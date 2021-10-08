@@ -46,7 +46,7 @@ void CoordinateSystem::draw(Camera* camera, glm::vec3& lightPos)
     glBindVertexArray(VAO1);
     glDrawElements(GL_TRIANGLES, vertex_indices1.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
-    shader->setVec3("color", glm::vec3(0.1, 1.0, 0.1));
+    shader->setVec3("color", glm::vec3(0.1, 0.0, 1.0));
     glBindVertexArray(VAO2);
     glDrawElements(GL_TRIANGLES, vertex_indices2.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);

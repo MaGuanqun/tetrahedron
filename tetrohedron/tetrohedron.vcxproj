@@ -158,17 +158,20 @@
     <ClCompile Include="external\imgui\imgui_tables.cpp" />
     <ClCompile Include="external\imgui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="render\imgui_windows.cpp" />
     <ClCompile Include="simulation_main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="basic\basic_imgui.h" />
     <ClInclude Include="basic\camera.h" />
     <ClInclude Include="basic\Coordinate.h" />
+    <ClInclude Include="basic\enum_setting.h" />
     <ClInclude Include="basic\global.h" />
     <ClInclude Include="basic\opengl_input.h" />
     <ClInclude Include="external\imgui\imgui.h" />
     <ClInclude Include="external\imgui\imgui_impl_glfw.h" />
     <ClInclude Include="external\imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="render\imgui_windows.h" />
     <ClInclude Include="simulation_main.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

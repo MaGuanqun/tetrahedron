@@ -3,7 +3,7 @@
 Camera::Camera(glm::vec3 position, glm::vec3 up, glm::vec3 center, float fov):
     position(position), center(center), ori_position(position), ori_center(center), fov(fov)
 {
-    far_plane = 2.0 * sqrt(dot(position - center, position - center));
+    far_plane = 5.0 * sqrt(dot(position - center, position - center));
     near_plane = 0.01f;
     this->up = glm::normalize(up);
     ori_up = this->up;
