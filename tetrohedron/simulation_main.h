@@ -5,3 +5,5 @@
 #include"basic/basic_imgui.h"
 
 void simu_main(GLFWwindow* window, Input* input);
+
+void setHideWireframe(std::vector<std::vector<bool>>& hide, std::vector<std::vector<bool>>& wireframe, int collider_num, int object_num);

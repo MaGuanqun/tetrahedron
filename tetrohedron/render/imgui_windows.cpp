@@ -173,36 +173,36 @@ void ImGuiWindows::visualizationControlPanel(bool& reset_camera, std::vector<std
 			ImGui::TreePop();
 		}
 	}
-	for (int i = 0; i < wireframe[TETROHEDRON].size(); ++i) {
+	for (int i = 0; i < wireframe[OBJECT].size(); ++i) {
 		ImGui::SetNextItemOpen(true);
-		tempString = "Tetrohedron " + std::to_string(i);
+		tempString = "object " + std::to_string(i);
 		if (ImGui::TreeNode(tempString.c_str())) {
-			if (hide[TETROHEDRON][i]) {
-				tempString = "Show##Tetrohedron" + std::to_string(i);
+			if (hide[OBJECT][i]) {
+				tempString = "Show##object" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					hide[TETROHEDRON][i] = false;
+					hide[OBJECT][i] = false;
 				}
 			}
 			else {
-				tempString = "Hide##Tetrohedron" + std::to_string(i);
+				tempString = "Hide##object" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					hide[TETROHEDRON][i] = true;
+					hide[OBJECT][i] = true;
 				}
 			}
-			if (wireframe[TETROHEDRON][i]) {
-				tempString = "Hide WireFrame##Tetrohedron" + std::to_string(i);
+			if (wireframe[OBJECT][i]) {
+				tempString = "Hide WireFrame##object" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					wireframe[TETROHEDRON][i] = false;
+					wireframe[OBJECT][i] = false;
 				}
 			}
 			else {
-				tempString = "Show WireFrame##Tetrohedron" + std::to_string(i);
+				tempString = "Show WireFrame##object" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					wireframe[TETROHEDRON][i] = true;
+					wireframe[OBJECT][i] = true;
 				}
 			}
 			ImGui::TreePop();
@@ -212,7 +212,7 @@ void ImGuiWindows::visualizationControlPanel(bool& reset_camera, std::vector<std
 }
 
 
-bool ImGuiWindows::loadModel(std::vector<std::string>& collider_path, std::vector<std::string>& tetrohedron_path)
+bool ImGuiWindows::loadModel(std::vector<std::string>& collider_path, std::vector<std::string>& object_path)
 {
 	bool finished_loading = false;
 	ImGui::SetNextWindowPos(ImVec2(SCR_WIDTH - 270, 0));
@@ -225,7 +225,7 @@ bool ImGuiWindows::loadModel(std::vector<std::string>& collider_path, std::vecto
 	if (open_load_model) {
 		ImGui::SetNextWindowSize(ImVec2(700, 160));
 		ImGui::Begin("Load Model", &open_load_model);
-		ImGui::TextWrapped("Load colliders and tetrohedrons.");
+		ImGui::TextWrapped("Load colliders and objects.");
 		if (ImGui::Button("Load Collider", ImVec2(160, 25))) {
 			m_file_dialog_info.SetTypeFilters({ ".obj" });
 			m_file_dialog_info.SetTitle("Load Collider");
@@ -245,31 +245,31 @@ bool ImGuiWindows::loadModel(std::vector<std::string>& collider_path, std::vecto
 				ImGui::TextWrapped(collider_path[i].c_str());
 			}
 		}
-		if (ImGui::Button("Load Tetrohedron", ImVec2(160, 25))) {
-			m_file_dialog_info.SetTypeFilters({ ".ele" });
-			m_file_dialog_info.SetTitle("Load Tetrohedron");
+		if (ImGui::Button("Load object", ImVec2(160, 25))) {
+			m_file_dialog_info.SetTypeFilters({ ".ele", ".obj"});
+			m_file_dialog_info.SetTitle("Load object");
 			m_file_dialog_info.Open();
 			load_collider_is_open = false;
 		}
 		if (!load_collider_is_open) {
 			m_file_dialog_info.Display();
 			if (m_file_dialog_info.HasSelected()) {
-				if (!tetrohedron_path.empty() && tetrohedron_path[tetrohedron_path.size() - 1] == m_file_dialog_info.GetSelected().string()) {
+				if (!object_path.empty() && object_path[object_path.size() - 1] == m_file_dialog_info.GetSelected().string()) {
 					ImGui::TextWrapped("Error, Need to add different path");
 				}
 				else {
-					tetrohedron_path.push_back(m_file_dialog_info.GetSelected().string());
+					object_path.push_back(m_file_dialog_info.GetSelected().string());
 					m_file_dialog_info.ClearSelected();
 				}		
 			}
 		}
-		if (!tetrohedron_path.empty()) {
-			ImGui::TextWrapped("Tetrohedron path:");
-			for (int i = 0; i < tetrohedron_path.size(); ++i) {
-				ImGui::TextWrapped(tetrohedron_path[i].c_str());
+		if (!object_path.empty()) {
+			ImGui::TextWrapped("object path:");
+			for (int i = 0; i < object_path.size(); ++i) {
+				ImGui::TextWrapped(object_path[i].c_str());
 			}
 		}
-		if (ImGui::Button("Load Tetrohedron", ImVec2(160, 25))) {
+		if (ImGui::Button("Confirm", ImVec2(160, 25))) {
 			finished_loading = true;
 		}
 		ImGui::End();

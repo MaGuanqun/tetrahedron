@@ -2,6 +2,7 @@
 #include "./basic/Coordinate.h"
 #include"basic/enum_setting.h"
 #include"render/imgui_windows.h"
+#include"scene.h"
 
 void simu_main(GLFWwindow* window, Input* input) {
 	// Set up GUI
@@ -17,15 +18,25 @@ void simu_main(GLFWwindow* window, Input* input) {
 	Camera camera(cameraPos, normalize(glm::vec3(0.0f, 1.0f, 0.0f)));
 	float zoom_value = 1.0;
 	CoordinateSystem coordinateSystem;
-	bool control_paramenter[11];
-	memset(control_paramenter, 0, 11);
+	bool control_parameter[11];
+	memset(control_parameter, 0, 11);
 	ImGuiWindows imgui_windows;
 	float force_coe=1.0;
 	std::vector<std::vector<bool>> wireframe(2);
 	std::vector<std::vector<bool>> hide(2);
 	std::vector<std::string> collider_path;
-	std::vector<std::string> tetrohedron_path;
+	std::vector<std::string> object_path;
 	bool already_load_model = false;
+	Scene scene;
+	scene.control_parameter = control_parameter;
+	std::vector<std::array<int, 3>>cloth_info0;//vertices,edges
+	std::vector<double>mass;//vertices,edges
+	double cloth_info1[2] = { 1.0,1.0 };//fps, mass
+	bool reset_camera = false;
+	std::vector<std::array<double, 5>> cloth_stiffness;//stretch, bending, position, collision, fricition
+	std::vector<std::array<double, 4>> collision_stiffness;//stretch, bending, position, collision, fricition
+	double simulation_parameter[2];//timestep, gravity
+
 	while (!glfwWindowShouldClose(window))
 	{
 		glClearColor(1.0, 1.0, 1.0, 1.0);
@@ -55,20 +66,28 @@ void simu_main(GLFWwindow* window, Input* input) {
 				}
 			}
 
-			if (control_paramenter[INITIAL_CAMERA]) {
+			if (control_parameter[INITIAL_CAMERA]) {
 				camera.resetCam();
 				zoom_value = 1.0;
-				control_paramenter[INITIAL_CAMERA] = false;
+				control_parameter[INITIAL_CAMERA] = false;
 			}
 		}
 		if (!already_load_model) {
-			if (imgui_windows.loadModel(collider_path, tetrohedron_path)) {
+			if (imgui_windows.loadModel(collider_path, object_path)) {
 				already_load_model = true;
-
+				scene.loadMesh(collider_path, object_path);
+				glm::vec3 camera_pos = glm::vec3(0.6 * scene.shadow.camera_from_origin + scene.camera_center[0], scene.camera_center[1], -0.8 * scene.shadow.camera_from_origin + scene.camera_center[2]);
+				camera.updateCamera(camera_pos, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(scene.camera_center[0], scene.camera_center[1], scene.camera_center[2]));
+				scene.getClothInfo(cloth_info0, mass, cloth_stiffness, simulation_parameter, collision_stiffness);
+				camera_from_origin = scene.shadow.camera_from_origin;				
+				setHideWireframe(hide, wireframe, scene.collider.size(), scene.cloth.size() + scene.tetrohedron.size());
 			}
 		}
-		imgui_windows.controlWindow(control_paramenter, &force_coe);
-		imgui_windows.visualizationControlPanel(control_paramenter[INITIAL_CAMERA], wireframe, hide);
+		else {
+			scene.drawScene(&camera, wireframe, hide, control_parameter[SAVE_OBJ]);
+		}
+		imgui_windows.controlWindow(control_parameter, &force_coe);
+		imgui_windows.visualizationControlPanel(control_parameter[INITIAL_CAMERA], wireframe, hide);
 
 		coordinateSystem.draw(&camera, cameraPos);
 
@@ -78,4 +97,15 @@ void simu_main(GLFWwindow* window, Input* input) {
 		glfwPollEvents();
 	}
 	basic_imgui.imguiShutdown();
+}
+
+
+void setHideWireframe(std::vector<std::vector<bool>>& hide, std::vector<std::vector<bool>>& wireframe, int collider_num, int object_num)
+{
+	if (collider_num > 0) {
+		hide[COLLIDER].resize(collider_num, false);
+		wireframe[COLLIDER].resize(collider_num, false);
+	}
+	hide[OBJECT].resize(object_num, false);
+	wireframe[OBJECT].resize(object_num, false);
 }

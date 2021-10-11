@@ -7,7 +7,7 @@ class ImGuiWindows
 public:
 	void controlWindow(bool* control_parameter, float* force_coe);
 	void visualizationControlPanel(bool& reset_camera, std::vector<std::vector<bool>>& wireframe, std::vector<std::vector<bool>>& hide);
-	bool loadModel(std::vector<std::string>& collider_path, std::vector<std::string>& tetrohedron_path);
+	bool loadModel(std::vector<std::string>& collider_path, std::vector<std::string>& object_path);
 
 private:
 	bool open_load_model;

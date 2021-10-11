@@ -1,0 +1,270 @@
+#include"thread.h"
+//#include"projectDynamic.h"
+//#include"collision_detection/spatial_hashing.h"
+#include"./mesh_struct/mesh_struct.h"
+
+Thread::Thread()
+{
+    thread_num = std::thread::hardware_concurrency();
+    initial();
+}
+
+Thread::~Thread()
+{
+    for (int i = 0; i < thread_num; ++i)
+    {
+        std::unique_lock<std::mutex> l(threads[i].m);
+        threads[i].stop = true;
+        threads[i].cv.notify_one();
+    }
+    // Join all the threads
+    for (int i = 0; i < thread_num; ++i) { threads[i].t.join(); }
+}
+
+void Thread::initial()
+{
+   // std::cout << thread_num;
+    threads = new ThreadData[thread_num];
+   // threads.push_back(a);
+	//threads.resize(thread_num);
+    int tdi = 0;
+    for(int i=0;i< thread_num;i++)
+    {
+        threads[i].id = tdi++;
+        threads[i].t = std::thread(&Thread::thread_func,this, &threads[i]);
+    }
+}
+
+//job Thread::create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread function_type)// int jobNumber
+//{
+//    job k;
+//    switch (function_type)
+//    {
+//    case LOCAL_PROJECTION:
+//        k = job([func, thread_id]() {func->localProjectionPerThread(thread_id); });
+//        break;
+//    case SOLVE_SYSYTEM:
+//        k = job([func, thread_id]() {func->solveSystemPerThead2(thread_id); });
+//        break;
+//    case UPDATE_COLLISION_STIFFNESS:
+//        k = job([func, thread_id]() {func->updateCollisionStiffnessClothPerThread(thread_id); });
+//        break;
+//    case UPDATE_UV:
+//        k = job([func, thread_id]() {func->updateUVPerThread(thread_id); });
+//        break;
+//    case MATRIX_DECOMPOSITION:
+//        k = job([func, thread_id]() {func->matrixDecomposition(thread_id); });
+//        break;
+//    case SET_DIAGONAL: {
+//        k = job([func, thread_id]() {func->setDiagonal(thread_id); });
+//        break;
+//    }
+//    case VIRTUAL_LOCAL_PROJECTION: {
+//        k = job([func, thread_id]() {func->virtualLocalProjectionPerThread(thread_id); });
+//    }
+//        break;
+//    case PREPARE_WOODBURY: {
+//        k = job([func, thread_id]() {func->prepareWoodbury(thread_id); });
+//        break;
+//    }
+//    case SET_K_COLUMN: {
+//        k = job([func, thread_id]() {func->setKColumnPerThread(thread_id); });
+//        break;
+//    }
+//    case FACTORIZE_WOODBURY_K: {
+//        k = job([func, thread_id]() {func->factorizeWoodburyK(thread_id); });
+//        break;
+//    }
+//    case GET_FRICTION:
+//        k= job([func, thread_id]() {func->getFrictionPerThread(thread_id); });
+//        break;
+//    }
+//    return k;
+//}
+
+job Thread::create_task(MeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type)// int jobNumber
+{
+    job k;
+    switch (function_type)
+    {
+    case FACE_NORMAL:
+        k = job([func, thread_id]() {func->getFaceNormalPerThread(thread_id); });
+        break;
+    case FACE_NORMAL_RENDER:
+        k = job([func, thread_id]() {func->getRenderFaceNormalPerThread(thread_id); });
+        break;
+    case VERTEX_NORMAL_RENDER:
+        k = job([func, thread_id]() {func->getRenderVertexNormalPerThread(thread_id); });
+        break;
+    case VERTEX_NORMAL:
+        k = job([func, thread_id]() {func->getVertexNormalPerThread(thread_id); });
+        break;     
+    }
+    return k;
+}
+
+
+//job Thread::create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncSendToThread function_type)
+//{
+//    job k;
+//    switch (function_type)
+//    {
+//    case RESUM_TARGET_POSITION: {
+//        k = job([func, thread_id]() {func->resumTargetPositionperThread(thread_id); });
+//    }
+//                            break;
+//    case CCD_REFIND_TARGET_POSITION: {
+//        k = job([func, thread_id]() {func->refindTargetPosPerThread(thread_id); });
+//    }
+//                                   break;
+//    case SUM_TARGET_POSITION: {
+//        k = job([func, thread_id]() {func->sumTargetPositionPerThread(thread_id); });
+//    }
+//                            break;
+//    case CCD_UPDATE_TARGET_POSITION: {
+//        k = job([func, thread_id]() {func->updateCCDTargetPosPerThread(thread_id); });
+//    }
+//                                   break;
+//    case FIND_AROUND_PRIMITIVE: {
+//        k = job([func, thread_id]() {func->setCCDFindAroundIndex(thread_id); });
+//    }
+//                             break;
+//    case CHECK_IF_SIDE_CHANGED: {
+//        k = job([func, thread_id]() {func->checkIfTriangleSideChanged(thread_id); });
+//    }
+//                                          break;
+//    case DECIDE_IF_NEED_ITERATION: {
+//        k = job([func, thread_id]() {func->decideIfNeedIterationPerThread(thread_id); });
+//    }
+//                                 break;
+//    case VERTEX_COLLISION_INDICATOR: {
+//        k = job([func, thread_id]() {func->resetVertexCollisionIndicatorPerThread(thread_id); });
+//    }
+//                                   break;
+//    case SPATIAL_HASHING: {
+//        k = job([func, thread_id]() {func->spatialHashingCloth(thread_id); });
+//    }
+//                        break;
+//    case CCD_CHECK_COLLISION: {
+//        k = job([func, thread_id]() {func->checkIfCollidePerThread(thread_id); });
+//    }
+//    }
+//    return k;
+//}
+
+
+//job Thread::create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncSendToThread function_type, int cloth_No, int compare_cloth_No)// int jobNumber
+//{
+//    job k;
+//    switch (function_type)
+//    {
+//  
+//    case POINT_AABB: {
+//        k = job([func, thread_id, cloth_No, compare_cloth_No]() {func->getPointAABBPerThread(thread_id, cloth_No, compare_cloth_No); });
+//    }
+//                   break;
+//    case EDGE_AABB: {
+//        k = job([func, thread_id, cloth_No, compare_cloth_No]() {func->getEdgeAABBPerThread(thread_id, cloth_No); });
+//    }
+//                  break;
+//    case TRIANGLE_AABB: {
+//        k = job([func, thread_id, cloth_No, compare_cloth_No]() {func->getTriangleAABBPerThread(thread_id, cloth_No, compare_cloth_No); });
+//    }
+//                      break;   
+//    case FIRST_SET_COLLISION_FREE: {
+//        k = job([func, thread_id, cloth_No, compare_cloth_No]() {func->firstFindCollisionFreePerThread(thread_id, cloth_No, compare_cloth_No); });
+//    }
+//                                 break;
+//    }
+//    return k;
+//}
+
+//void Thread::assignTask(SpatialHashing* func, SpatialHashingFuncSendToThread taskType, int cloth_No, int compare_cloth_No)
+//{   
+//    for (int i = 0; i < thread_num; ++i)
+//    {
+//        // std::cout << threads[i].id << std::endl;
+//        job j = create_task(func, threads[i].id, taskType, cloth_No, compare_cloth_No);
+//        futures.push_back(j.get_future());
+//        std::unique_lock<std::mutex> l(threads[i].m);
+//        threads[i].jobs.push(std::move(j));
+//        // Notify the thread that there is work do to...
+//        threads[i].cv.notify_one();
+//    }
+//    for (auto& f : futures) { f.wait(); }
+//    futures.clear();  
+//}
+
+//void Thread::assignTask(SpatialHashing* func, SpatialHashingFuncSendToThread taskType)
+//{
+//    for (int i = 0; i < thread_num; ++i)
+//    {
+//        // std::cout << threads[i].id << std::endl;
+//        job j = create_task(func, threads[i].id, taskType);
+//        futures.push_back(j.get_future());
+//        std::unique_lock<std::mutex> l(threads[i].m);
+//        threads[i].jobs.push(std::move(j));
+//        // Notify the thread that there is work do to...
+//        threads[i].cv.notify_one();
+//    }
+//    for (auto& f : futures) { f.wait(); }
+//    futures.clear();
+//}
+
+
+void Thread::assignTask(MeshStruct* func, MeshStructFuncSendToThread taskType)
+{
+    for (int i = 0; i < thread_num; ++i)
+    {
+        // std::cout << threads[i].id << std::endl;
+        job j = create_task(func, threads[i].id, taskType);
+        futures.push_back(j.get_future());
+        std::unique_lock<std::mutex> l(threads[i].m);
+        threads[i].jobs.push(std::move(j));
+        // Notify the thread that there is work do to...
+        threads[i].cv.notify_one();
+    }
+    for (auto& f : futures) { f.wait(); }
+    futures.clear();
+}
+
+//void Thread::assignTask(ProjectDynamic* func, PDFuncSendToThread taskType)
+//{
+//    for (int i = 0; i < thread_num; ++i)
+//    {
+//        // std::cout << threads[i].id << std::endl;
+//        job j = create_task(func, threads[i].id, taskType);
+//        futures.push_back(j.get_future());
+//        std::unique_lock<std::mutex> l(threads[i].m);
+//        threads[i].jobs.push(std::move(j));
+//        // Notify the thread that there is work do to...
+//        threads[i].cv.notify_one();
+//    }
+//    for (auto& f : futures) { f.wait(); }
+//    futures.clear();
+//}
+
+
+
+
+
+void Thread::thread_func(ThreadData* pData)
+{
+    std::unique_lock<std::mutex> l(pData->m, std::defer_lock);
+    while (true)
+    {
+        l.lock();
+        // Wait until the queue won't be empty or stop is signaled
+        pData->cv.wait(l, [pData]() {
+            return (pData->stop || !pData->jobs.empty());
+            });
+        // Stop was signaled, let's exit the thread
+        if (pData->stop) { return; }
+        // Pop one task from the queue...
+        job j = std::move(pData->jobs.front());
+        pData->jobs.pop();
+        l.unlock();
+        // Execute the task!
+        j();
+    }
+}

@@ -1,0 +1,30 @@
+newmtl _Tshirts:Cotton_Canvas_FRONT_49821
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.08 0.08 0.08
+Ns 28.76
+newmtl _simpleCoat:W_FACE_FRONT_469350
+illum 4
+Kd 0.13 0.8 0.13
+Ka 0.0336 0.1 0.0336
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.0336 0.1 0.0336
+Ns 28.76
+newmtl _simplePants3:DENIM_FRONT_132796
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.08 0.08 0.08
+Ns 28.76
+newmtl initialShadingGroup
+illum 4
+Kd 0.50 0.50 0.50
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+Ni 1.00

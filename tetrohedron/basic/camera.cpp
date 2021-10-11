@@ -3,7 +3,7 @@
 Camera::Camera(glm::vec3 position, glm::vec3 up, glm::vec3 center, float fov):
     position(position), center(center), ori_position(position), ori_center(center), fov(fov)
 {
-    far_plane = 5.0 * sqrt(dot(position - center, position - center));
+    far_plane = 3.0 * sqrt(dot(position - center, position - center));
     near_plane = 0.01f;
     this->up = glm::normalize(up);
     ori_up = this->up;
@@ -17,6 +17,21 @@ void Camera::resetCam()
     position = ori_position;
     center = ori_center;
     up = ori_up;
+    maxHightValue = sqrt(dot(position - center, position - center)) * tan(glm::radians(fov / 2.0f));
+    right = maxHightValue * (float)SCR_WIDTH / (float)SCR_HEIGHT;
+    y_vec = glm::normalize(glm::cross(up, position - center));
+}
+
+void Camera::updateCamera(glm::vec3 position, glm::vec3 up, glm::vec3 center)
+{
+    this->position = position;
+    this->up = up;
+    this->center = center;
+    ori_position = position;
+    ori_center = center;
+    ori_up = up;
+    far_plane = 2.0 * sqrt(dot(position - center, position - center));
+    near_plane = 0.01f;
     maxHightValue = sqrt(dot(position - center, position - center)) * tan(glm::radians(fov / 2.0f));
     right = maxHightValue * (float)SCR_WIDTH / (float)SCR_HEIGHT;
     y_vec = glm::normalize(glm::cross(up, position - center));
