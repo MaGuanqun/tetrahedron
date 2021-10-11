@@ -86,6 +86,29 @@ void simu_main(GLFWwindow* window, Input* input) {
 				control_parameter[INITIAL_CAMERA] = false;
 			}
 		}
+
+		if (control_parameter[RESET_SIMULATION]) {
+			for (int i = 0; i < wireframe.size(); ++i) {
+				std::fill(wireframe[i].begin(), wireframe[i].end(), false);
+			}
+			control_parameter[START_SIMULATION] = false;
+			scene.resetCloth();
+			control_parameter[RESET_SIMULATION] = false;
+		}
+		if (control_parameter[INITIAL_SIMULATION]) {
+			for (int i = 0; i < wireframe.size(); ++i) {
+				std::fill(wireframe[i].begin(), wireframe[i].end(), false);
+			}
+			control_parameter[START_SIMULATION] = false;
+			scene.initialCloth();
+			control_parameter[INITIAL_SIMULATION] = false;
+		}
+		if (scene.intersection.happened && control_parameter[STOP_AFTER_RELEASE_MOUSE] && input->mouse.leftButtonWasReleasedThisFrame()) {
+			control_parameter[START_SIMULATION] = false;
+		}
+		if (input->mouse.leftButtonWasReleasedThisFrame() && !control_parameter[START_TEST]) {// 
+			scene.initialIntersection();
+		}
 		imgui_windows.operationWindow(cloth_stiffness, simulation_parameter, collision_stiffness, set_stiffness, temp_stiffness, update_stiffness);
 		if (!already_load_model) {
 			if (imgui_windows.loadModel(collider_path, object_path)) {
@@ -99,8 +122,14 @@ void simu_main(GLFWwindow* window, Input* input) {
 			}
 		}
 		else {
+			scene.updateCloth(&camera, input->mouse.screen_pos, control_parameter, force_coe);
 			scene.drawScene(&camera, wireframe, hide, control_parameter[SAVE_OBJ]);
 		}
+
+		if (control_parameter[ONE_FRAME]) {
+			control_parameter[ONE_FRAME] = false;
+		}
+
 		imgui_windows.controlWindow(control_parameter, &force_coe);
 		imgui_windows.visualizationControlPanel(control_parameter[INITIAL_CAMERA], wireframe, hide);
 

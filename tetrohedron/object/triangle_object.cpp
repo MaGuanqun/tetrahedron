@@ -70,3 +70,17 @@ void TriangleObject::setMaterial(OriMesh& ori_mesh)
 	material.back_material = ori_mesh.back_material;
 	material.front_material = ori_mesh.front_material;
 }
+
+
+
+
+void TriangleObject::reset()
+{
+	mesh_struct.vertex_position = mesh_struct.ori_vertex;
+	mesh_struct.vertex_for_render = mesh_struct.ori_vertex;
+	mesh_struct.getRenderNormal();
+	mesh_struct.getNormal();
+	for (int i = 0; i < mesh_struct.anchor_vertex.size(); ++i) {
+		mesh_struct.anchor_position[i] = mesh_struct.vertex_position[mesh_struct.anchor_vertex[i]];
+	}
+}

@@ -26,6 +26,9 @@ public:
 	std::vector<std::array<double, 4>>collision_stiffness_time_step_starts_indicator;
 	double collision_stiffness_update_indicator;
 	double position_stiffness;
+
+	void initial();
+	void initialMouseChosenVertex();
 private:
 	void setMeshStruct(double density, OriMesh& ori_mesh);
 	std::vector<bool>is_vertex_used;

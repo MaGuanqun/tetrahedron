@@ -194,3 +194,68 @@ void Scene::saveObj()
 	}
 }
 
+void Scene::initialCloth()
+{
+	//project_dynamic.initial();
+	for (int i = 0; i < cloth.size(); ++i) {
+		cloth[i].initial();
+	}
+	intersection.initialIntersection();
+	//spatial_hashing.body_time_stamp++;
+	for (int i = 0; i < collider.size(); ++i) {
+		collider[i].reset();
+	}
+	time_stamp = 0;
+}
+
+void Scene::resetCloth()
+{
+	//project_dynamic.reset();
+	for (int i = 0; i < cloth.size(); ++i) {
+		cloth[i].reset();
+	}
+	intersection.initialIntersection();
+	//spatial_hashing.time_stamp++;
+	for (int i = 0; i < collider.size(); ++i) {
+		collider[i].reset();
+	}
+	time_stamp = 0;
+}
+
+void Scene::initialIntersection()
+{
+	intersection.initialIntersection();
+	for (int i = 0; i < cloth.size(); ++i) {
+		cloth[i].initialMouseChosenVertex();
+	}
+}
+
+void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe)
+{
+
+
+	if (intersection.happened && !control_parameter[START_TEST]) {
+		//add mouse force
+
+	}
+
+	if (control_parameter[START_SIMULATION] || control_parameter[ONE_FRAME]) {
+
+		time_stamp++;
+	}
+
+	updateBuffer();
+}
+
+void Scene::updateBuffer()
+{
+	for (int i = 0; i < cloth.size(); ++i) {
+		cloth[i].setBuffer();
+	}
+	for (int i = 0; i < collider.size(); ++i) {
+		collider[i].setBuffer();
+	}
+	for (int i = 0; i < tetrohedron.size(); ++i) {
+		tetrohedron[i].setBuffer();
+	}
+}

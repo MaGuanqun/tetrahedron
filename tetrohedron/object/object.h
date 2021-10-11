@@ -27,5 +27,8 @@ private:
 
 public:
 	double mass;
+	std::vector<double>coe_neighbor_vertex_force;
+	std::vector<int>neighbor_vertex;
 	void setWireframwColor(double* color);
+
 };

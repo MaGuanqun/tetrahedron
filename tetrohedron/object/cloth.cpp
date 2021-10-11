@@ -172,3 +172,30 @@ void Cloth::recordInitialMesh(SingleClothInfo& single_cloth_info_ref)
 	}
 	collision_stiffness_time_step_starts_indicator.resize(mesh_struct.vertices.size(), collision_stiff_indicator);
 }
+
+void Cloth::initial()
+{
+	mesh_struct.vertex_position = mesh_struct.ori_vertex;
+	mesh_struct.vertex_for_render = mesh_struct.ori_vertex;
+	mesh_struct.getRenderNormal();
+	mesh_struct.getNormal();
+	for (int i = 0; i < mesh_struct.anchor_vertex.size(); ++i) {
+		mesh_struct.anchor_position[i] = mesh_struct.vertex_position[mesh_struct.anchor_vertex[i]];
+	}
+	std::fill(length_stiffness.begin(), length_stiffness.end(), single_cloth_info_ref.length_stiffness);
+	bend_stiffness = single_cloth_info_ref.bending_stiffness;
+	std::array<double, 4> collision_stiff;
+	memcpy(collision_stiff.data(), single_cloth_info_ref.collision_stiffness, 32);
+	std::fill(collision_stiffness_time_step_starts.begin(), collision_stiffness_time_step_starts.end(), collision_stiff);
+	std::array<double, 4> collision_stiff_indicator;
+	for (int i = 0; i < 4; ++i) {
+		collision_stiff_indicator[i] = collision_stiffness_update_indicator * collision_stiff[i];
+	}
+	std::fill(collision_stiffness_time_step_starts_indicator.begin(), collision_stiffness_time_step_starts_indicator.end(), collision_stiff_indicator);
+}
+
+void Cloth::initialMouseChosenVertex()
+{
+	coe_neighbor_vertex_force.clear();
+	neighbor_vertex.clear();
+}

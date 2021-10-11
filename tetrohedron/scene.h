@@ -18,9 +18,13 @@ public:
 	Shadow shadow;
 	double camera_center[3];
 	bool* control_parameter;
+	void initialCloth();
+	void resetCloth();
 	void loadMesh(std::vector<std::string>& collider_path, std::vector<std::string>& object_path);
 	void drawScene(Camera* camera, std::vector<std::vector<bool>>& wireframe, std::vector<std::vector<bool>>& hide, bool start_save_obj);
 	void getClothInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 3>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 4>>& collision_stiffness);
+	void updateCloth(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe);
+	void initialIntersection();
 private:
 	Light light;
 	int cloth_num, collider_num,tetrohedron_num;
@@ -36,4 +40,5 @@ private:
 
 	Cursor cursor;
 	void saveObj();
+	void updateBuffer();
 };

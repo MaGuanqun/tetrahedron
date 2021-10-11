@@ -18,6 +18,7 @@ public:
 	void setBuffer();
 	void simpDraw(Camera* camera, Shader* shader);
 	Material material;
+	void reset();
 private:
 
 };
