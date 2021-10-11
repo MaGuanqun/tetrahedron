@@ -1,8 +1,10 @@
+#define _CRT_SECURE_NO_DEPRECATE
 #include "simulation_main.h"
 #include "./basic/Coordinate.h"
 #include"basic/enum_setting.h"
 #include"render/imgui_windows.h"
 #include"scene.h"
+#include"render/saveImage.h"
 
 void simu_main(GLFWwindow* window, Input* input) {
 	// Set up GUI
@@ -29,16 +31,28 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool already_load_model = false;
 	Scene scene;
 	scene.control_parameter = control_parameter;
-	std::vector<std::array<int, 3>>cloth_info0;//vertices,edges
-	std::vector<double>mass;//vertices,edges
-	double cloth_info1[2] = { 1.0,1.0 };//fps, mass
+	std::vector<std::array<int, 3>>cloth_info;//vertices,edges
+	std::vector<std::array<int, 2>>tetrohedron_info;//vertices,edges
+	std::vector<double>cloth_mass;//vertices,edges
+	std::vector<double>tetrohedron_mass;//vertices,edges
+	double time = 1.0;//fps, mass
 	bool reset_camera = false;
-	std::vector<std::array<double, 5>> cloth_stiffness;//stretch, bending, position, collision, fricition
+	std::vector<std::array<double, 3>> cloth_stiffness;//stretch, bending, position, collision, fricition
 	std::vector<std::array<double, 4>> collision_stiffness;//stretch, bending, position, collision, fricition
-	double simulation_parameter[2];//timestep, gravity
-
+	double simulation_parameter[2] = {0.0,0.0};//timestep, gravity
+	SaveImage save_image;
+	int iteration_number[2] = { 0,0 };
+	double convergence_rate[2] = { 0.1,0.1 };
+	bool edit_PD_conv_rate = false;
+	time_t start_time;
+	
+	bool set_stiffness[10];
+	memset(set_stiffness, 0, 10);
+	double temp_stiffness[6] = { 0.0,0.0,0.0,0.0,0.0,0.0 };
+	UpdateStiffness update_stiffness;
 	while (!glfwWindowShouldClose(window))
 	{
+		start_time = clock();
 		glClearColor(1.0, 1.0, 1.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
@@ -72,13 +86,14 @@ void simu_main(GLFWwindow* window, Input* input) {
 				control_parameter[INITIAL_CAMERA] = false;
 			}
 		}
+		imgui_windows.operationWindow(cloth_stiffness, simulation_parameter, collision_stiffness, set_stiffness, temp_stiffness, update_stiffness);
 		if (!already_load_model) {
 			if (imgui_windows.loadModel(collider_path, object_path)) {
 				already_load_model = true;
 				scene.loadMesh(collider_path, object_path);
 				glm::vec3 camera_pos = glm::vec3(0.6 * scene.shadow.camera_from_origin + scene.camera_center[0], scene.camera_center[1], -0.8 * scene.shadow.camera_from_origin + scene.camera_center[2]);
 				camera.updateCamera(camera_pos, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(scene.camera_center[0], scene.camera_center[1], scene.camera_center[2]));
-				scene.getClothInfo(cloth_info0, mass, cloth_stiffness, simulation_parameter, collision_stiffness);
+				scene.getClothInfo(cloth_info, cloth_mass, cloth_stiffness, simulation_parameter, collision_stiffness);
 				camera_from_origin = scene.shadow.camera_from_origin;				
 				setHideWireframe(hide, wireframe, scene.collider.size(), scene.cloth.size() + scene.tetrohedron.size());
 			}
@@ -90,11 +105,18 @@ void simu_main(GLFWwindow* window, Input* input) {
 		imgui_windows.visualizationControlPanel(control_parameter[INITIAL_CAMERA], wireframe, hide);
 
 		coordinateSystem.draw(&camera, cameraPos);
+		time = (double)(clock() - start_time);
+		imgui_windows.infoWindow(cloth_info, cloth_mass, tetrohedron_info, tetrohedron_mass, time, iteration_number, convergence_rate, scene.time_stamp, edit_PD_conv_rate, control_parameter[START_SIMULATION]);
+
 
 		basic_imgui.imguiEndFrame();
 		glfwSwapBuffers(window);
 		input->beginFrame();
 		glfwPollEvents();
+
+		if (control_parameter[OUTPUT_IMAGE]) {
+			save_image.outputImage(scene.time_stamp);
+		}
 	}
 	basic_imgui.imguiShutdown();
 }

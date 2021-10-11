@@ -100,7 +100,7 @@ void Scene::initialSceneSetting(Preprocessing& preprocessing)
 }
 
 
-void Scene::getClothInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 5>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 4>>& collision_stiffness)
+void Scene::getClothInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 3>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 4>>& collision_stiffness)
 {
 	mesh_info.resize(2);
 	mass.resize(cloth_num);
@@ -116,8 +116,6 @@ void Scene::getClothInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector
 		mesh_stiffness[i][0] = cloth[i].single_cloth_info_ref.length_stiffness;
 		mesh_stiffness[i][1] = cloth[i].single_cloth_info_ref.bending_stiffness;
 		mesh_stiffness[i][2] = cloth[i].single_cloth_info_ref.position_stiffness;
-		mesh_stiffness[i][3] = cloth[i].single_cloth_info_ref.friction_stiffness_tangent;
-		mesh_stiffness[i][4] = cloth[i].single_cloth_info_ref.friction_stiffness_normal;
 	}
 
 	simulation_parameter[0] = time_step;

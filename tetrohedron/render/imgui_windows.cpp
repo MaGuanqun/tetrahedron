@@ -280,6 +280,69 @@ bool ImGuiWindows::loadModel(std::vector<std::string>& collider_path, std::vecto
 	return false;	 
 }
 
+void ImGuiWindows::infoWindow(std::vector<std::array<int, 3>>& cloth_info, std::vector<double>& cloth_mass,
+	std::vector<std::array<int, 2>>& tetrohedron_info, std::vector<double>& tetrohedron_mass,
+	double time, int* iteration_num, double* convergence_rate, int time_stamp, bool& start_edit, bool& start_simulation)
+{
+	ImGui::SetNextWindowPos(ImVec2(0, 0));
+	ImGui::SetNextWindowSize(ImVec2(260, 330));
+	ImGui::Begin("Basic Information This Time step");
+	ImGui::Text("stamp: %i", time_stamp);
+	ImGui::Text("Time(ms): %f", time);
+	ImGui::SetNextItemOpen(true);
+	if (ImGui::TreeNode("Iteration")){
+		ImGui::Text("Local-global iteration: %i", iteration_num[LOCAL_GLOBAL]);
+		ImGui::Text("Outter iteration: %i", iteration_num[OUTER]);
+		if (!start_edit) {
+			if (ImGui::Button("Edit Rate", ImVec2(160, 25))) {
+				start_edit = true;
+				start_simulation = false;
+			}
+		}
+		else {
+			if (ImGui::Button("Confirm Rate", ImVec2(160, 25))) {
+				start_edit = false;
+			}
+		}
+		if (start_edit) {
+			ImGui::Text("Local-global convergence rate:");
+			ImGui::InputDouble("##Local-global convergence rate", &convergence_rate[LOCAL_GLOBAL], 0.0f, 0.0f, "%.2e");
+			ImGui::Text("Outter convergence rate:");
+			ImGui::InputDouble("##Outter convergence rate:", &convergence_rate[OUTER], 0.0f, 0.0f, "%.2e");
+		}
+		else {
+			ImGui::TextWrapped("Local-global convergence rate: %.2e", convergence_rate[LOCAL_GLOBAL]);
+			ImGui::TextWrapped("Outter convergence rate:\n %.2e", convergence_rate[OUTER]);
+		}
+		ImGui::TreePop();
+	}
+	std::string tempString;
+	for (int i = 0; i < cloth_info.size(); ++i) {
+		ImGui::SetNextItemOpen(true);
+		tempString = "Cloth " + std::to_string(i);
+		if (ImGui::TreeNode(tempString.c_str()))
+		{
+			ImGui::Text("Vertex: %i", cloth_info[i][0]);
+			ImGui::Text("Edge: %i", cloth_info[i][1]);
+			ImGui::Text("Face: %i", cloth_info[i][2]);
+			ImGui::Text("Total Mass: %.2f", cloth_mass[i]);
+			ImGui::TreePop();
+		}
+	}
+	for (int i = 0; i < tetrohedron_info.size(); ++i) {
+		ImGui::SetNextItemOpen(true);
+		tempString = "Tetrohedron " + std::to_string(i);
+		if (ImGui::TreeNode(tempString.c_str()))
+		{
+			ImGui::Text("Vertex: %i", tetrohedron_info[i][0]);
+			ImGui::Text("Tetrohedron: %i", tetrohedron_info[i][1]);
+			ImGui::Text("Total Mass: %.2f##tetrohedron", tetrohedron_mass[i]);
+			ImGui::TreePop();
+		}
+	}
+	ImGui::End();
+}
+
 void ImGuiWindows::helpMarker(const char* desc)
 {
 	ImGui::TextDisabled("(?)");
@@ -290,5 +353,164 @@ void ImGuiWindows::helpMarker(const char* desc)
 		ImGui::TextUnformatted(desc);
 		ImGui::PopTextWrapPos();
 		ImGui::EndTooltip();
+	}
+}
+
+
+void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_stiffness, double* simulation_parameters, std::vector<std::array<double, 4>>& collision_stiffness,
+	bool* set_stiffness, double* temp_stiffness, UpdateStiffness& update_stiffness)
+{
+	ImGui::SetNextWindowPos(ImVec2(0, 330));
+	ImGui::SetNextWindowSize(ImVec2(240, 140));
+	ImGui::Begin("Simulation");
+	ImGui::Text("Time Step: %.3f", simulation_parameters[0]);
+	ImGui::Text("Gravity: %f", simulation_parameters[1]);
+	//ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.35f, 0.75f, 0.35f, 1.0f));
+	if (ImGui::Button("Set Stiffness", ImVec2(160, 25))) {
+		set_stiffness[START_SETTING] = true;
+	}
+
+	//ImGui::PopStyleColor();
+	ImGui::End();
+
+	bool test = true;
+	if (set_stiffness[START_SETTING]) {
+		ImGui::SetNextWindowSize(ImVec2(500, 330));
+		ImGui::Begin("Set Stiffness", set_stiffness+START_SETTING);
+		ImGui::Text("Press to set constraint stiffness.");
+		if (ImGui::Button("set stiffness", ImVec2(160, 25))) {
+			set_stiffness[EDIT] = true;
+		}
+		ImGui::Text("Default stiffness:");
+		std::string tempString;
+		for (int i = 0; i < collision_stiffness.size(); ++i) {
+			ImGui::SetNextItemOpen(true);
+			tempString = "Cloth " + std::to_string(i) +"##collision stiffness";
+			if (ImGui::TreeNode(tempString.c_str())) {
+				ImGui::Text("Stretch: %.2e", cloth_stiffness[i][0]);
+				ImGui::SameLine();
+				ImGui::Text("Bending: %.2e", cloth_stiffness[i][1]);
+				ImGui::SameLine();
+				ImGui::Text("Position: %.2e", cloth_stiffness[i][2]);
+				ImGui::Text("Collision stiffness:(P point, E edge, T triangle)");
+				ImGui::Text("Self-collision:");
+				ImGui::Text("PT: %.2e", collision_stiffness[i][SELF_POINT_TRIANGLE]);
+				ImGui::SameLine();
+				ImGui::Text("EE: %.2e", collision_stiffness[i][SELF_EDGE_EDGE]);
+				ImGui::SameLine();
+				ImGui::Text("PP: %.2e", collision_stiffness[i][SELF_POINT_POINT]);
+				ImGui::Text("body-cloth collision:");
+				ImGui::Text("PT: %.2e", collision_stiffness[i][BODY_POINT_TRIANGLE]);
+				ImGui::TreePop();
+			}
+		}
+		ImGui::End();
+	}
+	if (set_stiffness[EDIT]) {
+		ImGui::SetNextWindowSize(ImVec2(300, 330));
+		ImGui::Begin("Set Stiffness##1", set_stiffness + EDIT);
+		ImGui::PushItemWidth(ImGui::GetFontSize() * 7.0f);
+		ImGui::Text("Length: ");
+		//ImGui::SameLine();
+		if (ImGui::InputDouble("##Length", &temp_stiffness[LENGTH], 0.0f, 0.0f, "%.2f")) {
+			set_stiffness[EDIT_LENGTH] = false;
+		}
+		ImGui::SameLine();
+		if (!set_stiffness[EDIT_LENGTH]) {
+			if (ImGui::Button("Save##length", ImVec2(80, 25))) {
+				update_stiffness.update_length = true;
+				update_stiffness.length_stiffness = temp_stiffness[LENGTH];
+				set_stiffness[EDIT_LENGTH] = true;
+			}
+		}
+		else {
+			ImGui::Text("Saved");
+		}
+		ImGui::Text("Bending: ");
+		if (ImGui::InputDouble("##Bending", &temp_stiffness[BENDING], 0.0f, 0.0f, "%.2e")) {
+			set_stiffness[EDIT_BENDING] = false;
+		}
+		ImGui::SameLine();
+		helpMarker(
+			"You can input bending using the scientific notation");
+		ImGui::SameLine();
+		if (!set_stiffness[EDIT_BENDING]) {
+			if (ImGui::Button("Save##bend", ImVec2(80, 25))) {
+				set_stiffness[EDIT_BENDING] = true;
+				update_stiffness.update_bend = true;
+				update_stiffness.bend_stiffness = temp_stiffness[BENDING];
+			}
+		}
+		else {
+			ImGui::Text("Saved");
+		}
+		if (ImGui::Button("Set Collision", ImVec2(160, 25))) {
+			set_stiffness[EDIT_COLLISION] = true;
+		}
+
+		
+		if (ImGui::Button("Confirm Stiffness", ImVec2(160, 25))) {
+			set_stiffness[STIFFNESS_CONFIRMED] = true;
+			set_stiffness[EDIT] = false;
+		}
+		ImGui::TextWrapped("Press the button above to save all change.");
+		ImGui::End();
+	}
+	else {
+		memset(set_stiffness + EDIT_LENGTH, 0, 2);
+	}
+	if (set_stiffness[EDIT_COLLISION]) {
+		ImGui::SetNextWindowSize(ImVec2(270, 230));
+		ImGui::Begin("Set Collision", set_stiffness + EDIT_COLLISION);
+		ImGui::PushItemWidth(ImGui::GetFontSize() * 7.0f);
+		ImGui::Text("Cloth point triangle collision: ");
+		if (ImGui::InputDouble("##CPTcollision", &temp_stiffness[SELF_POINT_TRIANGLE], 0.0f, 0.0f, "%.2f")) {
+			set_stiffness[EDIT_SELF_POINT_TRIANGLE] = false;
+		}
+		ImGui::SameLine();
+		if (!set_stiffness[EDIT_SELF_POINT_TRIANGLE]) {
+			if (ImGui::Button("Save##CPTcollision", ImVec2(80, 25))) {
+				set_stiffness[EDIT_SELF_POINT_TRIANGLE] = true;
+				update_stiffness.update_collision[SELF_POINT_TRIANGLE] = true;
+				update_stiffness.collision_stiffness[SELF_POINT_TRIANGLE] = temp_stiffness[SELF_POINT_TRIANGLE];
+			}
+		}
+		else {
+			ImGui::Text("Saved");
+		}
+		ImGui::Text("Cloth Edge edge collision: ");
+		if (ImGui::InputDouble("##CEEcollision", &temp_stiffness[SELF_EDGE_EDGE], 0.0f, 0.0f, "%.2f")) {
+			set_stiffness[EDIT_SELF_EDGE_EDGE] = false;
+		}
+		ImGui::SameLine();
+		if (!set_stiffness[EDIT_SELF_EDGE_EDGE]) {
+			if (ImGui::Button("Save##CEEcollision", ImVec2(80, 25))) {
+				set_stiffness[EDIT_SELF_EDGE_EDGE] = true;
+				update_stiffness.update_collision[SELF_EDGE_EDGE] = true;
+				update_stiffness.collision_stiffness[SELF_EDGE_EDGE] = temp_stiffness[SELF_EDGE_EDGE];
+			}
+		}
+		else {
+			ImGui::Text("Saved");
+		}
+		ImGui::Text("Body point triangle collision: ");
+		if (ImGui::InputDouble("##BPTcollision", &temp_stiffness[BODY_POINT_TRIANGLE], 0.0f, 0.0f, "%.2f")) {
+			set_stiffness[EDIT_BODY_POINT_TRIANGLE] = false;
+		}
+		ImGui::SameLine();
+		if (!set_stiffness[EDIT_BODY_POINT_TRIANGLE]) {
+			if (ImGui::Button("Save##BPTcollision", ImVec2(80, 25))) {
+				set_stiffness[EDIT_BODY_POINT_TRIANGLE] = true;
+				update_stiffness.update_collision[BODY_POINT_TRIANGLE] = true;
+				update_stiffness.collision_stiffness[BODY_POINT_TRIANGLE] = temp_stiffness[BODY_POINT_TRIANGLE];
+			}
+		}
+		else {
+			ImGui::Text("Saved");
+		}
+		ImGui::End();
+	}
+	else {
+		memset(set_stiffness + EDIT_BODY_POINT_TRIANGLE, 0, 4);
 	}
 }

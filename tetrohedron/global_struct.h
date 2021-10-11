@@ -97,3 +97,20 @@ struct SingleClothInfo {
 	}
 };
 
+
+struct UpdateStiffness
+{
+	bool update_length;
+	double length_stiffness;
+	bool update_bend;
+	double bend_stiffness;
+
+	bool  update_collision[4];
+	double collision_stiffness[4];
+
+	UpdateStiffness() {
+		update_length = false;
+		update_bend = false;
+		memset(update_collision, 0, 4);
+	}
+};
