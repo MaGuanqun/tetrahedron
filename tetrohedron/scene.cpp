@@ -9,15 +9,26 @@ Scene::Scene()
 
 	
 	time_step = 1.0 / 50.0;
-	//project_dynamic.time_step = time_step;
+	project_dynamic.time_step = time_step;
 	//spatial_hashing.time_step = time_step;
 	//max_force_magnitude = 12.0;
 
 	last_output_obj_stamp = -1;
-	//project_dynamic.setSceneAddress(this);
 	time_stamp = 0;
 }
 
+
+void Scene::obtainConvergenceRate(double* convergence_rate)
+{
+	convergence_rate[LOCAL_GLOBAL] = project_dynamic.local_global_conv_rate;
+	convergence_rate[OUTER] = project_dynamic.outer_itr_conv_rate;
+}
+
+void Scene::updateConvRate(double* convergence_rate)
+{
+	project_dynamic.outer_itr_conv_rate = convergence_rate[OUTER];
+	project_dynamic.local_global_conv_rate = convergence_rate[LOCAL_GLOBAL];
+}
 
 void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::string>& object_path)
 {
@@ -58,7 +69,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].recordInitialMesh(single_cloth_info[i]);
 	}
-
+	project_dynamic.setForPD(&cloth, &tetrohedron, &thread);
 }
 
 void Scene::setWireframwColor()
@@ -196,7 +207,7 @@ void Scene::saveObj()
 
 void Scene::initialCloth()
 {
-	//project_dynamic.initial();
+	project_dynamic.initial();
 	for (int i = 0; i < cloth.size(); ++i) {
 		cloth[i].initial();
 	}
@@ -210,7 +221,7 @@ void Scene::initialCloth()
 
 void Scene::resetCloth()
 {
-	//project_dynamic.reset();
+	project_dynamic.reset();
 	for (int i = 0; i < cloth.size(); ++i) {
 		cloth[i].reset();
 	}
@@ -240,7 +251,7 @@ void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_par
 	}
 
 	if (control_parameter[START_SIMULATION] || control_parameter[ONE_FRAME]) {
-
+		project_dynamic.PDsolve();
 		time_stamp++;
 	}
 

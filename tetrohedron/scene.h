@@ -5,6 +5,7 @@
 #include"load_mesh/writeObj.h"
 #include"basic/intersection.h"
 #include"basic/cursor.h"
+#include"project_dynamic.h"
 
 class Scene
 {
@@ -25,6 +26,8 @@ public:
 	void getClothInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 3>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 4>>& collision_stiffness);
 	void updateCloth(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe);
 	void initialIntersection();
+	void obtainConvergenceRate(double* convergence_rate);
+	void updateConvRate(double* convergence_rate);
 private:
 	Light light;
 	int cloth_num, collider_num,tetrohedron_num;
@@ -41,4 +44,5 @@ private:
 	Cursor cursor;
 	void saveObj();
 	void updateBuffer();
+	ProjectDynamic project_dynamic;
 };

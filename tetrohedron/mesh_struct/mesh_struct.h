@@ -21,7 +21,6 @@ public:
 		std::vector<int>neighbor_vertex;
 		std::vector<int>around_face;
 		bool on_border = false;
-		double mass_2;
 		double mass;
 	};
 	struct Edge {

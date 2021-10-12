@@ -1,5 +1,5 @@
 #include"thread.h"
-//#include"projectDynamic.h"
+#include"project_dynamic.h"
 //#include"collision_detection/spatial_hashing.h"
 #include"./mesh_struct/mesh_struct.h"
 
@@ -35,52 +35,52 @@ void Thread::initial()
     }
 }
 
-//job Thread::create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread function_type)// int jobNumber
-//{
-//    job k;
-//    switch (function_type)
-//    {
-//    case LOCAL_PROJECTION:
-//        k = job([func, thread_id]() {func->localProjectionPerThread(thread_id); });
-//        break;
-//    case SOLVE_SYSYTEM:
-//        k = job([func, thread_id]() {func->solveSystemPerThead2(thread_id); });
-//        break;
-//    case UPDATE_COLLISION_STIFFNESS:
-//        k = job([func, thread_id]() {func->updateCollisionStiffnessClothPerThread(thread_id); });
-//        break;
-//    case UPDATE_UV:
-//        k = job([func, thread_id]() {func->updateUVPerThread(thread_id); });
-//        break;
-//    case MATRIX_DECOMPOSITION:
-//        k = job([func, thread_id]() {func->matrixDecomposition(thread_id); });
-//        break;
-//    case SET_DIAGONAL: {
-//        k = job([func, thread_id]() {func->setDiagonal(thread_id); });
-//        break;
-//    }
-//    case VIRTUAL_LOCAL_PROJECTION: {
-//        k = job([func, thread_id]() {func->virtualLocalProjectionPerThread(thread_id); });
-//    }
-//        break;
-//    case PREPARE_WOODBURY: {
-//        k = job([func, thread_id]() {func->prepareWoodbury(thread_id); });
-//        break;
-//    }
-//    case SET_K_COLUMN: {
-//        k = job([func, thread_id]() {func->setKColumnPerThread(thread_id); });
-//        break;
-//    }
-//    case FACTORIZE_WOODBURY_K: {
-//        k = job([func, thread_id]() {func->factorizeWoodburyK(thread_id); });
-//        break;
-//    }
-//    case GET_FRICTION:
-//        k= job([func, thread_id]() {func->getFrictionPerThread(thread_id); });
-//        break;
-//    }
-//    return k;
-//}
+job Thread::create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread function_type)// int jobNumber
+{
+    job k;
+    switch (function_type)
+    {
+    //case LOCAL_PROJECTION:
+    //    k = job([func, thread_id]() {func->localProjectionPerThread(thread_id); });
+    //    break;
+    case SOLVE_SYSYTEM:
+        k = job([func, thread_id]() {func->solveSystemPerThead(thread_id); });
+        break;
+    //case UPDATE_COLLISION_STIFFNESS:
+    //    k = job([func, thread_id]() {func->updateCollisionStiffnessClothPerThread(thread_id); });
+    //    break;
+    //case UPDATE_UV:
+    //    k = job([func, thread_id]() {func->updateUVPerThread(thread_id); });
+    //    break;
+    case MATRIX_DECOMPOSITION:
+        k = job([func, thread_id]() {func->matrixDecomposition(thread_id); });
+        break;
+    case UPDATE_MATRIX: {
+        k = job([func, thread_id]() {func->updateMatrixPerThread(thread_id); });
+        break;
+    }
+    //case VIRTUAL_LOCAL_PROJECTION: {
+    //    k = job([func, thread_id]() {func->virtualLocalProjectionPerThread(thread_id); });
+    //}
+    //    break;
+    //case PREPARE_WOODBURY: {
+    //    k = job([func, thread_id]() {func->prepareWoodbury(thread_id); });
+    //    break;
+    //}
+    //case SET_K_COLUMN: {
+    //    k = job([func, thread_id]() {func->setKColumnPerThread(thread_id); });
+    //    break;
+    //}
+    //case FACTORIZE_WOODBURY_K: {
+    //    k = job([func, thread_id]() {func->factorizeWoodburyK(thread_id); });
+    //    break;
+    //}
+    //case GET_FRICTION:
+    //    k= job([func, thread_id]() {func->getFrictionPerThread(thread_id); });
+    //    break;
+    }
+    return k;
+}
 
 job Thread::create_task(MeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type)// int jobNumber
 {
@@ -228,21 +228,21 @@ void Thread::assignTask(MeshStruct* func, MeshStructFuncSendToThread taskType)
     futures.clear();
 }
 
-//void Thread::assignTask(ProjectDynamic* func, PDFuncSendToThread taskType)
-//{
-//    for (int i = 0; i < thread_num; ++i)
-//    {
-//        // std::cout << threads[i].id << std::endl;
-//        job j = create_task(func, threads[i].id, taskType);
-//        futures.push_back(j.get_future());
-//        std::unique_lock<std::mutex> l(threads[i].m);
-//        threads[i].jobs.push(std::move(j));
-//        // Notify the thread that there is work do to...
-//        threads[i].cv.notify_one();
-//    }
-//    for (auto& f : futures) { f.wait(); }
-//    futures.clear();
-//}
+void Thread::assignTask(ProjectDynamic* func, PDFuncSendToThread taskType)
+{
+    for (int i = 0; i < thread_num; ++i)
+    {
+        // std::cout << threads[i].id << std::endl;
+        job j = create_task(func, threads[i].id, taskType);
+        futures.push_back(j.get_future());
+        std::unique_lock<std::mutex> l(threads[i].m);
+        threads[i].jobs.push(std::move(j));
+        // Notify the thread that there is work do to...
+        threads[i].cv.notify_one();
+    }
+    for (auto& f : futures) { f.wait(); }
+    futures.clear();
+}
 
 
 

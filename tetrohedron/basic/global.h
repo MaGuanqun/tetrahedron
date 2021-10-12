@@ -122,3 +122,5 @@ inline void normalize(double x[3]) {
 
 #undef DEG_RADIANS
 #define DEG_RADIANS(a) (a/180.0*M_PI)
+
+
