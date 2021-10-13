@@ -68,7 +68,7 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mesh_struct = triangle_mesh_struct;
 
 	setMeshStruct(density, ori_mesh);
-
+	this->thread = thread;
 	mesh_struct.thread = thread;
 	mesh_struct.initialNormalSize();
 	mesh_struct.setVertex();
@@ -91,12 +91,6 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	setMass(density);
 	mesh_struct.setAnchorPosition();
 
-
-
-	aabb.resize(4);
-	for (int i = 0; i < 4; ++i) {
-		aabb[i].resize(mesh_struct.vertices.size());
-	}
 	hash_index_for_vertex.resize(mesh_struct.vertices.size());
 	for (int i = 0; i < hash_index_for_vertex.size(); ++i) {
 		hash_index_for_vertex[i].reserve(32);
@@ -106,8 +100,13 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 		hash_index_for_edge[i].reserve(32);
 	}
 	update_stiffness_iteration_number.resize(mesh_struct.vertices.size());
-}
 
+	triangle_AABB.resize(mesh_struct.faces.size());
+	edge_AABB.resize(mesh_struct.edges.size());
+	vertex_AABB.resize(mesh_struct.vertices.size());
+
+	setRepresentativePrimitve();
+}
 
 void Cloth::setMass(double density)
 {
@@ -138,6 +137,7 @@ void Cloth::setMeshStruct(double density, OriMesh& ori_mesh)
 		mesh_struct.triangle_indices=ori_mesh.indices;
 	}
 	this->density = density;
+	setAnchor();
 }
 
 
@@ -199,3 +199,196 @@ void Cloth::initialMouseChosenVertex()
 	coe_neighbor_vertex_force.clear();
 	neighbor_vertex.clear();
 }
+
+void Cloth::setAnchor()
+{
+	mesh_struct.anchor_vertex.push_back(30 * 30 - 1);
+	mesh_struct.anchor_vertex.push_back(30 * 29);
+}
+
+//VERTEX_AABB
+void Cloth::getVertexAABBPerThread(int thread_No)
+{
+	std::vector<std::array<double, 3>>* vertex_render=&mesh_struct.vertex_for_render;
+	std::vector<std::array<double, 3>>* vertex=&mesh_struct.vertex_position;
+	for (int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < mesh_struct.vertex_index_begin_per_thread[thread_No + 1]; ++i) {
+		vertex_AABB[i].obtainAABB((*vertex_render)[i].data(), (*vertex)[i].data(),tolerance);
+	}
+}
+
+//EDGE_AABB
+void Cloth::getEdgeAABBPerThread(int thread_No)
+{
+	std::vector<MeshStruct::Edge>* edge = &mesh_struct.edges;
+	int* vertex_index;
+	for (int i = mesh_struct.edge_index_begin_per_thread[thread_No]; i < mesh_struct.edge_index_begin_per_thread[thread_No + 1]; ++i) {
+		vertex_index = (*edge)[i].vertex;
+		getAABB(edge_AABB[i], vertex_AABB[vertex_index[0]], vertex_AABB[vertex_index[1]]);
+	}
+}
+
+//TRIANGLE_AABB
+void Cloth::getTriangleAABBPerThread(int thread_No)
+{
+	std::vector<MeshStruct::Face>* face = &mesh_struct.faces;
+	int* vertex_index;
+	for (int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < mesh_struct.face_index_begin_per_thread[thread_No + 1]; ++i) {
+		vertex_index = (*face)[i].vertex;
+		getAABB(triangle_AABB[i], vertex_AABB[vertex_index[0]], vertex_AABB[vertex_index[1]], vertex_AABB[vertex_index[2]]);
+	}
+}
+
+
+void Cloth::obtainAABB()
+{
+	thread->assignTask(this, VERTEX_AABB);
+	thread->assignTask(this, EDGE_AABB);
+	thread->assignTask(this, TRIANGLE_AABB);
+}
+
+
+void Cloth::setRepresentativePrimitve()
+{
+	representative_vertex_num.resize(mesh_struct.faces.size(), 0);
+	representative_edge_num.resize(mesh_struct.faces.size(), 0);
+	setRepresentativeVertex(mesh_struct.faces, mesh_struct.vertices);
+	setRepresentativeEdge(mesh_struct.faces, mesh_struct.edges);
+}
+
+void Cloth::setRepresentativeVertex(std::vector<MeshStruct::Face>& face, std::vector<MeshStruct::Vertex>& vertex)
+{
+	int count;
+	bool in_this_triangle[3];
+	std::vector<bool> is_used(vertex.size(), false);
+	for (int i = 0; i < face.size(); ++i) {
+		count = 0;
+		memset(in_this_triangle, 0, 3);
+		for (int j = 0; j < 3; ++j) {
+			if (!is_used[face[i].vertex[j]]) {
+				count++;
+				is_used[face[i].vertex[j]] = true;
+				in_this_triangle[j] = true;
+			}		
+		}
+		representative_vertex_num[i] = count;
+		setOrder(in_this_triangle, count, face[i].vertex);
+	}
+}
+
+void Cloth::setRepresentativeEdge(std::vector<MeshStruct::Face>& face, std::vector<MeshStruct::Edge>& edge)
+{
+	int count;
+	bool in_this_triangle[3];
+	std::vector<bool> is_used(edge.size(), false);
+	for (int i = 0; i < face.size(); ++i) {
+		count = 0;
+		memset(in_this_triangle, 0, 3);
+		for (int j = 0; j < 3; ++j) {
+			if (!is_used[face[i].edge[j]]) {
+				count++;
+				is_used[face[i].edge[j]] = true;
+				in_this_triangle[j] = true;
+			}
+		}
+		representative_edge_num[i] = count;
+		setOrderEdge(in_this_triangle, count, face[i].edge.data());
+	}
+}
+
+
+void Cloth::setOrder(bool* in_this_triangle, int count, int* index)
+{
+	if (count == 1) {
+		if (in_this_triangle[1]) {
+			int temp = index[0];
+			index[0] = index[1];
+			index[1] = index[2];
+			index[2] = temp;
+		}
+		else if (in_this_triangle[2]) {
+			int temp = index[0];
+			index[0] = index[2];
+			index[2] = index[1];
+			index[1] = temp;
+		}
+	}
+	else if (count == 2) {
+		if (!in_this_triangle[0]) {
+			int temp = index[0];
+			index[0] = index[1];
+			index[1] = index[2];
+			index[2] = temp;
+		}
+		else if (!in_this_triangle[1]) {
+			int temp = index[0];
+			index[0] = index[2];
+			index[2] = index[1];
+			index[1] = temp;
+		}
+	}
+}
+
+void Cloth::setOrderEdge(bool* in_this_triangle, int count, int* index)
+{
+	if (count == 1) {
+		if (in_this_triangle[1]) {
+			int temp = index[0];
+			index[0] = index[1];
+			index[1] = temp;
+		}
+		else if (in_this_triangle[2]) {
+			int temp = index[0];
+			index[0] = index[2];
+			index[2] = temp;
+		}
+	}
+	else if (count == 2) {
+		if (!in_this_triangle[0]) {
+			int temp = index[0];
+			index[0] = index[2];
+			index[2] = temp;
+		}
+		else if (!in_this_triangle[1]) {
+			int temp = index[2];
+			index[2] = index[1];
+			index[1] = temp;
+		}
+	}
+}
+
+//void Cloth::test() //ttest representative triangle
+//{
+//	std::vector<bool> is_used(mesh_struct.vertices.size(), false);
+//	for (int i = 0; i < mesh_struct.faces.size(); ++i) {
+//		for (int j = 0; j < representative_vertex_num[i]; ++j) {
+//			if (!is_used[mesh_struct.faces[i].vertex[j]]) {
+//				is_used[mesh_struct.faces[i].vertex[j]] = true;
+//			}
+//			else {
+//				std::cout << "false " << i << std::endl;
+//			}
+//		}
+//	}
+//	for (int i = 0; i < mesh_struct.vertices.size(); ++i) {
+//		if (!is_used[i]) {
+//			std::cout << "false_" << std::endl;
+//		}
+//	}
+//	std::vector<bool> is_used_(mesh_struct.edges.size(), false);
+//	for (int i = 0; i < mesh_struct.faces.size(); ++i) {
+//		for (int j = 0; j < representative_edge_num[i]; ++j) {
+//			if (!is_used_[mesh_struct.faces[i].edge[j]]) {
+//				is_used_[mesh_struct.faces[i].edge[j]] = true;
+//			}
+//			else {
+//				std::cout << "false " << i << std::endl;
+//			}
+//		}
+//	}
+//	for (int i = 0; i < mesh_struct.edges.size(); ++i) {
+//		if (!is_used_[i]) {
+//			std::cout << "false_edge" << std::endl;
+//		}
+//	}
+//	std::cout << "test " << std::endl;
+//}

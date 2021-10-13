@@ -4,11 +4,12 @@
 class Collider:public TriangleObject
 {
 public:
+	double tolerance;
 	void draw(Camera* camera);
 	void setSceneShader(Light& light, Camera* camera, float& far_plane);
 	void loadMesh(OriMesh& ori_mesh, Thread* thread);
-	std::vector<AABB> aabb;
-
+	void getTriangleAABBPerThread(int thread_No);
+	void obtainAABB();
 private:
 	void setMeshStruct(OriMesh& ori_mesh);
 };

@@ -37,6 +37,7 @@ void Collider::setSceneShader(Light& light, Camera* camera, float& far_plane)
 
 void Collider::loadMesh(OriMesh& ori_mesh, Thread* thread)
 {
+	this->thread = thread;
 	total_thread_num = std::thread::hardware_concurrency();
 	setMeshStruct(ori_mesh);
 	mesh_struct.thread = thread;
@@ -50,8 +51,8 @@ void Collider::loadMesh(OriMesh& ori_mesh, Thread* thread)
 	genBuffer();
 	setBuffer();
 	genShader();
-	aabb.resize(mesh_struct.vertices.size());
 	ori_vertices = mesh_struct.vertex_position;
+	triangle_AABB.resize(mesh_struct.faces.size());
 }
 
 void Collider::setMeshStruct(OriMesh& ori_mesh)
@@ -62,4 +63,25 @@ void Collider::setMeshStruct(OriMesh& ori_mesh)
 		mesh_struct.triangle_indices = ori_mesh.indices;
 	}
 	this->density = density;
+}
+
+void Collider::obtainAABB()
+{
+	thread->assignTask(this, TRIANGLE_AABB);
+}
+
+//TRIANGLE_AABB
+void Collider::getTriangleAABBPerThread(int thread_No)
+{
+	std::vector<MeshStruct::Face>* face = &mesh_struct.faces;
+	std::vector<std::array<double,3>>* render_pos = &mesh_struct.vertex_for_render;
+	std::vector<std::array<double,3>>* pos = &mesh_struct.vertex_position;
+	int* vertex_index;
+	AABB aabb0, aabb1;
+	for (int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < mesh_struct.face_index_begin_per_thread[thread_No + 1]; ++i) {
+		vertex_index = (*face)[i].vertex;
+		aabb0.obtainAABB((*render_pos)[vertex_index[0]].data(), (*render_pos)[vertex_index[1]].data(), (*render_pos)[vertex_index[2]].data());
+		aabb1.obtainAABB((*pos)[vertex_index[0]].data(), (*pos)[vertex_index[1]].data(), (*pos)[vertex_index[2]].data());
+		getAABB(triangle_AABB[i], aabb0, aabb1,tolerance);
+	}
 }

@@ -11,7 +11,10 @@
 
 
 class ProjectDynamic;
-class MeshStruct;
+class TriangleMeshStruct;
+class Cloth;
+class Collider;
+class TetrohedronObject;
 
 using job = std::packaged_task<void()>;
 
@@ -33,8 +36,10 @@ public:
 	~Thread();
     void assignTask(ProjectDynamic* func, PDFuncSendToThread taskType);
     //void assignTask(SpatialHashing* func, SpatialHashingFuncSendToThread taskType, int cloth_No, int compare_cloth_No);
-    void assignTask(MeshStruct* func, MeshStructFuncSendToThread taskType);
+    void assignTask(TriangleMeshStruct* func, MeshStructFuncSendToThread taskType);
     //void assignTask(SpatialHashing* func, SpatialHashingFuncSendToThread taskType);
+    void assignTask(Cloth* func, ObjectFunc taskType);
+    void assignTask(Collider* func, ObjectFunc taskType);
    
     int thread_num;
 private:
@@ -44,8 +49,10 @@ private:
     void thread_func(ThreadData* pData);
     job create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread function_type);
     //job create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncSendToThread function_type, int cloth_No, int compare_cloth_No);
-    job create_task(MeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);// int jobNumber
+    job create_task(TriangleMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);// int jobNumber
     //job create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncSendToThread function_type);
+    job create_task(Cloth* func, int thread_id, ObjectFunc function_type);
+    job create_task(Collider* func, int thread_id, ObjectFunc function_type);
 };
 
 

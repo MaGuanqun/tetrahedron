@@ -272,6 +272,7 @@ void ProjectDynamic::computeClothGravity()
 		vertex = &(*cloth)[j].mesh_struct.vertices;
 		for (int i = 0; i < 3; ++i){
 			if (cloth_sys_size[j] > 1) {
+				cloth_gravity[j][i].resize(cloth_sys_size[j]);
 				for (int k = 0; k < cloth_sys_size[j]; ++k) {
 					cloth_gravity[j][i][k] = gravity_accerlation[i] * (*vertex)[k].mass;
 				}
@@ -448,6 +449,19 @@ void ProjectDynamic::updateModelPosition()
 	}
 }
 
+void ProjectDynamic::updateRenderPosition()
+{
+	for (int j = 0; j < total_cloth_num; ++j) {
+		(*cloth)[j].mesh_struct.vertex_for_render = (*cloth)[j].mesh_struct.vertex_position;
+		(*cloth)[j].mesh_struct.getRenderNormal();
+
+	}
+	for (int j = 0; j < total_tetrohedron_num; ++j) {
+		(*tetrohedron)[j].mesh_struct.vertex_for_render = (*tetrohedron)[j].mesh_struct.vertex_position;
+	}
+
+}
+
 void ProjectDynamic::PDsetPosPredict()
 {
 	PDClothPredict();
@@ -486,9 +500,7 @@ void ProjectDynamic::PDsolve()
 	local_global_iteration_num = 0;
 	while (!PDConvergeCondition())	{
 		initialEnergyOuterInteration();
-
 		while (!PDLocalGlobalConvergeCondition()){
-
 			initialEnergyLocalGlobal();
 			localProjection();
 			current_constraint_energy += current_collision_energy;
@@ -500,8 +512,48 @@ void ProjectDynamic::PDsolve()
 			updateModelPosition();
 			local_global_iteration_num++;
 		}
-
 		outer_iteration_num++;
+	}
+	thread->assignTask(this, UPDATE_UV);
+	updateRenderPosition();
+}
+
+
+//UPDATE_UV
+void ProjectDynamic::updateUVPerThread(int thread_id)
+{
+	updateClothUV(thread_id);
+	updateTetrohedronUV(thread_id);
+}
+
+void ProjectDynamic::updateClothUV(int thread_id)
+{
+	int object_No;
+	int dimension;
+	for (int i = 0; i < cloth_dimension_per_thread[thread_id].size(); ++i) {
+		object_No = cloth_dimension_per_thread[thread_id][i] / 3;
+		dimension = cloth_dimension_per_thread[thread_id][i] % 3;
+		cloth_v[object_No][dimension] = (cloth_u[object_No][dimension] - cloth_u_[object_No][dimension]) / sub_time_step;
+		cloth_v[object_No][dimension] *= 0.98;
+		cloth_acceleration[object_No][dimension] = (cloth_v[object_No][dimension] - cloth_v_[object_No][dimension]) / sub_time_step;
+		cloth_u_[object_No][dimension] = cloth_u[object_No][dimension];
+		cloth_v_[object_No][dimension] = cloth_v[object_No][dimension];
+	}
+}
+
+
+void ProjectDynamic::updateTetrohedronUV(int thread_id)
+{
+	int object_No;
+	int dimension;
+	for (int i = 0; i < tetrohedron_dimension_per_thread[thread_id].size(); ++i) {
+		object_No = tetrohedron_dimension_per_thread[thread_id][i] / 3;
+		dimension = tetrohedron_dimension_per_thread[thread_id][i] % 3;
+		tetrohedron_v[object_No][dimension] = (tetrohedron_u[object_No][dimension] - tetrohedron_u_[object_No][dimension]) / sub_time_step;
+		tetrohedron_v[object_No][dimension] *= 0.98;
+		tetrohedron_acceleration[object_No][dimension] = (tetrohedron_v[object_No][dimension] - tetrohedron_v_[object_No][dimension]) / sub_time_step;
+		tetrohedron_u_[object_No][dimension] = tetrohedron_u[object_No][dimension];
+		tetrohedron_v_[object_No][dimension] = tetrohedron_v[object_No][dimension];
 	}
 }
 
@@ -594,8 +646,8 @@ void ProjectDynamic::matrixDecomposition(int thread_id)
 
 bool ProjectDynamic::PDConvergeCondition()
 {
-	bool system_energy = abs(current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy < outer_itr_conv_rate || current_PD_energy < 1e-14;
-	bool collision_energy = abs(previous_itr_collision_energy - current_collision_energy) / previous_itr_collision_energy < local_global_conv_rate || current_collision_energy < 1e-14;
+	bool system_energy = abs(current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy < outer_itr_conv_rate || current_PD_energy < 1.1e-15;
+	bool collision_energy = abs(previous_itr_collision_energy - current_collision_energy) / previous_itr_collision_energy < local_global_conv_rate || current_collision_energy < 1.1e-15;
 
 	bool energy_satisfied = system_energy && collision_energy;
 	bool need_to_stop = local_global_iteration_num > max_it - 3 || abs(current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy < 5e-6;
@@ -611,9 +663,9 @@ bool ProjectDynamic::PDConvergeCondition()
 
 bool ProjectDynamic::PDLocalGlobalConvergeCondition()
 {
-	bool system_energy = abs(current_PD_energy - previous_PD_energy) / previous_PD_energy < local_global_conv_rate || current_PD_energy < 1e-14;
-	bool constraint_energy = abs(current_constraint_energy - previous_constraint_energy) / previous_constraint_energy < local_global_conv_rate || current_constraint_energy < 1e-14;
-	bool collision_energy = abs(previous_collision_energy - current_collision_energy) / previous_collision_energy < local_global_conv_rate || current_collision_energy < 1e-14;
+	bool system_energy = abs(current_PD_energy - previous_PD_energy) / previous_PD_energy < local_global_conv_rate || current_PD_energy < 1.1e-15;
+	bool constraint_energy = abs(current_constraint_energy - previous_constraint_energy) / previous_constraint_energy < local_global_conv_rate || current_constraint_energy < 1.1e-15;
+	bool collision_energy = abs(previous_collision_energy - current_collision_energy) / previous_collision_energy < local_global_conv_rate || current_collision_energy < 1.1e-15;
 	bool need_to_stop = abs(current_PD_energy - previous_PD_energy) / previous_PD_energy < 5e-6 || local_global_iteration_num > max_it - 3;
 	bool energy_satisfied = system_energy && constraint_energy && collision_energy;
 	if (energy_satisfied || need_to_stop) {

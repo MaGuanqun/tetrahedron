@@ -16,18 +16,18 @@ public:
 	std::vector<int> vertex_index_begin_per_thread;
 	std::vector<int> edge_index_begin_per_thread;
 
-
-
 	void setVertex() override;
 	void setFace();
 	void setEdge();
-	void getRenderVertexNormalPerThread(int thread_id) override;
-	void setThreadIndex(int total_thread_num_) override;
+	void getRenderVertexNormalPerThread(int thread_id);
+	void setThreadIndex(int total_thread_num_);
 	void getNormal();
-
-	void getFaceNormalPerThread(int thread_id) override;
-	void getVertexNormalPerThread(int thread_id) override;
+	void getRenderNormal();
+	void getRenderFaceNormalPerThread(int thread_id);
+	void getFaceNormalPerThread(int thread_id);
+	void getVertexNormalPerThread(int thread_id);
 	void initialInfo();
+	void getTriangleAABBPerThread(int thread_No);
 private:
 	bool isEdgeExist(int v0, int v1, int& edge_index);
 	void addEdge(int v0, int v1, int face, int opposite_vertex);

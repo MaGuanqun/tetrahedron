@@ -1,6 +1,8 @@
 #pragma once
 #include<cstring>
 #include<string>
+#include"basic/global.h"
+
 struct AABB
 {
 	double min[3];
@@ -11,6 +13,45 @@ struct AABB
 		memcpy(min, aabb.min, 24);
 		memcpy(max, aabb.max, 24);
 		return *this;
+	}
+
+	bool AABB_intersection(AABB& a1, AABB& a2)
+	{
+		if (a1.max[0] < a2.min[0]) {
+			return false;
+		}
+		if (a1.min[0] > a2.max[0]) {
+			return false;
+		}
+		if (a1.max[1] < a2.min[1]) {
+			return false;
+		}
+		if (a1.min[1] > a2.max[1]) {
+			return false;
+		}
+		if (a1.max[2] < a2.min[2]) {
+			return false;
+		}
+		if (a1.min[2] > a2.max[2]) {
+			return false;
+		}
+		return true;
+	}
+	void obtainAABB(double* a, double*b, double* c)
+	{
+		for (int i = 0; i < 3; ++i) {
+			min[i] = myMin(a[i], b[i]);
+			max[i] = myMax(a[i], b[i]);
+			min[i] = myMin(min[i], c[i]);
+			max[i] = myMin(max[i], c[i]);
+		}
+	}
+	void obtainAABB(double* a, double* b, double tolerance)
+	{
+		for (int i = 0; i < 3; ++i) {
+			min[i] = myMin(a[i], b[i])-tolerance;
+			max[i] = myMax(a[i], b[i])+tolerance;
+		}
 	}
 };
 

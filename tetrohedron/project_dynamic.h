@@ -29,6 +29,8 @@ public:
 	void matrixDecomposition(int thread_id);
 	void localProjectionPerThread(int thread_id);
 	void solveSystemPerThead(int thread_id);
+	void updateUVPerThread(int thread_id);
+	void updateRenderPosition();
 private:
 	int total_thread_num;
 	std::vector<double> temEnergy;
@@ -139,4 +141,6 @@ private:
 	void initialEnergyOuterInteration();
 	void initialEnergyLocalGlobal();
 	void PDsetPosPredict();
+	void updateClothUV(int thread_id);
+	void updateTetrohedronUV(int thread_id);
 };

@@ -12,7 +12,6 @@ public:
 		std::vector<int> edge;
 		double area;
 		std::vector<int>vertex_around;
-		AABB aabb;
 		double initial_area;
 	};
 	struct Vertex {
@@ -35,8 +34,8 @@ public:
 			bool b1 = (vertex[0] == v1) && (vertex[1] == v0);
 			return b0 || b1;
 		}
-		AABB aabb;
 	};
+
 
 	std::vector<std::array<double, 3>> vertex_position;
 	std::vector<int> triangle_indices;//if for tetrohedron, store the surface triangle	
@@ -53,20 +52,12 @@ public:
 	std::vector<int> anchor_index_begin_per_thread;
 
 
-
-
 	void initialNormalSize();
 	void arrangeIndex(int total_thread_num, int total_num, std::vector<int>& begin);
-	void getRenderNormal();
-	void getRenderFaceNormalPerThread(int thread_id);
-	virtual void getRenderVertexNormalPerThread(int thread_id)=0;
 
 	virtual void setVertex() =0;
 	virtual void setThreadIndex(int total_thread_num_)=0;
 
-
-	virtual void getFaceNormalPerThread(int thread_id) = 0;
-	virtual void getVertexNormalPerThread(int thread_id) = 0;
 	void setAnchorPosition();
 protected:
 	int type;

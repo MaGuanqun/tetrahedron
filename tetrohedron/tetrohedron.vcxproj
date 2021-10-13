@@ -151,6 +151,7 @@
     <ClCompile Include="basic\Coordinate.cpp" />
     <ClCompile Include="basic\cursor.cpp" />
     <ClCompile Include="basic\opengl_input.cpp" />
+    <ClCompile Include="collision\BVH.cpp" />
     <ClCompile Include="external\glad.c" />
     <ClCompile Include="external\imgui\imgui.cpp" />
     <ClCompile Include="external\imgui\imgui_draw.cpp" />
@@ -184,6 +185,7 @@
     <ClInclude Include="basic\global.h" />
     <ClInclude Include="basic\intersection.h" />
     <ClInclude Include="basic\opengl_input.h" />
+    <ClInclude Include="collision\BVH.h" />
     <ClInclude Include="external\imgui\imgui.h" />
     <ClInclude Include="external\imgui\imgui_impl_glfw.h" />
     <ClInclude Include="external\imgui\imgui_impl_opengl3.h" />

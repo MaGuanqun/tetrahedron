@@ -9,8 +9,8 @@ TriangleMeshStruct::TriangleMeshStruct()
 void TriangleMeshStruct::setVertex()
 {
 	vertices.resize(vertex_position.size());
-	int faceNum = triangle_indices.size() / 3;
-	for (int i = 0; i < faceNum; ++i) {
+	int face_num = triangle_indices.size() / 3;
+	for (int i = 0; i < face_num; ++i) {
 		vertices[triangle_indices[3 * i]].face.push_back(i);
 		vertices[triangle_indices[3 * i + 1]].face.push_back(i);
 		vertices[triangle_indices[3 * i + 2]].face.push_back(i);
@@ -43,6 +43,25 @@ void TriangleMeshStruct::getFaceNormalPerThread(int thread_id)
 	}
 }
 
+void TriangleMeshStruct::getRenderNormal()
+{
+	thread->assignTask(this, FACE_NORMAL_RENDER);
+	memset(vertex_norm_for_render[0].data(), 0, 24 * vertex_position.size());
+	thread->assignTask(this, VERTEX_NORMAL_RENDER);
+}
+
+//FACE_NORMAL_RENDER
+void TriangleMeshStruct::getRenderFaceNormalPerThread(int thread_id)
+{
+	double e0[3], e2[3];
+	for (int j = face_index_begin_per_thread[thread_id]; j < face_index_begin_per_thread[thread_id + 1]; ++j) {
+		SUB(e2, vertex_for_render[triangle_indices[3 * j + 1]], vertex_for_render[triangle_indices[3 * j]]);
+		SUB(e0, vertex_for_render[triangle_indices[3 * j + 2]], vertex_for_render[triangle_indices[3 * j]]);
+		CROSS(temp_face_norm[j].data(), e2, e0);
+		memcpy(face_norm_for_render[j].data(), temp_face_norm[j].data(), 24);
+		normalize(face_norm_for_render[j].data());
+	}
+}
 
 void TriangleMeshStruct::getNormal()
 {
@@ -91,9 +110,9 @@ void TriangleMeshStruct::setThreadIndex(int total_thread_num_)
 
 void TriangleMeshStruct::setFace()
 {
-	int faceNum = triangle_indices.size() / 3;
-	faces.resize(faceNum);
-	for (int i = 0; i < faceNum; ++i) {
+	int face_num = triangle_indices.size() / 3;
+	faces.resize(face_num);
+	for (int i = 0; i < face_num; ++i) {
 		faces[i].vertex[0] = triangle_indices[3 * i];
 		faces[i].vertex[1] = triangle_indices[3 * i + 1];
 		faces[i].vertex[2] = triangle_indices[3 * i + 2];
@@ -102,10 +121,10 @@ void TriangleMeshStruct::setFace()
 
 void TriangleMeshStruct::setEdge()
 {
-	int faceNum = triangle_indices.size() / 3;
-	edges.reserve(faceNum * 3 / 2);
+	int face_num = triangle_indices.size() / 3;
+	edges.reserve(face_num * 3 / 2);
 	int edgeNo;
-	for (int i = 0; i < faceNum; ++i) {
+	for (int i = 0; i < face_num; ++i) {
 		if (isEdgeExist(faces[i].vertex[0], faces[i].vertex[1], edgeNo)) {
 			edges[edgeNo].face.push_back(i);
 			edges[edgeNo].opposite_vertex.push_back(faces[i].vertex[2]);
@@ -201,5 +220,3 @@ void TriangleMeshStruct::addEdge(int v0, int v1, int face, int opposite_vertex)
 	vertices[v0].neighbor_vertex.push_back(v1);
 	vertices[v1].neighbor_vertex.push_back(v0);
 }
-
-

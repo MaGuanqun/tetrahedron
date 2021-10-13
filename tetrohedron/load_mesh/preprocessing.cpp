@@ -12,8 +12,8 @@ void Preprocessing::load_all_model(std::vector<std::string>& body_path, std::vec
 			collider_model[i].load_getAABB(body_path[i]);
 		}
 	}
-	getRegularizationInfo();
-	//getPresetRegularizationInfo();
+	//getRegularizationInfo();
+	getPresetRegularizationInfo();
 	for (int i = 0; i < cloth_path.size(); ++i) {
 		simulation_model[i].regularization(regularization_info);
 	}
