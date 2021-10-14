@@ -1,7 +1,7 @@
 #pragma once
 #include"object.h"
 #include"../mesh_struct/tetrohedron_mesh_struct.h"
-class TetrohedronObject:public Object
+class Tetrohedron:public Object
 {
 private:
 	void setMaterial(OriMesh& ori_mesh);

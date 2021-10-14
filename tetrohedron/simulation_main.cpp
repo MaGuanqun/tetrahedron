@@ -50,6 +50,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	memset(set_stiffness, 0, 10);
 	double temp_stiffness[6] = { 0.0,0.0,0.0,0.0,0.0,0.0 };
 	UpdateStiffness update_stiffness;
+	double tolerance_ratio[4] = {0.1,0.1,0.1,0.1};
 	while (!glfwWindowShouldClose(window))
 	{
 		start_time = clock();
@@ -106,8 +107,10 @@ void simu_main(GLFWwindow* window, Input* input) {
 		if (scene.intersection.happened && control_parameter[STOP_AFTER_RELEASE_MOUSE] && input->mouse.leftButtonWasReleasedThisFrame()) {
 			control_parameter[START_SIMULATION] = false;
 		}
-		if (input->mouse.leftButtonWasReleasedThisFrame() && !control_parameter[START_TEST]) {// 
-			scene.initialIntersection();
+		if (!already_load_model) {
+			if (input->mouse.leftButtonWasReleasedThisFrame() && !control_parameter[START_TEST]) {// 
+				scene.initialIntersection();
+			}
 		}
 		imgui_windows.operationWindow(cloth_stiffness, simulation_parameter, collision_stiffness, set_stiffness, temp_stiffness, update_stiffness);
 		if (!already_load_model) {
@@ -119,9 +122,12 @@ void simu_main(GLFWwindow* window, Input* input) {
 				scene.getClothInfo(cloth_info, cloth_mass, cloth_stiffness, simulation_parameter, collision_stiffness);
 				camera_from_origin = scene.shadow.camera_from_origin;				
 				setHideWireframe(hide, wireframe, scene.collider.size(), scene.cloth.size() + scene.tetrohedron.size());
+				scene.setTolerance(tolerance_ratio);
+				scene.testBVH();
 			}
 		}
 		else {
+			scene.setTolerance(tolerance_ratio);
 			scene.updateCloth(&camera, input->mouse.screen_pos, control_parameter, force_coe);
 			scene.drawScene(&camera, wireframe, hide, control_parameter[SAVE_OBJ]);
 		}

@@ -46,7 +46,7 @@ void Shadow::FBOdepth()
 }
 
 void Shadow::drawShadow(Camera* camera, std::vector<std::vector<bool>>& hide, std::vector<Cloth>& cloth, std::vector<Collider>& collider, 
-	std::vector<TetrohedronObject>& tetrohedron, std::vector<int>& cloth_index_in_object, std::vector<int>& tetrohedron_index_in_object)
+	std::vector<Tetrohedron>& tetrohedron, std::vector<int>& cloth_index_in_object, std::vector<int>& tetrohedron_index_in_object)
 {
 	lightSpace(camera->position);
 	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);

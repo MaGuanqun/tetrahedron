@@ -82,12 +82,11 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	genShader();
 	setBuffer();
 	setArea();
-	is_vertex_used.resize(mesh_struct.vertices.size(), false);
+
 
 	//face_need_recal_radius = new bool[mesh_struct.faces.size()];
 	//edge_need_recal_radius = new bool[mesh_struct.edges.size()];
 	PC_radius.resize(4);
-	PC_radius_coe = 0.0001;
 	setMass(density);
 	mesh_struct.setAnchorPosition();
 
@@ -355,6 +354,46 @@ void Cloth::setOrderEdge(bool* in_this_triangle, int count, int* index)
 		}
 	}
 }
+
+void Cloth::setTolerance(double* tolerance_ratio, double ave_edge_length)
+{
+	for (int i = 0; i < PC_radius.size(); ++i) {
+		PC_radius[i] = tolerance_ratio[i] * ave_edge_length;
+	}
+	tolerance = tolerance_ratio[SELF_POINT_TRIANGLE] * ave_edge_length;
+}
+
+
+void Cloth::findAllNeighborVertex(int face_index, double cursor_pos[3], double average_edge_length)
+{
+	std::vector<bool>is_vertex_used(mesh_struct.vertices.size(), false);
+	neighbor_vertex.clear();
+	neighbor_vertex.push_back(mesh_struct.faces[face_index].vertex[0]);
+	is_vertex_used[mesh_struct.faces[face_index].vertex[0]] = true;
+	findNeighborVertex(mesh_struct.faces[face_index].vertex[0], 0, is_vertex_used);
+	coe_neighbor_vertex_force.clear();
+	coe_neighbor_vertex_force.resize(neighbor_vertex.size());
+	double vec3[3];
+	for (int i = 0; i < neighbor_vertex.size(); i++) {
+		SUB(vec3, cursor_pos, mesh_struct.vertex_for_render[neighbor_vertex[i]]);
+		coe_neighbor_vertex_force[i] = gaussian(sqrt(DOT(vec3, vec3)) / average_edge_length, 5.0);
+	}
+	//std::cout <<"add "<< neighbor_vertex.size() << std::endl;
+}
+
+void Cloth::findNeighborVertex(int vertex_index, int recursion_deepth, std::vector<bool>&is_vertex_used)
+{
+	if (recursion_deepth > 1)
+		return;
+	for (int i = 0; i < mesh_struct.vertices[vertex_index].neighbor_vertex.size(); ++i) {
+		if (!is_vertex_used[mesh_struct.vertices[vertex_index].neighbor_vertex[i]]) {
+			neighbor_vertex.push_back(mesh_struct.vertices[vertex_index].neighbor_vertex[i]);
+			is_vertex_used[mesh_struct.vertices[vertex_index].neighbor_vertex[i]] = true;
+			findNeighborVertex(mesh_struct.vertices[vertex_index].neighbor_vertex[i], recursion_deepth + 1, is_vertex_used);
+		}
+	}
+}
+
 
 //void Cloth::test() //ttest representative triangle
 //{

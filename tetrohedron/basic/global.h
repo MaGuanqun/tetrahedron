@@ -108,6 +108,14 @@ dest[0]=coe0*v0[0]-coe1*v1[0];\
 dest[1]=coe0*v0[1]-coe1*v1[1];\
 dest[2]=coe0*v0[2]-coe1*v1[2];
 
+#undef TWO_POINTS_CENTER
+#define TWO_POINTS_CENTER(dest,v0,v1)\
+dest[0]=0.5*(v0[0]+v1[0]);\
+dest[1]=0.5*(v0[1]+v1[1]);\
+dest[2]=0.5*(v0[2]+v1[2]);
+
+
+
 inline double gaussian(double x, double sigma) {
     return std::exp(-x * x / (2.0 * sigma * sigma));
 

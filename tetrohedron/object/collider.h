@@ -10,6 +10,7 @@ public:
 	void loadMesh(OriMesh& ori_mesh, Thread* thread);
 	void getTriangleAABBPerThread(int thread_No);
 	void obtainAABB();
+	void setTolerance(double* tolerance_ratio, double ave_edge_length);
 private:
 	void setMeshStruct(OriMesh& ori_mesh);
 };

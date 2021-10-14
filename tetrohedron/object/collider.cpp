@@ -85,3 +85,8 @@ void Collider::getTriangleAABBPerThread(int thread_No)
 		getAABB(triangle_AABB[i], aabb0, aabb1,tolerance);
 	}
 }
+
+void Collider::setTolerance(double* tolerance_ratio, double ave_edge_length)
+{
+	tolerance = tolerance_ratio[BODY_POINT_TRIANGLE] * ave_edge_length;
+}

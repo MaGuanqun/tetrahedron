@@ -6,6 +6,8 @@
 #include"basic/intersection.h"
 #include"basic/cursor.h"
 #include"project_dynamic.h"
+#include"basic/pick_triangle.h"
+
 
 class Scene
 {
@@ -14,7 +16,7 @@ public:
 	size_t time_stamp;
 	std::vector<Cloth>cloth;
 	std::vector<Collider>collider;
-	std::vector<TetrohedronObject>tetrohedron;
+	std::vector<Tetrohedron>tetrohedron;
 	Intersection intersection;
 	Shadow shadow;
 	double camera_center[3];
@@ -28,6 +30,9 @@ public:
 	void initialIntersection();
 	void obtainConvergenceRate(double* convergence_rate);
 	void updateConvRate(double* convergence_rate);
+	void setTolerance(double* tolerance_ratio);
+	void testBVH();
+
 private:
 	Light light;
 	int cloth_num, collider_num,tetrohedron_num;
@@ -45,4 +50,15 @@ private:
 	void saveObj();
 	void updateBuffer();
 	ProjectDynamic project_dynamic;
+	Collision collision;
+
+	double ave_edge_length;
+	
+	void setAveEdgeLength();
+	PickTriangle pick_triangle;
+	void obtainCursorPosition(double* pos, Camera* camera, std::vector<std::vector<bool>>& hide);
+	void getCursorPos(double* cursor_pos, std::vector<std::array<double, 3>>& vertex, int* vertex_index);
+	void setCursorForce(Camera* camera, double* cursor_screen, float force_coe);
+	void cursorMovement(Camera* camera, double* cursor_screen, double* force_direction, float force_coe, double* object_position);
+	double max_force_magnitude;
 };

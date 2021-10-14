@@ -70,7 +70,7 @@
     <ClCompile Include="object\object.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="object\tetrohedron_object.cpp">
+    <ClCompile Include="object\tetrohedron.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="object\collider.cpp">
@@ -85,7 +85,16 @@
     <ClCompile Include="project_dynamic.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="collision\morton.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="collision\BVH.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="collision\collision.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="basic\pick_triangle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -162,7 +171,7 @@
     <ClInclude Include="mesh_struct\tetrohedron_mesh_struct.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="object\tetrohedron_object.h">
+    <ClInclude Include="object\tetrohedron.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="object\collider.h">
@@ -180,7 +189,19 @@
     <ClInclude Include="project_dynamic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="collision\morton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="collision\BVH.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="basic\aabb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="collision\collision.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="basic\pick_triangle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

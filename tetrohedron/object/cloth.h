@@ -11,6 +11,7 @@ public:
 	void draw(Camera* camera);
 	void setAnchor(std::vector<int>& anchor_vertex);
 	void setArea();
+	double tolerance;
 	std::vector<double> PC_radius;
 	std::vector<std::vector<int>>hash_index_for_edge;
 	std::vector<std::vector<int>>hash_index_for_vertex;
@@ -33,16 +34,16 @@ public:
 	void getEdgeAABBPerThread(int thread_No);
 	void getVertexAABBPerThread(int thread_No);
 	void obtainAABB();
-	double tolerance;
+	
 
 	std::vector<int> representative_vertex_num;
 	std::vector<int> representative_edge_num;
 
-	
+	void setTolerance(double* tolerance_ratio, double ave_edge_length);
+	void findAllNeighborVertex(int face_index, double* cursor_pos, double average_edge_length);
 private:
 	void setMeshStruct(double density, OriMesh& ori_mesh);
-	std::vector<bool>is_vertex_used;
-	double PC_radius_coe;
+
 	void setMass(double density);
 	void setAnchor();
 	void setOrder(bool* in_this_triangle, int count, int* index);
@@ -50,5 +51,6 @@ private:
 	void setRepresentativePrimitve();
 	void setRepresentativeVertex(std::vector<MeshStruct::Face>& face, std::vector<MeshStruct::Vertex>& vertex);
 	void setRepresentativeEdge(std::vector<MeshStruct::Face>& face, std::vector<MeshStruct::Edge>& edge);
+	void findNeighborVertex(int vertex_index, int recursion_deepth, std::vector<bool>& is_vertex_used);
 };
 

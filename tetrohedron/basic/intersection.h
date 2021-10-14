@@ -6,30 +6,26 @@ class Intersection
 public:
 	Intersection() {
         happened = false;
-        distance = DBL_MAX;
-        baryCenCoord[0] = 0.0;
-        baryCenCoord[1] = 0.0;
         face_index = -1;
         cloth_No = -1;
-
 	}
 
     bool happened;
-    double distance;
     int face_index;
     int cloth_No;
     std::vector<int>vertex_index;
-    //Vector3d emission;
-    double baryCenCoord[2];
     double position[3];
 
     void initialIntersection() {
         happened = false;
-        distance = DBL_MAX;
-        baryCenCoord[0] = 0.0;
-        baryCenCoord[1] = 0.0;
         face_index = -1;
         cloth_No = -1;
+    }
+
+    void setIntersection(int* triangle_index) {
+        happened = true;
+        face_index = triangle_index[0];
+        cloth_No = triangle_index[1];
     }
 
 };

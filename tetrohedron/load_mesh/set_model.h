@@ -1,5 +1,6 @@
 #pragma once
 
+#include"../basic/aabb.h"
 #include"readObj.h"
 #include"../thread.h"
 #include"../not used/createMesh.h"

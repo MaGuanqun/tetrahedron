@@ -4,7 +4,8 @@
 #include"./mesh_struct/triangle_mesh_struct.h"
 #include"./object/cloth.h"
 #include"./object/collider.h"
-#include"./object/tetrohedron_object.h"
+#include"./object/tetrohedron.h"
+#include"collision/BVH.h"
 
 Thread::Thread()
 {
@@ -133,6 +134,21 @@ job Thread::create_task(Collider* func, int thread_id, ObjectFunc function_type)
     {
     case TRIANGLE_AABB:
         k = job([func, thread_id]() {func->getTriangleAABBPerThread(thread_id); });
+        break;
+    }
+    return k;
+}
+
+job Thread::create_task(BVH* func, int thread_id, BVHFunc function_type)// int jobNumber
+{
+    job k;
+    switch (function_type)
+    {
+    case CAL_CENTER:
+        k = job([func, thread_id]() {func->calCenterPerThread(thread_id); });
+        break;
+    case CAL_MORTON:
+        k = job([func, thread_id]() {func->calMortonCode(thread_id); });
         break;
     }
     return k;
@@ -295,6 +311,24 @@ void Thread::assignTask(Cloth* func, ObjectFunc taskType)
 }
 
 void Thread::assignTask(Collider* func, ObjectFunc taskType)
+{
+    for (int i = 0; i < thread_num; ++i)
+    {
+        // std::cout << threads[i].id << std::endl;
+        job j = create_task(func, threads[i].id, taskType);
+        futures.push_back(j.get_future());
+        std::unique_lock<std::mutex> l(threads[i].m);
+        threads[i].jobs.push(std::move(j));
+        // Notify the thread that there is work do to...
+        threads[i].cv.notify_one();
+    }
+    for (auto& f : futures) { f.wait(); }
+    futures.clear();
+}
+
+
+
+void Thread::assignTask(BVH* func, BVHFunc taskType)
 {
     for (int i = 0; i < thread_num; ++i)
     {

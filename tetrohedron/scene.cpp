@@ -1,5 +1,5 @@
 #include"scene.h"
-
+#include<bitset>
 
 Scene::Scene()
 {
@@ -10,11 +10,12 @@ Scene::Scene()
 	
 	time_step = 1.0 / 50.0;
 	project_dynamic.time_step = time_step;
-	//spatial_hashing.time_step = time_step;
-	//max_force_magnitude = 12.0;
+
+	max_force_magnitude = 12.0;
 
 	last_output_obj_stamp = -1;
 	time_stamp = 0;
+
 }
 
 
@@ -70,6 +71,8 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 		cloth[i].recordInitialMesh(single_cloth_info[i]);
 	}
 	project_dynamic.setForPD(&cloth, &tetrohedron, &thread);
+	collision.initial(&cloth, &collider, &tetrohedron, &thread);
+	setAveEdgeLength();
 }
 
 void Scene::setWireframwColor()
@@ -246,8 +249,8 @@ void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_par
 
 
 	if (intersection.happened && !control_parameter[START_TEST]) {
-		//add mouse force
-
+	
+		setCursorForce(camera,cursor_screen,force_coe);
 	}
 
 	if (control_parameter[START_SIMULATION] || control_parameter[ONE_FRAME]) {
@@ -269,4 +272,103 @@ void Scene::updateBuffer()
 	for (int i = 0; i < tetrohedron.size(); ++i) {
 		tetrohedron[i].setBuffer();
 	}
+}
+
+
+void Scene::setAveEdgeLength()
+{
+	double edge_length_temp = 0.0;
+	int edge_size=0;
+	for (int i = 0; i < cloth.size(); ++i) {
+		for (int j = 0; j < cloth[i].mesh_struct.edges.size(); ++j) {
+			edge_length_temp += cloth[i].mesh_struct.edges[j].length;
+		}
+		edge_size += cloth[i].mesh_struct.edges.size();
+	}
+
+	ave_edge_length = edge_length_temp / (double)edge_size;
+}
+
+void Scene::setTolerance(double* tolerance_ratio)
+{
+	for (int i = 0; i < cloth.size(); ++i) {
+		cloth[i].setTolerance(tolerance_ratio, ave_edge_length);
+	}
+	for (int i = 0; i < collider.size(); ++i) {
+		collider[i].setTolerance(tolerance_ratio, ave_edge_length);
+	}
+}
+
+
+void Scene::testBVH()
+{
+/*	collision.buildBVH();
+	std::vector<std::vector<int>>cloth_neighbor_index;
+	std::vector<std::vector<int>>collider_neighbor_index;
+	cloth_neighbor_index.resize(cloth.size());
+	collision.searchTriangle(cloth[0].triangle_AABB[60], 60, &cloth_neighbor_index, &collider_neighbor_index);
+	for (int i = 0; i < cloth_neighbor_index[0].size(); ++i) {
+		std::cout << cloth_neighbor_index[0][i] << std::endl;
+	}*/	
+
+
+	std::bitset<64>t1(0x1f00000000ffff);
+	std::cout << t1 << std::endl;
+	std::bitset<64>t2(0x1f0000ff0000ff);
+	std::cout << t2 << std::endl;
+	std::bitset<64>t3(0x100f00f00f00f00f);
+	std::cout << t3 << std::endl;
+	std::bitset<64>t4(0x10c30c30c30c30c3);
+	std::cout << t4 << std::endl;
+	std::bitset<64>t5(0x1249249249249249);
+	std::cout << t5 << std::endl;
+}
+
+void Scene::obtainCursorPosition(double* pos, Camera* camera, std::vector<std::vector<bool>>& hide)
+{
+	int mouse_pos[2];
+	mouse_pos[0] = pos[0];
+	mouse_pos[1] = pos[1];
+	int chosen_index[2];
+	pick_triangle.pickTriangle(&cloth, &collider, camera, hide, chosen_index, mouse_pos);
+	intersection.initialIntersection();
+	if (chosen_index[0] > -1) {
+		double cursor_pos[3];
+		intersection.setIntersection(chosen_index);
+		getCursorPos(cursor_pos, cloth[intersection.cloth_No].mesh_struct.vertex_position,
+			cloth[intersection.cloth_No].mesh_struct.faces[intersection.face_index].vertex);
+		cloth[chosen_index[1]].findAllNeighborVertex(chosen_index[0], cursor_pos, ave_edge_length);
+	}
+}
+
+void Scene::getCursorPos(double* cursor_pos, std::vector<std::array<double,3>>& vertex, int* vertex_index)
+{
+	for (int i = 0; i < 3; ++i) {
+		cursor_pos[i] = (vertex[vertex_index[0]][i] + vertex[vertex_index[1]][i] + vertex[vertex_index[2]][i]) / 3.0;
+	}
+}
+
+void Scene::setCursorForce(Camera* camera, double* cursor_screen, float force_coe)
+{
+	double cursor_pos[3];
+	double force_direction[3];
+	getCursorPos(cursor_pos, cloth[intersection.cloth_No].mesh_struct.vertex_position,
+		cloth[intersection.cloth_No].mesh_struct.faces[intersection.face_index].vertex);
+	cursor.translate(cursor_pos);
+	cursorMovement(camera, cursor_screen, force_direction, force_coe, cursor_pos);
+	//project_dynamic.add
+}
+
+void Scene::cursorMovement(Camera* camera, double* cursor_screen, double* force_direction, float force_coe, double* object_position)
+{
+	double cursor_pos_in_space[3];
+	camera->getCursorPosInSpace(cursor_pos_in_space, cursor_screen, object_position);
+	SUB(force_direction, cursor_pos_in_space, object_position);
+	MULTI(force_direction, force_direction, force_coe);
+	double force_magnitude = sqrt(DOT(force_direction, force_direction));
+	if (force_magnitude > max_force_magnitude) {
+		force_magnitude = max_force_magnitude / force_magnitude;
+		MULTI(force_direction, force_direction, force_magnitude);
+	}
+	//std::cout << "force mag " << force_direction[0] << " " << force_direction[1] << " " << force_direction[2] << std::endl;
 }

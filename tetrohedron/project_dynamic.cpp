@@ -15,7 +15,7 @@ ProjectDynamic::ProjectDynamic()
 	max_jacobi_itr_num = 20;
 }
 
-void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<TetrohedronObject>* tetrohedron, Thread* thread)
+void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrohedron>* tetrohedron, Thread* thread)
 {
 	sub_time_step = time_step / (double)sub_step_num;
 	this->thread = thread;
@@ -285,7 +285,7 @@ void ProjectDynamic::computeClothGravity()
 	}
 }
 
-void ProjectDynamic::setForTetrohedronPD(std::vector<TetrohedronObject>* tetrohedron)
+void ProjectDynamic::setForTetrohedronPD(std::vector<Tetrohedron>* tetrohedron)
 {
 	total_tetrohedron_num = tetrohedron->size();
 	tetrohedron_sys_size.resize(total_tetrohedron_num);

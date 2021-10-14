@@ -5,6 +5,8 @@
 #include"../global_struct.h"
 #include"../thread.h"
 #include<array>
+#include"../basic/aabb.h"
+
 class Object
 {
 protected:
@@ -37,4 +39,6 @@ public:
 	std::vector<AABB>triangle_AABB;
 	std::vector<AABB>edge_AABB;
 	std::vector<AABB>vertex_AABB;
+
+
 };

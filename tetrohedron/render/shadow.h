@@ -1,7 +1,7 @@
 #pragma once
 #include"../object/cloth.h"
 #include"../object/collider.h"
-#include"../object/tetrohedron_object.h"
+#include"../object/tetrohedron.h"
 
 class Shadow
 {
@@ -12,7 +12,7 @@ public:
 	float camera_from_origin;
 	void setBasic();
 	void drawShadow(Camera* camera, std::vector<std::vector<bool>>& hide, std::vector<Cloth>& cloth, std::vector<Collider>& collider,
-		std::vector<TetrohedronObject>& tetrohedron, std::vector<int>& cloth_index_in_object, std::vector<int>& tetrohedron_index_in_object);
+		std::vector<Tetrohedron>& tetrohedron, std::vector<int>& cloth_index_in_object, std::vector<int>& tetrohedron_index_in_object);
 private:
 	Shader* shadow_shader;
 

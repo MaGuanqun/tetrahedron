@@ -7,7 +7,9 @@
 #include"thread.h"
 #include"basic/global.h"
 #include"object/cloth.h"
-#include"object/tetrohedron_object.h"
+#include"object/tetrohedron.h"
+#include"collision/collision.h"
+
 
 using namespace Eigen;
 using namespace denseOperation;
@@ -19,7 +21,7 @@ public:
 	double time_step;
 	double gravity_;
 	double outer_itr_conv_rate, local_global_conv_rate;
-	void setForPD(std::vector<Cloth>* cloth, std::vector<TetrohedronObject>* tetrohedron, Thread* thread);
+	void setForPD(std::vector<Cloth>* cloth, std::vector<Tetrohedron>* tetrohedron, Thread* thread);
 	void reset();
 	void initial();
 	
@@ -42,7 +44,7 @@ private:
 	int total_cloth_num, total_tetrohedron_num;
 	std::vector<int>cloth_sys_size, tetrohedron_sys_size;
 	std::vector<Cloth>* cloth;
-	std::vector<TetrohedronObject>* tetrohedron;
+	std::vector<Tetrohedron>* tetrohedron;
 	Thread* thread;
 	double sub_time_step;
 	std::vector<std::vector<double>> lbo_weight;
@@ -52,7 +54,7 @@ private:
 	std::vector<std::vector<VectorXd>> cloth_gravity;
 	std::vector<std::vector<VectorXd>>vertex_lbo;
 	void setForClothPD(std::vector<Cloth>* cloth);
-	void setForTetrohedronPD(std::vector<TetrohedronObject>* tetrohedron);
+	void setForTetrohedronPD(std::vector<Tetrohedron>* tetrohedron);
 	void computeEdgeCotWeight(std::vector<std::vector<double>>& edge_cot_weight);
 	void computeEdgeCotWeightSingleCloth(std::vector<double>& edge_cot_weight, TriangleMeshStruct& mesh_struct);
 	void computeLBOWeight(std::vector<std::vector<double>>& edge_cot_weight);

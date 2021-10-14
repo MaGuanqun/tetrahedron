@@ -41,3 +41,7 @@ enum SetStiffness {
 enum ObjectFunc {
     TRIANGLE_AABB, EDGE_AABB, VERTEX_AABB
 };
+
+enum BVHFunc {
+    CAL_CENTER, CAL_MORTON
+};

@@ -151,7 +151,10 @@
     <ClCompile Include="basic\Coordinate.cpp" />
     <ClCompile Include="basic\cursor.cpp" />
     <ClCompile Include="basic\opengl_input.cpp" />
+    <ClCompile Include="basic\pick_triangle.cpp" />
     <ClCompile Include="collision\BVH.cpp" />
+    <ClCompile Include="collision\collision.cpp" />
+    <ClCompile Include="collision\morton.cpp" />
     <ClCompile Include="external\glad.c" />
     <ClCompile Include="external\imgui\imgui.cpp" />
     <ClCompile Include="external\imgui\imgui_draw.cpp" />
@@ -166,7 +169,7 @@
     <ClCompile Include="mesh_struct\triangle_mesh_struct.cpp" />
     <ClCompile Include="object\collider.cpp" />
     <ClCompile Include="object\object.cpp" />
-    <ClCompile Include="object\tetrohedron_object.cpp" />
+    <ClCompile Include="object\tetrohedron.cpp" />
     <ClCompile Include="object\triangle_object.cpp" />
     <ClCompile Include="object\cloth.cpp" />
     <ClCompile Include="project_dynamic.cpp" />
@@ -177,6 +180,7 @@
     <ClCompile Include="thread.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="basic\aabb.h" />
     <ClInclude Include="basic\basic_imgui.h" />
     <ClInclude Include="basic\camera.h" />
     <ClInclude Include="basic\Coordinate.h" />
@@ -185,7 +189,10 @@
     <ClInclude Include="basic\global.h" />
     <ClInclude Include="basic\intersection.h" />
     <ClInclude Include="basic\opengl_input.h" />
+    <ClInclude Include="basic\pick_triangle.h" />
     <ClInclude Include="collision\BVH.h" />
+    <ClInclude Include="collision\collision.h" />
+    <ClInclude Include="collision\morton.h" />
     <ClInclude Include="external\imgui\imgui.h" />
     <ClInclude Include="external\imgui\imgui_impl_glfw.h" />
     <ClInclude Include="external\imgui\imgui_impl_opengl3.h" />
@@ -199,7 +206,7 @@
     <ClInclude Include="mesh_struct\triangle_mesh_struct.h" />
     <ClInclude Include="object\collider.h" />
     <ClInclude Include="object\object.h" />
-    <ClInclude Include="object\tetrohedron_object.h" />
+    <ClInclude Include="object\tetrohedron.h" />
     <ClInclude Include="object\triangle_object.h" />
     <ClInclude Include="object\cloth.h" />
     <ClInclude Include="project_dynamic.h" />

@@ -1,7 +1,7 @@
-#include"tetrohedron_object.h"
+#include"tetrohedron.h"
 
 
-void TetrohedronObject::drawWireframe(Camera* camera)
+void Tetrohedron::drawWireframe(Camera* camera)
 {
 	//setBuffer(cloth_index);
 	if (!mesh_struct.triangle_indices.empty()) {
@@ -17,7 +17,7 @@ void TetrohedronObject::drawWireframe(Camera* camera)
 	}
 }
 
-void TetrohedronObject::setBuffer()
+void Tetrohedron::setBuffer()
 {
 	if (!mesh_struct.triangle_indices.empty())
 	{
@@ -37,7 +37,7 @@ void TetrohedronObject::setBuffer()
 }
 
 
-void TetrohedronObject::drawShadow(Camera* camera, Shader* shader)
+void Tetrohedron::drawShadow(Camera* camera, Shader* shader)
 {
 	//setBuffer(cloth_index);
 	if (!mesh_struct.triangle_indices.empty()) {
@@ -50,7 +50,7 @@ void TetrohedronObject::drawShadow(Camera* camera, Shader* shader)
 	}
 }
 
-void TetrohedronObject::simpDraw(Camera* camera, Shader* shader)
+void Tetrohedron::simpDraw(Camera* camera, Shader* shader)
 {
 	if (!mesh_struct.triangle_indices.empty()) {
 		shader->use();
@@ -65,7 +65,7 @@ void TetrohedronObject::simpDraw(Camera* camera, Shader* shader)
 }
 
 
-void TetrohedronObject::setMaterial(OriMesh& ori_mesh)
+void Tetrohedron::setMaterial(OriMesh& ori_mesh)
 {
 	material = ori_mesh.front_material;
 }

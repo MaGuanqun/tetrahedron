@@ -14,7 +14,8 @@ class ProjectDynamic;
 class TriangleMeshStruct;
 class Cloth;
 class Collider;
-class TetrohedronObject;
+class Tetrohedron;
+class BVH;
 
 using job = std::packaged_task<void()>;
 
@@ -40,6 +41,7 @@ public:
     //void assignTask(SpatialHashing* func, SpatialHashingFuncSendToThread taskType);
     void assignTask(Cloth* func, ObjectFunc taskType);
     void assignTask(Collider* func, ObjectFunc taskType);
+    void assignTask(BVH* func, BVHFunc taskType);
    
     int thread_num;
 private:
@@ -53,6 +55,7 @@ private:
     //job create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncSendToThread function_type);
     job create_task(Cloth* func, int thread_id, ObjectFunc function_type);
     job create_task(Collider* func, int thread_id, ObjectFunc function_type);
+    job create_task(BVH* func, int thread_id, BVHFunc function_type);
 };
 
 
