@@ -36,27 +36,24 @@ public:
 		}
 	};
 
-
 	std::vector<std::array<double, 3>> vertex_position;
-	std::vector<int> triangle_indices;//if for tetrohedron, store the surface triangle	
+	std::vector<std::array<int,3>> triangle_indices;//if for tetrohedron, store the surface triangle	
 	std::vector<std::array<double, 3>> vertex_for_render;
 	std::vector<std::array<double, 3>> vertex_norm_for_render;
 	std::vector<std::array<double, 3>> face_norm_for_render;
+	std::vector<std::array<double, 3>> face_norm;
 	std::vector<int>anchor_vertex;
 	std::vector<std::array<double, 3>>anchor_position;
 
-	std::vector<std::array<double, 3>> ori_vertex;
 	Thread* thread;
 
 	std::vector<int> face_index_begin_per_thread;
 	std::vector<int> anchor_index_begin_per_thread;
-
+	std::vector<int> vertex_index_begin_per_thread;
 
 	void initialNormalSize();
 	void arrangeIndex(int total_thread_num, int total_num, std::vector<int>& begin);
 
-	virtual void setVertex() =0;
-	virtual void setThreadIndex(int total_thread_num_)=0;
 
 	void setAnchorPosition();
 protected:

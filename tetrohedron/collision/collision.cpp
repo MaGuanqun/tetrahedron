@@ -53,4 +53,7 @@ void Collision::searchTriangle(AABB& aabb, int compare_index, std::vector<std::v
 
 }
 
-//compute tolerance
+//void Collision::findAllTrianglePairs()
+//{
+//
+//}

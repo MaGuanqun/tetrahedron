@@ -5,7 +5,7 @@ enum ControlPrameter {
 };
 
 enum ObjectType {
-	COLLIDER, OBJECT
+	COLLIDER_, TETROHEDRON_, CLOTH_
 };
 
 enum PDFuncSendToThread {

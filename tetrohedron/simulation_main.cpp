@@ -23,9 +23,9 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool control_parameter[11];
 	memset(control_parameter, 0, 11);
 	ImGuiWindows imgui_windows;
-	float force_coe=1.0;
-	std::vector<std::vector<bool>> wireframe(2);
-	std::vector<std::vector<bool>> hide(2);
+	float force_coe=5.0;
+	std::vector<std::vector<bool>> wireframe(3);
+	std::vector<std::vector<bool>> hide(3);
 	std::vector<std::string> collider_path;
 	std::vector<std::string> object_path;
 	bool already_load_model = false;
@@ -72,15 +72,16 @@ void simu_main(GLFWwindow* window, Input* input) {
 		}
 
 		if (input->mouse.mouse_callback) {
-			if (input->mouse.leftButtonIsPressed()) {
-				if (!input->mouse.rightButtonIsPressed()) {
-					camera.rotation(input->mouse.angle[0], input->mouse.angle[1], 1);
-				}
-				if (input->mouse.rightButtonIsPressed()) {
-					camera.move(-input->mouse.move_direction[0], -input->mouse.move_direction[1]);
+			if (!scene.intersection.happened) {
+				if (input->mouse.leftButtonIsPressed()) {
+					if (!input->mouse.rightButtonIsPressed()) {
+						camera.rotation(input->mouse.angle[0], input->mouse.angle[1], 1);
+					}
+					if (input->mouse.rightButtonIsPressed()) {
+						camera.move(-input->mouse.move_direction[0], -input->mouse.move_direction[1]);
+					}
 				}
 			}
-
 			if (control_parameter[INITIAL_CAMERA]) {
 				camera.resetCam();
 				zoom_value = 1.0;
@@ -107,11 +108,17 @@ void simu_main(GLFWwindow* window, Input* input) {
 		if (scene.intersection.happened && control_parameter[STOP_AFTER_RELEASE_MOUSE] && input->mouse.leftButtonWasReleasedThisFrame()) {
 			control_parameter[START_SIMULATION] = false;
 		}
-		if (!already_load_model) {
+		if (already_load_model) {
 			if (input->mouse.leftButtonWasReleasedThisFrame() && !control_parameter[START_TEST]) {// 
+
 				scene.initialIntersection();
 			}
+			if (input->mouse.leftButtonWasPressedThisFrame() && !input->mouse.rightButtonIsPressed()
+				&& !control_parameter[START_TEST]) {
+				scene.obtainCursorIntersection(input->mouse.screen_pos, &camera, hide);
+			}
 		}
+
 		imgui_windows.operationWindow(cloth_stiffness, simulation_parameter, collision_stiffness, set_stiffness, temp_stiffness, update_stiffness);
 		if (!already_load_model) {
 			if (imgui_windows.loadModel(collider_path, object_path)) {
@@ -121,13 +128,14 @@ void simu_main(GLFWwindow* window, Input* input) {
 				camera.updateCamera(camera_pos, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(scene.camera_center[0], scene.camera_center[1], scene.camera_center[2]));
 				scene.getClothInfo(cloth_info, cloth_mass, cloth_stiffness, simulation_parameter, collision_stiffness);
 				camera_from_origin = scene.shadow.camera_from_origin;				
-				setHideWireframe(hide, wireframe, scene.collider.size(), scene.cloth.size() + scene.tetrohedron.size());
+				setHideWireframe(hide, wireframe, scene.collider.size(), scene.cloth.size(), scene.tetrohedron.size());
 				scene.setTolerance(tolerance_ratio);
-				scene.testBVH();
+				//scene.testBVH();
 			}
 		}
 		else {
 			scene.setTolerance(tolerance_ratio);
+			
 			scene.updateCloth(&camera, input->mouse.screen_pos, control_parameter, force_coe);
 			scene.drawScene(&camera, wireframe, hide, control_parameter[SAVE_OBJ]);
 		}
@@ -157,12 +165,19 @@ void simu_main(GLFWwindow* window, Input* input) {
 }
 
 
-void setHideWireframe(std::vector<std::vector<bool>>& hide, std::vector<std::vector<bool>>& wireframe, int collider_num, int object_num)
+void setHideWireframe(std::vector<std::vector<bool>>& hide, std::vector<std::vector<bool>>& wireframe, int collider_num, int cloth_num, int tetrohedron_num)
 {
 	if (collider_num > 0) {
-		hide[COLLIDER].resize(collider_num, false);
-		wireframe[COLLIDER].resize(collider_num, false);
+		hide[COLLIDER_].resize(collider_num, false);
+		wireframe[COLLIDER_].resize(collider_num, false);
 	}
-	hide[OBJECT].resize(object_num, false);
-	wireframe[OBJECT].resize(object_num, false);
+	if (tetrohedron_num > 0) {
+		hide[TETROHEDRON_].resize(tetrohedron_num, false);
+		wireframe[TETROHEDRON_].resize(tetrohedron_num, false);
+	}
+	if (cloth_num > 0) {
+		hide[CLOTH_].resize(cloth_num, false);
+		wireframe[CLOTH_].resize(cloth_num, false);
+	}
+	
 }

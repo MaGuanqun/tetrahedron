@@ -123,9 +123,11 @@ inline double gaussian(double x, double sigma) {
 
 inline void normalize(double x[3]) {
     double norm = sqrt(DOT(x, x));
-    x[0] /= norm;
-    x[1] /= norm;
-    x[2] /= norm;
+    if (norm > 1e-10) {
+        x[0] /= norm;
+        x[1] /= norm;
+        x[2] /= norm;
+    }
 }
 
 #undef DEG_RADIANS

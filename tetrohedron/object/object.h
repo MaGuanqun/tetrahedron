@@ -17,11 +17,8 @@ protected:
 	Shader* object_shader_front;
 	Shader* wireframe_shader;
 	int total_thread_num;
-	void genShader();
 	void genBuffer();
-	virtual void setMaterial(OriMesh& ori_mesh) =0;
 
-	std::vector<std::array<double, 3>> ori_vertices;
 	glm::vec3 wireframe_color;
 
 	void getAABB(AABB& target, AABB& aabb0, AABB& aabb1, AABB& aabb2);
@@ -39,6 +36,6 @@ public:
 	std::vector<AABB>triangle_AABB;
 	std::vector<AABB>edge_AABB;
 	std::vector<AABB>vertex_AABB;
-
+	std::vector<std::array<double, 3>> ori_vertices;
 
 };

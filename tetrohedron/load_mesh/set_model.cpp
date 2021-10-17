@@ -1,14 +1,16 @@
 #include"set_model.h"
 #include"../basic/enum_setting.h"
+#include"readObj.h"
+#include"read_ele.h"
 
-void SetModel::load_getAABB(std::string& path)
+void SetModel::load_getAABB(std::string& path, int& index)
 {
 	std::string extension_name;
 	extension_name = path.substr(path.length() - 3, path.length());
 	if (extension_name == "obj") {
 		//ReadObj read_obj;
 		//read_obj.load(path.c_str(), ori_mesh);
-		ori_mesh.type == TRIANGLE;
+		ori_mesh.type = TRIANGLE;
 	CreateMesh create_mesh(ori_mesh);
 	//if (path == "./model/Avatar_low.obj") {
 	//	create_mesh.setSphere(ori_mesh);
@@ -29,7 +31,10 @@ void SetModel::load_getAABB(std::string& path)
 	//}
 	}
 	else {
-		ori_mesh.type == TETROHEDRON;
+		ori_mesh.type = TETROHEDRON;
+		ReadEle read_ele;
+		read_ele.load(path.c_str(), ori_mesh);
+		setTetFrontMaterial(ori_mesh, index);
 	}
 	
 	getAABB();
@@ -88,4 +93,40 @@ void SetModel::regularization(RegularizationInfo& regularization_info)
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
 		SUM(ori_mesh.vertices[i], ori_mesh.vertices[i], regularization_info.move_info);
 	}
+}
+
+void SetModel::setTetFrontMaterial(OriMesh& ori_mesh, int& index)
+{
+	std::array<float, 3> Kd, Ka, Ks, Tf;
+	int illum;
+	float Ni, Ns;
+	Tf = { 1.00, 1.00, 1.00 };
+	Ni = 1.00;
+	Ns = 28.76;
+	illum = 4;
+	switch (index)
+	{
+	case 0:
+		Kd = { 0.235, 0.5, 0.605 };		
+		Ka = { 0.047, 0.1, 0.121 };
+		Ks = { 0.094, 0.2, 0.242 };
+		break;
+	case 1:
+		Kd = { 0.1, 0.1, 0.6 };
+		Ka = { 0.02, 0.02, 0.12 };
+		Ks = { 0.04, 0.04, 0.24 };
+		break;
+	default:
+		Kd = { 0.5, 0.5, 0.5 };
+		Ka = { 0.02, 0.02, 0.02 };
+		Ks = { 0.24, 0.24, 0.24 };
+	}
+	memcpy(ori_mesh.front_material.Ka, Ka.data(), 12);
+	memcpy(ori_mesh.front_material.Kd, Kd.data(), 12);
+	memcpy(ori_mesh.front_material.Ks, Ks.data(), 12);
+	memcpy(ori_mesh.front_material.Tf, Tf.data(), 12);
+	ori_mesh.front_material.Ns = Ns;
+	ori_mesh.front_material.Ni = Ni;
+	ori_mesh.front_material.illum = illum;
+	index++;
 }

@@ -1,20 +1,21 @@
 #include"preprocessing.h"
 
-void Preprocessing::load_all_model(std::vector<std::string>& body_path, std::vector<std::string>& cloth_path)
+void Preprocessing::load_all_model(std::vector<std::string>& body_path, std::vector<std::string>& object_path)
 {
-	simulation_model.resize(cloth_path.size());
-	for (int i = 0; i < cloth_path.size(); ++i) {
-		simulation_model[i].load_getAABB(cloth_path[i]);
+	int tet_index = 0;
+	simulation_model.resize(object_path.size());
+	for (int i = 0; i < object_path.size(); ++i) {
+		simulation_model[i].load_getAABB(object_path[i], tet_index);
 	}
 	if (!body_path.empty()) {
 		collider_model.resize(body_path.size());
 		for (int i = 0; i < body_path.size(); ++i) {
-			collider_model[i].load_getAABB(body_path[i]);
+			collider_model[i].load_getAABB(body_path[i], tet_index);
 		}
 	}
-	//getRegularizationInfo();
-	getPresetRegularizationInfo();
-	for (int i = 0; i < cloth_path.size(); ++i) {
+	getRegularizationInfo();
+	//getPresetRegularizationInfo();
+	for (int i = 0; i < object_path.size(); ++i) {
 		simulation_model[i].regularization(regularization_info);
 	}
 	if (!body_path.empty()) {
@@ -54,7 +55,6 @@ void Preprocessing::getRegularizationInfo()
 			min_pos[j] = myMin(min_pos[j], simulation_model[i].aabb.min[j]);
 		}
 	}
-	//std::cout << max_pos[0] << " " << max_pos[1] << std::endl;
 	if (!collider_model.empty()) {
 		for (int i = 0; i < collider_model.size(); ++i) {
 			for (int j = 0; j < 3; ++j) {
@@ -62,7 +62,6 @@ void Preprocessing::getRegularizationInfo()
 				min_pos[j] = myMin(min_pos[j], collider_model[i].aabb.min[j]);
 			}
 		}
-		//std::cout << max_pos[0] << " " << max_pos[1] << std::endl;
 	}
 
 	for (int i = 0; i < 3; ++i) {

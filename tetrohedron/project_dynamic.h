@@ -8,6 +8,7 @@
 #include"basic/global.h"
 #include"object/cloth.h"
 #include"object/tetrohedron.h"
+#include"object/collider.h"
 #include"collision/collision.h"
 
 
@@ -21,7 +22,7 @@ public:
 	double time_step;
 	double gravity_;
 	double outer_itr_conv_rate, local_global_conv_rate;
-	void setForPD(std::vector<Cloth>* cloth, std::vector<Tetrohedron>* tetrohedron, Thread* thread);
+	void setForPD(std::vector<Cloth>* cloth, std::vector<Tetrohedron>* tetrohedron, std::vector<Collider>* collider, Thread* thread);
 	void reset();
 	void initial();
 	
@@ -33,6 +34,9 @@ public:
 	void solveSystemPerThead(int thread_id);
 	void updateUVPerThread(int thread_id);
 	void updateRenderPosition();
+	void addExternalClothForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int cloth_No);
+	void resetExternalForce();
+	void mainProcess();
 private:
 	int total_thread_num;
 	std::vector<double> temEnergy;
@@ -132,6 +136,7 @@ private:
 	double current_constraint_energy, previous_constraint_energy;
 	double current_collision_energy, previous_collision_energy;
 	double	current_PD_energy, previous_PD_energy;
+
 	void PDupdateSystemMatrix();
 
 	bool PDConvergeCondition();
@@ -145,4 +150,7 @@ private:
 	void PDsetPosPredict();
 	void updateClothUV(int thread_id);
 	void updateTetrohedronUV(int thread_id);
+
+	Collision collision;
+
 };

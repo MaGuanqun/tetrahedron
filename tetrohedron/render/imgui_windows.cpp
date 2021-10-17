@@ -116,7 +116,7 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 		ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.9f);
 		ImGui::SetNextItemOpen(true);
 		if (ImGui::TreeNode("Set force coefficient")) {
-			ImGui::SliderFloat("##set force coefficient", force_coe, 0.5, 1.0f, "force coefficient = %.2f");
+			ImGui::SliderFloat("##set force coefficient", force_coe, 1.0, 10.0f, "force coefficient = %.2f");
 			ImGui::TreePop();
 		}
 		ImGui::TextWrapped("Force depends on force coefficient and cursor moving speed.");
@@ -138,76 +138,112 @@ void ImGuiWindows::visualizationControlPanel(bool& reset_camera, std::vector<std
 		reset_camera = true;
 	}
 	std::string tempString;
-	for (int i = 0; i < wireframe[COLLIDER].size(); ++i) {
+	for (int i = 0; i < wireframe[COLLIDER_].size(); ++i) {
 		ImGui::SetNextItemOpen(true);
 		tempString = "Collider " + std::to_string(i);
 		if (ImGui::TreeNode(tempString.c_str())) {
-			if (hide[COLLIDER][i]) {
+			if (hide[COLLIDER_][i]) {
 				tempString = "Show##Collider" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					hide[COLLIDER][i] = false;
+					hide[COLLIDER_][i] = false;
 				}
 			}
 			else {
 				tempString = "Hide##Collider" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					hide[COLLIDER][i] = true;
+					hide[COLLIDER_][i] = true;
 				}
 			}
-			if (wireframe[COLLIDER][i]) {
+			if (wireframe[COLLIDER_][i]) {
 				tempString = "Hide WireFrame##Collider" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					wireframe[COLLIDER][i] = false;
+					wireframe[COLLIDER_][i] = false;
 				}
 			}
 			else {
 				tempString = "Show WireFrame##Collider" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					wireframe[COLLIDER][i] = true;
+					wireframe[COLLIDER_][i] = true;
 				}
 			}
 			ImGui::TreePop();
 		}
 	}
-	for (int i = 0; i < wireframe[OBJECT].size(); ++i) {
+	for (int i = 0; i < wireframe[CLOTH_].size(); ++i) {
 		ImGui::SetNextItemOpen(true);
-		tempString = "object " + std::to_string(i);
+		tempString = "cloth " + std::to_string(i);
 		if (ImGui::TreeNode(tempString.c_str())) {
-			if (hide[OBJECT][i]) {
-				tempString = "Show##object" + std::to_string(i);
+			if (hide[CLOTH_][i]) {
+				tempString = "Show##cloth" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					hide[OBJECT][i] = false;
+					hide[CLOTH_][i] = false;
 				}
 			}
 			else {
-				tempString = "Hide##object" + std::to_string(i);
+				tempString = "Hide##cloth" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					hide[OBJECT][i] = true;
+					hide[CLOTH_][i] = true;
 				}
 			}
-			if (wireframe[OBJECT][i]) {
-				tempString = "Hide WireFrame##object" + std::to_string(i);
+			if (wireframe[CLOTH_][i]) {
+				tempString = "Hide WireFrame##cloth" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					wireframe[OBJECT][i] = false;
+					wireframe[CLOTH_][i] = false;
 				}
 			}
 			else {
-				tempString = "Show WireFrame##object" + std::to_string(i);
+				tempString = "Show WireFrame##cloth" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					wireframe[OBJECT][i] = true;
+					wireframe[CLOTH_][i] = true;
 				}
 			}
 			ImGui::TreePop();
 		}
 	}
+	for (int i = 0; i < wireframe[TETROHEDRON_].size(); ++i) {
+		ImGui::SetNextItemOpen(true);
+		tempString = "cloth " + std::to_string(i);
+		if (ImGui::TreeNode(tempString.c_str())) {
+			if (hide[TETROHEDRON_][i]) {
+				tempString = "Show##tetrohedron" + std::to_string(i);
+				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+				{
+					hide[TETROHEDRON_][i] = false;
+				}
+			}
+			else {
+				tempString = "Hide##tetrohedron" + std::to_string(i);
+				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+				{
+					hide[TETROHEDRON_][i] = true;
+				}
+			}
+			if (wireframe[TETROHEDRON_][i]) {
+				tempString = "Hide WireFrame##tetrohedron" + std::to_string(i);
+				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+				{
+					wireframe[TETROHEDRON_][i] = false;
+				}
+			}
+			else {
+				tempString = "Show WireFrame##tetrohedron" + std::to_string(i);
+				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+				{
+					wireframe[TETROHEDRON_][i] = true;
+				}
+			}
+			ImGui::TreePop();
+		}
+	}
+
 	ImGui::End();
 }
 

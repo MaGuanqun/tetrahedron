@@ -12,7 +12,7 @@ public:
 	float camera_from_origin;
 	void setBasic();
 	void drawShadow(Camera* camera, std::vector<std::vector<bool>>& hide, std::vector<Cloth>& cloth, std::vector<Collider>& collider,
-		std::vector<Tetrohedron>& tetrohedron, std::vector<int>& cloth_index_in_object, std::vector<int>& tetrohedron_index_in_object);
+		std::vector<Tetrohedron>& tetrohedron);
 private:
 	Shader* shadow_shader;
 

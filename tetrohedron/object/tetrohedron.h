@@ -4,7 +4,8 @@
 class Tetrohedron:public Object
 {
 private:
-	void setMaterial(OriMesh& ori_mesh);
+	void genShader();
+	void setMeshStruct(double density, OriMesh& ori_mesh);
 public:
 	MeshMaterial material;
 	TetrohedronMeshStruct mesh_struct;
@@ -12,5 +13,10 @@ public:
 	void drawWireframe(Camera* camera);
 	void setBuffer();
 	void simpDraw(Camera* camera, Shader* shader);
+
+	int tetrohedron_num;
+	void loadMesh(OriMesh& ori_mesh, double density, Thread* thread);
+	void draw(Camera* camera);
+	void setSceneShader(Light& light, Camera* camera, float& far_plane);
 };
 

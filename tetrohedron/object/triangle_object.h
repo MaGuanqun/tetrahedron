@@ -11,6 +11,7 @@ protected:
 		MeshMaterial back_material;
 	};
 	void setMaterial(OriMesh& ori_mesh);
+	void genShader();
 public:
 	TriangleMeshStruct mesh_struct;	
 	void drawShadow(Camera* camera, Shader* shader);

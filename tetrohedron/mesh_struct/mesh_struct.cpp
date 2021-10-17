@@ -1,8 +1,8 @@
 #include"mesh_struct.h"
 void MeshStruct::initialNormalSize()
 {
-	face_norm_for_render.resize(triangle_indices.size() / 3, {0.0,0.0,0.0});
-	temp_face_norm.resize(triangle_indices.size() / 3, { 0.0,0.0,0.0 });
+	face_norm_for_render.resize(triangle_indices.size(), {0.0,0.0,0.0});
+	temp_face_norm.resize(triangle_indices.size(), { 0.0,0.0,0.0 });
 	vertex_norm_for_render.resize(vertex_position.size());
 }
 
@@ -31,9 +31,7 @@ void MeshStruct::setAnchorPosition()
 {
 	for (int i = 0; i < anchor_vertex.size(); ++i) {
 		anchor_position.push_back(vertex_position[anchor_vertex[i]]);
-
 	}
-
 }
 
 

@@ -19,7 +19,7 @@ void Cloth::draw(Camera* camera)
 		glBindVertexArray(VAO);
 		glPolygonMode(GL_FRONT, GL_FILL);
 		glCullFace(GL_BACK);
-		glDrawElements(GL_TRIANGLES, mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, 3*mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 		object_shader_back->use();
 		object_shader_back->setVec3("viewPos", camera->position);
@@ -35,7 +35,7 @@ void Cloth::draw(Camera* camera)
 		glBindVertexArray(VAO);
 		glPolygonMode(GL_BACK, GL_FILL);
 		glCullFace(GL_FRONT);
-		glDrawElements(GL_TRIANGLES, mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, 3*mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 	}
 }
@@ -64,8 +64,6 @@ void Cloth::setSceneShader(Light& light, Camera* camera, float& far_plane)
 void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 {
 	total_thread_num = std::thread::hardware_concurrency();
-	TriangleMeshStruct triangle_mesh_struct;
-	mesh_struct = triangle_mesh_struct;
 
 	setMeshStruct(density, ori_mesh);
 	this->thread = thread;
@@ -120,20 +118,13 @@ void Cloth::setMass(double density)
 	}
 }
 
-void Cloth::setAnchor(std::vector<int>& anchor_vertex)
-{
-	mesh_struct.anchor_vertex = anchor_vertex;
-	for (int i = 0; i < mesh_struct.anchor_vertex.size(); ++i) {
-		mesh_struct.anchor_position.push_back(mesh_struct.vertex_position[mesh_struct.anchor_vertex[i]]);
-	}
-}
-
 void Cloth::setMeshStruct(double density, OriMesh& ori_mesh)
 {
 	setMaterial(ori_mesh);
-	mesh_struct.vertex_position = ori_mesh.vertices;
+	mesh_struct.vertex_position = ori_mesh.vertices;	
 	if (!ori_mesh.indices.empty()) {
-		mesh_struct.triangle_indices=ori_mesh.indices;
+		mesh_struct.triangle_indices.resize(ori_mesh.indices.size() / 3);
+		memcpy(mesh_struct.triangle_indices[0].data(), ori_mesh.indices.data(),12* mesh_struct.triangle_indices.size());
 	}
 	this->density = density;
 	setAnchor();
@@ -143,9 +134,11 @@ void Cloth::setMeshStruct(double density, OriMesh& ori_mesh)
 void Cloth::setArea()
 {
 	double v01[3], v21[3], v_cross[3];
+	int* triangle_indices;
 	for (int i = 0; i < mesh_struct.faces.size(); ++i) {
-		SUB(v01, mesh_struct.vertex_position[mesh_struct.triangle_indices[3*i]], mesh_struct.vertex_position[mesh_struct.triangle_indices[3 * i+1]]);
-		SUB(v21, mesh_struct.vertex_position[mesh_struct.triangle_indices[3 * i+2]], mesh_struct.vertex_position[mesh_struct.triangle_indices[3 * i+1]]);
+		triangle_indices = mesh_struct.triangle_indices[i].data();
+		SUB(v01, mesh_struct.vertex_position[triangle_indices[0]], mesh_struct.vertex_position[triangle_indices[1]]);
+		SUB(v21, mesh_struct.vertex_position[triangle_indices[2]], mesh_struct.vertex_position[triangle_indices[1]]);
 		CROSS(v_cross, v21, v01);
 		mesh_struct.faces[i].area = 0.5 * sqrt(DOT(v_cross, v_cross));
 	}
@@ -174,8 +167,8 @@ void Cloth::recordInitialMesh(SingleClothInfo& single_cloth_info_ref)
 
 void Cloth::initial()
 {
-	mesh_struct.vertex_position = mesh_struct.ori_vertex;
-	mesh_struct.vertex_for_render = mesh_struct.ori_vertex;
+	mesh_struct.vertex_position = ori_vertices;
+	mesh_struct.vertex_for_render = ori_vertices;
 	mesh_struct.getRenderNormal();
 	mesh_struct.getNormal();
 	for (int i = 0; i < mesh_struct.anchor_vertex.size(); ++i) {
@@ -229,10 +222,10 @@ void Cloth::getEdgeAABBPerThread(int thread_No)
 //TRIANGLE_AABB
 void Cloth::getTriangleAABBPerThread(int thread_No)
 {
-	std::vector<MeshStruct::Face>* face = &mesh_struct.faces;
+	std::vector<std::array<int,3>>* face = &mesh_struct.triangle_indices;
 	int* vertex_index;
 	for (int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < mesh_struct.face_index_begin_per_thread[thread_No + 1]; ++i) {
-		vertex_index = (*face)[i].vertex;
+		vertex_index = (*face)[i].data();
 		getAABB(triangle_AABB[i], vertex_AABB[vertex_index[0]], vertex_AABB[vertex_index[1]], vertex_AABB[vertex_index[2]]);
 	}
 }
@@ -368,9 +361,9 @@ void Cloth::findAllNeighborVertex(int face_index, double cursor_pos[3], double a
 {
 	std::vector<bool>is_vertex_used(mesh_struct.vertices.size(), false);
 	neighbor_vertex.clear();
-	neighbor_vertex.push_back(mesh_struct.faces[face_index].vertex[0]);
-	is_vertex_used[mesh_struct.faces[face_index].vertex[0]] = true;
-	findNeighborVertex(mesh_struct.faces[face_index].vertex[0], 0, is_vertex_used);
+	neighbor_vertex.push_back(mesh_struct.triangle_indices[face_index][0]);
+	is_vertex_used[mesh_struct.triangle_indices[face_index][0]] = true;
+	findNeighborVertex(mesh_struct.triangle_indices[face_index][0], 0, is_vertex_used);
 	coe_neighbor_vertex_force.clear();
 	coe_neighbor_vertex_force.resize(neighbor_vertex.size());
 	double vec3[3];

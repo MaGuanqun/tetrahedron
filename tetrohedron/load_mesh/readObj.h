@@ -33,10 +33,6 @@ public:
 			splitting(tem_mtl_string, read_mtl_string);
 			transferMaterial(read_mtl_string, mesh);
 		}
-		//refineMesh(mesh);
-		//time_t t2 = clock();
-		//std::cout << "read file cost " << (double)(t2 - t1) / (double)CLOCKS_PER_SEC << std::endl;
-		//test(mesh);
 	}
 private:
 

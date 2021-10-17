@@ -15,13 +15,14 @@ ProjectDynamic::ProjectDynamic()
 	max_jacobi_itr_num = 20;
 }
 
-void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrohedron>* tetrohedron, Thread* thread)
+void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrohedron>* tetrohedron, std::vector<Collider>* collider, Thread* thread)
 {
 	sub_time_step = time_step / (double)sub_step_num;
 	this->thread = thread;
 	setForClothPD(cloth);
 	setForTetrohedronPD(tetrohedron);	
 	setIndexPerThread();
+	collision.initial(cloth, collider, tetrohedron, thread);
 }
 
 void ProjectDynamic::setForClothPD(std::vector<Cloth>* cloth)
@@ -300,9 +301,9 @@ void ProjectDynamic::computeLBOWeightSingleCloth(std::vector<double>& edge_cot_w
 	double m;
 	for (int i = 0; i < mesh_struct.faces.size(); ++i) {
 		m = mesh_struct.faces[i].area / 3.0;
-		lbo_weight[mesh_struct.faces[i].vertex[0]] += m;
-		lbo_weight[mesh_struct.faces[i].vertex[1]] += m;
-		lbo_weight[mesh_struct.faces[i].vertex[2]] += m;
+		lbo_weight[mesh_struct.triangle_indices[i][0]] += m;
+		lbo_weight[mesh_struct.triangle_indices[i][1]] += m;
+		lbo_weight[mesh_struct.triangle_indices[i][2]] += m;
 	}
 	double mass_;
 	if (!mesh_struct.faces.empty()) {
@@ -387,7 +388,7 @@ void ProjectDynamic::reset()
 	for (int j = 0; j < total_cloth_num; ++j) {
 		for (int i = 0; i < cloth_sys_size[j]; ++i) {
 			for (int k = 0; k < 3; ++k) {
-				cloth_u[j][k].data()[i] = (*cloth)[j].mesh_struct.ori_vertex[i][k];
+				cloth_u[j][k].data()[i] = (*cloth)[j].ori_vertices[i][k];
 			}
 		}
 		for (int i = 0; i < 3; ++i) {
@@ -402,7 +403,7 @@ void ProjectDynamic::reset()
 	for (int j = 0; j < total_tetrohedron_num; ++j) {
 		for (int i = 0; i < tetrohedron_sys_size[j]; ++i) {
 			for (int k = 0; k < 3; ++k) {
-				tetrohedron_u[j][k].data()[i] = (*tetrohedron)[j].mesh_struct.ori_vertex[i][k];
+				tetrohedron_u[j][k].data()[i] = (*tetrohedron)[j].ori_vertices[i][k];
 			}
 		}
 		for (int i = 0; i < 3; ++i) {
@@ -458,6 +459,7 @@ void ProjectDynamic::updateRenderPosition()
 	}
 	for (int j = 0; j < total_tetrohedron_num; ++j) {
 		(*tetrohedron)[j].mesh_struct.vertex_for_render = (*tetrohedron)[j].mesh_struct.vertex_position;
+		(*tetrohedron)[j].mesh_struct.getRenderNormal();
 	}
 
 }
@@ -488,7 +490,7 @@ void ProjectDynamic::PDClothPredict()
 
 void ProjectDynamic::PDsolve()
 {
-	PDsetPosPredict();
+	
 	int itr_num = 0;
 	outer_iteration_num = 0;
 	initialEnergy();
@@ -830,5 +832,32 @@ void ProjectDynamic::solveClothSystemPerThead(int thread_id)
 		solveClothSystemPerThead(cloth_b[cloth_No][dimension], cloth_u[cloth_No][dimension], (*cloth)[cloth_No].mesh_struct, (*cloth)[cloth_No].length_stiffness,
 			p_edge_length[cloth_No], cloth_No, dimension, vertex_around_vertex_for_bending[cloth_No], vertex_lbo[cloth_No], p_bending[cloth_No],
 			lbo_weight[cloth_No], cloth_u_prediction[cloth_No][dimension], thread_id);
+	}
+}
+
+
+void ProjectDynamic::addExternalClothForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int cloth_No)
+{
+	if (!coe.empty()) {
+		for (int i = 0; i < coe.size(); ++i) {
+			for (int j = 0; j < 3; ++j) {
+				cloth_f_ext[cloth_No][j].data()[neighbor_vertex[i]] += coe[i] * neighbor_vertex_force_direction[j];
+			}			
+		}
+	}
+}
+
+void ProjectDynamic::resetExternalForce()
+{
+	cloth_f_ext = cloth_gravity;
+	tetrohedron_f_ext = tetrohedron_gravity;
+}
+
+void ProjectDynamic::mainProcess()
+{
+	PDsetPosPredict();
+	for (int i = 0; i < total_cloth_num; ++i) {
+		(*cloth)[i].mesh_struct.getNormal();
+
 	}
 }

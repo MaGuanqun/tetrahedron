@@ -9,7 +9,6 @@ public:
 	void setSceneShader(Light& light, Camera* camera, float& far_plane);
 	void loadMesh(OriMesh& ori_mesh, double density, Thread* thread);
 	void draw(Camera* camera);
-	void setAnchor(std::vector<int>& anchor_vertex);
 	void setArea();
 	double tolerance;
 	std::vector<double> PC_radius;
@@ -41,6 +40,7 @@ public:
 
 	void setTolerance(double* tolerance_ratio, double ave_edge_length);
 	void findAllNeighborVertex(int face_index, double* cursor_pos, double average_edge_length);
+
 private:
 	void setMeshStruct(double density, OriMesh& ori_mesh);
 

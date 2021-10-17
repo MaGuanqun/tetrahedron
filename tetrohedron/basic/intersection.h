@@ -13,8 +13,6 @@ public:
     bool happened;
     int face_index;
     int cloth_No;
-    std::vector<int>vertex_index;
-    double position[3];
 
     void initialIntersection() {
         happened = false;

@@ -17,7 +17,7 @@ void Collider::draw(Camera* camera)
 	glBindVertexArray(VAO);
 	glPolygonMode(GL_FRONT, GL_FILL);
 	glCullFace(GL_BACK);
-	glDrawElements(GL_TRIANGLES, mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, 3* mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 
 }
@@ -60,7 +60,8 @@ void Collider::setMeshStruct(OriMesh& ori_mesh)
 	setMaterial(ori_mesh);
 	mesh_struct.vertex_position = ori_mesh.vertices;
 	if (!ori_mesh.indices.empty()) {
-		mesh_struct.triangle_indices = ori_mesh.indices;
+		mesh_struct.triangle_indices.resize(ori_mesh.indices.size() / 3);
+		memcpy(mesh_struct.triangle_indices[0].data(), ori_mesh.indices.data(),12* mesh_struct.triangle_indices.size());
 	}
 	this->density = density;
 }
@@ -73,13 +74,13 @@ void Collider::obtainAABB()
 //TRIANGLE_AABB
 void Collider::getTriangleAABBPerThread(int thread_No)
 {
-	std::vector<MeshStruct::Face>* face = &mesh_struct.faces;
+	std::vector<std::array<int,3>>* face = &mesh_struct.triangle_indices;
 	std::vector<std::array<double,3>>* render_pos = &mesh_struct.vertex_for_render;
 	std::vector<std::array<double,3>>* pos = &mesh_struct.vertex_position;
 	int* vertex_index;
 	AABB aabb0, aabb1;
 	for (int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < mesh_struct.face_index_begin_per_thread[thread_No + 1]; ++i) {
-		vertex_index = (*face)[i].vertex;
+		vertex_index = (*face)[i].data();
 		aabb0.obtainAABB((*render_pos)[vertex_index[0]].data(), (*render_pos)[vertex_index[1]].data(), (*render_pos)[vertex_index[2]].data());
 		aabb1.obtainAABB((*pos)[vertex_index[0]].data(), (*pos)[vertex_index[1]].data(), (*pos)[vertex_index[2]].data());
 		getAABB(triangle_AABB[i], aabb0, aabb1,tolerance);

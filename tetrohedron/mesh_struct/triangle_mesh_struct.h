@@ -13,10 +13,9 @@ public:
 	std::vector<std::array<double, 3>> face_normal;//if for tetrohedron, store the surface triangle
 	std::vector<std::array<double, 3>> vertex_normal;//if for tetrohedron, store the surface triangle
 
-	std::vector<int> vertex_index_begin_per_thread;
 	std::vector<int> edge_index_begin_per_thread;
 
-	void setVertex() override;
+	void setVertex();
 	void setFace();
 	void setEdge();
 	void getRenderVertexNormalPerThread(int thread_id);
@@ -27,7 +26,6 @@ public:
 	void getFaceNormalPerThread(int thread_id);
 	void getVertexNormalPerThread(int thread_id);
 	void initialInfo();
-	void getTriangleAABBPerThread(int thread_No);
 private:
 	bool isEdgeExist(int v0, int v1, int& edge_index);
 	void addEdge(int v0, int v1, int face, int opposite_vertex);

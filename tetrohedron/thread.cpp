@@ -107,6 +107,20 @@ job Thread::create_task(TriangleMeshStruct* func, int thread_id, MeshStructFuncS
     return k;
 }
 
+job Thread::create_task(TetrohedronMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type)// int jobNumber
+{
+    job k;
+    switch (function_type)
+    {
+    case FACE_NORMAL_RENDER:
+        k = job([func, thread_id]() {func->getRenderFaceNormalPerThread(thread_id); });
+        break;
+    case VERTEX_NORMAL_RENDER:
+        k = job([func, thread_id]() {func->getRenderVertexNormalPerThread(thread_id); });
+        break;
+    }
+    return k;
+}
 
 job Thread::create_task(Cloth* func, int thread_id, ObjectFunc function_type)// int jobNumber
 {
@@ -153,6 +167,7 @@ job Thread::create_task(BVH* func, int thread_id, BVHFunc function_type)// int j
     }
     return k;
 }
+
 
 //job Thread::create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncSendToThread function_type)
 //{
@@ -277,6 +292,24 @@ void Thread::assignTask(TriangleMeshStruct* func, MeshStructFuncSendToThread tas
     for (auto& f : futures) { f.wait(); }
     futures.clear();
 }
+
+
+void Thread::assignTask(TetrohedronMeshStruct* func, MeshStructFuncSendToThread taskType)
+{
+    for (int i = 0; i < thread_num; ++i)
+    {
+        // std::cout << threads[i].id << std::endl;
+        job j = create_task(func, threads[i].id, taskType);
+        futures.push_back(j.get_future());
+        std::unique_lock<std::mutex> l(threads[i].m);
+        threads[i].jobs.push(std::move(j));
+        // Notify the thread that there is work do to...
+        threads[i].cv.notify_one();
+    }
+    for (auto& f : futures) { f.wait(); }
+    futures.clear();
+}
+
 
 void Thread::assignTask(ProjectDynamic* func, PDFuncSendToThread taskType)
 {

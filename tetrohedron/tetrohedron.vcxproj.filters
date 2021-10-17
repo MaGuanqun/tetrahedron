@@ -97,6 +97,12 @@
     <ClCompile Include="basic\pick_triangle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="load_mesh\read_ele.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mesh_struct\tetrohedron_mesh_struct.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="basic\basic_imgui.h">
@@ -202,6 +208,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="basic\pick_triangle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="load_mesh\read_ele.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

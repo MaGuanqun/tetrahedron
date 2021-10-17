@@ -12,6 +12,7 @@
 
 class ProjectDynamic;
 class TriangleMeshStruct;
+class TetrohedronMeshStruct;
 class Cloth;
 class Collider;
 class Tetrohedron;
@@ -42,7 +43,8 @@ public:
     void assignTask(Cloth* func, ObjectFunc taskType);
     void assignTask(Collider* func, ObjectFunc taskType);
     void assignTask(BVH* func, BVHFunc taskType);
-   
+    void assignTask(TetrohedronMeshStruct* func, MeshStructFuncSendToThread taskType);
+
     int thread_num;
 private:
     ThreadData* threads;
@@ -56,6 +58,7 @@ private:
     job create_task(Cloth* func, int thread_id, ObjectFunc function_type);
     job create_task(Collider* func, int thread_id, ObjectFunc function_type);
     job create_task(BVH* func, int thread_id, BVHFunc function_type);
+    job create_task(TetrohedronMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);
 };
 
 

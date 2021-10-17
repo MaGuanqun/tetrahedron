@@ -1,17 +1,50 @@
 #pragma once
 #include"mesh_struct.h"
+#include<map>
 class TetrohedronMeshStruct:public MeshStruct
 {
 public:
+	struct TetrohedronVertex
+	{
+		std::vector<int>face;
+	};
 
+	std::vector<TetrohedronVertex> vertices;
+	void setVertex();
+	void findSurface();
 	void getRenderVertexNormalPerThread(int thread_id);
-	void setThreadIndex(int total_thread_num_) override {};
-
-	void getFaceNormalPerThread(int thread_id);
-	void getVertexNormalPerThread(int thread_id);
-
-	void setVertex() override {};
+	void setThreadIndex(int total_thread_num_);
+	void getRenderNormal();
+	void getRenderFaceNormalPerThread(int thread_id);
+	std::vector<std::array<int, 4>> indices;
+	std::vector<int> tetrohedron_index_begin_per_thread;
 private:
+	struct TetrohedronFace {
+		std::array<int,3> index;
+		int sorted_index[3];
+		TetrohedronFace(int v0, int v1, int v2) {
+			index.data()[0] = v0;
+			index.data()[1] = v1;
+			index.data()[2] = v2;
+			memcpy(sorted_index, index.data(), 12);
+			std::sort(sorted_index, sorted_index + 3);
+		}
+		bool operator<(const TetrohedronFace& t1) const
+		{
+			if (sorted_index[0] < t1.sorted_index[0])
+				return true;
+			else if (sorted_index[0] == t1.sorted_index[0]) {
+				if (sorted_index[1] < t1.sorted_index[1])
+					return true;
+				else if (sorted_index[1] == t1.sorted_index[1]) {
+					if (sorted_index[2] < t1.sorted_index[2])
+						return true;
+				}
+			}
+			return false;
+		}
+	};
+	void buildMap(std::map<TetrohedronFace, int>& face_in_tet, int v0, int v1, int v2);
 
 };
 

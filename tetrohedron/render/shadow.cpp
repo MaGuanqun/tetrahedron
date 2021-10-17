@@ -46,7 +46,7 @@ void Shadow::FBOdepth()
 }
 
 void Shadow::drawShadow(Camera* camera, std::vector<std::vector<bool>>& hide, std::vector<Cloth>& cloth, std::vector<Collider>& collider, 
-	std::vector<Tetrohedron>& tetrohedron, std::vector<int>& cloth_index_in_object, std::vector<int>& tetrohedron_index_in_object)
+	std::vector<Tetrohedron>& tetrohedron)
 {
 	lightSpace(camera->position);
 	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
@@ -55,17 +55,17 @@ void Shadow::drawShadow(Camera* camera, std::vector<std::vector<bool>>& hide, st
 	setIn(camera);
 	shadow_shader->use();
 	for (int i = 0; i < cloth.size(); ++i) {
-		if (!hide[1][cloth_index_in_object[i]]) {
+		if (!hide[CLOTH_][i]) {
 			cloth[i].drawShadow(camera, shadow_shader);
 		}
 	}
 	for (int i = 0; i < collider.size(); ++i) {
-		if (!hide[0][i]) {
+		if (!hide[COLLIDER_][i]) {
 			collider[i].drawShadow(camera, shadow_shader);
 		}
 	}
 	for (int i = 0; i < tetrohedron.size(); ++i) {
-		if (!hide[1][tetrohedron_index_in_object[i]]) {
+		if (!hide[TETROHEDRON_][i]) {
 			tetrohedron[i].drawShadow(camera, shadow_shader);
 		}
 	}

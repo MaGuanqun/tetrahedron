@@ -54,12 +54,12 @@ private:
 		std::string material_name = name + ".mtl";
 		input_file.open(obj_name.c_str(), std::ios::trunc);
 		std::vector<std::array<double, 3>>* position = &model.mesh_struct.vertex_position;
-		std::vector<int>* indices = &model.mesh_struct.triangle_indices;
+		std::vector<std::array<int,3>>* indices = &model.mesh_struct.triangle_indices;
 		for (int i = 0; i < position->size(); ++i) {
 			input_file << "v " << (*position)[i][0] << " " << (*position)[i][1] << " " << (*position)[i][2] << "\n";
 		}	
-		for (int j = 0; j < indices->size() / 3; ++j) {
-			input_file << "f " << (*indices)[3 * j] + 1 << " " << (*indices)[3 * j + 1] + 1 << " " << (*indices)[3 * j + 2] + 1 << "\n";
+		for (int j = 0; j < indices->size(); ++j) {
+			input_file << "f " << (*indices)[j][0] + 1 << " " << (*indices)[j][1] + 1 << " " << (*indices)[j][2] + 1 << "\n";
 		}
 		input_file.close();
 	}

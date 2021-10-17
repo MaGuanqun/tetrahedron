@@ -20,5 +20,5 @@ public:
 	SceneInfo scene_info;
 	std::vector<OriMesh> ori_simulation_mesh;
 	std::vector<OriMesh> ori_collider_mesh;
-	void load_all_model(std::vector<std::string>& body_path, std::vector<std::string>& cloth_path);
+	void load_all_model(std::vector<std::string>& body_path, std::vector<std::string>& object_path);
 };

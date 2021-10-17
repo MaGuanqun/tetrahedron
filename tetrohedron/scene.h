@@ -32,7 +32,7 @@ public:
 	void updateConvRate(double* convergence_rate);
 	void setTolerance(double* tolerance_ratio);
 	void testBVH();
-
+	void obtainCursorIntersection(double* pos, Camera* camera, std::vector<std::vector<bool>>& hide);
 private:
 	Light light;
 	int cloth_num, collider_num,tetrohedron_num;
@@ -43,20 +43,18 @@ private:
 	Thread thread;
 	WriteObj save_obj;
 	void setWireframwColor();
-	std::vector<int>cloth_index_in_object;
-	std::vector<int>tetrohedron_index_in_object;
 
 	Cursor cursor;
 	void saveObj();
 	void updateBuffer();
 	ProjectDynamic project_dynamic;
-	Collision collision;
+
 
 	double ave_edge_length;
 	
 	void setAveEdgeLength();
 	PickTriangle pick_triangle;
-	void obtainCursorPosition(double* pos, Camera* camera, std::vector<std::vector<bool>>& hide);
+	
 	void getCursorPos(double* cursor_pos, std::vector<std::array<double, 3>>& vertex, int* vertex_index);
 	void setCursorForce(Camera* camera, double* cursor_screen, float force_coe);
 	void cursorMovement(Camera* camera, double* cursor_screen, double* force_direction, float force_coe, double* object_position);

@@ -1,10 +1,8 @@
 #pragma once
 
 #include"../basic/aabb.h"
-#include"readObj.h"
 #include"../thread.h"
 #include"../not used/createMesh.h"
-
 class SetModel
 {
 public:
@@ -19,7 +17,7 @@ public:
 	AABB aabb;
 	OriMesh ori_mesh;
 	RegularizationInfo regularization_info;
-	void load_getAABB(std::string& path);
+	void load_getAABB(std::string& path, int& index);
 	void regularization(RegularizationInfo& regularization_info);
 
 private:
@@ -27,5 +25,6 @@ private:
 	void setBackMaterial(OriMesh& ori_mesh);
 	void moveBodyCapsule();
 	void getAABB();
+	void setTetFrontMaterial(OriMesh& ori_mesh, int& index);
 };
 

@@ -3,10 +3,10 @@ PickTriangle::PickTriangle()
 {
 	initalFBO();
 
-	shader = new Shader("./basic/picking.vs", "./basic/picking.fs");
-	*shader = Shader("./basic/picking.vs", "./basic/picking.fs");
-	collider_shader = new Shader("./shaders/wireframe.vs", "./shaders/wireframe.fs");
-	*collider_shader = Shader("./shaders/wireframe.vs", "./shaders/wireframe.fs");
+	shader = new Shader("./shader/picking.vs", "./shader/picking.fs");
+	*shader = Shader("./shader/picking.vs", "./shader/picking.fs");
+	collider_shader = new Shader("./shader/wireframe.vs", "./shader/wireframe.fs");
+	*collider_shader = Shader("./shader/wireframe.vs", "./shader/wireframe.fs");
 }
 
 void PickTriangle::initalFBO()
@@ -24,14 +24,20 @@ void PickTriangle::initalFBO()
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 }
+
+//void PickTriangle::firstTimePick()
+//{
+//
+//}
 
 void PickTriangle::pickTriangle(std::vector<Cloth>* cloth, std::vector<Collider>* collider, Camera* camera, std::vector<std::vector<bool>>& hide, int* triangle_index, int* pos)
 {
 	glDisable(GL_BLEND);
 	glDisable(GL_MULTISAMPLE);
 	glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-	int total_face_num = 0;
+	int total_face_num = 1;
 	for (int i = 0; i < cloth->size(); ++i) {
 		total_face_num += (*cloth)[i].mesh_struct.faces.size();
 	}
@@ -47,19 +53,19 @@ void PickTriangle::pickTriangle(std::vector<Cloth>* cloth, std::vector<Collider>
 void PickTriangle::writingFBO(std::vector<Cloth>* cloth, std::vector<Collider>* collider, Camera* camera, std::vector<std::vector<bool>>& hide, Shader* shader)
 {
 	glClearColor(1.0, 1.0, 1.0, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
 	glBindFramebuffer(GL_FRAMEBUFFER, picking_FBO);
-	picking_base_ID = 0;
+	picking_base_ID = 1;
 	for (int i = 0; i < cloth->size(); ++i) {
-		if (!hide[1][i]) {
+		if (!hide[CLOTH_][i]) {
 			shader->use();
 			shader->setInt("picking_base_ID", picking_base_ID);
 			(*cloth)[i].simpDraw(camera, shader);
 		}
-		picking_base_ID = (*cloth)[i].mesh_struct.faces.size();
+		picking_base_ID += (*cloth)[i].mesh_struct.faces.size();
 	}
 	for (int i = 0; i < collider->size(); ++i) {
-		if (!hide[0][i]) {
+		if (!hide[COLLIDER_][i]) {
 			collider_shader->use();
 			collider_shader->setVec3("color", glm::vec3(1.0f, 1.0f, 1.0f));
 			(*collider)[i].simpDraw(camera, collider_shader);
@@ -79,13 +85,12 @@ void PickTriangle::decideTriangle(int& triangle_index, int total_cloth_triangle_
 	num_component[1] = ((int)(pixel_value[1])) * 256;
 	num_component[2] = ((int)(pixel_value[2])) * 256 * 256;
 	triangle = num_component[0] + num_component[1] + num_component[2];
-	if (triangle > -1 && triangle < total_cloth_triangle_num) {
+	if (triangle > 0 && triangle < total_cloth_triangle_num) {
 		triangle_index=triangle;
 	}
 	else {
 		triangle_index = -1;
 	}
-
 }
 
 void PickTriangle::readPixel(std::vector<unsigned char>* pixel_value, unsigned int* FBO, int* pos)
@@ -98,8 +103,10 @@ void PickTriangle::readPixel(std::vector<unsigned char>* pixel_value, unsigned i
 
 void PickTriangle::decideFinalIndi(std::vector<Cloth>* cloth, int sum_triangle_index, int* triangle_index)
 {
+	triangle_index[1] = -1;
+	triangle_index[0] = -1;
 	std::vector<int>start_indi(cloth->size() + 1);
-	int id = 0;
+	int id = 1;
 	for (int i = 0; i < cloth->size(); ++i) {
 		start_indi[i] = id;
 		id += (*cloth)[i].mesh_struct.faces.size();
@@ -111,9 +118,5 @@ void PickTriangle::decideFinalIndi(std::vector<Cloth>* cloth, int sum_triangle_i
 			triangle_index[0] = sum_triangle_index - start_indi[j];
 			break;
 		}
-	}
-	if (sum_triangle_index == -1) {
-		triangle_index[1] = -1;
-		triangle_index[0] = -1;
-	}
+	}	
 }
