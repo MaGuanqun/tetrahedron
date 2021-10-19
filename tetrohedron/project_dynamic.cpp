@@ -191,6 +191,7 @@ void ProjectDynamic::computeGlobalStepMatrixSingleCloth(SparseMatrix<double>* gl
 	for (int i = 0; i < mesh_struct.edges.size(); ++i) {
 		id0 = mesh_struct.edges[i].vertex[0];
 		id1 = mesh_struct.edges[i].vertex[1];
+
 		global_mat_nnz.push_back(Triplet<double>(id0, id0, length_stiffness[i]));
 		global_mat_nnz.push_back(Triplet<double>(id1, id1, length_stiffness[i]));
 		global_mat_nnz.push_back(Triplet<double>(id0, id1, -length_stiffness[i]));
@@ -490,7 +491,7 @@ void ProjectDynamic::PDClothPredict()
 
 void ProjectDynamic::PDsolve()
 {
-	
+	PDsetPosPredict();
 	int itr_num = 0;
 	outer_iteration_num = 0;
 	initialEnergy();
@@ -665,6 +666,7 @@ bool ProjectDynamic::PDConvergeCondition()
 		//std::cout << abs(current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy << " " << current_PD_energy << std::endl;
 		return false;
 	}
+
 }
 
 bool ProjectDynamic::PDLocalGlobalConvergeCondition()

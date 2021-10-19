@@ -8,7 +8,7 @@ class MeshStruct
 {
 public:
 	struct Face {
-		//int vertex[3];
+		int vertex[3];
 		std::vector<int> edge;
 		double area;
 		std::vector<int>vertex_around;

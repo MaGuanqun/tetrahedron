@@ -9,7 +9,7 @@ TriangleMeshStruct::TriangleMeshStruct()
 void TriangleMeshStruct::setVertex()
 {
 	vertices.resize(vertex_position.size());
-	int face_num = triangle_indices.size() / 3;
+	int face_num = triangle_indices.size();
 	for (int i = 0; i < face_num; ++i) {
 		vertices[triangle_indices[i][0]].face.push_back(i);
 		vertices[triangle_indices[i][1]].face.push_back(i);
@@ -112,11 +112,11 @@ void TriangleMeshStruct::setFace()
 {
 	int face_num = triangle_indices.size();
 	faces.resize(face_num);
-	//for (int i = 0; i < face_num; ++i) {
-	//	faces[i].vertex[0] = triangle_indices[i][0];
-	//	faces[i].vertex[1] = triangle_indices[i][1];
-	//	faces[i].vertex[2] = triangle_indices[i][2];
-	//}
+	for (int i = 0; i < face_num; ++i) {
+		faces[i].vertex[0] = triangle_indices[i][0];
+		faces[i].vertex[1] = triangle_indices[i][1];
+		faces[i].vertex[2] = triangle_indices[i][2];
+	}
 }
 
 void TriangleMeshStruct::setEdge()
