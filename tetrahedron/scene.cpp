@@ -419,8 +419,8 @@ void Scene::cursorMovement(Camera* camera, double* cursor_screen, double* force_
 		force_magnitude = max_force_magnitude / force_magnitude;
 		MULTI(force_direction, force_direction, force_magnitude);
 	}
-	std::cout << cursor_pos_in_space[0] << " " << cursor_pos_in_space[1] << " " << cursor_pos_in_space[2] << std::endl;
-	std::cout << object_position[0] << " " << object_position[1] << " " << object_position[2] << std::endl;
+	//std::cout << cursor_pos_in_space[0] << " " << cursor_pos_in_space[1] << " " << cursor_pos_in_space[2] << std::endl;
+	//std::cout << object_position[0] << " " << object_position[1] << " " << object_position[2] << std::endl;
 
-	std::cout << "force mag " << force_direction[0] << " " << force_direction[1] << " " << force_direction[2] << std::endl;
+	//std::cout << "force mag " << force_direction[0] << " " << force_direction[1] << " " << force_direction[2] << std::endl;
 }

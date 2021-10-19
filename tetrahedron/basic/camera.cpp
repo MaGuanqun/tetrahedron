@@ -65,11 +65,10 @@ void Camera::getCursorPosInSpace(double* cursor_pos_in_space, double* cursor_scr
     double cursor_pos[2];
     cursor_pos[0] = (cursor_screen[0] - (double)(SCR_WIDTH / 2)) / (double)(SCR_WIDTH)*max_width;
     cursor_pos[1] = ((double)(SCR_HEIGHT / 2) - cursor_screen[1]) / (double)(SCR_HEIGHT)*max_hight;
-    double up_dir[3];
     glm::vec3 x_ = normalize(glm::cross(position2center, up));
-    cursor_pos_in_space[0] = object_plane_center[0] + cursor_pos[0] * x_[0] + cursor_pos[1] * up_dir[0];
-    cursor_pos_in_space[1] = object_plane_center[1] + cursor_pos[0] * x_[1] + cursor_pos[1] * up_dir[1];
-    cursor_pos_in_space[2] = object_plane_center[2] + cursor_pos[0] * x_[2] + cursor_pos[1] * up_dir[2];
+    cursor_pos_in_space[0] = object_plane_center[0] + cursor_pos[0] * x_[0] + cursor_pos[1] * up[0];
+    cursor_pos_in_space[1] = object_plane_center[1] + cursor_pos[0] * x_[1] + cursor_pos[1] * up[1];
+    cursor_pos_in_space[2] = object_plane_center[2] + cursor_pos[0] * x_[2] + cursor_pos[1] * up[2];
 }
 
 

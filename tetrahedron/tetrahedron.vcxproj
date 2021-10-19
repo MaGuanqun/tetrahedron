@@ -147,6 +147,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="basic\basic_imgui.cpp" />
+    <ClCompile Include="basic\camera.cpp" />
     <ClCompile Include="basic\Coordinate.cpp" />
     <ClCompile Include="basic\cursor.cpp" />
     <ClCompile Include="basic\draw_vertex.cpp" />
