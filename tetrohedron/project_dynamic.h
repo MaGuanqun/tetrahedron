@@ -38,6 +38,7 @@ public:
 	void resetExternalForce();
 	void mainProcess();
 private:
+	int local_global_itr_in_single_outer;
 	int total_thread_num;
 	std::vector<double> temEnergy;
 	int sub_step_num;

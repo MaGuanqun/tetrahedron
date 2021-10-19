@@ -50,6 +50,7 @@ struct OriMesh {
 	}
 };
 
+
 struct SingleClothInfo {
 	double density;
 	double length_stiffness;			// stiffness of length constraint
@@ -86,8 +87,30 @@ struct SingleClothInfo {
 	}
 };
 
+struct SingleTetrohedronInfo {
+	double density;
+	double position_stiffness;			// stiffness of position constraint
+	double ARAP_stiffness;		
+	double collision_stiffness[4];			// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point
+	SingleTetrohedronInfo() {};
+	SingleTetrohedronInfo(double density, double position_stiffness,
+		double ARAP_stiffness, double* collision_stiffness) {
+		this->density = density;
+		this->position_stiffness = position_stiffness;
+		this->ARAP_stiffness = ARAP_stiffness;
+		memcpy(this->collision_stiffness, collision_stiffness, 32);
+	};
+	SingleTetrohedronInfo& operator=(SingleTetrohedronInfo const& single_cloth_info)
+	{
+		this->density = single_cloth_info.density;
+		this->position_stiffness = single_cloth_info.position_stiffness;
+		this->ARAP_stiffness = single_cloth_info.ARAP_stiffness;
+		memcpy(this->collision_stiffness, single_cloth_info.collision_stiffness, 32);
+		return *this;
+	}
+};
 
-struct UpdateStiffness
+struct UpdateClothStiffness
 {
 	bool update_length;
 	double length_stiffness;
@@ -97,7 +120,7 @@ struct UpdateStiffness
 	bool  update_collision[4];
 	double collision_stiffness[4];
 
-	UpdateStiffness() {
+	UpdateClothStiffness() {
 		update_length = false;
 		update_bend = false;
 		memset(update_collision, 0, 4);

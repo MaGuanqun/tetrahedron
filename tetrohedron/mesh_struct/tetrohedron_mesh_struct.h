@@ -8,7 +8,7 @@ public:
 	{
 		std::vector<int>face;
 	};
-
+	std::vector<double>mass;
 	std::vector<TetrohedronVertex> vertices;
 	void setVertex();
 	void findSurface();
@@ -17,7 +17,12 @@ public:
 	void getRenderNormal();
 	void getRenderFaceNormalPerThread(int thread_id);
 	std::vector<std::array<int, 4>> indices;
+	std::vector<double>volume;
+
 	std::vector<int> tetrohedron_index_begin_per_thread;
+	void setVolume(int thread_No);
+	double setVolumeMass(double density);
+	std::vector<bool>vertex_on_surface;
 private:
 	struct TetrohedronFace {
 		std::array<int,3> index;
@@ -45,6 +50,6 @@ private:
 		}
 	};
 	void buildMap(std::map<TetrohedronFace, int>& face_in_tet, int v0, int v1, int v2);
-
+	double getTetrohedronVolume(double* v1, double* v2, double* v3, double* v4);
 };
 

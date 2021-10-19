@@ -135,12 +135,35 @@ void Scene::getClothInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector
 	}
 
 	simulation_parameter[0] = time_step;
-	//simulation_parameter[1] = project_dynamic.gravity_;
+	simulation_parameter[1] = project_dynamic.gravity_;
 	collision_stiffness.resize(cloth_num);
 	for (int i = 0; i < cloth_num; ++i) {
 		memcpy(collision_stiffness[i].data(), cloth[i].single_cloth_info_ref.collision_stiffness, 32);
 	}
+}
 
+void Scene::getTetrohedronInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 2>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 4>>& collision_stiffness)
+{
+	mesh_info.resize(2);
+	mass.resize(tetrohedron_num);
+	mesh_info.resize(tetrohedron_num);
+	for (int i = 0; i < tetrohedron_num; ++i) {
+		mesh_info[i][0] = tetrohedron[i].mesh_struct.vertex_position.size();
+		mesh_info[i][1] = tetrohedron[i].mesh_struct.indices.size();
+		mesh_info[i][2] = tetrohedron[i].mesh_struct.triangle_indices.size();		
+		mass[i] = tetrohedron[i].mass;
+	}
+	mesh_stiffness.resize(tetrohedron_num);
+	for (int i = 0; i < tetrohedron_num; ++i) {
+		mesh_stiffness[i][0] = tetrohedron[i].single_tetrohedron_info_ref.ARAP_stiffness;
+		mesh_stiffness[i][1] = tetrohedron[i].single_tetrohedron_info_ref.position_stiffness;
+	}
+	simulation_parameter[0] = time_step;
+	simulation_parameter[1] = project_dynamic.gravity_;
+	collision_stiffness.resize(tetrohedron_num);
+	for (int i = 0; i < tetrohedron_num; ++i) {
+		memcpy(collision_stiffness[i].data(), tetrohedron[i].single_tetrohedron_info_ref.collision_stiffness, 32);
+	}
 }
 
 void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& wireframe, std::vector<std::vector<bool>>& hide, bool start_save_obj)
@@ -293,6 +316,35 @@ void Scene::setTolerance(double* tolerance_ratio)
 	}
 	for (int i = 0; i < collider.size(); ++i) {
 		collider[i].setTolerance(tolerance_ratio, ave_edge_length);
+	}
+}
+
+
+void Scene::selectAnchor(bool* control_parameter, bool* select_anchor, double* screen_pos, bool press_state, bool pre_press_state, Camera* camera, 
+	std::vector<bool>& hide)
+{	
+	if (select_anchor[0]) {
+		control_parameter[START_SIMULATION] = false;
+		if (press_state) {
+			set_tetrohedron_anchor.setCorner(screen_pos, pre_press_state,tetrohedron,camera,hide);
+		}
+	}
+	if (select_anchor[1]) {
+		for (int i = 0; i < tetrohedron.size(); ++i) {
+			tetrohedron[i].mesh_struct.setAnchorPosition();
+
+		}
+		
+		select_anchor[1] = false;
+	}
+}
+
+void Scene::drawSelectRange(bool* select_anchor, bool press_state, bool pre_press_state)
+{
+	if (select_anchor[0]) {
+		if (press_state && pre_press_state) {
+			set_tetrohedron_anchor.draw();
+		}
 	}
 }
 

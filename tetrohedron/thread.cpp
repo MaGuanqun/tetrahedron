@@ -6,6 +6,8 @@
 #include"./object/collider.h"
 #include"./object/tetrohedron.h"
 #include"collision/BVH.h"
+#include"collision/collision.h"
+
 
 Thread::Thread()
 {
@@ -118,6 +120,9 @@ job Thread::create_task(TetrohedronMeshStruct* func, int thread_id, MeshStructFu
     case VERTEX_NORMAL_RENDER:
         k = job([func, thread_id]() {func->getRenderVertexNormalPerThread(thread_id); });
         break;
+    case SET_VOLUME:
+        k = job([func, thread_id]() {func->setVolume(thread_id); });
+        break;
     }
     return k;
 }
@@ -163,6 +168,18 @@ job Thread::create_task(BVH* func, int thread_id, BVHFunc function_type)// int j
         break;
     case CAL_MORTON:
         k = job([func, thread_id]() {func->calMortonCode(thread_id); });
+        break;
+    }
+    return k;
+}
+
+job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThread function_type)// int jobNumber
+{
+    job k;
+    switch (function_type)
+    {
+    case FIND_TRIANGLE_PAIRS:
+        k = job([func, thread_id]() {func->findAllTrianglePairs(thread_id); });
         break;
     }
     return k;
@@ -362,6 +379,23 @@ void Thread::assignTask(Collider* func, ObjectFunc taskType)
 
 
 void Thread::assignTask(BVH* func, BVHFunc taskType)
+{
+    for (int i = 0; i < thread_num; ++i)
+    {
+        // std::cout << threads[i].id << std::endl;
+        job j = create_task(func, threads[i].id, taskType);
+        futures.push_back(j.get_future());
+        std::unique_lock<std::mutex> l(threads[i].m);
+        threads[i].jobs.push(std::move(j));
+        // Notify the thread that there is work do to...
+        threads[i].cv.notify_one();
+    }
+    for (auto& f : futures) { f.wait(); }
+    futures.clear();
+}
+
+
+void Thread::assignTask(Collision* func, CollisionFuncSendToThread taskType)
 {
     for (int i = 0; i < thread_num; ++i)
     {

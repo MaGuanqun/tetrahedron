@@ -38,8 +38,15 @@ public:
 	std::vector<int> representative_vertex_num;
 	std::vector<int> representative_edge_num;
 
+	std::vector<int> vertex_from_rep_triangle_index;
+	std::vector<int> edge_from_rep_triangle_index;
+
 	void setTolerance(double* tolerance_ratio, double ave_edge_length);
 	void findAllNeighborVertex(int face_index, double* cursor_pos, double average_edge_length);
+
+	std::vector<std::vector<std::vector<int>>>triangle_neighbor_cloth_traingle;
+	std::vector<std::vector<std::vector<int>>>triangle_neighbor_collider_triangle;
+	void initialNeighborPrimitiveRecording(int cloth_num, int tetrohedron_num, int collider_num);
 
 private:
 	void setMeshStruct(double density, OriMesh& ori_mesh);
@@ -52,5 +59,6 @@ private:
 	void setRepresentativeVertex(std::vector<MeshStruct::Face>& face, std::vector<MeshStruct::Vertex>& vertex);
 	void setRepresentativeEdge(std::vector<MeshStruct::Face>& face, std::vector<MeshStruct::Edge>& edge);
 	void findNeighborVertex(int vertex_index, int recursion_deepth, std::vector<bool>& is_vertex_used);
+
 };
 

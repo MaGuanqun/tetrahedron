@@ -24,13 +24,18 @@ void BVH::buildBVH(std::vector<AABB>* triangle_AABB)
 	initBVHRecursive(triangle_AABB, 1, 0, triangle_AABB->size());
 }
 
-void BVH::search(AABB& aabb, int compare_index, std::vector<int>* neighbor_list, int n, int b, int e)
+void BVH::search(AABB& aabb, int compare_index, bool search_same_object, std::vector<int>* neighbor_list, int n, int b, int e)
 {
 	if (!aabb.AABB_intersection(aabb_list[n])) {
 		return;
 	}
 	if (e == b + 1) {
-		if (compare_index < new2old[b]) {
+		if(search_same_object){
+			if (compare_index < new2old[b]) {
+				neighbor_list->push_back(new2old[b]);
+			}
+		}
+		else {
 			neighbor_list->push_back(new2old[b]);
 		}
 		return;
@@ -39,8 +44,8 @@ void BVH::search(AABB& aabb, int compare_index, std::vector<int>* neighbor_list,
 	int child_left = 2 * n;
 	int child_right = 2 * n + 1;
 
-	search(aabb, compare_index, neighbor_list, child_left, b, m);
-	search(aabb, compare_index, neighbor_list, child_right, m, e);
+	search(aabb, compare_index, search_same_object, neighbor_list, child_left, b, m);
+	search(aabb, compare_index, search_same_object, neighbor_list, child_right, m, e);
 }
 
 

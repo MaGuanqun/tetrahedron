@@ -41,19 +41,52 @@ void Collision::buildBVH()
 }
 
 
-
-void Collision::searchTriangle(AABB& aabb, int compare_index, std::vector<std::vector<int>>* cloth_neighbor_index, std::vector<std::vector<int>>* collider_neighbor_index)
+void Collision::findAllTrianglePairs()
 {
-	for (int i = 0; i < cloth->size(); ++i) {
-		cloth_BVH[i].search(aabb, compare_index, &((*cloth_neighbor_index)[i]),1,0, (*cloth)[i].triangle_AABB.size());
-	}
-	for (int i = 0; i < collider->size(); ++i) {
-		collider_BVH[i].search(aabb, compare_index, &((*collider_neighbor_index)[i]), 1, 0, (*collider)[i].triangle_AABB.size());
-	}
-
+	buildBVH();
+	thread->assignTask(this, FIND_TRIANGLE_PAIRS);
 }
 
-//void Collision::findAllTrianglePairs()
+
+void Collision::searchTriangle(AABB& aabb, int compare_index, int cloth_No, std::vector<std::vector<int>>* cloth_neighbor_index, std::vector<std::vector<int>>* collider_neighbor_index)
+{
+	for (int i = cloth_No; i < cloth->size(); ++i) {
+		(*cloth_neighbor_index)[i].reserve(5);
+		(*cloth_neighbor_index)[i].clear();
+		cloth_BVH[i].search(aabb, compare_index,i==cloth_No, &((*cloth_neighbor_index)[i]),1,0, (*cloth)[i].triangle_AABB.size());
+	}
+	for (int i = 0; i < collider->size(); ++i) {
+		(*collider_neighbor_index)[i].reserve(5);
+		(*collider_neighbor_index)[i].clear();
+		collider_BVH[i].search(aabb, compare_index,false, &((*collider_neighbor_index)[i]), 1, 0, (*collider)[i].triangle_AABB.size());
+	}
+}
+
+
+//FIND_TRIANGLE_PAIRS
+void Collision::findAllTrianglePairs(int thread_No)
+{
+	int* thread_begin;
+	for (int i = 0; i < cloth->size(); ++i) {
+		thread_begin = (*cloth)[i].mesh_struct.face_index_begin_per_thread.data();
+		for (int j = thread_begin[thread_No]; j < thread_begin[thread_No + 1]; ++j) {
+			searchTriangle((*cloth)[i].triangle_AABB[j], j, i, &(*cloth)[i].triangle_neighbor_cloth_traingle[j],
+				&(*cloth)[i].triangle_neighbor_collider_triangle[j]);
+		}
+	}
+}
+
+void Collision::findTriangleAroundVertex(int thread_No)
+{
+	int* thread_begin;
+	for (int i = 0; i < cloth->size(); ++i) {
+		thread_begin = (*cloth)[i].mesh_struct.vertex_index_begin_per_thread.data();
+
+	}
+}
+
+//void Collision::findPrimitivesAround()
 //{
 //
 //}
+

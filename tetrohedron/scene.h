@@ -7,7 +7,7 @@
 #include"basic/cursor.h"
 #include"project_dynamic.h"
 #include"basic/pick_triangle.h"
-
+#include"basic/set_tetrohedron_anchor.h"
 
 class Scene
 {
@@ -33,6 +33,9 @@ public:
 	void setTolerance(double* tolerance_ratio);
 	void testBVH();
 	void obtainCursorIntersection(double* pos, Camera* camera, std::vector<std::vector<bool>>& hide);
+	void getTetrohedronInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 2>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 4>>& collision_stiffness);
+	void selectAnchor(bool* control_parameter, bool* select_anchor, double* screen_pos, bool press_state, bool pre_press_state, Camera* camera, std::vector<bool>& hide);
+	void drawSelectRange(bool* select_anchor, bool press_state, bool pre_press_state);
 private:
 	Light light;
 	int cloth_num, collider_num,tetrohedron_num;
@@ -59,4 +62,5 @@ private:
 	void setCursorForce(Camera* camera, double* cursor_screen, float force_coe);
 	void cursorMovement(Camera* camera, double* cursor_screen, double* force_direction, float force_coe, double* object_position);
 	double max_force_magnitude;
+	SetTetrohedronAnchor set_tetrohedron_anchor;
 };

@@ -9,9 +9,10 @@ class Collision
 {
 public:
 	void initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrohedron>* tetrohedron, Thread* thread);
-	
-	void buildBVH();
-	void searchTriangle(AABB& aabb, int compare_index, std::vector<std::vector<int>>* cloth_neighbor_index, std::vector<std::vector<int>>* collider_neighbor_index);
+
+	void findAllTrianglePairs(int thread_No);
+	void findAllTrianglePairs();
+
 private:
 	std::vector<BVH> cloth_BVH;
 	std::vector<BVH> collider_BVH;
@@ -22,7 +23,8 @@ private:
 	std::vector<Tetrohedron>* tetrohedron;
 
 	Thread* thread;
-
+	void buildBVH();
 	void initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrohedron>* tetrohedron, Thread* thread);
-	
+	void searchTriangle(AABB& aabb, int compare_index, int cloth_No, std::vector<std::vector<int>>* cloth_neighbor_index, std::vector<std::vector<int>>* collider_neighbor_index);
+	void findTriangleAroundVertex(int thread_No);
 };

@@ -32,25 +32,30 @@ void simu_main(GLFWwindow* window, Input* input) {
 	Scene scene;
 	scene.control_parameter = control_parameter;
 	std::vector<std::array<int, 3>>cloth_info;//vertices,edges
-	std::vector<std::array<int, 2>>tetrohedron_info;//vertices,edges
+	std::vector<std::array<int, 3>>tetrohedron_info;//vertices,edges
 	std::vector<double>cloth_mass;//vertices,edges
 	std::vector<double>tetrohedron_mass;//vertices,edges
 	double time = 1.0;//fps, mass
 	bool reset_camera = false;
-	std::vector<std::array<double, 3>> cloth_stiffness;//stretch, bending, position, collision, fricition
-	std::vector<std::array<double, 4>> collision_stiffness;//stretch, bending, position, collision, fricition
+	std::vector<std::array<double, 3>> cloth_stiffness;//stretch, bending, position
+	std::vector<std::array<double, 4>> cloth_collision_stiffness;//stretch, bending, position, collision, fricition
 	double simulation_parameter[2] = {0.0,0.0};//timestep, gravity
 	SaveImage save_image;
 	int iteration_number[2] = { 0,0 };
 	double convergence_rate[2] = { 0.1,0.1 };
 	bool edit_PD_conv_rate = false;
 	time_t start_time;
-	
+
+	std::vector<std::array<double, 2>> tetrohedron_stiffness;//ARAP, position
+	std::vector<std::array<double, 4>> tetrohedron_collision_stiffness;//stretch, bending, position, collision, fricition
 	bool set_stiffness[10];
 	memset(set_stiffness, 0, 10);
 	double temp_stiffness[6] = { 0.0,0.0,0.0,0.0,0.0,0.0 };
-	UpdateStiffness update_stiffness;
+	UpdateClothStiffness update_cloth_stiffness;
 	double tolerance_ratio[4] = {0.1,0.1,0.1,0.1};
+
+	bool set_anchor[2] = { false,false };
+
 	while (!glfwWindowShouldClose(window))
 	{
 		start_time = clock();
@@ -63,16 +68,18 @@ void simu_main(GLFWwindow* window, Input* input) {
 		input->guiCaptureKeyboard = io.WantCaptureKeyboard;
 		
 		if (input->mouse.scroll_callback) {
-			if (zoom_value > 0.025) {
-				zoom_value -= 0.025 * input->mouse.scroll;
-				zoom_value = myMax(zoom_value, 0.026);
-				zoom_value = myMin(zoom_value, 1.3);
+			if (!scene.intersection.happened && !set_anchor[0]) {
+				if (zoom_value > 0.025) {
+					zoom_value -= 0.025 * input->mouse.scroll;
+					zoom_value = myMax(zoom_value, 0.026);
+					zoom_value = myMin(zoom_value, 1.3);
+				}
+				camera.zoomInOut((float)zoom_value * camera_from_origin);
 			}
-			camera.zoomInOut((float)zoom_value * camera_from_origin);
 		}
 
 		if (input->mouse.mouse_callback) {
-			if (!scene.intersection.happened) {
+			if (!scene.intersection.happened && !set_anchor[0]) {
 				if (input->mouse.leftButtonIsPressed()) {
 					if (!input->mouse.rightButtonIsPressed()) {
 						camera.rotation(input->mouse.angle[0], input->mouse.angle[1], 1);
@@ -119,25 +126,27 @@ void simu_main(GLFWwindow* window, Input* input) {
 			}
 		}
 
-		imgui_windows.operationWindow(cloth_stiffness, simulation_parameter, collision_stiffness, set_stiffness, temp_stiffness, update_stiffness);
+		imgui_windows.operationWindow(cloth_stiffness, simulation_parameter, cloth_collision_stiffness, set_stiffness, temp_stiffness, update_cloth_stiffness, set_anchor);
 		if (!already_load_model) {
 			if (imgui_windows.loadModel(collider_path, object_path)) {
 				already_load_model = true;
 				scene.loadMesh(collider_path, object_path);
 				glm::vec3 camera_pos = glm::vec3(0.6 * scene.shadow.camera_from_origin + scene.camera_center[0], scene.camera_center[1], -0.8 * scene.shadow.camera_from_origin + scene.camera_center[2]);
 				camera.updateCamera(camera_pos, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(scene.camera_center[0], scene.camera_center[1], scene.camera_center[2]));
-				scene.getClothInfo(cloth_info, cloth_mass, cloth_stiffness, simulation_parameter, collision_stiffness);
+				scene.getClothInfo(cloth_info, cloth_mass, cloth_stiffness, simulation_parameter, cloth_collision_stiffness);
+				scene.getTetrohedronInfo(tetrohedron_info, tetrohedron_mass, tetrohedron_stiffness, simulation_parameter, tetrohedron_collision_stiffness);
 				camera_from_origin = scene.shadow.camera_from_origin;				
 				setHideWireframe(hide, wireframe, scene.collider.size(), scene.cloth.size(), scene.tetrohedron.size());
 				scene.setTolerance(tolerance_ratio);
 				//scene.testBVH();
 			}
 		}
-		else {
-			scene.setTolerance(tolerance_ratio);
-			
+		else {		
+			scene.setTolerance(tolerance_ratio);			
 			scene.updateCloth(&camera, input->mouse.screen_pos, control_parameter, force_coe);
 			scene.drawScene(&camera, wireframe, hide, control_parameter[SAVE_OBJ]);
+			scene.selectAnchor(control_parameter, set_anchor, input->mouse.screen_pos, input->mouse.left_press, input->mouse.prev_left_press, &camera, hide[TETROHEDRON_]);
+
 		}
 
 		if (control_parameter[ONE_FRAME]) {
@@ -148,6 +157,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 		imgui_windows.visualizationControlPanel(control_parameter[INITIAL_CAMERA], wireframe, hide);
 
 		coordinateSystem.draw(&camera, cameraPos);
+		scene.drawSelectRange(set_anchor, input->mouse.left_press, input->mouse.prev_left_press);
 		time = (double)(clock() - start_time);
 		imgui_windows.infoWindow(cloth_info, cloth_mass, tetrohedron_info, tetrohedron_mass, time, iteration_number, convergence_rate, scene.time_stamp, edit_PD_conv_rate, control_parameter[START_SIMULATION]);
 

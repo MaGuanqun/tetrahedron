@@ -12,12 +12,12 @@ void Tetrohedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mesh_struct.setThreadIndex(total_thread_num);
 	mesh_struct.vertex_for_render = mesh_struct.vertex_position;
 	mesh_struct.getRenderNormal();
+	mass = mesh_struct.setVolumeMass(density);
 	genBuffer();
 	genShader();
 	setBuffer();
 
 }
-
 
 
 void Tetrohedron::genShader()

@@ -29,8 +29,9 @@ void MeshStruct::arrangeIndex(int total_thread_num, int total_num, std::vector<i
 
 void MeshStruct::setAnchorPosition()
 {
+	anchor_position.resize(anchor_vertex.size());
 	for (int i = 0; i < anchor_vertex.size(); ++i) {
-		anchor_position.push_back(vertex_position[anchor_vertex[i]]);
+		anchor_position[i] = vertex_position[anchor_vertex[i]];
 	}
 }
 

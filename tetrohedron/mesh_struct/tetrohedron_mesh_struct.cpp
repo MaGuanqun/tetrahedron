@@ -19,6 +19,13 @@ void TetrohedronMeshStruct::findSurface()
 		}
 	}
 	triangle_indices.shrink_to_fit();
+
+	vertex_on_surface.resize(vertex_position.size(),false);
+	for (int i = 0; i < triangle_indices.size(); ++i) {
+		for (int j = 0; j < 3; ++j) {
+			vertex_on_surface[triangle_indices[i][j]] = true;
+		}		
+	}
 }
 
 void TetrohedronMeshStruct::buildMap(std::map<TetrohedronFace, int>& face_in_tet, int v0, int v1, int v2)
@@ -28,6 +35,44 @@ void TetrohedronMeshStruct::buildMap(std::map<TetrohedronFace, int>& face_in_tet
 	if (!ret.second) {
 		++ret.first->second;
 	}
+}
+
+//SET_VOLUME
+void TetrohedronMeshStruct::setVolume(int thread_No)
+{
+	for (int i = tetrohedron_index_begin_per_thread[thread_No]; i < tetrohedron_index_begin_per_thread[thread_No + 1]; ++i) {
+		volume[i] = getTetrohedronVolume(vertex_position[indices[i][0]].data(), vertex_position[indices[i][1]].data(), vertex_position[indices[i][2]].data(), vertex_position[indices[i][3]].data());
+	}
+}
+
+double TetrohedronMeshStruct::getTetrohedronVolume(double* v1, double* v2, double* v3, double* v4)
+{
+	double a[3], b[3], c[3];
+	SUB(a, v2, v1);
+	SUB(b, v3, v1);
+	CROSS(c, a, b);
+	SUB(a, v4, v1);
+	return abs(DOT(c, a)) / 6.0;
+}
+
+double TetrohedronMeshStruct::setVolumeMass(double density)
+{
+	volume.resize(indices.size());
+	mass.resize(vertex_position.size(),0.0);
+	thread->assignTask(this, SET_VOLUME);
+	double total_mass = 0.0;
+	double tetrohedron_mass;
+	for (int i = 0; i < indices.size(); ++i) {
+		tetrohedron_mass = volume[i] * density * 0.25;
+		mass[indices[i][0]] += tetrohedron_mass;
+		mass[indices[i][1]] += tetrohedron_mass;
+		mass[indices[i][2]] += tetrohedron_mass;
+		mass[indices[i][3]] += tetrohedron_mass;
+	}
+	for (int i = 0; i < vertex_position.size(); ++i) {
+		total_mass += mass[i];
+	}
+	return total_mass;
 }
 
 void TetrohedronMeshStruct::setThreadIndex(int total_thread_num_)

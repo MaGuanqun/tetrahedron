@@ -494,14 +494,15 @@ void ProjectDynamic::PDsolve()
 	int itr_num = 0;
 	outer_iteration_num = 0;
 	initialEnergy();
-	current_PD_energy = 1.5 * previous_itr_PD_energy;
-	current_collision_energy = 1.5 * previous_itr_collision_energy;
-	current_constraint_energy = 1.5 * previous_constraint_energy;
-
+	current_PD_energy = 1e-15;
+	current_collision_energy = 1e-15;
+	current_constraint_energy = 1e-15;
 	PDupdateSystemMatrix();
 	local_global_iteration_num = 0;
 	while (!PDConvergeCondition())	{
 		initialEnergyOuterInteration();
+		local_global_itr_in_single_outer = 0;
+		//collision.findAllTrianglePairs();
 		while (!PDLocalGlobalConvergeCondition()){
 			initialEnergyLocalGlobal();
 			localProjection();
@@ -511,10 +512,11 @@ void ProjectDynamic::PDsolve()
 				current_PD_energy += temEnergy[i];
 			}
 			current_PD_energy += current_constraint_energy;
-			updateModelPosition();
-			local_global_iteration_num++;
+			updateModelPosition();			
+			local_global_itr_in_single_outer++;
 		}
 		outer_iteration_num++;
+		local_global_iteration_num+= local_global_itr_in_single_outer;
 	}
 	thread->assignTask(this, UPDATE_UV);
 	updateRenderPosition();
@@ -564,6 +566,7 @@ void ProjectDynamic::initialEnergy()
 	previous_itr_PD_energy = 1e-15;
 	previous_itr_constraint_energy = 1e-15;
 	previous_itr_collision_energy = 1e-15;
+
 }
 
 void ProjectDynamic::initialEnergyOuterInteration()
@@ -654,7 +657,8 @@ bool ProjectDynamic::PDConvergeCondition()
 	bool energy_satisfied = system_energy && collision_energy;
 	bool need_to_stop = local_global_iteration_num > max_it - 3 || abs(current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy < 5e-6;
 
-	if (energy_satisfied || need_to_stop) {
+	bool standard = (energy_satisfied || need_to_stop) && outer_iteration_num > 0;
+	if (standard) {
 		return true;
 	}
 	else {
@@ -670,7 +674,9 @@ bool ProjectDynamic::PDLocalGlobalConvergeCondition()
 	bool collision_energy = abs(previous_collision_energy - current_collision_energy) / previous_collision_energy < local_global_conv_rate || current_collision_energy < 1.1e-15;
 	bool need_to_stop = abs(current_PD_energy - previous_PD_energy) / previous_PD_energy < 5e-6 || local_global_iteration_num > max_it - 3;
 	bool energy_satisfied = system_energy && constraint_energy && collision_energy;
-	if (energy_satisfied || need_to_stop) {
+	bool standard = (energy_satisfied || need_to_stop) && local_global_itr_in_single_outer > 0;
+	
+	if (standard) {
 		return true;
 	}
 	else {
@@ -858,6 +864,7 @@ void ProjectDynamic::mainProcess()
 	PDsetPosPredict();
 	for (int i = 0; i < total_cloth_num; ++i) {
 		(*cloth)[i].mesh_struct.getNormal();
-
 	}
+	
+
 }

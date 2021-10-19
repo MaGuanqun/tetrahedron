@@ -17,6 +17,7 @@ class Cloth;
 class Collider;
 class Tetrohedron;
 class BVH;
+class Collision;
 
 using job = std::packaged_task<void()>;
 
@@ -44,6 +45,7 @@ public:
     void assignTask(Collider* func, ObjectFunc taskType);
     void assignTask(BVH* func, BVHFunc taskType);
     void assignTask(TetrohedronMeshStruct* func, MeshStructFuncSendToThread taskType);
+    void assignTask(Collision* func, CollisionFuncSendToThread taskType);
 
     int thread_num;
 private:
@@ -59,6 +61,8 @@ private:
     job create_task(Collider* func, int thread_id, ObjectFunc function_type);
     job create_task(BVH* func, int thread_id, BVHFunc function_type);
     job create_task(TetrohedronMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);
+    job create_task(Collision* func, int thread_id, CollisionFuncSendToThread function_type);
+
 };
 
 

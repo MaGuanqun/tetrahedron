@@ -16,7 +16,7 @@ public:
 	void buildBVH(std::vector<AABB>* triangle_AABB);
 	void calCenterPerThread(int thread_No);
 	void calMortonCode(int thread_No);
-	void search(AABB& aabb, int compare_index, std::vector<int>* neighbor_list, int n, int b, int e);private:
+	void search(AABB& aabb, int compare_index, bool search_same_object, std::vector<int>* neighbor_list, int n, int b, int e);private:
 	
 	std::vector<std::array<double, 3>> aabb_center;
 	std::vector<SortStruct> list;

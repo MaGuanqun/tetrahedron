@@ -34,6 +34,7 @@ void TriangleObject::setBuffer()
 		glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
 		glBindVertexArray(0);
 	}
+	
 }
 
 

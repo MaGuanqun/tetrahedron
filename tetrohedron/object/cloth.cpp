@@ -102,7 +102,7 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	edge_AABB.resize(mesh_struct.edges.size());
 	vertex_AABB.resize(mesh_struct.vertices.size());
 
-	setRepresentativePrimitve();
+	//setRepresentativePrimitve();
 }
 
 void Cloth::setMass(double density)
@@ -241,50 +241,60 @@ void Cloth::obtainAABB()
 
 void Cloth::setRepresentativePrimitve()
 {
-	representative_vertex_num.resize(mesh_struct.faces.size(), 0);
-	representative_edge_num.resize(mesh_struct.faces.size(), 0);
-	setRepresentativeVertex(mesh_struct.faces, mesh_struct.vertices);
-	setRepresentativeEdge(mesh_struct.faces, mesh_struct.edges);
+	//representative_vertex_num.resize(mesh_struct.faces.size(), 0);
+	//representative_edge_num.resize(mesh_struct.faces.size(), 0);
+	//setRepresentativeVertex(mesh_struct.faces, mesh_struct.vertices);
+	//setRepresentativeEdge(mesh_struct.faces, mesh_struct.edges);
+	//vertex_from_rep_triangle_index.resize(mesh_struct.vertex_position.size(),-1);
+	//edge_from_rep_triangle_index.resize(mesh_struct.edges.size(),-1);
+	//for (int i = 0; i < mesh_struct.faces.size(); ++i) {
+	//	for (int j = 0; j < representative_vertex_num[i]; ++j) {
+	//		vertex_from_rep_triangle_index[mesh_struct.faces[i].vertex[j]] = i;
+	//	}
+	//	for (int j = 0; j < representative_edge_num[i]; ++j) {
+	//		edge_from_rep_triangle_index[mesh_struct.faces[i].edge[j]] = i;
+	//	}
+	//}
 }
 
 void Cloth::setRepresentativeVertex(std::vector<MeshStruct::Face>& face, std::vector<MeshStruct::Vertex>& vertex)
 {
-	int count;
-	bool in_this_triangle[3];
-	std::vector<bool> is_used(vertex.size(), false);
-	for (int i = 0; i < face.size(); ++i) {
-		count = 0;
-		memset(in_this_triangle, 0, 3);
-		for (int j = 0; j < 3; ++j) {
-			if (!is_used[face[i].vertex[j]]) {
-				count++;
-				is_used[face[i].vertex[j]] = true;
-				in_this_triangle[j] = true;
-			}		
-		}
-		representative_vertex_num[i] = count;
-		setOrder(in_this_triangle, count, face[i].vertex);
-	}
+	//int count;
+	//bool in_this_triangle[3];
+	//std::vector<bool> is_used(vertex.size(), false);
+	//for (int i = 0; i < face.size(); ++i) {
+	//	count = 0;
+	//	memset(in_this_triangle, 0, 3);
+	//	for (int j = 0; j < 3; ++j) {
+	//		if (!is_used[face[i].vertex[j]]) {
+	//			count++;
+	//			is_used[face[i].vertex[j]] = true;
+	//			in_this_triangle[j] = true;
+	//		}		
+	//	}
+	//	representative_vertex_num[i] = count;
+	//	setOrder(in_this_triangle, count, face[i].vertex);
+	//}
 }
 
 void Cloth::setRepresentativeEdge(std::vector<MeshStruct::Face>& face, std::vector<MeshStruct::Edge>& edge)
 {
-	int count;
-	bool in_this_triangle[3];
-	std::vector<bool> is_used(edge.size(), false);
-	for (int i = 0; i < face.size(); ++i) {
-		count = 0;
-		memset(in_this_triangle, 0, 3);
-		for (int j = 0; j < 3; ++j) {
-			if (!is_used[face[i].edge[j]]) {
-				count++;
-				is_used[face[i].edge[j]] = true;
-				in_this_triangle[j] = true;
-			}
-		}
-		representative_edge_num[i] = count;
-		setOrderEdge(in_this_triangle, count, face[i].edge.data());
-	}
+	//int count;
+	//bool in_this_triangle[3];
+	//std::vector<bool> is_used(edge.size(), false);
+	//for (int i = 0; i < face.size(); ++i) {
+	//	count = 0;
+	//	memset(in_this_triangle, 0, 3);
+	//	for (int j = 0; j < 3; ++j) {
+	//		if (!is_used[face[i].edge[j]]) {
+	//			count++;
+	//			is_used[face[i].edge[j]] = true;
+	//			in_this_triangle[j] = true;
+	//		}
+	//	}
+	//	representative_edge_num[i] = count;
+	//	setOrderEdge(in_this_triangle, count, face[i].edge.data());
+	//}
 }
 
 
@@ -387,6 +397,16 @@ void Cloth::findNeighborVertex(int vertex_index, int recursion_deepth, std::vect
 	}
 }
 
+
+void Cloth::initialNeighborPrimitiveRecording(int cloth_num, int tetrohedron_num, int collider_num)
+{
+	triangle_neighbor_cloth_traingle.resize(mesh_struct.triangle_indices.size());
+	triangle_neighbor_collider_triangle.resize(mesh_struct.triangle_indices.size());
+	for (int i = 0; i < mesh_struct.triangle_indices.size(); ++i) {
+		triangle_neighbor_cloth_traingle[i].resize(cloth_num);
+		triangle_neighbor_collider_triangle[i].resize(collider_num);
+	}
+}
 
 //void Cloth::test() //ttest representative triangle
 //{
