@@ -75,6 +75,10 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	project_dynamic.setForPD(&cloth, &tetrahedron,&collider, &thread);
 	setAveEdgeLength();
 	cursor.createVertices(4.0 * ave_edge_length, camera_center);
+
+	for (int i = 0; i < cloth_num; ++i) {
+		cloth[i].initialNeighborPrimitiveRecording(cloth_num, tetrahedron_num, collider_num);
+	}
 }
 
 void Scene::setWireframwColor()

@@ -181,6 +181,9 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     case FIND_TRIANGLE_PAIRS:
         k = job([func, thread_id]() {func->findAllTrianglePairs(thread_id); });
         break;
+    case  FIND_PRIMITIVE_AROUND:
+        k = job([func, thread_id]() {func->findPrimitivesAround(thread_id); });
+        break;
     }
     return k;
 }

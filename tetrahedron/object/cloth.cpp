@@ -406,6 +406,18 @@ void Cloth::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num
 		triangle_neighbor_cloth_traingle[i].resize(cloth_num);
 		triangle_neighbor_collider_triangle[i].resize(collider_num);
 	}
+
+	vertex_neighbor_cloth_traingle.resize(mesh_struct.vertex_position.size());
+	vertex_neighbor_collider_triangle.resize(mesh_struct.vertex_position.size());
+	for (int i = 0; i < vertex_neighbor_cloth_traingle.size(); ++i) {
+		vertex_neighbor_cloth_traingle[i].resize(cloth_num);
+		vertex_neighbor_collider_triangle[i].resize(collider_num);
+	}
+
+	edge_neighbor_cloth_edge.resize(mesh_struct.edges.size());
+	for (int i = 0; i < edge_neighbor_cloth_edge.size(); ++i) {
+		edge_neighbor_cloth_edge[i].resize(cloth_num);
+	}
 }
 
 //void Cloth::test() //ttest representative triangle

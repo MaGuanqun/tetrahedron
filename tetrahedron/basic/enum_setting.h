@@ -21,7 +21,7 @@ enum SpatialHashingFuncSendToThread {
 };
 
 enum CollisionFuncSendToThread {
-    FIND_TRIANGLE_PAIRS
+    FIND_TRIANGLE_PAIRS, FIND_PRIMITIVE_AROUND
 };
 
 enum MeshStructFuncSendToThread {

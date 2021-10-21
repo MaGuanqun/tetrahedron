@@ -504,6 +504,7 @@ void ProjectDynamic::PDsolve()
 		initialEnergyOuterInteration();
 		local_global_itr_in_single_outer = 0;
 		//collision.findAllTrianglePairs();
+		//collision.test();
 		while (!PDLocalGlobalConvergeCondition()){
 			initialEnergyLocalGlobal();
 			localProjection();
