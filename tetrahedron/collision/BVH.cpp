@@ -31,7 +31,7 @@ void BVH::search(AABB& aabb, int compare_index, bool search_same_object, std::ve
 	}
 	if (e == b + 1) {
 		if(search_same_object){
-			if (compare_index < new2old[b]) {
+			if (compare_index != new2old[b]) {
 				neighbor_list->push_back(new2old[b]);
 			}
 		}

@@ -153,5 +153,5 @@ private:
 	void updateTetrahedronUV(int thread_id);
 
 	Collision collision;
-
+	void initialTetrahedronPDvariable();
 };

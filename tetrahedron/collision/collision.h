@@ -11,8 +11,9 @@ public:
 	void initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread);
 
 	void findAllTrianglePairs(int thread_No);
-	void findAllTrianglePairs();
+	void findAllNeighborPairs();
 	void findPrimitivesAround(int thread_No);
+	void collisionDetection(int thread_No);
 
 	void test();
 private:
@@ -32,4 +33,7 @@ private:
 	void findEdgeAroundEdge(int thread_No);
 	inline bool vertexInTriangle(int* face_index, int vertex_index);
 	inline bool edgeEdgeconnected(int* edge1, int* edge2);
+	void pointTriangleCollisionDetection(int thread_No, std::vector<std::vector<std::vector<int>>>& vertex_neighbor_cloth_traingle, std::vector<int>& vertex_index_begin);
+	bool checkPointTriangleCollision(double* initial_position, double* current_position, int* triangle_vertex_index, std::vector<std::array<double, 3>>& initial_triangle_position, std::vector<std::array<double, 3>>& current_triangle_position);
+	void getAABB();
 };

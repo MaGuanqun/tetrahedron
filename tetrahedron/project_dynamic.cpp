@@ -43,6 +43,16 @@ void ProjectDynamic::setForClothPD(std::vector<Cloth>* cloth)
 	restBendingMeanCurvature();
 }
 
+void ProjectDynamic::setForTetrahedronPD(std::vector<Tetrahedron>* tetrahedron)
+{
+	total_tetrahedron_num = tetrahedron->size();
+	tetrahedron_sys_size.resize(total_tetrahedron_num);
+	for (int i = 0; i < total_tetrahedron_num; ++i) {
+		tetrahedron_sys_size[i] = (*tetrahedron)[i].mesh_struct.vertex_position.size();
+	}
+
+}
+
 void ProjectDynamic::restBendingMeanCurvature()
 {
 	rest_mean_curvature_norm.resize(total_cloth_num);
@@ -73,6 +83,13 @@ void ProjectDynamic::restBendingMeanCurvatureSingleCloth(TriangleMeshStruct& mes
 		rest_mean_curvature_norm[i] = sqrt(DOT(vertex_curvature, vertex_curvature));
 	}
 }
+
+
+void ProjectDynamic::initialTetrahedronPDvariable()
+{
+
+}
+
 
 void ProjectDynamic::initialClothPDvariable()
 {
@@ -287,14 +304,7 @@ void ProjectDynamic::computeClothGravity()
 	}
 }
 
-void ProjectDynamic::setForTetrahedronPD(std::vector<Tetrahedron>* tetrahedron)
-{
-	total_tetrahedron_num = tetrahedron->size();
-	tetrahedron_sys_size.resize(total_tetrahedron_num);
-	for (int i = 0; i < total_tetrahedron_num; ++i) {
-		tetrahedron_sys_size[i] = (*tetrahedron)[i].mesh_struct.vertex_position.size();
-	}
-}
+
 
 void ProjectDynamic::computeLBOWeightSingleCloth(std::vector<double>& edge_cot_weight, std::vector<double>& lbo_weight, 
 	TriangleMeshStruct& mesh_struct, VectorXd& mass_inv, double density, VectorXd& mass)
@@ -492,6 +502,7 @@ void ProjectDynamic::PDClothPredict()
 void ProjectDynamic::PDsolve()
 {
 	PDsetPosPredict();
+	collision.findAllNeighborPairs();
 	int itr_num = 0;
 	outer_iteration_num = 0;
 	initialEnergy();

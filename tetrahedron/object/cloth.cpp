@@ -194,8 +194,8 @@ void Cloth::initialMouseChosenVertex()
 
 void Cloth::setAnchor()
 {
-	mesh_struct.anchor_vertex.push_back(30 * 30 - 1);
-	mesh_struct.anchor_vertex.push_back(30 * 29);
+	//mesh_struct.anchor_vertex.push_back(30 * 30 - 1);
+	//mesh_struct.anchor_vertex.push_back(30 * 29);
 }
 
 //VERTEX_AABB

@@ -89,10 +89,10 @@ void TriangleObject::reset()
 
 void TriangleObject::genShader()
 {
-	object_shader_front = new Shader("./shader/object.vs", "./shader/object.fs");
-	*object_shader_front = Shader("./shader/object.vs", "./shader/object.fs");
-	object_shader_back = new Shader("./shader/object.vs", "./shader/object.fs");
-	*object_shader_back = Shader("./shader/object.vs", "./shader/object.fs");
+	object_shader_front = new Shader("./shader/object_triangle.vs", "./shader/object_triangle.fs");
+	*object_shader_front = Shader("./shader/object_triangle.vs", "./shader/object_triangle.fs");
+	object_shader_back = new Shader("./shader/object_triangle.vs", "./shader/object_triangle.fs");
+	*object_shader_back = Shader("./shader/object_triangle.vs", "./shader/object_triangle.fs");
 	wireframe_shader = new Shader("./shader/wireframe.vs", "./shader/wireframe.fs");
 	*wireframe_shader = Shader("./shader/wireframe.vs", "./shader/wireframe.fs");
 }

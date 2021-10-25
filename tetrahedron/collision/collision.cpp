@@ -27,32 +27,74 @@ void Collision::initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* col
 }
 
 
+void Collision::getAABB()
+{
+	for (int i = 0; i < cloth->size(); ++i) {
+		(*cloth)[i].obtainAABB();
+	}
+	for (int i = 0; i < collider->size(); ++i) {
+		(*collider)[i].obtainAABB();
+	}
+}
 
 void Collision::buildBVH()
 {
 	for (int i = 0; i < cloth->size(); ++i) {
-		(*cloth)[i].obtainAABB();
 		cloth_BVH[i].buildBVH(&(*cloth)[i].triangle_AABB);
 	}
 	for (int i = 0; i < collider->size(); ++i) {
-		(*collider)[i].obtainAABB();
 		collider_BVH[i].buildBVH(&(*collider)[i].triangle_AABB);
 	}
 }
 
 
-void Collision::findAllTrianglePairs()
+void Collision::findAllNeighborPairs()
 {
-	buildBVH();
-	thread->assignTask(this, FIND_TRIANGLE_PAIRS);
-	thread->assignTask(this, FIND_PRIMITIVE_AROUND);
-
+	getAABB();
+	time_t t = clock();
+	for (int i = 0; i < 1000; ++i) {
+		buildBVH();
+	}
+	std::cout<<"build bvh " << clock() - t << std::endl;
+	t = clock();
+	for (int i = 0; i < 1000; ++i) {
+		thread->assignTask(this, FIND_TRIANGLE_PAIRS);
+		thread->assignTask(this, FIND_PRIMITIVE_AROUND);
+	}
+	std::cout<<"fine around primitive " << clock() - t << std::endl;
 }
 
 
+//CollisionDetection
+void Collision::collisionDetection(int thread_No)
+{
+	//for (int i = 1) {
+
+	//}
+}
+
+void Collision::pointTriangleCollisionDetection(int thread_No, std::vector<std::vector<std::vector<int>>>& vertex_neighbor_cloth_traingle, std::vector<int>& vertex_index_begin)
+{
+	std::vector<int>* neighbor_triangle;
+	for (int i = vertex_index_begin[thread_No]; i < vertex_index_begin[thread_No + 1]; ++i) {
+		for (int j = 0; j < cloth->size(); ++j) {
+			neighbor_triangle = &vertex_neighbor_cloth_traingle[i][j];
+			for (int k = 0; k < neighbor_triangle->size(); ++k) {
+				
+			}
+		}
+	}
+}
+
+
+bool Collision::checkPointTriangleCollision(double* initial_position, double* current_position,  int* triangle_vertex_index, std::vector<std::array<double,3>>& initial_triangle_position, std::vector<std::array<double,3>>& current_triangle_position)
+{
+	
+}
+
 void Collision::test()
 {
-	findAllTrianglePairs();
+	findAllNeighborPairs();
 
 	std::cout << "vertex " << std::endl;
 	for (int i = 0; i < (*cloth)[0].vertex_neighbor_cloth_traingle[0][0].size(); ++i) {
@@ -213,7 +255,7 @@ void Collision::findEdgeAroundEdge(int thread_No)
 		edge = &(*cloth)[i].mesh_struct.edges;
 		edge_aabb = &(*cloth)[i].edge_AABB;
 
-		for (int k = 0; k < cloth->size(); ++k) {
+		for (int k = i; k < cloth->size(); ++k) {
 			compared_edge_aabb= &(*cloth)[k].edge_AABB;
 			representative_edge_num = &(*cloth)[k].representative_edge_num;
 			face = &(*cloth)[k].mesh_struct.faces;
@@ -221,7 +263,6 @@ void Collision::findEdgeAroundEdge(int thread_No)
 				for (int j = thread_begin[thread_No]; j < thread_begin[thread_No + 1]; ++j) {
 					edge_neighbor_one_cloth_edge = &(*edge_neighbor_edge)[j][k];
 					triangle_neighbor_one_cloth_traingle = &(*triangle_neighbor_traingle)[(*edge_from_rep_triangle_index)[j]][k];
-					//vertex's represent triangle index = (*vertex_from_rep_triangle_index)[j];
 					edge_neighbor_one_cloth_edge->clear();
 					edge_neighbor_one_cloth_edge->reserve(triangle_neighbor_one_cloth_traingle->size());					
 					for (int m = 0; m < triangle_neighbor_one_cloth_traingle->size(); ++m) {
@@ -238,18 +279,19 @@ void Collision::findEdgeAroundEdge(int thread_No)
 				for (int j = thread_begin[thread_No]; j < thread_begin[thread_No + 1]; ++j) {
 					edge_neighbor_one_cloth_edge = &(*edge_neighbor_edge)[j][k];
 					triangle_neighbor_one_cloth_traingle = &(*triangle_neighbor_traingle)[(*edge_from_rep_triangle_index)[j]][k];
-					//vertex's represent triangle index = (*vertex_from_rep_triangle_index)[j];
 					edge_neighbor_one_cloth_edge->clear();
 					edge_neighbor_one_cloth_edge->reserve(triangle_neighbor_one_cloth_traingle->size());
 					for (int m = 0; m < triangle_neighbor_one_cloth_traingle->size(); ++m) {
 						face_index = (*triangle_neighbor_one_cloth_traingle)[m];
 						for (int n = 0; n < (*representative_edge_num)[face_index]; ++n) {
 							compare_edge_index = (*face)[face_index].edge[n];
-							if (!edgeEdgeconnected((*edge)[j].vertex, (*edge)[compare_edge_index].vertex)) {
-								if ((*edge_aabb)[j].AABB_intersection((*compared_edge_aabb)[compare_edge_index])) {
-									(*edge_neighbor_one_cloth_edge).push_back(compare_edge_index);
-								}								
-							}							
+							if (j < compare_edge_index) {
+								if (!edgeEdgeconnected((*edge)[j].vertex, (*edge)[compare_edge_index].vertex)) {
+									if ((*edge_aabb)[j].AABB_intersection((*compared_edge_aabb)[compare_edge_index])) {
+										(*edge_neighbor_one_cloth_edge).push_back(compare_edge_index);
+									}
+								}
+							}
 						}
 					}
 				}
@@ -262,6 +304,7 @@ void Collision::findEdgeAroundEdge(int thread_No)
 
 bool Collision::edgeEdgeconnected(int* edge1, int* edge2)
 {
+
 	if (edge1[0] == edge2[0])
 		return true;
 	if (edge1[1] == edge2[1])

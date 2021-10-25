@@ -22,8 +22,8 @@ void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 
 void Tetrahedron::genShader()
 {
-	object_shader_front = new Shader("./shader/object.vs", "./shader/object.fs");
-	*object_shader_front = Shader("./shader/object.vs", "./shader/object.fs");
+	object_shader_front = new Shader("./shader/object_tetrahedron.vs", "./shader/object_tetrahedron.fs", "./shader/object_tetrahedron.gs");
+	*object_shader_front = Shader("./shader/object_tetrahedron.vs", "./shader/object_tetrahedron.fs", "./shader/object_tetrahedron.gs");
 	wireframe_shader = new Shader("./shader/wireframe.vs", "./shader/wireframe.fs");
 	*wireframe_shader = Shader("./shader/wireframe.vs", "./shader/wireframe.fs");
 }
@@ -57,10 +57,6 @@ void Tetrahedron::setBuffer()
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh_struct.triangle_indices.size() * sizeof(std::array<int, 3>), mesh_struct.triangle_indices[0].data(), GL_STATIC_DRAW);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
-		glBufferData(GL_ARRAY_BUFFER, mesh_struct.vertex_norm_for_render.size() * sizeof(std::array<double, 3>), mesh_struct.vertex_norm_for_render[0].data(), GL_STATIC_DRAW);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
 		glBindVertexArray(0);
 	}
 }

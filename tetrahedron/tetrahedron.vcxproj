@@ -157,6 +157,7 @@
     <ClCompile Include="collision\BVH.cpp" />
     <ClCompile Include="collision\collision.cpp" />
     <ClCompile Include="collision\morton.cpp" />
+    <ClCompile Include="collision\predictive_contact.cpp" />
     <ClCompile Include="external\glad.c" />
     <ClCompile Include="external\imgui\imgui.cpp" />
     <ClCompile Include="external\imgui\imgui_draw.cpp" />
@@ -199,6 +200,7 @@
     <ClInclude Include="collision\BVH.h" />
     <ClInclude Include="collision\collision.h" />
     <ClInclude Include="collision\morton.h" />
+    <ClInclude Include="collision\predictive_contact.h" />
     <ClInclude Include="external\imgui\imgui.h" />
     <ClInclude Include="external\imgui\imgui_impl_glfw.h" />
     <ClInclude Include="external\imgui\imgui_impl_opengl3.h" />
@@ -211,6 +213,7 @@
     <ClInclude Include="mesh_struct\mesh_struct.h" />
     <ClInclude Include="mesh_struct\tetrahedron_mesh_struct.h" />
     <ClInclude Include="mesh_struct\triangle_mesh_struct.h" />
+    <ClInclude Include="not used\createMesh.h" />
     <ClInclude Include="object\collider.h" />
     <ClInclude Include="object\object.h" />
     <ClInclude Include="object\tetrahedron.h" />

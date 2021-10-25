@@ -13,7 +13,7 @@
 #define NEAR_ZERO 1.0e-10
 
 #undef NORM_NEAR_ZERO
-#define NORM_NEAR_ZERO 1.0e-6
+#define NORM_NEAR_ZERO 1.0e-7
 
 #undef NEAR_ZERO2
 #define NEAR_ZERO2 1.0e-20
