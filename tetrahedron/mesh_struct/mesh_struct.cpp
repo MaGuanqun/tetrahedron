@@ -2,8 +2,8 @@
 void MeshStruct::initialNormalSize()
 {
 	face_norm_for_render.resize(triangle_indices.size(), {0.0,0.0,0.0});
-	temp_face_norm.resize(triangle_indices.size(), { 0.0,0.0,0.0 });
 	vertex_norm_for_render.resize(vertex_position.size());
+	triangle_normal_magnitude_reciprocal.resize(triangle_indices.size());
 }
 
 void MeshStruct::arrangeIndex(int total_thread_num, int total_num, std::vector<int>& begin) {

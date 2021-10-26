@@ -46,10 +46,11 @@ private:
 	int super_jacobi_step_size;
 	int max_it;
 	int max_jacobi_itr_num;
-	int total_cloth_num, total_tetrahedron_num;
+	int total_cloth_num, total_tetrahedron_num, total_collider_num;
 	std::vector<int>cloth_sys_size, tetrahedron_sys_size;
 	std::vector<Cloth>* cloth;
 	std::vector<Tetrahedron>* tetrahedron;
+	std::vector<Collider>* collider;
 	Thread* thread;
 	double sub_time_step;
 	std::vector<std::vector<double>> lbo_weight;
@@ -112,7 +113,8 @@ private:
 	void solveClothSystemPerThead(int thread_id);
 	void solveClothSystemPerThead(VectorXd& b, VectorXd& u, TriangleMeshStruct& mesh_struct, std::vector<double>& length_stiffness,
 		std::vector<Vector3d>& p_edge_length, int cloth_No, int dimension, std::vector<std::vector<int>>& vertex_around_vertex_for_bending,
-		std::vector<VectorXd>& vertex_lbo, std::vector<Vector3d>& p_bending, std::vector<double>& lbo_weight, VectorXd& u_prediction, int thread_id);
+		std::vector<VectorXd>& vertex_lbo, std::vector<Vector3d>& p_bending, std::vector<double>& lbo_weight, VectorXd& u_prediction, int thread_id,
+		std::vector<std::array<double, 3>>& collision_b_sum, bool* collision_b_need_update);
 
 	void updateModelPosition();
 	void setIndexPerThread();

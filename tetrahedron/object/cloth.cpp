@@ -149,20 +149,24 @@ void Cloth::recordInitialMesh(SingleClothInfo& single_cloth_info_ref)
 {
 	ori_vertices = mesh_struct.vertex_position;
 	this->single_cloth_info_ref = single_cloth_info_ref;
-	length_stiffness.resize(mesh_struct.edges.size());	
-	collision_stiffness.resize(mesh_struct.vertices.size());
+	length_stiffness.resize(mesh_struct.edges.size());
+	collision_stiffness.resize(4);
+	for (int i = 0; i < 4; ++i) {
+		collision_stiffness[i].resize(mesh_struct.vertices.size(), single_cloth_info_ref.collision_stiffness[i]);
+	}	
 	bend_stiffness = single_cloth_info_ref.bending_stiffness;
 	position_stiffness = single_cloth_info_ref.position_stiffness;
-	std::array<double, 4> collision_stiff;
-	std::fill(length_stiffness.begin(), length_stiffness.end(), single_cloth_info_ref.length_stiffness);
-	memcpy(collision_stiff.data(), single_cloth_info_ref.collision_stiffness, 32);
-	std::fill(collision_stiffness.begin(), collision_stiffness.end(), collision_stiff);
+	std::fill(length_stiffness.begin(), length_stiffness.end(), single_cloth_info_ref.length_stiffness);	
 	collision_stiffness_time_step_starts = collision_stiffness;
 	std::array<double, 4> collision_stiff_indicator;
 	for (int i = 0; i < 4; ++i) {
-		collision_stiff_indicator[i] = collision_stiffness_update_indicator * collision_stiff[i];
+		collision_stiff_indicator[i] = collision_stiffness_update_indicator * single_cloth_info_ref.collision_stiffness[i];
 	}
-	collision_stiffness_time_step_starts_indicator.resize(mesh_struct.vertices.size(), collision_stiff_indicator);
+	collision_stiffness_time_step_starts_indicator.resize(4);
+	for (int i = 0; i < 4; ++i) {
+		collision_stiffness_time_step_starts_indicator[i].resize(mesh_struct.vertices.size(), collision_stiff_indicator[i]);
+	}
+	
 }
 
 void Cloth::initial()
@@ -175,15 +179,15 @@ void Cloth::initial()
 		mesh_struct.anchor_position[i] = mesh_struct.vertex_position[mesh_struct.anchor_vertex[i]];
 	}
 	std::fill(length_stiffness.begin(), length_stiffness.end(), single_cloth_info_ref.length_stiffness);
-	bend_stiffness = single_cloth_info_ref.bending_stiffness;
-	std::array<double, 4> collision_stiff;
-	memcpy(collision_stiff.data(), single_cloth_info_ref.collision_stiffness, 32);
-	std::fill(collision_stiffness_time_step_starts.begin(), collision_stiffness_time_step_starts.end(), collision_stiff);
+	bend_stiffness = single_cloth_info_ref.bending_stiffness;	
 	std::array<double, 4> collision_stiff_indicator;
 	for (int i = 0; i < 4; ++i) {
-		collision_stiff_indicator[i] = collision_stiffness_update_indicator * collision_stiff[i];
+		collision_stiff_indicator[i] = collision_stiffness_update_indicator * single_cloth_info_ref.collision_stiffness[i];
 	}
-	std::fill(collision_stiffness_time_step_starts_indicator.begin(), collision_stiffness_time_step_starts_indicator.end(), collision_stiff_indicator);
+	for (int i = 0; i < 4; ++i) {
+		std::fill(collision_stiffness_time_step_starts[i].begin(), collision_stiffness_time_step_starts[i].end(), single_cloth_info_ref.collision_stiffness[i]);
+		std::fill(collision_stiffness_time_step_starts_indicator[i].begin(), collision_stiffness_time_step_starts_indicator[i].end(), collision_stiff_indicator[i]);
+	}
 }
 
 void Cloth::initialMouseChosenVertex()
@@ -408,15 +412,21 @@ void Cloth::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num
 	}
 
 	vertex_neighbor_cloth_traingle.resize(mesh_struct.vertex_position.size());
+	collide_vertex_cloth_traingle.resize(mesh_struct.vertex_position.size());
 	vertex_neighbor_collider_triangle.resize(mesh_struct.vertex_position.size());
+	collide_vertex_collider_triangle.resize(mesh_struct.vertex_position.size());
 	for (int i = 0; i < vertex_neighbor_cloth_traingle.size(); ++i) {
 		vertex_neighbor_cloth_traingle[i].resize(cloth_num);
+		collide_vertex_cloth_traingle[i].resize(cloth_num);
 		vertex_neighbor_collider_triangle[i].resize(collider_num);
+		collide_vertex_collider_triangle[i].resize(collider_num);
 	}
 
 	edge_neighbor_cloth_edge.resize(mesh_struct.edges.size());
+	collide_edge_cloth_edge.resize(mesh_struct.edges.size());
 	for (int i = 0; i < edge_neighbor_cloth_edge.size(); ++i) {
 		edge_neighbor_cloth_edge[i].resize(cloth_num);
+		collide_edge_cloth_edge[i].resize(cloth_num);
 	}
 }
 

@@ -20,7 +20,7 @@ public:
 		std::vector<int>neighbor_vertex;
 		std::vector<int>around_face;
 		bool on_border = false;
-		double mass;
+	
 	};
 	struct Edge {
 		int vertex[2];
@@ -46,6 +46,8 @@ public:
 	std::vector<std::array<double, 3>>anchor_position;
 
 	Thread* thread;
+	std::vector<double>mass;
+	std::vector<double>triangle_normal_magnitude_reciprocal;
 
 	std::vector<int> face_index_begin_per_thread;
 	std::vector<int> anchor_index_begin_per_thread;
@@ -58,7 +60,6 @@ public:
 	void setAnchorPosition();
 protected:
 	int type;
-	std::vector<std::array<double, 3>>temp_face_norm;
 private:
 
 };

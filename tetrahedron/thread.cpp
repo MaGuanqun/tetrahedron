@@ -178,11 +178,23 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     job k;
     switch (function_type)
     {
+    case RE_DETECTION:
+        k = job([func, thread_id]() {func->collisionReDetection(thread_id); });
+        break;
+    case RESUM_TARGET_POSITION:
+        k = job([func, thread_id]() {func->collisionReDetection(thread_id); });
+        break;
     case FIND_TRIANGLE_PAIRS:
         k = job([func, thread_id]() {func->findAllTrianglePairs(thread_id); });
         break;
     case  FIND_PRIMITIVE_AROUND:
         k = job([func, thread_id]() {func->findPrimitivesAround(thread_id); });
+        break;
+    case GLOBAL_COLLISION_DETECTION:
+        k = job([func, thread_id]() {func->collisionDetection(thread_id); });
+        break;
+    case SUM_TARGET_POSITION:
+        k = job([func, thread_id]() {func->sumTargetPositionPerThread(thread_id); });
         break;
     }
     return k;

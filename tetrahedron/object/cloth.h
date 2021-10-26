@@ -20,9 +20,9 @@ public:
 
 	std::vector<double>length_stiffness;
 	double bend_stiffness;
-	std::vector<std::array<double, 4>>collision_stiffness;
-	std::vector<std::array<double, 4>>collision_stiffness_time_step_starts;
-	std::vector<std::array<double, 4>>collision_stiffness_time_step_starts_indicator;
+	std::vector<std::vector<double>>collision_stiffness;
+	std::vector<std::vector<double>>collision_stiffness_time_step_starts;
+	std::vector<std::vector<double>>collision_stiffness_time_step_starts_indicator;
 	double collision_stiffness_update_indicator;
 	double position_stiffness;
 
@@ -51,8 +51,11 @@ public:
 
 	std::vector<std::vector<std::vector<int>>>vertex_neighbor_cloth_traingle;
 	std::vector<std::vector<std::vector<int>>>vertex_neighbor_collider_triangle;
-
 	std::vector<std::vector<std::vector<int>>>edge_neighbor_cloth_edge;
+
+	std::vector<std::vector<std::vector<int>>>collide_vertex_cloth_traingle;
+	std::vector<std::vector<std::vector<int>>>collide_vertex_collider_triangle;
+	std::vector<std::vector<std::vector<int>>>collide_edge_cloth_edge;
 
 private:
 	void setMeshStruct(double density, OriMesh& ori_mesh);

@@ -31,7 +31,7 @@ bool PredictiveContact::pointTriangleCollision(double* initial_position, double*
 	return false;
 }
 
-bool PredictiveContact::pointBodyTriangleCollision(double* initial_position, double* current_position, std::vector<double*>& initial_triangle_position, std::vector<double*>& current_triangle_position,
+bool PredictiveContact::pointColliderTriangleCollision(double* initial_position, double* current_position, std::vector<double*>& initial_triangle_position, std::vector<double*>& current_triangle_position,
 	double* initial_triangle_normal, double* current_triangle_normal,
 	double* vertex_target_pos, double radius)
 {
@@ -50,9 +50,9 @@ bool PredictiveContact::pointBodyTriangleCollision(double* initial_position, dou
 		calNearestPoint(nearest_point_barycentric, current_triangle_position[0], current_triangle_position[1], current_triangle_position[2], current_nearest_point);
 	}
 	double current_vertex_triangle_dis;
-	if (checkIfCollidePointBodyTriangle(initial_position, current_position, initial_nearest_point, current_nearest_point,
+	if (checkIfCollidePointColliderTriangle(initial_position, current_position, initial_nearest_point, current_nearest_point,
 		initial_triangle_normal,current_triangle_normal, current_vertex_triangle_dis,  radius)) {
-		obtainPointBodyTriangleTargetPosition(current_position, vertex_target_pos, radius, current_triangle_normal, initial_triangle_normal, current_vertex_triangle_dis);
+		obtainPointColliderTriangleTargetPosition(current_position, vertex_target_pos, radius, current_triangle_normal, initial_triangle_normal, current_vertex_triangle_dis);
 		return true;
 	}
 	return false;
@@ -256,7 +256,7 @@ bool PredictiveContact::checkIfCollidePointTriangle(double* initial_point_positi
 	}
 	return false;
 }
-bool PredictiveContact::checkIfCollidePointBodyTriangle(double* initial_point_position, double* current_point_position,
+bool PredictiveContact::checkIfCollidePointColliderTriangle(double* initial_point_position, double* current_point_position,
 	double* initial_nearest_point, double* current_nearest_point, double* initial_triangle_normal, double* current_triangle_normal, double& current_vertex_triangle_dis,double radius)
 {
 	double p_c[3];
@@ -332,7 +332,7 @@ void PredictiveContact::obtainPointTriangleTargetPosition(double* point_position
 	}
 }
 
-void PredictiveContact::obtainPointBodyTriangleTargetPosition(double* point_position,double* vertex_target_pos, 
+void PredictiveContact::obtainPointColliderTriangleTargetPosition(double* point_position,double* vertex_target_pos, 
 	double radius, double* current_triangle_normal, double* initial_triangle_normal, double current_vertex_triangle_dis)
 {
 	current_vertex_triangle_dis -= radius;
@@ -467,7 +467,7 @@ bool PredictiveContact::getClosestPointBetweenPointSegement(double* alpha, doubl
 
 
 void PredictiveContact::obtaindgeEdgeTargetPosition(std::vector<std::array<double, 3>>& target_pos, std::vector<std::array<double, 3>>& compare_target_pos,
-	double norm[3], double radius, double* alpha, double* current_edge_vertex_0, double* current_edge_vertex_1,
+	double* norm, double radius, double* alpha, double* current_edge_vertex_0, double* current_edge_vertex_1,
 	double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* mass)
 {
 	target_pos.resize(2);
