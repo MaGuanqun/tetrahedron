@@ -9,6 +9,8 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	this->thread = thread;
 	initialBVH(cloth, collider, tetrahedron, thread);
 	initialTargetPos(cloth, tetrahedron, thread);
+	initialSpatialHashing(cloth, collider, tetrahedron, thread);
+	std::cout << "6" << std::endl;
 }
 
 void Collision::initialTargetPos(std::vector<Cloth>* cloth,	std::vector<Tetrahedron>* tetrahedron, Thread* thread)
@@ -41,6 +43,11 @@ void Collision::initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* col
 	//for (int i = 0; i < tetrahedron->size(); ++i) {
 	//	tetrahedron_BVH[i].init((*tetrahedron)[i].mesh_struct.triangle_indices.size()/3, (*tetrahedron)[i].mesh_struct.face_index_begin_per_thread, thread);
 	//}
+}
+
+void Collision::initialSpatialHashing(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread)
+{
+	spatial_hashing.setInObject(cloth, collider, tetrahedron, thread);
 }
 
 

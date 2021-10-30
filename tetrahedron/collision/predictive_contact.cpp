@@ -310,7 +310,6 @@ void PredictiveContact::obtainPointTriangleTargetPosition(double* point_position
 	SUB(triangle_target_pos[0], triangle_position[1], triangle_position[2]);
 	SUB(triangle_target_pos[1], triangle_position[2], triangle_position[0]);
 	SUB(triangle_target_pos[2], triangle_position[0], triangle_position[1]);
-	double temp_vec[3];
 	for (int i = 0; i < 3; ++i) {
 		CROSS(temp_vec, triangle_target_pos[i], in_triangle);
 		MULTI(triangle_target_pos[i], temp_vec, normal_magnitude_reciprocal);

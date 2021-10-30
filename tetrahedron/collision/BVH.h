@@ -34,4 +34,5 @@ public:
 	int maxNodeIndex(int node_index, int b, int e);
 	std::vector<AABB> aabb_list;
 	void initBVHRecursive(std::vector<AABB>* triangle_AABB, int node_index, int b, int e);
+
 };

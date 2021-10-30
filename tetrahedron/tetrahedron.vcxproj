@@ -157,7 +157,9 @@
     <ClCompile Include="collision\BVH.cpp" />
     <ClCompile Include="collision\collision.cpp" />
     <ClCompile Include="collision\morton.cpp" />
+    <ClCompile Include="collision\parallel_radix_sort.cpp" />
     <ClCompile Include="collision\predictive_contact.cpp" />
+    <ClCompile Include="collision\spatial_hashing.cpp" />
     <ClCompile Include="external\glad.c" />
     <ClCompile Include="external\imgui\imgui.cpp" />
     <ClCompile Include="external\imgui\imgui_draw.cpp" />
@@ -200,7 +202,9 @@
     <ClInclude Include="collision\BVH.h" />
     <ClInclude Include="collision\collision.h" />
     <ClInclude Include="collision\morton.h" />
+    <ClInclude Include="collision\parallel_radix_sort.h" />
     <ClInclude Include="collision\predictive_contact.h" />
+    <ClInclude Include="collision\spatial_hashing.h" />
     <ClInclude Include="external\imgui\imgui.h" />
     <ClInclude Include="external\imgui\imgui_impl_glfw.h" />
     <ClInclude Include="external\imgui\imgui_impl_opengl3.h" />

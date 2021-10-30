@@ -29,6 +29,7 @@ void SetModel::load_getAABB(std::string& path, int& index)
 	//else if (path == "./model/Pants_simpleModel_high.obj") {
 	//	create_mesh.setMaterial3(ori_mesh);
 	//}
+	
 	}
 	else {
 		ori_mesh.type = TETROHEDRON;

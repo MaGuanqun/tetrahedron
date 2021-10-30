@@ -5,6 +5,7 @@
 #include"../object/tetrahedron.h"
 #include"../thread.h"
 #include"predictive_contact.h"
+#include"spatial_hashing.h"
 
 class Collision
 {
@@ -73,6 +74,9 @@ private:
 
 	Thread* thread;
 	PredictiveContact predictive_contact;
+
+	SpatialHashing spatial_hashing;
+
 	void buildBVH();
 	void initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread);
 	void searchTriangle(AABB& aabb, int compare_index, int cloth_No, std::vector<std::vector<int>>* cloth_neighbor_index, std::vector<std::vector<int>>* collider_neighbor_index);
@@ -106,4 +110,5 @@ private:
 	void edgeSelfEdgeCollisionReDetection(int thread_No, int edge_index, int cloth_No, std::vector<std::vector<int>>* collide_edge_edge, TriangleMeshStruct* edge_mesh,
 		double radius0, std::vector<double>& collision_stiffness, TargetPosition* target_postion_);
 	void resumTargetPosition();
+	void initialSpatialHashing(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread);
 };
