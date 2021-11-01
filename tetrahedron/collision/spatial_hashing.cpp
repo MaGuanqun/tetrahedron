@@ -43,8 +43,60 @@ void SpatialHashing::setInObject(std::vector<Cloth>* cloth, std::vector<Collider
 		}
 	}
 	radix_sort.initial(thread);
+
+	//testRadixSort();
+	
 }
 
+
+void SpatialHashing::testRadixSort()
+{
+	time_t t1 = clock();
+	int index = 0;
+	int vec_size = 4e7;
+	std::vector<std::array<int, 2>> cell1;
+	cell1.reserve(vec_size);
+	for (int j = 0; j < 10; ++j) {
+		int size = 100 * 100 * 100;
+		cell1.clear();
+		for (int i = 0; i < vec_size; ++i) {
+			cell1.push_back({ i,rand() % size });
+		}
+		for (int i = 0; i < vec_size; ++i) {
+			if (i % 2 == 0) {
+				cell1[i][1] += 100000;
+			}
+		}
+		index += cell1.size();
+	}
+	t1 = clock() - t1;
+	std::cout << "index " << index<<" "<<t1 << std::endl;
+	time_t t = clock();
+	std::vector<std::array<int, 2>> cell;
+	cell.reserve(vec_size);
+	for (int j = 0;  j< 10; ++j) {
+	int size = 100 * 100 * 100;
+	cell.clear();
+	for (int i = 0; i < vec_size; ++i) {
+		cell.push_back({ i,rand() % size });
+	}
+	for (int i = 0; i < vec_size; ++i) {
+		if (i % 2 == 0) {
+			cell[i][1] += 100000;
+		}
+	}
+	//for (int i = 0; i < vec_size; ++i) {
+	//	std::cout << cell[i][1] << " ";
+	//}
+	//std::cout << std::endl;
+	radix_sort.radixSort(size, &cell);
+	//for (int i = 0; i < vec_size; ++i) {
+	//	std::cout << cell[i][1] << " ";
+	//}
+	//std::cout << std::endl;
+	}
+	std::cout <<"time "<< clock() - t<<" "<< clock() - t - t1 << std::endl;
+}
 
 void SpatialHashing::setSpatialHashing()
 {

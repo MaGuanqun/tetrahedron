@@ -46,3 +46,7 @@ enum ObjectFunc {
 enum BVHFunc {
     CAL_CENTER, CAL_MORTON
 };
+
+enum RadixSortFunc {
+    SET_COUNT_BUCKET, REORDER
+};

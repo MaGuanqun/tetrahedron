@@ -133,7 +133,7 @@ void ProjectDynamic::setIndexPerThread()
 {
 	cloth_per_thread_begin.resize(total_thread_num+1);
 	if (total_cloth_num > 0) {
-		(*cloth)[0].mesh_struct.arrangeIndex(total_thread_num, total_cloth_num, cloth_per_thread_begin);
+		arrangeIndex(total_thread_num, total_cloth_num, cloth_per_thread_begin);
 	}
 	cloth_dimension_per_thread.resize(total_thread_num);
 	int total_num = total_cloth_num * 3;
@@ -142,7 +142,7 @@ void ProjectDynamic::setIndexPerThread()
 	}
 	tetrahedron_per_thread_begin.resize(total_thread_num + 1);
 	if (total_tetrahedron_num > 0) {
-		(*tetrahedron)[0].mesh_struct.arrangeIndex(total_thread_num, total_tetrahedron_num, tetrahedron_per_thread_begin);
+		arrangeIndex(total_thread_num, total_tetrahedron_num, tetrahedron_per_thread_begin);
 	}
 	tetrahedron_dimension_per_thread.resize(total_thread_num);
 	total_num = total_tetrahedron_num * 3;

@@ -54,7 +54,6 @@ public:
 	std::vector<int> vertex_index_begin_per_thread;
 
 	void initialNormalSize();
-	void arrangeIndex(int total_thread_num, int total_num, std::vector<int>& begin);
 
 
 	void setAnchorPosition();

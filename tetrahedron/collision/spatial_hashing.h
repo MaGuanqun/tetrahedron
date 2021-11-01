@@ -36,5 +36,6 @@ private:
 	std::vector<std::vector<std::vector<std::array<int, 2>>>> spatial_hashing_collider_triangle;
 	void triangleHashingValue(AABB& aabb, std::vector<std::array<int, 2>>* spatial_hashing_triangle, int triangle_index);
 	RadixSort radix_sort;
+	void testRadixSort();
 };
 

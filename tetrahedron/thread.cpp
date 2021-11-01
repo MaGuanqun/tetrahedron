@@ -7,6 +7,7 @@
 #include"./object/tetrahedron.h"
 #include"collision/BVH.h"
 #include"collision/collision.h"
+#include"collision/parallel_radix_sort.h"
 
 
 Thread::Thread()
@@ -218,6 +219,20 @@ job Thread::create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncS
 }
 
 
+job Thread::create_task(RadixSort* func, int thread_id, RadixSortFunc function_type, int key_id)
+{
+    job k;
+    switch (function_type)
+    {
+    case SET_COUNT_BUCKET:
+        k = job([func, thread_id, key_id]() {func->setCountBucket(thread_id,key_id); });
+        break;
+    case REORDER:
+        k = job([func, thread_id, key_id]() {func->reorder(thread_id, key_id); });
+    }
+    return k;
+}
+
 
 void Thread::assignTask(SpatialHashing* func, SpatialHashingFuncSendToThread taskType)
 {
@@ -352,6 +367,23 @@ void Thread::assignTask(Collision* func, CollisionFuncSendToThread taskType)
     for (auto& f : futures) { f.wait(); }
     futures.clear();
 }
+
+void Thread::assignTask(RadixSort* func, RadixSortFunc taskType, int key_id)
+{
+    for (int i = 0; i < thread_num; ++i)
+    {
+        // std::cout << threads[i].id << std::endl;
+        job j = create_task(func, threads[i].id, taskType, key_id);
+        futures.push_back(j.get_future());
+        std::unique_lock<std::mutex> l(threads[i].m);
+        threads[i].jobs.push(std::move(j));
+        // Notify the thread that there is work do to...
+        threads[i].cv.notify_one();
+    }
+    for (auto& f : futures) { f.wait(); }
+    futures.clear();
+}
+
 
 void Thread::thread_func(ThreadData* pData)
 {

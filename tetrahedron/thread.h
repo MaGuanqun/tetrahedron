@@ -9,7 +9,6 @@
 #include <mutex>
 #include"basic/enum_setting.h"
 
-
 class ProjectDynamic;
 class TriangleMeshStruct;
 class TetrahedronMeshStruct;
@@ -19,6 +18,7 @@ class Tetrahedron;
 class BVH;
 class Collision;
 class SpatialHashing;
+class RadixSort;
 
 using job = std::packaged_task<void()>;
 
@@ -46,6 +46,7 @@ public:
     void assignTask(BVH* func, BVHFunc taskType);
     void assignTask(TetrahedronMeshStruct* func, MeshStructFuncSendToThread taskType);
     void assignTask(Collision* func, CollisionFuncSendToThread taskType);
+    void assignTask(RadixSort* func, RadixSortFunc taskType, int key_id);
 
     int thread_num;
 private:
@@ -61,6 +62,7 @@ private:
     job create_task(BVH* func, int thread_id, BVHFunc function_type);
     job create_task(TetrahedronMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);
     job create_task(Collision* func, int thread_id, CollisionFuncSendToThread function_type);
+    job create_task(RadixSort* func, int thread_id, RadixSortFunc function_type, int key_id);
 
 };
 
