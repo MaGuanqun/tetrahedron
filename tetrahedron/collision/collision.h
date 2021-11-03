@@ -76,11 +76,14 @@ private:
 	PredictiveContact predictive_contact;
 
 	SpatialHashing spatial_hashing;
+	bool use_BVH;
 
 	void buildBVH();
 	void initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread);
 	void searchTriangle(AABB& aabb, int compare_index, int cloth_No, std::vector<std::vector<int>>* cloth_neighbor_index, std::vector<std::vector<int>>* collider_neighbor_index);
-	void findTriangleAroundVertex(int thread_No);
+	void findClothTriangleAroundVertex(int thread_No);
+	void findColliderTriangleAroundVertex(int thread_No);
+	void findVertexAroundColliderTriangle(int thread_No);
 	void findEdgeAroundEdge(int thread_No);
 	inline bool vertexInTriangle(int* face_index, int vertex_index);
 	inline bool edgeEdgeconnected(int* edge1, int* edge2);
@@ -111,4 +114,11 @@ private:
 		double radius0, std::vector<double>& collision_stiffness, TargetPosition* target_postion_);
 	void resumTargetPosition();
 	void initialSpatialHashing(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread);
+	void initialNeighborPrimitive();
+	void colliderTriangleVertexCollisionDetection(int thread_No, int triangle_index, int collider_No,
+		std::vector<std::vector<int>>* triangle_neighbor_vertex, std::vector<std::vector<int>>* collide_triangle_vertex, MeshStruct* triangle_mesh, double radius0,
+		TargetPosition* target_pos);
+	void colliderTriangleVertexCollisionReDetection(int thread_No, int triangle_index, int collider_No,
+		std::vector<int>* collide_triangle_vertex, MeshStruct* triangle_mesh, double radius0, TargetPosition* target_pos);
+	void testCollision();
 };

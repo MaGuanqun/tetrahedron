@@ -53,6 +53,7 @@ void Collider::loadMesh(OriMesh& ori_mesh, Thread* thread)
 	genShader();
 	ori_vertices = mesh_struct.vertex_position;
 	triangle_AABB.resize(mesh_struct.faces.size());
+	vertex_AABB.resize(mesh_struct.vertex_position.size());
 }
 
 void Collider::setMeshStruct(OriMesh& ori_mesh)
@@ -68,26 +69,45 @@ void Collider::setMeshStruct(OriMesh& ori_mesh)
 
 void Collider::obtainAABB()
 {
+	thread->assignTask(this, VERTEX_AABB);
 	thread->assignTask(this, TRIANGLE_AABB);
+}
+
+
+//VERTEX_AABB
+void Collider::getVertexAABBPerThread(int thread_No)
+{
+	std::vector<std::array<double, 3>>* vertex_render = &mesh_struct.vertex_for_render;
+	std::vector<std::array<double, 3>>* vertex = &mesh_struct.vertex_position;
+	for (int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < mesh_struct.vertex_index_begin_per_thread[thread_No + 1]; ++i) {
+		vertex_AABB[i].obtainAABB((*vertex_render)[i].data(), (*vertex)[i].data(), tolerance);
+	}
 }
 
 //TRIANGLE_AABB
 void Collider::getTriangleAABBPerThread(int thread_No)
 {
 	std::vector<std::array<int,3>>* face = &mesh_struct.triangle_indices;
-	std::vector<std::array<double,3>>* render_pos = &mesh_struct.vertex_for_render;
-	std::vector<std::array<double,3>>* pos = &mesh_struct.vertex_position;
 	int* vertex_index;
-	AABB aabb0, aabb1;
 	for (int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < mesh_struct.face_index_begin_per_thread[thread_No + 1]; ++i) {
 		vertex_index = (*face)[i].data();
-		aabb0.obtainAABB((*render_pos)[vertex_index[0]].data(), (*render_pos)[vertex_index[1]].data(), (*render_pos)[vertex_index[2]].data());
-		aabb1.obtainAABB((*pos)[vertex_index[0]].data(), (*pos)[vertex_index[1]].data(), (*pos)[vertex_index[2]].data());
-		getAABB(triangle_AABB[i], aabb0, aabb1,tolerance);
+		getAABB(triangle_AABB[i], vertex_AABB[vertex_index[0]], vertex_AABB[vertex_index[1]], vertex_AABB[vertex_index[2]]);
 	}
 }
 
 void Collider::setTolerance(double* tolerance_ratio, double ave_edge_length)
 {
 	tolerance = tolerance_ratio[BODY_POINT_TRIANGLE] * ave_edge_length;
+}
+
+void Collider::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num)
+{
+	triangle_neighbor_cloth_triangle.resize(mesh_struct.triangle_indices.size());
+	triangle_neighbor_cloth_vertex.resize(mesh_struct.triangle_indices.size());
+	collider_triangle_cloth_vertex.resize(mesh_struct.triangle_indices.size());
+	for (int i = 0; i < mesh_struct.triangle_indices.size(); ++i) {
+		triangle_neighbor_cloth_triangle[i].resize(cloth_num);
+		triangle_neighbor_cloth_vertex[i].resize(cloth_num);
+		collider_triangle_cloth_vertex[i].resize(cloth_num);
+	}
 }

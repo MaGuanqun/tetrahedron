@@ -66,6 +66,11 @@ job Thread::create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread 
         k = job([func, thread_id]() {func->updateMatrixPerThread(thread_id); });
         break;
     }
+    case TEST_LOCAL_PROJECTION: {
+        k = job([func, thread_id]() {func->testLocalProjectionPerThread(thread_id); });
+        break;
+    }
+
     //case VIRTUAL_LOCAL_PROJECTION: {
     //    k = job([func, thread_id]() {func->virtualLocalProjectionPerThread(thread_id); });
     //}
@@ -155,6 +160,9 @@ job Thread::create_task(Collider* func, int thread_id, ObjectFunc function_type)
     case TRIANGLE_AABB:
         k = job([func, thread_id]() {func->getTriangleAABBPerThread(thread_id); });
         break;
+    case VERTEX_AABB:
+        k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id); });
+        break;
     }
     return k;
 }
@@ -183,7 +191,7 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
         k = job([func, thread_id]() {func->collisionReDetection(thread_id); });
         break;
     case RESUM_TARGET_POSITION:
-        k = job([func, thread_id]() {func->collisionReDetection(thread_id); });
+        k = job([func, thread_id]() {func->resumTargetPositionPerThread(thread_id); });
         break;
     case FIND_TRIANGLE_PAIRS:
         k = job([func, thread_id]() {func->findAllTrianglePairs(thread_id); });
@@ -213,6 +221,9 @@ job Thread::create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncS
         break;
     case SCENE_AABB:
         k = job([func, thread_id]() {func->getSceneAABB(thread_id); });
+        break;
+    case SET_HASH_TOGETHER:
+        k = job([func, thread_id]() {func->setHashTogether(thread_id); });
         break;
     }
     return k;

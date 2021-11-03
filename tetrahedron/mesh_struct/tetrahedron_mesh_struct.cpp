@@ -93,7 +93,7 @@ void TetrahedronMeshStruct::setThreadIndex(int total_thread_num_)
 void TetrahedronMeshStruct::getRenderNormal()
 {
 	thread->assignTask(this, FACE_NORMAL_RENDER);
-	memset(vertex_norm_for_render[0].data(), 0, 24 * vertex_position.size());
+	memset(vertex_normal_for_render[0].data(), 0, 24 * vertex_position.size());
 	thread->assignTask(this, VERTEX_NORMAL_RENDER);
 }
 
@@ -104,8 +104,8 @@ void TetrahedronMeshStruct::getRenderFaceNormalPerThread(int thread_id)
 	for (int j = face_index_begin_per_thread[thread_id]; j < face_index_begin_per_thread[thread_id + 1]; ++j) {
 		SUB(e2, vertex_for_render[triangle_indices[j][1]], vertex_for_render[triangle_indices[j][0]]);
 		SUB(e0, vertex_for_render[triangle_indices[j][2]], vertex_for_render[triangle_indices[j][0]]);
-		CROSS(face_norm_for_render[j].data(), e2, e0);
-		normalize(face_norm_for_render[j].data());
+		CROSS(face_normal_for_render[j].data(), e2, e0);
+		normalize(face_normal_for_render[j].data());
 	}
 }
 
@@ -114,10 +114,10 @@ void TetrahedronMeshStruct::getRenderVertexNormalPerThread(int thread_id)
 {
 	for (int i = vertex_index_begin_per_thread[thread_id]; i < vertex_index_begin_per_thread[thread_id + 1]; ++i) {
 		for (int k = 0; k < vertices[i].face.size(); ++k) {
-			SUM(vertex_norm_for_render[i],
-				vertex_norm_for_render[i], face_norm_for_render[vertices[i].face[k]]);
+			SUM(vertex_normal_for_render[i],
+				vertex_normal_for_render[i], face_normal_for_render[vertices[i].face[k]]);
 		}
-		normalize(vertex_norm_for_render[i].data());
+		normalize(vertex_normal_for_render[i].data());
 	}
 }
 

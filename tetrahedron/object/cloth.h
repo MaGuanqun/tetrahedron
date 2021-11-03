@@ -45,17 +45,18 @@ public:
 
 	void setTolerance(double* tolerance_ratio, double ave_edge_length);
 
-	std::vector<std::vector<std::vector<int>>>triangle_neighbor_cloth_traingle;
+	std::vector<std::vector<std::vector<int>>>triangle_neighbor_cloth_triangle;
 	std::vector<std::vector<std::vector<int>>>triangle_neighbor_collider_triangle;
-	void initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num, int collider_num);
+	void initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num, int collider_num, bool use_BVH);
 
 	std::vector<std::vector<std::vector<int>>>vertex_neighbor_cloth_traingle;
 	std::vector<std::vector<std::vector<int>>>vertex_neighbor_collider_triangle;
 	std::vector<std::vector<std::vector<int>>>edge_neighbor_cloth_edge;
 
-	std::vector<std::vector<std::vector<int>>>collide_vertex_cloth_traingle;
+	std::vector<std::vector<std::vector<int>>>collide_vertex_cloth_triangle;
 	std::vector<std::vector<std::vector<int>>>collide_vertex_collider_triangle;
 	std::vector<std::vector<std::vector<int>>>collide_edge_cloth_edge;
+
 
 private:
 	void setMeshStruct(double density, OriMesh& ori_mesh);

@@ -10,7 +10,20 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	initialBVH(cloth, collider, tetrahedron, thread);
 	initialTargetPos(cloth, tetrahedron, thread);
 	initialSpatialHashing(cloth, collider, tetrahedron, thread);
-	std::cout << "6" << std::endl;
+	use_BVH = false;
+	initialNeighborPrimitive();
+}
+
+void Collision::initialNeighborPrimitive()
+{
+	for (int i = 0; i < cloth->size(); ++i) {
+		(*cloth)[i].initialNeighborPrimitiveRecording(cloth->size(), tetrahedron->size(), collider->size(),use_BVH);
+	}
+	if (!use_BVH) {
+		for (int i = 0; i < collider->size(); ++i) {
+			(*collider)[i].initialNeighborPrimitiveRecording(cloth->size(), tetrahedron->size());
+		}		
+	}
 }
 
 void Collision::initialTargetPos(std::vector<Cloth>* cloth,	std::vector<Tetrahedron>* tetrahedron, Thread* thread)
@@ -75,14 +88,82 @@ void Collision::buildBVH()
 void Collision::globalCollision()
 {
 	getAABB();
-	buildBVH();
+	if (use_BVH) {
+		buildBVH();
+	}
+	else {
+		time_t t1 = clock();
+		for (int i = 0; i < 1000; ++i) {
+			spatial_hashing.buildSpatialHashing();
+		}		
+		std::cout <<"build "<< clock() - t1 << std::endl;
+		t1 = clock();
+		for (int i = 0; i < 1000; ++i) {
+			spatial_hashing.buildSpatialHashing01();
+		}
+		std::cout << "build01 " << clock() - t1 << std::endl;
+		t1 = clock();
+		for (int i = 0; i < 1000; ++i) {
+			spatial_hashing.buildSpatialHashing2();
+		}
+		std::cout << "build2 " << clock() - t1 << std::endl;
+	}
 	for (int i = 0; i < cloth->size(); ++i) {
 		(*cloth)[i].mesh_struct.getNormal();
 	}
-	thread->assignTask(this, FIND_TRIANGLE_PAIRS);
-	thread->assignTask(this, FIND_PRIMITIVE_AROUND);
+	time_t t1 = clock();
+	for (int i = 0; i < 1000; ++i) {
+		thread->assignTask(this, FIND_TRIANGLE_PAIRS);
+		thread->assignTask(this, FIND_PRIMITIVE_AROUND);
+	}
+	std::cout << "search " << clock() - t1 << std::endl;
 	thread->assignTask(this, GLOBAL_COLLISION_DETECTION);
 	sumTargetPosition();
+}
+
+
+void Collision::testCollision()
+{
+	//for (int i = 0; i < (*cloth)[0].mesh_struct.vertices.size(); ++i) {
+	int i = 0;
+
+	for (int j = 0; j < (*cloth)[0].vertex_neighbor_collider_triangle[i][0].size(); ++j) {
+		std::cout << (*cloth)[0].vertex_AABB[i].min[0] << " " << (*cloth)[0].vertex_AABB[i].min[1] << " " << (*cloth)[0].vertex_AABB[i].min[2] << " "
+			<< (*cloth)[0].vertex_AABB[i].max[0] << " " << (*cloth)[0].vertex_AABB[i].max[1] << " " << (*cloth)[0].vertex_AABB[i].max[2] << std::endl;
+		std::cout << (*collider)[0].triangle_AABB[(*cloth)[0].vertex_neighbor_collider_triangle[i][0][j]].min[0] << " " << (*collider)[0].triangle_AABB[(*cloth)[0].vertex_neighbor_collider_triangle[i][0][j]].min[1] << " " << (*collider)[0].triangle_AABB[(*cloth)[0].vertex_neighbor_collider_triangle[i][0][j]].min[2] << " "
+			<< (*collider)[0].triangle_AABB[(*cloth)[0].vertex_neighbor_collider_triangle[i][0][j]].max[0] << " " << (*collider)[0].triangle_AABB[(*cloth)[0].vertex_neighbor_collider_triangle[i][0][j]].max[1] << " " << (*collider)[0].triangle_AABB[(*cloth)[0].vertex_neighbor_collider_triangle[i][0][j]].max[2] << std::endl;
+		std::cout << i << " " << (*cloth)[0].vertex_neighbor_collider_triangle[i][0][j] << std::endl;
+		/*	if (!(*cloth)[0].vertex_AABB[i].AABB_intersection((*collider)[0].triangle_AABB[(*cloth)[0].vertex_neighbor_collider_triangle[i][0][j]])) {
+				std::cout << i << " " << (*cloth)[0].vertex_neighbor_collider_triangle[i][0][j] << std::endl;
+			}*/
+	}
+
+	if (!(*cloth)[0].vertex_neighbor_collider_triangle[i][0].empty()) {
+		system("pause");
+	}
+	//}
+	//for (int i = 0; i < (*collider)[0].mesh_struct.triangle_indices.size(); ++i) {
+	//	for (int j = 0; j < (*collider)[0].triangle_neighbor_cloth_vertex[i][0].size(); ++j) {
+	//		if ((*collider)[0].triangle_neighbor_cloth_vertex[i][0][j] == 0) {
+	//			if (!(*collider)[0].triangle_AABB[i].AABB_intersection((*cloth)[0].vertex_AABB[(*collider)[0].triangle_neighbor_cloth_vertex[i][0][j]])) {
+	//				std::cout << (*collider)[0].triangle_neighbor_cloth_vertex[i][0][j] << " " << i << std::endl;
+	//			}
+	//			system("pause");
+	//		}
+	//	}
+	//}
+	//if (!(*cloth)[0].vertex_neighbor_collider_triangle[i][0].empty()) {
+	//	
+	//}
+	//for (int i = 0; i < (*cloth)[0].mesh_struct.triangle_indices.size(); ++i) {
+	//	for (int j = 0; j < (*cloth)[0].triangle_neighbor_collider_triangle[i][0].size(); ++j) {
+	//		if (!(*cloth)[0].triangle_AABB[i].AABB_intersection((*collider)[0].triangle_AABB[(*cloth)[0].triangle_neighbor_collider_triangle[i][0][j]])) {
+	//			std::cout << i << " " << (*cloth)[0].triangle_neighbor_collider_triangle[i][0][j] << std::endl;
+	//		}
+	//		
+	//	}
+	//}
+	
 }
 
 void Collision::updateCollisionPosition()
@@ -176,19 +257,63 @@ void Collision::collisionDetection(int thread_No)
 {
 	TargetPosition* target_pos = &cloth_target_pos_per_thread[thread_No];
 	target_pos->initial();
-	std::vector<int>* index_begin;
-	for (int cloth_No = 0; cloth_No < cloth->size(); ++cloth_No) {
-		index_begin = &(*cloth)[cloth_No].mesh_struct.vertex_index_begin_per_thread;
-		for (int i =(*index_begin)[thread_No]; i < (*index_begin)[thread_No + 1]; ++i) {
-			pointSelfTriangleCollisionDetection(thread_No, i, cloth_No, &(*cloth)[cloth_No].vertex_neighbor_cloth_traingle[i],
-				&(*cloth)[cloth_No].collide_vertex_cloth_traingle[i], &(*cloth)[cloth_No].mesh_struct, (*cloth)[cloth_No].PC_radius[SELF_POINT_TRIANGLE], target_pos);
-			pointColliderTriangleCollisionDetection(thread_No, i, cloth_No, &(*cloth)[cloth_No].vertex_neighbor_collider_triangle[i],
-				&(*cloth)[cloth_No].collide_vertex_collider_triangle[i], &(*cloth)[cloth_No].mesh_struct, (*cloth)[cloth_No].PC_radius[BODY_POINT_TRIANGLE], target_pos);
+	int* index_begin;
+	if (use_BVH) {
+		for (int cloth_No = 0; cloth_No < cloth->size(); ++cloth_No) {
+			index_begin = (*cloth)[cloth_No].mesh_struct.vertex_index_begin_per_thread.data();
+			for (int i = index_begin[thread_No]; i < index_begin[thread_No + 1]; ++i) {
+				pointSelfTriangleCollisionDetection(thread_No, i, cloth_No, &(*cloth)[cloth_No].vertex_neighbor_cloth_traingle[i],
+					&(*cloth)[cloth_No].collide_vertex_cloth_triangle[i], &(*cloth)[cloth_No].mesh_struct, (*cloth)[cloth_No].PC_radius[SELF_POINT_TRIANGLE], target_pos);
+				pointColliderTriangleCollisionDetection(thread_No, i, cloth_No, &(*cloth)[cloth_No].vertex_neighbor_collider_triangle[i],
+					&(*cloth)[cloth_No].collide_vertex_collider_triangle[i], &(*cloth)[cloth_No].mesh_struct, (*cloth)[cloth_No].PC_radius[BODY_POINT_TRIANGLE], target_pos);
+			}
 		}
-		index_begin = &(*cloth)[cloth_No].mesh_struct.edge_index_begin_per_thread;
-		for (int i = (*index_begin)[thread_No]; i < (*index_begin)[thread_No + 1]; ++i) {
+	}
+	else {
+		for (int cloth_No = 0; cloth_No < cloth->size(); ++cloth_No) {
+			index_begin = (*cloth)[cloth_No].mesh_struct.vertex_index_begin_per_thread.data();
+			for (int i = index_begin[thread_No]; i < index_begin[thread_No + 1]; ++i) {
+				pointSelfTriangleCollisionDetection(thread_No, i, cloth_No, &(*cloth)[cloth_No].vertex_neighbor_cloth_traingle[i],
+					&(*cloth)[cloth_No].collide_vertex_cloth_triangle[i], &(*cloth)[cloth_No].mesh_struct, (*cloth)[cloth_No].PC_radius[SELF_POINT_TRIANGLE], target_pos);
+			}
+		}
+		for (int collider_No = 0; collider_No < collider->size(); ++collider_No) {
+			index_begin = (*collider)[collider_No].mesh_struct.face_index_begin_per_thread.data();
+			for (int i = index_begin[thread_No]; i < index_begin[thread_No + 1]; ++i) {
+				colliderTriangleVertexCollisionDetection(thread_No, i, collider_No, &(*collider)[collider_No].triangle_neighbor_cloth_vertex[i],
+					&(*collider)[collider_No].collider_triangle_cloth_vertex[i], &(*collider)[collider_No].mesh_struct, (*collider)[collider_No].tolerance, target_pos);
+			}
+		}
+	}
+	for (int cloth_No = 0; cloth_No < cloth->size(); ++cloth_No) {
+		index_begin = (*cloth)[cloth_No].mesh_struct.edge_index_begin_per_thread.data();
+		for (int i = index_begin[thread_No]; i < index_begin[thread_No + 1]; ++i) {
 			edgeSelfEdgeCollisionDetection(thread_No, i, cloth_No, &(*cloth)[cloth_No].edge_neighbor_cloth_edge[i], &(*cloth)[cloth_No].collide_edge_cloth_edge[i], 
 				&(*cloth)[cloth_No].mesh_struct, (*cloth)[cloth_No].PC_radius[SELF_EDGE_EDGE], target_pos);
+		}
+	}
+}
+
+void Collision::colliderTriangleVertexCollisionDetection(int thread_No, int triangle_index, int collider_No,
+	std::vector<std::vector<int>>* triangle_neighbor_vertex, std::vector<std::vector<int>>* collide_triangle_vertex, MeshStruct* triangle_mesh, double radius0,
+	TargetPosition* target_pos)
+{
+	MeshStruct* vertex_mesh;
+	std::vector<int>* neighbor_vertex;
+	std::vector<int>* collide_vertex;
+	double radius1;
+	for (int i = 0; i < cloth->size(); ++i) {
+		vertex_mesh = &(*cloth)[i].mesh_struct;
+		neighbor_vertex = &(*triangle_neighbor_vertex)[i];
+		collide_vertex = &(*collide_triangle_vertex)[i];
+		collide_vertex->clear();
+		collide_vertex->reserve(neighbor_vertex->size());
+		radius1 = (*cloth)[i].PC_radius[BODY_POINT_TRIANGLE];
+		for (int k = 0; k < neighbor_vertex->size(); ++k) {
+			if (checkPointColliderTriangleCollision(vertex_mesh, triangle_mesh, radius0 + radius1, (*neighbor_vertex)[k], triangle_index,  i,
+				collider_No, target_pos, true, (*cloth)[i].collision_stiffness[BODY_POINT_TRIANGLE])) {
+				collide_vertex->push_back((*neighbor_vertex)[k]);
+			}
 		}
 	}
 }
@@ -198,22 +323,46 @@ void Collision::collisionReDetection(int thread_No)
 {
 	TargetPosition* target_pos = &cloth_target_pos_per_thread[thread_No];
 	target_pos->partialInitial();
-	std::vector<int>* index_begin;
-	for (int cloth_No = 0; cloth_No < cloth->size(); ++cloth_No) {
-		index_begin = &(*cloth)[cloth_No].mesh_struct.vertex_index_begin_per_thread;
-		for (int i = (*index_begin)[thread_No]; i < (*index_begin)[thread_No + 1]; ++i) {
-			pointSelfTriangleCollisionReDetection(thread_No, i, cloth_No, &(*cloth)[cloth_No].collide_vertex_cloth_traingle[i], &(*cloth)[cloth_No].mesh_struct,
-				(*cloth)[cloth_No].PC_radius[SELF_POINT_TRIANGLE], &(*cloth)[cloth_No].collision_stiffness[SELF_POINT_TRIANGLE], target_pos);
-			pointColliderTriangleCollisionReDetection(thread_No, i, cloth_No, &(*cloth)[cloth_No].collide_vertex_collider_triangle[i], &(*cloth)[cloth_No].mesh_struct,
-				(*cloth)[cloth_No].PC_radius[BODY_POINT_TRIANGLE], &(*cloth)[cloth_No].collision_stiffness[BODY_POINT_TRIANGLE], target_pos);
+	int* index_begin;
+	if (use_BVH) {
+		for (int cloth_No = 0; cloth_No < cloth->size(); ++cloth_No) {
+			index_begin = (*cloth)[cloth_No].mesh_struct.vertex_index_begin_per_thread.data();
+			for (int i = index_begin[thread_No]; i < index_begin[thread_No + 1]; ++i) {
+				pointSelfTriangleCollisionReDetection(thread_No, i, cloth_No, &(*cloth)[cloth_No].collide_vertex_cloth_triangle[i], &(*cloth)[cloth_No].mesh_struct,
+					(*cloth)[cloth_No].PC_radius[SELF_POINT_TRIANGLE], &(*cloth)[cloth_No].collision_stiffness[SELF_POINT_TRIANGLE], target_pos);
+			}
+			for (int i = index_begin[thread_No]; i < index_begin[thread_No + 1]; ++i) {
+				pointColliderTriangleCollisionReDetection(thread_No, i, cloth_No, &(*cloth)[cloth_No].collide_vertex_collider_triangle[i], &(*cloth)[cloth_No].mesh_struct,
+					(*cloth)[cloth_No].PC_radius[BODY_POINT_TRIANGLE], &(*cloth)[cloth_No].collision_stiffness[BODY_POINT_TRIANGLE], target_pos);
+			}
 		}
-		index_begin = &(*cloth)[cloth_No].mesh_struct.edge_index_begin_per_thread;
-		for (int i = (*index_begin)[thread_No]; i < (*index_begin)[thread_No + 1]; ++i) {
-			edgeSelfEdgeCollisionReDetection(thread_No, i, cloth_No, &(*cloth)[cloth_No].collide_edge_cloth_edge[i], &(*cloth)[cloth_No].mesh_struct, 
+	}
+	else {
+		for (int cloth_No = 0; cloth_No < cloth->size(); ++cloth_No) {
+			index_begin = (*cloth)[cloth_No].mesh_struct.vertex_index_begin_per_thread.data();
+			for (int i = index_begin[thread_No]; i < index_begin[thread_No + 1]; ++i) {
+				pointSelfTriangleCollisionReDetection(thread_No, i, cloth_No, &(*cloth)[cloth_No].collide_vertex_cloth_triangle[i], &(*cloth)[cloth_No].mesh_struct,
+					(*cloth)[cloth_No].PC_radius[SELF_POINT_TRIANGLE], &(*cloth)[cloth_No].collision_stiffness[SELF_POINT_TRIANGLE], target_pos);
+			}
+		}
+		for (int collider_No = 0; collider_No < collider->size(); ++collider_No) {
+			index_begin = (*collider)[collider_No].mesh_struct.face_index_begin_per_thread.data();
+			for (int i = index_begin[thread_No]; i < index_begin[thread_No + 1]; ++i) {
+				colliderTriangleVertexCollisionReDetection(thread_No, i, collider_No,(*collider)[collider_No].collider_triangle_cloth_vertex[i].data(), 
+					&(*collider)[collider_No].mesh_struct, (*collider)[collider_No].tolerance, target_pos);
+			}
+		}
+	}
+	for (int cloth_No = 0; cloth_No < cloth->size(); ++cloth_No) {
+		index_begin = (*cloth)[cloth_No].mesh_struct.edge_index_begin_per_thread.data();
+		for (int i = index_begin[thread_No]; i < index_begin[thread_No + 1]; ++i) {
+			edgeSelfEdgeCollisionReDetection(thread_No, i, cloth_No, &(*cloth)[cloth_No].collide_edge_cloth_edge[i], &(*cloth)[cloth_No].mesh_struct,
 				(*cloth)[cloth_No].PC_radius[SELF_EDGE_EDGE], (*cloth)[cloth_No].collision_stiffness[SELF_EDGE_EDGE], target_pos);
 		}
 	}
 }
+
+
 
 
 
@@ -263,6 +412,13 @@ void Collision::pointSelfTriangleCollisionDetection(int thread_No,int vertex_ind
 				collide_triangle->push_back((*neighbor_triangle)[k]);
 			}
 		}
+		//if (vertex_index == 0 || vertex_index == 1) {
+		//	std::cout << vertex_index << std::endl;
+		//	for (int k = 0; k < neighbor_triangle->size(); ++k) {
+		//		std::cout << (*neighbor_triangle)[k] << " ";
+		//	}
+		//	std::cout << std::endl;
+		//}
 	}	
 }
 
@@ -279,6 +435,10 @@ void Collision::pointColliderTriangleCollisionReDetection(int thread_No, int ver
 		for (int k = 0; k < collide_triangle->size(); ++k) {
 			if (!checkPointColliderTriangleCollision(vertex_mesh, triangle_mesh, radius0 + radius1, vertex_index, (*collide_triangle)[k], cloth_No,
 				i, target_postion_, false, (*collision_stiffness))) {
+				//if (vertex_index == 0) {
+				//	std::cout<<"refind "<< vertex_mesh->vertex_position[vertex_index][0] << " " <<
+				//		vertex_mesh->vertex_position[vertex_index][1] << " " << vertex_mesh->vertex_position[vertex_index][2] << std::endl;
+				//}
 				addTargetPosToSystem(target_postion_->b_sum[cloth_No][vertex_index].data(),
 					target_postion_->collision_energy[cloth_No], vertex_mesh->vertex_position[vertex_index].data(), vertex_mesh->vertex_position[vertex_index].data(), (*collision_stiffness)[vertex_index]);
 			}
@@ -298,10 +458,10 @@ void Collision::pointSelfTriangleCollisionReDetection(int thread_No, int vertex_
 	for (int i = 0; i < cloth->size(); ++i) {
 		triangle_mesh = &(*cloth)[i].mesh_struct;
 		collide_triangle = &(*collide_vertex_triangle)[i];
-		radius1 = (*cloth)[i].PC_radius[SELF_POINT_TRIANGLE];
+		radius1 = (*cloth)[i].PC_radius[SELF_POINT_TRIANGLE]+ radius0;
 		triangle_collision_stiffness = &(*cloth)[i].collision_stiffness[SELF_POINT_TRIANGLE];
 		for (int k = 0; k < collide_triangle->size(); ++k) {
-			if (!checkPointTriangleCollision(vertex_mesh, triangle_mesh, radius0 + radius1, vertex_index, (*collide_triangle)[k], cloth_No,
+			if (!checkPointTriangleCollision(vertex_mesh, triangle_mesh, radius1, vertex_index, (*collide_triangle)[k], cloth_No,
 				i, target_postion_, false, (*collision_stiffness), (*triangle_collision_stiffness))) {
 				addTargetPosToSystem(target_postion_->b_sum[cloth_No][vertex_index].data(),
 					target_postion_->collision_energy[cloth_No], vertex_mesh->vertex_position[vertex_index].data(), vertex_mesh->vertex_position[vertex_index].data(), (*collision_stiffness)[vertex_index]);
@@ -316,6 +476,29 @@ void Collision::pointSelfTriangleCollisionReDetection(int thread_No, int vertex_
 		}
 	}
 }
+
+void Collision::colliderTriangleVertexCollisionReDetection(int thread_No, int triangle_index, int collider_No,
+	std::vector<int>* collide_triangle_vertex, MeshStruct* triangle_mesh, double radius0, TargetPosition* target_pos)
+{
+	MeshStruct* vertex_mesh;
+	std::vector<int>* collide_vertex;
+	double radius1;
+	std::vector<double>* collision_stiffness;
+	for (int i = 0; i < cloth->size(); ++i) {
+		vertex_mesh = &(*cloth)[i].mesh_struct;
+		collide_vertex = &collide_triangle_vertex[i];
+		radius1 = (*cloth)[i].PC_radius[BODY_POINT_TRIANGLE]+radius0;
+		collision_stiffness = &(*cloth)[i].collision_stiffness[BODY_POINT_TRIANGLE];
+		for (int k = 0; k < collide_vertex->size(); ++k) {
+			if (!checkPointColliderTriangleCollision(vertex_mesh, triangle_mesh, radius1, (*collide_vertex)[k], triangle_index, i,
+				collider_No, target_pos, false, (*collision_stiffness))) {
+				addTargetPosToSystem(target_pos->b_sum[i][(*collide_vertex)[k]].data(),
+					target_pos->collision_energy[i], vertex_mesh->vertex_position[(*collide_vertex)[k]].data(), vertex_mesh->vertex_position[(*collide_vertex)[k]].data(), (*collision_stiffness)[(*collide_vertex)[k]]);
+			}
+		}
+	}
+}
+
 
 void Collision::edgeSelfEdgeCollisionReDetection(int thread_No, int edge_index, int cloth_No, std::vector<std::vector<int>>* collide_edge_edge, TriangleMeshStruct* edge_mesh, 
 	double radius0, std::vector<double>& collision_stiffness, TargetPosition* target_postion_)
@@ -385,8 +568,25 @@ bool Collision::checkPointTriangleCollision(MeshStruct* vertex_mesh, MeshStruct*
 	double vertex_target_pos[3];
 	std::vector<std::array<double, 3>> triangle_target_pos;
 	if (predictive_contact.pointTriangleCollision(vertex_mesh->vertex_for_render[vertex_index].data(), vertex_mesh->vertex_position[vertex_index].data(), initial_triangle_pos, current_triangle_pos,
-		triangle_mesh->face_norm_for_render[triangle_index].data(), triangle_mesh->face_norm[triangle_index].data(), vertex_target_pos, triangle_target_pos, radius, triangle_mesh->triangle_normal_magnitude_reciprocal[triangle_index],
-		vertex_mesh->mass[vertex_index], triangle_mass)) {		
+		triangle_mesh->face_normal_for_render[triangle_index].data(), triangle_mesh->face_normal[triangle_index].data(), vertex_target_pos, triangle_target_pos, radius, triangle_mesh->triangle_normal_magnitude_reciprocal[triangle_index],
+		vertex_mesh->mass[vertex_index], triangle_mass)) {	
+		//if (vertex_index == 0) {
+		//	std::cout << "++" << std::endl;
+		//	std::cout << vertex_index << " " << triangle_index << " " << vertex_mesh->vertex_for_render[vertex_index][0] << " " << vertex_mesh->vertex_for_render[vertex_index][1] << " " << vertex_mesh->vertex_for_render[vertex_index][2] << " " << std::endl;
+		//	for (int i = 0; i < triangle_target_pos.size(); ++i) {
+		//		std::cout << vertex_index << " " << triangle_index << " " << initial_triangle_pos[i][0] << " " << initial_triangle_pos[i][1] << " " << initial_triangle_pos[i][2] << " " << std::endl;
+		//	}
+		//	std::cout << vertex_mesh->vertex_position[vertex_index][0] << " " << vertex_mesh->vertex_position[vertex_index][1] << " " << vertex_mesh->vertex_position[vertex_index][2] << " " << std::endl;
+		//	for (int i = 0; i < triangle_target_pos.size(); ++i) {
+		//		std::cout << current_triangle_pos[i][0] << " " << current_triangle_pos[i][1] << " " << current_triangle_pos[i][2] << " " << std::endl;
+		//	}
+		//	std::cout << vertex_index << " " << triangle_index <<" "<< vertex_target_pos[0] << " " << vertex_target_pos[1] << " " << vertex_target_pos[2] << " " << std::endl;
+		//	for (int i = 0; i < triangle_target_pos.size(); ++i) {
+		//		std::cout << vertex_index<<" "<< triangle_index << " " << triangle_target_pos[i][0] << " " << triangle_target_pos[i][1] << " " << triangle_target_pos[i][2] << " " << std::endl;
+		//	}
+		//	std::cout << "++" << std::endl;
+		//}
+
 		addTargetPosToSystem(target_position->b_sum[vertex_cloth_No][vertex_index].data(),
 			target_position->collision_energy[vertex_cloth_No], vertex_mesh->vertex_position[vertex_index].data(), vertex_target_pos, vertex_collision_stiffness[vertex_index]);
 		int triangle_vertex;
@@ -457,10 +657,17 @@ bool Collision::checkPointColliderTriangleCollision(MeshStruct* vertex_mesh, Mes
 	}
 	double vertex_target_pos[3];
 	if (predictive_contact.pointColliderTriangleCollision(vertex_mesh->vertex_for_render[vertex_index].data(), vertex_mesh->vertex_position[vertex_index].data(), initial_triangle_pos, current_triangle_pos,
-		triangle_mesh->face_norm_for_render[triangle_index].data(), triangle_mesh->face_norm[triangle_index].data(), vertex_target_pos, radius)) {
+		triangle_mesh->face_normal_for_render[triangle_index].data(), triangle_mesh->face_normal[triangle_index].data(), vertex_target_pos, radius)) {
 		if (new_collision_registration) {
 			target_position->stiffness[vertex_cloth_No][vertex_index] += vertex_collision_stiffness[vertex_index];
 			target_position->need_update[vertex_cloth_No][vertex_index] = true;
+			
+		}
+		else {
+			/*if (vertex_index == 0) {
+				std::cout << vertex_target_pos[0] << " " << vertex_target_pos[1] << " " << vertex_target_pos[2] << " "
+					<< vertex_mesh->vertex_position[vertex_index][0] << " " << vertex_mesh->vertex_position[vertex_index][1] << " " << vertex_mesh->vertex_position[vertex_index][2] << std::endl;
+			}*/
 		}
 		addTargetPosToSystem(target_position->b_sum[vertex_cloth_No][vertex_index].data(),
 			target_position->collision_energy[vertex_cloth_No], vertex_mesh->vertex_position[vertex_index].data(), vertex_target_pos, vertex_collision_stiffness[vertex_index]);
@@ -475,8 +682,8 @@ void Collision::addTargetPosToSystem(double* b_sum, double& energy, double* curr
 	SUB(temp, current_pos, target_pos);
 	energy += 0.5 * stiffness * DOT(temp, temp);
 	b_sum[0] += target_pos[0] * stiffness;
-	b_sum[1] += target_pos[2] * stiffness;
-	b_sum[2] += target_pos[1] * stiffness;
+	b_sum[1] += target_pos[1] * stiffness;
+	b_sum[2] += target_pos[2] * stiffness;
 }
 void Collision::test()
 {
@@ -488,8 +695,8 @@ void Collision::test()
 	}
 	std::cout << std::endl;
 	std::cout << "triangle " << std::endl;
-	for (int i = 0; i < (*cloth)[0].triangle_neighbor_cloth_traingle[0][0].size(); ++i) {
-		std::cout << (*cloth)[0].triangle_neighbor_cloth_traingle[0][0][i] << " ";
+	for (int i = 0; i < (*cloth)[0].triangle_neighbor_cloth_triangle[0][0].size(); ++i) {
+		std::cout << (*cloth)[0].triangle_neighbor_cloth_triangle[0][0][i] << " ";
 	}
 	std::cout << std::endl;
 	std::cout << "edge " << std::endl;
@@ -498,6 +705,8 @@ void Collision::test()
 	}
 	std::cout << std::endl;
 }
+
+
 
 void Collision::searchTriangle(AABB& aabb, int compare_index, int cloth_No, std::vector<std::vector<int>>* cloth_neighbor_index, std::vector<std::vector<int>>* collider_neighbor_index)
 {
@@ -518,11 +727,36 @@ void Collision::searchTriangle(AABB& aabb, int compare_index, int cloth_No, std:
 void Collision::findAllTrianglePairs(int thread_No)
 {
 	int* thread_begin;
-	for (int i = 0; i < cloth->size(); ++i) {
-		thread_begin = (*cloth)[i].mesh_struct.face_index_begin_per_thread.data();
-		for (int j = thread_begin[thread_No]; j < thread_begin[thread_No + 1]; ++j) {
-			searchTriangle((*cloth)[i].triangle_AABB[j], j, i, &(*cloth)[i].triangle_neighbor_cloth_traingle[j],
-				&(*cloth)[i].triangle_neighbor_collider_triangle[j]);
+	if (use_BVH) {
+		for (int i = 0; i < cloth->size(); ++i) {
+			thread_begin = (*cloth)[i].mesh_struct.face_index_begin_per_thread.data();
+			for (int j = thread_begin[thread_No]; j < thread_begin[thread_No + 1]; ++j) {
+				searchTriangle((*cloth)[i].triangle_AABB[j], j, i, &(*cloth)[i].triangle_neighbor_cloth_triangle[j],
+					&(*cloth)[i].triangle_neighbor_collider_triangle[j]);
+			}
+		}
+	}
+	else {
+		for (int i = 0; i < cloth->size(); ++i) { 
+			thread_begin = (*cloth)[i].mesh_struct.face_index_begin_per_thread.data();
+			for (int j = thread_begin[thread_No]; j < thread_begin[thread_No + 1]; ++j) {
+				spatial_hashing.searchTriangle((*cloth)[i].triangle_AABB[j],i, j,(*cloth)[i].triangle_neighbor_cloth_triangle[j].data(),
+					false,thread_No);
+				//if (j == 0) {
+				//	std::cout << j << " ";
+				//	for (int k = 0; k < (*cloth)[i].triangle_neighbor_cloth_triangle[j][0].size(); ++k) {
+				//		std::cout << (*cloth)[i].triangle_neighbor_cloth_triangle[j][0][k] << " ";
+				//	}
+				//	std::cout << std::endl;					
+				//}
+			}
+		}
+		for (int i = 0; i < collider->size(); ++i) {
+			thread_begin = (*collider)[i].mesh_struct.face_index_begin_per_thread.data();
+			for (int j = thread_begin[thread_No]; j < thread_begin[thread_No + 1]; ++j) {
+				spatial_hashing.searchTriangle((*collider)[i].triangle_AABB[j], i, j, (*collider)[i].triangle_neighbor_cloth_triangle[j].data(),
+					true, thread_No);
+			}
 		}
 	}
 }
@@ -530,13 +764,60 @@ void Collision::findAllTrianglePairs(int thread_No)
 //FIND_PRIMITIVE_AROUND
 void Collision::findPrimitivesAround(int thread_No)
 {
-	findTriangleAroundVertex(thread_No);
+	findClothTriangleAroundVertex(thread_No);
+	if (use_BVH) {
+		findColliderTriangleAroundVertex(thread_No);
+	}
+	else {
+		findVertexAroundColliderTriangle(thread_No);
+	}
 	findEdgeAroundEdge(thread_No);
 }
 
+void Collision::findVertexAroundColliderTriangle(int thread_No)
+{
+	int* thread_begin;
+	std::vector<std::vector<std::vector<int>>>* triangle_neighbor_triangle;
+	std::vector<std::vector<std::vector<int>>>* triangle_neighbor_vertex; //triangle index near vertex
+	int* rep_vertex_num; // record of vertex's representative triangle index
 
+	std::vector<int>* triangle_neighbor_this_cloth_vertex; //vector to record the triangle index near vertex which triangle and vertex in same cloth
+	std::vector<int>* triangle_neighbor_this_cloth_triangle;//vector to record the triangle index near triangle in same cloth
 
-void Collision::findTriangleAroundVertex(int thread_No)
+	std::vector<AABB>* triangle_aabb;
+	std::vector<AABB>* compared_vertex_aabb;
+	int cloth_triangle_index;
+
+	MeshStruct::Face* faces;
+
+	for (int i = 0; i < collider->size(); ++i) {
+		thread_begin = (*collider)[i].mesh_struct.face_index_begin_per_thread.data();
+		triangle_aabb = &(*collider)[i].triangle_AABB;
+		triangle_neighbor_vertex = &(*collider)[i].triangle_neighbor_cloth_vertex;
+		triangle_neighbor_triangle = &(*collider)[i].triangle_neighbor_cloth_triangle;
+		for (int k = 0; k < cloth->size(); ++k) {
+			compared_vertex_aabb = &(*cloth)[k].vertex_AABB;
+			rep_vertex_num = (*cloth)[k].representative_vertex_num.data();
+			faces = (*cloth)[k].mesh_struct.faces.data();
+			for (int j = thread_begin[thread_No]; j < thread_begin[thread_No + 1]; ++j) {
+				triangle_neighbor_this_cloth_vertex = &(*triangle_neighbor_vertex)[j][k];
+				triangle_neighbor_this_cloth_triangle = &(*triangle_neighbor_triangle)[j][k];
+				triangle_neighbor_this_cloth_vertex->clear();				
+				triangle_neighbor_this_cloth_vertex->reserve(triangle_neighbor_this_cloth_triangle->size());
+				for (int m = 0; m < triangle_neighbor_this_cloth_triangle->size(); ++m) {
+					cloth_triangle_index = (*triangle_neighbor_this_cloth_triangle)[m];
+					for (int n = 0; n < rep_vertex_num[cloth_triangle_index]; ++n) {
+						if ((*triangle_aabb)[j].AABB_intersection((*compared_vertex_aabb)[faces[cloth_triangle_index].vertex[n]])) {
+							triangle_neighbor_this_cloth_vertex->push_back(faces[cloth_triangle_index].vertex[n]);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void Collision::findClothTriangleAroundVertex(int thread_No)
 {
 	int* thread_begin;
 	std::vector<std::vector<std::vector<int>>>* triangle_neighbor_traingle;
@@ -552,15 +833,13 @@ void Collision::findTriangleAroundVertex(int thread_No)
 
 	for (int i = 0; i < cloth->size(); ++i) {
 		thread_begin = (*cloth)[i].mesh_struct.vertex_index_begin_per_thread.data();
-		triangle_neighbor_traingle = &(*cloth)[i].triangle_neighbor_cloth_traingle;
+		triangle_neighbor_traingle = &(*cloth)[i].triangle_neighbor_cloth_triangle;
 		vertex_neighbor_traingle = &(*cloth)[i].vertex_neighbor_cloth_traingle;
 		vertex_from_rep_triangle_index = &(*cloth)[i].vertex_from_rep_triangle_index;
-
 		vertex_aabb = &(*cloth)[i].vertex_AABB;
 
 		for (int k = 0; k < cloth->size(); ++k) {
 			compared_triangle_aabb= &(*cloth)[k].triangle_AABB;
-
 			if (i != k) {
 				for (int j = thread_begin[thread_No]; j < thread_begin[thread_No + 1]; ++j) {
 					vertex_neighbor_this_cloth_traingle = &(*vertex_neighbor_traingle)[j][k];
@@ -569,7 +848,7 @@ void Collision::findTriangleAroundVertex(int thread_No)
 					vertex_neighbor_this_cloth_traingle->reserve(triangle_neighbor_this_cloth_traingle->size());
 					for (int m = 0; m < triangle_neighbor_this_cloth_traingle->size(); ++m) {						
 						if ((*vertex_aabb)[j].AABB_intersection((*compared_triangle_aabb)[(*triangle_neighbor_this_cloth_traingle)[m]])) {
-							(*vertex_neighbor_this_cloth_traingle).push_back((*triangle_neighbor_this_cloth_traingle)[m]);
+							vertex_neighbor_this_cloth_traingle->push_back((*triangle_neighbor_this_cloth_traingle)[m]);
 						}
 					}
 				}
@@ -584,13 +863,34 @@ void Collision::findTriangleAroundVertex(int thread_No)
 					for (int m = 0; m < triangle_neighbor_this_cloth_traingle->size(); ++m) {
 						if (!vertexInTriangle((*face_indices)[(*triangle_neighbor_this_cloth_traingle)[m]].data(), j)) {
 							if ((*vertex_aabb)[j].AABB_intersection((*compared_triangle_aabb)[(*triangle_neighbor_this_cloth_traingle)[m]])) {
-								(*vertex_neighbor_this_cloth_traingle).push_back((*triangle_neighbor_this_cloth_traingle)[m]);
+								vertex_neighbor_this_cloth_traingle->push_back((*triangle_neighbor_this_cloth_traingle)[m]);
 							}
 						}
 					}
 				}
 			}
 		}
+	}
+}
+
+
+void Collision::findColliderTriangleAroundVertex(int thread_No)
+{
+	int* thread_begin;
+	std::vector<std::vector<std::vector<int>>>* triangle_neighbor_traingle;
+	std::vector<std::vector<std::vector<int>>>* vertex_neighbor_traingle; //triangle index near vertex
+	std::vector<int>* vertex_from_rep_triangle_index; // record of vertex's representative triangle index
+
+	std::vector<int>* vertex_neighbor_this_cloth_traingle; //vector to record the triangle index near vertex which triangle and vertex in same cloth
+	std::vector<int>* triangle_neighbor_this_cloth_traingle;//vector to record the triangle index near triangle in same cloth
+
+	std::vector<AABB>* vertex_aabb;
+	std::vector<AABB>* compared_triangle_aabb;
+
+	for (int i = 0; i < cloth->size(); ++i) {
+		thread_begin = (*cloth)[i].mesh_struct.vertex_index_begin_per_thread.data();
+		vertex_from_rep_triangle_index = &(*cloth)[i].vertex_from_rep_triangle_index;
+		vertex_aabb = &(*cloth)[i].vertex_AABB;
 		vertex_neighbor_traingle = &(*cloth)[i].vertex_neighbor_collider_triangle;
 		triangle_neighbor_traingle = &(*cloth)[i].triangle_neighbor_collider_triangle;
 		for (int k = 0; k < collider->size(); ++k) {
@@ -635,7 +935,7 @@ void Collision::findEdgeAroundEdge(int thread_No)
 
 	for (int i = 0; i < cloth->size(); ++i) {
 		thread_begin = (*cloth)[i].mesh_struct.edge_index_begin_per_thread.data();
-		triangle_neighbor_traingle = &(*cloth)[i].triangle_neighbor_cloth_traingle;
+		triangle_neighbor_traingle = &(*cloth)[i].triangle_neighbor_cloth_triangle;
 		edge_neighbor_edge = &(*cloth)[i].edge_neighbor_cloth_edge;
 		edge_from_rep_triangle_index = &(*cloth)[i].edge_from_rep_triangle_index;
 		edge = &(*cloth)[i].mesh_struct.edges;
@@ -677,7 +977,7 @@ void Collision::findEdgeAroundEdge(int thread_No)
 										(*edge_neighbor_one_cloth_edge).push_back(compare_edge_index);
 									}
 								}
-							}
+							}							
 						}
 					}
 				}

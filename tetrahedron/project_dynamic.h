@@ -37,6 +37,7 @@ public:
 	void addExternalClothForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int cloth_No);
 	void resetExternalForce();
 	void mainProcess();
+	void testLocalProjectionPerThread(int thread_id);
 private:
 	int local_global_itr_in_single_outer;
 	int total_thread_num;

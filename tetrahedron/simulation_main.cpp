@@ -138,6 +138,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 				camera_from_origin = scene.shadow.camera_from_origin;				
 				setHideWireframe(hide, wireframe, scene.collider.size(), scene.cloth.size(), scene.tetrahedron.size());
 				scene.setTolerance(tolerance_ratio);
+				
 				//scene.testBVH();
 			}
 		}
@@ -146,6 +147,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 			scene.updateCloth(&camera, input->mouse.screen_pos, control_parameter, force_coe);
 			scene.drawScene(&camera, wireframe, hide, control_parameter[SAVE_OBJ]);
 			scene.selectAnchor(control_parameter, set_anchor, input->mouse.screen_pos, input->mouse.left_press, input->mouse.prev_left_press, &camera, hide[TETROHEDRON_]);
+			scene.obtainConvergenceInfo(convergence_rate, iteration_number);
 
 		}
 

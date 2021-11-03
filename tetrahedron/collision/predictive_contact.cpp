@@ -340,12 +340,12 @@ void PredictiveContact::obtainPointColliderTriangleTargetPosition(double* point_
 		current_vertex_triangle_dis /= angle;
 		double displacement[3];
 		MULTI(displacement, initial_triangle_normal, current_vertex_triangle_dis);
-		SUB(vertex_target_pos, vertex_target_pos, displacement);
+		SUB(vertex_target_pos, point_position, displacement);
 	}
 	else {
 		double displacement[3];
 		MULTI(displacement, initial_triangle_normal, current_vertex_triangle_dis);
-		SUB(vertex_target_pos, vertex_target_pos, displacement);
+		SUB(vertex_target_pos, point_position, displacement);
 	}
 }
 

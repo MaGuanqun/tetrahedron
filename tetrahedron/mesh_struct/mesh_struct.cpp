@@ -1,9 +1,10 @@
 #include"mesh_struct.h"
 void MeshStruct::initialNormalSize()
 {
-	face_norm_for_render.resize(triangle_indices.size(), {0.0,0.0,0.0});
-	vertex_norm_for_render.resize(vertex_position.size());
+	face_normal_for_render.resize(triangle_indices.size(), {0.0,0.0,0.0});
+	vertex_normal_for_render.resize(vertex_position.size());
 	triangle_normal_magnitude_reciprocal.resize(triangle_indices.size());
+
 }
 
 

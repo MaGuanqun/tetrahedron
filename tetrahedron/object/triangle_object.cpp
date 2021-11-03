@@ -29,7 +29,7 @@ void TriangleObject::setBuffer()
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
 		glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
-		glBufferData(GL_ARRAY_BUFFER, mesh_struct.vertex_norm_for_render.size() * sizeof(std::array<double, 3>), mesh_struct.vertex_norm_for_render[0].data(), GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, mesh_struct.vertex_normal_for_render.size() * sizeof(std::array<double, 3>), mesh_struct.vertex_normal_for_render[0].data(), GL_STATIC_DRAW);
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
 		glBindVertexArray(0);

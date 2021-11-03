@@ -5,8 +5,8 @@ ProjectDynamic::ProjectDynamic()
 	gravity_ = 9.8;
 	total_thread_num = std::thread::hardware_concurrency();
 	temEnergy.resize(total_thread_num);
-	outer_itr_conv_rate = 1e-2;// 7.5e-2; 
-	local_global_conv_rate = 2e-2;
+	outer_itr_conv_rate = 5e-3;// 7.5e-2; 
+	local_global_conv_rate = 1e-2;
 	sub_step_num = 1;
 
 	use_dierct_solve_for_coarest_mesh = true;	
@@ -218,9 +218,9 @@ void ProjectDynamic::computeGlobalStepMatrixSingleCloth(SparseMatrix<double>* gl
 	}
 
 	//position
-	//for (int i = 0; i < mesh_struct.anchor_vertex.size(); ++i) {
-	//	global_mat_nnz.push_back(Triplet<double>(mesh_struct.anchor_vertex[i], mesh_struct.anchor_vertex[i], position_stiffness));
-	//}
+	for (int i = 0; i < mesh_struct.anchor_vertex.size(); ++i) {
+		global_mat_nnz.push_back(Triplet<double>(mesh_struct.anchor_vertex[i], mesh_struct.anchor_vertex[i], position_stiffness));
+	}
 	//mass
 	for (int i = 0; i < sys_size; ++i) {
 		global_mat_nnz.push_back(Triplet<double>(i, i, mesh_struct.mass[i] / (sub_time_step * sub_time_step)));
@@ -235,6 +235,7 @@ void ProjectDynamic::computeGlobalStepMatrixSingleCloth(SparseMatrix<double>* gl
 		global_mat_diagonal_ref[i] = *(global_collision_mat_diagonal_ref[i]);
 	}
 	global_llt->analyzePattern((*global_mat));
+	global_llt->factorize((*global_mat));
 }
 
 void ProjectDynamic::computeVertexLBOSingleCloth(TriangleMeshStruct& mesh_struct, std::vector<VectorXd>& vertex_lbo, std::vector<double>& edge_cot_weight,
@@ -512,6 +513,7 @@ void ProjectDynamic::PDsolve()
 	outer_iteration_num = 0;
 	initialEnergy();	
 	local_global_iteration_num = 0;
+	//std::cout << "==============================================" << std::endl;
 	while (!PDConvergeCondition())	{
 		collision.globalCollision();
 		PDupdateSystemMatrix();
@@ -532,15 +534,25 @@ void ProjectDynamic::PDsolve()
 
 			current_constraint_energy += current_collision_energy;
 			thread->assignTask(this, SOLVE_SYSYTEM);//solve b	
+
 			for (int i = 0; i < total_thread_num; ++i) {
 				current_PD_energy += temEnergy[i];
 			}
 			current_PD_energy += current_constraint_energy;
-			updateModelPosition();			
+			updateModelPosition();	
+			//std::cout << "result"<< local_global_itr_in_single_outer << std::endl;
+			//for (int j = 0; j < total_cloth_num; ++j) {
+			//	for (int i = 0; i < cloth_sys_size[j]; ++i) {
+			//		std::cout << cloth_u[j][0].data()[i] << " " << cloth_u[j][1].data()[i] << " " << cloth_u[j][2].data()[i] << std::endl;
+			//	}
+			//}
+			//std::cout << "=======" << std::endl;
 			local_global_itr_in_single_outer++;
+			local_global_iteration_num++;
 		}
+		//std::cout << "==local===global=========" << std::endl;
 		outer_iteration_num++;
-		local_global_iteration_num+= local_global_itr_in_single_outer;
+		
 	}
 	thread->assignTask(this, UPDATE_UV);
 	updateRenderPosition();
@@ -624,7 +636,7 @@ void ProjectDynamic::PDupdateSystemMatrix()
 void ProjectDynamic::updateMatrix()
 {
 	thread->assignTask(this, UPDATE_MATRIX);
-	updateCollisionMatrix();
+	//updateCollisionMatrix();
 }
 
 void ProjectDynamic::updateCollisionMatrix()
@@ -660,8 +672,10 @@ void ProjectDynamic::setClothMatrix(int thread_No)
 		diagonal_ref_address = cloth_global_mat_diagonal_ref_address[j].data();
 		for (int i = (*vertex_index_begin_per_thread)[thread_No]; i < (*vertex_index_begin_per_thread)[thread_No+1]; ++i) {
 			*(diagonal_ref_address[i]) = diagonal_ref[i];
+			//std::cout << i << " " << *(diagonal_ref_address[i]) << std::endl;
 			if (need_update[i]) {
 				*(diagonal_ref_address[i]) += stiffness[i];
+				//std::cout<<"update "<<i << " " << *(diagonal_ref_address[i]) << std::endl;
 			}
 		}
 	}
@@ -683,8 +697,8 @@ void ProjectDynamic::matrixDecomposition(int thread_id)
 
 bool ProjectDynamic::PDConvergeCondition()
 {
-	bool system_energy = abs(current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy < outer_itr_conv_rate || current_PD_energy < 1.1e-15;
-	bool collision_energy = abs(previous_itr_collision_energy - current_collision_energy) / previous_itr_collision_energy < local_global_conv_rate || current_collision_energy < 1.1e-15;
+	bool system_energy = abs(current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy < outer_itr_conv_rate || current_PD_energy < 1e-14;
+	bool collision_energy = abs(previous_itr_collision_energy - current_collision_energy) / previous_itr_collision_energy < local_global_conv_rate || current_collision_energy < 1e-14;
 
 	bool energy_satisfied = system_energy && collision_energy;
 	bool need_to_stop = local_global_iteration_num > max_it - 3 || abs(current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy < 5e-6;
@@ -702,13 +716,19 @@ bool ProjectDynamic::PDConvergeCondition()
 
 bool ProjectDynamic::PDLocalGlobalConvergeCondition()
 {
-	bool system_energy = abs(current_PD_energy - previous_PD_energy) / previous_PD_energy < local_global_conv_rate || current_PD_energy < 1.1e-15;
-	bool constraint_energy = abs(current_constraint_energy - previous_constraint_energy) / previous_constraint_energy < local_global_conv_rate || current_constraint_energy < 1.1e-15;
-	bool collision_energy = abs(previous_collision_energy - current_collision_energy) / previous_collision_energy < local_global_conv_rate || current_collision_energy < 1.1e-15;
+	bool system_energy = abs(current_PD_energy - previous_PD_energy) / previous_PD_energy < local_global_conv_rate;
+	bool constraint_energy = abs(current_constraint_energy - previous_constraint_energy) / previous_constraint_energy < local_global_conv_rate || current_constraint_energy < 1e-14;
+	bool collision_energy = abs(previous_collision_energy - current_collision_energy) / previous_collision_energy < local_global_conv_rate || current_collision_energy < 1e-14;
 	bool need_to_stop = abs(current_PD_energy - previous_PD_energy) / previous_PD_energy < 5e-6 || local_global_iteration_num > max_it - 3;
 	bool energy_satisfied = system_energy && constraint_energy && collision_energy;
 	bool standard = (energy_satisfied || need_to_stop) && local_global_itr_in_single_outer > 0;
 	
+	//if (local_global_itr_in_single_outer > 300) {
+	//	std::cout<<"energy " << current_collision_energy<<" "<< abs(previous_collision_energy - current_collision_energy) / previous_collision_energy << std::endl;
+	//	std::cout << current_constraint_energy<<" "<< abs(current_constraint_energy - previous_constraint_energy) / previous_constraint_energy << std::endl;
+	//	std::cout << current_PD_energy <<" "<< abs(current_PD_energy - previous_PD_energy) / previous_PD_energy << std::endl;
+	//}
+
 	if (standard) {
 		return true;
 	}
@@ -720,18 +740,33 @@ bool ProjectDynamic::PDLocalGlobalConvergeCondition()
 
 void ProjectDynamic::localProjection()
 {
+	//time_t t = clock();
+	//for (int i = 0; i < 1000; ++i) {
+	//	thread->assignTask(this, TEST_LOCAL_PROJECTION);
+	//}
+	//std::cout <<"time "<< clock() - t << std::endl;;
+
 	thread->assignTask(this, LOCAL_PROJECTION);
 	for (int i = 0; i < total_thread_num; ++i) {
 		current_constraint_energy += temEnergy[i];
 	}
+	
+}
+
+
+//TEST_LOCAL_PROJECTION
+void ProjectDynamic::testLocalProjectionPerThread(int thread_id)
+{
+	temEnergy[thread_id] = 0.0;
+	localBendingProjectionPerThread(thread_id);
 }
 
 
 //LOCAL_PROJECTION
 void ProjectDynamic::localProjectionPerThread(int thread_id)
 {
-	//edgeLengthConstraint
 	temEnergy[thread_id] = 0.0;
+	//edgeLengthConstraint	
 	localEdgeLengthProjectionPerThread(thread_id);
 	//bending
 	localBendingProjectionPerThread(thread_id);

@@ -26,5 +26,6 @@ private:
 	void moveBodyCapsule();
 	void getAABB();
 	void setTetFrontMaterial(OriMesh& ori_mesh, int& index);
+	void splitPath(std::string& path, std::string& name);
 };
 

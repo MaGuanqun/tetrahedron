@@ -39,9 +39,9 @@ public:
 	std::vector<std::array<double, 3>> vertex_position;
 	std::vector<std::array<int,3>> triangle_indices;//if for tetrahedron, store the surface triangle	
 	std::vector<std::array<double, 3>> vertex_for_render;
-	std::vector<std::array<double, 3>> vertex_norm_for_render;
-	std::vector<std::array<double, 3>> face_norm_for_render;
-	std::vector<std::array<double, 3>> face_norm;
+	std::vector<std::array<double, 3>> vertex_normal_for_render;
+	std::vector<std::array<double, 3>> face_normal_for_render;
+	std::vector<std::array<double, 3>> face_normal;
 	std::vector<int>anchor_vertex;
 	std::vector<std::array<double, 3>>anchor_position;
 

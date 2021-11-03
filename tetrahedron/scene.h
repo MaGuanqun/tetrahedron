@@ -28,7 +28,7 @@ public:
 	void getClothInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 3>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 4>>& collision_stiffness);
 	void updateCloth(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe);
 	void initialIntersection();
-	void obtainConvergenceRate(double* convergence_rate);
+	void obtainConvergenceInfo(double* convergence_rate, int* iteration_num);
 	void updateConvRate(double* convergence_rate);
 	void setTolerance(double* tolerance_ratio);
 	void testBVH();

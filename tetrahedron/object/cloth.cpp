@@ -75,15 +75,14 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mesh_struct.setThreadIndex(total_thread_num);
 	mesh_struct.vertex_for_render = mesh_struct.vertex_position;
 	mesh_struct.getRenderNormal();
+	mesh_struct.face_normal = mesh_struct.face_normal_for_render;
+	mesh_struct.vertex_normal = mesh_struct.vertex_normal_for_render;
 	mesh_struct.initialInfo();
 	genBuffer();
 	genShader();
 	setBuffer();
 	setArea();
 
-
-	//face_need_recal_radius = new bool[mesh_struct.faces.size()];
-	//edge_need_recal_radius = new bool[mesh_struct.edges.size()];
 	PC_radius.resize(4);
 	setMass(density);
 	mesh_struct.setAnchorPosition();
@@ -112,6 +111,7 @@ void Cloth::setMass(double density)
 		for (int i = 0; i < mesh_struct.faces.size(); ++i) {
 			mass += mesh_struct.faces[i].area * density;
 		}
+		std::cout << mesh_struct.faces[0].area + mesh_struct.faces[1].area << std::endl;
 	}
 	else {
 		mass = 1.25;
@@ -198,6 +198,8 @@ void Cloth::initialMouseChosenVertex()
 
 void Cloth::setAnchor()
 {
+	//mesh_struct.anchor_vertex.push_back(100);
+	//mesh_struct.anchor_vertex.push_back(0);
 	//mesh_struct.anchor_vertex.push_back(30 * 30 - 1);
 	//mesh_struct.anchor_vertex.push_back(30 * 29);
 }
@@ -208,7 +210,7 @@ void Cloth::getVertexAABBPerThread(int thread_No)
 	std::vector<std::array<double, 3>>* vertex_render=&mesh_struct.vertex_for_render;
 	std::vector<std::array<double, 3>>* vertex=&mesh_struct.vertex_position;
 	for (int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < mesh_struct.vertex_index_begin_per_thread[thread_No + 1]; ++i) {
-		vertex_AABB[i].obtainAABB((*vertex_render)[i].data(), (*vertex)[i].data(),tolerance);
+		vertex_AABB[i].obtainAABB((*vertex_render)[i].data(), (*vertex)[i].data(),tolerance);	
 	}
 }
 
@@ -402,24 +404,18 @@ void Cloth::findNeighborVertex(int vertex_index, int recursion_deepth, std::vect
 }
 
 
-void Cloth::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num, int collider_num)
+void Cloth::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num, int collider_num, bool use_BVH)
 {
-	triangle_neighbor_cloth_traingle.resize(mesh_struct.triangle_indices.size());
-	triangle_neighbor_collider_triangle.resize(mesh_struct.triangle_indices.size());
+	triangle_neighbor_cloth_triangle.resize(mesh_struct.triangle_indices.size());
 	for (int i = 0; i < mesh_struct.triangle_indices.size(); ++i) {
-		triangle_neighbor_cloth_traingle[i].resize(cloth_num);
-		triangle_neighbor_collider_triangle[i].resize(collider_num);
+		triangle_neighbor_cloth_triangle[i].resize(cloth_num);
 	}
 
 	vertex_neighbor_cloth_traingle.resize(mesh_struct.vertex_position.size());
-	collide_vertex_cloth_traingle.resize(mesh_struct.vertex_position.size());
-	vertex_neighbor_collider_triangle.resize(mesh_struct.vertex_position.size());
-	collide_vertex_collider_triangle.resize(mesh_struct.vertex_position.size());
+	collide_vertex_cloth_triangle.resize(mesh_struct.vertex_position.size());
 	for (int i = 0; i < vertex_neighbor_cloth_traingle.size(); ++i) {
 		vertex_neighbor_cloth_traingle[i].resize(cloth_num);
-		collide_vertex_cloth_traingle[i].resize(cloth_num);
-		vertex_neighbor_collider_triangle[i].resize(collider_num);
-		collide_vertex_collider_triangle[i].resize(collider_num);
+		collide_vertex_cloth_triangle[i].resize(cloth_num);
 	}
 
 	edge_neighbor_cloth_edge.resize(mesh_struct.edges.size());
@@ -428,6 +424,19 @@ void Cloth::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num
 		edge_neighbor_cloth_edge[i].resize(cloth_num);
 		collide_edge_cloth_edge[i].resize(cloth_num);
 	}
+
+	if (use_BVH) {
+		triangle_neighbor_collider_triangle.resize(mesh_struct.triangle_indices.size());
+		for (int i = 0; i < mesh_struct.triangle_indices.size(); ++i) {
+			triangle_neighbor_collider_triangle[i].resize(collider_num);
+		}
+		vertex_neighbor_collider_triangle.resize(mesh_struct.vertex_position.size());
+		collide_vertex_collider_triangle.resize(mesh_struct.vertex_position.size());
+		for (int i = 0; i < vertex_neighbor_cloth_traingle.size(); ++i) {
+			vertex_neighbor_collider_triangle[i].resize(collider_num);
+			collide_vertex_collider_triangle[i].resize(collider_num);
+		}
+	}	
 }
 
 //void Cloth::test() //ttest representative triangle

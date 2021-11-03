@@ -19,7 +19,7 @@ void RadixSort::findHighestBit(unsigned int size, int& key_num)
     }
 }
 
-void RadixSort::radixSort(int spatial_hashing_index_size, std::vector<std::array<int, 2>>* array)
+void RadixSort::radixSort(int spatial_hashing_index_size, std::vector<std::array<int, 3>>* array)
 {
     arrangeIndex(thread->thread_num, array->size(), array_index_begin);
 	findHighestBit(spatial_hashing_index_size, key_num);
@@ -28,14 +28,14 @@ void RadixSort::radixSort(int spatial_hashing_index_size, std::vector<std::array
 }
 
 
-void RadixSort::lsdSort(std::vector<std::array<int, 2>>* array)
+void RadixSort::lsdSort(std::vector<std::array<int, 3>>* array)
 {
     stack.resize(array->size());
     int s, t;
     for (int j = 0; j < key_num; ++j) {
         thread->assignTask(this, SET_COUNT_BUCKET,j);
         s = 0;
-        for (int i = 0; i < 0xff; ++i) {
+        for (int i = 0; i < 0x100; ++i) {
             for (int k = 0; k < thread_num; ++k) {
                 t = s + histogram[k][i];
                 histogram[k][i] = s;
@@ -49,11 +49,11 @@ void RadixSort::lsdSort(std::vector<std::array<int, 2>>* array)
     }
 }
 
-//void RadixSort::lsdSort(std::vector<std::array<int, 2>>* array)
+//void RadixSort::lsdSort(std::vector<std::array<int, 3>>* array)
 //{
 //    std::vector<std::array<int, 0x100>> index(key_num);
 //    std::vector<std::array<int, 0x100>> count(key_num, { 0 });
-//    std::vector<std::array<int, 2>> stack_(array->size());
+//    std::vector<std::array<int, 3>> stack_(array->size());
 //    int* index_bucket;
 //    int* count_bucket;
 //    for (int j = 0; j < key_num; ++j) {
@@ -93,6 +93,7 @@ void RadixSort::setCountBucket(int thread_No, int key_id)
 }
 
 
+
 //REORDER
 void RadixSort::reorder(int thread_No, int key_id)
 {
@@ -106,58 +107,58 @@ void RadixSort::reorder(int thread_No, int key_id)
 
 
 
-void RadixSort::reorder(std::array<int, 2>* array, std::array<int, 2>* stack, int move_byte, int* index_bucket, int array_index_start, int array_index_end)
+void RadixSort::reorder(std::array<int, 3>* array, std::array<int, 3>* stack, int move_byte, int* index_bucket, int array_index_start, int array_index_end)
 {
     if (move_byte == 0) {
         for (int i = array_index_start; i < array_index_end; ++i) {
-            stack[index_bucket[array[i][1] & 0xff]++] = array[i];
+            stack[index_bucket[array[i][2] & 0xff]++] = array[i];
         }
     }
     else {
         for (int i = array_index_start; i < array_index_end; ++i) {
-            stack[index_bucket[(array[i][1] >> move_byte) & 0xff]++] = array[i];
+            stack[index_bucket[(array[i][2] >> move_byte) & 0xff]++] = array[i];
         }
     }
 }
 
-void RadixSort::reorder(std::array<int, 2>* array, std::array<int, 2>* stack, int move_byte, int* index_bucket, int size)
+void RadixSort::reorder(std::array<int, 3>* array, std::array<int, 3>* stack, int move_byte, int* index_bucket, int size)
 {
     if (move_byte == 0) {
         for (int i = 0; i < size; ++i) {
-            stack[index_bucket[array[i][1] & 0xff]++] = array[i];
+            stack[index_bucket[array[i][2] & 0xff]++] = array[i];
         }
     }
     else {
         for (int i = 0; i < size; ++i) {
-            stack[index_bucket[(array[i][1]>>move_byte) & 0xff]++] = array[i];
+            stack[index_bucket[(array[i][2]>>move_byte) & 0xff]++] = array[i];
         }
     }
 }
 
-void RadixSort::addCount(int array_begin, int array_end, int* count_bucket, int move_byte, std::array<int, 2>* array)
+void RadixSort::addCount(int array_begin, int array_end, int* count_bucket, int move_byte, std::array<int, 3>* array)
 {
     if (move_byte == 0) {
         for (int i = array_begin; i < array_end; ++i) {
-            count_bucket[array[i][1] & 0xff]++;
+            count_bucket[array[i][2] & 0xff]++;
         }
     }
     else {
         for (int i = array_begin; i < array_end; ++i) {
-            count_bucket[(array[i][1] >> move_byte) & 0xff]++;
+            count_bucket[(array[i][2] >> move_byte) & 0xff]++;
         }
     }
 }
 
-void RadixSort::addCount(int size, int* count_bucket, int move_byte, std::array<int, 2>* array)
+void RadixSort::addCount(int size, int* count_bucket, int move_byte, std::array<int, 3>* array)
 {
     if (move_byte == 0) {
         for (int i = 0; i < size; ++i) {
-            count_bucket[array[i][1] & 0xff]++;
+            count_bucket[array[i][2] & 0xff]++;
         }
     }
     else {
         for (int i = 0; i < size; ++i) {
-            count_bucket[(array[i][1]>>move_byte) & 0xff]++;
+            count_bucket[(array[i][2]>>move_byte) & 0xff]++;
         }
     }
 }
