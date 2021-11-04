@@ -409,6 +409,9 @@ void Cloth::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num
 	triangle_neighbor_cloth_triangle.resize(mesh_struct.triangle_indices.size());
 	for (int i = 0; i < mesh_struct.triangle_indices.size(); ++i) {
 		triangle_neighbor_cloth_triangle[i].resize(cloth_num);
+		for (int j = 0; j < cloth_num; ++j) {
+			triangle_neighbor_cloth_triangle[i][j].reserve(10);
+		}
 	}
 
 	vertex_neighbor_cloth_traingle.resize(mesh_struct.vertex_position.size());
@@ -416,6 +419,10 @@ void Cloth::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num
 	for (int i = 0; i < vertex_neighbor_cloth_traingle.size(); ++i) {
 		vertex_neighbor_cloth_traingle[i].resize(cloth_num);
 		collide_vertex_cloth_triangle[i].resize(cloth_num);
+		for (int j = 0; j < cloth_num; ++j) {
+			vertex_neighbor_cloth_traingle[i][j].reserve(10);
+			collide_vertex_cloth_triangle[i][j].reserve(10);
+		}
 	}
 
 	edge_neighbor_cloth_edge.resize(mesh_struct.edges.size());
@@ -423,18 +430,29 @@ void Cloth::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num
 	for (int i = 0; i < edge_neighbor_cloth_edge.size(); ++i) {
 		edge_neighbor_cloth_edge[i].resize(cloth_num);
 		collide_edge_cloth_edge[i].resize(cloth_num);
+		for (int j = 0; j < cloth_num; ++j) {
+			edge_neighbor_cloth_edge[i][j].reserve(10);
+			collide_edge_cloth_edge[i][j].reserve(10);
+		}
 	}
 
 	if (use_BVH) {
 		triangle_neighbor_collider_triangle.resize(mesh_struct.triangle_indices.size());
 		for (int i = 0; i < mesh_struct.triangle_indices.size(); ++i) {
 			triangle_neighbor_collider_triangle[i].resize(collider_num);
+			for (int j = 0; j < collider_num; ++j) {
+				triangle_neighbor_collider_triangle[i][j].reserve(10);
+			}
 		}
 		vertex_neighbor_collider_triangle.resize(mesh_struct.vertex_position.size());
 		collide_vertex_collider_triangle.resize(mesh_struct.vertex_position.size());
 		for (int i = 0; i < vertex_neighbor_cloth_traingle.size(); ++i) {
 			vertex_neighbor_collider_triangle[i].resize(collider_num);
 			collide_vertex_collider_triangle[i].resize(collider_num);
+			for (int j = 0; j < collider_num; ++j) {
+				vertex_neighbor_collider_triangle[i][j].reserve(10);
+				collide_vertex_collider_triangle[i][j].reserve(10);
+			}
 		}
 	}	
 }

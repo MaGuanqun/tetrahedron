@@ -19,18 +19,22 @@ void RadixSort::findHighestBit(unsigned int size, int& key_num)
     }
 }
 
-void RadixSort::radixSort(int spatial_hashing_index_size, std::vector<std::array<int, 3>>* array)
+void RadixSort::radixSort(int spatial_hashing_index_size, std::vector<int>* hash_value, std::vector<int>* hash_triangle_index, std::vector<int>* hash_cloth_No)
 {
-    arrangeIndex(thread->thread_num, array->size(), array_index_begin);
+    arrangeIndex(thread->thread_num, hash_value->size(), array_index_begin);
 	findHighestBit(spatial_hashing_index_size, key_num);
-    this->array = array;
-    lsdSort(array);   
+    this->hash_value = hash_value;
+    this->hash_triangle_index = hash_triangle_index;
+    this->hash_cloth_No = hash_cloth_No;
+    lsdSort(hash_value, hash_triangle_index, hash_cloth_No);
 }
 
 
-void RadixSort::lsdSort(std::vector<std::array<int, 3>>* array)
+void RadixSort::lsdSort(std::vector<int>* hash_value, std::vector<int>* hash_triangle_index, std::vector<int>* hash_cloth_No)
 {
-    stack.resize(array->size());
+    stack_hash_value.resize(hash_value->size());
+    stack_hash_triangle_index.resize(hash_value->size());
+    stack_hash_cloth_No.resize(hash_value->size());
     int s, t;
     for (int j = 0; j < key_num; ++j) {
         thread->assignTask(this, SET_COUNT_BUCKET,j);
@@ -45,7 +49,9 @@ void RadixSort::lsdSort(std::vector<std::array<int, 3>>* array)
         thread->assignTask(this, REORDER, j);
     }
     if (key_num % 2 == 1) {
-        (*array) = stack;
+        (*hash_value) = stack_hash_value;
+        (*hash_triangle_index) = stack_hash_triangle_index;
+        (*hash_cloth_No) = stack_hash_cloth_No;
     }
 }
 
@@ -85,10 +91,10 @@ void RadixSort::setCountBucket(int thread_No, int key_id)
     count_bucket = histogram[thread_No].data();
     memset(count_bucket, 0, 4 * 0x100);
     if (key_id % 2 == 0) {
-        addCount(array_index_begin[thread_No], array_index_begin[thread_No + 1], count_bucket, 8 * key_id, array->data());
+        addCount(array_index_begin[thread_No], array_index_begin[thread_No + 1], count_bucket, 8 * key_id, hash_value->data());
     }
     else {
-        addCount(array_index_begin[thread_No], array_index_begin[thread_No + 1], count_bucket, 8 * key_id, stack.data());
+        addCount(array_index_begin[thread_No], array_index_begin[thread_No + 1], count_bucket, 8 * key_id, stack_hash_value.data());
     }
 }
 
@@ -98,25 +104,33 @@ void RadixSort::setCountBucket(int thread_No, int key_id)
 void RadixSort::reorder(int thread_No, int key_id)
 {
     if (key_id % 2 == 0) {
-        reorder(array->data(), stack.data(), 8 * key_id, histogram[thread_No].data(), array_index_begin[thread_No], array_index_begin[thread_No+1]);
+        reorder(hash_value->data(), stack_hash_value.data(), hash_triangle_index->data(), stack_hash_triangle_index.data(), hash_cloth_No->data(), stack_hash_cloth_No.data(),  8 * key_id, histogram[thread_No].data(), array_index_begin[thread_No], array_index_begin[thread_No+1]);
     }
     else {
-        reorder(stack.data(), array->data(), 8 * key_id, histogram[thread_No].data(), array_index_begin[thread_No], array_index_begin[thread_No + 1]);
+        reorder(stack_hash_value.data(), hash_value->data(), stack_hash_triangle_index.data(), hash_triangle_index->data(), stack_hash_cloth_No.data(), hash_cloth_No->data(), 8 * key_id, histogram[thread_No].data(), array_index_begin[thread_No], array_index_begin[thread_No + 1]);
     }
 }
 
 
-
-void RadixSort::reorder(std::array<int, 3>* array, std::array<int, 3>* stack, int move_byte, int* index_bucket, int array_index_start, int array_index_end)
+void RadixSort::reorder(int* hash_value, int* stack_hash_value, int* hash_triangle_index, int* stack_hash_triangle_index,int* hash_cloth_No, int* stack_hash_cloth_No, int move_byte, int* index_bucket, int array_index_start, int array_index_end)
 {
+    int* index;
     if (move_byte == 0) {
         for (int i = array_index_start; i < array_index_end; ++i) {
-            stack[index_bucket[array[i][2] & 0xff]++] = array[i];
+            index = &index_bucket[hash_value[i] & 0xff];
+            stack_hash_value[*index] = hash_value[i];
+            stack_hash_triangle_index[*index] = hash_triangle_index[i];
+            stack_hash_cloth_No[*index] = hash_cloth_No[i];
+            (*index)++;
         }
     }
     else {
         for (int i = array_index_start; i < array_index_end; ++i) {
-            stack[index_bucket[(array[i][2] >> move_byte) & 0xff]++] = array[i];
+            index = &index_bucket[(hash_value[i] >> move_byte) & 0xff];
+            stack_hash_value[*index] = hash_value[i];
+            stack_hash_triangle_index[*index] = hash_triangle_index[i];
+            stack_hash_cloth_No[*index] = hash_cloth_No[i];
+            (*index)++;            
         }
     }
 }
@@ -135,16 +149,16 @@ void RadixSort::reorder(std::array<int, 3>* array, std::array<int, 3>* stack, in
     }
 }
 
-void RadixSort::addCount(int array_begin, int array_end, int* count_bucket, int move_byte, std::array<int, 3>* array)
+void RadixSort::addCount(int array_begin, int array_end, int* count_bucket, int move_byte, int* array)
 {
     if (move_byte == 0) {
         for (int i = array_begin; i < array_end; ++i) {
-            count_bucket[array[i][2] & 0xff]++;
+            count_bucket[array[i] & 0xff]++;
         }
     }
     else {
         for (int i = array_begin; i < array_end; ++i) {
-            count_bucket[(array[i][2] >> move_byte) & 0xff]++;
+            count_bucket[(array[i] >> move_byte) & 0xff]++;
         }
     }
 }

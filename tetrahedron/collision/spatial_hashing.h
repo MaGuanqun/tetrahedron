@@ -14,8 +14,6 @@ public:
 	void getSceneAABB(int thread_No);
 	void triangleHashing(int thread_No);
 	void buildSpatialHashing();
-	void buildSpatialHashing01();
-	void buildSpatialHashing2();
 	void setHashTogether(int thread_No);
 	void searchTriangle(AABB& aabb, int obj_No, int triangle_index, std::vector<int>* cloth_neighbor_index, bool is_collider, int thread_No);
 private:
@@ -46,8 +44,8 @@ private:
 	std::vector<int> spatial_hashing_triangle_index;
 
 
-	void clothTriangleHashingValue(AABB& aabb, std::vector<std::array<int, 3>>* spatial_hashing_triangle, int triangle_index, std::vector<int>* hash_value, int cloth_index);
-	void obtainTriangleHashingValue(AABB& aabb, std::vector<int>& hash_value);
+	void clothTriangleHashingValue(AABB& aabb, std::vector<int>* spatial_hashing_triangle_index, std::vector<int>* spatial_hashing_value, int triangle_index, std::vector<int>* hash_value);
+	void obtainTriangleHashingValue(AABB& aabb, std::vector<int>* hash_value);
 	RadixSort radix_sort;
 	void testRadixSort();
 

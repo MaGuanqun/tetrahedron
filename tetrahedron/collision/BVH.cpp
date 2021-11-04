@@ -55,16 +55,20 @@ void BVH::calCenterPerThread(int thread_No)
 	aabb_min_per_thread[thread_No] = std::array{ DBL_MAX,DBL_MAX ,DBL_MAX };
 	aabb_max_per_thread[thread_No] = std::array{ DBL_MIN,DBL_MIN ,DBL_MIN };
 	double* center; double* max; double* min; double* aabb_min; double* aabb_max;
+	aabb_min = aabb_min_per_thread[thread_No].data();
+	aabb_max = aabb_max_per_thread[thread_No].data();
 	for (int i = triangle_index_begin_per_thread[thread_No]; i < triangle_index_begin_per_thread[thread_No + 1]; ++i) {
 		center = aabb_center[i].data();
 		min = (*triangle_AABB)[i].min;
-		max = (*triangle_AABB)[i].max;
-		aabb_min = aabb_min_per_thread[thread_No].data();
-		aabb_max = aabb_max_per_thread[thread_No].data();
+		max = (*triangle_AABB)[i].max;		
 		TWO_POINTS_CENTER(center, min, max);
 		for (int j = 0; j < 3; ++j) {
-			aabb_min[j] = myMin(aabb_min[j], center[j]);
-			aabb_min[j] = myMax(aabb_min[j], center[j]);
+			if (aabb_min[j] > center[j]) {
+				aabb_min[j] = center[j];
+			}
+			if (aabb_max[j] < center[j]) {
+				aabb_max[j] = center[j];
+			}
 		}		
 	}
 }

@@ -109,5 +109,10 @@ void Collider::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_
 		triangle_neighbor_cloth_triangle[i].resize(cloth_num);
 		triangle_neighbor_cloth_vertex[i].resize(cloth_num);
 		collider_triangle_cloth_vertex[i].resize(cloth_num);
+		for (int j = 0; j < cloth_num; ++j) {
+			triangle_neighbor_cloth_triangle[i][j].reserve(10);
+			triangle_neighbor_cloth_vertex[i][j].reserve(10);
+			collider_triangle_cloth_vertex[i][j].reserve(10);
+		}
 	}
 }

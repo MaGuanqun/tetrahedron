@@ -10,7 +10,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	initialBVH(cloth, collider, tetrahedron, thread);
 	initialTargetPos(cloth, tetrahedron, thread);
 	initialSpatialHashing(cloth, collider, tetrahedron, thread);
-	use_BVH = false;
+	use_BVH = true;
 	initialNeighborPrimitive();
 }
 
@@ -88,35 +88,35 @@ void Collision::buildBVH()
 void Collision::globalCollision()
 {
 	getAABB();
+	time_t t1 = clock();
 	if (use_BVH) {
-		buildBVH();
+		//for (int i = 0; i < 1000; ++i) {
+			buildBVH();
+		//}
 	}
-	else {
-		time_t t1 = clock();
-		for (int i = 0; i < 1000; ++i) {
+	else {		
+		//for (int i = 0; i < 1000; ++i) {
 			spatial_hashing.buildSpatialHashing();
-		}		
-		std::cout <<"build "<< clock() - t1 << std::endl;
-		t1 = clock();
-		for (int i = 0; i < 1000; ++i) {
-			spatial_hashing.buildSpatialHashing01();
-		}
-		std::cout << "build01 " << clock() - t1 << std::endl;
-		t1 = clock();
-		for (int i = 0; i < 1000; ++i) {
-			spatial_hashing.buildSpatialHashing2();
-		}
-		std::cout << "build2 " << clock() - t1 << std::endl;
+		//}				
 	}
+	//std::cout << "build " << clock() - t1 << std::endl;
 	for (int i = 0; i < cloth->size(); ++i) {
 		(*cloth)[i].mesh_struct.getNormal();
 	}
-	time_t t1 = clock();
-	for (int i = 0; i < 1000; ++i) {
+	t1 = clock();
+	//for (int i = 0; i < 1000; ++i) {
 		thread->assignTask(this, FIND_TRIANGLE_PAIRS);
+	//}
+	//std::cout << "find triangle pair " << clock() - t1 << std::endl;
+
+	//testCollision();
+
+	t1 = clock();
+	for (int i = 0; i < 1000; ++i) {
 		thread->assignTask(this, FIND_PRIMITIVE_AROUND);
 	}
-	std::cout << "search " << clock() - t1 << std::endl;
+	std::cout << "find around primitive " << clock() - t1 << std::endl;
+	//std::cout << "search " << clock() - t1 << std::endl;
 	thread->assignTask(this, GLOBAL_COLLISION_DETECTION);
 	sumTargetPosition();
 }
@@ -124,23 +124,30 @@ void Collision::globalCollision()
 
 void Collision::testCollision()
 {
+	int k = 0;
+	for (int i = 0; i < (*cloth)[0].triangle_neighbor_cloth_triangle.size(); ++i) {
+		//(*cloth)[0].triangle_neighbor_cloth_triangle[i][0].push_back(i);
+		k += (*cloth)[0].triangle_neighbor_cloth_triangle[i][0].size();
+	}
+	std::cout << k + (*cloth)[0].triangle_neighbor_cloth_triangle.size()<<std::endl;
+
 	//for (int i = 0; i < (*cloth)[0].mesh_struct.vertices.size(); ++i) {
-	int i = 0;
+	//int i = 0;
 
-	for (int j = 0; j < (*cloth)[0].vertex_neighbor_collider_triangle[i][0].size(); ++j) {
-		std::cout << (*cloth)[0].vertex_AABB[i].min[0] << " " << (*cloth)[0].vertex_AABB[i].min[1] << " " << (*cloth)[0].vertex_AABB[i].min[2] << " "
-			<< (*cloth)[0].vertex_AABB[i].max[0] << " " << (*cloth)[0].vertex_AABB[i].max[1] << " " << (*cloth)[0].vertex_AABB[i].max[2] << std::endl;
-		std::cout << (*collider)[0].triangle_AABB[(*cloth)[0].vertex_neighbor_collider_triangle[i][0][j]].min[0] << " " << (*collider)[0].triangle_AABB[(*cloth)[0].vertex_neighbor_collider_triangle[i][0][j]].min[1] << " " << (*collider)[0].triangle_AABB[(*cloth)[0].vertex_neighbor_collider_triangle[i][0][j]].min[2] << " "
-			<< (*collider)[0].triangle_AABB[(*cloth)[0].vertex_neighbor_collider_triangle[i][0][j]].max[0] << " " << (*collider)[0].triangle_AABB[(*cloth)[0].vertex_neighbor_collider_triangle[i][0][j]].max[1] << " " << (*collider)[0].triangle_AABB[(*cloth)[0].vertex_neighbor_collider_triangle[i][0][j]].max[2] << std::endl;
-		std::cout << i << " " << (*cloth)[0].vertex_neighbor_collider_triangle[i][0][j] << std::endl;
-		/*	if (!(*cloth)[0].vertex_AABB[i].AABB_intersection((*collider)[0].triangle_AABB[(*cloth)[0].vertex_neighbor_collider_triangle[i][0][j]])) {
-				std::cout << i << " " << (*cloth)[0].vertex_neighbor_collider_triangle[i][0][j] << std::endl;
-			}*/
-	}
+	//for (int j = 0; j < (*cloth)[0].vertex_neighbor_collider_triangle[i][0].size(); ++j) {
+	//	std::cout << (*cloth)[0].vertex_AABB[i].min[0] << " " << (*cloth)[0].vertex_AABB[i].min[1] << " " << (*cloth)[0].vertex_AABB[i].min[2] << " "
+	//		<< (*cloth)[0].vertex_AABB[i].max[0] << " " << (*cloth)[0].vertex_AABB[i].max[1] << " " << (*cloth)[0].vertex_AABB[i].max[2] << std::endl;
+	//	std::cout << (*collider)[0].triangle_AABB[(*cloth)[0].vertex_neighbor_collider_triangle[i][0][j]].min[0] << " " << (*collider)[0].triangle_AABB[(*cloth)[0].vertex_neighbor_collider_triangle[i][0][j]].min[1] << " " << (*collider)[0].triangle_AABB[(*cloth)[0].vertex_neighbor_collider_triangle[i][0][j]].min[2] << " "
+	//		<< (*collider)[0].triangle_AABB[(*cloth)[0].vertex_neighbor_collider_triangle[i][0][j]].max[0] << " " << (*collider)[0].triangle_AABB[(*cloth)[0].vertex_neighbor_collider_triangle[i][0][j]].max[1] << " " << (*collider)[0].triangle_AABB[(*cloth)[0].vertex_neighbor_collider_triangle[i][0][j]].max[2] << std::endl;
+	//	std::cout << i << " " << (*cloth)[0].vertex_neighbor_collider_triangle[i][0][j] << std::endl;
+	//	/*	if (!(*cloth)[0].vertex_AABB[i].AABB_intersection((*collider)[0].triangle_AABB[(*cloth)[0].vertex_neighbor_collider_triangle[i][0][j]])) {
+	//			std::cout << i << " " << (*cloth)[0].vertex_neighbor_collider_triangle[i][0][j] << std::endl;
+	//		}*/
+	//}
 
-	if (!(*cloth)[0].vertex_neighbor_collider_triangle[i][0].empty()) {
-		system("pause");
-	}
+	//if (!(*cloth)[0].vertex_neighbor_collider_triangle[i][0].empty()) {
+	//	system("pause");
+	//}
 	//}
 	//for (int i = 0; i < (*collider)[0].mesh_struct.triangle_indices.size(); ++i) {
 	//	for (int j = 0; j < (*collider)[0].triangle_neighbor_cloth_vertex[i][0].size(); ++j) {
@@ -711,12 +718,10 @@ void Collision::test()
 void Collision::searchTriangle(AABB& aabb, int compare_index, int cloth_No, std::vector<std::vector<int>>* cloth_neighbor_index, std::vector<std::vector<int>>* collider_neighbor_index)
 {
 	for (int i = cloth_No; i < cloth->size(); ++i) {
-		(*cloth_neighbor_index)[i].reserve(5);
 		(*cloth_neighbor_index)[i].clear();
 		cloth_BVH[i].search(aabb, compare_index,i==cloth_No, &((*cloth_neighbor_index)[i]),1,0, (*cloth)[i].triangle_AABB.size());
 	}
 	for (int i = 0; i < collider->size(); ++i) {
-		(*collider_neighbor_index)[i].reserve(5);
 		(*collider_neighbor_index)[i].clear();
 		collider_BVH[i].search(aabb, compare_index, false, &((*collider_neighbor_index)[i]), 1, 0, (*collider)[i].triangle_AABB.size());
 	}
