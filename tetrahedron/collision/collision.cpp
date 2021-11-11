@@ -10,7 +10,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	initialBVH(cloth, collider, tetrahedron, thread);
 	initialTargetPos(cloth, tetrahedron, thread);
 	initialSpatialHashing(cloth, collider, tetrahedron, thread);
-	use_BVH = true;
+	use_BVH = false;
 	initialNeighborPrimitive();
 }
 
@@ -88,7 +88,7 @@ void Collision::buildBVH()
 void Collision::globalCollision()
 {
 	getAABB();
-	time_t t1 = clock();
+	//time_t t1 = clock();
 	if (use_BVH) {
 		//for (int i = 0; i < 1000; ++i) {
 			buildBVH();
@@ -103,7 +103,7 @@ void Collision::globalCollision()
 	for (int i = 0; i < cloth->size(); ++i) {
 		(*cloth)[i].mesh_struct.getNormal();
 	}
-	t1 = clock();
+	//t1 = clock();
 	//for (int i = 0; i < 1000; ++i) {
 		thread->assignTask(this, FIND_TRIANGLE_PAIRS);
 	//}
@@ -111,11 +111,11 @@ void Collision::globalCollision()
 
 	//testCollision();
 
-	t1 = clock();
-	for (int i = 0; i < 1000; ++i) {
+	//t1 = clock();
+	//for (int i = 0; i < 1000; ++i) {
 		thread->assignTask(this, FIND_PRIMITIVE_AROUND);
-	}
-	std::cout << "find around primitive " << clock() - t1 << std::endl;
+	//}
+	//std::cout << "find around primitive " << clock() - t1 << std::endl;
 	//std::cout << "search " << clock() - t1 << std::endl;
 	thread->assignTask(this, GLOBAL_COLLISION_DETECTION);
 	sumTargetPosition();

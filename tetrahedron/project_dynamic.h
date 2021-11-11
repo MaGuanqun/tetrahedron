@@ -31,6 +31,7 @@ public:
 	void updateMatrixPerThread(int thread_No);
 	void matrixDecomposition(int thread_id);
 	void localProjectionPerThread(int thread_id);
+	void localEdgeLengthProjectionPerThread(int thread_id);
 	void solveSystemPerThead(int thread_id);
 	void updateUVPerThread(int thread_id);
 	void updateRenderPosition();
@@ -91,7 +92,7 @@ private:
 		double position_stiffness);
 	std::vector<std::vector<double>> rest_mean_curvature_norm;
 	std::vector<std::vector<Vector3d>> p_edge_length;
-	std::vector < std::vector<Vector3d>> p_bending;
+	std::vector<std::vector < std::vector<VectorXd>>> p_bending;
 	std::vector < std::vector<VectorXd>> cloth_b;
 	std::vector < std::vector<VectorXd>> cloth_u_prediction;
 	std::vector < std::vector<VectorXd>> cloth_v;
@@ -108,13 +109,13 @@ private:
 		std::vector<std::vector<int>>& vertex_around_vertex_for_bending, std::vector<VectorXd>& vertex_lbo);
 	void PDClothPredict();
 	void setClothMatrix(int thread_No);
-	void localEdgeLengthProjectionPerThread(int thread_id);
+	
 	void localBendingProjectionPerThread(int thread_id);
 	void localPositionProjectionPerThread(int thread_id);
 	void solveClothSystemPerThead(int thread_id);
 	void solveClothSystemPerThead(VectorXd& b, VectorXd& u, TriangleMeshStruct& mesh_struct, std::vector<double>& length_stiffness,
 		std::vector<Vector3d>& p_edge_length, int cloth_No, int dimension, std::vector<std::vector<int>>& vertex_around_vertex_for_bending,
-		std::vector<VectorXd>& vertex_lbo, std::vector<Vector3d>& p_bending, std::vector<double>& lbo_weight, VectorXd& u_prediction, int thread_id,
+		std::vector<VectorXd>& vertex_lbo, std::vector<std::vector<VectorXd>>& p_bending, VectorXd& u_prediction, int thread_id,
 		std::vector<std::array<double, 3>>& collision_b_sum, bool* collision_b_need_update);
 
 	void updateModelPosition();

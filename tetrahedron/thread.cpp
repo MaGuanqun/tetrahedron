@@ -50,6 +50,9 @@ job Thread::create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread 
     case LOCAL_PROJECTION:
         k = job([func, thread_id]() {func->localProjectionPerThread(thread_id); });
         break;
+    case LOCAL_EDGE_LENGTH_PROJECTION:
+        k = job([func, thread_id]() {func->localEdgeLengthProjectionPerThread(thread_id); });
+        break;
     case SOLVE_SYSYTEM:
         k = job([func, thread_id]() {func->solveSystemPerThead(thread_id); });
         break;
@@ -240,7 +243,15 @@ job Thread::create_task(RadixSort* func, int thread_id, RadixSortFunc function_t
         break;
     case REORDER:
         k = job([func, thread_id, key_id]() {func->reorder(thread_id, key_id); });
+        break;
+    case MORTON_REORDER:
+        k = job([func, thread_id, key_id]() {func->reorderMorton(thread_id, key_id); });
+        break;
+    case SET_COUNT_BUCKET_MORTON:
+        k = job([func, thread_id, key_id]() {func->setCountBucketMorton(thread_id, key_id); });
+        break;
     }
+
     return k;
 }
 

@@ -30,7 +30,7 @@ MortonCode64::MortonCode64(int32_t x, int32_t y, int32_t z)
 MortonCode64::MortonCode64(uint32_t x, uint32_t y, uint32_t z)
 {
     data = (SplitBy3Bits21(x) | SplitBy3Bits21(y) << 1 | SplitBy3Bits21(z) << 2);
-    data |= 0x7000000000000000;
+    //data |= 0x7000000000000000;
 }
 
 
