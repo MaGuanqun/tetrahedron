@@ -487,28 +487,30 @@ void ProjectDynamic::updateRenderPositionIPC()
 		mesh_struct = &(*collider)[j].mesh_struct;
 		mesh_struct->vertex_for_render = mesh_struct->vertex_position;
 		mesh_struct->face_normal_for_render = mesh_struct->face_normal;
-		mesh_struct->vertex_normal_for_render = mesh_struct->vertex_normal;
+		thread->assignTask(mesh_struct, VERTEX_NORMAL_RENDER);
 		mesh_struct->ori_face_normal_for_render = mesh_struct->ori_face_normal;
 	}
 }
 
 void ProjectDynamic::updateRenderPosition()
 {
+	TriangleMeshStruct* mesh_struct;
 	for (int j = 0; j < total_cloth_num; ++j) {
-		(*cloth)[j].mesh_struct.vertex_for_render = (*cloth)[j].mesh_struct.vertex_position;
-		(*cloth)[j].mesh_struct.getRenderNormal();
-
+		mesh_struct = &(*cloth)[j].mesh_struct;
+		mesh_struct->vertex_for_render = mesh_struct->vertex_position;
+		mesh_struct->face_normal_for_render = mesh_struct->face_normal;
+		thread->assignTask(mesh_struct, VERTEX_NORMAL_RENDER);
 	}
 	for (int j = 0; j < total_tetrahedron_num; ++j) {
 		(*tetrahedron)[j].mesh_struct.vertex_for_render = (*tetrahedron)[j].mesh_struct.vertex_position;
 		(*tetrahedron)[j].mesh_struct.getRenderNormal();
 	}
-	MeshStruct* mesh_struct;
+	
 	for (int j = 0; j < total_collider_num; ++j) {
 		mesh_struct = &(*collider)[j].mesh_struct;
 		mesh_struct->vertex_for_render= mesh_struct->vertex_position;
 		mesh_struct->face_normal_for_render= mesh_struct->face_normal;
-		mesh_struct->vertex_normal_for_render= mesh_struct->vertex_normal;
+		thread->assignTask(mesh_struct, VERTEX_NORMAL_RENDER);
 	}
 }
 
@@ -519,6 +521,8 @@ void ProjectDynamic::PDsetPosPredict()
 
 	updateModelPosition();
 }
+
+
 
 void ProjectDynamic::PDTetrahedronPredict()
 {
@@ -536,7 +540,7 @@ void ProjectDynamic::PDClothPredict()
 }
 
 
-void ProjectDynamic::PDsolve()
+void ProjectDynamic::PD_IPC_solve()
 {
 	PDsetPosPredict();
 	initialEnergy();
@@ -550,6 +554,7 @@ void ProjectDynamic::PDsolve()
 	previous_PD_energy = 1e-15;
 	while (IPC_PDConvergeCondition()) {
 		previous_PD_energy = current_PD_energy;
+		current_PD_energy = 1e-15;
 		collision.globalCollisionTime();
 		thread->assignTask(this, COLLISION_FREE_POSITION);
 		collision.solveCollisionConstraint();
@@ -584,7 +589,10 @@ void ProjectDynamic::PDsolve()
 	initialEnergy();	
 	local_global_iteration_num = 0;
 	for (int i = 0; i < collider->size(); ++i) {
-		(*collider)[i].mesh_struct.getNormal();
+		thread->assignTask(&(*collider)[i].mesh_struct, FACE_NORMAL);
+	}
+	for (int i = 0; i < cloth->size(); ++i) {
+		thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL);
 	}
 	//std::cout << "==============================================" << std::endl;
 	while (!PDConvergeCondition())	{
@@ -593,15 +601,12 @@ void ProjectDynamic::PDsolve()
 		initialEnergyOuterInteration();
 		local_global_itr_in_single_outer = 0;
 		while (!PDLocalGlobalConvergeCondition()){
-
 			initialEnergyLocalGlobal();
-
 			if (local_global_itr_in_single_outer > 0) {
 				//time_t t = clock();
 				collision.updateCollisionPosition();
 				//std::cout << clock() - t << std::endl;
 			}
-
 			time_t t = clock();
 			//for (int i = 0; i < 1000; ++i) {
 				//thread->assignTask(this, LOCAL_EDGE_LENGTH_PROJECTION);
@@ -627,6 +632,9 @@ void ProjectDynamic::PDsolve()
 			}
 			current_PD_energy += current_constraint_energy;
 			updateModelPosition();	
+			for (int i = 0; i < cloth->size(); ++i) {
+				thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL);
+			}
 			//std::cout << "result"<< local_global_itr_in_single_outer << std::endl;
 			//for (int j = 0; j < total_cloth_num; ++j) {
 			//	for (int i = 0; i < cloth_sys_size[j]; ++i) {

@@ -278,7 +278,8 @@ void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_par
 		if (intersection.happened && !control_parameter[START_TEST]) {
 			setCursorForce(camera, cursor_screen, force_coe);
 		}
-		project_dynamic.PDsolve();
+		//project_dynamic.PDsolve();
+		project_dynamic.PD_IPC_solve();
 		time_stamp++;
 	}
 

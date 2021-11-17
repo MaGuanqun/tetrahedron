@@ -27,6 +27,7 @@ public:
 	void initial();
 	
 	void PDsolve();
+	void PD_IPC_solve();
 	int local_global_iteration_num, outer_iteration_num;
 	void updateMatrixPerThread(int thread_No);
 	void matrixDecomposition(int thread_id);

@@ -102,9 +102,6 @@ void Collision::globalCollision()
 		//}				
 	}
 	//std::cout << "build " << clock() - t1 << std::endl;
-	for (int i = 0; i < cloth->size(); ++i) {
-		thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL);
-	}
 	//t1 = clock();
 	//for (int i = 0; i < 1000; ++i) {
 		thread->assignTask(this, FIND_TRIANGLE_PAIRS);
@@ -134,7 +131,13 @@ void Collision::collisionCulling()
 		spatial_hashing.buildSpatialHashing();			
 	}
 	for (int i = 0; i < collider->size(); ++i) {
-		(*collider)[i].mesh_struct.getNormal();
+		thread->assignTask(&(*collider)[i].mesh_struct, FACE_NORMAL);
+	}
+	for (int i = 0; i < cloth->size(); ++i) {
+		thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL);
+	}
+	for (int i = 0; i < tetrahedron->size(); ++i) {
+		thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL);
 	}
 	thread->assignTask(this, FIND_TRIANGLE_PAIRS);
 	thread->assignTask(this, FIND_PRIMITIVE_AROUND);
