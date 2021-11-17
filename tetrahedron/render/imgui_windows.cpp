@@ -282,7 +282,7 @@ bool ImGuiWindows::loadModel(std::vector<std::string>& collider_path, std::vecto
 			}
 		}
 		if (ImGui::Button("Load object", ImVec2(160, 25))) {
-			m_file_dialog_info.SetTypeFilters({ ".ele", ".obj"});
+			m_file_dialog_info.SetTypeFilters({".obj",".ele" });
 			m_file_dialog_info.SetTitle("Load object");
 			m_file_dialog_info.Open();
 			load_collider_is_open = false;

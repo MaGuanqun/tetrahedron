@@ -24,6 +24,8 @@ void TriangleMeshStruct::getRenderVertexNormalPerThread(int thread_id)
 {
 	std::vector<int>* face_vertex;
 	double* current_vertex_normal;
+	memset(vertex_normal_for_render[vertex_index_begin_per_thread[thread_id]].data(), 
+		0, 24 * (vertex_index_begin_per_thread[thread_id+1]- vertex_index_begin_per_thread[thread_id]));
 	for (int i = vertex_index_begin_per_thread[thread_id]; i < vertex_index_begin_per_thread[thread_id + 1]; ++i) {
 		face_vertex = &vertices[i].face;
 		current_vertex_normal = vertex_normal_for_render[i].data();
@@ -57,6 +59,7 @@ void TriangleMeshStruct::getVertexNormalPerThread(int thread_id)
 {
 	std::vector<int>* face_vertex;
 	double* current_vertex_normal;
+	memset(vertex_normal[vertex_index_begin_per_thread[thread_id]].data(), 0, 24 * (vertex_index_begin_per_thread[thread_id + 1]- vertex_index_begin_per_thread[thread_id]));
 	for (int i = vertex_index_begin_per_thread[thread_id]; i < vertex_index_begin_per_thread[thread_id + 1]; ++i) {
 		face_vertex = &vertices[i].face;
 		current_vertex_normal = vertex_normal[i].data();
@@ -81,6 +84,7 @@ void TriangleMeshStruct::getRenderFaceNormalPerThread(int thread_id)
 		SUB(e2, vertex_for_render[triangle_vertex[1]], vertex_for_render[triangle_vertex[0]]);
 		SUB(e0, vertex_for_render[triangle_vertex[2]], vertex_for_render[triangle_vertex[0]]);
 		CROSS(current_face_normal, e2, e0);
+		memcpy(ori_face_normal_for_render[j].data(), current_face_normal, 24);
 		normalize(current_face_normal);
 	}
 }
@@ -89,6 +93,7 @@ void TriangleMeshStruct::getRenderFaceNormalPerThread(int thread_id)
 void TriangleMeshStruct::getFaceNormalPerThread(int thread_id)
 {
 	double e0[3], e2[3];
+	double e3[3], e4[3], cross[3];
 	double* current_face_normal;
 	int* triangle_vertex;
 	for (int j = face_index_begin_per_thread[thread_id]; j < face_index_begin_per_thread[thread_id+1]; ++j) {
@@ -97,15 +102,22 @@ void TriangleMeshStruct::getFaceNormalPerThread(int thread_id)
 		SUB(e2, vertex_position[triangle_vertex[1]], vertex_position[triangle_vertex[0]]);
 		SUB(e0, vertex_position[triangle_vertex[2]], vertex_position[triangle_vertex[0]]);
 		CROSS(current_face_normal, e2, e0);
+		memcpy(ori_face_normal[j].data(), current_face_normal, 24);
 		triangle_normal_magnitude_reciprocal[j] = 1.0 / sqrt(DOT(current_face_normal, current_face_normal));
 		normalize(current_face_normal);
+
+		SUB(e3, vertex_for_render[triangle_vertex[1]], vertex_for_render[triangle_vertex[0]]);
+		SUB(e4, vertex_for_render[triangle_vertex[2]], vertex_for_render[triangle_vertex[0]]);
+		current_face_normal=cross_for_approx_CCD[j].data();
+		CROSS(current_face_normal, e3, e0);
+		CROSS(cross, e2, e4);
+		SUM(current_face_normal, cross, current_face_normal);		
 	}
 }
 
 void TriangleMeshStruct::getRenderNormal()
 {
 	thread->assignTask(this, FACE_NORMAL_RENDER);
-	memset(vertex_normal_for_render[0].data(), 0, 24 * vertex_position.size());
 	thread->assignTask(this, VERTEX_NORMAL_RENDER);
 }
 
@@ -113,8 +125,7 @@ void TriangleMeshStruct::getRenderNormal()
 
 void TriangleMeshStruct::getNormal()
 {
-	thread->assignTask(this, FACE_NORMAL);
-	memset(vertex_normal[0].data(), 0, 24 * vertex_position.size());
+	thread->assignTask(this, FACE_NORMAL);	
 	thread->assignTask(this, VERTEX_NORMAL);
 }
 

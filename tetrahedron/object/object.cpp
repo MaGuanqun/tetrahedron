@@ -17,10 +17,13 @@ void Object::getAABB(AABB& target, AABB& aabb0, AABB& aabb1, AABB& aabb2)
 {
 	for (int i = 0; i < 3; ++i) {
 		target.min[i] = myMin(aabb0.min[i], aabb1.min[i]);
-		target.min[i] = myMin(target.min[i], aabb2.min[i]);
-
 		target.max[i] = myMax(aabb0.max[i], aabb1.max[i]);
-		target.max[i] = myMax(target.max[i], aabb2.max[i]);
+		if (target.min[i] > aabb2.min[i]) {
+			target.min[i] = aabb2.min[i];
+		}
+		if (target.max[i] < aabb2.max[i]) {
+			target.max[i] = aabb2.max[i];
+		}
 	}	
 }
 

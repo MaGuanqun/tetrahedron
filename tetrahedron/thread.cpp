@@ -48,13 +48,19 @@ job Thread::create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread 
     switch (function_type)
     {
     case LOCAL_PROJECTION:
-        k = job([func, thread_id]() {func->localProjectionPerThread(thread_id); });
+        k = job([func, thread_id]() {func->localProjectionPerThread(thread_id,true); });
         break;
-    case LOCAL_EDGE_LENGTH_PROJECTION:
-        k = job([func, thread_id]() {func->localEdgeLengthProjectionPerThread(thread_id); });
+    case LOCAL_PROJECTION_WITHOUT_ENERGY:
+        k = job([func, thread_id]() {func->localProjectionPerThread(thread_id, false); });
         break;
+    case COLLISION_FREE_POSITION:
+        k = job([func, thread_id]() {func->computeCollisionFreePosition(thread_id); });
+        break;  
     case SOLVE_SYSYTEM:
-        k = job([func, thread_id]() {func->solveSystemPerThead(thread_id); });
+        k = job([func, thread_id]() {func->solveSystemPerThead(thread_id,true); });
+        break;
+    case SOLVE_SYSYTEM_WITHOUT_COLLISION:
+        k = job([func, thread_id]() {func->solveSystemPerThead(thread_id, false); });
         break;
     //case UPDATE_COLLISION_STIFFNESS:
     //    k = job([func, thread_id]() {func->updateCollisionStiffnessClothPerThread(thread_id); });
@@ -69,6 +75,9 @@ job Thread::create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread 
         k = job([func, thread_id]() {func->updateMatrixPerThread(thread_id); });
         break;
     }
+    //case LOCAL_EDGE_LENGTH_PROJECTION:
+    //    k = job([func, thread_id]() {func->localEdgeLengthProjectionPerThread(thread_id); });
+    //    break;
     case TEST_LOCAL_PROJECTION: {
         k = job([func, thread_id]() {func->testLocalProjectionPerThread(thread_id); });
         break;
@@ -141,12 +150,15 @@ job Thread::create_task(Cloth* func, int thread_id, ObjectFunc function_type)// 
     job k;
     switch (function_type)
     {
-    case TRIANGLE_AABB:
-        k = job([func, thread_id]() {func->getTriangleAABBPerThread(thread_id); });
-        break;
-    case EDGE_AABB:
-        k = job([func, thread_id]() {func->getEdgeAABBPerThread(thread_id); });
-        break;
+    case EDGE_TRIANGLE_AABB:
+        k = job([func, thread_id]() {func->getEdgeTriangleAABBPerThread(thread_id); });        
+            break;
+    //case TRIANGLE_AABB:
+    //    
+    //    break;
+    //case EDGE_AABB:
+    //    k = job([func, thread_id]() {func->getEdgeAABBPerThread(thread_id); });
+    //    break;
     case VERTEX_AABB:
         k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id); });
         break;
@@ -160,9 +172,12 @@ job Thread::create_task(Collider* func, int thread_id, ObjectFunc function_type)
     job k;
     switch (function_type)
     {
-    case TRIANGLE_AABB:
+    case EDGE_TRIANGLE_AABB:
         k = job([func, thread_id]() {func->getTriangleAABBPerThread(thread_id); });
         break;
+    //case TRIANGLE_AABB:
+    //    k = job([func, thread_id]() {func->getTriangleAABBPerThread(thread_id); });
+    //    break;
     case VERTEX_AABB:
         k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id); });
         break;
@@ -190,18 +205,24 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     job k;
     switch (function_type)
     {
-    case RE_DETECTION:
-        k = job([func, thread_id]() {func->collisionReDetection(thread_id); });
-        break;
-    case RESUM_TARGET_POSITION:
-        k = job([func, thread_id]() {func->resumTargetPositionPerThread(thread_id); });
-        break;
     case FIND_TRIANGLE_PAIRS:
         k = job([func, thread_id]() {func->findAllTrianglePairs(thread_id); });
         break;
     case  FIND_PRIMITIVE_AROUND:
         k = job([func, thread_id]() {func->findPrimitivesAround(thread_id); });
         break;
+    case GLOBAL_COLLISION_TIME:
+        k = job([func, thread_id]() {func->collisionTime(thread_id); });
+        break;
+    case COLLISION_CONSTRAINT:
+        k = job([func, thread_id]() {func->collisionConstraint(thread_id); });
+        break;
+    case RE_DETECTION:
+        k = job([func, thread_id]() {func->collisionReDetection(thread_id); });
+        break;
+    case RESUM_TARGET_POSITION:
+        k = job([func, thread_id]() {func->resumTargetPositionPerThread(thread_id); });
+        break; 
     case GLOBAL_COLLISION_DETECTION:
         k = job([func, thread_id]() {func->collisionDetection(thread_id); });
         break;

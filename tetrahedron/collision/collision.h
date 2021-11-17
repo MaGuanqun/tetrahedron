@@ -6,10 +6,17 @@
 #include"../thread.h"
 #include"predictive_contact.h"
 #include"spatial_hashing.h"
+#include"ApproxCCD.h"
+#include"../external/Eigen/Dense"
+#include"collision_constraint.h"
+
+using namespace Eigen;
 
 class Collision
 {
 public:
+	double collision_time;
+
 	void initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread);
 
 	void findAllTrianglePairs(int thread_No);
@@ -20,7 +27,12 @@ public:
 	void collisionReDetection(int thread_No);
 	void resumTargetPositionPerThread(int thread_id);
 	void updateCollisionPosition();
+	void collisionTime(int thread_No);
+	void collisionConstraint(int thread_No);
+	void solveCollisionConstraint();
 	void test();
+	void collisionCulling();
+	void globalCollisionTime();
 	struct TargetPosition
 	{
 		std::vector<std::vector<std::array<double, 3>>>b_sum; // add on the b vector in projectDynamic.cpp
@@ -78,6 +90,14 @@ private:
 	SpatialHashing spatial_hashing;
 	bool use_BVH;
 
+
+	std::vector<double>collision_time_thread;
+
+	ApproxCCD approx_CCD;
+	CollisionConstraint collision_constraint;
+
+	double d_hat_2;
+
 	void buildBVH();
 	void initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread);
 	void searchTriangle(AABB& aabb, int compare_index, int cloth_No, std::vector<std::vector<int>>* cloth_neighbor_index, std::vector<std::vector<int>>* collider_neighbor_index);
@@ -121,4 +141,20 @@ private:
 	void colliderTriangleVertexCollisionReDetection(int thread_No, int triangle_index, int collider_No,
 		std::vector<int>* collide_triangle_vertex, MeshStruct* triangle_mesh, double radius0, TargetPosition* target_pos);
 	void testCollision();
+	
+
+	void pointSelfTriangleCollisionTime(double* collision_time, std::vector<int>* vertex_neighbor_triangle, double* initial_vertex_pos, double* current_vertex_pos);
+	void edgeEdgeCollisionTime(double* collision_time, std::vector<int>* edge_neighbor_edge, double* initial_edge_vertex_0, double* initial_edge_vertex_1, double* current_edge_vertex_0, double* current_edge_vertex_1);
+	void pointColliderTriangleCollisionTime(double* collision_time, int* triangle_vertex_index, std::vector<int>* triangle_neighbor_vertex,
+		std::array<double, 3>* initial_position, std::array<double, 3>* current_position,
+		double* initial_ori_face_normal, double* current_ori_face_normal, double* cross_for_CCD);
+	void pointSelfTriangleClose(std::vector<int>* vertex_neighbor_triangle, double* initial_vertex_pos, double* current_vertex_pos,
+		int vertex_index, int cloth_No, double mass, TargetPosition* target_position);
+	void pointColliderTriangleClose(int* triangle_vertex_index, std::vector<int>* triangle_neighbor_vertex,
+		std::vector<double*>& current_position, double* current_face_normal, TargetPosition* target_position);
+	void addTargetPosToSystemTotal(double* b_sum, double& energy, double* current_pos, double* target_pos, double stiffness, double& sum_stiffness, bool& update);
+	void edgeEdgeClose(std::vector<int>* edge_neighbor_edge, double* initial_edge_vertex_0, double* initial_edge_vertex_1, double* current_edge_vertex_0, double* current_edge_vertex_1,
+		int cloth_No, int edge_vertex_index_0, int edge_vertex_index_1, double* mass, TargetPosition* target_position);
+
+
 };

@@ -154,8 +154,10 @@
     <ClCompile Include="basic\opengl_input.cpp" />
     <ClCompile Include="basic\pick_triangle.cpp" />
     <ClCompile Include="basic\set_tetrahedron_anchor.cpp" />
+    <ClCompile Include="collision\ApproxCCD.cpp" />
     <ClCompile Include="collision\BVH.cpp" />
     <ClCompile Include="collision\collision.cpp" />
+    <ClCompile Include="collision\collision_constraint.cpp" />
     <ClCompile Include="collision\parallel_radix_sort.cpp" />
     <ClCompile Include="collision\predictive_contact.cpp" />
     <ClCompile Include="collision\spatial_hashing.cpp" />
@@ -198,8 +200,10 @@
     <ClInclude Include="basic\opengl_input.h" />
     <ClInclude Include="basic\pick_triangle.h" />
     <ClInclude Include="basic\set_tetrahedron_anchor.h" />
+    <ClInclude Include="collision\ApproxCCD.h" />
     <ClInclude Include="collision\BVH.h" />
     <ClInclude Include="collision\collision.h" />
+    <ClInclude Include="collision\collision_constraint.h" />
     <ClInclude Include="collision\parallel_radix_sort.h" />
     <ClInclude Include="collision\predictive_contact.h" />
     <ClInclude Include="collision\spatial_hashing.h" />

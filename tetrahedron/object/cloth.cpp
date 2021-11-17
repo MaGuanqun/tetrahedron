@@ -75,8 +75,7 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mesh_struct.setThreadIndex(total_thread_num);
 	mesh_struct.vertex_for_render = mesh_struct.vertex_position;
 	mesh_struct.getRenderNormal();
-	mesh_struct.face_normal = mesh_struct.face_normal_for_render;
-	mesh_struct.vertex_normal = mesh_struct.vertex_normal_for_render;
+	mesh_struct.getNormal();
 	mesh_struct.initialInfo();
 	genBuffer();
 	genShader();
@@ -209,39 +208,48 @@ void Cloth::getVertexAABBPerThread(int thread_No)
 {
 	std::vector<std::array<double, 3>>* vertex_render=&mesh_struct.vertex_for_render;
 	std::vector<std::array<double, 3>>* vertex=&mesh_struct.vertex_position;
-	for (int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < mesh_struct.vertex_index_begin_per_thread[thread_No + 1]; ++i) {
+	int index_end= mesh_struct.vertex_index_begin_per_thread[thread_No + 1];
+	for (int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < index_end; ++i) {
 		vertex_AABB[i].obtainAABB((*vertex_render)[i].data(), (*vertex)[i].data(),tolerance);	
 	}
 }
 
-//EDGE_AABB
-void Cloth::getEdgeAABBPerThread(int thread_No)
+//EDGE_TRIANGLE_AABB
+void Cloth::getEdgeTriangleAABBPerThread(int thread_No)
 {
-	std::vector<MeshStruct::Edge>* edge = &mesh_struct.edges;
+	MeshStruct::Edge* edge = mesh_struct.edges.data();
 	int* vertex_index;
-	for (int i = mesh_struct.edge_index_begin_per_thread[thread_No]; i < mesh_struct.edge_index_begin_per_thread[thread_No + 1]; ++i) {
-		vertex_index = (*edge)[i].vertex;
+	int index_end = mesh_struct.edge_index_begin_per_thread[thread_No + 1];
+	for (int i = mesh_struct.edge_index_begin_per_thread[thread_No]; i < index_end; ++i) {
+		vertex_index = edge[i].vertex;
 		getAABB(edge_AABB[i], vertex_AABB[vertex_index[0]], vertex_AABB[vertex_index[1]]);
+	}
+	std::array<int, 3>* face = mesh_struct.triangle_indices.data();
+	index_end = mesh_struct.face_index_begin_per_thread[thread_No + 1];
+	for (int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < index_end; ++i) {
+		vertex_index = face[i].data();
+		getAABB(triangle_AABB[i], vertex_AABB[vertex_index[0]], vertex_AABB[vertex_index[1]], vertex_AABB[vertex_index[2]]);
 	}
 }
 
 //TRIANGLE_AABB
-void Cloth::getTriangleAABBPerThread(int thread_No)
-{
-	std::vector<std::array<int,3>>* face = &mesh_struct.triangle_indices;
-	int* vertex_index;
-	for (int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < mesh_struct.face_index_begin_per_thread[thread_No + 1]; ++i) {
-		vertex_index = (*face)[i].data();
-		getAABB(triangle_AABB[i], vertex_AABB[vertex_index[0]], vertex_AABB[vertex_index[1]], vertex_AABB[vertex_index[2]]);
-	}
-}
+//void Cloth::getTriangleAABBPerThread(int thread_No)
+//{
+//	std::vector<std::array<int,3>>* face = &mesh_struct.triangle_indices;
+//	int* vertex_index;
+//	int index_end = mesh_struct.face_index_begin_per_thread[thread_No + 1];
+//	for (int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < index_end; ++i) {
+//		vertex_index = (*face)[i].data();
+//		getAABB(triangle_AABB[i], vertex_AABB[vertex_index[0]], vertex_AABB[vertex_index[1]], vertex_AABB[vertex_index[2]]);
+//	}
+//}
 
 
 void Cloth::obtainAABB()
 {
 	thread->assignTask(this, VERTEX_AABB);
-	thread->assignTask(this, EDGE_AABB);
-	thread->assignTask(this, TRIANGLE_AABB);
+	//thread->assignTask(this, EDGE_AABB);
+	thread->assignTask(this, EDGE_TRIANGLE_AABB);
 }
 
 

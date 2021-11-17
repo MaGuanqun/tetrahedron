@@ -10,7 +10,6 @@ public:
 	std::vector<Face> faces;
 	std::vector<Edge> edges;
 
-	std::vector<std::array<double, 3>> vertex_normal;
 
 	std::vector<int> edge_index_begin_per_thread;
 

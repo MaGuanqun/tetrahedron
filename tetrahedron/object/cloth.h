@@ -29,8 +29,8 @@ public:
 	void initial();
 	void initialMouseChosenVertex();
 
-	void getTriangleAABBPerThread(int thread_No);
-	void getEdgeAABBPerThread(int thread_No);
+	//void getTriangleAABBPerThread(int thread_No);
+	void getEdgeTriangleAABBPerThread(int thread_No);
 	void getVertexAABBPerThread(int thread_No);
 	void obtainAABB();
 	

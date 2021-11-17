@@ -30,15 +30,16 @@ public:
 	int local_global_iteration_num, outer_iteration_num;
 	void updateMatrixPerThread(int thread_No);
 	void matrixDecomposition(int thread_id);
-	void localProjectionPerThread(int thread_id);
-	void localEdgeLengthProjectionPerThread(int thread_id);
-	void solveSystemPerThead(int thread_id);
+	void localProjectionPerThread(int thread_id, bool with_energy);
+	
+	void solveSystemPerThead(int thread_id, bool with_collision);
 	void updateUVPerThread(int thread_id);
 	void updateRenderPosition();
 	void addExternalClothForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int cloth_No);
 	void resetExternalForce();
 	void mainProcess();
 	void testLocalProjectionPerThread(int thread_id);
+	void computeCollisionFreePosition(int thread_No);
 private:
 	int local_global_itr_in_single_outer;
 	int total_thread_num;
@@ -85,11 +86,14 @@ private:
 	std::vector<std::vector<double>>cloth_global_mat_diagonal_ref;
 	std::vector<std::vector<double*>>cloth_global_mat_diagonal_ref_address;
 	SimplicialLLT<SparseMatrix<double>>* cloth_llt;
+
+	SimplicialLLT<SparseMatrix<double>>* collision_free_cloth_llt;
+
 	void computeGlobalStepMatrixSingleCloth(SparseMatrix<double>* global_mat, std::vector<double>& global_mat_diagonal_ref,
 		std::vector<double*>& global_collision_mat_diagonal_ref, SimplicialLLT<SparseMatrix<double>>* global_llt, TriangleMeshStruct& mesh_struct,
 		std::vector<std::vector<int>>& vertex_around_vertex_for_bending,
 		std::vector<double>& lbo_weight, std::vector<VectorXd>& vertex_lbo, int sys_size, double bending_stiffness, std::vector<double>& length_stiffness,
-		double position_stiffness);
+		double position_stiffness, SimplicialLLT<SparseMatrix<double>>* collision_free_global_llt);
 	std::vector<std::vector<double>> rest_mean_curvature_norm;
 	std::vector<std::vector<Vector3d>> p_edge_length;
 	std::vector<std::vector < std::vector<VectorXd>>> p_bending;
@@ -109,14 +113,14 @@ private:
 		std::vector<std::vector<int>>& vertex_around_vertex_for_bending, std::vector<VectorXd>& vertex_lbo);
 	void PDClothPredict();
 	void setClothMatrix(int thread_No);
-	
-	void localBendingProjectionPerThread(int thread_id);
-	void localPositionProjectionPerThread(int thread_id);
-	void solveClothSystemPerThead(int thread_id);
+	void localEdgeLengthProjectionPerThread(int thread_id, bool with_energy);
+	void localBendingProjectionPerThread(int thread_id, bool with_energy);
+	void localPositionProjectionPerThread(int thread_id, bool with_energy);
+	void solveClothSystemPerThead(int thread_id, bool with_collision);
 	void solveClothSystemPerThead(VectorXd& b, VectorXd& u, TriangleMeshStruct& mesh_struct, std::vector<double>& length_stiffness,
 		std::vector<Vector3d>& p_edge_length, int cloth_No, int dimension, std::vector<std::vector<int>>& vertex_around_vertex_for_bending,
 		std::vector<VectorXd>& vertex_lbo, std::vector<std::vector<VectorXd>>& p_bending, VectorXd& u_prediction, int thread_id,
-		std::vector<std::array<double, 3>>& collision_b_sum, bool* collision_b_need_update);
+		std::vector<std::array<double, 3>>& collision_b_sum, bool* collision_b_need_update, bool with_collision);
 
 	void updateModelPosition();
 	void setIndexPerThread();
@@ -158,4 +162,6 @@ private:
 
 	Collision collision;
 	void initialTetrahedronPDvariable();
+	bool IPC_PDConvergeCondition();
+	void updateRenderPositionIPC();
 };

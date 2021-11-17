@@ -43,6 +43,12 @@ dest[0] = v1[0] - v2[0];\
 dest[1] = v1[1] - v2[1];\
 dest[2] = v1[2] - v2[2];
 
+#undef SUB_
+#define SUB_(dest,v1) \
+dest[0] -= v1[0];\
+dest[1] -= v1[1];\
+dest[2] -= v1[2];
+
 
 #undef MID
 #define MID(dest,v1,v2)\
@@ -55,6 +61,13 @@ dest[2] =  0.5*(v1[2] + v2[2]);
 dest[0] = v1[0] + v2[0];\
 dest[1] = v1[1] + v2[1];\
 dest[2] = v1[2] + v2[2];
+
+
+#undef SUM_
+#define SUM_(dest,v1)\
+dest[0] += v1[0];\
+dest[1] += v1[1];\
+dest[2] += v1[2];
 
 #undef SUM_2
 #define SUM_2(dest,v1,v2)\
@@ -71,6 +84,12 @@ dest[1] = v1[1] - v2[1];
 dest[0]=v1[0]/value;\
 dest[1]=v1[1]/value;\
 dest[2]=v1[2]/value;
+
+#undef DEV_
+#define DEV_(dest,value)\
+dest[0]/=value;\
+dest[1]/=value;\
+dest[2]/=value;
 
 #undef DOT
 #define DOT(v1,v2) (v1[0]*v2[0]+v1[1]*v2[1]+v1[2]*v2[2])
@@ -89,6 +108,13 @@ dest[2] = v1[0] * v2[1] - v1[1] * v2[0];
 dest[0]=value*v1[0];\
 dest[1]=value*v1[1];\
 dest[2]=value*v1[2];
+
+
+#undef MULTI_
+#define MULTI_(dest,value)\
+dest[0]*=value;\
+dest[1]*=value;\
+dest[2]*=value;
 
 #undef BARYCENTRIC
 #define BARYCENTRIC(dest,barycoe,v0,v1,v2)\
@@ -121,7 +147,7 @@ inline double gaussian(double x, double sigma) {
 
 }
 
-inline void normalize(double x[3]) {
+inline void normalize(double* x) {
     double norm = sqrt(DOT(x, x));
     if (norm > 1e-10) {
         x[0] /= norm;
@@ -129,6 +155,7 @@ inline void normalize(double x[3]) {
         x[2] /= norm;
     }
 }
+
 
 #undef DEG_RADIANS
 #define DEG_RADIANS(a) (a/180.0*M_PI)

@@ -47,6 +47,7 @@ void Collider::loadMesh(OriMesh& ori_mesh, Thread* thread)
 	mesh_struct.setThreadIndex(total_thread_num);
 	mesh_struct.vertex_for_render = mesh_struct.vertex_position;
 	mesh_struct.getRenderNormal();
+	mesh_struct.getNormal();
 	mesh_struct.initialInfo();
 	genBuffer();
 	setBuffer();
@@ -70,7 +71,7 @@ void Collider::setMeshStruct(OriMesh& ori_mesh)
 void Collider::obtainAABB()
 {
 	thread->assignTask(this, VERTEX_AABB);
-	thread->assignTask(this, TRIANGLE_AABB);
+	thread->assignTask(this, EDGE_TRIANGLE_AABB);
 }
 
 
@@ -84,13 +85,13 @@ void Collider::getVertexAABBPerThread(int thread_No)
 	}
 }
 
-//TRIANGLE_AABB
+//EDGE_TRIANGLE_AABB
 void Collider::getTriangleAABBPerThread(int thread_No)
 {
-	std::vector<std::array<int,3>>* face = &mesh_struct.triangle_indices;
+	std::array<int,3>* face = mesh_struct.triangle_indices.data();
 	int* vertex_index;
 	for (int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < mesh_struct.face_index_begin_per_thread[thread_No + 1]; ++i) {
-		vertex_index = (*face)[i].data();
+		vertex_index = face[i].data();
 		getAABB(triangle_AABB[i], vertex_AABB[vertex_index[0]], vertex_AABB[vertex_index[1]], vertex_AABB[vertex_index[2]]);
 	}
 }

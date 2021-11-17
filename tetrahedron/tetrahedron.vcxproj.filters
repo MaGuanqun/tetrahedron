@@ -115,6 +115,12 @@
     <ClCompile Include="collision\parallel_radix_sort.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="collision\ApproxCCD.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="collision\collision_constraint.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="basic\basic_imgui.h">
@@ -238,6 +244,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="collision\parallel_radix_sort.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="collision\ApproxCCD.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="collision\collision_constraint.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

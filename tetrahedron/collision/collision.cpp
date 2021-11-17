@@ -12,6 +12,8 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	initialSpatialHashing(cloth, collider, tetrahedron, thread);
 	use_BVH = false;
 	initialNeighborPrimitive();
+	collision_time_thread.resize(thread->thread_num);
+	collision_constraint.testPT();
 }
 
 void Collision::initialNeighborPrimitive()
@@ -101,7 +103,7 @@ void Collision::globalCollision()
 	}
 	//std::cout << "build " << clock() - t1 << std::endl;
 	for (int i = 0; i < cloth->size(); ++i) {
-		(*cloth)[i].mesh_struct.getNormal();
+		thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL);
 	}
 	//t1 = clock();
 	//for (int i = 0; i < 1000; ++i) {
@@ -119,6 +121,161 @@ void Collision::globalCollision()
 	//std::cout << "search " << clock() - t1 << std::endl;
 	thread->assignTask(this, GLOBAL_COLLISION_DETECTION);
 	sumTargetPosition();
+}
+
+
+void Collision::collisionCulling()
+{
+	getAABB();
+	if (use_BVH) {
+		buildBVH();
+	}
+	else {
+		spatial_hashing.buildSpatialHashing();			
+	}
+	for (int i = 0; i < collider->size(); ++i) {
+		(*collider)[i].mesh_struct.getNormal();
+	}
+	thread->assignTask(this, FIND_TRIANGLE_PAIRS);
+	thread->assignTask(this, FIND_PRIMITIVE_AROUND);
+}
+
+
+void Collision::globalCollisionTime()
+{
+
+	thread->assignTask(this, GLOBAL_COLLISION_TIME);
+	collision_time = collision_time_thread[0];
+	for (int i = 1; i < thread_num; ++i) {
+		if (collision_time > collision_time_thread[i]) {
+			collision_time = collision_time_thread[i];
+		}
+	}
+	
+}
+
+
+void Collision::solveCollisionConstraint()
+{
+	for (int i = 0; i < cloth->size(); ++i) {
+		thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL_RENDER);
+	}
+	thread->assignTask(this, COLLISION_CONSTRAINT);
+	sumTargetPosition();
+}
+
+//COLLISION_CONSTRAINT
+void Collision::collisionConstraint(int thread_No)
+{
+	TargetPosition* target_pos = &cloth_target_pos_per_thread[thread_No];
+	target_pos->initial();
+	TriangleMeshStruct* mesh_struct;
+	std::vector<std::vector<int>>* neighbor_primitve;
+	int index_begin;
+	int index_end;
+	double* mass;
+	std::array<double, 3>* current_pos;
+	std::array<double, 3>* initial_pos;
+	for (int cloth_No = 0; cloth_No < cloth->size(); ++cloth_No) {
+		mesh_struct = &(*cloth)[cloth_No].mesh_struct;
+		index_begin = mesh_struct->vertex_index_begin_per_thread[thread_No];
+		index_end = mesh_struct->vertex_index_begin_per_thread[thread_No + 1];
+		neighbor_primitve = (*cloth)[cloth_No].vertex_neighbor_cloth_traingle.data();
+		mass = mesh_struct->mass.data();
+		current_pos = mesh_struct->vertex_position.data();
+		initial_pos = mesh_struct->vertex_for_render.data();
+		for (int i = index_begin; i < index_end; ++i) {
+			pointSelfTriangleClose(neighbor_primitve[i].data(), initial_pos[i].data(), current_pos[i].data(), i, cloth_No, mass[i], target_pos);
+		}
+	}
+	std::array<int, 3>* triangle_vertex_index;
+	std::vector<double*> triangle_pos(3);
+	std::array<double, 3>* triangle_normal;
+	for (int collider_No = 0; collider_No < collider->size(); ++collider_No) {
+		mesh_struct = &(*collider)[collider_No].mesh_struct;
+		index_begin = mesh_struct->face_index_begin_per_thread[thread_No];
+		index_end = mesh_struct->face_index_begin_per_thread[thread_No + 1];
+		current_pos = mesh_struct->vertex_position.data();
+		neighbor_primitve = (*collider)[collider_No].triangle_neighbor_cloth_vertex.data();
+		triangle_vertex_index = mesh_struct->triangle_indices.data();
+		triangle_normal = mesh_struct->face_normal.data();
+		for (int i = index_begin; i < index_end; ++i) {
+			for (int j = 0; j < 3; ++j) {
+				triangle_pos[j] = current_pos[triangle_vertex_index[i][j]].data();
+			}
+			pointColliderTriangleClose(triangle_vertex_index[i].data(), neighbor_primitve[i].data(), triangle_pos, triangle_normal[i].data(), target_pos);
+		}
+	}
+	int* edge_vertex_index;
+	double mass[4];
+	for (int cloth_No = 0; cloth_No < cloth->size(); ++cloth_No) {
+		mesh_struct = &(*cloth)[cloth_No].mesh_struct;
+		index_begin = mesh_struct->edge_index_begin_per_thread[thread_No];
+		index_end = mesh_struct->edge_index_begin_per_thread[thread_No + 1];
+		neighbor_primitve = (*cloth)[cloth_No].edge_neighbor_cloth_edge.data();
+		initial_pos = mesh_struct->vertex_for_render.data();
+		current_pos = mesh_struct->vertex_position.data();
+		for (int i = index_begin; i < index_end; ++i) {
+			edge_vertex_index = mesh_struct->edges[i].vertex;
+			mass[0] = mesh_struct->mass[edge_vertex_index[0]];
+			mass[1] = mesh_struct->mass[edge_vertex_index[1]];
+			edgeEdgeClose(neighbor_primitve[i].data(), initial_pos[edge_vertex_index[0]].data(), initial_pos[edge_vertex_index[1]].data(),
+				current_pos[edge_vertex_index[0]].data(), current_pos[edge_vertex_index[1]].data(), cloth_No, edge_vertex_index[0],
+				edge_vertex_index[1], mass, target_pos);
+		}
+	}
+
+}
+
+
+
+
+//GLOBAL_COLLISION_TIME
+void Collision::collisionTime(int thread_No)
+{
+	double* collision_time = &collision_time_thread[thread_No];
+	(*collision_time) = 2.0;
+	TriangleMeshStruct* mesh_struct;
+	std::vector<std::vector<int>>* neighbor_primitve;
+	int index_begin;
+	int index_end;
+	for (int cloth_No = 0; cloth_No < cloth->size(); ++cloth_No) {
+		mesh_struct = &(*cloth)[cloth_No].mesh_struct;
+		index_begin = mesh_struct->vertex_index_begin_per_thread[thread_No];
+		index_end= mesh_struct->vertex_index_begin_per_thread[thread_No+1];
+		neighbor_primitve = (*cloth)[cloth_No].vertex_neighbor_cloth_traingle.data();
+		for (int i = index_begin; i < index_end; ++i) {
+			pointSelfTriangleCollisionTime(collision_time, neighbor_primitve[i].data(),mesh_struct->vertex_for_render[i].data(), mesh_struct->vertex_position[i].data());
+		}
+	}
+	std::array<double,3>* initial_pos;
+	std::array<double,3>* current_pos;
+	for (int collider_No = 0; collider_No < collider->size(); ++collider_No) {
+		mesh_struct = &(*collider)[collider_No].mesh_struct;
+		index_begin = mesh_struct->face_index_begin_per_thread[thread_No];
+		index_end = mesh_struct->face_index_begin_per_thread[thread_No+1];		
+		initial_pos = mesh_struct->vertex_for_render.data();
+		current_pos = mesh_struct->vertex_position.data();
+		neighbor_primitve = (*collider)[collider_No].triangle_neighbor_cloth_vertex.data();
+		for (int i = index_begin; i < index_end; ++i) {
+			pointColliderTriangleCollisionTime(collision_time, mesh_struct->triangle_indices[i].data(), neighbor_primitve[i].data(), initial_pos,current_pos, 
+				mesh_struct->ori_face_normal_for_render[i].data(), mesh_struct->ori_face_normal[i].data(), mesh_struct->cross_for_approx_CCD[i].data());
+		}
+	}	
+	int* edge_vertex_index;
+	for (int cloth_No = 0; cloth_No < cloth->size(); ++cloth_No) {
+		mesh_struct = &(*cloth)[cloth_No].mesh_struct;
+		index_begin = mesh_struct->edge_index_begin_per_thread[thread_No];
+		index_end = mesh_struct->edge_index_begin_per_thread[thread_No+1];		
+		neighbor_primitve = (*cloth)[cloth_No].edge_neighbor_cloth_edge.data();
+		initial_pos= mesh_struct->vertex_for_render.data();
+		current_pos = mesh_struct->vertex_position.data();
+		for (int i = index_begin; i < index_end; ++i) {
+			edge_vertex_index = mesh_struct->edges[i].vertex;
+			edgeEdgeCollisionTime(collision_time, neighbor_primitve[i].data(), initial_pos[edge_vertex_index[0]].data(), initial_pos[edge_vertex_index[1]].data(), 
+				current_pos[edge_vertex_index[0]].data(), current_pos[edge_vertex_index[1]].data());
+		}
+	}
 }
 
 
@@ -397,6 +554,221 @@ void Collision::pointColliderTriangleCollisionDetection(int thread_No, int verte
 	}
 }
 
+
+
+void Collision::pointSelfTriangleClose(std::vector<int>* vertex_neighbor_triangle, double* initial_vertex_pos, double* current_vertex_pos,
+	int vertex_index, int cloth_No, double mass, TargetPosition* target_position)
+{
+	TriangleMeshStruct* triangle_mesh;
+	std::vector<int>* neighbor_triangle;
+	int* triangle_vertex_index;
+	std::array<double, 3>* current_position;
+	std::array<double, 3>* initial_position;
+	std::array<int, 3>* triangle_indices;
+	std::array<double, 3>* initial_face_normal;
+	int triangle_index;
+
+	std::vector<double*>triangle_initial_pos(3);
+	std::vector<double*>triangle_current_pos(3);
+
+	double target_pos[3];
+	std::vector<std::array<double, 3>> triangle_target_pos(3);
+	double stiffness;
+	double triangle_mass[3];
+
+	double* vertex_b_sum = target_position->b_sum[cloth_No][vertex_index].data();
+	double* vertex_stiffness = &target_position->stiffness[cloth_No][vertex_index];
+	bool* vetex_need_update = &target_position->need_update[cloth_No][vertex_index];
+
+	for (int i = 0; i < cloth->size(); ++i) {
+		triangle_mesh = &(*cloth)[i].mesh_struct;
+		neighbor_triangle = &(vertex_neighbor_triangle[i]);
+		current_position = triangle_mesh->vertex_position.data();
+		initial_position = triangle_mesh->vertex_for_render.data();
+		triangle_indices = triangle_mesh->triangle_indices.data();
+		initial_face_normal = triangle_mesh->face_normal_for_render.data();
+		for (int k = 0; k < neighbor_triangle->size(); ++k) {
+			triangle_index = (*neighbor_triangle)[k];
+			triangle_vertex_index = triangle_indices[triangle_index].data();
+			for (int j = 0; j < 3; ++j) {
+				triangle_initial_pos[j] = initial_position[triangle_vertex_index[j]].data();
+				triangle_current_pos[j] = current_position[triangle_vertex_index[j]].data();
+				triangle_mass[i] = triangle_mesh->mass[triangle_vertex_index[j]];
+			}
+			if (collision_constraint.pointSelfTriangle(initial_vertex_pos, current_vertex_pos, triangle_initial_pos, triangle_current_pos,
+				initial_face_normal[triangle_index].data(), target_pos, triangle_target_pos.data(), d_hat_2, stiffness,mass, triangle_mass)) {
+				addTargetPosToSystemTotal(vertex_b_sum,
+					target_position->collision_energy[cloth_No], initial_vertex_pos, target_pos, stiffness, *vertex_stiffness, *vetex_need_update);
+				int triangle_vertex;
+				for (int j = 0; j < 3; ++j) {
+					triangle_vertex = triangle_vertex_index[j];
+					addTargetPosToSystemTotal(target_position->b_sum[i][triangle_vertex].data(),
+						target_position->collision_energy[i], initial_position[triangle_vertex].data(), triangle_target_pos[j].data(), stiffness,
+						target_position->stiffness[i][triangle_vertex], target_position->need_update[i][triangle_vertex]);
+				}
+			}
+		}
+	}
+}
+
+void Collision::edgeEdgeClose(std::vector<int>* edge_neighbor_edge, double* initial_edge_vertex_0, double* initial_edge_vertex_1, double* current_edge_vertex_0, double* current_edge_vertex_1,
+	int cloth_No, int edge_vertex_index_0, int edge_vertex_index_1, double* mass, TargetPosition* target_position)
+{
+	TriangleMeshStruct* compare_mesh;
+	std::vector<int>* neighbor_edge;
+	double current_collision_time;
+	std::array<double, 3>* current_position;
+	std::array<double, 3>* initial_position;
+	std::vector<std::array<double, 3>> target_pos(2);
+	std::vector<std::array<double, 3>> compare_target_pos(2);
+	int compare_edge_index_0;
+	int compare_edge_index_1;
+	double stiffness;
+	for (int i = 0; i < cloth->size(); ++i) {
+		compare_mesh = &(*cloth)[i].mesh_struct;
+		neighbor_edge = &(edge_neighbor_edge[i]);
+		current_position = compare_mesh->vertex_position.data();
+		initial_position = compare_mesh->vertex_for_render.data();
+		for (int k = 0; k < neighbor_edge->size(); ++k) {
+			compare_edge_index_0= compare_mesh->edges[(*neighbor_edge)[k]].vertex[0];
+			compare_edge_index_1= compare_mesh->edges[(*neighbor_edge)[k]].vertex[1];
+			mass[2] = compare_mesh->mass[compare_edge_index_0];
+			mass[3] = compare_mesh->mass[compare_edge_index_1];
+			if (collision_constraint.edgeEdgeCollision(target_pos, compare_target_pos,current_edge_vertex_0, current_edge_vertex_1, initial_edge_vertex_0, 
+				initial_edge_vertex_1, current_position[compare_edge_index_0].data(), current_position[compare_edge_index_1].data(),
+				initial_position[compare_edge_index_0].data(), initial_position[compare_edge_index_1].data(),mass,d_hat_2, stiffness)) {
+				addTargetPosToSystemTotal(target_position->b_sum[cloth_No][edge_vertex_index_0].data(),
+					target_position->collision_energy[cloth_No], initial_edge_vertex_0, target_pos[0].data(), stiffness, target_position->stiffness[cloth_No][edge_vertex_index_0], target_position->need_update[cloth_No][edge_vertex_index_0]);
+				addTargetPosToSystemTotal(target_position->b_sum[cloth_No][edge_vertex_index_1].data(),
+					target_position->collision_energy[cloth_No], initial_edge_vertex_1, target_pos[1].data(), stiffness, target_position->stiffness[cloth_No][edge_vertex_index_1], target_position->need_update[cloth_No][edge_vertex_index_1]);
+				addTargetPosToSystemTotal(target_position->b_sum[i][compare_edge_index_0].data(),
+					target_position->collision_energy[i], initial_position[compare_edge_index_0].data(), compare_target_pos[0].data(), stiffness, target_position->stiffness[i][compare_edge_index_0], target_position->need_update[i][compare_edge_index_0]);
+				addTargetPosToSystemTotal(target_position->b_sum[i][compare_edge_index_1].data(),
+					target_position->collision_energy[i], initial_position[compare_edge_index_1].data(), compare_target_pos[1].data(), stiffness, target_position->stiffness[i][compare_edge_index_1], target_position->need_update[i][compare_edge_index_1]);
+			}
+		}
+	}
+}
+
+
+
+void Collision::pointColliderTriangleClose(int* triangle_vertex_index, std::vector<int>* triangle_neighbor_vertex,
+	std::vector<double*>& current_position, double* current_face_normal, TargetPosition* target_position)
+{
+	MeshStruct* vertex_mesh;
+	std::vector<int>* neighbor_vertex;
+	double current_collision_time;
+	double target_pos[3];
+	double stiffness;
+
+	std::array<double,3>* vertex_b_sum;
+	double* vertex_stiffness;
+	bool* vertex_need_update;
+	double* energy;
+	int vertex_index;
+	for (int i = 0; i < cloth->size(); ++i) {
+		vertex_mesh = &(*cloth)[i].mesh_struct;
+		neighbor_vertex = &(triangle_neighbor_vertex[i]);
+		vertex_b_sum = target_position->b_sum[i].data();
+		vertex_stiffness = target_position->stiffness[i].data();
+		vertex_need_update = target_position->need_update[i];
+		energy= &target_position->collision_energy[i];
+		for (int k = 0; k < neighbor_vertex->size(); ++k) {
+			vertex_index = (*neighbor_vertex)[k];
+			if (collision_constraint.pointColliderTriangle(vertex_mesh->vertex_for_render[vertex_index].data(), vertex_mesh->vertex_position[vertex_index].data(),
+				current_position, current_face_normal, target_pos, d_hat_2, stiffness)) {
+				addTargetPosToSystemTotal(vertex_b_sum[vertex_index].data(), *energy, vertex_mesh->vertex_for_render[vertex_index].data(), target_pos, stiffness,
+					vertex_stiffness[vertex_index], vertex_need_update[vertex_index]);
+			}
+		}
+	}
+}
+
+
+
+void Collision::pointSelfTriangleCollisionTime(double* collision_time, std::vector<int>* vertex_neighbor_triangle, double* initial_vertex_pos, double* current_vertex_pos)
+{
+	MeshStruct* triangle_mesh;
+	std::vector<int>* neighbor_triangle;
+	double current_collision_time;
+	int* triangle_vertex_index;
+	std::array<double, 3>* current_position;
+	std::array<double, 3>* initial_position;
+	std::array<int, 3>* triangle_indices;
+	std::array<double, 3>* current_ori_face_normal;
+	std::array<double, 3>* initial_ori_face_normal;
+	std::array<double, 3>* cross_for_CCD;
+	int triangle_index;
+	for (int i = 0; i < cloth->size(); ++i) {
+		triangle_mesh = &(*cloth)[i].mesh_struct;
+		neighbor_triangle = &(vertex_neighbor_triangle[i]);
+		current_position = triangle_mesh->vertex_position.data();
+		initial_position = triangle_mesh->vertex_for_render.data();
+		triangle_indices = triangle_mesh->triangle_indices.data();
+		current_ori_face_normal = triangle_mesh->ori_face_normal.data();
+		initial_ori_face_normal = triangle_mesh->ori_face_normal_for_render.data();
+		cross_for_CCD = triangle_mesh->cross_for_approx_CCD.data();
+
+		for (int k = 0; k < neighbor_triangle->size(); ++k) {
+			triangle_index = (*neighbor_triangle)[k];
+			triangle_vertex_index = triangle_indices[triangle_index].data();
+			if (approx_CCD.pointTriangleCollisionTime(current_collision_time, initial_vertex_pos, current_vertex_pos, initial_position[triangle_vertex_index[0]].data(), current_position[triangle_vertex_index[0]].data(),
+				initial_position[triangle_vertex_index[1]].data(), current_position[triangle_vertex_index[1]].data(), initial_position[triangle_vertex_index[2]].data(), current_position[triangle_vertex_index[2]].data(), initial_ori_face_normal[triangle_index].data(),
+				current_ori_face_normal[triangle_index].data(), cross_for_CCD[triangle_index].data())) {
+				if ((*collision_time) > current_collision_time) {
+					(*collision_time) = current_collision_time;
+				}
+			}
+		}
+	}
+}
+
+void Collision::pointColliderTriangleCollisionTime(double* collision_time, int* triangle_vertex_index, std::vector<int>* triangle_neighbor_vertex,
+	std::array<double, 3>* initial_position, std::array<double, 3>* current_position,
+	double* initial_ori_face_normal, double* current_ori_face_normal, double* cross_for_CCD)
+{
+	MeshStruct* vertex_mesh;
+	std::vector<int>* neighbor_vertex;
+	double current_collision_time;
+	for (int i = 0; i < cloth->size(); ++i) {
+		vertex_mesh = &(*cloth)[i].mesh_struct;
+		neighbor_vertex = &(triangle_neighbor_vertex[i]);		
+		for (int k = 0; k < neighbor_vertex->size(); ++k) {
+			if (approx_CCD.pointTriangleCollisionTime(current_collision_time, vertex_mesh->vertex_for_render[(*neighbor_vertex)[k]].data(), vertex_mesh->vertex_position[(*neighbor_vertex)[k]].data(), initial_position[triangle_vertex_index[0]].data(), current_position[triangle_vertex_index[0]].data(),
+				initial_position[triangle_vertex_index[1]].data(), current_position[triangle_vertex_index[1]].data(), initial_position[triangle_vertex_index[2]].data(), current_position[triangle_vertex_index[2]].data(), initial_ori_face_normal,
+				current_ori_face_normal, cross_for_CCD)) {
+				if ((*collision_time) > current_collision_time) {
+					(*collision_time) = current_collision_time;
+				}
+			}
+		}
+	}
+}
+
+void Collision::edgeEdgeCollisionTime(double* collision_time, std::vector<int>* edge_neighbor_edge, double* initial_edge_vertex_0, double* initial_edge_vertex_1, double* current_edge_vertex_0, double* current_edge_vertex_1)
+{
+	TriangleMeshStruct* compare_mesh;
+	std::vector<int>* neighbor_edge;
+	double current_collision_time;
+	std::array<double, 3>* current_position;
+	std::array<double, 3>* initial_position;
+	int* edgee_vertex_index;
+	for (int i = 0; i < cloth->size(); ++i) {
+		compare_mesh = &(*cloth)[i].mesh_struct;
+		neighbor_edge = &(edge_neighbor_edge[i]);
+		current_position = compare_mesh->vertex_position.data();
+		initial_position = compare_mesh->vertex_for_render.data();
+		for (int k = 0; k < neighbor_edge->size(); ++k) {
+			edgee_vertex_index = compare_mesh->edges[(*neighbor_edge)[k]].vertex;
+			if (approx_CCD.edgeEdgeCollisionTime(current_collision_time, current_edge_vertex_0, current_edge_vertex_1, initial_edge_vertex_0, initial_edge_vertex_1, current_position[edgee_vertex_index[0]].data(), current_position[edgee_vertex_index[1]].data(),
+				initial_position[edgee_vertex_index[0]].data(), initial_position[edgee_vertex_index[1]].data())) {
+				if ((*collision_time) > current_collision_time) {
+					(*collision_time) = current_collision_time;
+				}
+			}
+		}
+	}
+}
 
 
 void Collision::pointSelfTriangleCollisionDetection(int thread_No,int vertex_index, int cloth_No,
@@ -692,6 +1064,19 @@ void Collision::addTargetPosToSystem(double* b_sum, double& energy, double* curr
 	b_sum[1] += target_pos[1] * stiffness;
 	b_sum[2] += target_pos[2] * stiffness;
 }
+
+void Collision::addTargetPosToSystemTotal(double* b_sum, double& energy, double* current_pos, double* target_pos, double stiffness, double& sum_stiffness, bool& update)
+{
+	double temp[3];
+	SUB(temp, current_pos, target_pos);
+	energy += 0.5 * stiffness * DOT(temp, temp);
+	b_sum[0] += target_pos[0] * stiffness;
+	b_sum[1] += target_pos[1] * stiffness;
+	b_sum[2] += target_pos[2] * stiffness;
+	update = true;
+	sum_stiffness += stiffness;
+}
+
 void Collision::test()
 {
 	//findAllNeighborPairs();
