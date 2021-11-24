@@ -2,7 +2,7 @@
 #include"../mesh_struct/triangle_mesh_struct.h"
 #include<thread>
 
-void Cloth::draw(Camera* camera)
+void Cloth::draw(Camera* camera, Shader* object_shader_front)
 {
 	if (!mesh_struct.triangle_indices.empty()) {
 		object_shader_front->use();
@@ -20,18 +20,18 @@ void Cloth::draw(Camera* camera)
 		glPolygonMode(GL_FRONT, GL_FILL);
 		glCullFace(GL_BACK);
 		glDrawElements(GL_TRIANGLES, 3*mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-		object_shader_back->use();
-		object_shader_back->setVec3("viewPos", camera->position);
-		object_shader_back->setBool("lightShadowOn", true);
-		object_shader_back->setMat4("projection", camera->GetProjectMatrix());
-		object_shader_back->setMat4("view", camera->GetViewMatrix());
-		object_shader_back->setMat4("model", glm::mat4(1.0));
-		object_shader_front->setFloat("transparence", 1.0);
-		object_shader_back->setVec3("material.Kd", glm::vec3(material.back_material.Kd[0], material.back_material.Kd[1], material.back_material.Kd[2]));
-		object_shader_back->setVec3("material.Ka", glm::vec3(material.back_material.Ka[0], material.back_material.Ka[1], material.back_material.Ka[2]));
-		object_shader_back->setVec3("material.Ks", glm::vec3(material.back_material.Ks[0], material.back_material.Ks[1], material.back_material.Ks[2]));
-		object_shader_back->setFloat("material.Ns", material.back_material.Ns);
+		//glBindVertexArray(0);
+		//object_shader_back->use();
+		//object_shader_back->setVec3("viewPos", camera->position);
+		//object_shader_back->setBool("lightShadowOn", true);
+		//object_shader_back->setMat4("projection", camera->GetProjectMatrix());
+		//object_shader_back->setMat4("view", camera->GetViewMatrix());
+		//object_shader_back->setMat4("model", glm::mat4(1.0));
+		//object_shader_front->setFloat("transparence", 1.0);
+		object_shader_front->setVec3("material.Kd", glm::vec3(material.back_material.Kd[0], material.back_material.Kd[1], material.back_material.Kd[2]));
+		object_shader_front->setVec3("material.Ka", glm::vec3(material.back_material.Ka[0], material.back_material.Ka[1], material.back_material.Ka[2]));
+		object_shader_front->setVec3("material.Ks", glm::vec3(material.back_material.Ks[0], material.back_material.Ks[1], material.back_material.Ks[2]));
+		object_shader_front->setFloat("material.Ns", material.back_material.Ns);
 		glBindVertexArray(VAO);
 		glPolygonMode(GL_BACK, GL_FILL);
 		glCullFace(GL_FRONT);
@@ -41,7 +41,7 @@ void Cloth::draw(Camera* camera)
 }
 
 
-void Cloth::setSceneShader(Light& light, Camera* camera, float& far_plane)
+void Cloth::setSceneShader(Light& light, Camera* camera, float& far_plane, Shader* object_shader_front)
 {
 	object_shader_front->use();
 	object_shader_front->setInt("depthMap", 0);
@@ -51,14 +51,14 @@ void Cloth::setSceneShader(Light& light, Camera* camera, float& far_plane)
 	object_shader_front->setVec3("light.ambient", light.ambient);
 	object_shader_front->setVec3("light.diffuse", light.diffuse);
 	object_shader_front->setVec3("light.specular", light.specular);
-	object_shader_back->use();
-	object_shader_back->setInt("depthMap", 0);
-	object_shader_back->setFloat("far_plane", far_plane);
-	object_shader_back->setBool("lightIsChosen", true);
-	object_shader_back->setVec3("lightPos", camera->position);
-	object_shader_back->setVec3("light.ambient", light.ambient);
-	object_shader_back->setVec3("light.diffuse", light.diffuse);
-	object_shader_back->setVec3("light.specular", light.specular);
+	//object_shader_back->use();
+	//object_shader_back->setInt("depthMap", 0);
+	//object_shader_back->setFloat("far_plane", far_plane);
+	//object_shader_back->setBool("lightIsChosen", true);
+	//object_shader_back->setVec3("lightPos", camera->position);
+	//object_shader_back->setVec3("light.ambient", light.ambient);
+	//object_shader_back->setVec3("light.diffuse", light.diffuse);
+	//object_shader_back->setVec3("light.specular", light.specular);
 }
 
 void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
@@ -78,7 +78,6 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mesh_struct.getNormal();
 	mesh_struct.initialInfo();
 	genBuffer();
-	genShader();
 	setBuffer();
 	setArea();
 
@@ -153,6 +152,7 @@ void Cloth::recordInitialMesh(SingleClothInfo& single_cloth_info_ref)
 	for (int i = 0; i < 4; ++i) {
 		collision_stiffness[i].resize(mesh_struct.vertices.size(), single_cloth_info_ref.collision_stiffness[i]);
 	}	
+	memcpy(collision_stiffness_initial, single_cloth_info_ref.collision_stiffness, 32);
 	bend_stiffness = single_cloth_info_ref.bending_stiffness;
 	position_stiffness = single_cloth_info_ref.position_stiffness;
 	std::fill(length_stiffness.begin(), length_stiffness.end(), single_cloth_info_ref.length_stiffness);	

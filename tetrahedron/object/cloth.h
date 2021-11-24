@@ -6,9 +6,9 @@
 class Cloth:public TriangleObject
 {
 public:
-	void setSceneShader(Light& light, Camera* camera, float& far_plane);
+	void setSceneShader(Light& light, Camera* camera, float& far_plane, Shader* object_shader_front);
 	void loadMesh(OriMesh& ori_mesh, double density, Thread* thread);
-	void draw(Camera* camera);
+	void draw(Camera* camera, Shader* object_shader_front);
 	void setArea();
 	double tolerance;
 	std::vector<double> PC_radius;
@@ -25,6 +25,7 @@ public:
 	std::vector<std::vector<double>>collision_stiffness_time_step_starts_indicator;
 	double collision_stiffness_update_indicator;
 	double position_stiffness;
+	double collision_stiffness_initial[4];
 
 	void initial();
 	void initialMouseChosenVertex();

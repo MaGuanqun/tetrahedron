@@ -5,8 +5,8 @@ class Collider:public TriangleObject
 {
 public:
 	double tolerance;
-	void draw(Camera* camera);
-	void setSceneShader(Light& light, Camera* camera, float& far_plane);
+	void draw(Camera* camera, Shader* object_shader_front);
+	void setSceneShader(Light& light, Camera* camera, float& far_plane, Shader* object_shader_front);
 	void loadMesh(OriMesh& ori_mesh, Thread* thread);
 	void getTriangleAABBPerThread(int thread_No);
 	void getVertexAABBPerThread(int thread_No);

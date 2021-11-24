@@ -1,6 +1,6 @@
 #include"collider.h"
 
-void Collider::draw(Camera* camera)
+void Collider::draw(Camera* camera, Shader* object_shader_front)
 {
 	object_shader_front->use();
 	object_shader_front->setVec3("viewPos", camera->position);
@@ -22,7 +22,7 @@ void Collider::draw(Camera* camera)
 
 }
 
-void Collider::setSceneShader(Light& light, Camera* camera, float& far_plane)
+void Collider::setSceneShader(Light& light, Camera* camera, float& far_plane, Shader* object_shader_front)
 {
 	object_shader_front->use();
 	object_shader_front->setInt("depthMap", 0);
@@ -51,7 +51,6 @@ void Collider::loadMesh(OriMesh& ori_mesh, Thread* thread)
 	mesh_struct.initialInfo();
 	genBuffer();
 	setBuffer();
-	genShader();
 	ori_vertices = mesh_struct.vertex_position;
 	triangle_AABB.resize(mesh_struct.faces.size());
 	vertex_AABB.resize(mesh_struct.vertex_position.size());

@@ -96,31 +96,32 @@ void RadixSort::lsdSort(std::vector<uint64_t>* value, std::vector<int>* triangle
         (*triangle_index) = stack_triangle_index;      
     }
 }
-//void RadixSort::lsdSort(std::vector<std::array<int, 3>>* array)
+//void RadixSort::lsdSort(std::vector<int>* value, std::vector<int>* triangle_index, std::vector<int>* hash_cloth_No)
 //{
-//    std::vector<std::array<int, 0x100>> index(key_num);
-//    std::vector<std::array<int, 0x100>> count(key_num, { 0 });
-//    std::vector<std::array<int, 3>> stack_(array->size());
-//    int* index_bucket;
-//    int* count_bucket;
+//    std::vector<int> stack_(value->size());
+//    std::vector<int> stack_triangle_index(value->size());
+//    std::vector<int> stack_cloth_No(value->size());
+//    int s, t;
 //    for (int j = 0; j < key_num; ++j) {
-//        count_bucket = count[j].data();
-//        addCount(array->size(), count_bucket, 8 * j, array->data());
-//        index_bucket = index[j].data();
-//        count_bucket = count[j].data();
-//        index_bucket[0] = 0;
-//        for (int i = 1; i < 0xff; ++i) {
-//            index_bucket[i] = index_bucket[i - 1] + count_bucket[i - 1];
+//        memset(histogram[0].data(), 0, 4 * 0x100);
+//        addCount(0,value->size(), histogram[0].data(), 8 * j, value->data());      
+//        s = 0;
+//        for (int i = 0; i < 0x100; ++i) {
+//            t = s + histogram[0][i];
+//            histogram[0][i] = s;
+//            s = t;
 //        }
 //        if (j % 2 == 0) {
-//            reorder(array->data(), stack_.data(), 8 * j, index[j].data(), array->size());
+//            reorder(value->data(), stack_.data(), triangle_index->data(), stack_triangle_index.data(), hash_cloth_No->data(), stack_cloth_No.data(), 8 * j, histogram[0].data(),0, value->size());
 //        }
 //        else {
-//            reorder(stack_.data(), array->data(), 8 * j, index[j].data(), array->size());
+//            reorder(stack_.data(), value->data(), stack_triangle_index.data(), triangle_index->data(),  stack_cloth_No.data(), hash_cloth_No->data(), 8 * j, histogram[0].data(), 0, value->size());
 //        }
 //    }
 //    if (key_num % 2 == 1) {
-//        (*array) = stack;
+//        (*value) = stack_;
+//        (*triangle_index) = stack_triangle_index;
+//        (*hash_cloth_No) = stack_cloth_No;
 //    }
 //}
 

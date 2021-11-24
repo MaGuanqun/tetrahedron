@@ -13,9 +13,7 @@ protected:
 	unsigned int VAO;
 	unsigned int VBO[3];
 	unsigned int EBO;
-	Shader* object_shader_back;
-	Shader* object_shader_front;
-	Shader* wireframe_shader;
+
 	int total_thread_num;
 	void genBuffer();
 

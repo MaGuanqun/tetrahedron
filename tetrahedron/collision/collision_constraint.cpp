@@ -33,7 +33,7 @@ bool CollisionConstraint::pointSelfTriangle(double* initial_position, double* cu
 		calNearestPoint(nearest_point_barycentric, current_triangle_position[0], current_triangle_position[1], current_triangle_position[2], current_nearest_point);
 	}
 
-	stiffness = barrier(d_2 - d_hat_2, d_2 / d_hat_2);
+	stiffness *= barrier(d_2 - d_hat_2, d_2 / d_hat_2);
 	double d[3];
 	for (int i = 0; i < 3; ++i) {
 		d[i] = initial_position[i] - current_position[i] - (initial_nearest_point[i] - current_nearest_point[i]);
@@ -41,13 +41,19 @@ bool CollisionConstraint::pointSelfTriangle(double* initial_position, double* cu
 	double d_move = sqrt(DOT(d, d));
 	//decide the direction
 	double direction[3];
-	SUB(direction, initial_position, initial_nearest_point);
-	if (DOT(initial_triangle_normal, direction) > 0) {
-		MULTI(direction, initial_triangle_normal, -1.0);
+	SUB(direction, initial_nearest_point, initial_position);
+	double t1 = sqrt(DOT(direction, direction));
+	if (t1 > NEAR_ZERO) {
+		DEV_(direction, t1);
 	}
 	else {
-		memcpy(direction, initial_triangle_normal, 24);
-	}
+		if (DOT(initial_triangle_normal, direction) < 0) {
+			MULTI(direction, initial_triangle_normal, -1.0);
+		}
+		else {
+			memcpy(direction, initial_triangle_normal, 24);
+		}
+	}	
 	moveDistance(vertex_mass, triangle_mass, vertex_target_pos, triangle_target_pos,d_move, nearest_point_barycentric, direction,initial_position, initial_triangle_position);
 
 	return true;
@@ -59,23 +65,26 @@ bool CollisionConstraint::pointColliderTriangle(double* initial_position, double
 {
 	double d_2;
 	double nearest_point_barycentric[3];
+	double current_nearest_point[3];
 	if (!vertexTriangleDistance(initial_position, d_2, current_triangle_position, triangle_normal, nearest_point_barycentric)) {
 		NearestPointInfo nearest_point_info;
 		double barycentric_edge[2];
 		vertexLineSegmentDistance(0, 1, initial_position, current_triangle_position, nearest_point_info, barycentric_edge);
 		vertexLineSegmentDistance(1, 2, initial_position, current_triangle_position, nearest_point_info, barycentric_edge);
-		vertexLineSegmentDistance(2, 0, initial_position, current_triangle_position, nearest_point_info, barycentric_edge);
+		vertexLineSegmentDistance(2, 0, initial_position, current_triangle_position, nearest_point_info, barycentric_edge);		
 		if (nearest_point_info.distance >= d_hat_2) {
 			return false;
 		}
 		d_2 = nearest_point_info.distance;
+		calNearestPoint(nearest_point_info, barycentric_edge, current_triangle_position, current_nearest_point);
 	}
 	else {
 		if (d_2 >= d_hat_2) {
 			return false;
 		}
+		calNearestPoint(nearest_point_barycentric, current_triangle_position[0], current_triangle_position[1], current_triangle_position[2], current_nearest_point);
 	}
-	stiffness = barrier(d_2 - d_hat_2, d_2 / d_hat_2);
+	stiffness *= barrier(d_2 - d_hat_2, d_2 / d_hat_2);
 	double d[3];
 	for (int i = 0; i < 3; ++i) {
 		d[i] = initial_position[i] - current_position[i];
@@ -83,12 +92,18 @@ bool CollisionConstraint::pointColliderTriangle(double* initial_position, double
 	double d_move = sqrt(DOT(d, d));
 	//decide the direction
 	double direction[3];
-	SUB(direction, initial_position, current_triangle_position[0]);
-	if (DOT(triangle_normal, direction) > 0) {
-		memcpy(direction, triangle_normal, 24);	
+	SUB(direction, initial_position, current_nearest_point);
+	double t1 = sqrt(DOT(direction, direction));
+	if (t1 > NEAR_ZERO) {
+		DEV_(direction, t1);
 	}
 	else {
-		MULTI(direction, triangle_normal, -1.0);
+		if (DOT(triangle_normal, direction) > 0) {
+			memcpy(direction, triangle_normal, 24);
+		}
+		else {
+			MULTI(direction, triangle_normal, -1.0);
+		}
 	}
 	MULTI(vertex_target_pos, direction, d_move);
 	SUM_(vertex_target_pos, initial_position);
@@ -108,7 +123,7 @@ bool CollisionConstraint::edgeEdgeCollision(std::vector<std::array<double, 3>>& 
 		initial_compare_edge_vertex_0, initial_compare_edge_vertex_1, d_hat_2, initial_close_point_1, initial_close_point_2, distance)) {
 		return false;
 	}
-	stiffness = barrier(distance - d_hat_2, distance / d_hat_2);
+	stiffness *= barrier(distance - d_hat_2, distance / d_hat_2);
 	double d[3];
 	double current_close_point_1[3]; double current_close_point_2[3];
 	POINT_ON_EDGE(current_close_point_1, alpha[0], alpha[1], current_edge_vertex_0, current_edge_vertex_1);
@@ -126,7 +141,7 @@ bool CollisionConstraint::edgeEdgeCollision(std::vector<std::array<double, 3>>& 
 	double direction[3];
 	SUB(direction, initial_close_point_2, initial_close_point_1);
 	distance = sqrt(distance);
-	if (distance > 1e-10) {
+	if (distance > NEAR_ZERO) {
 		DEV_(direction, distance);
 	}
 	else {

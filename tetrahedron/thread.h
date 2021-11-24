@@ -34,25 +34,10 @@ struct ThreadData
 
 class Thread
 {
-public:
-    Thread();
-    void initial();
-	~Thread();
-    void assignTask(ProjectDynamic* func, PDFuncSendToThread taskType);
-    void assignTask(TriangleMeshStruct* func, MeshStructFuncSendToThread taskType);
-    void assignTask(SpatialHashing* func, SpatialHashingFuncSendToThread taskType);
-    void assignTask(Cloth* func, ObjectFunc taskType);
-    void assignTask(Collider* func, ObjectFunc taskType);
-    void assignTask(BVH* func, BVHFunc taskType);
-    void assignTask(TetrahedronMeshStruct* func, MeshStructFuncSendToThread taskType);
-    void assignTask(Collision* func, CollisionFuncSendToThread taskType);
-    void assignTask(RadixSort* func, RadixSortFunc taskType, int key_id);
-
-    int thread_num;
 private:
     ThreadData* threads;
     std::vector<std::future<void>> futures;
-    
+
     void thread_func(ThreadData* pData);
     job create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread function_type);
     job create_task(TriangleMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);// int jobNumber
@@ -64,6 +49,43 @@ private:
     job create_task(Collision* func, int thread_id, CollisionFuncSendToThread function_type);
     job create_task(RadixSort* func, int thread_id, RadixSortFunc function_type, int key_id);
 
+public:
+    Thread();
+    void initial();
+	~Thread();
+    template <class T, typename U>
+    void assignTask(T* func, U taskType)
+    {
+        for (int i = 0; i < thread_num; ++i)
+        {
+            // std::cout << threads[i].id << std::endl;
+            job j = create_task(func, threads[i].id, taskType);
+            futures.push_back(j.get_future());
+            std::unique_lock<std::mutex> l(threads[i].m);
+            threads[i].jobs.push(std::move(j));
+            // Notify the thread that there is work do to...
+            threads[i].cv.notify_one();
+        }
+        for (auto& f : futures) { f.wait(); }
+        futures.clear();
+    }
+    template <class T, typename U>
+    void assignTask(T* func, U taskType, int key_id)
+    {
+        for (int i = 0; i < thread_num; ++i)
+        {
+            // std::cout << threads[i].id << std::endl;
+            job j = create_task(func, threads[i].id, taskType, key_id);
+            futures.push_back(j.get_future());
+            std::unique_lock<std::mutex> l(threads[i].m);
+            threads[i].jobs.push(std::move(j));
+            // Notify the thread that there is work do to...
+            threads[i].cv.notify_one();
+        }
+        for (auto& f : futures) { f.wait(); }
+        futures.clear();
+    }  
+    int thread_num;
 };
 
 

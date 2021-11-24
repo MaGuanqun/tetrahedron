@@ -82,50 +82,59 @@ void SpatialHashing::initialTriangleHash()
 
 void SpatialHashing::testRadixSort()
 {
+	int vec_size = 4e5;
+	std::vector<int> value;
+	std::vector<int> triangle_index;
+	std::vector<int> hash_cloth_No;
+	value.reserve(vec_size);
+	triangle_index.reserve(vec_size);
+	hash_cloth_No.reserve(vec_size);
 	time_t t1 = clock();
-	int index = 0;
-	int vec_size = 4e7;
-	std::vector<std::array<int, 3>> cell1;
-	cell1.reserve(vec_size);
-	for (int j = 0; j < 10; ++j) {
+	for (int j = 0; j < 100; ++j) {
 		int size = 100 * 100 * 100;
-		cell1.clear();
+		value.clear();
+		triangle_index.clear();
+		hash_cloth_No.clear();
 		for (int i = 0; i < vec_size; ++i) {
-			cell1.push_back({0, i,rand() % size });
+			value.push_back(rand() % size);
+			triangle_index.push_back(i);
+			hash_cloth_No.push_back(0);
 		}
 		for (int i = 0; i < vec_size; ++i) {
 			if (i % 2 == 0) {
-				cell1[i][1] += 100000;
+				value[i] += 100000;
 			}
 		}
-		index += cell1.size();
 	}
 	t1 = clock() - t1;
-	std::cout << "index " << index<<" "<<t1 << std::endl;
+	std::cout << "index " << t1 << std::endl;
 	time_t t = clock();
-	std::vector<std::array<int, 3>> cell;
-	cell.reserve(vec_size);
-	for (int j = 0;  j< 10; ++j) {
-	int size = 100 * 100 * 100;
-	cell.clear();
-	for (int i = 0; i < vec_size; ++i) {
-		cell.push_back({0, i,rand() % size });
-	}
-	for (int i = 0; i < vec_size; ++i) {
-		if (i % 2 == 0) {
-			cell[i][1] += 100000;
+	for (int j = 0; j < 100; ++j) {
+		int size = 100 * 100 * 100;
+		value.clear();
+		triangle_index.clear();
+		hash_cloth_No.clear();
+		for (int i = 0; i < vec_size; ++i) {
+			value.push_back(rand() % size);
+			triangle_index.push_back(i);
+			hash_cloth_No.push_back(0);
 		}
+		for (int i = 0; i < vec_size; ++i) {
+			if (i % 2 == 0) {
+				value[i] += 100000;
+			}
+		}
+		//for (int i = 0; i < vec_size; ++i) {
+		//	std::cout << cell[i][1] << " ";
+		//}
+		//std::cout << std::endl;
+		radix_sort.radixSort(size, &value, &triangle_index, &hash_cloth_No);
 	}
 	//for (int i = 0; i < vec_size; ++i) {
 	//	std::cout << cell[i][1] << " ";
 	//}
 	//std::cout << std::endl;
-	//radix_sort.radixSort(size, &cell);
-	//for (int i = 0; i < vec_size; ++i) {
-	//	std::cout << cell[i][1] << " ";
 	//}
-	//std::cout << std::endl;
-	}
 	std::cout <<"time "<< clock() - t<<" "<< clock() - t - t1 << std::endl;
 }
 

@@ -15,7 +15,7 @@ Scene::Scene()
 
 	last_output_obj_stamp = -1;
 	time_stamp = 0;
-
+	genShader();
 }
 
 
@@ -182,37 +182,37 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& wireframe,
 	glEnable(GL_CULL_FACE);
 	for (int j = 0; j < cloth_num; ++j) {
 		if (!hide[CLOTH_][j]) {
-			cloth[j].setSceneShader(light, camera, shadow.far_plane);
-			cloth[j].draw(camera);
+			cloth[j].setSceneShader(light, camera, shadow.far_plane, object_shader_front);
+			cloth[j].draw(camera,object_shader_front);
 		}
 	}
 	glDisable(GL_CULL_FACE);
 	for (int j = 0; j < tetrahedron_num; ++j) {
 		if (!hide[TETROHEDRON_][j]) {
-			tetrahedron[j].setSceneShader(light, camera, shadow.far_plane);
-			tetrahedron[j].draw(camera);
+			tetrahedron[j].setSceneShader(light, camera, shadow.far_plane, object_shader_front);
+			tetrahedron[j].draw(camera, object_shader_front);
 		}
 	}
 	for (int j = 0; j < collider.size(); ++j) {
 		if (!hide[COLLIDER_][j]) {
-			collider[j].setSceneShader(light, camera, shadow.far_plane);
-			collider[j].draw(camera);
+			collider[j].setSceneShader(light, camera, shadow.far_plane, object_shader_front);
+			collider[j].draw(camera, object_shader_front);
 		}
 	}
 
 	for (int i = 0; i < collider.size(); ++i) {
 		if (wireframe[COLLIDER_][i]) {
-			collider[i].drawWireframe(camera);
+			collider[i].drawWireframe(camera,wireframe_shader);
 		}
 	}
 	for (int j = 0; j < cloth_num; ++j) {
 		if (wireframe[CLOTH_][j]) {
-			cloth[j].drawWireframe(camera);
+			cloth[j].drawWireframe(camera, wireframe_shader);
 		}
 	}
 	for (int j = 0; j < tetrahedron_num; ++j) {
 		if (wireframe[TETROHEDRON_][j]) {
-			tetrahedron[j].drawWireframe(camera);
+			tetrahedron[j].drawWireframe(camera, wireframe_shader);
 		}
 	}
 
@@ -278,8 +278,8 @@ void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_par
 		if (intersection.happened && !control_parameter[START_TEST]) {
 			setCursorForce(camera, cursor_screen, force_coe);
 		}
-		//project_dynamic.PDsolve();
-		project_dynamic.PD_IPC_solve();
+		project_dynamic.PDsolve();
+		//project_dynamic.PD_IPC_solve();
 		time_stamp++;
 	}
 
@@ -428,4 +428,12 @@ void Scene::cursorMovement(Camera* camera, double* cursor_screen, double* force_
 	//std::cout << object_position[0] << " " << object_position[1] << " " << object_position[2] << std::endl;
 
 	//std::cout << "force mag " << force_direction[0] << " " << force_direction[1] << " " << force_direction[2] << std::endl;
+}
+
+void Scene::genShader()
+{
+	object_shader_front = new Shader("./shader/object_triangle.vs", "./shader/object_triangle.fs");
+	*object_shader_front = Shader("./shader/object_triangle.vs", "./shader/object_triangle.fs");
+	wireframe_shader = new Shader("./shader/wireframe.vs", "./shader/wireframe.fs");
+	*wireframe_shader = Shader("./shader/wireframe.vs", "./shader/wireframe.fs");
 }

@@ -63,4 +63,8 @@ private:
 	void cursorMovement(Camera* camera, double* cursor_screen, double* force_direction, float force_coe, double* object_position);
 	double max_force_magnitude;
 	SetTetrahedronAnchor set_tetrahedron_anchor;
+
+	Shader* wireframe_shader;
+	Shader* object_shader_front;
+	void genShader();
 };

@@ -14,21 +14,18 @@ void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mesh_struct.getRenderNormal();
 	mass = mesh_struct.setVolumeMass(density);
 	genBuffer();
-	genShader();
 	setBuffer();
 
 }
 
 
-void Tetrahedron::genShader()
-{
-	object_shader_front = new Shader("./shader/object_tetrahedron.vs", "./shader/object_tetrahedron.fs", "./shader/object_tetrahedron.gs");
-	*object_shader_front = Shader("./shader/object_tetrahedron.vs", "./shader/object_tetrahedron.fs", "./shader/object_tetrahedron.gs");
-	wireframe_shader = new Shader("./shader/wireframe.vs", "./shader/wireframe.fs");
-	*wireframe_shader = Shader("./shader/wireframe.vs", "./shader/wireframe.fs");
-}
+//void Tetrahedron::genShader()
+//{
+//	object_shader_front = new Shader("./shader/object_tetrahedron.vs", "./shader/object_tetrahedron.fs", "./shader/object_tetrahedron.gs");
+//	*object_shader_front = Shader("./shader/object_tetrahedron.vs", "./shader/object_tetrahedron.fs", "./shader/object_tetrahedron.gs");
+//}
 
-void Tetrahedron::drawWireframe(Camera* camera)
+void Tetrahedron::drawWireframe(Camera* camera, Shader* wireframe_shader)
 {
 	//setBuffer(cloth_index);
 	if (!mesh_struct.triangle_indices.empty()) {
@@ -57,12 +54,16 @@ void Tetrahedron::setBuffer()
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh_struct.triangle_indices.size() * sizeof(std::array<int, 3>), mesh_struct.triangle_indices[0].data(), GL_STATIC_DRAW);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
+		glBufferData(GL_ARRAY_BUFFER, mesh_struct.vertex_normal_for_render.size() * sizeof(std::array<double, 3>), mesh_struct.vertex_normal_for_render[0].data(), GL_STATIC_DRAW);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
 		glBindVertexArray(0);
 	}
 }
 
 
-void Tetrahedron::setSceneShader(Light& light, Camera* camera, float& far_plane)
+void Tetrahedron::setSceneShader(Light& light, Camera* camera, float& far_plane, Shader* object_shader_front)
 {
 	object_shader_front->use();
 	object_shader_front->setInt("depthMap", 0);
@@ -116,7 +117,7 @@ void Tetrahedron::setMeshStruct(double density, OriMesh& ori_mesh)
 	mesh_struct.findSurface();
 }
 
-void Tetrahedron::draw(Camera* camera)
+void Tetrahedron::draw(Camera* camera, Shader* object_shader_front)
 {
 	if (!mesh_struct.triangle_indices.empty()) {
 		object_shader_front->use();
