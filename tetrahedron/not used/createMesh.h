@@ -73,14 +73,15 @@ public:
 
 		//indicesForTwoTriangle(mesh);
 
-		int col_num = 70;
-		int row_num = 70;
-		for (int j = 0; j < row_num; j++) {
-			for (int i = 0; i < col_num; i++) {
-				mesh.vertices.push_back(std::array<double, 3>{1.4 * (double)i / (double)(col_num - 1) - 0.7,  //+0.9
-					1.4 * (double)j / (double)(row_num - 1) - 0.7, 0.2 * (double)j / (double)(row_num - 1) - 0.1});//
-			}
-		}
+		//int col_num = 70;
+		//int row_num = 70;
+		//for (int j = 0; j < row_num; j++) {
+		//	for (int i = 0; i < col_num; i++) {
+		//		mesh.vertices.push_back(std::array<double, 3>{1.4 * (double)i / (double)(col_num - 1) - 0.7,  //+0.9
+		//			1.4 * (double)j / (double)(row_num - 1) - 0.7, 0.2 * (double)j / (double)(row_num - 1) - 0.1});//
+		//	}
+		//}
+		
 		//int col_num = 2;
 		//int row_num = 2;
 		//for (int j = 0; j < row_num; j++) {
@@ -89,21 +90,21 @@ public:
 		//		//mesh.vertices.push_back(std::array<double, 3>{0.7* (double)i / (double)(col_num - 1) - 0.35,  //+0.9
 		//		//	0.4 * (double)j / (double)(row_num - 1) - 0.285, 0.7 * (double)j / (double)(row_num - 1) - 0.35});//
 		//		mesh.vertices.push_back(std::array<double, 3>{0.07 * (double)i / (double)(col_num - 1) - 0.035,  //+0.9
-		//			0.07 * (double)j / (double)(row_num - 1) - 0.585, 0.01 * (double)j / (double)(row_num - 1) - 0.01});//
+		//			0.07 * (double)j / (double)(row_num - 1) - 0.6, 0.05 * (double)j / (double)(row_num - 1) - 0.01});//
 		//	}
 		//}
 
-		//int col_num = 31;
-		//int row_num = 31;
-		//for (int j = 0; j < row_num; j++) {
-		//	for (int i = 0; i < col_num; i++) {
-		//		//mesh.vertices.push_back(std::array<double, 3>{ 0.7 * (double)j / (double)(row_num - 1) + 0.575, 0.35 * (double)i / (double)(col_num - 1),//+0.9
-		//		//mesh.vertices.push_back(std::array<double, 3>{0.7* (double)i / (double)(col_num - 1) - 0.35,  //+0.9
-		//		//	0.4 * (double)j / (double)(row_num - 1) - 0.285, 0.7 * (double)j / (double)(row_num - 1) - 0.35});//
-		//		mesh.vertices.push_back(std::array<double, 3>{0.7 * (double)i / (double)(col_num - 1) - 0.35,  //+0.9
-		//			0.7 * (double)j / (double)(row_num - 1) - 0.585, 0.1 * (double)j / (double)(row_num - 1) - 0.1});//
-		//	}
-		//}
+		int col_num = 31;
+		int row_num = 31;
+		for (int j = 0; j < row_num; j++) {
+			for (int i = 0; i < col_num; i++) {
+				//mesh.vertices.push_back(std::array<double, 3>{ 0.7 * (double)j / (double)(row_num - 1) + 0.575, 0.35 * (double)i / (double)(col_num - 1),//+0.9
+				//mesh.vertices.push_back(std::array<double, 3>{0.7* (double)i / (double)(col_num - 1) - 0.35,  //+0.9
+				//	0.4 * (double)j / (double)(row_num - 1) - 0.285, 0.7 * (double)j / (double)(row_num - 1) - 0.35});//
+				mesh.vertices.push_back(std::array<double, 3>{0.7 * (double)i / (double)(col_num - 1) - 0.35,  //+0.9
+					0.7 * (double)j / (double)(row_num - 1) - 0.585, 0.1 * (double)j / (double)(row_num - 1) - 0.1});//
+			}
+		}
 
 		//int col_num = 121;
 		//int row_num = 121;

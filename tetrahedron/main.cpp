@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include<iostream>
 #include"basic/opengl_input.h"
 #include"basic/global.h"

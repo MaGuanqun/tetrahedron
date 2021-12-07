@@ -18,7 +18,7 @@ public:
 	double collision_time;
 
 	void initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread);
-
+	void initialDHatTolerance(double ave_edge_length);
 	void findAllTrianglePairs(int thread_No);
 	void globalCollision();
 	void findPrimitivesAround(int thread_No);
@@ -97,6 +97,7 @@ private:
 	CollisionConstraint collision_constraint;
 
 	double d_hat_2;
+	double tolerance_2;// distance to report a collision
 
 	void buildBVH();
 	void initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread);
@@ -152,7 +153,7 @@ private:
 		int vertex_index, int cloth_No, double mass, TargetPosition* target_position);
 	void pointColliderTriangleClose(int* triangle_vertex_index, std::vector<int>* triangle_neighbor_vertex,
 		std::vector<double*>& current_position, double* current_face_normal, TargetPosition* target_position);
-	void addTargetPosToSystemTotal(double* b_sum, double& energy, double* current_pos, double* target_pos, double stiffness, double& sum_stiffness, bool& update);
+	void addTargetPosToSystemTotal(double* b_sum, double* current_pos, double* target_pos, double stiffness, double& sum_stiffness, bool& update);
 	void edgeEdgeClose(std::vector<int>* edge_neighbor_edge, double* initial_edge_vertex_0, double* initial_edge_vertex_1, double* current_edge_vertex_0, double* current_edge_vertex_1,
 		int cloth_No, int edge_vertex_index_0, int edge_vertex_index_1, double* mass, TargetPosition* target_position);
 

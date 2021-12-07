@@ -33,7 +33,7 @@ public:
 	void matrixDecomposition(int thread_id);
 	void localProjectionPerThread(int thread_id, bool with_energy);
 	
-	void solveSystemPerThead(int thread_id, bool with_collision);
+	void solveSystemPerThead(int thread_id, bool with_collision, bool compute_energy);
 	void updateUVPerThread(int thread_id);
 	void updateRenderPosition();
 	void addExternalClothForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int cloth_No);
@@ -41,6 +41,9 @@ public:
 	void mainProcess();
 	void testLocalProjectionPerThread(int thread_id);
 	void computeCollisionFreePosition(int thread_No);
+
+	void initialDHatTolerance(double ave_edge_length);
+	void computeDisplacement(int thread_No);
 private:
 	int local_global_itr_in_single_outer;
 	int total_thread_num;
@@ -117,11 +120,11 @@ private:
 	void localEdgeLengthProjectionPerThread(int thread_id, bool with_energy);
 	void localBendingProjectionPerThread(int thread_id, bool with_energy);
 	void localPositionProjectionPerThread(int thread_id, bool with_energy);
-	void solveClothSystemPerThead(int thread_id, bool with_collision);
+	void solveClothSystemPerThead(int thread_id, bool with_collision, bool compute_energy);
 	void solveClothSystemPerThead(VectorXd& b, VectorXd& u, TriangleMeshStruct& mesh_struct, std::vector<double>& length_stiffness,
 		std::vector<Vector3d>& p_edge_length, int cloth_No, int dimension, std::vector<std::vector<int>>& vertex_around_vertex_for_bending,
 		std::vector<VectorXd>& vertex_lbo, std::vector<std::vector<VectorXd>>& p_bending, VectorXd& u_prediction, int thread_id,
-		std::vector<std::array<double, 3>>& collision_b_sum, bool* collision_b_need_update, bool with_collision);
+		std::vector<std::array<double, 3>>& collision_b_sum, bool* collision_b_need_update, bool with_collision, bool compute_energy);
 
 	void updateModelPosition();
 	void setIndexPerThread();
@@ -165,4 +168,10 @@ private:
 	void initialTetrahedronPDvariable();
 	bool IPC_PDConvergeCondition();
 	void updateRenderPositionIPC();
+	void firstPDForIPC();
+
+	std::vector<double>displacement_norm_thread;
+	std::vector<double>position_norm_thread;
+	std::vector<std::vector<VectorXd>> cloth_u_previous_itr;
+
 };

@@ -121,6 +121,15 @@
     <ClCompile Include="collision\collision_constraint.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="collision\rootparitycollisiontest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="collision\expansion.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="collision\interval.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="basic\basic_imgui.h">

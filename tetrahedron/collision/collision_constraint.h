@@ -38,7 +38,7 @@ private:
 		NearestPointInfo& nearest_point_info, double* barycentric);
 	void calNearestPoint(NearestPointInfo& nearest_point_info, double* barycentric, std::vector<double*>& triangle_position, double* center);
 	void pointOnEdge(double* center, double coe0, double coe1, double* vertex0, double* vertex1);
-	double barrier(double d_hat_2, double d_2);
+	double barrier(double d_2_minus_d_hat_2_over_d_hat2, double d_2_div_d_hat_2);
 	void moveDistance(double vertex_mass, double* triangle_mass, double* vertex_target_pos, std::array<double, 3>* triangle_target_pos,
 		double d_move, double* barycentric, double* direction, double* initial_pos, std::vector<double*>& initial_triangle_position);
 	void setBarycentric(NearestPointInfo& nearest_point_info, double* barycentric, double* edge_barycentric);

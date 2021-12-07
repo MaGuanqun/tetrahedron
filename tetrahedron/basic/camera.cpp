@@ -103,7 +103,7 @@ void Camera::rotation(float angleY, float angleZ, int type) //type to note if th
     {
         glm::vec3 tem = up - glm::normalize(position_center);
 
-        if (abs(tem.x) + abs(tem.y) + abs(tem.z) > 2e-5f) {
+        if (fabs(tem.x) + fabs(tem.y) + fabs(tem.z) > 2e-5f) {
             glm::vec3 y = glm::cross(position_center, up);
             position_center = rotationxyz(angleZ, y, position_center);
             up = rotationxyz(angleZ, y, up);

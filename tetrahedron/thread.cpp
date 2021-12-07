@@ -57,10 +57,16 @@ job Thread::create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread 
         k = job([func, thread_id]() {func->computeCollisionFreePosition(thread_id); });
         break;  
     case SOLVE_SYSYTEM:
-        k = job([func, thread_id]() {func->solveSystemPerThead(thread_id,true); });
+        k = job([func, thread_id]() {func->solveSystemPerThead(thread_id,true,true); });
         break;
     case SOLVE_SYSYTEM_WITHOUT_COLLISION:
-        k = job([func, thread_id]() {func->solveSystemPerThead(thread_id, false); });
+        k = job([func, thread_id]() {func->solveSystemPerThead(thread_id, false,false); });
+        break;
+    case SOLVE_SYSYTEM_WITHOUT_ENERGY:
+        k = job([func, thread_id]() {func->solveSystemPerThead(thread_id, true, false); });
+        break;
+    case COMPUTE_DISPLACEMENT:
+        k = job([func, thread_id]() {func->computeDisplacement(thread_id); });
         break;
     //case UPDATE_COLLISION_STIFFNESS:
     //    k = job([func, thread_id]() {func->updateCollisionStiffnessClothPerThread(thread_id); });

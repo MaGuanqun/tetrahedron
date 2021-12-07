@@ -199,6 +199,7 @@ void SpatialHashing::searchTriangle(AABB& aabb,int obj_No, int triangle_index, s
 		cloth_neighbor_index[i].clear();
 		cloth_neighbor_index[i].reserve(10);
 	}
+
 	if (is_collider) {
 		std::vector<int>hash_value;
 		obtainTriangleHashingValue(aabb, &hash_value);
@@ -211,6 +212,18 @@ void SpatialHashing::searchTriangle(AABB& aabb,int obj_No, int triangle_index, s
 					cloth_is_used_[cloth_No][current_triangle_index] = true;
 					cloth_index_record.push_back(cloth_No);
 					triangle_index_record.push_back(current_triangle_index);
+					//if (current_triangle_index == 0) {
+					//	std::cout << "====" << std::endl;
+					//	std::cout << aabb.max[0] << " " << aabb.max[1] <<" " << aabb.max[2] << std::endl;
+					//	std::cout << aabb.min[0] << " " << aabb.min[1] <<" " << aabb.min[2] << std::endl;
+					//	std::cout << (*cloth)[cloth_No].triangle_AABB[current_triangle_index].max[0] << " " << 
+					//		(*cloth)[cloth_No].triangle_AABB[current_triangle_index].max[1] << " " << 
+					//		(*cloth)[cloth_No].triangle_AABB[current_triangle_index].max[2] << std::endl;
+					//	std::cout << (*cloth)[cloth_No].triangle_AABB[current_triangle_index].min[0] << " " <<
+					//		(*cloth)[cloth_No].triangle_AABB[current_triangle_index].min[1] << " " <<
+					//		(*cloth)[cloth_No].triangle_AABB[current_triangle_index].min[2] << std::endl;
+					//}
+
 					if (aabb.AABB_intersection((*cloth)[cloth_No].triangle_AABB[current_triangle_index])) {
 						cloth_neighbor_index[cloth_No].push_back(current_triangle_index);
 					}				

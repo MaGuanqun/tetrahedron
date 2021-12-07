@@ -44,11 +44,20 @@ struct AABB
 			max[i] = myMin(max[i], c[i]);
 		}
 	}
-	void obtainAABB(double* a, double* b, double tolerance)
+	void obtainAABB(double* a, double* b)//
 	{
 		for (int i = 0; i < 3; ++i) {
-			min[i] = myMin(a[i], b[i]) - tolerance;
-			max[i] = myMax(a[i], b[i]) + tolerance;
+			min[i] = myMin(a[i], b[i]);// -tolerance;
+			max[i] = myMax(a[i], b[i]);// +tolerance;
 		}
 	}
+
+	void obtainAABB(double* a, double* b, double tolerance)//
+	{
+		for (int i = 0; i < 3; ++i) {
+			min[i] = myMin(a[i], b[i] - tolerance);// 
+			max[i] = myMax(a[i], b[i] + tolerance);//;
+		}
+	}
+
 };

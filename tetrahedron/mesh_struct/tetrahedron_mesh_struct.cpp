@@ -52,7 +52,7 @@ double TetrahedronMeshStruct::getTetrahedronVolume(double* v1, double* v2, doubl
 	SUB(b, v3, v1);
 	CROSS(c, a, b);
 	SUB(a, v4, v1);
-	return abs(DOT(c, a)) / 6.0;
+	return fabs(DOT(c, a)) / 6.0;
 }
 
 double TetrahedronMeshStruct::setVolumeMass(double density)

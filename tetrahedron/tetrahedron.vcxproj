@@ -158,8 +158,11 @@
     <ClCompile Include="collision\BVH.cpp" />
     <ClCompile Include="collision\collision.cpp" />
     <ClCompile Include="collision\collision_constraint.cpp" />
+    <ClCompile Include="collision\expansion.cpp" />
+    <ClCompile Include="collision\interval.cpp" />
     <ClCompile Include="collision\parallel_radix_sort.cpp" />
     <ClCompile Include="collision\predictive_contact.cpp" />
+    <ClCompile Include="collision\rootparitycollisiontest.cpp" />
     <ClCompile Include="collision\spatial_hashing.cpp" />
     <ClCompile Include="external\glad.c" />
     <ClCompile Include="external\imgui\imgui.cpp" />

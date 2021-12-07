@@ -15,7 +15,7 @@ Scene::Scene()
 
 	last_output_obj_stamp = -1;
 	time_stamp = 0;
-	genShader();
+	genShader();	
 }
 
 
@@ -278,8 +278,8 @@ void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_par
 		if (intersection.happened && !control_parameter[START_TEST]) {
 			setCursorForce(camera, cursor_screen, force_coe);
 		}
-		project_dynamic.PDsolve();
-		//project_dynamic.PD_IPC_solve();
+		//project_dynamic.PDsolve();
+		project_dynamic.PD_IPC_solve();
 		time_stamp++;
 	}
 
@@ -312,6 +312,7 @@ void Scene::setAveEdgeLength()
 	}
 
 	ave_edge_length = edge_length_temp / (double)edge_size;
+	project_dynamic.initialDHatTolerance(ave_edge_length);
 }
 
 void Scene::setTolerance(double* tolerance_ratio)
@@ -322,6 +323,7 @@ void Scene::setTolerance(double* tolerance_ratio)
 	for (int i = 0; i < collider.size(); ++i) {
 		collider[i].setTolerance(tolerance_ratio, ave_edge_length);
 	}
+	
 }
 
 
