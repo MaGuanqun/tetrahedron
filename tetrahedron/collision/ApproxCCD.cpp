@@ -511,6 +511,7 @@ bool ApproxCCD::solveQuadraticEquation(double& t, double a2, double a1, double a
 	if (a0<NEAR_ZERO2 && a0>-NEAR_ZERO2) {
 		if (a2<NEAR_ZERO2 && a2>-NEAR_ZERO2) {
 			return false;
+			std::cout << "all zero "<<a2<<" "<<a1<<" "<<a0 << std::endl;
 		}
 		t = -a1 / a2;
 		if (t > 0.0 && t < 1.0) {

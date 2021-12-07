@@ -76,6 +76,14 @@ bool CollisionConstraint::pointColliderTriangle(double* initial_position, double
 		vertexLineSegmentDistance(0, 1, initial_position, current_triangle_position, nearest_point_info, barycentric_edge);
 		vertexLineSegmentDistance(1, 2, initial_position, current_triangle_position, nearest_point_info, barycentric_edge);
 		vertexLineSegmentDistance(2, 0, initial_position, current_triangle_position, nearest_point_info, barycentric_edge);		
+
+		//if (initial_position[1] < 0.769645) {
+		//	std::cout << "distance when <floor "<< initial_position[0]<<" "<< initial_position[1]<<" "<< initial_position[2]<<" "
+		//		<< " " << current_triangle_position[0][0]<<" " << current_triangle_position[0][1] << " " << current_triangle_position[0][2] << " "
+		//		<< current_triangle_position[1][0] << " " << current_triangle_position[1][1] << " " << current_triangle_position[1][2] << " "
+		//		<< current_triangle_position[2][0] << " " << current_triangle_position[2][1] << " " << current_triangle_position[2][2] << " "
+		//		<< " " << nearest_point_info.distance << " " << d_hat_2 << std::endl;
+		//}
 		if (nearest_point_info.distance >= d_hat_2) {
 			return false;
 		}
@@ -83,6 +91,9 @@ bool CollisionConstraint::pointColliderTriangle(double* initial_position, double
 		calNearestPoint(nearest_point_info, barycentric_edge, current_triangle_position, current_nearest_point);
 	}
 	else {
+		//if (initial_position[1] < 0.769645) {
+		//	std::cout << "distance when <floor" << initial_position[1] << " " << d_2 << " " << d_hat_2 << std::endl;
+		//}
 		if (d_2 >= d_hat_2) {
 			return false;
 		}
@@ -99,7 +110,8 @@ bool CollisionConstraint::pointColliderTriangle(double* initial_position, double
 	double d_move = DOT(d, d);
 	//std::cout << d_hat_2<<" "<< d_move << std::endl;
 	if (d_move < d_hat_2) {
-		d_move = 2.0*d_hat_2;
+		d_move = d_hat_2;
+		//std::cout << "kk" << std::endl;
 	}
 	d_move = sqrt(d_move);
 	//decide the direction
@@ -451,6 +463,10 @@ bool CollisionConstraint::vertexTriangleDistance(double* vertex, double& d_2, st
 	barycentric[1] = temp * DOT(S1, S);
 	barycentric[2] = temp * DOT(S2, triangle_normal);
 	barycentric[0] = 1.0 - barycentric[1] - barycentric[2];
+	//if (vertex[1] < 0.769645) {
+	//	std::cout << "barycentric "<< barycentric[0]<<" "<< barycentric[1]<<" "<< barycentric[2] << std::endl;
+	//}
+
 	if (barycentric[0] > EPSILON && barycentric[1] > EPSILON && barycentric[2] > EPSILON) {
 		return true;
 	}

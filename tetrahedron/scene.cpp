@@ -8,7 +8,7 @@ Scene::Scene()
 	light.specular = glm::vec3(0.95, 0.95, 0.95);
 
 	
-	time_step = 1.0 / 50.0;
+	time_step = 1.0 / 200.0;
 	project_dynamic.time_step = time_step;
 
 	max_force_magnitude = 12.0;

@@ -80,7 +80,7 @@ void Collider::getVertexAABBPerThread(int thread_No)
 	std::vector<std::array<double, 3>>* vertex_render = &mesh_struct.vertex_for_render;
 	std::vector<std::array<double, 3>>* vertex = &mesh_struct.vertex_position;
 	for (int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < mesh_struct.vertex_index_begin_per_thread[thread_No + 1]; ++i) {
-		vertex_AABB[i].obtainAABB((*vertex_render)[i].data(), (*vertex)[i].data());// tolerance
+		vertex_AABB[i].obtainAABB((*vertex_render)[i].data(), (*vertex)[i].data(), tolerance);// 
 	}
 }
 
