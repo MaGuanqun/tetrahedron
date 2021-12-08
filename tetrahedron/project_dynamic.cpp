@@ -5,8 +5,8 @@ ProjectDynamic::ProjectDynamic()
 	gravity_ = 9.8;
 	total_thread_num = std::thread::hardware_concurrency();
 	temEnergy.resize(total_thread_num);
-	outer_itr_conv_rate = 1e-8;// 7.5e-2; 
-	local_global_conv_rate = 2e-2;
+	outer_itr_conv_rate = 1e-2;// 7.5e-2; 
+	local_global_conv_rate = 5e-2;
 	sub_step_num = 1;
 
 	use_dierct_solve_for_coarest_mesh = true;
@@ -33,6 +33,13 @@ void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron
 void ProjectDynamic::initialDHatTolerance(double ave_edge_length)
 {
 	collision.initialDHatTolerance(ave_edge_length);
+	int element_count = 0;
+	for (int i = 0; i < cloth->size(); ++i) {
+		element_count += (*cloth)[i].mesh_struct.vertex_for_render.size();
+	}
+	displacement_bound = 5e-3 * ave_edge_length;
+	displacement_bound *= displacement_bound;
+	displacement_bound *= (double)element_count;
 }
 
 void ProjectDynamic::setForClothPD(std::vector<Cloth>* cloth)
@@ -550,16 +557,15 @@ void ProjectDynamic::firstPDForIPC()
 	thread->assignTask(this, SOLVE_SYSYTEM_WITHOUT_COLLISION);
 	updateModelPosition();
 	collision.collisionCulling();
-	//std::cout << "++++" << std::endl;
+	////std::cout << "++++" << std::endl;
 	//for (int i = 0; i < cloth_sys_size[0]; ++i) {
-	//	std::cout << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "
+	//	//std::cout << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "
 	//		<< cloth_u[0][2][i] << std::endl;
 	//}
-
-	//for (int i = 0; i < cloth_sys_size[0]; ++i) {
-	//	std::cout << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "
-	//		<< cloth_u[0][2][i] << std::endl;
-	//}
+	//std::cout << "first local-global without collision" << std::endl;
+	for (int i = 0; i < cloth_sys_size[0]; ++i) {
+		//std::cout << "    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "<< cloth_u[0][2][i] << std::endl;
+	}
 }
 
 
@@ -568,36 +574,38 @@ void ProjectDynamic::PD_IPC_solve()
 	firstPDForIPC();
 	outer_iteration_num = 1;
 	while (!IPC_PDConvergeCondition()) {
-		//std::cout << "==" << std::endl;
+		////std::cout << "==" << std::endl;
 		collision.globalCollisionTime();
 		thread->assignTask(this, COLLISION_FREE_POSITION);//in document, we use q_n+1, however, here, we use vertices_for_render & cloth_u to store this collision free position.
 		cloth_u_previous_itr = cloth_u;
 		collision.solveCollisionConstraint();
 		PDupdateSystemMatrix();
-		//for (int i = 0; i < cloth_sys_size[0]; ++i) {
-		//	std::cout << outer_iteration_num<<" "<< cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "
-		//		<< cloth_u[0][2][i] << std::endl;
-		//}
+		//std::cout << "==iteration number " << outer_iteration_num << std::endl;
+		//std::cout << "collision free position " << std::endl;
+		for (int i = 0; i < cloth_sys_size[0]; ++i) {
+			//std::cout<<"    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "<< cloth_u[0][2][i] << std::endl;
+		}
 		thread->assignTask(this, LOCAL_PROJECTION_WITHOUT_ENERGY);
 		thread->assignTask(this, SOLVE_SYSYTEM_WITHOUT_ENERGY);
 		updateModelPosition();
 
 		outer_iteration_num++;
 		//system("pause");
-		//for (int i = 0; i < cloth_sys_size[0]; ++i) {
-		//	std::cout << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "
-		//		<< cloth_u[0][2][i] << std::endl;
-		//}
+		//std::cout << "pd position " << std::endl;
+		for (int i = 0; i < cloth_sys_size[0]; ++i) {
+			//std::cout << "    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "	<< cloth_u[0][2][i] << std::endl;
+		}
 	}
 	collision.globalCollisionTime();
 	thread->assignTask(this, COLLISION_FREE_POSITION);
-	//for (int i = 0; i < cloth_sys_size[0]; ++i) {
-	//	std::cout << outer_iteration_num << " " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "
-	//		<< cloth_u[0][2][i] << std::endl;
-	//}
+	//std::cout << "final collision free position " << std::endl;
+	for (int i = 0; i < cloth_sys_size[0]; ++i) {
+		//std::cout << "    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "	<< cloth_u[0][2][i] << std::endl;
+	}
 	thread->assignTask(this, UPDATE_UV);
 	updateRenderPositionIPC();
-	std::cout << "========" << std::endl;
+	//std::cout << cloth_v[0][1] << std::endl;
+	//std::cout << "========" << std::endl;
 }
 
 
@@ -614,7 +622,7 @@ void ProjectDynamic::PDsolve()
 	for (int i = 0; i < cloth->size(); ++i) {
 		thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL);
 	}
-	//std::cout << "==============================================" << std::endl;
+	////std::cout << "==============================================" << std::endl;
 	while (!PDConvergeCondition()) {
 		collision.globalCollision();
 		PDupdateSystemMatrix();
@@ -625,7 +633,7 @@ void ProjectDynamic::PDsolve()
 			if (local_global_itr_in_single_outer > 0) {
 				//time_t t = clock();
 				collision.updateCollisionPosition();
-				//std::cout << clock() - t << std::endl;
+				////std::cout << clock() - t << std::endl;
 			}
 			time_t t = clock();
 			//for (int i = 0; i < 1000; ++i) {
@@ -635,21 +643,21 @@ void ProjectDynamic::PDsolve()
 				current_constraint_energy += temEnergy[i];
 			}
 			//}
-			//std::cout << "local " << clock() - t << std::endl;
+			////std::cout << "local " << clock() - t << std::endl;
 			//t = clock();
 			//for (int i = 0; i < 1000; ++i) {
-				//std::cout << "===" << std::endl;
+				////std::cout << "===" << std::endl;
 				//for (int i = 0; i < cloth_sys_size[0]; ++i) {
-				//	std::cout << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "
+				//	//std::cout << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "
 				//		<< cloth_u[0][2][i] << std::endl;
 				//}
 			thread->assignTask(this, SOLVE_SYSYTEM);//solve b	
 			//for (int i = 0; i < cloth_sys_size[0]; ++i) {
-			//	std::cout << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "
+			//	//std::cout << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "
 			//		<< cloth_u[0][2][i] << std::endl;
 			//}
 		//}
-		//std::cout << "global " << clock() - t << std::endl;
+		////std::cout << "global " << clock() - t << std::endl;
 
 
 			for (int k = 0; k < total_cloth_num; ++k) {
@@ -664,15 +672,20 @@ void ProjectDynamic::PDsolve()
 			for (int i = 0; i < cloth->size(); ++i) {
 				thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL);
 			}
-			//std::cout << "result"<< local_global_itr_in_single_outer << std::endl;
+			////std::cout << "result"<< local_global_itr_in_single_outer << std::endl;
 			//for (int j = 0; j < total_cloth_num; ++j) {
 			//	for (int i = 0; i < cloth_sys_size[j]; ++i) {
-			//		std::cout << cloth_u[j][0].data()[i] << " " << cloth_u[j][1].data()[i] << " " << cloth_u[j][2].data()[i] << std::endl;
+			//		//std::cout << cloth_u[j][0].data()[i] << " " << cloth_u[j][1].data()[i] << " " << cloth_u[j][2].data()[i] << std::endl;
 			//	}
 			//}
-			//std::cout << "=======" << std::endl;
+			////std::cout << "=======" << std::endl;
 			local_global_itr_in_single_outer++;
 			local_global_iteration_num++;
+			//std::cout << "==iteration number " << local_global_iteration_num << std::endl;
+			//std::cout << "pd position " << std::endl;
+			for (int i = 0; i < cloth_sys_size[0]; ++i) {
+				//std::cout << "    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "	<< cloth_u[0][2][i] << std::endl;
+			}
 		}
 		//std::cout << "==local===global=========" << std::endl;
 		outer_iteration_num++;
@@ -861,10 +874,10 @@ void ProjectDynamic::setClothMatrix(int thread_No)
 		diagonal_ref_address = cloth_global_mat_diagonal_ref_address[j].data();
 		for (int i = (*vertex_index_begin_per_thread)[thread_No]; i < (*vertex_index_begin_per_thread)[thread_No + 1]; ++i) {
 			*(diagonal_ref_address[i]) = diagonal_ref[i];
-			//std::cout << i << " " << *(diagonal_ref_address[i]) << std::endl;
+			////std::cout << i << " " << *(diagonal_ref_address[i]) << std::endl;
 			if (need_update[i]) {
 				*(diagonal_ref_address[i]) += stiffness[i];
-				//std::cout<<"update "<<i << " " << *(diagonal_ref_address[i]) << std::endl;
+				////std::cout<<"update "<<i << " " << *(diagonal_ref_address[i]) << std::endl;
 			}
 		}
 	}
@@ -896,13 +909,14 @@ bool ProjectDynamic::IPC_PDConvergeCondition()
 				displacement_norm += displacement_norm_thread[i];
 				position_norm += position_norm_thread[i];
 			}
-			//std::cout << displacement_norm / position_norm << std::endl;
-			if (displacement_norm / position_norm < outer_itr_conv_rate) {
+			//std::cout <<"displacement ratio "<< displacement_norm / displacement_bound << std::endl;
+
+			if (displacement_norm / displacement_bound < 1.0) {
 				return true;
 			}
 		}
 		else {
-			//std::cout << "larger than 1000 " << std::endl;
+			////std::cout << "larger than 1000 " << std::endl;
 			return true;
 		}
 	}
@@ -922,7 +936,7 @@ bool ProjectDynamic::PDConvergeCondition()
 		return true;
 	}
 	else {
-		//std::cout << fabs(current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy << " " << current_PD_energy << std::endl;
+		////std::cout << fabs(current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy << " " << current_PD_energy << std::endl;
 		return false;
 	}
 
@@ -938,9 +952,9 @@ bool ProjectDynamic::PDLocalGlobalConvergeCondition()
 	bool standard = (energy_satisfied || need_to_stop) && local_global_itr_in_single_outer > 0;
 
 	//if (local_global_itr_in_single_outer > 300) {
-	//	std::cout<<"energy " << current_collision_energy<<" "<< abs(previous_collision_energy - current_collision_energy) / previous_collision_energy << std::endl;
-	//	std::cout << current_constraint_energy<<" "<< abs(current_constraint_energy - previous_constraint_energy) / previous_constraint_energy << std::endl;
-	//	std::cout << current_PD_energy <<" "<< abs(current_PD_energy - previous_PD_energy) / previous_PD_energy << std::endl;
+	//	//std::cout<<"energy " << current_collision_energy<<" "<< abs(previous_collision_energy - current_collision_energy) / previous_collision_energy << std::endl;
+	//	//std::cout << current_constraint_energy<<" "<< abs(current_constraint_energy - previous_constraint_energy) / previous_constraint_energy << std::endl;
+	//	//std::cout << current_PD_energy <<" "<< abs(current_PD_energy - previous_PD_energy) / previous_PD_energy << std::endl;
 	//}
 
 	if (standard) {
@@ -960,7 +974,7 @@ void ProjectDynamic::localProjection()
 	//for (int i = 0; i < 1000; ++i) {
 	//	thread->assignTask(this, TEST_LOCAL_PROJECTION);
 	//}
-	//std::cout <<"time "<< clock() - t << std::endl;;
+	////std::cout <<"time "<< clock() - t << std::endl;;
 
 	thread->assignTask(this, LOCAL_PROJECTION);
 }

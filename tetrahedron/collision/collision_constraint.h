@@ -9,15 +9,15 @@ public:
 	bool pointSelfTriangle(double* initial_position, double* current_position,
 		std::vector<double*>& initial_triangle_position, std::vector<double*>& current_triangle_position,
 		double* initial_triangle_normal, double* vertex_target_pos,
-		std::array<double, 3>* triangle_target_pos, double d_hat_2, double& stiffness,
+		std::array<double, 3>* triangle_target_pos, double d_hat, double& stiffness,
 		double vertex_mass, double* triangle_mass);
 	bool pointColliderTriangle(double* initial_position, double* current_position,
 		std::vector<double*>& current_triangle_position, double* triangle_normal, double* vertex_target_pos,
-		double d_hat_2, double& stiffness);
+		double d_hat, double& stiffness);
 	bool edgeEdgeCollision(std::vector<std::array<double, 3>>& target_pos,
 		std::vector<std::array<double, 3>>& compare_target_pos, double* current_edge_vertex_0, double* current_edge_vertex_1, double* initial_edge_vertex_0, double* initial_edge_vertex_1,
 		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0,
-		double* initial_compare_edge_vertex_1, double* mass, double d_hat_2, double& stiffness);
+		double* initial_compare_edge_vertex_1, double* mass, double d_hat, double& stiffness);
 
 	void testPT();
 	void testEE();

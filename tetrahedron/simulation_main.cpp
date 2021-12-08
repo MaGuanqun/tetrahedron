@@ -151,6 +151,11 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 		}
 
+		if (already_load_model) {
+
+		}
+
+
 		if (control_parameter[ONE_FRAME]) {
 			control_parameter[ONE_FRAME] = false;
 		}

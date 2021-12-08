@@ -174,4 +174,5 @@ private:
 	std::vector<double>position_norm_thread;
 	std::vector<std::vector<VectorXd>> cloth_u_previous_itr;
 
+	double displacement_bound;
 };

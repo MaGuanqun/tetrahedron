@@ -96,7 +96,7 @@ private:
 	ApproxCCD approx_CCD;
 	CollisionConstraint collision_constraint;
 
-	double d_hat_2;
+	double d_hat;
 	double tolerance_2;// distance to report a collision
 
 	void buildBVH();
@@ -157,5 +157,5 @@ private:
 	void edgeEdgeClose(std::vector<int>* edge_neighbor_edge, double* initial_edge_vertex_0, double* initial_edge_vertex_1, double* current_edge_vertex_0, double* current_edge_vertex_1,
 		int cloth_No, int edge_vertex_index_0, int edge_vertex_index_1, double* mass, TargetPosition* target_position);
 	void testCulling();
-
+	void testIfBuildCollisionConstraint();
 };

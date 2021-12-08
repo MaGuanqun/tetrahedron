@@ -57,7 +57,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	tetrahedron_num = tetrahedron_index_in_object.size();
 	cloth.resize(cloth_num);
 	tetrahedron.resize(tetrahedron_num);
-	double cloth_density=25.0;
+	double cloth_density=50.0;
 	double tetrahedron_density = 25.0;
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].loadMesh(preprocessing.ori_simulation_mesh[cloth_index_in_object[i]], cloth_density, &thread);
@@ -67,10 +67,10 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	}
 	setWireframwColor();
 	std::vector<SingleClothInfo> single_cloth_info;
-	std::array<double, 4>collision_stiffness_per = { 5e3,5e3,5e3,5e3 };// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point,
+	std::array<double, 4>collision_stiffness_per = { 2e5,2e5,2e5,2e5 };// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point,
 	std::vector<std::array<double, 4>>collision_stiffness(cloth_num, collision_stiffness_per);
 	for (int i = 0; i < cloth_num; ++i) {
-		single_cloth_info.push_back(SingleClothInfo(cloth_density, 5e3, 1e5, 1e-4, collision_stiffness[i].data(), 0.5, 0.4, collision_stiffness_per[1]));
+		single_cloth_info.push_back(SingleClothInfo(cloth_density, 1e3, 1e6, 1e-6, collision_stiffness[i].data(), 0.5, 0.4, collision_stiffness_per[1]));
 	}
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].recordInitialMesh(single_cloth_info[i]);
@@ -275,7 +275,9 @@ void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_par
 {
 	if (control_parameter[START_SIMULATION] || control_parameter[ONE_FRAME]) {
 		project_dynamic.resetExternalForce();
+		std::cout << intersection.happened << " " << control_parameter[START_TEST] << std::endl;
 		if (intersection.happened && !control_parameter[START_TEST]) {
+		
 			setCursorForce(camera, cursor_screen, force_coe);
 		}
 		//project_dynamic.PDsolve();
@@ -388,10 +390,11 @@ void Scene::obtainCursorIntersection(double* pos, Camera* camera, std::vector<st
 	int chosen_index[2];
 	pick_triangle.pickTriangle(&cloth, &collider, camera, hide, chosen_index, mouse_pos);
 	intersection.initialIntersection();
+	//std::cout << chosen_index[0] << std::endl;
 	if (chosen_index[0] > -1) {
 		double cursor_pos[3];
 		intersection.setIntersection(chosen_index);
-		getCursorPos(cursor_pos, cloth[intersection.cloth_No].mesh_struct.vertex_position,
+		getCursorPos(cursor_pos, cloth[intersection.cloth_No].mesh_struct.vertex_for_render,
 			cloth[intersection.cloth_No].mesh_struct.triangle_indices[intersection.face_index].data());
 		cloth[chosen_index[1]].findAllNeighborVertex(chosen_index[0], cursor_pos, ave_edge_length);
 	}
@@ -408,9 +411,10 @@ void Scene::setCursorForce(Camera* camera, double* cursor_screen, float force_co
 {
 	double cursor_pos[3];
 	double force_direction[3];
-	getCursorPos(cursor_pos, cloth[intersection.cloth_No].mesh_struct.vertex_position,
+	getCursorPos(cursor_pos, cloth[intersection.cloth_No].mesh_struct.vertex_for_render,
 		cloth[intersection.cloth_No].mesh_struct.triangle_indices[intersection.face_index].data());
 	cursor.translate(cursor_pos);
+	//std::cout << cursor_pos[0] << " " << cursor_pos[1] << " " << cursor_pos[2] << std::endl;
 	cursorMovement(camera, cursor_screen, force_direction, force_coe, cursor_pos);
 	project_dynamic.addExternalClothForce(force_direction, cloth[intersection.cloth_No].coe_neighbor_vertex_force, cloth[intersection.cloth_No].neighbor_vertex, intersection.cloth_No);
 }
