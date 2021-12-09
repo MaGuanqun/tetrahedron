@@ -20,8 +20,8 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 
 void Collision::initialDHatTolerance(double ave_edge_length)
 {
-	d_hat = 3e-3 * ave_edge_length;
-	tolerance_2 = d_hat;
+	d_hat =5e-3 * ave_edge_length;
+	tolerance_2 = 1e-3 * d_hat;
 	tolerance_2 *= tolerance_2;
 	//std::cout << "d_hat_2 " << d_hat_2 << std::endl;
 	
@@ -136,8 +136,8 @@ void Collision::testCulling()
 {
 	for (int i = 0; i < (*collider)[0].triangle_AABB.size(); ++i) {
 		for (int j = 0; j < (*collider)[0].triangle_neighbor_cloth_vertex[i][0].size(); ++j) {
-			if ((*collider)[0].triangle_neighbor_cloth_vertex[i][0][j] == 0) {
-				//std::cout << i << std::endl;
+			if ((*collider)[0].triangle_neighbor_cloth_vertex[i][0][j] == 13) {
+				std::cout << i << std::endl;
 				}
 			} 		
 	}
@@ -183,7 +183,7 @@ void Collision::globalCollisionTime()
 	if (collision_time > 1.0) {
 		collision_time = 1.0;
 	}
-	std::cout <<"collision_time "<< collision_time << std::endl;
+	//std::cout <<"collision time "<< collision_time << std::endl;
 }
 
 
@@ -655,12 +655,12 @@ void Collision::pointSelfTriangleClose(std::vector<int>* vertex_neighbor_triangl
 			stiffness = record_stiffness;
 			if (collision_constraint.pointSelfTriangle(initial_vertex_pos, current_vertex_pos, triangle_initial_pos, triangle_current_pos,
 				initial_face_normal[triangle_index].data(), target_pos, triangle_target_pos.data(), d_hat, stiffness,mass, triangle_mass)) {
-				addTargetPosToSystemTotal(vertex_b_sum,
+				addTargetPosToSystemTotal(vertex_b_sum, target_position->collision_energy[cloth_No], initial_vertex_pos,
 					target_pos, stiffness, *vertex_stiffness, *vetex_need_update);
 				int triangle_vertex;
 				for (int j = 0; j < 3; ++j) {
 					triangle_vertex = triangle_vertex_index[j];
-					addTargetPosToSystemTotal(target_position->b_sum[i][triangle_vertex].data(),
+					addTargetPosToSystemTotal(target_position->b_sum[i][triangle_vertex].data(), target_position->collision_energy[i], initial_position[triangle_vertex].data(),
 						triangle_target_pos[j].data(), stiffness,
 						target_position->stiffness[i][triangle_vertex], target_position->need_update[i][triangle_vertex]);
 					//if (vertex_index == 1) {
@@ -708,12 +708,16 @@ void Collision::edgeEdgeClose(std::vector<int>* edge_neighbor_edge, double* init
 				initial_edge_vertex_1, current_position[compare_edge_index_0].data(), current_position[compare_edge_index_1].data(),
 				initial_position[compare_edge_index_0].data(), initial_position[compare_edge_index_1].data(),mass,d_hat, stiffness)) {
 				addTargetPosToSystemTotal(target_position->b_sum[cloth_No][edge_vertex_index_0].data(),
+					target_position->collision_energy[cloth_No], initial_edge_vertex_0,
 					target_pos[0].data(), stiffness, target_position->stiffness[cloth_No][edge_vertex_index_0], target_position->need_update[cloth_No][edge_vertex_index_0]);
 				addTargetPosToSystemTotal(target_position->b_sum[cloth_No][edge_vertex_index_1].data(),
+					target_position->collision_energy[cloth_No], initial_edge_vertex_1,
 					target_pos[1].data(), stiffness, target_position->stiffness[cloth_No][edge_vertex_index_1], target_position->need_update[cloth_No][edge_vertex_index_1]);
 				addTargetPosToSystemTotal(target_position->b_sum[i][compare_edge_index_0].data(),
+					target_position->collision_energy[i], initial_position[compare_edge_index_0].data(),
 					compare_target_pos[0].data(), stiffness, target_position->stiffness[i][compare_edge_index_0], target_position->need_update[i][compare_edge_index_0]);
 				addTargetPosToSystemTotal(target_position->b_sum[i][compare_edge_index_1].data(),
+					target_position->collision_energy[i], initial_position[compare_edge_index_1].data(),
 					compare_target_pos[1].data(), stiffness, target_position->stiffness[i][compare_edge_index_1], target_position->need_update[i][compare_edge_index_1]);
 			}
 		}
@@ -735,6 +739,7 @@ void Collision::pointColliderTriangleClose(int* triangle_vertex_index, std::vect
 	double* vertex_stiffness;
 	bool* vertex_need_update;
 	int vertex_index;
+	double* energy;
 	for (int i = 0; i < cloth->size(); ++i) {
 		vertex_mesh = &(*cloth)[i].mesh_struct;
 		neighbor_vertex = &(triangle_neighbor_vertex[i]);
@@ -742,12 +747,15 @@ void Collision::pointColliderTriangleClose(int* triangle_vertex_index, std::vect
 		vertex_stiffness = target_position->stiffness[i].data();
 		vertex_need_update = target_position->need_update[i];
 		record_stiffness = (*cloth)[i].collision_stiffness_initial[BODY_POINT_TRIANGLE];
+		energy = &target_position->collision_energy[i];
 		for (int k = 0; k < neighbor_vertex->size(); ++k) {
 			vertex_index = (*neighbor_vertex)[k];
 			stiffness = record_stiffness;
 			if (collision_constraint.pointColliderTriangle(vertex_mesh->vertex_for_render[vertex_index].data(), vertex_mesh->vertex_position[vertex_index].data(),
 				current_position, current_face_normal, target_pos, d_hat, stiffness)) {
-				addTargetPosToSystemTotal(vertex_b_sum[vertex_index].data(), target_pos, stiffness,
+				addTargetPosToSystemTotal(vertex_b_sum[vertex_index].data(), 
+					*energy, vertex_mesh->vertex_for_render[vertex_index].data(),
+					target_pos, stiffness,
 					vertex_stiffness[vertex_index], vertex_need_update[vertex_index]);
 				////std::cout << vertex_index << " " << stiffness << std::endl;
 			}
@@ -837,12 +845,12 @@ void Collision::pointColliderTriangleCollisionTime(double* collision_time, int* 
 				initial_position[triangle_vertex_index[1]].data(), current_position[triangle_vertex_index[1]].data(),
 				initial_position[triangle_vertex_index[2]].data(), current_position[triangle_vertex_index[2]].data(),
 				initial_ori_face_normal, current_ori_face_normal, cross_for_CCD, tolerance_2)) {
-				if ((*neighbor_vertex)[k] == 1) {
-					std::cout << "collision time " << current_collision_time << std::endl;
-				}
+				//if ((*neighbor_vertex)[k] == 1) {
+				//	std::cout << "collision time " << current_collision_time << std::endl;
+				//}
 				if ((*collision_time) > current_collision_time) {					
 					(*collision_time) = current_collision_time;
-					std::cout << "is less " << std::endl;
+					//std::cout << "is less " << std::endl;
 					//if (current_collision_time < 1e-6) {
 					//	//std::cout << current_collision_time << std::endl;
 					//	//std::cout << vertex_mesh->vertex_for_render[(*neighbor_vertex)[k]][0] << ", " << vertex_mesh->vertex_for_render[(*neighbor_vertex)[k]][1] << ", " <<
@@ -1190,8 +1198,11 @@ void Collision::addTargetPosToSystem(double* b_sum, double& energy, double* curr
 	b_sum[2] += target_pos[2] * stiffness;
 }
 
-void Collision::addTargetPosToSystemTotal(double* b_sum, double* target_pos, double stiffness, double& sum_stiffness, bool& update)
+void Collision::addTargetPosToSystemTotal(double* b_sum, double& energy, double* current_pos, double* target_pos, double stiffness, double& sum_stiffness, bool& update)
 {
+	double temp[3];
+	SUB(temp, current_pos, target_pos);
+	energy += 0.5 * stiffness * DOT(temp, temp);
 	b_sum[0] += target_pos[0] * stiffness;
 	b_sum[1] += target_pos[1] * stiffness;
 	b_sum[2] += target_pos[2] * stiffness;

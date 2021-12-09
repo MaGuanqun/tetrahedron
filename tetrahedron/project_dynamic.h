@@ -171,8 +171,13 @@ private:
 	void firstPDForIPC();
 
 	std::vector<double>displacement_norm_thread;
-	std::vector<double>position_norm_thread;
 	std::vector<std::vector<VectorXd>> cloth_u_previous_itr;
 
 	double displacement_bound;
+	void computeEnergyIPCPD();
+	double PD_energy_dif;
+	double collision_energy_dif;
+	double displacement_ratio_dif;
+	double displacement_norm;
+	double previous_displacement_norm;
 };

@@ -5,7 +5,7 @@ ProjectDynamic::ProjectDynamic()
 	gravity_ = 9.8;
 	total_thread_num = std::thread::hardware_concurrency();
 	temEnergy.resize(total_thread_num);
-	outer_itr_conv_rate = 1e-2;// 7.5e-2; 
+	outer_itr_conv_rate = 1e-3;// 7.5e-2; 
 	local_global_conv_rate = 5e-2;
 	sub_step_num = 1;
 
@@ -14,7 +14,6 @@ ProjectDynamic::ProjectDynamic()
 	max_it = 1000;
 	max_jacobi_itr_num = 20;
 	displacement_norm_thread.resize(total_thread_num);
-	position_norm_thread.resize(total_thread_num);
 }
 
 void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, Thread* thread)
@@ -37,7 +36,7 @@ void ProjectDynamic::initialDHatTolerance(double ave_edge_length)
 	for (int i = 0; i < cloth->size(); ++i) {
 		element_count += (*cloth)[i].mesh_struct.vertex_for_render.size();
 	}
-	displacement_bound = 5e-3 * ave_edge_length;
+	displacement_bound = 1e-3 * ave_edge_length;
 	displacement_bound *= displacement_bound;
 	displacement_bound *= (double)element_count;
 }
@@ -553,10 +552,24 @@ void ProjectDynamic::firstPDForIPC()
 {
 	//face_normal_render
 	PDsetPosPredict();
-	thread->assignTask(this, LOCAL_PROJECTION_WITHOUT_ENERGY);
-	thread->assignTask(this, SOLVE_SYSYTEM_WITHOUT_COLLISION);
+	thread->assignTask(this, LOCAL_PROJECTION);
+
+	current_constraint_energy = temEnergy[0];
+	for (int i = 1; i < total_thread_num; ++i) {
+		current_constraint_energy += temEnergy[i];
+	}
+
+	thread->assignTask(this, SOLVE_SYSYTEM);
 	updateModelPosition();
 	collision.collisionCulling();
+
+	current_PD_energy = temEnergy[0];
+	for (int i = 1; i < total_thread_num; ++i) {
+		current_PD_energy += temEnergy[i];
+	}
+	current_PD_energy += current_constraint_energy;
+	current_collision_energy = 1e-15;
+	previous_PD_energy = 1e-15;
 	////std::cout << "++++" << std::endl;
 	//for (int i = 0; i < cloth_sys_size[0]; ++i) {
 	//	//std::cout << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "
@@ -582,32 +595,58 @@ void ProjectDynamic::PD_IPC_solve()
 		PDupdateSystemMatrix();
 		//std::cout << "==iteration number " << outer_iteration_num << std::endl;
 		//std::cout << "collision free position " << std::endl;
-		for (int i = 0; i < cloth_sys_size[0]; ++i) {
-			//std::cout<<"    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "<< cloth_u[0][2][i] << std::endl;
+		//for (int i = 0; i < cloth_sys_size[0]; ++i) {
+		//	std::cout<<"    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "<< cloth_u[0][2][i] << std::endl;
+		//}
+		thread->assignTask(this, LOCAL_PROJECTION);
+
+		current_constraint_energy = temEnergy[0];
+		for (int i = 1; i < total_thread_num; ++i) {
+			current_constraint_energy += temEnergy[i];
 		}
-		thread->assignTask(this, LOCAL_PROJECTION_WITHOUT_ENERGY);
-		thread->assignTask(this, SOLVE_SYSYTEM_WITHOUT_ENERGY);
+
+		thread->assignTask(this, SOLVE_SYSYTEM);
 		updateModelPosition();
 
 		outer_iteration_num++;
+		computeEnergyIPCPD();
+		displacement_ratio_dif = previous_displacement_norm - displacement_norm;
+		previous_displacement_norm = displacement_norm;
 		//system("pause");
 		//std::cout << "pd position " << std::endl;
-		for (int i = 0; i < cloth_sys_size[0]; ++i) {
-			//std::cout << "    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "	<< cloth_u[0][2][i] << std::endl;
-		}
+		//for (int i = 0; i < cloth_sys_size[0]; ++i) {
+		//	std::cout << "    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "	<< cloth_u[0][2][i] << std::endl;
+		//}
 	}
 	collision.globalCollisionTime();
 	thread->assignTask(this, COLLISION_FREE_POSITION);
 	//std::cout << "final collision free position " << std::endl;
-	for (int i = 0; i < cloth_sys_size[0]; ++i) {
-		//std::cout << "    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "	<< cloth_u[0][2][i] << std::endl;
-	}
+	//for (int i = 0; i < cloth_sys_size[0]; ++i) {
+	//	std::cout << "    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "	<< cloth_u[0][2][i] << std::endl;
+	//}
 	thread->assignTask(this, UPDATE_UV);
 	updateRenderPositionIPC();
 	//std::cout << cloth_v[0][1] << std::endl;
 	//std::cout << "========" << std::endl;
 }
 
+void ProjectDynamic::computeEnergyIPCPD()
+{
+	PD_energy_dif = previous_PD_energy - current_PD_energy;
+	collision_energy_dif = previous_collision_energy - current_collision_energy;
+	previous_collision_energy = current_collision_energy;
+	previous_PD_energy = current_PD_energy;
+	current_collision_energy = 1e-15;
+	for (int k = 0; k < total_cloth_num; ++k) {
+		current_collision_energy += collision.cloth_target_pos.collision_energy[k];
+	}
+	current_PD_energy = temEnergy[0];
+	for (int i = 1; i < total_thread_num; ++i) {
+		current_PD_energy += temEnergy[i];
+	}
+	current_PD_energy += current_constraint_energy + current_constraint_energy;
+
+}
 
 void ProjectDynamic::PDsolve()
 {
@@ -734,6 +773,9 @@ void ProjectDynamic::updateTetrahedronUV(int thread_id)
 	}
 }
 
+
+
+
 void ProjectDynamic::initialEnergy()
 {
 	previous_itr_PD_energy = 1e-15;
@@ -826,9 +868,8 @@ void ProjectDynamic::computeDisplacement(int thread_No)
 	double* u_pre_x; double* u_pre_y; double* u_pre_z;
 	double x, y, z;
 	double* displacement_norm_ = &displacement_norm_thread[thread_No];
-	double* position_norm_ = &position_norm_thread[thread_No];
 	*displacement_norm_ = 0;
-	*position_norm_ = 0;
+	double displace_current;
 	for (int i = 0; i < cloth->size(); ++i) {
 		index_end = (*cloth)[i].mesh_struct.vertex_index_begin_per_thread[thread_No + 1];
 		u_x = cloth_u[i][0].data();
@@ -841,8 +882,10 @@ void ProjectDynamic::computeDisplacement(int thread_No)
 			x = u_x[j] - u_pre_x[j];
 			y = u_y[j] - u_pre_y[j];
 			z = u_z[j] - u_pre_z[j];
-			*displacement_norm_ += x * x + y * y + z * z;
-			*position_norm_ += u_pre_x[j] * u_pre_x[j] + u_pre_y[j] * u_pre_y[j] + u_pre_z[j] * u_pre_z[j];
+			displace_current = x * x + y * y + z * z;
+			//if (*displacement_norm_ < displace_current) {
+				*displacement_norm_ += displace_current;
+			//}
 		}
 	}
 }
@@ -900,20 +943,39 @@ void ProjectDynamic::matrixDecomposition(int thread_id)
 
 bool ProjectDynamic::IPC_PDConvergeCondition()
 {
-	if (outer_iteration_num > 1) {
+	if (outer_iteration_num > 2) {
 		if (outer_iteration_num < max_it) {
-			thread->assignTask(this, COMPUTE_DISPLACEMENT);
-			double displacement_norm = displacement_norm_thread[0];
-			double position_norm = position_norm_thread[0];
-			for (int i = 1; i < total_thread_num; ++i) {
-				displacement_norm += displacement_norm_thread[i];
-				position_norm += position_norm_thread[i];
-			}
-			//std::cout <<"displacement ratio "<< displacement_norm / displacement_bound << std::endl;
+			bool system_energy = fabs(current_PD_energy - previous_PD_energy) / previous_PD_energy < outer_itr_conv_rate || current_PD_energy < 5e-15;
+			//bool collision_energy = fabs(previous_collision_energy - current_collision_energy) / previous_collision_energy < local_global_conv_rate;
+			bool energy_changing = fabs(PD_energy_dif + (previous_PD_energy - current_PD_energy))/ current_PD_energy < outer_itr_conv_rate;
+			//bool collision_energy_changing= fabs(collision_energy_dif + (previous_collision_energy - current_collision_energy)) / current_collision_energy < 0.1;
+			//this is actually the changing ratio between itr-2 and itr;
+			//std::cout <<current_PD_energy << " " << current_collision_energy << std::endl;
+			//std::cout << fabs(current_PD_energy - previous_PD_energy) / previous_PD_energy << std::endl;
+			//if (outer_iteration_num > 990) {
+				//std::cout <<current_collision_energy <<" " << fabs(collision_energy_dif + (previous_collision_energy - current_collision_energy)) << std::endl;
+				//std::cout << current_PD_energy <<" " << fabs(PD_energy_dif + (previous_PD_energy - current_PD_energy)) << std::endl;
+				//std::cout << fabs(current_PD_energy - previous_PD_energy) / previous_PD_energy <<" " << fabs(PD_energy_dif + (previous_PD_energy - current_PD_energy)) / current_PD_energy << std::endl;
+			//}
+			//if (system_energy || energy_changing){//|| current_collision_energy<1e-6) {//&&(collision_energy|| collision_energy_changing)
+				//std::cout << outer_iteration_num << std::endl;
+				thread->assignTask(this, COMPUTE_DISPLACEMENT);
+				displacement_norm = displacement_norm_thread[0];
+				for (int i = 1; i < total_thread_num; ++i) {
+					//if (displacement_norm < displacement_norm_thread[i]) {
+						displacement_norm += displacement_norm_thread[i];
+					//}
+				}
+	
 
-			if (displacement_norm / displacement_bound < 1.0) {
-				return true;
-			}
+				bool ratio_changing = fabs(displacement_ratio_dif + (previous_displacement_norm - displacement_norm)) / displacement_norm < 1e-2;
+				//if (outer_iteration_num > 990) {
+					//std::cout << "displacement ratio " << displacement_norm <<" "<< fabs(displacement_ratio_dif + (previous_displacement_norm - displacement_norm)) / displacement_norm << std::endl;
+				//}
+				if (displacement_norm / displacement_bound < 1.0 || ratio_changing) {// 
+					return true;
+				}
+			//}
 		}
 		else {
 			////std::cout << "larger than 1000 " << std::endl;

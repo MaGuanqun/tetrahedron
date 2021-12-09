@@ -61,6 +61,7 @@ public:
             // std::cout << threads[i].id << std::endl;
             job j = create_task(func, threads[i].id, taskType);
             futures.push_back(j.get_future());
+            std::unique_lock<std::mutex> l(threads[i].m);
             threads[i].jobs.push(std::move(j));
             // Notify the thread that there is work do to...
             threads[i].cv.notify_one();
@@ -75,7 +76,9 @@ public:
         {
             // std::cout << threads[i].id << std::endl;
             job j = create_task(func, threads[i].id, taskType, key_id);
+           
             futures.push_back(j.get_future());
+            std::unique_lock<std::mutex> l(threads[i].m);
             threads[i].jobs.push(std::move(j));
             // Notify the thread that there is work do to...
             threads[i].cv.notify_one();

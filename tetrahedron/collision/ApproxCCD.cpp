@@ -77,6 +77,12 @@ bool ApproxCCD::pointTriangleCollisionTime(double& t, double* initial_position, 
 		}
 	}
 
+	//double test0[3];
+	//SUB(test0, current_position, current_triangle_0);
+	//double te= DOT(test0, current_normal_not_normalized);
+	//if (te * d > 0) {
+	//	std::cout << "test wrong " << std::endl;
+	//}
 	//if (t < 1e-6) {
 	//	std::cout << a3 << " " << a2 << " " << a1 << " " << d << std::endl;
 	//}

@@ -57,7 +57,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	tetrahedron_num = tetrahedron_index_in_object.size();
 	cloth.resize(cloth_num);
 	tetrahedron.resize(tetrahedron_num);
-	double cloth_density=50.0;
+	double cloth_density=25.0;
 	double tetrahedron_density = 25.0;
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].loadMesh(preprocessing.ori_simulation_mesh[cloth_index_in_object[i]], cloth_density, &thread);
@@ -67,7 +67,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	}
 	setWireframwColor();
 	std::vector<SingleClothInfo> single_cloth_info;
-	std::array<double, 4>collision_stiffness_per = { 2e5,2e5,2e5,2e5 };// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point,
+	std::array<double, 4>collision_stiffness_per = { 1e4,1e4,1e4,1e4 };// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point,
 	std::vector<std::array<double, 4>>collision_stiffness(cloth_num, collision_stiffness_per);
 	for (int i = 0; i < cloth_num; ++i) {
 		single_cloth_info.push_back(SingleClothInfo(cloth_density, 1e3, 1e6, 1e-6, collision_stiffness[i].data(), 0.5, 0.4, collision_stiffness_per[1]));
@@ -275,7 +275,7 @@ void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_par
 {
 	if (control_parameter[START_SIMULATION] || control_parameter[ONE_FRAME]) {
 		project_dynamic.resetExternalForce();
-		std::cout << intersection.happened << " " << control_parameter[START_TEST] << std::endl;
+		//std::cout << intersection.happened << " " << control_parameter[START_TEST] << std::endl;
 		if (intersection.happened && !control_parameter[START_TEST]) {
 		
 			setCursorForce(camera, cursor_screen, force_coe);

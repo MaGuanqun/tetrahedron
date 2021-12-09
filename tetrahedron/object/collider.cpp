@@ -97,7 +97,8 @@ void Collider::getTriangleAABBPerThread(int thread_No)
 
 void Collider::setTolerance(double* tolerance_ratio, double ave_edge_length)
 {
-	tolerance = tolerance_ratio[BODY_POINT_TRIANGLE] * ave_edge_length;
+	//tolerance = tolerance_ratio[BODY_POINT_TRIANGLE] * ave_edge_length;
+	tolerance = 0.5 * ave_edge_length;
 }
 
 void Collider::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num)

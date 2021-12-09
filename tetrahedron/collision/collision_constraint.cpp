@@ -104,19 +104,19 @@ bool CollisionConstraint::pointColliderTriangle(double* initial_position, double
 	stiffness *= barrier((d_hat_2- d_2)/d_hat_2, d_2 / d_hat_2);
 	//std::cout << stiffness<<" "<< barrier(d_2 - d_hat_2, d_2 / d_hat_2) << std::endl;
 	
-	double d[3];
-	for (int i = 0; i < 3; ++i) {
-		d[i] = initial_position[i] - current_position[i];
-	}
-	double d_move = DOT(d, d);
+	//double d[3];
+	//for (int i = 0; i < 3; ++i) {
+	//	d[i] = initial_position[i] - current_position[i];
+	//}
+	double d_move;// = DOT(d, d);
 	////std::cout << d_hat_2<<" "<< d_move << std::endl;
-	d_move = sqrt(d_move) + (d_hat - sqrt(d_2));
-	if (d_move < d_hat) {
+	//d_move = sqrt(d_move) + (d_hat - sqrt(d_2));
+	//if (d_move < d_hat) {
 		//std::cout << d_move<<" "<< d_hat_2 << std::endl;
-		d_move = 1.02*d_hat;
-		////std::cout << "kk" << std::endl;
-	}
-
+		d_move = d_hat;
+		//std::cout << "kk" << std::endl;
+	//}
+	//d_move = d_hat;// -sqrt(d_2);
 	//decide the direction
 	double direction[3];
 	SUB(direction, initial_position, current_nearest_point);
