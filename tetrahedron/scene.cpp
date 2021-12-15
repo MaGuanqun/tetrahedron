@@ -67,7 +67,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	}
 	setWireframwColor();
 	std::vector<SingleClothInfo> single_cloth_info;
-	std::array<double, 4>collision_stiffness_per = { 1e4,1e4,1e4,1e4 };// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point,
+	std::array<double, 4>collision_stiffness_per = { 5e4,5e4,5e4,5e4 };// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point,
 	std::vector<std::array<double, 4>>collision_stiffness(cloth_num, collision_stiffness_per);
 	for (int i = 0; i < cloth_num; ++i) {
 		single_cloth_info.push_back(SingleClothInfo(cloth_density, 1e3, 1e6, 1e-6, collision_stiffness[i].data(), 0.5, 0.4, collision_stiffness_per[1]));

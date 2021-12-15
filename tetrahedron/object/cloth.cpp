@@ -199,8 +199,8 @@ void Cloth::setAnchor()
 {
 	//mesh_struct.anchor_vertex.push_back(100);
 	//mesh_struct.anchor_vertex.push_back(0);
-	//mesh_struct.anchor_vertex.push_back(30 * 30 - 1);
-	//mesh_struct.anchor_vertex.push_back(30 * 29);
+	mesh_struct.anchor_vertex.push_back(15 * 30 - 1);
+	mesh_struct.anchor_vertex.push_back(15 * 29);
 }
 
 //VERTEX_AABB
@@ -377,7 +377,8 @@ void Cloth::setTolerance(double* tolerance_ratio, double ave_edge_length)
 	for (int i = 0; i < PC_radius.size(); ++i) {
 		PC_radius[i] = tolerance_ratio[i] * ave_edge_length;
 	}
-	tolerance = tolerance_ratio[SELF_POINT_TRIANGLE] * ave_edge_length;
+	tolerance = 0.5*ave_edge_length;
+	//tolerance = tolerance_ratio[SELF_POINT_TRIANGLE] * ave_edge_length;
 }
 
 

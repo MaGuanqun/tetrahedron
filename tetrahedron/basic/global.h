@@ -140,7 +140,11 @@ dest[0]=0.5*(v0[0]+v1[0]);\
 dest[1]=0.5*(v0[1]+v1[1]);\
 dest[2]=0.5*(v0[2]+v1[2]);
 
+#undef DIFF_SIGN
+#define DIFF_SIGN(v0,v1) ((v0>0&&v1<0)||(v0<0||v1>0))
 
+#undef SAME_SIGN
+#define SAME_SIGN(v0,v1) ((v0>0&&v1>0)||(v0<0||v1<0))
 
 inline double gaussian(double x, double sigma) {
     return std::exp(-x * x / (2.0 * sigma * sigma));
@@ -160,6 +164,9 @@ inline void normalize(double* x) {
 #undef DEG_RADIANS
 #define DEG_RADIANS(a) (a/180.0*M_PI)
 
+
+#undef DET2X2
+#define DET2X2(a,b,c,d) (a*d-b*c)
 
 inline void arrangeIndex(int total_thread_num, int total_num, std::vector<int>& begin) {
 	int interval1 = total_num / total_thread_num;

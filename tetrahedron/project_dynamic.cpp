@@ -11,7 +11,7 @@ ProjectDynamic::ProjectDynamic()
 
 	use_dierct_solve_for_coarest_mesh = true;
 	super_jacobi_step_size = 3;
-	max_it = 1000;
+	max_it = 100;
 	max_jacobi_itr_num = 20;
 	displacement_norm_thread.resize(total_thread_num);
 }
@@ -617,6 +617,7 @@ void ProjectDynamic::PD_IPC_solve()
 		//for (int i = 0; i < cloth_sys_size[0]; ++i) {
 		//	std::cout << "    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "	<< cloth_u[0][2][i] << std::endl;
 		//}
+		//std::cout << "+++++" << std::endl;
 	}
 	collision.globalCollisionTime();
 	thread->assignTask(this, COLLISION_FREE_POSITION);
@@ -957,7 +958,7 @@ bool ProjectDynamic::IPC_PDConvergeCondition()
 				//std::cout << current_PD_energy <<" " << fabs(PD_energy_dif + (previous_PD_energy - current_PD_energy)) << std::endl;
 				//std::cout << fabs(current_PD_energy - previous_PD_energy) / previous_PD_energy <<" " << fabs(PD_energy_dif + (previous_PD_energy - current_PD_energy)) / current_PD_energy << std::endl;
 			//}
-			//if (system_energy || energy_changing){//|| current_collision_energy<1e-6) {//&&(collision_energy|| collision_energy_changing)
+			if (system_energy || energy_changing){//|| current_collision_energy<1e-6) {//&&(collision_energy|| collision_energy_changing)
 				//std::cout << outer_iteration_num << std::endl;
 				thread->assignTask(this, COMPUTE_DISPLACEMENT);
 				displacement_norm = displacement_norm_thread[0];
@@ -968,14 +969,14 @@ bool ProjectDynamic::IPC_PDConvergeCondition()
 				}
 	
 
-				bool ratio_changing = fabs(displacement_ratio_dif + (previous_displacement_norm - displacement_norm)) / displacement_norm < 1e-2;
+				bool ratio_changing = fabs(displacement_ratio_dif + (previous_displacement_norm - displacement_norm)) / displacement_norm < 1e-3;
 				//if (outer_iteration_num > 990) {
-					//std::cout << "displacement ratio " << displacement_norm <<" "<< fabs(displacement_ratio_dif + (previous_displacement_norm - displacement_norm)) / displacement_norm << std::endl;
+					//std::cout << "displacement ratio " << displacement_norm / displacement_bound <<" "<< fabs(displacement_ratio_dif + (previous_displacement_norm - displacement_norm)) / displacement_norm << std::endl;
 				//}
-				if (displacement_norm / displacement_bound < 1.0 || ratio_changing) {// 
+				if (displacement_norm / displacement_bound < 1.0 || ratio_changing) {//  
 					return true;
 				}
-			//}
+			}
 		}
 		else {
 			////std::cout << "larger than 1000 " << std::endl;

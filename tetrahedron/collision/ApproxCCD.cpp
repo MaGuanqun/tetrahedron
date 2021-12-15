@@ -83,12 +83,26 @@ bool ApproxCCD::pointTriangleCollisionTime(double& t, double* initial_position, 
 	//if (te * d > 0) {
 	//	std::cout << "test wrong " << std::endl;
 	//}
-	//if (t < 1e-6) {
-	//	std::cout << a3 << " " << a2 << " " << a1 << " " << d << std::endl;
+	//if (t < 1e-4) {
+	//	std::cout <<"coef "<< a3 << " " << a2 << " " << a1 << " " << d << std::endl;
 	//}
+	//We add an extral collision test for CCD 
+	Vec3d initial_pos_a = Vec3d(initial_position[0], initial_position[1], initial_position[2]);
+	Vec3d current_pos_a = Vec3d(current_position[0], current_position[1], current_position[2]);
+	Vec3d initial_triangle_0_a = Vec3d(initial_triangle_0[0], initial_triangle_0[1], initial_triangle_0[2]);
+	Vec3d initial_triangle_1_a = Vec3d(initial_triangle_1[0], initial_triangle_1[1], initial_triangle_1[2]);
+	Vec3d initial_triangle_2_a = Vec3d(initial_triangle_2[0], initial_triangle_2[1], initial_triangle_2[2]);
+	Vec3d current_triangle_0_a = Vec3d(current_triangle_0[0], current_triangle_0[1], current_triangle_0[2]);
+	Vec3d current_triangle_1_a = Vec3d(current_triangle_1[0], current_triangle_1[1], current_triangle_1[2]);
+	Vec3d current_triangle_2_a = Vec3d(current_triangle_2[0], current_triangle_2[1], current_triangle_2[2]);
 
-
-	return true;
+	rootparity::RootParityCollisionTest root_parity(initial_pos_a, initial_triangle_0_a, initial_triangle_1_a, initial_triangle_2_a,
+				current_pos_a, current_triangle_0_a, current_triangle_1_a, current_triangle_2_a,false);
+	if (root_parity.point_triangle_collision())
+	{
+		return true;
+	}
+	return false;	
 }
 
 bool ApproxCCD::edgeEdgeCollisionTime(double& t, double* current_edge_vertex_0, double* current_edge_vertex_1, double* initial_edge_vertex_0, double* initial_edge_vertex_1,
@@ -218,7 +232,24 @@ bool ApproxCCD::edgeEdgeCollisionTime(double& t, double* current_edge_vertex_0, 
 			t = time[i];
 		}
 	}
-	return true;
+
+	Vec3d initial_edge_0 = Vec3d(initial_edge_vertex_0[0], initial_edge_vertex_0[1], initial_edge_vertex_0[2]);
+	Vec3d current_edge_0 = Vec3d(current_edge_vertex_0[0], current_edge_vertex_0[1], current_edge_vertex_0[2]);
+	Vec3d initial_edge_1 = Vec3d(initial_edge_vertex_1[0], initial_edge_vertex_1[1], initial_edge_vertex_1[2]);
+	Vec3d current_edge_1 = Vec3d(current_edge_vertex_1[0], current_edge_vertex_1[1], current_edge_vertex_1[2]);
+	Vec3d initial_comapre_edge_0 = Vec3d(initial_compare_edge_vertex_0[0], initial_compare_edge_vertex_0[1], initial_compare_edge_vertex_0[2]);
+	Vec3d current_comapre_edge_0 = Vec3d(current_compare_edge_vertex_0[0], current_compare_edge_vertex_0[1], current_compare_edge_vertex_0[2]);
+	Vec3d initial_comapre_edge_1 = Vec3d(initial_compare_edge_vertex_1[0], initial_compare_edge_vertex_1[1], initial_compare_edge_vertex_1[2]);
+	Vec3d current_comapre_edge_1 = Vec3d(current_compare_edge_vertex_1[0], current_compare_edge_vertex_1[1], current_compare_edge_vertex_1[2]);
+
+	rootparity::RootParityCollisionTest root_parity(initial_edge_0, initial_edge_1, initial_comapre_edge_0, initial_comapre_edge_1,
+		current_edge_0, current_edge_1, current_comapre_edge_0, current_comapre_edge_1, true);
+	if (root_parity.edge_edge_collision())
+	{
+		return true;
+
+	}
+	return false;
 }
 
 
