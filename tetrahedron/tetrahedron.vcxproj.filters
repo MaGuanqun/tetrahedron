@@ -267,6 +267,9 @@
     <ClInclude Include="collision\insideTest.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="collision\floating.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

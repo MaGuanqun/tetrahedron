@@ -2,6 +2,7 @@
 #include<vector>
 #define NOMINMAX
 #include"rootparitycollisiontest.h"
+#include"insideTest.h"
 
 class ApproxCCD
 {
@@ -24,7 +25,7 @@ private:
 	bool pointEdgeIsClose(double* v_0, double* v_1_0, double tolerance_2);
 	bool pointPointCollisionTime(double& t, double* e_1_0, double* e_0, double* e_1, double tolerance_2);
 	bool pointPointIsClose(double t, double* e10_0, double* e_0, double* e_1, double tolerance_2);
-
+	void make_vector(double* v, floating* out);
 };
 
 

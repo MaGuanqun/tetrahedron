@@ -110,20 +110,45 @@ bool ApproxCCD::edgeEdgeCollisionTime(double& t, double* current_edge_vertex_0, 
 	double* initial_compare_edge_vertex_1, double tolerance_2)
 {
 	double e0[3], e0_[3], e1[3], e1_[3], e2[3], e2_[3];
-	SUB(e0, initial_compare_edge_vertex_0, initial_edge_vertex_0);
-	SUB(e0_, current_compare_edge_vertex_0, current_edge_vertex_0);
-	SUB_(e0_, e0);
 
-	SUB(e1, initial_edge_vertex_1, initial_edge_vertex_0);
-	SUB(e1_, current_edge_vertex_1, current_edge_vertex_0);
-	SUB_(e1_, e1);
+	floating f_e0[3], f_e0_[3], f_e1[3], f_e1_[3], f_e2[3], f_e2_[3];
 
-	SUB(e2, initial_compare_edge_vertex_1, initial_compare_edge_vertex_0);
-	SUB(e2_, current_compare_edge_vertex_1, current_compare_edge_vertex_0);
-	SUB_(e2_, e2);
+	floating f_current_edge_vertex_0[3], f_current_edge_vertex_1[3], f_initial_edge_vertex_0[3], f_initial_edge_vertex_1[3],
+		f_current_compare_edge_vertex_0[3], f_current_compare_edge_vertex_1[3], f_initial_compare_edge_vertex_0[3],
+		f_initial_compare_edge_vertex_1[3];
+	make_vector(current_edge_vertex_0, f_current_edge_vertex_0);
+	make_vector(current_edge_vertex_1, f_current_edge_vertex_1);
+	make_vector(initial_edge_vertex_0, f_initial_edge_vertex_0);
+	make_vector(initial_edge_vertex_1, f_initial_edge_vertex_1);
+	make_vector(initial_compare_edge_vertex_0, f_initial_compare_edge_vertex_0);
+	make_vector(initial_compare_edge_vertex_1, f_initial_compare_edge_vertex_1);
+	make_vector(current_compare_edge_vertex_0, f_current_compare_edge_vertex_0);
+	make_vector(current_compare_edge_vertex_1, f_current_compare_edge_vertex_1);
+
+	SUB(f_e0, f_initial_compare_edge_vertex_0, f_initial_edge_vertex_0);
+	SUB(f_e0_, f_current_compare_edge_vertex_0, f_current_edge_vertex_0);
+
+	SUB(f_e1, f_initial_edge_vertex_1, f_initial_edge_vertex_0);
+	SUB(f_e1_, f_current_edge_vertex_1, f_current_edge_vertex_0);
+
+	SUB(f_e2, f_initial_compare_edge_vertex_1, f_initial_compare_edge_vertex_0);
+	SUB(f_e2_, f_current_compare_edge_vertex_1, f_current_compare_edge_vertex_0);
+
+	for (int i = 0; i < 3; ++i) {
+		e0[i] = f_e0[i].v;
+		e0_[i] = f_e0_[i].v;
+		e1[i] = f_e1[i].v;
+		e1_[i] = f_e1_[i].v;
+		e2[i] = f_e2[i].v;
+		e2_[i] = f_e2_[i].v;
+	}
 
 	double a[3];
-	CROSS(a, e1, e2);	
+	floating f_n0[3];
+	CROSS(f_n0, f_e1, f_e2);
+	for (int i = 0; i < 3; ++i) {
+		a[i] = f_n0[i].v;
+	}	
 	double d = DOT(e0, a);
 
 	if (d<NEAR_ZERO2 && d>-NEAR_ZERO2) {
@@ -164,14 +189,30 @@ bool ApproxCCD::edgeEdgeCollisionTime(double& t, double* current_edge_vertex_0, 
 		}
 	}
 
+
+	floating f_n1[3], f_cross_for_CCD[3];
+	CROSS(f_n1, f_e1, f_e2_);
+	CROSS(f_cross_for_CCD, f_e1_, f_e2);
+	SUM_(f_cross_for_CCD, f_n1);
+	CROSS(f_n1, f_e1_, f_e2_);
+
 	double b[3], c[3];
-	CROSS(b, e1, e2_);
-	CROSS(c, e1_, e2);
-	SUM_(b, c);
-	CROSS(c, e1_, e2_);
-	double a3 = DOT(e0_, c);
-	double a2 = DOT(e0, c) + DOT(e0_, b);
-	double a1 = DOT(e0, b) + DOT(e0_, a);
+	for (int i = 0; i < 3; ++i) {
+		b[i] = f_cross_for_CCD[i].v;
+		c[i] = f_n1[i].v;
+	}
+
+	double b1 = DOT(e0, b);
+	double b2 = DOT(e0, c);
+	double b3 = DOT(e0_, a);
+	double b4 = DOT(e0_, b);
+	double b5 = DOT(e0_, c);
+
+
+	double a3 = b5 - b4 + b3 - b2 + b1 - d;
+	double a2 = 3 * d - 2 * b1 + b2 - 2 * b3 + b4;
+	double a1 = b3 + b1 - 3 * d;
+
 	std::vector<double>time;
 	time.reserve(7);
 	if (solveEquation(t, a3, a2, a1, d)) {
@@ -251,6 +292,7 @@ bool ApproxCCD::edgeEdgeCollisionTime(double& t, double* current_edge_vertex_0, 
 	}
 	return false;
 }
+
 
 
 bool ApproxCCD::solveEquation(double&t, double a3, double a2, double a1, double d)
@@ -903,4 +945,11 @@ bool ApproxCCD::pointPointIsClose(double t, double* e10_0, double* e_0, double* 
 		return false;
 	}
 	return true;
+}
+
+inline void ApproxCCD::make_vector(double* v, floating* out)
+{
+	for (int i = 0; i < 3; i++) {
+		out[i] = floating(v[i], 0);
+	}
 }
