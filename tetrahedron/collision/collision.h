@@ -148,7 +148,8 @@ private:
 	void edgeEdgeCollisionTime(double* collision_time, std::vector<int>* edge_neighbor_edge, double* initial_edge_vertex_0, double* initial_edge_vertex_1, double* current_edge_vertex_0, double* current_edge_vertex_1);
 	void pointColliderTriangleCollisionTime(double* collision_time, int* triangle_vertex_index, std::vector<int>* triangle_neighbor_vertex,
 		std::array<double, 3>* initial_position, std::array<double, 3>* current_position,
-		double* initial_ori_face_normal, double* current_ori_face_normal, double* cross_for_CCD);
+		double* initial_ori_face_normal, double* current_ori_face_normal, double* cross_for_CCD,
+		floating* f_initial_normal, floating* f_current_normal, floating* f_cross_for_CCD);
 	void pointSelfTriangleClose(std::vector<int>* vertex_neighbor_triangle, double* initial_vertex_pos, double* current_vertex_pos,
 		int vertex_index, int cloth_No, double mass, TargetPosition* target_position);
 	void pointColliderTriangleClose(int* triangle_vertex_index, std::vector<int>* triangle_neighbor_vertex,

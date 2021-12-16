@@ -130,7 +130,7 @@
     <ClCompile Include="collision\interval.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="collision\insideTest.cpp">
+    <ClCompile Include="collision\TightCCD.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -264,7 +264,7 @@
     <ClInclude Include="collision\collision_constraint.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="collision\insideTest.h">
+    <ClInclude Include="collision\TightCCD.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="collision\floating.h">

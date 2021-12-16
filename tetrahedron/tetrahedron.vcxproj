@@ -159,7 +159,7 @@
     <ClCompile Include="collision\collision.cpp" />
     <ClCompile Include="collision\collision_constraint.cpp" />
     <ClCompile Include="collision\expansion.cpp" />
-    <ClCompile Include="collision\insideTest.cpp" />
+    <ClCompile Include="collision\TightCCD.cpp" />
     <ClCompile Include="collision\interval.cpp" />
     <ClCompile Include="collision\parallel_radix_sort.cpp" />
     <ClCompile Include="collision\predictive_contact.cpp" />
@@ -209,7 +209,7 @@
     <ClInclude Include="collision\collision.h" />
     <ClInclude Include="collision\collision_constraint.h" />
     <ClInclude Include="collision\floating.h" />
-    <ClInclude Include="collision\insideTest.h" />
+    <ClInclude Include="collision\TightCCD.h" />
     <ClInclude Include="collision\parallel_radix_sort.h" />
     <ClInclude Include="collision\predictive_contact.h" />
     <ClInclude Include="collision\spatial_hashing.h" />

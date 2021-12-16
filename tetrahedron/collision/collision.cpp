@@ -304,7 +304,8 @@ void Collision::collisionTime(int thread_No)
 		neighbor_primitve = (*collider)[collider_No].triangle_neighbor_cloth_vertex.data();
 		for (int i = index_begin; i < index_end; ++i) {
 			pointColliderTriangleCollisionTime(collision_time, mesh_struct->triangle_indices[i].data(), neighbor_primitve[i].data(), initial_pos,current_pos, 
-				mesh_struct->ori_face_normal_for_render[i].data(), mesh_struct->ori_face_normal[i].data(), mesh_struct->cross_for_approx_CCD[i].data());
+				mesh_struct->ori_face_normal_for_render[i].data(), mesh_struct->ori_face_normal[i].data(), mesh_struct->cross_for_approx_CCD[i].data(),
+				mesh_struct->f_face_normal_for_render[i].data(),mesh_struct->f_face_normal[i].data(),mesh_struct->f_cross_for_approx_CCD[i].data());
 		}
 	}	
 	int* edge_vertex_index;
@@ -777,6 +778,10 @@ void Collision::pointSelfTriangleCollisionTime(double* collision_time, std::vect
 	std::array<double, 3>* current_ori_face_normal;
 	std::array<double, 3>* initial_ori_face_normal;
 	std::array<double, 3>* cross_for_CCD;
+	std::array<floating, 3>* f_current_face_normal;
+	std::array<floating, 3>* f_initial_face_normal;
+	std::array<floating, 3>* f_cross_for_CCD;
+
 	int triangle_index;
 	for (int i = 0; i < cloth->size(); ++i) {
 		triangle_mesh = &(*cloth)[i].mesh_struct;
@@ -788,13 +793,18 @@ void Collision::pointSelfTriangleCollisionTime(double* collision_time, std::vect
 		initial_ori_face_normal = triangle_mesh->ori_face_normal_for_render.data();
 		cross_for_CCD = triangle_mesh->cross_for_approx_CCD.data();
 
+		f_current_face_normal=triangle_mesh->f_face_normal.data();
+		f_initial_face_normal =triangle_mesh->f_face_normal_for_render.data();
+		f_cross_for_CCD= triangle_mesh->f_cross_for_approx_CCD.data();
+
 		for (int k = 0; k < neighbor_triangle->size(); ++k) {
 			triangle_index = (*neighbor_triangle)[k];
 			triangle_vertex_index = triangle_indices[triangle_index].data();
 			if (approx_CCD.pointTriangleCollisionTime(current_collision_time, initial_vertex_pos, current_vertex_pos, initial_position[triangle_vertex_index[0]].data(), current_position[triangle_vertex_index[0]].data(),
 				initial_position[triangle_vertex_index[1]].data(), current_position[triangle_vertex_index[1]].data(), initial_position[triangle_vertex_index[2]].data(), current_position[triangle_vertex_index[2]].data(),
 				initial_ori_face_normal[triangle_index].data(),
-				current_ori_face_normal[triangle_index].data(), cross_for_CCD[triangle_index].data(), tolerance_2)) {//
+				current_ori_face_normal[triangle_index].data(), cross_for_CCD[triangle_index].data(), tolerance_2,
+				f_initial_face_normal[triangle_index].data(), f_current_face_normal[triangle_index].data(),f_cross_for_CCD[triangle_index].data())) {//
 				if (current_collision_time < 1e-4) {
 					std::cout << current_collision_time << " " << vertex_index << " " << triangle_vertex_index[0] << " " << triangle_vertex_index[1] << " " << triangle_vertex_index[2] << std::endl;
 				}
@@ -846,7 +856,8 @@ void Collision::pointSelfTriangleCollisionTime(double* collision_time, std::vect
 
 void Collision::pointColliderTriangleCollisionTime(double* collision_time, int* triangle_vertex_index, std::vector<int>* triangle_neighbor_vertex,
 	std::array<double, 3>* initial_position, std::array<double, 3>* current_position,
-	double* initial_ori_face_normal, double* current_ori_face_normal, double* cross_for_CCD)
+	double* initial_ori_face_normal, double* current_ori_face_normal, double* cross_for_CCD,
+	floating* f_initial_normal, floating* f_current_normal, floating* f_cross_for_CCD)
 {
 	MeshStruct* vertex_mesh;
 	std::vector<int>* neighbor_vertex;
@@ -858,7 +869,8 @@ void Collision::pointColliderTriangleCollisionTime(double* collision_time, int* 
 			if (approx_CCD.pointTriangleCollisionTime(current_collision_time, vertex_mesh->vertex_for_render[(*neighbor_vertex)[k]].data(), vertex_mesh->vertex_position[(*neighbor_vertex)[k]].data(), initial_position[triangle_vertex_index[0]].data(), current_position[triangle_vertex_index[0]].data(),
 				initial_position[triangle_vertex_index[1]].data(), current_position[triangle_vertex_index[1]].data(),
 				initial_position[triangle_vertex_index[2]].data(), current_position[triangle_vertex_index[2]].data(),
-				initial_ori_face_normal, current_ori_face_normal, cross_for_CCD, tolerance_2)) {
+				initial_ori_face_normal, current_ori_face_normal, cross_for_CCD, tolerance_2,
+				f_initial_normal, f_current_normal, f_cross_for_CCD)) {
 				//if ((*neighbor_vertex)[k] == 1) {
 				//	std::cout << "collision time " << current_collision_time << std::endl;
 				//}

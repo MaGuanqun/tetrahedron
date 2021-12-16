@@ -2,14 +2,15 @@
 #include<vector>
 #define NOMINMAX
 #include"rootparitycollisiontest.h"
-#include"insideTest.h"
+#include"TightCCD.h"
 
 class ApproxCCD
 {
 public:	
 	bool pointTriangleCollisionTime(double& t, double* initial_position, double* current_position,
 		double* initial_triangle_0, double* current_triangle_0, double* initial_triangle_1, double* current_triangle_1, double* initial_triangle_2, double* current_triangle_2,
-		double* initial_normal_not_normalized, double* current_normal_not_normalized, double* cross_for_CCD, double tolerance_2);
+		double* initial_normal_not_normalized, double* current_normal_not_normalized, double* cross_for_CCD, double tolerance_2,
+		floating* f_initial_normal, floating* f_current_normal, floating* f_cross_for_CCD);
 	bool edgeEdgeCollisionTime(double& t, double* current_edge_vertex_0, double* current_edge_vertex_1, double* initial_edge_vertex_0, double* initial_edge_vertex_1,
 		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0,
 		double* initial_compare_edge_vertex_1, double tolerance_2);
@@ -26,6 +27,7 @@ private:
 	bool pointPointCollisionTime(double& t, double* e_1_0, double* e_0, double* e_1, double tolerance_2);
 	bool pointPointIsClose(double t, double* e10_0, double* e_0, double* e_1, double tolerance_2);
 	void make_vector(double* v, floating* out);
+	TightCCD tight_CCD;
 };
 
 

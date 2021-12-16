@@ -9,6 +9,10 @@ void MeshStruct::initialNormalSize()
 	face_normal = face_normal_for_render;
 	ori_face_normal = ori_face_normal_for_render;
 	vertex_normal = vertex_normal_for_render;
+	
+	f_face_normal_for_render.resize(triangle_indices.size());
+	f_face_normal.resize(triangle_indices.size());
+	f_cross_for_approx_CCD.resize(triangle_indices.size());
 }
 
 

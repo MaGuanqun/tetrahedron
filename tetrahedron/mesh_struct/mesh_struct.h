@@ -4,6 +4,7 @@
 #include<array>
 #include"../basic/global.h"
 #include"../global_struct.h"
+#include"../collision/floating.h"
 class MeshStruct
 {
 public:
@@ -58,9 +59,10 @@ public:
 	std::vector<int> anchor_index_begin_per_thread;
 	std::vector<int> vertex_index_begin_per_thread;
 
+	std::vector<std::array<floating, 3>> f_face_normal_for_render;
+	std::vector<std::array<floating, 3>> f_face_normal;
+	std::vector<std::array<floating, 3>> f_cross_for_approx_CCD;
 	void initialNormalSize();
-
-
 	void setAnchorPosition();
 protected:
 	int type;

@@ -9,11 +9,14 @@ enum ReturnValue {
 };
 
 
-class InsideTest
+class TightCCD
 {
 public:
+	bool insideTest(floating* a0, floating* b0, floating* c0, floating* v0,
+		floating* a1, floating* b1, floating* c1, floating* v1, floating* n0, floating* n1, floating* cross_for_CCD, bool ee_test);
 	bool insideTest(double* a0, double* b0, double* c0, double* v0,
-		double* a1, double* b1, double* c1, double* v1, floating* n0, floating* n1, floating* cross_for_CCD, bool edge_edge);
+		double* a1, double* b1, double* c1, double* v1, floating* n0, floating* n1, floating* cross_for_CCD, bool ee_test);
+
 private:
 	struct BC {
 		floating k0, k1, k2, k3;
@@ -49,7 +52,7 @@ private:
 	void getSimplifyed(floating& k0, floating& k1, floating& k2, floating& k3, floating& l0, floating& l1, floating& l2, floating& l3, floating& l4,
 		floating& j0, floating& j1, floating& j2);
 
-	bool getSigns(const floating& t0, const floating& t1, const BC& c, floating& lt0, floating& lt1);
+	bool getSigns(const floating& t0, const floating& t1, const BC& c, floating& lt0, floating& lt1, int root_nums);
 
 	inline void norm(floating* result, floating* p1, floating* p2, floating* p3) {
 		floating temp1[3], temp2[3];
@@ -71,17 +74,18 @@ private:
 	int bezierClassification(const floating& k0, const floating& k1, const floating& k2, const floating& k3,
 		floating& kk0, floating& kk1, floating& kk2);
 
-	bool subdivide(floating& k0, floating& k1, floating& k2, floating& k3, floating* g, bool need_left, bool need_right);
+	bool subdivide(floating& k0, floating& k1, floating& k2, floating& k3, floating* g);
 	int sign(const double& a);
 	int sameSign(const floating& a, const floating& b);
 	int diffSign(const floating& a, const floating& b);
 	void make_vector(const double* v, floating* out);
 	floating det2x2(const floating& a, const floating& b, const floating& c, const floating& d);
-	bool insideTest(BC& c, floating* g);
+	bool insideTest(BC& c, floating* g, int root_nums);
 	void make_vector(double* v, floating* out);
 	void make_vector(double* v, double* sigma, floating* out);
-	bool insideRobust(floating* a0, floating* b0, floating* c0, floating* v0,
-		floating* a1, floating* b1, floating* c1, floating* v1, floating* n0, floating* n1, floating* cross_for_CCD, bool ee_test);
+
+	int coplanarTest(BC& c);
+	
 };
 
 
