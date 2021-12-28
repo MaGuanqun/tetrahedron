@@ -180,4 +180,6 @@ private:
 	double displacement_ratio_dif;
 	double displacement_norm;
 	double previous_displacement_norm;
+	bool innerIterationConvergeCondition();
+	void computeInnerEnergyIPCPD();
 };

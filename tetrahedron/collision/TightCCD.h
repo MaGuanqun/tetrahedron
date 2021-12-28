@@ -1,12 +1,14 @@
 #pragma once
 #include"floating.h"
-
+#include"rootparitycollisiontest.h"
+#include"bsc_tightbound.h"
+//#include"CCD.h"
 //#define BOUND_UNIT 0.00000000000000022204460492503136
-enum ReturnValue {
-	RETURN_ZERO,
-	RETURN_FALSE,
-	RETURN_TRUE
-};
+//enum ReturnValue {
+//	RETURN_ZERO,
+//	RETURN_FALSE,
+//	RETURN_TRUE
+//};
 
 
 class TightCCD
@@ -16,6 +18,8 @@ public:
 		floating* a1, floating* b1, floating* c1, floating* v1, floating* n0, floating* n1, floating* cross_for_CCD, bool ee_test);
 	bool insideTest(double* a0, double* b0, double* c0, double* v0,
 		double* a1, double* b1, double* c1, double* v1, floating* n0, floating* n1, floating* cross_for_CCD, bool ee_test);
+
+	void testInside();
 
 private:
 	struct BC {
@@ -85,7 +89,7 @@ private:
 	void make_vector(double* v, double* sigma, floating* out);
 
 	int coplanarTest(BC& c);
-	
+	bsc_tightbound::TightCCDSource tight_source;
 };
 
 

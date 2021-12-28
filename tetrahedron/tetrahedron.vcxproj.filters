@@ -270,6 +270,12 @@
     <ClInclude Include="collision\floating.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="collision\CCD.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="collision\primitive_distance.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

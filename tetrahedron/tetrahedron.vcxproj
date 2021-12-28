@@ -206,9 +206,11 @@
     <ClInclude Include="basic\set_tetrahedron_anchor.h" />
     <ClInclude Include="collision\ApproxCCD.h" />
     <ClInclude Include="collision\BVH.h" />
+    <ClInclude Include="collision\CCD.h" />
     <ClInclude Include="collision\collision.h" />
     <ClInclude Include="collision\collision_constraint.h" />
     <ClInclude Include="collision\floating.h" />
+    <ClInclude Include="collision\primitive_distance.h" />
     <ClInclude Include="collision\TightCCD.h" />
     <ClInclude Include="collision\parallel_radix_sort.h" />
     <ClInclude Include="collision\predictive_contact.h" />

@@ -41,8 +41,12 @@ bool TightCCD::insideTest(floating* a0, floating* b0, floating* c0, floating* d0
 	if (!getBezier3(a0, b0, c0, d0, a1, b1, c1, d1, k0, k1, k2, k3, n0, n1, cross_for_CCD,deltaN,nX)) {
 		return false;
 	}
+	
 	floating kk0, kk1, kk2;
 	int ct = bezierClassification(k0, k1, k2, k3, kk0, kk1, kk2);
+
+	////std::cout <<"ct "<< ct << std::endl;
+
 	if (ct == 2) {
 		floating g[15]; // for inside test
 		for (int i = 0; i < 3; i++) {
@@ -53,12 +57,15 @@ bool TightCCD::insideTest(floating* a0, floating* b0, floating* c0, floating* d0
 	}
 	BC c(k0, k1, k2, k3, kk0, kk1, kk2, ct);
 	int root_nums = coplanarTest(c);
+
+	//std::cout << "root_num "<< root_nums << std::endl;
 	if (root_nums == 0)
 		return false;
 	floating g[15]; // for inside test
 	for (int i = 0; i < 3; i++) {
 		getBezier4(a0, b0, c0, d0, a1, b1, c1, d1, g[i * 5 + 0], g[i * 5 + 1], g[i * 5 + 2], g[i * 5 + 3], g[i * 5 + 4], n0, n1, deltaN, nX, i, ee_test);
 	}
+
 	return insideTest(c, g, root_nums);
 }
 
@@ -97,7 +104,7 @@ int TightCCD::coplanarTest(BC& c)
 		floating s0, s1;
 		floating t0, t1;
 		//degenerated case
-		if (!bezierDecomposition(c.k0, c.k1, c.k2, c.k3, c.kk0, c.kk1, c.kk2, s0, s1, t0, t1))//which indicates Y'(t) is a linear polynomial
+		if (!bezierDecomposition(c.k0, c.k1, c.k2, c.k3, c.kk0, c.kk1, c.kk2, s0, s1, t0, t1))
 		{
 			floating fk = _evaluateBezier(c.k0, c.k1, c.k2, c.k3, c.kk0, -(c.kk1 * floating(2.0, 0) - c.kk0));//fk is the value of extreme point
 			if ((c.kk0 - c.kk1).sign() == 0)
@@ -138,10 +145,8 @@ int TightCCD::coplanarTest(BC& c)
 		}
 		else if (c.kk0.sign() == 0 && c.kk2.sign() != 0) {
 			c.sign_kk0 = -c.kk2.sign();
-			//sign_kk1 = c.kk1.sign();
 		}
 		else if (c.kk0.sign() != 0 && c.kk2.sign() == 0) {
-			//sign_kk0 = c.kk0.sign();
 			c.sign_kk2 = -c.kk0.sign();
 		}
 		if (t0.sign() == t1.sign()) {//(sameSign(t0, t1) == RETURN_TRUE) {
@@ -197,24 +202,25 @@ bool TightCCD::insideTest(BC& c, floating* g, int root_nums)
 		l3 = g[i * 5 + 3]; l4 = g[i * 5 + 4];
 
 		getSimplifyed(c.k0, c.k1, c.k2, c.k3, l0, l1, l2, l3, l4, j0, j1, j2);
-		if (!bezierDecomposition(c.k0, c.k1, c.k2, c.k3, j0, j1, j2, s0, s1, t0, t1)) {
+		if (!bezierDecomposition(c.k0, c.k1, c.k2, c.k3, j0, j1, j2, s0, s1, t0, t1)) {		
 			if ((j1 - j0) == 0) {
-				if (j0.sign() < 0)
+				if (j0.sign() <= 0)
 					return false;
 				else
 					continue;
 			}
-			getSigns(j0, j2, c, lt0, lt1, root_nums);//getSigns(j0, j1*floating<T>(2.0, 0) - j0, c, lt0, lt1, root_nums);
-			if (c.ct == 0 || (c.ct == 1 && diffSign(c.k0, c.k3)) == RETURN_TRUE)
+			getSigns(j0, j1 * floating(2.0, 0) - j0, c, lt0, lt1, root_nums);//getSigns(j0, j1*floating<T>(2.0, 0) - j0, c, lt0, lt1, root_nums);
+			//std::cout << "j1 " << j1.v << " " << j0.v << " " << j0.sign() << std::endl;
+			if (root_nums == 1)//c.ct == 0 || (c.ct == 1 && diffSign(c.k0, c.k3)) == RETURN_TRUE
 			{
-				if (lt0.sign() < 0)
+				if (lt0.sign() <= 0)
 					return false;
 			}
-			else if (c.ct == 1) { //(root_nums == 2){
-				if (lt0.sign() < 0)
+			else if (root_nums == 2) { //(c.ct == 1){
+				if (lt0.sign() <= 0)
 					bt0[i] = false;//bt0 = false;
 
-				if (lt1.sign() < 0)
+				if (lt1.sign() <= 0)
 					bt1[i] = false;//bt1 = false;
 
 				if (!bt0[i] && !bt1[i])//(!bt0 && !bt1)
@@ -222,22 +228,28 @@ bool TightCCD::insideTest(BC& c, floating* g, int root_nums)
 			}
 			continue;
 		}
+		//std::cout << "j2 " << j1.v << " " << j0.v << " " << j0.sign() << std::endl;
 		bool dg_l = getSigns(s0, s1, c, lt0, lt1, root_nums);//for L(t)
 		bool dg_k = getSigns(t0, t1, c, kt0, kt1, root_nums);//for K(t)
+		//std::cout << "lt " << lt0.sign() << " " << lt1.sign() << " " << kt0.sign() << " " << kt1.sign() << std::endl;
+		//std::cout << "dg_l " << dg_l << " " << dg_k << std::endl;
 		if (!dg_l || !dg_k) {
+			return false;
 			continue;
 		}
-		if ((c.ct == 0 || (c.ct == 1 && diffSign(c.k0, c.k3)) == RETURN_TRUE)) {//(c.ct == 0 || (c.ct == 1 && diffSign(c.k0, c.k3)) == RETURN_TRUE) {//(c.ct == 0){////wzd modify 2015.1.28
-			if (sameSign(lt0, kt0) == RETURN_TRUE)
+		if (root_nums==1) {//(c.ct == 0 || (c.ct == 1 && diffSign(c.k0, c.k3)) == RETURN_TRUE) {//(c.ct == 0){////wzd modify 2015.1.28
+			//std::cout << "same sign " << sameSign(lt0, kt0) << std::endl;
+			if (sameSign(lt0, kt0) > RETURN_FALSE) //Here, we mean ==RETURN_TRUE || ==BOTH_ZERO
 				return false;
 			continue;
 		}
+		
 		// kill an possiblity 
-		if (sameSign(lt0, kt0) == RETURN_TRUE)
+		if (sameSign(lt0, kt0) > RETURN_FALSE)
 			bt0[i] = false;//bt0 = false;
 
 		// kill an possiblity 
-		if (sameSign(lt1, kt1) == RETURN_TRUE)
+		if (sameSign(lt1, kt1) > RETURN_FALSE)
 			bt1[i] = false;//bt1 = false;
 
 		//if no possiblity left, return false ...
@@ -245,7 +257,7 @@ bool TightCCD::insideTest(BC& c, floating* g, int root_nums)
 			return false;
 	}
 
-	if (c.ct == 1) {
+	if (root_nums==2) {//c.ct == 1
 		bool bb0 = (bt0[0] && bt0[1] && bt0[2]);
 		bool bb1 = (bt1[0] && bt1[1] && bt1[2]);
 		if (!bb0 && !bb1)
@@ -375,7 +387,7 @@ bool TightCCD::subdivide(floating& k0, floating& k1, floating& k2, floating& k3,
 
 }
 
-
+// Use Y(t)=0, convert G(t)>=0 to P(t)>=0, here obtain coefficient of P(t)
 void TightCCD::getSimplifyed(floating& k0, floating& k1, floating& k2, floating& k3, floating& l0, floating& l1, floating& l2, 
 	floating& l3, floating& l4, floating& j0, floating& j1, floating& j2)
 {
@@ -433,9 +445,6 @@ void TightCCD::getBezier4(floating* a0, floating* b0, floating* c0, floating* v0
 	l2=DOT(m0,n1)+ floating(4.0, 0) * DOT(mX, nX)+DOT(m1, n0);
 	l3 = floating(3.0, 0) * (DOT(mX, n1) + DOT(m1, nX));
 	l4 = floating(6.0, 0) * DOT(m1, n1);
-	if (!ee_test && which != 0) {
-		l0 = -l0, l1 = -l1, l2 = -l2, l3 = -l3, l4 = -l4;
-	}
 
 	if (which == 2 && ee_test) {
 		l0 = -l0, l1 = -l1, l2 = -l2, l3 = -l3, l4 = -l4;
@@ -535,7 +544,7 @@ bool TightCCD::getSigns(const floating& t0, const floating& t1, const BC& c, flo
 			return true;
 		}		
 	}
-	//std::cout << "c.ct should be 0/1, should not be here" << std::endl;
+	////std::cout << "c.ct should be 0/1, should not be here" << std::endl;
 	return false;
 }
 
@@ -556,7 +565,7 @@ floating TightCCD::_evaluateBezier2(const floating& p0, const floating& p1, cons
 }
 
 
-
+//G(t)=L(t)P(t)+K(t). Here obtain the coefficients of L(t) and K(t)
 inline bool TightCCD::bezierDecomposition(const floating& k0, const floating& k1, const floating& k2, const floating& k3,
 	const floating& j0, const floating& j1, const floating& j2,
 	floating& m0, floating& m1, floating& n0, floating& n1)
@@ -595,18 +604,12 @@ bool TightCCD::getBezier3(floating* a0, floating* b0, floating* c0, floating* v0
 	floating pa0[3], pa1[3];
 	SUB(pa0, v0, a0);
 	SUB(pa1, v1, a1);
-	
-	floating A = DOT(n0, pa0);
-	floating B = DOT(n1, pa1);
-	floating C = DOT(nX, pa0);
-	floating D = DOT(nX, pa1);
-	floating E = DOT(n1, pa0);
-	floating F = DOT(n0, pa1);
 
-	p0 = A * floating(3.0,0);
-	p1 = C * floating(2.0, 0) + F;
-	p2 = D * floating(2.0, 0) + E;
-	p3 = B * floating(3.0, 0);
+
+	p0 = DOT(n0, pa0) * floating(3.0,0);
+	p1 = DOT(nX, pa0) * floating(2.0, 0) + DOT(n0, pa1);
+	p2 = DOT(nX, pa1) * floating(2.0, 0) + DOT(n1, pa0);
+	p3 = DOT(n1, pa1) * floating(3.0, 0);
 
 	if (p0.sign() > 0 && p1.sign() > 0 && p2.sign() > 0 && p3.sign() > 0)
 	{
@@ -641,7 +644,7 @@ inline int TightCCD::bezierClassification(const floating& k0, const floating& k1
 	floating b = k3 - k2 * floating(2.0, 0) + k1;
 
 	if (diffSign(a, b) != RETURN_FALSE) {
-		return 2; // 1 inflexion
+		return 2; // 1 inflection point
 	}
 
 	// f' = 3*(k1-k0) B^2_0 + 3*(k2-k1)*B^2_1 + 3*(k3-k2)*B^2_2
@@ -649,9 +652,9 @@ inline int TightCCD::bezierClassification(const floating& k0, const floating& k1
 	kk1 = k2 - k1;
 	kk2 = k3 - k2;
 	if (diffSign(kk0, kk2) != RETURN_FALSE)
-		return 1; // no inflexion, 1 extreme
+		return 1; // no inflection, 1 extreme
 	else
-		return 0;// no inflexion, no extreme
+		return 0;// no inflection, no extreme
 }
 
 inline int  TightCCD::sign(const double& a)
@@ -669,7 +672,16 @@ inline int  TightCCD::sign(const double& a)
 
 inline int TightCCD::sameSign(const floating& a, const floating& b)
 {
-	if (a.sign() == 0 || b.sign() == 0) {
+	if (a.sign() == 0) {
+		if (b.sign() == 0) {
+			return BOTH_ZERO;
+		}
+		else {
+			return RETURN_ZERO;
+		}
+	}
+	else if(b.sign() == 0)
+	{
 		return RETURN_ZERO;
 	}
 	else if ((a.sign() > 0 && b.sign() > 0) || (a.sign() < 0 && b.sign() < 0)) {
@@ -719,4 +731,105 @@ inline void TightCCD::make_vector(double* v, double* sigma, floating* out)
 	for (int i = 0; i < 3; i++) {
 		out[i] = floating(v[i], sigma[i]);
 	}
+}
+
+void TightCCD::testInside()
+{
+
+	floating f_a0[3], f_b0[3], f_c0[3], f_d0[3];
+	floating f_a1[3], f_b1[3], f_c1[3], f_d1[3];
+	//edge 1
+	double initial_pos[3] = { 1.0,1.0,0.0 };
+	double initial_triangle_0[3] = { -1.0,1.0,0.0 };
+	double current_pos[3] = { 1.0,-1.0,4.0 };
+	double current_triangle_0[3] = { -1.0,-1.0,4.0 };
+
+	//edge 2
+	double initial_triangle_1[3] = { 0.0,0.0,1.0 };
+	double initial_triangle_2[3] = { 0.0,0.0,3.0 };
+
+	double current_triangle_1[3] = { 0.0,0.0,1.0 };
+	double current_triangle_2[3] = { 0.0,0.0,3.0 };
+
+
+	/*double initial_pos[3] = { 0.657142857142857, 0.7, 0.785714285714286 };
+	double current_pos[3] = { 0.657142857142857, 0.699755000142151, 0.785714285714286 };
+	double initial_triangle_0[3] = { 0.657142857142857, 0.633333333333333, 0.776190476190476 };
+	double initial_triangle_1[3] = { 0.692857142857143, 0.666666666666667, 0.780952380952381 };
+	double initial_triangle_2[3] = { 0.692857142857143, 0.633333333333333, 0.776190476190476 };
+	double current_triangle_0[3] = { 0.657142857142857, 0.633088333368321, 0.776190476190476 };
+	double current_triangle_1[3] = { 0.692857142857143, 0.666421666742275, 0.780952380952381 };
+	double current_triangle_2[3] = { 0.692857142857143, 0.633088333369544, 0.776190476190476 };*/
+	/*double initial_pos[3] = { 0.0,1.0,0.0 };
+	double current_pos[3] = { 0.0,0.0,0.0 };
+	double initial_triangle_0[3] = { 1.0,0.0,0.0 };
+	double initial_triangle_1[3] = { -1.0,0.0,-1.0 };
+	double initial_triangle_2[3] = { -1.0,0.0,1.0 };
+	double current_triangle_0[3] = { 1.0,0.0,0.0 };
+	double current_triangle_1[3] = { -1.0,0.0,-1.0 };
+	double current_triangle_2[3] = { -1.0,0.0,1.0 };*/
+	floating initial_tri_normal[3], tri_normal[3];
+
+	make_vector(initial_triangle_0, f_a0);
+	make_vector(initial_triangle_1, f_b0);
+	make_vector(initial_triangle_2, f_c0);
+	make_vector(initial_pos, f_d0);
+
+	make_vector(current_triangle_0, f_a1);
+	make_vector(current_triangle_1, f_b1);
+	make_vector(current_triangle_2, f_c1);
+	make_vector(current_pos, f_d1);
+
+	floating cross_for_CCD[3]; floating temp[3];
+	floating e1[3], e2[3];
+	floating e3[3], e4[3];
+	SUB(e1, f_b0, f_a0);
+	SUB(e2, f_c0, f_a0);
+	CROSS(initial_tri_normal, e1, e2);
+	SUB(e3, f_b1, f_a1);
+	SUB(e4, f_c1, f_a1);
+	CROSS(tri_normal, e3, e4);
+	CROSS(cross_for_CCD, e1, e4);
+	CROSS(temp, e3, e2);
+	SUM_(cross_for_CCD, temp);
+	
+	bool test1;
+	test1 =insideTest(f_a0, f_b0, f_c0, f_d0, f_a1, f_b1, f_c1, f_d1, initial_tri_normal, tri_normal, cross_for_CCD, true);
+
+
+	Vec3d initial_pos_a = Vec3d(initial_pos[0], initial_pos[1], initial_pos_a[2]);
+	Vec3d current_pos_a = Vec3d(current_pos[0], current_pos[1], current_pos[2]);
+	Vec3d initial_triangle_0_a = Vec3d(initial_triangle_0[0], initial_triangle_0[1], initial_triangle_0[2]);
+	Vec3d initial_triangle_1_a = Vec3d(initial_triangle_1[0], initial_triangle_1[1], initial_triangle_1[2]);
+	Vec3d initial_triangle_2_a = Vec3d(initial_triangle_2[0], initial_triangle_2[1], initial_triangle_2[2]);
+	Vec3d current_triangle_0_a = Vec3d(current_triangle_0[0], current_triangle_0[1], current_triangle_0[2]);
+	Vec3d current_triangle_1_a = Vec3d(current_triangle_1[0], current_triangle_1[1], current_triangle_1[2]);
+	Vec3d current_triangle_2_a = Vec3d(current_triangle_2[0], current_triangle_2[1], current_triangle_2[2]);
+	rootparity::RootParityCollisionTest root_parity(initial_pos_a, initial_triangle_0_a, initial_triangle_1_a, initial_triangle_2_a,
+				current_pos_a, current_triangle_0_a, current_triangle_1_a, current_triangle_2_a,true);
+	bool test2 = root_parity.edge_edge_collision();
+	//if ((test1 && test2) || (!(test1 || test2))) {
+	//	//std::cout << "true" << std::endl;
+	//}
+	//else {
+	//	//std::cout << "error" << std::endl;
+	//}
+	Vec<3, bsc_tightbound::floating<double>>d_a0, d_b0, d_c0, d_d0, d_a1, d_b1, d_c1, d_d1;
+	for (int i = 0; i < 3; ++i) {
+		d_a0[i]= bsc_tightbound::floating(initial_triangle_0[i], 0.0);
+		d_b0[i]= bsc_tightbound::floating(initial_triangle_1[i], 0.0);
+		d_c0[i]= bsc_tightbound::floating(initial_triangle_2[i], 0.0);
+		d_a1[i] = bsc_tightbound::floating(current_triangle_0[i], 0.0);
+		d_b1[i] = bsc_tightbound::floating(current_triangle_1[i], 0.0);
+		d_c1[i] = bsc_tightbound::floating(current_triangle_2[i], 0.0);
+
+		d_d0[i] = bsc_tightbound::floating(initial_pos[i], 0.0);
+		d_d1[i] = bsc_tightbound::floating(current_pos[i], 0.0);
+
+	}
+	bool test3= tight_source.Intersect_robust(d_a0, d_b0, d_c0, d_d0, d_a1, d_b1, d_c1, d_d1,true);
+	std::cout <<"tight ccd "<< test1 << " " << test2 << " " << test3 << std::endl;
+
+
+	//CCD::test();
 }

@@ -9,6 +9,7 @@
 #include"ApproxCCD.h"
 #include"../external/Eigen/Dense"
 #include"collision_constraint.h"
+#include"CCD.h"
 
 using namespace Eigen;
 
@@ -159,4 +160,7 @@ private:
 		int cloth_No, int edge_vertex_index_0, int edge_vertex_index_1, double* mass, TargetPosition* target_position);
 	void testCulling();
 	void testIfBuildCollisionConstraint();
+	double tolerance;
+	double eta;//for setting gap in ccd
+
 };
