@@ -172,6 +172,7 @@
     <ClCompile Include="external\imgui\imgui_impl_opengl3.cpp" />
     <ClCompile Include="external\imgui\imgui_tables.cpp" />
     <ClCompile Include="external\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="iteration_method.cpp" />
     <ClCompile Include="load_mesh\preprocessing.cpp" />
     <ClCompile Include="load_mesh\read_ele.cpp" />
     <ClCompile Include="load_mesh\set_model.cpp" />
@@ -219,6 +220,7 @@
     <ClInclude Include="external\imgui\imgui_impl_glfw.h" />
     <ClInclude Include="external\imgui\imgui_impl_opengl3.h" />
     <ClInclude Include="global_struct.h" />
+    <ClInclude Include="iteration_method.h" />
     <ClInclude Include="load_mesh\preprocessing.h" />
     <ClInclude Include="load_mesh\readObj.h" />
     <ClInclude Include="load_mesh\read_ele.h" />

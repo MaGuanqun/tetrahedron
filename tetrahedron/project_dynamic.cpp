@@ -11,9 +11,12 @@ ProjectDynamic::ProjectDynamic()
 
 	use_dierct_solve_for_coarest_mesh = true;
 	super_jacobi_step_size = 3;
-	max_it = 100;
+	max_it = 30;
 	max_jacobi_itr_num = 20;
 	displacement_norm_thread.resize(total_thread_num);
+
+
+	iteration_method.setConvergenceRate(1e-7, 20);
 }
 
 void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, Thread* thread)
@@ -26,6 +29,9 @@ void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron
 	collision.initial(cloth, collider, tetrahedron, thread);
 	total_collider_num = collider->size();
 	this->collider = collider;
+
+	iteration_method.setBasicInfo(total_cloth_num, cloth_sys_size, thread, cloth_per_thread_begin);
+	initialJacobi();
 }
 
 
@@ -191,7 +197,52 @@ void ProjectDynamic::computeGlobalStepMatrix()
 	}
 	initial_cloth_global_mat = cloth_global_mat;
 }
-void ProjectDynamic::computeGlobalStepMatrixSingleCloth(SparseMatrix<double>* global_mat, std::vector<double>& global_mat_diagonal_ref,
+
+
+void ProjectDynamic::computeOffDiagonal()
+{
+	iteration_method.offDiagonalSize();	
+	for (int i = 0; i < total_cloth_num; ++i) {
+		setOffDiagonal(i, vertex_around_vertex_for_bending[i], lbo_weight[i], vertex_lbo[i], cloth_sys_size[i],
+			(*cloth)[i].bend_stiffness, (*cloth)[i].length_stiffness, (*cloth)[i].mesh_struct);
+	}
+}
+
+
+void ProjectDynamic::setOffDiagonal(int cloth_No, std::vector<std::vector<int>>& vertex_around_vertex_for_bending,
+	std::vector<double>& lbo_weight, std::vector<VectorXd>& vertex_lbo, int sys_size, double bending_stiffness, std::vector<double>& length_stiffness,
+	TriangleMeshStruct& mesh_struct)
+{
+	std::vector<Triplet<double>>global_mat_nnz;
+	int estimate_total_constraint = 4 * mesh_struct.edges.size() + 66 * sys_size; //to estimate the size of global_mat_nnz
+	global_mat_nnz.reserve(estimate_total_constraint);
+	//bending
+	int lbo_length; MatrixXd ATA;
+	if (!mesh_struct.faces.empty()) {
+		for (int i = 0; i < sys_size; ++i) {
+			lbo_length = vertex_lbo[i].size();
+			ATA = (bending_stiffness * lbo_weight[i] * vertex_lbo[i]) * vertex_lbo[i].transpose();
+			for (int l = 0; l < lbo_length; ++l) {
+				for (int k = l + 1; k < lbo_length; ++k) {
+					global_mat_nnz.push_back(Triplet<double>(vertex_around_vertex_for_bending[i][l], vertex_around_vertex_for_bending[i][k], ATA.data()[lbo_length * l + k]));
+					global_mat_nnz.push_back(Triplet<double>(vertex_around_vertex_for_bending[i][k], vertex_around_vertex_for_bending[i][l], ATA.data()[lbo_length * k + l]));
+				}
+			}
+		}
+	}
+	//edge length
+	int id0, id1;
+	for (int i = 0; i < mesh_struct.edges.size(); ++i) {
+		id0 = mesh_struct.edges[i].vertex[0];
+		id1 = mesh_struct.edges[i].vertex[1];
+		global_mat_nnz.push_back(Triplet<double>(id0, id1, -length_stiffness[i]));
+		global_mat_nnz.push_back(Triplet<double>(id1, id0, -length_stiffness[i]));
+	}
+	iteration_method.setOffDiagonal(cloth_No, global_mat_nnz);
+}
+
+
+void ProjectDynamic::computeGlobalStepMatrixSingleCloth(SparseMatrix<double, RowMajor>* global_mat, std::vector<double>& global_mat_diagonal_ref,
 	std::vector<double*>& global_collision_mat_diagonal_ref, SimplicialLLT<SparseMatrix<double>>* global_llt, TriangleMeshStruct& mesh_struct,
 	std::vector<std::vector<int>>& vertex_around_vertex_for_bending,
 	std::vector<double>& lbo_weight, std::vector<VectorXd>& vertex_lbo, int sys_size, double bending_stiffness, std::vector<double>& length_stiffness,
@@ -559,7 +610,7 @@ void ProjectDynamic::firstPDForIPC()
 		current_constraint_energy += temEnergy[i];
 	}
 
-	thread->assignTask(this, SOLVE_SYSYTEM);
+	thread->assignTask(this, SOLVE_SYSYTEM_WITHOUT_COLLISION);
 	updateModelPosition();
 	collision.collisionCulling();
 
@@ -609,7 +660,7 @@ void ProjectDynamic::PD_IPC_solve()
 			local_global_iteration_num++;
 			computeInnerEnergyIPCPD();
 		}
-		std::cout << outer_iteration_num << std::endl;
+		//std::cout << outer_iteration_num << std::endl;
 		updateModelPosition();
 		outer_iteration_num++;
 		computeEnergyIPCPD();
@@ -830,6 +881,8 @@ void ProjectDynamic::PDupdateSystemMatrix()
 	//updateMatrix();
 	thread->assignTask(this, UPDATE_MATRIX);
 	thread->assignTask(this, MATRIX_DECOMPOSITION);
+
+	thread->assignTask(&iteration_method, UPDATE_JACOBI_R);
 }
 
 void ProjectDynamic::updateMatrix()
@@ -958,6 +1011,8 @@ void ProjectDynamic::matrixDecomposition(int thread_id)
 		tetrahedron_llt[i].factorize(cloth_global_mat[i]);
 	}
 }
+
+
 
 
 bool ProjectDynamic::innerIterationConvergeCondition()
@@ -1368,12 +1423,15 @@ void ProjectDynamic::solveClothSystemPerThead(VectorXd& b, VectorXd& u, Triangle
 	}
 	b += (1.0 / (sub_time_step * sub_time_step)) * (cloth_mass[cloth_No].cwiseProduct(u_prediction));
 	if (with_collision) {
-		u = cloth_llt[cloth_No].solve(b);
+		//u = cloth_llt[cloth_No].solve(b);
+		int itr_num;
+		iteration_method.solveByJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
 		if (compute_energy) {
 			VectorXd p0, p1;
 			p0 = u - u_prediction;
 			p1 = p0.cwiseProduct(cloth_mass[cloth_No]);
 			temEnergy[thread_id] += 0.5 / (sub_time_step * sub_time_step) * p0.dot(p1);
+			std::cout << itr_num << std::endl;
 		}
 	}
 	else {
@@ -1410,3 +1468,11 @@ void ProjectDynamic::mainProcess()
 
 
 }
+
+
+void ProjectDynamic::initialJacobi()
+{
+	computeOffDiagonal();
+	iteration_method.initialJacobi(&cloth_global_mat_diagonal_ref_address);
+}
+

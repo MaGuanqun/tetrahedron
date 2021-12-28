@@ -19,6 +19,7 @@ class BVH;
 class Collision;
 class SpatialHashing;
 class RadixSort;
+class IterationMethod;
 
 using job = std::packaged_task<void()>;
 
@@ -48,6 +49,7 @@ private:
     job create_task(TetrahedronMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);
     job create_task(Collision* func, int thread_id, CollisionFuncSendToThread function_type);
     job create_task(RadixSort* func, int thread_id, RadixSortFunc function_type, int key_id);
+    job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type);
 
 public:
     Thread();

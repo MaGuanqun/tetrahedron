@@ -133,6 +133,9 @@
     <ClCompile Include="collision\TightCCD.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="iteration_method.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="basic\basic_imgui.h">
@@ -274,6 +277,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="collision\primitive_distance.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="iteration_method.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -8,7 +8,7 @@
 #include"collision/BVH.h"
 #include"collision/collision.h"
 #include"collision/parallel_radix_sort.h"
-
+#include"iteration_method.h"
 
 Thread::Thread()
 {
@@ -279,6 +279,19 @@ job Thread::create_task(RadixSort* func, int thread_id, RadixSortFunc function_t
         break;
     }
 
+    return k;
+}
+
+
+job Thread::create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type)
+{
+    job k;
+    switch (function_type)
+    {
+    case UPDATE_JACOBI_R:
+        k = job([func, thread_id]() {func->updateJacobi_R(thread_id); });
+        break;
+    }
     return k;
 }
 

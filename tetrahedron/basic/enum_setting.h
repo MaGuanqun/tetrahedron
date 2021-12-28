@@ -56,3 +56,7 @@ enum BVHFunc {
 enum RadixSortFunc {
     SET_COUNT_BUCKET, REORDER, MORTON_REORDER, SET_COUNT_BUCKET_MORTON
 };
+
+enum IterationMethodFunc {
+    UPDATE_JACOBI_R
+};

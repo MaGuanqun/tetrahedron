@@ -10,7 +10,7 @@
 #include"object/tetrahedron.h"
 #include"object/collider.h"
 #include"collision/collision.h"
-
+#include"iteration_method.h"
 
 using namespace Eigen;
 using namespace denseOperation;
@@ -85,15 +85,15 @@ private:
 	void computeVertexLBOSingleCloth(TriangleMeshStruct& mesh_struct, std::vector<VectorXd>& vertex_lbo, std::vector<double>& edge_cot_weight,
 		std::vector<std::vector<int>>& edge_around_vertex_for_bending, std::vector<double>& lbo_weight);
 
-	std::vector<SparseMatrix<double>> cloth_global_mat;
-	std::vector<SparseMatrix<double>> initial_cloth_global_mat;
+	std::vector<SparseMatrix<double, RowMajor>> cloth_global_mat;
+	std::vector<SparseMatrix<double, RowMajor>> initial_cloth_global_mat;
 	std::vector<std::vector<double>>cloth_global_mat_diagonal_ref;
 	std::vector<std::vector<double*>>cloth_global_mat_diagonal_ref_address;
 	SimplicialLLT<SparseMatrix<double>>* cloth_llt;
 
 	SimplicialLLT<SparseMatrix<double>>* collision_free_cloth_llt;
 
-	void computeGlobalStepMatrixSingleCloth(SparseMatrix<double>* global_mat, std::vector<double>& global_mat_diagonal_ref,
+	void computeGlobalStepMatrixSingleCloth(SparseMatrix<double, RowMajor>* global_mat, std::vector<double>& global_mat_diagonal_ref,
 		std::vector<double*>& global_collision_mat_diagonal_ref, SimplicialLLT<SparseMatrix<double>>* global_llt, TriangleMeshStruct& mesh_struct,
 		std::vector<std::vector<int>>& vertex_around_vertex_for_bending,
 		std::vector<double>& lbo_weight, std::vector<VectorXd>& vertex_lbo, int sys_size, double bending_stiffness, std::vector<double>& length_stiffness,
@@ -182,4 +182,13 @@ private:
 	double previous_displacement_norm;
 	bool innerIterationConvergeCondition();
 	void computeInnerEnergyIPCPD();
+
+
+	
+	void initialJacobi();
+	void setOffDiagonal(int cloth_No, std::vector<std::vector<int>>& vertex_around_vertex_for_bending,
+		std::vector<double>& lbo_weight, std::vector<VectorXd>& vertex_lbo, int sys_size, double bending_stiffness, std::vector<double>& length_stiffness,
+		TriangleMeshStruct& mesh_struct);
+	void computeOffDiagonal();
+	IterationMethod iteration_method;
 };

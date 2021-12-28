@@ -24,16 +24,25 @@ void TriangleMeshStruct::getRenderVertexNormalPerThread(int thread_id)
 {
 	std::vector<int>* face_vertex;
 	double* current_vertex_normal;
-	memset(vertex_normal_for_render[vertex_index_begin_per_thread[thread_id]].data(), 
-		0, 24 * (vertex_index_begin_per_thread[thread_id+1]- vertex_index_begin_per_thread[thread_id]));
+	//memset(vertex_normal_for_render[vertex_index_begin_per_thread[thread_id]].data(), 
+	//	0, 24 * (vertex_index_begin_per_thread[thread_id+1]- vertex_index_begin_per_thread[thread_id]));
+	double dot;
 	for (int i = vertex_index_begin_per_thread[thread_id]; i < vertex_index_begin_per_thread[thread_id + 1]; ++i) {
 		face_vertex = &vertices[i].face;
 		current_vertex_normal = vertex_normal_for_render[i].data();
-		for (int k = 0; k < face_vertex->size(); ++k) {
-			SUM(current_vertex_normal,
-				current_vertex_normal, face_normal_for_render[(*face_vertex)[k]]);
+		memcpy(current_vertex_normal, ori_face_normal_for_render[(*face_vertex)[0]].data(), 24);
+		for (int k = 1; k < face_vertex->size(); ++k) {
+			SUM_(current_vertex_normal,
+				ori_face_normal_for_render[(*face_vertex)[k]]);
 		}
-		normalize(current_vertex_normal);		
+		dot = DOT(current_vertex_normal, current_vertex_normal);
+		if (dot < 1e-20) {
+			memcpy(current_vertex_normal, ori_face_normal_for_render[(*face_vertex)[0]].data(), 24);
+		}
+		else {
+			dot = sqrt(dot);
+			DEV_(current_vertex_normal, dot);
+		}
 	}
 	
 }
