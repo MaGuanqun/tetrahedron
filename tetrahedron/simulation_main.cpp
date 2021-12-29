@@ -6,6 +6,7 @@
 #include"scene.h"
 #include"render/saveImage.h"
 
+
 void simu_main(GLFWwindow* window, Input* input) {
 	// Set up GUI
 	BasicImGui basic_imgui;
@@ -55,6 +56,17 @@ void simu_main(GLFWwindow* window, Input* input) {
 	double tolerance_ratio[4] = {1e-1,1e-1,1e-1,1e-1 };
 
 	bool set_anchor[2] = { false,false };
+
+	const char* itr_solver_items_[] = { "Direct", "Jacobi","Chebyshev jacobi","Super Jacobi","Chebyshev super jacobi", "Gauss seidel", "PCG", "Chebyshev Gauss seidel" };
+	char* itr_solver_item = (char*)"Direct";
+	char* itr_solver_items[IM_ARRAYSIZE(itr_solver_items_)];
+	for (int i = 0; i < IM_ARRAYSIZE(itr_solver_items_); ++i) {
+		itr_solver_items[i] = _strdup(itr_solver_items_[i]);
+	}
+	std::vector<std::array<int, 3>> iteration_solver_iteration_num;
+	int use_itr_solver_method = DIRECT_SOLVE;
+
+	double iteration_solver_conve_rate = 1e-7;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -116,6 +128,9 @@ void simu_main(GLFWwindow* window, Input* input) {
 			control_parameter[START_SIMULATION] = false;
 		}
 		if (already_load_model) {
+			scene.updateIterateSolverParameter(iteration_solver_conve_rate, use_itr_solver_method);
+
+
 			if (input->mouse.leftButtonWasReleasedThisFrame() && !control_parameter[START_TEST]) {// 
 
 				scene.initialIntersection();
@@ -151,10 +166,6 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 		}
 
-		if (already_load_model) {
-
-		}
-
 
 		if (control_parameter[ONE_FRAME]) {
 			control_parameter[ONE_FRAME] = false;
@@ -167,7 +178,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 		scene.drawSelectRange(set_anchor, input->mouse.left_press, input->mouse.prev_left_press);
 		time = (double)(clock() - start_time);
 		imgui_windows.infoWindow(cloth_info, cloth_mass, tetrahedron_info, tetrahedron_mass, time, iteration_number, convergence_rate, scene.time_stamp, edit_PD_conv_rate, control_parameter[START_SIMULATION]);
-
+		imgui_windows.iterationSolverInfoWindow(iteration_solver_iteration_num, use_itr_solver_method, itr_solver_items, itr_solver_item,
+			IM_ARRAYSIZE(itr_solver_items), &iteration_solver_conve_rate);
 
 		basic_imgui.imguiEndFrame();
 		glfwSwapBuffers(window);

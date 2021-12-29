@@ -44,6 +44,11 @@ public:
 
 	void initialDHatTolerance(double ave_edge_length);
 	void computeDisplacement(int thread_No);
+
+	int itr_solver_method;
+
+	void updateIterateSolverParameter(double conv_rate);
+
 private:
 	int local_global_itr_in_single_outer;
 	int total_thread_num;

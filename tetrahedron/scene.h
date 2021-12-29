@@ -36,6 +36,7 @@ public:
 	void getTetrahedronInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 2>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 4>>& collision_stiffness);
 	void selectAnchor(bool* control_parameter, bool* select_anchor, double* screen_pos, bool press_state, bool pre_press_state, Camera* camera, std::vector<bool>& hide);
 	void drawSelectRange(bool* select_anchor, bool press_state, bool pre_press_state);
+	void updateIterateSolverParameter(double rate, int itr_solver_method);
 private:
 	Light light;
 	int cloth_num, collider_num,tetrahedron_num;

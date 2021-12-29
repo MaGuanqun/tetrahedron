@@ -146,6 +146,13 @@ void Scene::getClothInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector
 	}
 }
 
+
+void Scene::updateIterateSolverParameter(double rate, int itr_solver_method)
+{
+	project_dynamic.updateIterateSolverParameter(rate);
+	project_dynamic.itr_solver_method = itr_solver_method;
+}
+
 void Scene::getTetrahedronInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 2>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 4>>& collision_stiffness)
 {
 	mesh_info.resize(2);

@@ -11,7 +11,7 @@ ProjectDynamic::ProjectDynamic()
 
 	use_dierct_solve_for_coarest_mesh = true;
 	super_jacobi_step_size = 3;
-	max_it = 30;
+	max_it = 100;
 	max_jacobi_itr_num = 20;
 	displacement_norm_thread.resize(total_thread_num);
 
@@ -31,7 +31,9 @@ void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron
 	this->collider = collider;
 
 	iteration_method.setBasicInfo(total_cloth_num, cloth_sys_size, thread, cloth_per_thread_begin);
+	iteration_method.initialGlobalDiagonalInv(&cloth_global_mat_diagonal_ref_address);
 	initialJacobi();
+	
 }
 
 
@@ -880,9 +882,34 @@ void ProjectDynamic::PDupdateSystemMatrix()
 {
 	//updateMatrix();
 	thread->assignTask(this, UPDATE_MATRIX);
-	thread->assignTask(this, MATRIX_DECOMPOSITION);
+	
+	switch (itr_solver_method)
+	{
+	case DIRECT_SOLVE:
+		thread->assignTask(this, MATRIX_DECOMPOSITION);
+		break;
+	case JACOBI:
+		thread->assignTask(&iteration_method, UPDATE_JACOBI_R);
+		break;
+	case SUPER_JACOBI:
+		thread->assignTask(&iteration_method, UPDATE_JACOBI_R);
+		break;
+	case CHEBYSHEV_SUPER_JACOBI:
+		thread->assignTask(&iteration_method, UPDATE_JACOBI_R);
+		iteration_method.estimateSuperJacobiEigenValue(cloth_u);
+		break;
+	case GAUSS_SEIDEL_CHEBYSHEV:
+		iteration_method.estimateGaussSeidelEigenValue(cloth_u, cloth_global_mat);
+		break;
+	case CHEBYSHEV_JACOBI:
+		thread->assignTask(&iteration_method, UPDATE_JACOBI_R);
+		iteration_method.estimateJacobiEigenValue(cloth_u);
+		break;
+	case PCG:
+		iteration_method.updateGlobalDiagonalInv();
+		break;
+	}
 
-	thread->assignTask(&iteration_method, UPDATE_JACOBI_R);
 }
 
 void ProjectDynamic::updateMatrix()
@@ -1423,15 +1450,60 @@ void ProjectDynamic::solveClothSystemPerThead(VectorXd& b, VectorXd& u, Triangle
 	}
 	b += (1.0 / (sub_time_step * sub_time_step)) * (cloth_mass[cloth_No].cwiseProduct(u_prediction));
 	if (with_collision) {
-		//u = cloth_llt[cloth_No].solve(b);
-		int itr_num;
-		iteration_method.solveByJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
+		switch (itr_solver_method)
+		{
+		case DIRECT_SOLVE:
+			u = cloth_llt[cloth_No].solve(b);
+			std::cout << "direct solve " << std::endl;
+			break;
+		case JACOBI: {
+			int itr_num;
+			iteration_method.solveByJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
+			std::cout << "Jacobi "<< itr_num << std::endl;
+		}
+			break;
+		case SUPER_JACOBI: {
+			int itr_num;
+			iteration_method.solveBySuperJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
+			std::cout << "super jacobi " << itr_num << std::endl;
+		}
+			break;
+		case CHEBYSHEV_SUPER_JACOBI: {
+			int itr_num;
+			iteration_method.solveByChebyshevSemiIterativeSuperJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
+			std::cout << "chebyshev super jacobi "<< itr_num << std::endl;
+		}
+			break;
+		case GAUSS_SEIDEL: {
+			int itr_num;
+			iteration_method.solveByGaussSeidel(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
+			std::cout << "gauss_seidel "<< itr_num << std::endl;
+		}
+			break;
+		case GAUSS_SEIDEL_CHEBYSHEV: {
+			int itr_num;
+			iteration_method.solveByChebyshevGaussSeidel(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);		
+			//std::cout << "gauss_seidel_chebysev "<< itr_num << std::endl;
+		}
+			break;
+		case CHEBYSHEV_JACOBI: {
+			int itr_num;
+			iteration_method.solveByChebyshevSemiIterativeJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
+			std::cout <<"chebyshev jacobi "<< itr_num << std::endl;
+		}
+			break;
+		case PCG: {
+			int itr_num;
+			iteration_method.solveByPCG(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
+			std::cout <<"PCG "<< itr_num << std::endl;
+		}
+			break;
+		}
 		if (compute_energy) {
 			VectorXd p0, p1;
 			p0 = u - u_prediction;
 			p1 = p0.cwiseProduct(cloth_mass[cloth_No]);
 			temEnergy[thread_id] += 0.5 / (sub_time_step * sub_time_step) * p0.dot(p1);
-			std::cout << itr_num << std::endl;
 		}
 	}
 	else {
@@ -1473,6 +1545,11 @@ void ProjectDynamic::mainProcess()
 void ProjectDynamic::initialJacobi()
 {
 	computeOffDiagonal();
-	iteration_method.initialJacobi(&cloth_global_mat_diagonal_ref_address);
+	iteration_method.initialJacobi();
 }
 
+
+void ProjectDynamic::updateIterateSolverParameter(double conv_rate)
+{
+	iteration_method.updateConvergenceRate(conv_rate);
+}
