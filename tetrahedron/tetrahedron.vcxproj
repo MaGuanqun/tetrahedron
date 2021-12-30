@@ -199,6 +199,7 @@
     <ClInclude Include="basic\Coordinate.h" />
     <ClInclude Include="basic\cursor.h" />
     <ClInclude Include="basic\draw_vertex.h" />
+    <ClInclude Include="basic\EigenMatrixIO.h" />
     <ClInclude Include="basic\enum_setting.h" />
     <ClInclude Include="basic\global.h" />
     <ClInclude Include="basic\intersection.h" />

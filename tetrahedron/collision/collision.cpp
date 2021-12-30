@@ -22,7 +22,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 void Collision::initialDHatTolerance(double ave_edge_length)
 {
 	d_hat =1e-2 * ave_edge_length;
-	eta = 0.1;
+	eta = 0.01;
 	tolerance = 1e-3 * d_hat;
 	tolerance_2 = tolerance* tolerance;
 	//std::cout << "d_hat_2 " << d_hat_2 << std::endl;

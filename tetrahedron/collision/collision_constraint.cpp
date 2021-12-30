@@ -40,7 +40,7 @@ bool CollisionConstraint::pointSelfTriangle(double* initial_position, double* cu
 		d[i] = initial_position[i] - current_position[i] - (initial_nearest_point[i] - current_nearest_point[i]);
 	}
 	double d_move = sqrt(DOT(d, d));
-	double d_min= d_hat + d_hat - sqrt(d_2);
+	double d_min= d_hat - sqrt(d_2);
 	if (d_move < d_min) {
 		d_move = d_min;
 	}
@@ -120,23 +120,20 @@ bool CollisionConstraint::pointColliderTriangle(double* initial_position, double
 	stiffness *= barrier((d_hat_2- d_2)/d_hat_2, d_2 / d_hat_2);
 	//std::cout << stiffness<<" "<< barrier(d_2 - d_hat_2, d_2 / d_hat_2) << std::endl;
 	
+
+	double d_move;// = sqrt(DOT(d, d));
+	d_move = d_hat - sqrt(d_2);
+	////////////////////////////////////////////
 	//double d[3];
 	//for (int i = 0; i < 3; ++i) {
 	//	d[i] = initial_position[i] - current_position[i];
 	//}
-	double d_move;// = sqrt(DOT(d, d));
+	//d_move = sqrt(DOT(d, d));
 	//double d_min = d_hat - sqrt(d_2);
 	//if (d_move < d_min) {
 	//	d_move = d_min;
 	//}
-	////std::cout << d_hat_2<<" "<< d_move << std::endl;
-	//d_move = sqrt(d_move) + (d_hat - sqrt(d_2));
-	//if (d_move < d_hat) {
-		//std::cout << d_move<<" "<< d_hat_2 << std::endl;
-		d_move = d_hat - sqrt(d_2);;
-		//std::cout << "kk" << std::endl;
-	//}
-	//d_move = d_hat;// -sqrt(d_2);
+	///////////////////////////////////////////////
 	//decide the direction
 	double direction[3];
 	SUB(direction, initial_position, current_nearest_point);

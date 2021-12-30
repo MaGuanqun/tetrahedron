@@ -196,4 +196,6 @@ private:
 		TriangleMeshStruct& mesh_struct);
 	void computeOffDiagonal();
 	IterationMethod iteration_method;
+	void saveMatrix(int dimension, VectorXd& vec, std::string& name);
+	void saveSparseMatrix(SparseMatrix<double, RowMajor>& matrix);
 };

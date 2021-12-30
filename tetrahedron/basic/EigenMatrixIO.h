@@ -58,8 +58,16 @@ namespace EigenMatrixIO {
 		in.read((char *)matrix.data(), rows*cols * sizeof(typename Matrix::Scalar));
 	};
 
-	template<typename T>
-	void write_sp_binary(std::ofstream &out, Eigen::SparseMatrix<T>& sp)
+	template<typename T, int d>
+	void write_sp_binary(const char* filename, Eigen::SparseMatrix<T,d>& sp)
+	{
+		std::ofstream out(filename, std::ios::out | std::ios::binary | std::ios::trunc);
+		out.precision(outputprecision);
+		write_sp_binary(out, sp);
+	}
+
+	template<typename T, int d>
+	void write_sp_binary(std::ofstream &out, Eigen::SparseMatrix<T,d>& sp)
 	{
 		int rows = sp.rows();
 		int cols = sp.cols();
@@ -80,8 +88,21 @@ namespace EigenMatrixIO {
 			}
 	}
 
-	template<typename T>
-	void read_sp_binary(std::ifstream &in, Eigen::SparseMatrix<T>& sp)
+	template<typename T, int d>
+	void read_sp_binary(const char* filename, Eigen::SparseMatrix<T,d>& sp)
+	{
+		std::ifstream in(filename, std::ios::in | std::ios::binary);
+		if (!in.good())
+		{
+			std::cout << "file not open" << std::endl;
+			return false;
+		}
+		read_sp_binary(in, sp);
+	}
+
+
+	template<typename T, int d>
+	void read_sp_binary(std::ifstream &in, Eigen::SparseMatrix<T,d>& sp)
 	{
 		int rows;
 		int cols;

@@ -57,7 +57,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 	bool set_anchor[2] = { false,false };
 
-	const char* itr_solver_items_[] = { "Direct", "Jacobi","Chebyshev jacobi","Super Jacobi","Chebyshev super jacobi", "Gauss seidel", "PCG", "Chebyshev Gauss seidel" };
+	const char* itr_solver_items_[] = { "Direct", "Jacobi","Chebyshev jacobi","Super Jacobi","Chebyshev super Jacobi", "Gauss Seidel", "PCG", "Chebyshev Gauss Seidel", "Weighted Jacobi"};
 	char* itr_solver_item = (char*)"Direct";
 	char* itr_solver_items[IM_ARRAYSIZE(itr_solver_items_)];
 	for (int i = 0; i < IM_ARRAYSIZE(itr_solver_items_); ++i) {

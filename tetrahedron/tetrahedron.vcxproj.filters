@@ -282,6 +282,9 @@
     <ClInclude Include="iteration_method.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="basic\EigenMatrixIO.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
