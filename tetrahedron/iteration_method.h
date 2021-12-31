@@ -40,13 +40,13 @@ public:
 	void solveByWeightedJacobi(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num, double weight);
 
 
-	
+	std::vector<SparseMatrix<double, RowMajor>> off_diagonal;
 
 	void test();
 private:
 	std::vector<SparseMatrix<double, RowMajor>> R_Jacobi;
 	std::vector<VectorXd> global_diagonal_inv;
-	std::vector<SparseMatrix<double, RowMajor>> off_diagonal;
+
 
 	std::vector<std::vector<double*>>* global_mat_diagonal_ref_address;//the address to quickly set the diagonal of system matrix A
 	int total_object_num;

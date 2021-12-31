@@ -63,12 +63,6 @@ namespace EigenMatrixIO {
 	{
 		std::ofstream out(filename, std::ios::out | std::ios::binary | std::ios::trunc);
 		out.precision(outputprecision);
-		write_sp_binary(out, sp);
-	}
-
-	template<typename T, int d>
-	void write_sp_binary(std::ofstream &out, Eigen::SparseMatrix<T,d>& sp)
-	{
 		int rows = sp.rows();
 		int cols = sp.cols();
 		out.write((char*)&rows, sizeof(int));
@@ -76,8 +70,8 @@ namespace EigenMatrixIO {
 		int nnz = sp.nonZeros();
 		out.write((char*)&nnz, sizeof(int));
 
-		for (int k = 0; k < sp.outerSize(); ++k)
-			for (Eigen::SparseMatrix<T>::InnerIterator it(sp, k); it; ++it)
+		for (int k = 0; k < sp.outerSize(); ++k) {
+			for (typename Eigen::SparseMatrix<T, d>::InnerIterator it(sp, k); it; ++it)
 			{
 				int row = it.row();
 				int col = it.col();
@@ -86,6 +80,30 @@ namespace EigenMatrixIO {
 				out.write((char*)&col, sizeof(int));
 				out.write((char*)&value, sizeof(T));
 			}
+		}
+	}
+
+	template<typename T, int d>
+	void write_sp_binary(Eigen::SparseMatrix<T,d>& sp, std::ofstream& out)
+	{
+		int rows = sp.rows();
+		int cols = sp.cols();
+		out.write((char*)&rows, sizeof(int));
+		out.write((char*)&cols, sizeof(int));
+		int nnz = sp.nonZeros();
+		out.write((char*)&nnz, sizeof(int));
+
+		for (int k = 0; k < sp.outerSize(); ++k) {
+			for (typename Eigen::SparseMatrix<T, d>::InnerIterator it(sp, k); it; ++it)
+			{
+				int row = it.row();
+				int col = it.col();
+				T value = it.value();
+				out.write((char*)&row, sizeof(int));
+				out.write((char*)&col, sizeof(int));
+				out.write((char*)&value, sizeof(T));
+			}
+		}
 	}
 
 	template<typename T, int d>
@@ -95,14 +113,33 @@ namespace EigenMatrixIO {
 		if (!in.good())
 		{
 			std::cout << "file not open" << std::endl;
-			return false;
+			return;
 		}
-		read_sp_binary(in, sp);
+		int rows;
+		int cols;
+		in.read((char*)&rows, sizeof(int));
+		in.read((char*)&cols, sizeof(int));
+		sp.resize(rows, cols);
+		int nnz;
+		in.read((char*)&nnz, sizeof(int));
+		std::vector<Eigen::Triplet<T>> triplet;
+		for (int i = 0; i < nnz; i++)
+		{
+			int row;
+			int col;
+			T value;
+			in.read((char*)&row, sizeof(int));
+			in.read((char*)&col, sizeof(int));
+			in.read((char*)&value, sizeof(T));
+			triplet.push_back(Eigen::Triplet<T>(row, col, value));
+		}
+
+		sp.setFromTriplets(triplet.begin(), triplet.end());
 	}
 
 
 	template<typename T, int d>
-	void read_sp_binary(std::ifstream &in, Eigen::SparseMatrix<T,d>& sp)
+	void read_sp_binary(Eigen::SparseMatrix<T,d>& sp, std::ifstream& in)
 	{
 		int rows;
 		int cols;

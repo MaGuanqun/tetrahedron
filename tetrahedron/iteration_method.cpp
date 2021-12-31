@@ -1,5 +1,6 @@
 #include"iteration_method.h"
 #include"basic/EigenMatrixIO.h"
+#include<algorithm>
 
 void IterationMethod::setConvergenceRate(double conv_rate, int max_itr_num)
 {
@@ -354,7 +355,7 @@ void IterationMethod::solveByPCG(VectorXd& u, VectorXd& b, SparseMatrix<double, 
 		beta = rz_k_1 / rz_k;
 		rz_k = rz_k_1;
 		p = z + beta * p;
-		std::cout << residual.squaredNorm() / b_norm << std::endl;
+		//std::cout << residual.squaredNorm() / b_norm << std::endl;
 	}
 }
 
@@ -372,7 +373,7 @@ void IterationMethod::solveBySuperJacobi(VectorXd& u, VectorXd& b, SparseMatrix<
 	itr_num = 0;
 	relative_error.reserve(max_itr_num);
 	relative_error.push_back((u - ground_truth).squaredNorm());
-	while (residual_norm / b_norm > convergence_rate_2 && itr_num < max_itr_num) {
+	while (residual_norm / b_norm > convergence_rate_2) {
 		superJacobiSingleIteration(u, b, global_diagonal_inv, R_Jacobi);
 		residual_norm = (b - system_matrix * u).squaredNorm();
 		itr_num++;
@@ -387,14 +388,13 @@ void IterationMethod::solveByChebyshevSemiIterativeSuperJacobi(VectorXd& u, Vect
 	double b_norm = b.squaredNorm();
 	double omega_chebyshev = 2.0;
 	double residual_norm;
-	double ground_truth_norm = ground_truth.squaredNorm();
 	relative_error.reserve(max_itr_num);
-	relative_error.push_back((u - ground_truth).squaredNorm() / ground_truth_norm);
+	relative_error.push_back((u - ground_truth).squaredNorm());
 	superJacobiSingleIteration(u, b, global_diagonal_inv, R_Jacobi);
 	itr_num = 1;
 	residual_norm = (b - system_matrix * u).squaredNorm();
-	relative_error.push_back((u - ground_truth).squaredNorm() / ground_truth_norm);
-	while (residual_norm / b_norm > convergence_rate_2 && itr_num < max_itr_num) {
+	relative_error.push_back((u - ground_truth).squaredNorm());
+	while (residual_norm / b_norm > convergence_rate_2) {
 		u_previous = u;
 		omega_chebyshev = 4.0 / (4.0 - super_jacobi_spectral_radius_square * omega_chebyshev);
 		superJacobiSingleIteration(u, b, global_diagonal_inv, R_Jacobi);
@@ -402,7 +402,7 @@ void IterationMethod::solveByChebyshevSemiIterativeSuperJacobi(VectorXd& u, Vect
 		u_last = u_previous;
 		itr_num++;
 		residual_norm = (b - system_matrix * u).squaredNorm();
-		relative_error.push_back((u - ground_truth).squaredNorm() / ground_truth_norm);
+		relative_error.push_back((u - ground_truth).squaredNorm());
 	}
 }
 
@@ -415,7 +415,7 @@ void IterationMethod::solveByJacobi(VectorXd& u, VectorXd& b, SparseMatrix<doubl
 	itr_num = 0;
 	relative_error.reserve(max_itr_num);
 	relative_error.push_back((u - ground_truth).squaredNorm());
-	while (residual_norm / b_norm > convergence_rate_2 && itr_num < max_itr_num) {
+	while (residual_norm / b_norm > convergence_rate_2) {
 		//u = b.cwiseProduct(global_diagonal_inv[cloth_No]) + RMultiplyX(u, cloth_No, 0);
 		u = b.cwiseProduct(global_diagonal_inv) + R_Jacobi * u;
 		residual_norm = (b - system_matrix * u).squaredNorm();
@@ -433,7 +433,7 @@ void IterationMethod::solveByGaussSeidel(VectorXd& u, VectorXd& b, SparseMatrix<
 	itr_num = 0;
 	relative_error.reserve(max_itr_num);
 	relative_error.push_back((u - ground_truth).squaredNorm());
-	while (residual_norm / b_norm > convergence_rate_2 && itr_num < max_itr_num) {
+	while (residual_norm / b_norm > convergence_rate_2) {
 		u = b - system_matrix.triangularView<StrictlyUpper>() * u;
 		u = system_matrix.triangularView<Lower>().solve(u);
 		residual_norm = (b - system_matrix * u).squaredNorm();
@@ -457,7 +457,7 @@ void IterationMethod::solveByChebyshevGaussSeidel(VectorXd& u, VectorXd& b, Spar
 	residual_norm = (b - system_matrix * u).squaredNorm();
 	relative_error.push_back((u - ground_truth).squaredNorm());
 	VectorXd u_previous;
-	while (residual_norm / b_norm > convergence_rate_2 && itr_num < max_itr_num) {
+	while (residual_norm / b_norm > convergence_rate_2) {
 		u_previous = u;
 		omega_chebyshev = 4.0 / (4.0 - gauss_seidel_spectral_radius_square * omega_chebyshev);
 		u = system_matrix.triangularView<Lower>().solve(b - system_matrix.triangularView<StrictlyUpper>() * u);
@@ -495,7 +495,7 @@ void IterationMethod::solveByPCG(VectorXd& u, VectorXd& b, SparseMatrix<double, 
 		u += alpha * p;
 		residual = b - system_matrix * u;
 		relative_error.push_back((u - ground_truth).squaredNorm());
-		if (residual.squaredNorm() / b_norm < convergence_rate_2 || itr_num >= max_itr_num) {
+		if (residual.squaredNorm() / b_norm < convergence_rate_2) {
 			break;
 		}
 		z = global_diagonal_inv.cwiseProduct(residual);
@@ -524,7 +524,7 @@ void IterationMethod::solveByChebyshevSemiIterativeJacobi(VectorXd& u, VectorXd&
 	double b_norm = b.squaredNorm();
 	double residual_chebyshev = 2 * b_norm;
 	relative_error.push_back((u - ground_truth).squaredNorm());
-	while (residual_chebyshev / b_norm > convergence_rate_2 && itr_num < max_itr_num)
+	while (residual_chebyshev / b_norm > convergence_rate_2)
 	{
 		u_previous = u;
 		omega_chebyshev = 4.0 / (4.0 - jacobi_spectral_radius_square * omega_chebyshev);
@@ -549,15 +549,22 @@ void IterationMethod::test()
 	//for (int i = 0; i < 3; ++i) {
 	//	dimension_per_thread_test[i] = i;
 	//}
-	std::string file_name_matrix;
+	std::string file_name_matrix="./back/global.dat";
 
 	EigenMatrixIO::read_sp_binary(file_name_matrix.c_str(), system_matrix);
 	std::vector<std::string> file_name_u(3);
 	std::vector<std::string> file_name_b(3);
+
 	for (int i = 0; i < 3; ++i) {
+		file_name_u[i] = "./back/u" + std::to_string(i) + ".dat";
+		file_name_b[i] = "./back/b" + std::to_string(i) + ".dat";
 		EigenMatrixIO::read_binary(file_name_u[i].c_str(), u[i]);
 		EigenMatrixIO::read_binary(file_name_b[i].c_str(), b[i]);
+		std::cout << "i" << std::endl;
 	}	
+
+
+
 
 	//ground_truth
 	SimplicialLLT<SparseMatrix<double>> collision_free_cloth_llt;
@@ -565,35 +572,100 @@ void IterationMethod::test()
 	for (int i = 0; i < 3; ++i) {
 		ground_truth[i] = collision_free_cloth_llt.solve(b[i]);
 	}	
+
+	std::vector<VectorXd> u_use;
 	//jacobi
+	u_use = u;
 	std::vector<double> jacobi_relative_error;
-	jacobi(u, b, system_matrix, ground_truth, jacobi_relative_error);
+	jacobi(u_use, b, system_matrix, ground_truth, jacobi_relative_error);
 
 	//super_jacobi
+	u_use = u;
 	std::vector<double> super_jacobi_relative_error;
-	superJacobi(u, b, system_matrix, ground_truth, super_jacobi_relative_error);
+	superJacobi(u_use, b, system_matrix, ground_truth, super_jacobi_relative_error);
 
 	//gauss_seidel
+	u_use = u;
 	std::vector<double> gauss_seidel_relative_error;
-	gauss_seidel(u, b, system_matrix, ground_truth, gauss_seidel_relative_error);
+	gauss_seidel(u_use, b, system_matrix, ground_truth, gauss_seidel_relative_error);
 
 	//jacobi_chebyshev
+	u_use = u;
 	std::vector<double> jacobi_chebyshev_relative_error;
-	chebyshevSemiIterativeJacobi(u, b, system_matrix, ground_truth, jacobi_chebyshev_relative_error);
+	chebyshevSemiIterativeJacobi(u_use, b, system_matrix, ground_truth, jacobi_chebyshev_relative_error);
 	
 	//super_jacobi_chebyshev
+	u_use = u;
 	std::vector<double> super_jacobi_chebyshev_relative_error;
-	chebyshevSemiIterativeSuperJacobi(u, b, system_matrix, ground_truth, super_jacobi_chebyshev_relative_error);
+	chebyshevSemiIterativeSuperJacobi(u_use, b, system_matrix, ground_truth, super_jacobi_chebyshev_relative_error);
 
 	//gauss_seidel_chebyshev
+	u_use = u;
 	std::vector<double> gauss_seidel_chebyshev_relative_error;
-	chebyshev_gauss_seidel(u, b, system_matrix, ground_truth, gauss_seidel_chebyshev_relative_error);
+	chebyshev_gauss_seidel(u_use, b, system_matrix, ground_truth, gauss_seidel_chebyshev_relative_error);
 
 	//PCG
+	u_use = u;
 	std::vector<double> PCG_chebyshev_relative_error;
 	PCG(u, b, system_matrix, ground_truth, PCG_chebyshev_relative_error);
 
-	//
+	
+	size_t max_itr = 0;
+	max_itr = (std::max)(max_itr, jacobi_relative_error.size());
+	max_itr = (std::max)(max_itr, super_jacobi_relative_error.size());
+	max_itr = (std::max)(max_itr, gauss_seidel_relative_error.size());
+	max_itr = (std::max)(max_itr, jacobi_chebyshev_relative_error.size());
+	max_itr = (std::max)(max_itr, super_jacobi_chebyshev_relative_error.size());
+	max_itr = (std::max)(max_itr, gauss_seidel_chebyshev_relative_error.size());
+	max_itr = (std::max)(max_itr, PCG_chebyshev_relative_error.size());
+
+	std::cout << "1.jacobi 2.super_jacobi 3.gauss_seidel 4.jacobi_chebyshev 5.super_jacobi_chebyshev 6.gauss_seidel_chebyshev 7.PCG" << std::endl;
+
+	for (int i = 0; i < max_itr; ++i) {
+		if (i < jacobi_relative_error.size()) {
+			std::cout << log10(jacobi_relative_error[i]);
+		}
+		else {
+			std::cout << " ++";
+		}
+		if (i < super_jacobi_relative_error.size()) {
+			std::cout << " " << log10(super_jacobi_relative_error[i]);
+		}
+		else {
+			std::cout << " ++";
+		}
+		if (i < gauss_seidel_relative_error.size()) {
+			std::cout << " " << log10(gauss_seidel_relative_error[i]);
+		}
+		else {
+			std::cout << " ++";
+		}
+		if (i < jacobi_chebyshev_relative_error.size()) {
+			std::cout << " " << log10(jacobi_chebyshev_relative_error[i]);
+		}
+		else {
+			std::cout << " ++";
+		}
+		if (i < super_jacobi_chebyshev_relative_error.size()) {
+			std::cout << " " << log10(super_jacobi_chebyshev_relative_error[i]);
+		}
+		else {
+			std::cout << " ++";
+		}
+		if (i < gauss_seidel_chebyshev_relative_error.size()) {
+			std::cout << " " << log10(gauss_seidel_chebyshev_relative_error[i]);
+		}
+		else {
+			std::cout << " ++";
+		}
+		if (i < PCG_chebyshev_relative_error.size()) {
+			std::cout << " " << log10(PCG_chebyshev_relative_error[i]);
+		}
+		else {
+			std::cout << " ++";
+		}
+		std::cout << std::endl;
+	}
 }
 
 //void IterationMethod::jacobi(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, VectorXd& ground_truth, std::vector<double>&relative_error)
@@ -602,6 +674,8 @@ void IterationMethod::jacobi(std::vector<VectorXd>& u, std::vector<VectorXd>& b,
 	SparseMatrix<double, RowMajor> R_Jacobi;
 	VectorXd global_diagonal_inverse;
 	prepareR(R_Jacobi, global_diagonal_inverse, system_matrix);
+	std::cout << R_Jacobi.cols() << " " << R_Jacobi.rows() << std::endl;
+
 	int itr_num;	
 	std::vector<std::vector<double>> relat(3);
 	for (int i = 0; i < 3; ++i) {
@@ -623,6 +697,14 @@ void IterationMethod::prepareR(SparseMatrix<double, RowMajor>& R_Jacobi, VectorX
 	}
 	R_Jacobi.prune(0.0);
 	R_Jacobi *= -1.0;
+
+	for (int j = 0; j < R_Jacobi.cols(); ++j) {
+		for (int k = R_Jacobi.outerIndexPtr()[j]; k < R_Jacobi.outerIndexPtr()[j + 1]; ++k) {
+			R_Jacobi.valuePtr()[k] *= global_diagonal_inverse.data()[j];
+		}
+	}
+	
+	
 }
 
 void IterationMethod::superJacobi(std::vector<VectorXd>& u, std::vector<VectorXd>& b, SparseMatrix<double, RowMajor>& system_matrix, std::vector<VectorXd>& ground_truth, std::vector<double>& relative_error)
@@ -660,6 +742,7 @@ void IterationMethod::chebyshevSemiIterativeJacobi(std::vector<VectorXd>& u, std
 	prepareR(R_Jacobi, global_diagonal_inverse, system_matrix);
 	int itr_num;
 	double eigen_value_square = estimateSuperJacobiEigenValue(u, R_Jacobi, 1);
+	std::cout << "eigen value " << eigen_value_square << std::endl;
 	for (int i = 0; i < 3; ++i) {
 		solveByChebyshevSemiIterativeJacobi(u[i], b[i], system_matrix, R_Jacobi, itr_num, global_diagonal_inverse, ground_truth[i], relat[i],
 			eigen_value_square);
@@ -737,10 +820,12 @@ double IterationMethod::estimateGaussSeidelEigenValue(std::vector<VectorXd>& u, 
 void IterationMethod::computeRelativeError(std::vector<std::vector<double>>& relat, std::vector<double>& relative_error, std::vector<VectorXd>& ground_truth)
 {
 	double ground_truth_norm;
-	ground_truth_norm = ground_truth[0].squaredNorm() + ground_truth[1].squaredNorm() + ground_truth[2].squaredNorm();
-	relative_error.resize(relat[0].size());
+	//ground_truth_norm = ground_truth[0].squaredNorm() + ground_truth[1].squaredNorm() + ground_truth[2].squaredNorm();
+	ground_truth_norm = ground_truth[1].squaredNorm();
+	relative_error.resize(relat[1].size());
 	for (int i = 0; i < relative_error.size(); ++i) {
-		relative_error[i] = sqrt((relat[0][i] + relat[1][i] + relat[2][i]) / ground_truth_norm);
+		//relative_error[i] = sqrt((relat[0][i] + relat[1][i] + relat[2][i]) / ground_truth_norm);
+		relative_error[i] = sqrt(relat[1][i] / ground_truth_norm);
 	}
 }
 

@@ -278,7 +278,8 @@ void Scene::initialIntersection()
 	}
 }
 
-void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe)
+void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe, bool& record_matrix,
+	std::vector<std::vector<double>>& ave_iteration)
 {
 	if (control_parameter[START_SIMULATION] || control_parameter[ONE_FRAME]) {
 		project_dynamic.resetExternalForce();
@@ -288,7 +289,8 @@ void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_par
 			setCursorForce(camera, cursor_screen, force_coe);
 		}
 		//project_dynamic.PDsolve();
-		project_dynamic.PD_IPC_solve();
+		project_dynamic.PD_IPC_solve(record_matrix);
+		project_dynamic.update_ave_iteration_record(ave_iteration);
 		time_stamp++;
 	}
 

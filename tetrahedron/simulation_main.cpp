@@ -63,10 +63,12 @@ void simu_main(GLFWwindow* window, Input* input) {
 	for (int i = 0; i < IM_ARRAYSIZE(itr_solver_items_); ++i) {
 		itr_solver_items[i] = _strdup(itr_solver_items_[i]);
 	}
-	std::vector<std::array<int, 3>> iteration_solver_iteration_num;
 	int use_itr_solver_method = DIRECT_SOLVE;
 
 	double iteration_solver_conve_rate = 1e-7;
+	bool record_matrix;
+
+	std::vector<std::vector<double>> iteration_solver_iteration_num;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -159,7 +161,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 		}
 		else {		
 			scene.setTolerance(tolerance_ratio);			
-			scene.updateCloth(&camera, input->mouse.screen_pos, control_parameter, force_coe);
+			scene.updateCloth(&camera, input->mouse.screen_pos, control_parameter, force_coe,record_matrix, iteration_solver_iteration_num);
 			scene.drawScene(&camera, wireframe, hide, control_parameter[SAVE_OBJ]);
 			scene.selectAnchor(control_parameter, set_anchor, input->mouse.screen_pos, input->mouse.left_press, input->mouse.prev_left_press, &camera, hide[TETROHEDRON_]);
 			scene.obtainConvergenceInfo(convergence_rate, iteration_number);
@@ -179,7 +181,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 		time = (double)(clock() - start_time);
 		imgui_windows.infoWindow(cloth_info, cloth_mass, tetrahedron_info, tetrahedron_mass, time, iteration_number, convergence_rate, scene.time_stamp, edit_PD_conv_rate, control_parameter[START_SIMULATION]);
 		imgui_windows.iterationSolverInfoWindow(iteration_solver_iteration_num, use_itr_solver_method, itr_solver_items, itr_solver_item,
-			IM_ARRAYSIZE(itr_solver_items), &iteration_solver_conve_rate);
+			IM_ARRAYSIZE(itr_solver_items), &iteration_solver_conve_rate, record_matrix);
 
 		basic_imgui.imguiEndFrame();
 		glfwSwapBuffers(window);

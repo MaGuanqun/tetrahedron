@@ -27,7 +27,7 @@ public:
 	void initial();
 	
 	void PDsolve();
-	void PD_IPC_solve();
+	void PD_IPC_solve(bool& record_matrix);
 	int local_global_iteration_num, outer_iteration_num;
 	void updateMatrixPerThread(int thread_No);
 	void matrixDecomposition(int thread_id);
@@ -48,7 +48,7 @@ public:
 	int itr_solver_method;
 
 	void updateIterateSolverParameter(double conv_rate);
-
+	void update_ave_iteration_record(std::vector<std::vector<double>>& ave_itr);
 private:
 	int local_global_itr_in_single_outer;
 	int total_thread_num;
@@ -196,6 +196,12 @@ private:
 		TriangleMeshStruct& mesh_struct);
 	void computeOffDiagonal();
 	IterationMethod iteration_method;
-	void saveMatrix(int dimension, VectorXd& vec, std::string& name);
-	void saveSparseMatrix(SparseMatrix<double, RowMajor>& matrix);
+	void saveMatrix(int dimension, VectorXd& vec, std::string name);
+	void saveSparseMatrix(SparseMatrix<double, RowMajor>& matrix, std::string file_name_matrix);
+
+	std::vector<std::vector<double>> ave_iteration;//the total iteration number of iteration method in a time step
+	void reset_ave_iteration_record();
+
+	int max_inner_iteration_num;
+
 };

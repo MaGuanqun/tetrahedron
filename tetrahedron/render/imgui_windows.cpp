@@ -563,8 +563,8 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 
 
 
-void ImGuiWindows::iterationSolverInfoWindow(std::vector<std::array<int, 3>>& solver_iteration_num, int& itr_sovler_method,
-	char** itr_solver_items, char*& itr_solver_item, int item_num, double* conv_rate)
+void ImGuiWindows::iterationSolverInfoWindow(std::vector<std::vector<double>>&solver_iteration_num, int& itr_sovler_method,
+	char** itr_solver_items, char*& itr_solver_item, int item_num, double* conv_rate, bool& record_matrix)
 {
 	ImGui::SetNextWindowPos(ImVec2(SCR_WIDTH - 540, 0));
 	ImGui::SetNextWindowSize(ImVec2(270, 540));
@@ -583,7 +583,7 @@ void ImGuiWindows::iterationSolverInfoWindow(std::vector<std::array<int, 3>>& so
 			for (int j = 0; j < 3; ++j) {
 				ImGui::Text(dimension[j]);
 				ImGui::SameLine();
-				ImGui::Text("%i", solver_iteration_num[i][j]);
+				ImGui::Text("%.2f", solver_iteration_num[i][j]);
 			}
 			ImGui::TreePop();
 		}
@@ -606,6 +606,9 @@ void ImGuiWindows::iterationSolverInfoWindow(std::vector<std::array<int, 3>>& so
 			}
 		}
 		ImGui::EndCombo();
+	}
+	if (ImGui::Button("Save Matrix", ImVec2(160, 25))) {
+		record_matrix = true;
 	}
 	ImGui::End();
 }

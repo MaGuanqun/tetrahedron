@@ -12,12 +12,14 @@ ProjectDynamic::ProjectDynamic()
 
 	use_dierct_solve_for_coarest_mesh = true;
 	super_jacobi_step_size = 3;
-	max_it = 100;
+	max_it = 30;
 	max_jacobi_itr_num = 20;
 	displacement_norm_thread.resize(total_thread_num);
 
 
 	iteration_method.setConvergenceRate(1e-7, 20);
+	max_inner_iteration_num = 5;
+
 }
 
 void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, Thread* thread)
@@ -34,6 +36,12 @@ void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron
 	iteration_method.setBasicInfo(total_cloth_num, cloth_sys_size, thread, cloth_per_thread_begin);
 	iteration_method.initialGlobalDiagonalInv(&cloth_global_mat_diagonal_ref_address);
 	initialJacobi();
+
+	ave_iteration.resize(cloth->size());
+	for (int i = 0; i < ave_iteration.size(); ++i) {
+		ave_iteration[i].resize(3);
+	}
+	iteration_method.test();
 	
 }
 
@@ -636,10 +644,11 @@ void ProjectDynamic::firstPDForIPC()
 }
 
 
-void ProjectDynamic::PD_IPC_solve()
+void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 {
 	firstPDForIPC();
 	outer_iteration_num = 1;
+	reset_ave_iteration_record();
 	while (!IPC_PDConvergeCondition()) {
 		////std::cout << "==" << std::endl;
 		collision.globalCollisionTime();
@@ -653,6 +662,16 @@ void ProjectDynamic::PD_IPC_solve()
 		//	std::cout<<"    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "<< cloth_u[0][2][i] << std::endl;
 		//}
 		local_global_iteration_num = 0;
+
+		if (record_matrix) {
+			saveSparseMatrix(cloth_global_mat[0],"global.dat");
+			saveSparseMatrix(iteration_method.off_diagonal[0],"off_diagonal.dat");
+
+			for (int i = 0; i < 3; ++i) {
+				saveMatrix(i, cloth_u[0][i], "u");
+			}			
+		}
+
 		while (!innerIterationConvergeCondition()) {
 			thread->assignTask(this, LOCAL_PROJECTION_WITHOUT_ENERGY);
 			current_constraint_energy = temEnergy[0];
@@ -662,6 +681,13 @@ void ProjectDynamic::PD_IPC_solve()
 			thread->assignTask(this, SOLVE_SYSYTEM_WITHOUT_ENERGY);
 			local_global_iteration_num++;
 			computeInnerEnergyIPCPD();
+
+			if (record_matrix) {
+				for (int i = 0; i < 3; ++i) {
+					saveMatrix(i, cloth_b[0][i], "b");
+				}
+				record_matrix = false;
+			}
 		}
 		//std::cout << outer_iteration_num << std::endl;
 		updateModelPosition();
@@ -1048,7 +1074,7 @@ void ProjectDynamic::matrixDecomposition(int thread_id)
 
 bool ProjectDynamic::innerIterationConvergeCondition()
 {
-	return local_global_iteration_num > 5;
+	return local_global_iteration_num > max_inner_iteration_num;
 
 	//if (local_global_iteration_num > 0) {
 	//	bool energy_changing = fabs(current_PD_energy - previous_PD_energy) / previous_PD_energy < local_global_conv_rate || current_PD_energy < 5e-15;
@@ -1454,56 +1480,49 @@ void ProjectDynamic::solveClothSystemPerThead(VectorXd& b, VectorXd& u, Triangle
 	}
 	b += (1.0 / (sub_time_step * sub_time_step)) * (cloth_mass[cloth_No].cwiseProduct(u_prediction));
 	if (with_collision) {
+		int itr_num;
 		switch (itr_solver_method)
 		{
 		case DIRECT_SOLVE:
 			u = cloth_llt[cloth_No].solve(b);
 			//std::cout << "direct solve " << std::endl;
 			break;
-		case JACOBI: {
-			int itr_num;
+		case JACOBI: {			
 			iteration_method.solveByJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
 			//std::cout << "Jacobi "<< itr_num << std::endl;
 		}
 			break;
 		case SUPER_JACOBI: {
-			int itr_num;
 			iteration_method.solveBySuperJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
 			//std::cout << "super jacobi " << itr_num << std::endl;
 		}
 			break;
 		case CHEBYSHEV_SUPER_JACOBI: {
-			int itr_num;
 			iteration_method.solveByChebyshevSemiIterativeSuperJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
 			//std::cout << "chebyshev super jacobi "<< itr_num << std::endl;
 		}
 			break;
 		case GAUSS_SEIDEL: {
-			int itr_num;
 			iteration_method.solveByGaussSeidel(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
 			//std::cout << "gauss_seidel "<< itr_num << std::endl;
 		}
 			break;
 		case GAUSS_SEIDEL_CHEBYSHEV: {
-			int itr_num;
 			iteration_method.solveByChebyshevGaussSeidel(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num,0.6);		
 			//std::cout << "gauss_seidel_chebysev "<< itr_num << std::endl;
 		}
 			break;
 		case CHEBYSHEV_JACOBI: {
-			int itr_num;
 			iteration_method.solveByChebyshevSemiIterativeJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
 			//std::cout <<"chebyshev jacobi "<< itr_num << std::endl;
 		}
 			break;
 		case PCG: {
-			int itr_num;
 			iteration_method.solveByPCG(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
 			//std::cout <<"PCG "<< itr_num << std::endl;
 		}
 			break;
 		case WEIGHTED_JACOBI: {
-			int itr_num;
 			iteration_method.solveByWeightedJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num,2.0/3.0);
 		}
 			break;
@@ -1514,6 +1533,7 @@ void ProjectDynamic::solveClothSystemPerThead(VectorXd& b, VectorXd& u, Triangle
 			p1 = p0.cwiseProduct(cloth_mass[cloth_No]);
 			temEnergy[thread_id] += 0.5 / (sub_time_step * sub_time_step) * p0.dot(p1);
 		}
+		ave_iteration[cloth_No][dimension] += itr_num;
 	}
 	else {
 		u = collision_free_cloth_llt[cloth_No].solve(b);
@@ -1563,14 +1583,31 @@ void ProjectDynamic::updateIterateSolverParameter(double conv_rate)
 	iteration_method.updateConvergenceRate(conv_rate);
 }
 
-void ProjectDynamic::saveMatrix(int dimension, VectorXd& vec, std::string& name)
+void ProjectDynamic::saveMatrix(int dimension, VectorXd& vec, std::string name)
 {
 	std::string file_name_matrix = name+std::to_string(dimension)+".dat";
 	EigenMatrixIO::write_binary(file_name_matrix.c_str(), vec);
 }
 
-void ProjectDynamic::saveSparseMatrix(SparseMatrix<double,RowMajor>& matrix)
+void ProjectDynamic::saveSparseMatrix(SparseMatrix<double,RowMajor>& matrix, std::string file_name_matrix)
 {
-	std::string file_name_matrix = "global.dat";
 	EigenMatrixIO::write_sp_binary(file_name_matrix.c_str(), matrix);
+}
+
+void ProjectDynamic::reset_ave_iteration_record()
+{
+	for (int i = 0; i < ave_iteration.size(); ++i) {
+		memset(ave_iteration[i].data(), 0, 24);
+	}
+}
+
+void ProjectDynamic::update_ave_iteration_record(std::vector<std::vector<double>>& ave_itr)
+{
+	for (int i = 0; i < ave_iteration.size(); ++i) {
+		for (int j = 0; j < 3; ++j) {
+			ave_iteration[i][j] /= (max_inner_iteration_num * (outer_iteration_num - 1));
+		}
+	
+	}
+	ave_itr = ave_iteration;
 }
