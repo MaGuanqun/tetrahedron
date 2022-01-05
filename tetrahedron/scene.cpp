@@ -70,7 +70,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	std::array<double, 4>collision_stiffness_per = { 5e4,5e4,5e4,5e4 };// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point,
 	std::vector<std::array<double, 4>>collision_stiffness(cloth_num, collision_stiffness_per);
 	for (int i = 0; i < cloth_num; ++i) {
-		single_cloth_info.push_back(SingleClothInfo(cloth_density, 1e3, 1e6, 1e-6, collision_stiffness[i].data(), 0.5, 0.4, collision_stiffness_per[1]));
+		single_cloth_info.push_back(SingleClothInfo(cloth_density, 1e3, 1e6, 1e-4, collision_stiffness[i].data(), 0.5, 0.4, collision_stiffness_per[1]));
 	}
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].recordInitialMesh(single_cloth_info[i]);
@@ -237,7 +237,9 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& wireframe,
 void Scene::saveObj()
 {
 	if (time_stamp != last_output_obj_stamp) {
-		save_obj.write(cloth, 10, time_stamp);
+		for (int i = 0; i < cloth.size(); ++i) {
+			save_obj.write(cloth[i].mesh_struct.vertex_for_render, cloth[i].mesh_struct.triangle_indices, 10, time_stamp,i);
+		}	
 		last_output_obj_stamp = time_stamp;
 	}
 }

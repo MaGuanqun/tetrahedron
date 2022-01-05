@@ -106,15 +106,20 @@ public:
 		//	}
 		//}
 
-		int col_num = 100;
-		int row_num = 100;
+		int col_num = 101;
+		int row_num = 101;
+		//for (int j = 0; j < row_num; j++) {
+		//	for (int i = 0; i < col_num; i++) {
+		//		mesh.vertices.push_back(std::array<double, 3>{2.0 * (double)i / (double)(col_num - 1) - 1.0,  //+0.9
+		//			1.6 * (double)j / (double)(row_num - 1) - 0.2, 1.2 * (double)j / (double)(row_num - 1) - 0.5});//
+		//	}
+		//}
 		for (int j = 0; j < row_num; j++) {
 			for (int i = 0; i < col_num; i++) {
 				mesh.vertices.push_back(std::array<double, 3>{2.0 * (double)i / (double)(col_num - 1) - 1.0,  //+0.9
-					1.6 * (double)j / (double)(row_num - 1) - 0.2, 1.2 * (double)j / (double)(row_num - 1) - 0.5});//
+					2.0 * (double)j / (double)(row_num - 1) - 0.2, 0.0});//
 			}
 		}
-
 		//int col_num = 121;
 		//int row_num = 121;
 		//for (int j = 0; j < row_num; j++) {
@@ -251,8 +256,8 @@ public:
 		//	}
 		//}
 
-		indices(mesh, col_num);
-		//meshIndices(mesh, col_num, row_num);
+		//indices(mesh, col_num);
+		meshIndices(mesh, col_num, row_num);
 
 		//mesh.vertices.push_back({ 0.0125,0.2,0.0125 });		
 		//mesh.vertices.push_back({ 0.0125,0.2,-0.0125 });

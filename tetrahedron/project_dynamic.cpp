@@ -53,7 +53,7 @@ void ProjectDynamic::initialDHatTolerance(double ave_edge_length)
 	for (int i = 0; i < cloth->size(); ++i) {
 		element_count += (*cloth)[i].mesh_struct.vertex_for_render.size();
 	}
-	displacement_bound = 2e-3 * ave_edge_length;
+	displacement_bound = 1e-3 * ave_edge_length;
 	displacement_bound *= displacement_bound;
 	displacement_bound *= (double)element_count;
 }
@@ -1112,7 +1112,7 @@ bool ProjectDynamic::IPC_PDConvergeCondition()
 			}
 	
 
-			bool ratio_changing = fabs(displacement_ratio_dif + (previous_displacement_norm - displacement_norm)) / displacement_norm < 1e-4;
+			bool ratio_changing = fabs(displacement_ratio_dif + (previous_displacement_norm - displacement_norm)) / displacement_norm < 1e-6;
 			//if (outer_iteration_num > 990) {
 				//std::cout << "displacement ratio " << displacement_norm / displacement_bound <<" "<< fabs(displacement_ratio_dif + (previous_displacement_norm - displacement_norm)) / displacement_norm << std::endl;
 			//}
