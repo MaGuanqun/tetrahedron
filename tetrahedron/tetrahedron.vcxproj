@@ -206,6 +206,7 @@
     <ClInclude Include="basic\opengl_input.h" />
     <ClInclude Include="basic\pick_triangle.h" />
     <ClInclude Include="basic\set_tetrahedron_anchor.h" />
+    <ClInclude Include="basic\write_txt.h" />
     <ClInclude Include="collision\ApproxCCD.h" />
     <ClInclude Include="collision\BVH.h" />
     <ClInclude Include="collision\CCD.h" />

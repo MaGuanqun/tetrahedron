@@ -175,15 +175,19 @@ void Collision::globalCollisionTime()
 		thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL);
 	}
 	thread->assignTask(this, GLOBAL_COLLISION_TIME);
+	//std::cout << "finish" << std::endl;
 	collision_time = collision_time_thread[0];
 	for (int i = 1; i < thread_num; ++i) {
 		if (collision_time > collision_time_thread[i]) {
 			collision_time = collision_time_thread[i];
 		}
 	}
+	collision_time *= 0.9;
+
 	if (collision_time > 1.0) {
 		collision_time = 1.0;
 	}
+
 	//std::cout <<"collision time "<< collision_time << std::endl;
 }
 
@@ -279,6 +283,7 @@ void Collision::collisionConstraint(int thread_No)
 //GLOBAL_COLLISION_TIME
 void Collision::collisionTime(int thread_No)
 {
+	int thread_test=2;
 	double* collision_time = &collision_time_thread[thread_No];
 	(*collision_time) = 2.0;
 	TriangleMeshStruct* mesh_struct;
@@ -303,12 +308,15 @@ void Collision::collisionTime(int thread_No)
 		initial_pos = mesh_struct->vertex_for_render.data();
 		current_pos = mesh_struct->vertex_position.data();
 		neighbor_primitve = (*collider)[collider_No].triangle_neighbor_cloth_vertex.data();
-		for (int i = index_begin; i < index_end; ++i) {
+		for (int i = index_begin; i < index_end; ++i) {			
 			pointColliderTriangleCollisionTime(collision_time, mesh_struct->triangle_indices[i].data(), neighbor_primitve[i].data(), initial_pos,current_pos, 
 				mesh_struct->ori_face_normal_for_render[i].data(), mesh_struct->ori_face_normal[i].data(), mesh_struct->cross_for_approx_CCD[i].data(),
-				mesh_struct->f_face_normal_for_render[i].data(),mesh_struct->f_face_normal[i].data(),mesh_struct->f_cross_for_approx_CCD[i].data());
+				mesh_struct->f_face_normal_for_render[i].data(),mesh_struct->f_face_normal[i].data(),mesh_struct->f_cross_for_approx_CCD[i].data(),i);
+			
 		}
+
 	}	
+	
 	int* edge_vertex_index;
 	for (int cloth_No = 0; cloth_No < cloth->size(); ++cloth_No) {
 		mesh_struct = &(*cloth)[cloth_No].mesh_struct;
@@ -826,23 +834,47 @@ void Collision::pointSelfTriangleCollisionTime(double* collision_time, std::vect
 void Collision::pointColliderTriangleCollisionTime(double* collision_time, int* triangle_vertex_index, std::vector<int>* triangle_neighbor_vertex,
 	std::array<double, 3>* initial_position, std::array<double, 3>* current_position,
 	double* initial_ori_face_normal, double* current_ori_face_normal, double* cross_for_CCD,
-	floating* f_initial_normal, floating* f_current_normal, floating* f_cross_for_CCD)
+	floating* f_initial_normal, floating* f_current_normal, floating* f_cross_for_CCD, int triangle_index)
 {
 	MeshStruct* vertex_mesh;
 	std::vector<int>* neighbor_vertex;
 	double current_collision_time;
 	for (int i = 0; i < cloth->size(); ++i) {
 		vertex_mesh = &(*cloth)[i].mesh_struct;
-		neighbor_vertex = &(triangle_neighbor_vertex[i]);		
+		neighbor_vertex = &(triangle_neighbor_vertex[i]);	
+		//if (*time_stamp == 15 && triangle_index == 9104)
+		//{
+		//	std::cout << "k11" << std::endl;
+		//}
 		for (int k = 0; k < neighbor_vertex->size(); ++k) {
-
+			//if (*time_stamp == 15 && triangle_index == 9104 && k==3)
+			//{
+			//	std::cout << vertex_mesh->vertex_for_render[(*neighbor_vertex)[k]][0]<<" "<< vertex_mesh->vertex_for_render[(*neighbor_vertex)[k]][1]<<" "
+			//		<< vertex_mesh->vertex_for_render[(*neighbor_vertex)[k]][2] << std::endl;
+			//	std::cout << vertex_mesh->vertex_position[(*neighbor_vertex)[k]][0] << " " << vertex_mesh->vertex_position[(*neighbor_vertex)[k]][1] << " "
+			//		<< vertex_mesh->vertex_position[(*neighbor_vertex)[k]][2] << std::endl;
+			//	std::cout << initial_position[triangle_vertex_index[0]][0] << " " << initial_position[triangle_vertex_index[0]][1] << " " <<
+			//		initial_position[triangle_vertex_index[0]][2] << std::endl;
+			//	std::cout << initial_position[triangle_vertex_index[1]][0] << " " << initial_position[triangle_vertex_index[1]][1] << " " <<
+			//		initial_position[triangle_vertex_index[1]][2] << std::endl;
+			//	std::cout << initial_position[triangle_vertex_index[2]][0] << " " << initial_position[triangle_vertex_index[2]][1] << " " <<
+			//		initial_position[triangle_vertex_index[2]][2] << std::endl;
+			//	std::cout << current_position[triangle_vertex_index[0]][0] << " " << current_position[triangle_vertex_index[0]][1] << " " <<
+			//		current_position[triangle_vertex_index[0]][2] << std::endl;
+			//	std::cout << current_position[triangle_vertex_index[1]][0] << " " << current_position[triangle_vertex_index[1]][1] << " " <<
+			//		current_position[triangle_vertex_index[1]][2] << std::endl;
+			//	std::cout << current_position[triangle_vertex_index[2]][0] << " " << current_position[triangle_vertex_index[2]][1] << " " <<
+			//		current_position[triangle_vertex_index[2]][2] << std::endl;
+			//}
 			current_collision_time = CCD::pointTriangleCcd(vertex_mesh->vertex_for_render[(*neighbor_vertex)[k]].data(), initial_position[triangle_vertex_index[0]].data(), initial_position[triangle_vertex_index[1]].data(), initial_position[triangle_vertex_index[2]].data(),
 				vertex_mesh->vertex_position[(*neighbor_vertex)[k]].data(), current_position[triangle_vertex_index[0]].data(), current_position[triangle_vertex_index[1]].data(), current_position[triangle_vertex_index[2]].data(), eta, tolerance);
 			if ((*collision_time) > current_collision_time) {
 				(*collision_time) = current_collision_time;
 			}
-
-
+			//if (*time_stamp == 15 && triangle_index == 9104)
+			//{
+			//	std::cout << k << " " << (*neighbor_vertex)[k] << std::endl;
+			//}
 			/*if (approx_CCD.pointTriangleCollisionTime(current_collision_time, vertex_mesh->vertex_for_render[(*neighbor_vertex)[k]].data(), vertex_mesh->vertex_position[(*neighbor_vertex)[k]].data(), initial_position[triangle_vertex_index[0]].data(), current_position[triangle_vertex_index[0]].data(),
 				initial_position[triangle_vertex_index[1]].data(), current_position[triangle_vertex_index[1]].data(),
 				initial_position[triangle_vertex_index[2]].data(), current_position[triangle_vertex_index[2]].data(),
@@ -853,6 +885,10 @@ void Collision::pointColliderTriangleCollisionTime(double* collision_time, int* 
 				}
 			}*/
 		}
+		//if (*time_stamp == 15 && triangle_index == 9104)
+		//{
+		//	std::cout << "k22" << std::endl;
+		//}
 	}
 }
 

@@ -8,7 +8,7 @@ Scene::Scene()
 	light.specular = glm::vec3(0.95, 0.95, 0.95);
 
 	
-	time_step = 1.0 / 200.0;
+	time_step = 1.0 / 100.0;
 	project_dynamic.time_step = time_step;
 
 	max_force_magnitude = 12.0;
@@ -16,6 +16,7 @@ Scene::Scene()
 	last_output_obj_stamp = -1;
 	time_stamp = 0;
 	genShader();	
+	project_dynamic.collision.time_stamp = &time_stamp;
 }
 
 
@@ -57,7 +58,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	tetrahedron_num = tetrahedron_index_in_object.size();
 	cloth.resize(cloth_num);
 	tetrahedron.resize(tetrahedron_num);
-	double cloth_density=25.0;
+	double cloth_density=15.0;
 	double tetrahedron_density = 25.0;
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].loadMesh(preprocessing.ori_simulation_mesh[cloth_index_in_object[i]], cloth_density, &thread);

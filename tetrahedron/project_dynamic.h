@@ -49,6 +49,9 @@ public:
 
 	void updateIterateSolverParameter(double conv_rate);
 	void update_ave_iteration_record(std::vector<std::vector<double>>& ave_itr);
+
+
+	Collision collision;
 private:
 	int local_global_itr_in_single_outer;
 	int total_thread_num;
@@ -169,7 +172,7 @@ private:
 	void updateClothUV(int thread_id);
 	void updateTetrahedronUV(int thread_id);
 
-	Collision collision;
+	
 	void initialTetrahedronPDvariable();
 	bool IPC_PDConvergeCondition();
 	void updateRenderPositionIPC();

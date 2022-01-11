@@ -1,6 +1,254 @@
 #include"iteration_method.h"
 #include"basic/EigenMatrixIO.h"
 #include<algorithm>
+#include"basic/write_txt.h"
+
+
+
+//void IterationMethod::useOperator()
+//{
+//
+//}
+
+
+void IterationMethod::testOperator(AJacobiOperator* A_jacobi_operator, SparseMatrix<double, ColMajor>& R_jacobi)
+{
+	std::cout << A_jacobi_operator->coefficient[0][0] << " " << R_jacobi.valuePtr()[0] << std::endl;
+	int size;
+	for (int i = 0; i < A_jacobi_operator->vertex_index.size(); ++i) {
+		size = R_jacobi.outerIndexPtr()[i + 1] - R_jacobi.outerIndexPtr()[i];
+		if (A_jacobi_operator->vertex_index[i].size() != size) {
+			std::cout << "error occur on count in " << i << " th line" << std::endl;
+		}
+		else {
+			for (int j = 0; j < size; ++j) {
+				if (A_jacobi_operator->coefficient[i][j] != R_jacobi.coeff(i, A_jacobi_operator->vertex_index[i][j])) {
+					std::cout << "error occur on the element " << i << " " << j<<" "<< A_jacobi_operator->coefficient[i][j] <<" "
+						<< R_jacobi.coeff(i,A_jacobi_operator->vertex_index[i][j]) << std::endl;
+				}
+			}
+		}
+	}
+}
+
+//RX+b result cannot be the same with x or b
+void IterationMethod::RMultiXPlusb(AJacobiOperator* A_jacobi_operator, double* x, double* b, double* result)
+{
+	int* index;
+	double* coeff;
+	int size = A_jacobi_operator->vertex_index.size();
+	memcpy(result, b, 8 * size);
+	std::vector<int>* vertex_index = A_jacobi_operator->vertex_index.data();
+	std::vector<double>* coefficient = A_jacobi_operator->coefficient.data();
+	int col_size;
+	for (int i = 0; i < size; ++i)
+	{
+		col_size = vertex_index[i].size();
+		index = vertex_index[i].data();
+		coeff = coefficient[i].data();
+		for (int j = 0; j < col_size; ++j)
+		{
+			result[i] += coeff[j] * x[index[j]];
+		}
+	}
+}
+
+
+
+void IterationMethod::RMultiXPlusb(std::vector<int>* vertex_index,std::vector<double>* coefficient , double* x, double* b, double* result, 
+	int vertex_index_begin, int vertex_index_end, int sys_size)
+{
+	int* index;
+	double* coeff;
+	memcpy(result + vertex_index_begin, b + vertex_index_begin, 8 * (vertex_index_end - vertex_index_begin));
+	int col_size;
+	for (int i = vertex_index_begin; i < vertex_index_end; ++i)
+	{
+		col_size = vertex_index[i].size();
+		index = vertex_index[i].data();
+		coeff = coefficient[i].data();
+		for (int j = 0; j < col_size; ++j)
+		{
+			result[i] += coeff[j] * x[index[j]];
+		}
+	}
+}
+
+
+
+
+VectorXd IterationMethod::RMultiX(AJacobiOperator* A_jacobi_operator, VectorXd& x)
+{
+	std::vector<int>* index;
+	double* coeff;
+	VectorXd result(x.size());
+
+	std::vector<int>* vertex_index = A_jacobi_operator->vertex_index.data();
+	std::vector<double>* coefficient= A_jacobi_operator->coefficient.data();
+
+	for (int i = 0; i < x.size(); ++i)
+	{
+		index = &vertex_index[i];
+		coeff = coefficient[i].data();
+		result.data()[i] = coeff[0] * x.data()[index->data()[0]];
+		for (int j = 1; j < index->size(); ++j)
+		{
+			result.data()[i] += coeff[j] * x.data()[index->data()[j]];
+		}
+	}
+	return result;
+}
+
+
+void IterationMethod::createSuperJacobiOperator(AJacobiOperator*  A_jacobi_operator, SparseMatrix<double, ColMajor>& R_jacobi,
+	AJacobiOperator* A_jacobi_basic)
+{
+	int sys_size = R_jacobi.rows();
+	A_jacobi_operator->vertex_index.resize(sys_size);
+	A_jacobi_operator->coefficient.resize(sys_size);
+
+	A_jacobi_basic->vertex_index.resize(sys_size);
+	A_jacobi_basic->coefficient.resize(sys_size);
+
+	std::vector<int>* vertex_index;
+	std::vector<double>* coefficient;
+	int inner_size;
+	int inner_index_start;
+
+	for (int i = 0; i < sys_size; ++i) {
+		inner_size = R_jacobi.outerIndexPtr()[i + 1] - R_jacobi.outerIndexPtr()[i];
+		A_jacobi_operator->vertex_index[i].reserve(inner_size);
+		A_jacobi_operator->coefficient[i].reserve(inner_size);
+	}
+
+	for (int i = 0; i < sys_size; ++i) {
+		vertex_index = &A_jacobi_basic->vertex_index[i];
+		coefficient = &A_jacobi_basic->coefficient[i];
+		inner_size = R_jacobi.outerIndexPtr()[i+1]- R_jacobi.outerIndexPtr()[i];
+		vertex_index->resize(inner_size);
+		coefficient->resize(inner_size);
+		inner_index_start = R_jacobi.outerIndexPtr()[i];
+		for (int j = 0; j < inner_size; ++j) {
+			vertex_index->data()[j] = R_jacobi.innerIndexPtr()[inner_index_start + j];
+			coefficient->data()[j] = R_jacobi.valuePtr()[inner_index_start + j];
+			A_jacobi_operator->vertex_index[vertex_index->data()[j]].push_back(i);
+			A_jacobi_operator->coefficient[vertex_index->data()[j]].push_back(R_jacobi.valuePtr()[inner_index_start + j]);
+		}
+	}
+}
+
+
+//A_jacobi_operator_need_to_multi * A_jacobi_operator_basic
+void IterationMethod::createHighOrderSuperJacobiMethod(AJacobiOperator* A_jacobi_operator_basic, AJacobiOperator* A_jacobi_operator_need_to_multi, AJacobiOperator* A_jacobi_operator)
+{
+	int sys_size = A_jacobi_operator_basic->vertex_index.size();
+	std::vector<bool> is_vertex_used(sys_size,false);
+	std::vector<int> indicate_if_vertex_exists(sys_size, -1);
+	A_jacobi_operator->vertex_index.resize(sys_size);
+	A_jacobi_operator->coefficient.resize(sys_size);
+
+	std::vector<int>* need_to_multi_index;
+	std::vector<double>* need_to_multi_value;
+	int need_to_multi_index_size;
+	int basic_index_in_need_to_multi;
+	
+	std::vector<int>* basic_index;
+	int basic_index_size;
+	std::vector<double>* basic_value;
+
+	std::vector<int>* result_index;
+	std::vector<double>* result_value;
+
+	double element_value;
+
+	int column_index;
+	for (int i = 0; i < sys_size; ++i) {
+		need_to_multi_index = &A_jacobi_operator_need_to_multi->vertex_index[i];
+		need_to_multi_value = &A_jacobi_operator_need_to_multi->coefficient[i];
+		need_to_multi_index_size = need_to_multi_index->size();
+		result_index = &A_jacobi_operator->vertex_index[i];
+		result_value = &A_jacobi_operator->coefficient[i];
+		result_index->reserve(3 * need_to_multi_index_size);
+		result_value->reserve(3 * need_to_multi_index_size);
+		
+		for (int j = 0; j < need_to_multi_index_size; ++j) {
+			basic_index_in_need_to_multi = need_to_multi_index->data()[j];
+			basic_index = &A_jacobi_operator_basic->vertex_index[basic_index_in_need_to_multi];
+			basic_value = &A_jacobi_operator_basic->coefficient[basic_index_in_need_to_multi];
+			basic_index_size = basic_index->size();
+			for (int k = 0; k < basic_index_size; ++k) {
+				column_index = basic_index->data()[k];
+				if (!is_vertex_used[column_index]) {
+					is_vertex_used[column_index] = true;
+					//std::cout << i << " " << column_index << std::endl;
+					//if (i == 0 && column_index == 0) {
+					//	std::cout << i << " " << A_jacobi_operator_basic->vertex_index[column_index].size() << " " << need_to_multi_index->size() << std::endl;
+					//	for (int m = 0; m < A_jacobi_operator_basic->vertex_index[column_index].size(); ++m) {
+					//		std::cout << A_jacobi_operator_basic->vertex_index[column_index][m] << " ";
+					//	}
+					//	std::cout << std::endl;
+					//	for (int m = 0; m < A_jacobi_operator_basic->coefficient[column_index].size(); ++m) {
+					//		std::cout << A_jacobi_operator_basic->coefficient[column_index][m] << " ";
+					//	}
+					//	std::cout << std::endl;
+					//	for (int m = 0; m < need_to_multi_index->size(); ++m) {
+					//		std::cout << need_to_multi_index->data()[m] << " ";
+					//	}
+					//	std::cout << std::endl;
+					//	for (int m = 0; m < need_to_multi_value->size(); ++m) {
+					//		std::cout << need_to_multi_value->data()[m] << " ";
+					//	}
+					//	std::cout << std::endl;
+					//}
+					result_index->push_back(column_index);
+					element_value = obtainElementValue(need_to_multi_index, need_to_multi_value, &A_jacobi_operator_basic->vertex_index[column_index], 
+						&A_jacobi_operator_basic->coefficient[column_index], indicate_if_vertex_exists);
+					result_value->push_back(element_value);
+						//std::cout << "value "<< element_value << std::endl;
+
+				}
+			}
+		}
+
+		for (int j = 0; j < result_index->size(); ++j) {
+			is_vertex_used[result_index->data()[j]] = false;
+		}
+		//for (int j = 0; j < result_index->size() - 1; ++j) {
+		//	if (result_index->data()[j + 1] - result_index->data()[j] < 0) {
+		//		std::cout << i<<" order wrong" << std::endl;
+		//	}
+		//}
+	}
+
+}
+
+//to obtain the value of the element (A_jacobi_operator->vertex_index[i],A_jacobi_operator->vertex_index[k])
+double IterationMethod::obtainElementValue(std::vector<int>*vertex_index_of_i, std::vector<double>* value_of_i, 
+	std::vector<int>* vertex_index_of_j, std::vector<double>* value_of_j,std::vector<int>& indicate_if_vertex_exists)
+{
+	double value = 0;
+
+	for (int i = 0; i < vertex_index_of_i->size(); ++i)
+	{
+		indicate_if_vertex_exists[vertex_index_of_i->data()[i]] = i;
+	}
+
+	for (int j = 0; j < vertex_index_of_j->size(); ++j) 
+	{
+		if (indicate_if_vertex_exists[vertex_index_of_j->data()[j]] > -1)
+		{
+			value += value_of_j->data()[j] * value_of_i->data()[indicate_if_vertex_exists[vertex_index_of_j->data()[j]]];
+		}
+	}
+
+	for (int i = 0; i < vertex_index_of_i->size(); ++i)
+	{
+		indicate_if_vertex_exists[vertex_index_of_i->data()[i]] = -1;
+	}
+
+	return value;
+}
+
 
 void IterationMethod::setConvergenceRate(double conv_rate, int max_itr_num)
 {
@@ -331,143 +579,193 @@ void IterationMethod::test()
 	//load matrix
 	std::vector<VectorXd> u_(3);
 	std::vector<VectorXd> b_(3);
-	SparseMatrix<double, RowMajor> system_matrix_;
-	std::vector<VectorXf> ground_truth(3);
+	SparseMatrix<double, ColMajor> system_matrix_;
+	std::vector<VectorXd> ground_truth(3);
 
 	//dimension_per_thread_test.resize(thread->thread_num + 1, 3);
 	//for (int i = 0; i < 3; ++i) {
 	//	dimension_per_thread_test[i] = i;
 	//}
-	std::string file_name_matrix="./back/global.dat";
+	std::string file_name_matrix="./back/new/global.dat";
 
 	EigenMatrixIO::read_sp_binary(file_name_matrix.c_str(), system_matrix_);
-	SparseMatrix<float, RowMajor> system_matrix;
+	SparseMatrix<double, ColMajor> system_matrix;
 
 
-	system_matrix = system_matrix_.cast<float>();
+	system_matrix = system_matrix_;// .cast<float>();
 
 	std::vector<std::string> file_name_u(3);
 	std::vector<std::string> file_name_b(3);
 
 	for (int i = 0; i < 3; ++i) {
-		file_name_u[i] = "./back/u" + std::to_string(i) + ".dat";
-		file_name_b[i] = "./back/b" + std::to_string(i) + ".dat";
+		file_name_u[i] = "./back/new/u" + std::to_string(i) + ".dat";
+		file_name_b[i] = "./back/new/b" + std::to_string(i) + ".dat";
 		EigenMatrixIO::read_binary(file_name_u[i].c_str(), u_[i]);
 		EigenMatrixIO::read_binary(file_name_b[i].c_str(), b_[i]);
 		std::cout << "i" << std::endl;
 	}	
 
+	SparseMatrix<double, ColMajor> sys_matrix_second_order;
+	SparseMatrix<double, ColMajor> sys_matrix_third_order;
+	time_t t1 = clock();
+	sys_matrix_second_order = system_matrix_ * system_matrix_;
+	sys_matrix_second_order.prune((double)0.0);
+	
+	//std::cout << "time " << clock() - t1 << std::endl;
+	//sys_matrix_third_order = sys_matrix_second_order * system_matrix_;
+	//std::cout <<"third"<<(double)sys_matrix_third_order.nonZeros() / (double)(sys_matrix_third_order.cols() * sys_matrix_third_order.cols());
+	//std::cout <<"second"<<(double)sys_matrix_second_order.nonZeros() / (double)(sys_matrix_second_order.cols() * sys_matrix_second_order.cols());
+	//std::cout << "first" << (double)system_matrix_.nonZeros() / (double)(system_matrix_.cols() * system_matrix_.cols());
 
-	std::vector<VectorXf> u(3);
-	std::vector<VectorXf> b(3);
+	std::vector<VectorXd> u(3);
+	std::vector<VectorXd> b(3);
 
 	for (int i = 0; i < 3; ++i) {
-		u[i] = u_[i].cast<float>();
-		b[i] = b_[i].cast<float>();
+		u[i] = u_[i];// .cast<float>();
+		b[i] = b_[i];// .cast<float>();
 	}
 	//ground_truth
-	SimplicialLLT<SparseMatrix<float>> collision_free_cloth_llt;
+	SimplicialLLT<SparseMatrix<double>> collision_free_cloth_llt;
 	collision_free_cloth_llt.compute(system_matrix);
 	for (int i = 0; i < 3; ++i) {
 		ground_truth[i] = collision_free_cloth_llt.solve(b[i]);
 	}	
 
-	std::vector<VectorXf> u_use;
+	std::vector<VectorXd> u_use;
 	//jacobi
 	u_use = u;
 	std::vector<double> jacobi_relative_error;
-	double conv_rate_2 = 1e-7;
+	std::vector<int> jacobi_time;
+	double conv_rate_2 = 5e-8;
 	conv_rate_2 *= conv_rate_2;
 
-	jacobi(u_use, b, system_matrix, ground_truth, jacobi_relative_error, conv_rate_2);
-
+	jacobi(u_use, b, system_matrix, ground_truth, jacobi_relative_error, conv_rate_2,jacobi_time);
+	WriteTxt::writeTxt(jacobi_relative_error, jacobi_time, 10, "iteration_result", "jacobi");
 	//super_jacobi
 	u_use = u;
 	std::vector<double> super_jacobi_relative_error;
-	superJacobi(u_use, b, system_matrix, ground_truth, super_jacobi_relative_error, conv_rate_2);
+	std::vector<int> super_jacobi_time;
+	superJacobi(u_use, b, system_matrix, ground_truth, super_jacobi_relative_error, conv_rate_2,2, super_jacobi_time);
+	WriteTxt::addToTxt(super_jacobi_relative_error, super_jacobi_time, 10, "iteration_result", "super jacobi");
+	std::cout << "finished a_jacobi 2" << std::endl;
+	u_use = u;
+	std::vector<double> super_jacobi_relative_error_3;
+	std::vector<int> super_jacobi_time_3;
+	superJacobi(u_use, b, system_matrix, ground_truth, super_jacobi_relative_error_3, conv_rate_2, 3, super_jacobi_time_3);
+	WriteTxt::addToTxt(super_jacobi_relative_error_3, super_jacobi_time_3, 10, "iteration_result", "super jacobi 3");
 
 	//gauss_seidel
 	u_use = u;
 	std::vector<double> gauss_seidel_relative_error;
-	gauss_seidel(u_use, b, system_matrix, ground_truth, gauss_seidel_relative_error, conv_rate_2);
-
+	std::vector<int> gauss_seidel_time;
+	gauss_seidel(u_use, b, system_matrix, ground_truth, gauss_seidel_relative_error, conv_rate_2, gauss_seidel_time);
+	WriteTxt::addToTxt(gauss_seidel_relative_error, gauss_seidel_time, 10, "iteration_result", "gauss seidel");
 	//jacobi_chebyshev
 	u_use = u;
 	std::vector<double> jacobi_chebyshev_relative_error;
-	chebyshevSemiIterativeJacobi(u_use, b, system_matrix, ground_truth, jacobi_chebyshev_relative_error, conv_rate_2);
-	
-	//super_jacobi_chebyshev
+	std::vector<int> jacobi_chebyshev_time;
+	chebyshevSemiIterativeJacobi(u_use, b, system_matrix, ground_truth, jacobi_chebyshev_relative_error, conv_rate_2, jacobi_chebyshev_time);
+	WriteTxt::addToTxt(jacobi_chebyshev_relative_error, jacobi_chebyshev_time, 10, "iteration_result", "cheybyshev jacobi");
+
+	//super_jacobi_chebyshev_2
 	u_use = u;
-	std::vector<double> super_jacobi_chebyshev_relative_error;
-	chebyshevSemiIterativeSuperJacobi(u_use, b, system_matrix, ground_truth, super_jacobi_chebyshev_relative_error, conv_rate_2);
+	std::vector<double> super_jacobi_chebyshev_relative_error_2;
+	std::vector<int> super_jacobi_chebyshev_time_2;
+	chebyshevSemiIterativeSuperJacobi(u_use, b, system_matrix, ground_truth, super_jacobi_chebyshev_relative_error_2, conv_rate_2,2, super_jacobi_chebyshev_time_2);
+	WriteTxt::addToTxt(super_jacobi_chebyshev_relative_error_2, super_jacobi_chebyshev_time_2, 10, "iteration_result", "cheybyshev super jacobi 2");
+
+	//super_jacobi_chebyshev_2
+	u_use = u;
+	std::vector<double> super_jacobi_chebyshev_relative_error_3;
+	std::vector<int> super_jacobi_chebyshev_time_3;
+	chebyshevSemiIterativeSuperJacobi(u_use, b, system_matrix, ground_truth, super_jacobi_chebyshev_relative_error_3, conv_rate_2, 3, super_jacobi_chebyshev_time_3);
+	WriteTxt::addToTxt(super_jacobi_chebyshev_relative_error_3, super_jacobi_chebyshev_time_3, 10, "iteration_result", "cheybyshev super jacobi 3");
 
 	//gauss_seidel_chebyshev
 	u_use = u;
 	std::vector<double> gauss_seidel_chebyshev_relative_error;
-	chebyshev_gauss_seidel(u_use, b, system_matrix, ground_truth, gauss_seidel_chebyshev_relative_error, conv_rate_2);
-
+	std::vector<int> gauss_seidel_chebyshev_time;
+	chebyshev_gauss_seidel(u_use, b, system_matrix, ground_truth, gauss_seidel_chebyshev_relative_error, conv_rate_2, gauss_seidel_chebyshev_time);
+	WriteTxt::addToTxt(gauss_seidel_chebyshev_relative_error, gauss_seidel_chebyshev_time, 10, "iteration_result", "gauss seidel chebyshev 3");
+	std::cout << "finished GS cheby" << std::endl;
 	//PCG
 	u_use = u;
-	std::vector<double> PCG_chebyshev_relative_error;
-	PCG(u, b, system_matrix, ground_truth, PCG_chebyshev_relative_error, conv_rate_2);
-
+	std::vector<double> PCG_relative_error;
+	std::vector<int> PCG_time;
+	PCG(u, b, system_matrix, ground_truth, PCG_relative_error, conv_rate_2, PCG_time);
+	WriteTxt::addToTxt(PCG_relative_error, PCG_time, 10, "iteration_result", "PCG");
 	
 	size_t max_itr = 0;
 	max_itr = (std::max)(max_itr, jacobi_relative_error.size());
 	max_itr = (std::max)(max_itr, super_jacobi_relative_error.size());
+	max_itr = (std::max)(max_itr, super_jacobi_relative_error_3.size());
 	max_itr = (std::max)(max_itr, gauss_seidel_relative_error.size());
 	max_itr = (std::max)(max_itr, jacobi_chebyshev_relative_error.size());
-	max_itr = (std::max)(max_itr, super_jacobi_chebyshev_relative_error.size());
+	max_itr = (std::max)(max_itr, super_jacobi_chebyshev_relative_error_2.size());
+	max_itr = (std::max)(max_itr, super_jacobi_chebyshev_relative_error_3.size());
 	max_itr = (std::max)(max_itr, gauss_seidel_chebyshev_relative_error.size());
-	max_itr = (std::max)(max_itr, PCG_chebyshev_relative_error.size());
+	max_itr = (std::max)(max_itr, PCG_relative_error.size());
 
-	std::cout << "1.jacobi 2.super_jacobi 3.gauss_seidel 4.jacobi_chebyshev 5.super_jacobi_chebyshev 6.gauss_seidel_chebyshev 7.PCG" << std::endl;
+	std::cout << "1.jacobi 2.super_jacobi_2 3. super_jacobi_3 4.gauss_seidel 5.jacobi_chebyshev 6.super_jacobi_chebyshev_2 7.super_jacobi_chebyshev_3 8.gauss_seidel_chebyshev 9.PCG" << std::endl;
 
-	for (int i = 0; i < max_itr; ++i) {
-		if (i < jacobi_relative_error.size()) {
-			std::cout << log10(jacobi_relative_error[i]);
-		}
-		else {
-			std::cout << " ++";
-		}
-		if (i < super_jacobi_relative_error.size()) {
-			std::cout << " " << log10(super_jacobi_relative_error[i]);
-		}
-		else {
-			std::cout << " ++";
-		}
-		if (i < gauss_seidel_relative_error.size()) {
-			std::cout << " " << log10(gauss_seidel_relative_error[i]);
-		}
-		else {
-			std::cout << " ++";
-		}
-		if (i < jacobi_chebyshev_relative_error.size()) {
-			std::cout << " " << log10(jacobi_chebyshev_relative_error[i]);
-		}
-		else {
-			std::cout << " ++";
-		}
-		if (i < super_jacobi_chebyshev_relative_error.size()) {
-			std::cout << " " << log10(super_jacobi_chebyshev_relative_error[i]);
-		}
-		else {
-			std::cout << " ++";
-		}
-		if (i < gauss_seidel_chebyshev_relative_error.size()) {
-			std::cout << " " << log10(gauss_seidel_chebyshev_relative_error[i]);
-		}
-		else {
-			std::cout << " ++";
-		}
-		if (i < PCG_chebyshev_relative_error.size()) {
-			std::cout << " " << log10(PCG_chebyshev_relative_error[i]);
-		}
-		else {
-			std::cout << " ++";
-		}
-		std::cout << std::endl;
-	}
+	//for (int i = 0; i < max_itr; ++i) {
+	//	if (i < jacobi_relative_error.size()) {
+	//		std::cout << (jacobi_relative_error[i])<<" "<< jacobi_time[i];
+	//	}
+	//	else {
+	//		std::cout << " ++ ++";
+	//	}
+	//	if (i < super_jacobi_relative_error.size()) {
+	//		std::cout << " " << (super_jacobi_relative_error[i])<<" "<<super_jacobi_time[i];
+	//	}
+	//	else {
+	//		std::cout << " ++ ++";
+	//	}
+	//	if (i < super_jacobi_relative_error_3.size()) {
+	//		std::cout << " " << (super_jacobi_relative_error_3[i])<<" "<< super_jacobi_time_3[i];
+	//	}
+	//	else {
+	//		std::cout << " ++ ++";
+	//	}
+	//	if (i < gauss_seidel_relative_error.size()) {
+	//		std::cout << " " << (gauss_seidel_relative_error[i])<<" "<<gauss_seidel_time[i];
+	//	}
+	//	else {
+	//		std::cout << " ++ ++";
+	//	}
+	//	if (i < jacobi_chebyshev_relative_error.size()) {
+	//		std::cout << " " << (jacobi_chebyshev_relative_error[i])<<" "<<jacobi_chebyshev_time[i];
+	//	}
+	//	else {
+	//		std::cout << " ++ ++";
+	//	}
+	//	if (i < super_jacobi_chebyshev_relative_error_2.size()) {
+	//		std::cout << " " << (super_jacobi_chebyshev_relative_error_2[i])<<" "<<super_jacobi_chebyshev_time_2[i];
+	//	}
+	//	else {
+	//		std::cout << " ++ ++";
+	//	}
+	//	if (i < super_jacobi_chebyshev_relative_error_3.size()) {
+	//		std::cout << " " << (super_jacobi_chebyshev_relative_error_3[i])<<" "<<super_jacobi_chebyshev_time_3[i];
+	//	}
+	//	else {
+	//		std::cout << " ++ ++";
+	//	}
+	//	if (i < gauss_seidel_chebyshev_relative_error.size()) {
+	//		std::cout << " " << (gauss_seidel_chebyshev_relative_error[i])<<" "<<gauss_seidel_chebyshev_time[i];
+	//	}
+	//	else {
+	//		std::cout << " ++ ++";
+	//	}
+	//	if (i < PCG_relative_error.size()) {
+	//		std::cout << " " << (PCG_relative_error[i])<<" "<<PCG_time[i];
+	//	}
+	//	else {
+	//		std::cout << " ++ ++";
+	//	}
+	//	std::cout << std::endl;
+	//}
+	//std::cout << gauss_seidel_chebyshev_relative_error.size() << std::endl;
 }
 
 //void IterationMethod::jacobi(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, VectorXd& ground_truth, std::vector<double>&relative_error)

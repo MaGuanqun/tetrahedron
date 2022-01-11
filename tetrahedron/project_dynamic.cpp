@@ -12,13 +12,13 @@ ProjectDynamic::ProjectDynamic()
 
 	use_dierct_solve_for_coarest_mesh = true;
 	super_jacobi_step_size = 3;
-	max_it = 30;
+	max_it = 50;
 	max_jacobi_itr_num = 20;
 	displacement_norm_thread.resize(total_thread_num);
 
 
-	iteration_method.setConvergenceRate(1e-7, 20);
-	max_inner_iteration_num = 5;
+	iteration_method.setConvergenceRate(1e-7, 50);
+	max_inner_iteration_num = 3;
 
 }
 
@@ -53,7 +53,7 @@ void ProjectDynamic::initialDHatTolerance(double ave_edge_length)
 	for (int i = 0; i < cloth->size(); ++i) {
 		element_count += (*cloth)[i].mesh_struct.vertex_for_render.size();
 	}
-	displacement_bound = 1e-3 * ave_edge_length;
+	displacement_bound = 1e-4 * ave_edge_length;
 	displacement_bound *= displacement_bound;
 	displacement_bound *= (double)element_count;
 }
@@ -1112,7 +1112,7 @@ bool ProjectDynamic::IPC_PDConvergeCondition()
 			}
 	
 
-			bool ratio_changing = fabs(displacement_ratio_dif + (previous_displacement_norm - displacement_norm)) / displacement_norm < 1e-6;
+			bool ratio_changing = fabs(displacement_ratio_dif + (previous_displacement_norm - displacement_norm)) / displacement_norm < 1e-7;
 			//if (outer_iteration_num > 990) {
 				//std::cout << "displacement ratio " << displacement_norm / displacement_bound <<" "<< fabs(displacement_ratio_dif + (previous_displacement_norm - displacement_norm)) / displacement_norm << std::endl;
 			//}

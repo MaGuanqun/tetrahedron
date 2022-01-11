@@ -117,7 +117,7 @@ public:
 		for (int j = 0; j < row_num; j++) {
 			for (int i = 0; i < col_num; i++) {
 				mesh.vertices.push_back(std::array<double, 3>{2.0 * (double)i / (double)(col_num - 1) - 1.0,  //+0.9
-					2.0 * (double)j / (double)(row_num - 1) - 0.2, 0.0});//
+					2.0 * (double)j / (double)(row_num - 1) - 0.6,0.0});// 0.3 * (double)j / (double)(row_num - 1) - 0.5
 			}
 		}
 		//int col_num = 121;
@@ -358,7 +358,7 @@ public:
 
 	void setFloor(OriMesh& mesh) 
 	{
-		int col_num = 120;
+		int col_num = 2;
 		for (int j = 0; j <col_num; j++) {
 			for (int i = 0; i < col_num; i++) {
 				mesh.vertices.push_back(std::array<double, 3>{2.8*(double)i / (double)(col_num - 1) - 1.4,

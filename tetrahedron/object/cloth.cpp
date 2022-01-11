@@ -202,7 +202,7 @@ void Cloth::setAnchor()
 	//mesh_struct.anchor_vertex.push_back(15 * 30 - 1);
 	//mesh_struct.anchor_vertex.push_back(15 * 29);
 	mesh_struct.anchor_vertex.push_back(101 * 101 - 1);
-	mesh_struct.anchor_vertex.push_back(100 * 101);
+	mesh_struct.anchor_vertex.push_back(101 * 100);
 }
 
 //VERTEX_AABB

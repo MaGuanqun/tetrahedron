@@ -160,6 +160,10 @@ void simu_main(GLFWwindow* window, Input* input) {
 			}
 		}
 		else {		
+			if (scene.time_stamp == 100 || scene.time_stamp == 200) {
+				record_matrix = true;
+			}
+
 			scene.setTolerance(tolerance_ratio);			
 			scene.updateCloth(&camera, input->mouse.screen_pos, control_parameter, force_coe,record_matrix, iteration_solver_iteration_num);
 			scene.drawScene(&camera, wireframe, hide, control_parameter[SAVE_OBJ]);

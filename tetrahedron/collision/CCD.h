@@ -41,7 +41,11 @@ namespace CCD {
         T dist2_cur = internal::pointTriangleDistanceUnclassified(p, t0, t1, t2);
         T dist_cur = std::sqrt(dist2_cur);
         T gap = eta * (dist_cur - thickness);
+
         T toc = 0.0;
+        int itr = 0;
+
+
         while (true) {
             T toc_lower_bound = (1 - eta) * (dist_cur - thickness) / max_disp_mag;
             for (int i = 0; i < 3; ++i) {
@@ -52,13 +56,16 @@ namespace CCD {
             }
             dist2_cur = internal::pointTriangleDistanceUnclassified(p, t0, t1, t2);
             dist_cur = std::sqrt(dist2_cur);
-            if (toc && ((dist_cur - thickness) < gap)) {
+            if ((toc && ((dist_cur - thickness) < gap)) || itr > 200) {
+               // std::cout << toc<<" "<< toc_lower_bound<<" "<< dist_cur - thickness<<" "<<gap << std::endl;
+
                 break;
             }
             toc += toc_lower_bound;
             if (toc > 1.0) {
                 return 1.0;
             }
+            itr++;
         }
         return toc;
     }
@@ -110,6 +117,7 @@ namespace CCD {
 
         T gap = eta * dFunc;
         T toc = 0.0;
+        int itr = 0;
         while (true)
         {
             T toc_lower_bound = (1 - eta) * dFunc / max_disp_mag;
@@ -135,12 +143,13 @@ namespace CCD {
                 dist2_cur = *std::min_element(dists.begin(), dists.end());
                 dFunc = sqrt(dist2_cur) - thickness;
             }
-            if (toc && (dFunc < gap)) {
+            if ((toc && (dFunc < gap)) || itr > 100) {
                 break;
             }
             toc += toc_lower_bound;
             if (toc > 1.0)
                 return 1.0;
+            itr++;
         }
         return toc;
     }

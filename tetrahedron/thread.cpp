@@ -296,6 +296,16 @@ job Thread::create_task(IterationMethod* func, int thread_id, IterationMethodFun
 }
 
 
+job Thread::create_task(IterationMethod* func, int thread_id, std::vector<int>* vertex_index, std::vector<double>* coefficient,
+    double* x, double* b, double* result, int* vertex_index_thread_begin, int sys_size)
+{
+    job k;
+    k = job([func, thread_id, vertex_index,coefficient,x,b,result,vertex_index_thread_begin,sys_size]()
+        {func->RMultiXPlusb(vertex_index,coefficient,x,b,result, vertex_index_thread_begin[thread_id],
+            vertex_index_thread_begin[thread_id+1],sys_size); });
+    return k;
+}
+
 void Thread::thread_func(ThreadData* pData)
 {
     std::unique_lock<std::mutex> l(pData->m, std::defer_lock);
@@ -315,4 +325,21 @@ void Thread::thread_func(ThreadData* pData)
         // Execute the task!
         j();
     }
+}
+
+void Thread::assignTask(IterationMethod* func, std::vector<int>* vertex_index, std::vector<double>* coefficient,
+    double* x, double* b, double* result, int* vertex_index_thread_begin, int sys_size)
+{
+    for (int i = 0; i < thread_num; ++i)
+    {
+        // std::cout << threads[i].id << std::endl;
+        job j = create_task(func, threads[i].id, vertex_index,coefficient,x,b,result,vertex_index_thread_begin,sys_size);
+        futures.push_back(j.get_future());
+        std::unique_lock<std::mutex> l(threads[i].m);
+        threads[i].jobs.push(std::move(j));
+        // Notify the thread that there is work do to...
+        threads[i].cv.notify_one();
+    }
+    for (auto& f : futures) { f.wait(); }
+    futures.clear();
 }

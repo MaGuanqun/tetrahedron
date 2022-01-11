@@ -50,6 +50,9 @@ private:
     job create_task(Collision* func, int thread_id, CollisionFuncSendToThread function_type);
     job create_task(RadixSort* func, int thread_id, RadixSortFunc function_type, int key_id);
     job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type);
+    job create_task(IterationMethod* func, int thread_id, std::vector<int>* vertex_index, std::vector<double>* coefficient,
+        double* x, double* b, double* result, int* vertex_index_thread_begin, int sys_size);
+
 
 public:
     Thread();
@@ -88,6 +91,11 @@ public:
         for (auto& f : futures) { f.wait(); }
         futures.clear();
     }  
+
+
+    void assignTask(IterationMethod* func, std::vector<int>* vertex_index, std::vector<double>* coefficient,
+        double* x, double* b, double* result, int* vertex_index_thread_begin, int sys_size);
+
     int thread_num;
 };
 
