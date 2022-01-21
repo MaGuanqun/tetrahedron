@@ -84,6 +84,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <LibraryPath>external/;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\guanq\OneDrive - Clemson University\LearnOpenGL\tetrahedron\tetrahedron\external;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

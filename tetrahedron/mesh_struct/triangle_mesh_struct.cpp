@@ -316,3 +316,24 @@ void TriangleMeshStruct::addEdge(int v0, int v1, int face, int opposite_vertex)
 	vertices[v0].neighbor_vertex.push_back(v1);
 	vertices[v1].neighbor_vertex.push_back(v0);
 }
+
+
+void TriangleMeshStruct::addArounVertex()
+{
+	int vertex_index;
+	std::vector<bool>point_is_used;
+	point_is_used.resize(vertices.size(), true);
+	for (int i = 0; i < vertices.size(); ++i) {
+		std::fill(point_is_used.begin(), point_is_used.end(), false);
+		vertices[i].around_vertex.reserve(3 * vertices[i].neighbor_vertex.size());
+		for (int k = 0; k < vertices[i].neighbor_vertex.size(); ++k) {
+			vertex_index = vertices[i].neighbor_vertex[k];
+			for (int m = 0; m < vertices[vertex_index].neighbor_vertex.size(); ++m) {
+				if (!point_is_used[vertices[vertex_index].neighbor_vertex[m]]) {
+					vertices[i].around_vertex.push_back(vertices[vertex_index].neighbor_vertex[m]);
+				}
+			}
+		}
+
+	}
+}

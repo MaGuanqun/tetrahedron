@@ -2,8 +2,6 @@
 #include"external/Eigen/Dense"
 #include"basic/eigenDenseOperation.h"
 #include"external/Eigen/Sparse"
-//#include "external/spectral/GenEigsSolver.h"
-//#include "external/spectral/MatOp/SparseGenMatProd.h"
 #include"thread.h"
 #include"basic/global.h"
 #include<array>
@@ -51,10 +49,9 @@ public:
 
 	void RMultiXPlusb(std::vector<int>* vertex_index, std::vector<double>* coefficient, double* x, double* b, double* result,
 		int vertex_index_begin, int vertex_index_end, int sys_size);
-	void testRelativeError();
+
 private:
 	void testGaussSeidel();
-
 	struct AJacobiOperator
 	{
 		std::vector<std::vector<int>> vertex_index;
@@ -188,7 +185,6 @@ private:
 		while (residual_norm / b_norm > conv_rate_2) {
 			u_previous = u;
 			omega_chebyshev = 4.0 / (4.0 - super_jacobi_spectral_radius_square * omega_chebyshev);
-			//std::cout << residual_norm / b_norm << std::endl;
 			for (int i = 0; i < 3; ++i) {
 				//u[i] = RMultiX(a_jacobi_operator_2, u[i]) + R_temp[i];
 				RMultiXPlusb(a_jacobi_operator_2, u[i].data(), R_temp[i].data(), temp[i].data());
@@ -199,7 +195,7 @@ private:
 				//superJacobiSingleIteration(u[i], b[i], global_diagonal_inv, R_Jacobi, super_jacobi_step_size);
 				u[i] = omega_chebyshev * (u[i] - u_last[i]) + u_last[i];
 			}
-			//std::cout <<omega_chebyshev<<"  AJ2 u value " << u[0].squaredNorm() + u[1].squaredNorm() + u[2].squaredNorm() << std::endl;
+			
 			u_last = u_previous;
 			itr_num++;
 			residual_norm = (b[0] - system_matrix * u[0]).squaredNorm() + (b[1] - system_matrix * u[1]).squaredNorm() + (b[2] - system_matrix * u[2]).squaredNorm();
@@ -452,7 +448,7 @@ private:
 		double gauss_seidel_spectral_radius_square, int& itr_num, double weight, std::vector<Matrix<T, -1, 1>>& ground_truth, std::vector<double>& relative_error,
 		double conv_rate_2, std::vector<int>& time)
 	{
-		double record_relat_error = 10.0;
+		double residual_norm_record = 10.0;
 		time_t t0 = clock();
 		std::vector<Matrix<T, -1, 1>> u_last = u;
 		double residual_norm;
@@ -464,40 +460,33 @@ private:
 		for (int i = 0; i < 3; ++i) {
 			u[i] = system_matrix.triangularView<Lower>().solve(b[i] - system_matrix.triangularView<StrictlyUpper>() * u[i]);
 		}
-		gauss_seidel_spectral_radius_square = estimateGaussSeidelEigenValue(u, system_matrix);
-		//std::cout <<"new estimate eigen value "<< gauss_seidel_spectral_radius_square << std::endl;
 		itr_num = 1;
 		residual_norm = (b[0] - system_matrix * u[0]).squaredNorm() + (b[1] - system_matrix * u[1]).squaredNorm() + (b[2] - system_matrix * u[2]).squaredNorm();
 		relative_error.push_back((u[0] - ground_truth[0]).squaredNorm() + (u[1] - ground_truth[1]).squaredNorm() + (u[2] - ground_truth[2]).squaredNorm());
 		time.push_back(clock() - t0);
 		std::vector<Matrix<T, -1, 1>> u_previous;
-		record_relat_error =relative_error[1];
-		double relat_error;
-
-		int itr_num_ = 0;
-		while (residual_norm / b_norm > conv_rate_2 && itr_num_ < 300) {
-			//std::cout << residual_norm / b_norm << std::endl;
+		while (residual_norm / b_norm > conv_rate_2) {
+		
 			u_previous = u;
 			omega_chebyshev = 4.0 / (4.0 - gauss_seidel_spectral_radius_square * omega_chebyshev);
 
 			for (int i = 0; i < 3; ++i) {
 				u[i] = system_matrix.triangularView<Lower>().solve(b[i] - system_matrix.triangularView<StrictlyUpper>() * u[i]);
-				//u[i] = omega_chebyshev * (u[i] - u_last[i]) + u_last[i];
-				u[i] = omega_chebyshev * (weight * (u[i] - u_previous[i]) + u_previous[i] - u_last[i]) + u_last[i];
+				u[i] = omega_chebyshev * (u[i] - u_last[i]) + u_last[i];
+				//u[i] = omega_chebyshev * (weight * (u[i] - u_previous[i]) + u_previous[i] - u_last[i]) + u_last[i];
 			}
-			//std::cout << omega_chebyshev<< "GS u value " << u[0].squaredNorm() + u[1].squaredNorm() + u[2].squaredNorm() << std::endl;
 			u_last = u_previous;
 			residual_norm = (b[0] - system_matrix * u[0]).squaredNorm() + (b[1] - system_matrix * u[1]).squaredNorm() + (b[2] - system_matrix * u[2]).squaredNorm();
-			itr_num_++;
-			relat_error = (u[0] - ground_truth[0]).squaredNorm() + (u[1] - ground_truth[1]).squaredNorm() + (u[2] - ground_truth[2]).squaredNorm();
-			//if (relat_error > record_relat_error)
-			//{
-			//	break;
-			//}		
 			itr_num++;
-			relative_error.push_back(relat_error);
+			if (residual_norm / b_norm >1e-4)
+			{
+				break;
+			}
+			else {
+				residual_norm_record = residual_norm / b_norm;
+			}
+			relative_error.push_back((u[0] - ground_truth[0]).squaredNorm() + (u[1] - ground_truth[1]).squaredNorm() + (u[2] - ground_truth[2]).squaredNorm());
 			time.push_back(clock() - t0);
-			record_relat_error = relat_error;
 		}
 	}
 
@@ -667,7 +656,7 @@ private:
 		SparseMatrix<T, ColMajor> R_Jacobi;
 		Matrix<T, -1, 1> global_diagonal_inverse;
 		prepareR(R_Jacobi, global_diagonal_inverse, system_matrix);
-		//std::cout << R_Jacobi.cols() << " " << R_Jacobi.rows() << std::endl;
+		std::cout << R_Jacobi.cols() << " " << R_Jacobi.rows() << std::endl;
 
 		int itr_num;
 		std::vector<double> relat;
@@ -770,7 +759,7 @@ private:
 		prepareR(R_Jacobi, global_diagonal_inverse, system_matrix);
 		int itr_num;
 		double eigen_value_square = estimateSuperJacobiEigenValue(u, R_Jacobi, 1);
-		//std::cout << "eigen value " << eigen_value_square << std::endl;
+		std::cout << "eigen value " << eigen_value_square << std::endl;
 		solveByChebyshevSemiIterativeJacobi(u, b, system_matrix, R_Jacobi, itr_num, global_diagonal_inverse, ground_truth, relat,
 			eigen_value_square, conv_rate_2,time);
 		
@@ -819,17 +808,16 @@ private:
 
 		if (super_jacobi_step_size == 2) {
 			double eigen_value_square = estimateSuperJacobiEigenValue(u, R_Jacobi, 2);
-			//double eigen_value_square = estimateGaussSeidelEigenValue(u, system_matrix);
-			//std::cout <<"super jacobi 2 "<< eigen_value_square<<" v_norm "<< u[0].squaredNorm() + u[1].squaredNorm() + u[2].squaredNorm()
-			//	<<" "<< b[0].squaredNorm() + b[1].squaredNorm() + b[2].squaredNorm() << std::endl;
+			std::cout <<"super jacobi 2 "<< eigen_value_square<<" v_norm "<< u[0].squaredNorm() + u[1].squaredNorm() + u[2].squaredNorm()
+				<<" "<< b[0].squaredNorm() + b[1].squaredNorm() + b[2].squaredNorm() << std::endl;
 			solveByChebyshevSemiIterativeSuperJacobi_2(u, b, system_matrix, R_Jacobi, global_diagonal_inverse, eigen_value_square, itr_num,
 				ground_truth, relat, conv_rate_2, super_jacobi_step_size, time, &a_jacobi_1, &a_jacobi_2);
 		}
 		else if (super_jacobi_step_size == 3)
 		{
-			double eigen_value_square = estimateSuperJacobiEigenValue(u, R_Jacobi, 3);/*
+			double eigen_value_square = estimateSuperJacobiEigenValue(u, R_Jacobi, 3);
 			std::cout << "super jacobi 3 " << eigen_value_square << " v_norm " << u[0].squaredNorm() + u[1].squaredNorm() + u[2].squaredNorm()
-				<< " " << b[0].squaredNorm() + b[1].squaredNorm() + b[2].squaredNorm() << std::endl;*/
+				<< " " << b[0].squaredNorm() + b[1].squaredNorm() + b[2].squaredNorm() << std::endl;
 			solveByChebyshevSemiIterativeSuperJacobi_3(u, b, system_matrix, R_Jacobi, global_diagonal_inverse, eigen_value_square, itr_num,
 				ground_truth, relat, conv_rate_2, super_jacobi_step_size, time, &a_jacobi_1, &a_jacobi_2, &a_jacobi_3);
 		}
@@ -845,29 +833,11 @@ private:
 	{
 		int itr_num;
 		std::vector<double> relat;
-		SparseMatrix<T, ColMajor> R_Jacobi;
-		Matrix<T, -1, 1> global_diagonal_inverse;
-		prepareR(R_Jacobi, global_diagonal_inverse, system_matrix);
-		//double eigen_value_square = estimateSuperJacobiEigenValue(u, R_Jacobi, 2);
 		double eigen_value_square = estimateGaussSeidelEigenValue(u, system_matrix);	
+		std::cout <<"gauss seidel "<< eigen_value_square << " v_norm " << u[0].squaredNorm() + u[1].squaredNorm() + u[2].squaredNorm()
+			<< " " << b[0].squaredNorm() + b[1].squaredNorm() + b[2].squaredNorm() << std::endl;
 
-
-		//SparseMatrix<double>a;		
-		//a = R_Jacobi * R_Jacobi - system_matrix.triangularView<Lower>().solve(system_matrix.triangularView<StrictlyUpper>());
-		//std::cout<<"compare a " << a.squaredNorm() << std::endl;
-
-		//SparseGenMatProd<double> op(system_matrix);
-		//GenEigsSolver< double, LARGEST_MAGN, SparseGenMatProd<double> > eigs(&op,1,6);
-		//eigs.init();
-		//int nconv = eigs.compute();
-		//Eigen::VectorXcd evalues;
-		//if (nconv > 0)
-		//	evalues = eigs.eigenvalues();
-		//std::cout << "Eigenvalues found:\n" << evalues << std::endl;
-		//std::cout <<"gauss seidel "<< eigen_value_square << " v_norm " << u[0].squaredNorm() + u[1].squaredNorm() + u[2].squaredNorm()
-		//	<< " " << b[0].squaredNorm() + b[1].squaredNorm() + b[2].squaredNorm() << std::endl;
-
-		solveByChebyshevGaussSeidel(u, b, system_matrix, eigen_value_square, itr_num, 0.054, ground_truth, relat, conv_rate_2, time);	
+		solveByChebyshevGaussSeidel(u, b, system_matrix, eigen_value_square, itr_num, 0.8, ground_truth, relat, conv_rate_2, time);	
 		computeRelativeError(relat, relative_error, ground_truth);
 	}
 	template <class T>

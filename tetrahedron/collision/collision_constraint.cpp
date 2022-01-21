@@ -39,10 +39,10 @@ bool CollisionConstraint::pointSelfTriangle(double* initial_position, double* cu
 	for (int i = 0; i < 3; ++i) {
 		d[i] = initial_position[i] - current_position[i] - (initial_nearest_point[i] - current_nearest_point[i]);
 	}
-	double d_move = sqrt(DOT(d, d));
+	double d_move =4.0 * sqrt(DOT(d, d));
 	double d_min= d_hat - sqrt(d_2);
 	if (d_move < d_min) {
-		d_move = d_min;
+		d_move =4.0 * d_min;
 	}
 	//else {
 	//	std::cout << d_move<<" "<< d_min << std::endl;
@@ -122,17 +122,17 @@ bool CollisionConstraint::pointColliderTriangle(double* initial_position, double
 	
 
 	double d_move;// = sqrt(DOT(d, d));
-	d_move = d_hat - sqrt(d_2);
+	//d_move = d_hat - sqrt(d_2);
 	////////////////////////////////////////////
-	//double d[3];
-	//for (int i = 0; i < 3; ++i) {
-	//	d[i] = initial_position[i] - current_position[i];
-	//}
-	//d_move = sqrt(DOT(d, d));
-	//double d_min = d_hat - sqrt(d_2);
-	//if (d_move < d_min) {
-	//	d_move = d_min;
-	//}
+	double d[3];
+	for (int i = 0; i < 3; ++i) {
+		d[i] = initial_position[i] - current_position[i];
+	}
+	d_move = sqrt(DOT(d, d));
+	double d_min = d_hat - sqrt(d_2);
+	if (d_move < d_min) {
+		d_move = d_min;
+	}
 	///////////////////////////////////////////////
 	//decide the direction
 	double direction[3];

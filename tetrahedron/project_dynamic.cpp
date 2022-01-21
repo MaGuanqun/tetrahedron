@@ -12,13 +12,13 @@ ProjectDynamic::ProjectDynamic()
 
 	use_dierct_solve_for_coarest_mesh = true;
 	super_jacobi_step_size = 3;
-	max_it = 50;
-	max_jacobi_itr_num = 20;
+	max_it = 100;
+	max_jacobi_itr_num = 50;
 	displacement_norm_thread.resize(total_thread_num);
 
 
-	iteration_method.setConvergenceRate(1e-7, 50);
-	max_inner_iteration_num = 3;
+	iteration_method.setConvergenceRate(1e-7, 30);
+	max_inner_iteration_num = 7;
 
 }
 
@@ -41,7 +41,8 @@ void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron
 	for (int i = 0; i < ave_iteration.size(); ++i) {
 		ave_iteration[i].resize(3);
 	}
-	iteration_method.test();
+	//iteration_method.test();
+	iteration_method.testRelativeError();
 	
 }
 
@@ -53,7 +54,7 @@ void ProjectDynamic::initialDHatTolerance(double ave_edge_length)
 	for (int i = 0; i < cloth->size(); ++i) {
 		element_count += (*cloth)[i].mesh_struct.vertex_for_render.size();
 	}
-	displacement_bound = 1e-4 * ave_edge_length;
+	displacement_bound = 1e-5 * ave_edge_length;
 	displacement_bound *= displacement_bound;
 	displacement_bound *= (double)element_count;
 }
@@ -602,15 +603,15 @@ void ProjectDynamic::PDClothPredict()
 {
 	for (int j = 0; j < total_cloth_num; ++j) {
 		for (int i = 0; i < 3; ++i) {
-			cloth_u[j][i] = cloth_u_[j][i] + sub_time_step * cloth_v_[j][i] + (0.25 * sub_time_step * sub_time_step) * (cloth_acceleration[j][i]);//sub_time_step * sub_time_step * mass_inv[j].cwiseProduct(f_ext[j][i]);
+			//cloth_u[j][i] = cloth_u_[j][i] + sub_time_step * cloth_v_[j][i] + (0.25 * sub_time_step * sub_time_step) * (cloth_acceleration[j][i]);//sub_time_step * sub_time_step * mass_inv[j].cwiseProduct(f_ext[j][i]);
 			cloth_u_prediction[j][i] = cloth_u_[j][i] + sub_time_step * cloth_v_[j][i] + (sub_time_step * sub_time_step) * cloth_mass_inv[j].cwiseProduct(cloth_f_ext[j][i]);
-			//cloth_u[j][i] = cloth_u_prediction[j][i];
+			cloth_u[j][i] = cloth_u_prediction[j][i];
 		}
 	}
 }
 
 
-void ProjectDynamic::firstPDForIPC()
+void ProjectDynamic::firstPDForIPC(bool& record_matrix)
 {
 	//face_normal_render
 	PDsetPosPredict();
@@ -621,7 +622,28 @@ void ProjectDynamic::firstPDForIPC()
 		current_constraint_energy += temEnergy[i];
 	}
 
+	if (record_matrix) {
+	
+		//	std::string matrix_name = "./save_matrix/global_" + std::to_string(*time_stamp) + ".dat";
+		//	saveSparseMatrix(cloth_global_mat[0], matrix_name);
+		//
+		////std::string off_diagonal_name = "off_diagonal_" + std::to_string(*time_stamp) + ".dat";
+		////saveSparseMatrix(iteration_method.off_diagonal[0], off_diagonal_name);
+		//std::string u_name = "./save_matrix/u_" + std::to_string(*time_stamp) + "_";
+		//for (int i = 0; i < 3; ++i) {
+		//	saveMatrix(i, cloth_u[0][i], u_name);
+		//}
+	}
 	thread->assignTask(this, SOLVE_SYSYTEM_WITHOUT_COLLISION);
+	if (record_matrix) {
+		//std::string b_name = "./save_matrix/b_" + std::to_string(*time_stamp) + "_";
+		//for (int i = 0; i < 3; ++i) {
+		//	saveMatrix(i, cloth_b[0][i], b_name);
+		//}
+		//record_matrix = false;
+	}
+
+
 	updateModelPosition();
 	collision.collisionCulling();
 
@@ -646,7 +668,7 @@ void ProjectDynamic::firstPDForIPC()
 
 void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 {
-	firstPDForIPC();
+	firstPDForIPC(record_matrix);
 	outer_iteration_num = 1;
 	reset_ave_iteration_record();
 	while (!IPC_PDConvergeCondition()) {
@@ -663,14 +685,16 @@ void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 		//}
 		local_global_iteration_num = 0;
 
-		if (record_matrix) {
-			saveSparseMatrix(cloth_global_mat[0],"global.dat");
-			saveSparseMatrix(iteration_method.off_diagonal[0],"off_diagonal.dat");
-
-			for (int i = 0; i < 3; ++i) {
-				saveMatrix(i, cloth_u[0][i], "u");
-			}			
-		}
+//		if (record_matrix && outer_iteration_num==1) {
+//			std::string matrix_name = "./save_matrix/global_" + std::to_string(*time_stamp) + ".dat";
+//			//saveSparseMatrix(cloth_global_mat[0], matrix_name);
+//			//std::string off_diagonal_name = "off_diagonal_" + std::to_string(*time_stamp) + ".dat";
+//			//saveSparseMatrix(iteration_method.off_diagonal[0], off_diagonal_name);
+//			std::string u_name = "./save_matrix/u_" + std::to_string(*time_stamp) + "_";
+///*			for (int i = 0; i < 3; ++i) {
+//				saveMatrix(i, cloth_u[0][i], u_name);
+//			}	*/		
+//		}
 
 		while (!innerIterationConvergeCondition()) {
 			thread->assignTask(this, LOCAL_PROJECTION_WITHOUT_ENERGY);
@@ -682,12 +706,13 @@ void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 			local_global_iteration_num++;
 			computeInnerEnergyIPCPD();
 
-			if (record_matrix) {
-				for (int i = 0; i < 3; ++i) {
-					saveMatrix(i, cloth_b[0][i], "b");
-				}
-				record_matrix = false;
-			}
+			//if (record_matrix && outer_iteration_num == 1 && local_global_iteration_num==1) {
+			//	std::string b_name = "./save_matrix/b_" + std::to_string(*time_stamp) + "_";
+			//	for (int i = 0; i < 3; ++i) {
+			//		//saveMatrix(i, cloth_b[0][i], b_name);
+			//	}
+			//	//record_matrix = false;
+			//}
 		}
 		//std::cout << outer_iteration_num << std::endl;
 		updateModelPosition();
@@ -1087,7 +1112,7 @@ bool ProjectDynamic::innerIterationConvergeCondition()
 
 bool ProjectDynamic::IPC_PDConvergeCondition()
 {
-	if (outer_iteration_num > 2) {
+	if (outer_iteration_num > 30) {
 		if (outer_iteration_num < max_it) {
 			//bool system_energy = fabs(current_PD_energy - previous_PD_energy) / previous_PD_energy < outer_itr_conv_rate || current_PD_energy < 5e-15;
 			//bool collision_energy = fabs(previous_collision_energy - current_collision_energy) / previous_collision_energy < local_global_conv_rate;

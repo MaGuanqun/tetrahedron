@@ -24,7 +24,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool control_parameter[11];
 	memset(control_parameter, 0, 11);
 	ImGuiWindows imgui_windows;
-	float force_coe=5.0;
+	float force_coe=10.0;
 	std::vector<std::vector<bool>> wireframe(3);
 	std::vector<std::vector<bool>> hide(3);
 	std::vector<std::string> collider_path;
@@ -155,13 +155,26 @@ void simu_main(GLFWwindow* window, Input* input) {
 				camera_from_origin = scene.shadow.camera_from_origin;				
 				setHideWireframe(hide, wireframe, scene.collider.size(), scene.cloth.size(), scene.tetrahedron.size());
 				scene.setTolerance(tolerance_ratio);
-				
+			
 				//scene.testBVH();
 			}
 		}
 		else {		
-			if (scene.time_stamp == 100 || scene.time_stamp == 200) {
+			//std::cout << camera.position.x<<" "<< camera.position.y<<" "<< camera.position.z << std::endl;
+			if (input->keyboard.keyWasPressedThisFrame(GLFW_KEY_W))
+			{
 				record_matrix = true;
+				control_parameter[SAVE_OBJ] = true;
+			}
+
+			if (scene.time_stamp == 20 || scene.time_stamp == 50 || scene.time_stamp == 100) {
+				record_matrix = true;
+				control_parameter[SAVE_OBJ] = true;
+			}
+
+			if (scene.time_stamp == 100) {
+				record_matrix = false;
+				control_parameter[SAVE_OBJ] = false;
 			}
 
 			scene.setTolerance(tolerance_ratio);			

@@ -20,6 +20,7 @@ public:
 		std::vector<int>edge;
 		std::vector<int>neighbor_vertex;
 		std::vector<int>around_face;
+		std::vector<int>around_vertex;
 		bool on_border = false;
 	
 	};

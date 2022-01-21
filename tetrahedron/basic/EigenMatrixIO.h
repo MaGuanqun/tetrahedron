@@ -137,6 +137,43 @@ namespace EigenMatrixIO {
 		sp.setFromTriplets(triplet.begin(), triplet.end());
 	}
 
+	template<typename T, int d>
+	void read_sp_binary(const char* filename, Eigen::SparseMatrix<T, d>& sp, Eigen::SparseMatrix<T, d>& sp_3)
+	{
+		std::ifstream in(filename, std::ios::in | std::ios::binary);
+		if (!in.good())
+		{
+			std::cout << "file not open" << std::endl;
+			return;
+		}
+		int rows;
+		int cols;
+		in.read((char*)&rows, sizeof(int));
+		in.read((char*)&cols, sizeof(int));
+		sp.resize(rows, cols);
+		sp_3.resize(3*rows, 3*cols);
+		int nnz;
+		in.read((char*)&nnz, sizeof(int));
+		std::vector<Eigen::Triplet<T>> triplet;
+		std::vector<Eigen::Triplet<T>> triplet_3;
+		for (int i = 0; i < nnz; i++)
+		{
+			int row;
+			int col;
+			T value;
+			in.read((char*)&row, sizeof(int));
+			in.read((char*)&col, sizeof(int));
+			in.read((char*)&value, sizeof(T));
+			triplet.push_back(Eigen::Triplet<T>(row, col, value));
+			for (int j = 0; j < 3; ++j)
+			{
+				triplet_3.push_back(Eigen::Triplet<T>(3 * row + j, 3 * col + j, value));
+			}
+		}
+
+		sp.setFromTriplets(triplet.begin(), triplet.end());
+		sp_3.setFromTriplets(triplet_3.begin(), triplet_3.end());
+	}
 
 	template<typename T, int d>
 	void read_sp_binary(Eigen::SparseMatrix<T,d>& sp, std::ifstream& in)

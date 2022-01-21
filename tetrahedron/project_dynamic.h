@@ -50,7 +50,7 @@ public:
 	void updateIterateSolverParameter(double conv_rate);
 	void update_ave_iteration_record(std::vector<std::vector<double>>& ave_itr);
 
-
+	size_t* time_stamp;
 	Collision collision;
 private:
 	int local_global_itr_in_single_outer;
@@ -176,7 +176,7 @@ private:
 	void initialTetrahedronPDvariable();
 	bool IPC_PDConvergeCondition();
 	void updateRenderPositionIPC();
-	void firstPDForIPC();
+	void firstPDForIPC(bool& record_matrix);
 
 	std::vector<double>displacement_norm_thread;
 	std::vector<std::vector<VectorXd>> cloth_u_previous_itr;

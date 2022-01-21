@@ -72,6 +72,7 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mesh_struct.setVertex();
 	mesh_struct.setFace();
 	mesh_struct.setEdge();
+	mesh_struct.addArounVertex();
 	mesh_struct.setThreadIndex(total_thread_num);
 	mesh_struct.vertex_for_render = mesh_struct.vertex_position;
 	mesh_struct.getRenderNormal();
@@ -201,8 +202,11 @@ void Cloth::setAnchor()
 	//mesh_struct.anchor_vertex.push_back(0);
 	//mesh_struct.anchor_vertex.push_back(15 * 30 - 1);
 	//mesh_struct.anchor_vertex.push_back(15 * 29);
+	//mesh_struct.anchor_vertex.push_back(101 * 101 - 1);
+	//mesh_struct.anchor_vertex.push_back(101 * 100);
+
 	mesh_struct.anchor_vertex.push_back(101 * 101 - 1);
-	mesh_struct.anchor_vertex.push_back(101 * 100);
+	mesh_struct.anchor_vertex.push_back(101 * 100);//131 * 100
 }
 
 //VERTEX_AABB
@@ -405,11 +409,11 @@ void Cloth::findNeighborVertex(int vertex_index, int recursion_deepth, std::vect
 {
 	if (recursion_deepth > 1)
 		return;
-	for (int i = 0; i < mesh_struct.vertices[vertex_index].neighbor_vertex.size(); ++i) {
-		if (!is_vertex_used[mesh_struct.vertices[vertex_index].neighbor_vertex[i]]) {
-			neighbor_vertex.push_back(mesh_struct.vertices[vertex_index].neighbor_vertex[i]);
-			is_vertex_used[mesh_struct.vertices[vertex_index].neighbor_vertex[i]] = true;
-			findNeighborVertex(mesh_struct.vertices[vertex_index].neighbor_vertex[i], recursion_deepth + 1, is_vertex_used);
+	for (int i = 0; i < mesh_struct.vertices[vertex_index].around_vertex.size(); ++i) {
+		if (!is_vertex_used[mesh_struct.vertices[vertex_index].around_vertex[i]]) {
+			neighbor_vertex.push_back(mesh_struct.vertices[vertex_index].around_vertex[i]);
+			is_vertex_used[mesh_struct.vertices[vertex_index].around_vertex[i]] = true;
+			findNeighborVertex(mesh_struct.vertices[vertex_index].around_vertex[i], recursion_deepth + 1, is_vertex_used);
 		}
 	}
 }

@@ -114,12 +114,24 @@ public:
 		//			1.6 * (double)j / (double)(row_num - 1) - 0.2, 1.2 * (double)j / (double)(row_num - 1) - 0.5});//
 		//	}
 		//}
+
 		for (int j = 0; j < row_num; j++) {
 			for (int i = 0; i < col_num; i++) {
-				mesh.vertices.push_back(std::array<double, 3>{2.0 * (double)i / (double)(col_num - 1) - 1.0,  //+0.9
-					2.0 * (double)j / (double)(row_num - 1) - 0.6,0.0});// 0.3 * (double)j / (double)(row_num - 1) - 0.5
+				mesh.vertices.push_back(std::array<double, 3>{1.0 * (double)i / (double)(col_num - 1) - 0.45,  //+0.9
+					0.954 * (double)j / (double)(row_num - 1) - 0.6, 0.3 * (double)j / (double)(row_num - 1) - 0.6});// 
 			}
 		}
+		
+		//this is for adding force
+		//for (int j = 0; j < row_num; j++) {
+		//	for (int i = 0; i < col_num; i++) {
+		//		mesh.vertices.push_back(std::array<double, 3>{1.0 * (double)i / (double)(col_num - 1) - 0.45,  //+0.9
+		//			1.0 * (double)j / (double)(row_num - 1) - 0.6, 0.2 * (double)j / (double)(row_num - 1) - 0.6});// 
+		//	}
+		//}
+
+
+
 		//int col_num = 121;
 		//int row_num = 121;
 		//for (int j = 0; j < row_num; j++) {

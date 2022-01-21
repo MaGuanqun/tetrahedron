@@ -8,15 +8,16 @@ Scene::Scene()
 	light.specular = glm::vec3(0.95, 0.95, 0.95);
 
 	
-	time_step = 1.0 / 100.0;
+	time_step = 1.0 / 50.0;
 	project_dynamic.time_step = time_step;
 
-	max_force_magnitude = 12.0;
+	max_force_magnitude = 2.0;
 
 	last_output_obj_stamp = -1;
 	time_stamp = 0;
 	genShader();	
 	project_dynamic.collision.time_stamp = &time_stamp;
+	project_dynamic.time_stamp = &time_stamp;
 }
 
 
@@ -68,10 +69,10 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	}
 	setWireframwColor();
 	std::vector<SingleClothInfo> single_cloth_info;
-	std::array<double, 4>collision_stiffness_per = { 5e4,5e4,5e4,5e4 };// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point,
+	std::array<double, 4>collision_stiffness_per = { 2e5,2e5,2e5, 2e5 };// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point,
 	std::vector<std::array<double, 4>>collision_stiffness(cloth_num, collision_stiffness_per);
 	for (int i = 0; i < cloth_num; ++i) {
-		single_cloth_info.push_back(SingleClothInfo(cloth_density, 1e3, 1e6, 1e-4, collision_stiffness[i].data(), 0.5, 0.4, collision_stiffness_per[1]));
+		single_cloth_info.push_back(SingleClothInfo(cloth_density, 1e3, 1e6, 3e-4, collision_stiffness[i].data(), 0.5, 0.4, collision_stiffness_per[1]));
 	}
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].recordInitialMesh(single_cloth_info[i]);
@@ -288,7 +289,7 @@ void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_par
 		project_dynamic.resetExternalForce();
 		//std::cout << intersection.happened << " " << control_parameter[START_TEST] << std::endl;
 		if (intersection.happened && !control_parameter[START_TEST]) {
-		
+			//std::cout << cursor_screen[0] << " " << cursor_screen[1] << " " << force_coe << std::endl;
 			setCursorForce(camera, cursor_screen, force_coe);
 		}
 		//project_dynamic.PDsolve();

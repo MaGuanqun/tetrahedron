@@ -571,22 +571,194 @@ void IterationMethod::solveByPCG(VectorXd& u, VectorXd& b, SparseMatrix<double, 
 
 
 
+void IterationMethod::testGaussSeidel()
+{
+	int size = 5;
+	SparseMatrix<double, ColMajor> system_matrix_(size,size);
+	std::vector<Eigen::Triplet<double>> triplet;
+	std::vector<std::array<double, 5>> ma(5);
+	ma[0] =std::array{ 2.1012, 0.1300, -1.6081, -1.1935, 0.3851 };
+	ma[1] =std::array{ 0.1300,0.6209,-0.2666,-0.3431,-0.5251 };
+	ma[2] =std::array{ -1.6081,-0.2666,2.6402,1.0969,-0.5009 };
+	ma[3] =std::array{ -1.1935,-0.3431,1.0969,3.3753,-0.6894 };
+	ma[4] =std::array{ 0.3851,-0.5251,-0.5009,-0.6894,1.5310 };
 
+	for (int i = 0; i < size; ++i)
+	{
+		for (int j = 0; j < size; ++j)
+		{
+			triplet.push_back(Eigen::Triplet<double>(i, j, ma[i][j]));
+		}		
+	}	
+	system_matrix_.setFromTriplets(triplet.begin(), triplet.end());
+	VectorXd f(size);
+	for (int i = 0; i < size; ++i)
+	{
+			f[i] = 0.2 * (i+1);
+	}
+	VectorXd x(size);
+	x.setZero();
+	std::vector<VectorXd> u(3);
+	std::vector<VectorXd> b(3);
+	for(int i=0;i<3;++i)
+	{
+		u[i] = x;
+		b[i] = f;
+	}
+
+	std::vector<VectorXd> ground_truth(3);
+	SimplicialLLT<SparseMatrix<double>> collision_free_cloth_llt;
+	collision_free_cloth_llt.compute(system_matrix_);
+	for (int i = 0; i < 3; ++i) {
+		ground_truth[i] = collision_free_cloth_llt.solve(b[i]);
+	}
+	std::vector<double> relative_error;
+	double conv_rate_2 = 1e-5;
+	std::vector<int> time;
+	gauss_seidel(u, b, system_matrix_, ground_truth, relative_error, conv_rate_2, time);
+
+}
+
+void IterationMethod::testRelativeError()
+{
+	std::vector<VectorXd> u_(3);
+	std::vector<VectorXd> b_(3);
+	std::string file_name_matrix = "./save_matrix_prediction2/global_0.dat";
+	SparseMatrix<double, ColMajor> system_matrix_;
+	EigenMatrixIO::read_sp_binary(file_name_matrix.c_str(), system_matrix_);
+	SparseMatrix<double, ColMajor> system_matrix;
+	system_matrix = system_matrix_;// .cast<float>();
+	std::vector<std::string> file_name_u(3);
+	std::vector<std::string> file_name_b(3);
+	std::vector<VectorXd> ground_truth(3);
+	//ground_truth
+	SimplicialLLT<SparseMatrix<double>> collision_free_cloth_llt;
+	collision_free_cloth_llt.analyzePattern(system_matrix);
+	collision_free_cloth_llt.factorize(system_matrix_);
+	double relative_error;
+	double ground_truth_norm;
+	//std::string file_name_matrix1 = "./save_matrix_prediction2/global_0.dat";
+	for (int k = 16; k < 17; ++k)
+	{
+		//std::cout << k << std::endl;
+		//std::string file_name_matrix1 = "./save_matrix_prediction2/global_" + std::to_string(k) + ".dat";
+		//EigenMatrixIO::read_sp_binary(file_name_matrix1.c_str(), system_matrix_);
+		//collision_free_cloth_llt.factorize(system_matrix_);
+		//system_matrix = system_matrix_;
+		for (int i = 0; i < 3; ++i) {			
+			file_name_u[i] = "./save_matrix_prediction2/u_"+ std::to_string(k) + "_" + std::to_string(i) + ".dat";
+			file_name_b[i] = "./save_matrix_prediction2/b_" + std::to_string(k) + "_" + std::to_string(i) + ".dat";
+			EigenMatrixIO::read_binary(file_name_u[i].c_str(), u_[i]);
+			EigenMatrixIO::read_binary(file_name_b[i].c_str(), b_[i]);
+			for (int i = 0; i < 3; ++i) {
+				ground_truth[i] = collision_free_cloth_llt.solve(b_[i]);
+			}	
+		}
+		//relative_error = (u_[0] - ground_truth[0]).squaredNorm() + (u_[1] - ground_truth[1]).squaredNorm() + (u_[2] - ground_truth[2]).squaredNorm();
+		//ground_truth_norm = ground_truth[0].squaredNorm() + ground_truth[1].squaredNorm() + ground_truth[2].squaredNorm();
+		//relative_error = sqrt(relative_error / ground_truth_norm);
+		//std::cout << k << " " << relative_error << std::endl;
+		std::cout << "successful read" << std::endl;
+		std::vector<VectorXd> u(3);
+		std::vector<VectorXd> b(3);
+		for (int i = 0; i < 3; ++i) {
+			u[i] = u_[i];// .cast<float>();
+			b[i] = b_[i];// .cast<float>();
+		}
+		//ground_truth
+		for (int i = 0; i < 3; ++i) {
+			ground_truth[i] = collision_free_cloth_llt.solve(b[i]);
+		}
+		std::vector<VectorXd> u_use;
+
+		std::string txt_file_name = "add force iteration_result" + std::to_string(k);
+
+		//jacobi
+		u_use = u;
+		std::vector<double> jacobi_relative_error;
+		std::vector<int> jacobi_time;
+		double conv_rate_2 = 1e-7;
+		conv_rate_2 *= conv_rate_2;
+		jacobi(u_use, b, system_matrix, ground_truth, jacobi_relative_error, conv_rate_2, jacobi_time);
+		WriteTxt::writeTxt(jacobi_relative_error, jacobi_time, 10, txt_file_name, "jacobi");
+		std::cout << "jaco" << std::endl;
+		////super_jacobi
+		u_use = u;
+		std::vector<double> super_jacobi_relative_error;
+		std::vector<int> super_jacobi_time;
+		superJacobi(u_use, b, system_matrix, ground_truth, super_jacobi_relative_error, conv_rate_2, 2, super_jacobi_time);
+		WriteTxt::addToTxt(super_jacobi_relative_error, super_jacobi_time, 10, txt_file_name, "super jacobi");
+		//WriteTxt::writeTxt(super_jacobi_relative_error, super_jacobi_time, 10, txt_file_name, "super jacobi");
+		std::cout << "finished a_jacobi 2" << std::endl;
+		u_use = u;
+		std::vector<double> super_jacobi_relative_error_3;
+		std::vector<int> super_jacobi_time_3;
+		superJacobi(u_use, b, system_matrix, ground_truth, super_jacobi_relative_error_3, conv_rate_2, 3, super_jacobi_time_3);
+		WriteTxt::addToTxt(super_jacobi_relative_error_3, super_jacobi_time_3, 10, txt_file_name, "super jacobi 3");
+
+		std::cout << "finished a_jacobi 3" << std::endl;
+
+
+		////gauss_seidel
+		u_use = u;
+		std::vector<double> gauss_seidel_relative_error;
+		std::vector<int> gauss_seidel_time;
+		gauss_seidel(u_use, b, system_matrix, ground_truth, gauss_seidel_relative_error, conv_rate_2, gauss_seidel_time);
+		WriteTxt::addToTxt(gauss_seidel_relative_error, gauss_seidel_time, 10, txt_file_name, "gauss seidel");
+		////jacobi_chebyshev
+		u_use = u;
+		std::vector<double> jacobi_chebyshev_relative_error;
+		std::vector<int> jacobi_chebyshev_time;
+		chebyshevSemiIterativeJacobi(u_use, b, system_matrix, ground_truth, jacobi_chebyshev_relative_error, conv_rate_2, jacobi_chebyshev_time);
+		WriteTxt::addToTxt(jacobi_chebyshev_relative_error, jacobi_chebyshev_time, 10, txt_file_name, "cheybyshev jacobi");
+		//super_jacobi_chebyshev_2
+		u_use = u;
+		std::vector<double> super_jacobi_chebyshev_relative_error_2;
+		std::vector<int> super_jacobi_chebyshev_time_2;
+		chebyshevSemiIterativeSuperJacobi(u_use, b, system_matrix, ground_truth, super_jacobi_chebyshev_relative_error_2, conv_rate_2, 2, super_jacobi_chebyshev_time_2);
+		WriteTxt::addToTxt(super_jacobi_chebyshev_relative_error_2, super_jacobi_chebyshev_time_2, 10, txt_file_name, "cheybyshev super jacobi 2");
+		//WriteTxt::writeTxt(super_jacobi_chebyshev_relative_error_2, super_jacobi_chebyshev_time_2, 10, txt_file_name, "cheybyshev super jacobi 2");
+		//super_jacobi_chebyshev_3
+		u_use = u;
+		std::vector<double> super_jacobi_chebyshev_relative_error_3;
+		std::vector<int> super_jacobi_chebyshev_time_3;
+		chebyshevSemiIterativeSuperJacobi(u_use, b, system_matrix, ground_truth, super_jacobi_chebyshev_relative_error_3, conv_rate_2, 3, super_jacobi_chebyshev_time_3);
+		WriteTxt::addToTxt(super_jacobi_chebyshev_relative_error_3, super_jacobi_chebyshev_time_3, 10, txt_file_name, "cheybyshev super jacobi 3");
+		//gauss_seidel_chebyshev
+		std::cout << "start" << std::endl;
+		u_use = u;
+		std::vector<double> gauss_seidel_chebyshev_relative_error;
+		std::vector<int> gauss_seidel_chebyshev_time;
+		chebyshev_gauss_seidel(u_use, b, system_matrix, ground_truth, gauss_seidel_chebyshev_relative_error, conv_rate_2, gauss_seidel_chebyshev_time);
+		WriteTxt::addToTxt(gauss_seidel_chebyshev_relative_error, gauss_seidel_chebyshev_time, 10, txt_file_name, "gauss seidel chebyshev 3");
+		std::cout << "end" << std::endl;
+		//std::cout << gauss_seidel_chebyshev_relative_error.size() << " ";
+		//std::cout << "finished GS cheby" << std::endl;
+		////PCG
+		u_use = u;
+		std::vector<double> PCG_relative_error;
+		std::vector<int> PCG_time;
+		PCG(u, b, system_matrix, ground_truth, PCG_relative_error, conv_rate_2, PCG_time);
+		WriteTxt::addToTxt(PCG_relative_error, PCG_time, 10, txt_file_name, "PCG");
+	}
+}
 
 
 void IterationMethod::test()
 {
+	//testGaussSeidel();
 	//load matrix
 	std::vector<VectorXd> u_(3);
 	std::vector<VectorXd> b_(3);
 	SparseMatrix<double, ColMajor> system_matrix_;
+	SparseMatrix<double, ColMajor> system_matrix_3;
 	std::vector<VectorXd> ground_truth(3);
 
 	//dimension_per_thread_test.resize(thread->thread_num + 1, 3);
 	//for (int i = 0; i < 3; ++i) {
 	//	dimension_per_thread_test[i] = i;
 	//}
-	std::string file_name_matrix="./back/new/global.dat";
+	std::string file_name_matrix="./back/scene2_101/global.dat";
 
 	EigenMatrixIO::read_sp_binary(file_name_matrix.c_str(), system_matrix_);
 	SparseMatrix<double, ColMajor> system_matrix;
@@ -598,28 +770,15 @@ void IterationMethod::test()
 	std::vector<std::string> file_name_b(3);
 
 	for (int i = 0; i < 3; ++i) {
-		file_name_u[i] = "./back/new/u" + std::to_string(i) + ".dat";
-		file_name_b[i] = "./back/new/b" + std::to_string(i) + ".dat";
+		file_name_u[i] = "./back/scene2_101/u" + std::to_string(i) + ".dat";
+		file_name_b[i] = "./back/scene2_101/b" + std::to_string(i) + ".dat";
 		EigenMatrixIO::read_binary(file_name_u[i].c_str(), u_[i]);
 		EigenMatrixIO::read_binary(file_name_b[i].c_str(), b_[i]);
 		std::cout << "i" << std::endl;
 	}	
 
-	SparseMatrix<double, ColMajor> sys_matrix_second_order;
-	SparseMatrix<double, ColMajor> sys_matrix_third_order;
-	time_t t1 = clock();
-	sys_matrix_second_order = system_matrix_ * system_matrix_;
-	sys_matrix_second_order.prune((double)0.0);
-	
-	//std::cout << "time " << clock() - t1 << std::endl;
-	//sys_matrix_third_order = sys_matrix_second_order * system_matrix_;
-	//std::cout <<"third"<<(double)sys_matrix_third_order.nonZeros() / (double)(sys_matrix_third_order.cols() * sys_matrix_third_order.cols());
-	//std::cout <<"second"<<(double)sys_matrix_second_order.nonZeros() / (double)(sys_matrix_second_order.cols() * sys_matrix_second_order.cols());
-	//std::cout << "first" << (double)system_matrix_.nonZeros() / (double)(system_matrix_.cols() * system_matrix_.cols());
-
 	std::vector<VectorXd> u(3);
 	std::vector<VectorXd> b(3);
-
 	for (int i = 0; i < 3; ++i) {
 		u[i] = u_[i];// .cast<float>();
 		b[i] = b_[i];// .cast<float>();
@@ -630,84 +789,83 @@ void IterationMethod::test()
 	for (int i = 0; i < 3; ++i) {
 		ground_truth[i] = collision_free_cloth_llt.solve(b[i]);
 	}	
-
 	std::vector<VectorXd> u_use;
 	//jacobi
 	u_use = u;
 	std::vector<double> jacobi_relative_error;
 	std::vector<int> jacobi_time;
-	double conv_rate_2 = 5e-8;
+	double conv_rate_2 = 5e-7;
 	conv_rate_2 *= conv_rate_2;
-
 	jacobi(u_use, b, system_matrix, ground_truth, jacobi_relative_error, conv_rate_2,jacobi_time);
 	WriteTxt::writeTxt(jacobi_relative_error, jacobi_time, 10, "iteration_result", "jacobi");
-	//super_jacobi
+	////super_jacobi
 	u_use = u;
 	std::vector<double> super_jacobi_relative_error;
 	std::vector<int> super_jacobi_time;
 	superJacobi(u_use, b, system_matrix, ground_truth, super_jacobi_relative_error, conv_rate_2,2, super_jacobi_time);
 	WriteTxt::addToTxt(super_jacobi_relative_error, super_jacobi_time, 10, "iteration_result", "super jacobi");
-	std::cout << "finished a_jacobi 2" << std::endl;
+	//WriteTxt::writeTxt(super_jacobi_relative_error, super_jacobi_time, 10, "iteration_result", "super jacobi");
+	//std::cout << "finished a_jacobi 2" << std::endl;
 	u_use = u;
 	std::vector<double> super_jacobi_relative_error_3;
 	std::vector<int> super_jacobi_time_3;
 	superJacobi(u_use, b, system_matrix, ground_truth, super_jacobi_relative_error_3, conv_rate_2, 3, super_jacobi_time_3);
 	WriteTxt::addToTxt(super_jacobi_relative_error_3, super_jacobi_time_3, 10, "iteration_result", "super jacobi 3");
 
-	//gauss_seidel
+	//gauss_seidel_chebyshev
+	
+
+	////gauss_seidel
 	u_use = u;
 	std::vector<double> gauss_seidel_relative_error;
 	std::vector<int> gauss_seidel_time;
 	gauss_seidel(u_use, b, system_matrix, ground_truth, gauss_seidel_relative_error, conv_rate_2, gauss_seidel_time);
 	WriteTxt::addToTxt(gauss_seidel_relative_error, gauss_seidel_time, 10, "iteration_result", "gauss seidel");
-	//jacobi_chebyshev
+	////jacobi_chebyshev
 	u_use = u;
 	std::vector<double> jacobi_chebyshev_relative_error;
 	std::vector<int> jacobi_chebyshev_time;
 	chebyshevSemiIterativeJacobi(u_use, b, system_matrix, ground_truth, jacobi_chebyshev_relative_error, conv_rate_2, jacobi_chebyshev_time);
 	WriteTxt::addToTxt(jacobi_chebyshev_relative_error, jacobi_chebyshev_time, 10, "iteration_result", "cheybyshev jacobi");
-
 	//super_jacobi_chebyshev_2
 	u_use = u;
 	std::vector<double> super_jacobi_chebyshev_relative_error_2;
 	std::vector<int> super_jacobi_chebyshev_time_2;
 	chebyshevSemiIterativeSuperJacobi(u_use, b, system_matrix, ground_truth, super_jacobi_chebyshev_relative_error_2, conv_rate_2,2, super_jacobi_chebyshev_time_2);
 	WriteTxt::addToTxt(super_jacobi_chebyshev_relative_error_2, super_jacobi_chebyshev_time_2, 10, "iteration_result", "cheybyshev super jacobi 2");
-
-	//super_jacobi_chebyshev_2
+	//WriteTxt::writeTxt(super_jacobi_chebyshev_relative_error_2, super_jacobi_chebyshev_time_2, 10, "iteration_result", "cheybyshev super jacobi 2");
+	//super_jacobi_chebyshev_3
 	u_use = u;
 	std::vector<double> super_jacobi_chebyshev_relative_error_3;
 	std::vector<int> super_jacobi_chebyshev_time_3;
 	chebyshevSemiIterativeSuperJacobi(u_use, b, system_matrix, ground_truth, super_jacobi_chebyshev_relative_error_3, conv_rate_2, 3, super_jacobi_chebyshev_time_3);
 	WriteTxt::addToTxt(super_jacobi_chebyshev_relative_error_3, super_jacobi_chebyshev_time_3, 10, "iteration_result", "cheybyshev super jacobi 3");
-
-	//gauss_seidel_chebyshev
+	
 	u_use = u;
 	std::vector<double> gauss_seidel_chebyshev_relative_error;
 	std::vector<int> gauss_seidel_chebyshev_time;
 	chebyshev_gauss_seidel(u_use, b, system_matrix, ground_truth, gauss_seidel_chebyshev_relative_error, conv_rate_2, gauss_seidel_chebyshev_time);
 	WriteTxt::addToTxt(gauss_seidel_chebyshev_relative_error, gauss_seidel_chebyshev_time, 10, "iteration_result", "gauss seidel chebyshev 3");
+	std::cout << gauss_seidel_chebyshev_relative_error.size() << " ";
 	std::cout << "finished GS cheby" << std::endl;
-	//PCG
+	////PCG
 	u_use = u;
 	std::vector<double> PCG_relative_error;
 	std::vector<int> PCG_time;
 	PCG(u, b, system_matrix, ground_truth, PCG_relative_error, conv_rate_2, PCG_time);
 	WriteTxt::addToTxt(PCG_relative_error, PCG_time, 10, "iteration_result", "PCG");
 	
-	size_t max_itr = 0;
-	max_itr = (std::max)(max_itr, jacobi_relative_error.size());
-	max_itr = (std::max)(max_itr, super_jacobi_relative_error.size());
-	max_itr = (std::max)(max_itr, super_jacobi_relative_error_3.size());
-	max_itr = (std::max)(max_itr, gauss_seidel_relative_error.size());
-	max_itr = (std::max)(max_itr, jacobi_chebyshev_relative_error.size());
-	max_itr = (std::max)(max_itr, super_jacobi_chebyshev_relative_error_2.size());
-	max_itr = (std::max)(max_itr, super_jacobi_chebyshev_relative_error_3.size());
-	max_itr = (std::max)(max_itr, gauss_seidel_chebyshev_relative_error.size());
-	max_itr = (std::max)(max_itr, PCG_relative_error.size());
-
+	//size_t max_itr = 0;
+	//max_itr = (std::max)(max_itr, jacobi_relative_error.size());
+	//max_itr = (std::max)(max_itr, super_jacobi_relative_error.size());
+	//max_itr = (std::max)(max_itr, super_jacobi_relative_error_3.size());
+	//max_itr = (std::max)(max_itr, gauss_seidel_relative_error.size());
+	//max_itr = (std::max)(max_itr, jacobi_chebyshev_relative_error.size());
+	//max_itr = (std::max)(max_itr, super_jacobi_chebyshev_relative_error_2.size());
+	//max_itr = (std::max)(max_itr, super_jacobi_chebyshev_relative_error_3.size());
+	//max_itr = (std::max)(max_itr, gauss_seidel_chebyshev_relative_error.size());
+	//max_itr = (std::max)(max_itr, PCG_relative_error.size());
 	std::cout << "1.jacobi 2.super_jacobi_2 3. super_jacobi_3 4.gauss_seidel 5.jacobi_chebyshev 6.super_jacobi_chebyshev_2 7.super_jacobi_chebyshev_3 8.gauss_seidel_chebyshev 9.PCG" << std::endl;
-
 	//for (int i = 0; i < max_itr; ++i) {
 	//	if (i < jacobi_relative_error.size()) {
 	//		std::cout << (jacobi_relative_error[i])<<" "<< jacobi_time[i];
@@ -765,7 +923,7 @@ void IterationMethod::test()
 	//	}
 	//	std::cout << std::endl;
 	//}
-	//std::cout << gauss_seidel_chebyshev_relative_error.size() << std::endl;
+	std::cout << gauss_seidel_chebyshev_relative_error.size() << std::endl;
 }
 
 //void IterationMethod::jacobi(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, VectorXd& ground_truth, std::vector<double>&relative_error)
