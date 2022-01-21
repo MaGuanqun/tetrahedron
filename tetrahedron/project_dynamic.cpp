@@ -42,7 +42,7 @@ void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron
 		ave_iteration[i].resize(3);
 	}
 	//iteration_method.test();
-	iteration_method.testRelativeError();
+	//iteration_method.testRelativeError();
 	
 }
 
@@ -93,24 +93,24 @@ void ProjectDynamic::restBendingMeanCurvature()
 	int neighbor, ve;
 	double vertex_curvature[3];
 	for (int k = 0; k < total_cloth_num; ++k) {
-		restBendingMeanCurvatureSingleCloth((*cloth)[k].mesh_struct, rest_mean_curvature_norm[k], vertex_around_vertex_for_bending[k],
-			vertex_lbo[k]);
+		restBendingMeanCurvatureSingleCloth((*cloth)[k].mesh_struct, rest_mean_curvature_norm[k], vertex_lbo[k]);
 	}
 }
 
 void ProjectDynamic::restBendingMeanCurvatureSingleCloth(TriangleMeshStruct& mesh_struct, std::vector<double>& rest_mean_curvature_norm,
-	std::vector<std::vector<int>>& vertex_around_vertex_for_bending, std::vector<VectorXd>& vertex_lbo)
+	std::vector<VectorXd>& vertex_lbo)
 {
 	rest_mean_curvature_norm.resize(mesh_struct.vertices.size());
 	VectorXd q;
 	int size;
 	double vertex_curvature[3];
 	for (int i = 0; i < mesh_struct.vertices.size(); ++i) {
-		size = vertex_around_vertex_for_bending[i].size();
+		size = vertex_lbo[i].size();
 		q.resize(size);
 		for (int j = 0; j < 3; ++j) {
-			for (int h = 0; h < size; h++) {
-				q[h] = mesh_struct.vertex_position[vertex_around_vertex_for_bending[i][h]][j];
+			q[0] = mesh_struct.vertex_position[i][j];
+			for (int h = 1; h < size; h++) {
+				q[h] = mesh_struct.vertex_position[mesh_struct.vertices[i].neighbor_vertex[h-1]][j];
 			}
 			vertex_curvature[j] = dotProductX_(vertex_lbo[i], q);
 		}
@@ -181,17 +181,9 @@ void ProjectDynamic::setIndexPerThread()
 
 void ProjectDynamic::computeVertexLBO(std::vector<std::vector<double>>& edge_cot_weight)
 {
-	std::vector<std::vector<std::vector<int>>> edge_around_vertex_for_bending;
-	edge_around_vertex_for_bending.resize(total_cloth_num);
-	vertex_around_vertex_for_bending.resize(total_cloth_num);
-	for (int k = 0; k < total_cloth_num; ++k) {
-		edge_around_vertex_for_bending[k].resize(cloth_sys_size[k]);
-		vertex_around_vertex_for_bending[k].resize(cloth_sys_size[k]);
-		setAroundVertexPrimitive((*cloth)[k].mesh_struct, edge_around_vertex_for_bending[k], vertex_around_vertex_for_bending[k]);
-	}
 	vertex_lbo.resize(total_cloth_num);
 	for (int k = 0; k < total_cloth_num; ++k) {
-		computeVertexLBOSingleCloth((*cloth)[k].mesh_struct, vertex_lbo[k], edge_cot_weight[k], edge_around_vertex_for_bending[k], lbo_weight[k]);
+		computeVertexLBOSingleCloth((*cloth)[k].mesh_struct, vertex_lbo[k], edge_cot_weight[k], lbo_weight[k]);
 	}
 }
 
@@ -204,7 +196,7 @@ void ProjectDynamic::computeGlobalStepMatrix()
 	collision_free_cloth_llt = new SimplicialLLT<SparseMatrix<double>>[total_cloth_num];
 	for (int i = 0; i < total_cloth_num; ++i) {
 		computeGlobalStepMatrixSingleCloth(&cloth_global_mat[i], cloth_global_mat_diagonal_ref[i], cloth_global_mat_diagonal_ref_address[i],
-			&cloth_llt[i], (*cloth)[i].mesh_struct, vertex_around_vertex_for_bending[i], lbo_weight[i], vertex_lbo[i], cloth_sys_size[i],
+			&cloth_llt[i], (*cloth)[i].mesh_struct, lbo_weight[i], vertex_lbo[i], cloth_sys_size[i],
 			(*cloth)[i].bend_stiffness, (*cloth)[i].length_stiffness, (*cloth)[i].position_stiffness, &collision_free_cloth_llt[i]);
 	}
 	initial_cloth_global_mat = cloth_global_mat;
@@ -215,13 +207,13 @@ void ProjectDynamic::computeOffDiagonal()
 {
 	iteration_method.offDiagonalSize();	
 	for (int i = 0; i < total_cloth_num; ++i) {
-		setOffDiagonal(i, vertex_around_vertex_for_bending[i], lbo_weight[i], vertex_lbo[i], cloth_sys_size[i],
+		setOffDiagonal(i, lbo_weight[i], vertex_lbo[i], cloth_sys_size[i],
 			(*cloth)[i].bend_stiffness, (*cloth)[i].length_stiffness, (*cloth)[i].mesh_struct);
 	}
 }
 
 
-void ProjectDynamic::setOffDiagonal(int cloth_No, std::vector<std::vector<int>>& vertex_around_vertex_for_bending,
+void ProjectDynamic::setOffDiagonal(int cloth_No,
 	std::vector<double>& lbo_weight, std::vector<VectorXd>& vertex_lbo, int sys_size, double bending_stiffness, std::vector<double>& length_stiffness,
 	TriangleMeshStruct& mesh_struct)
 {
@@ -230,14 +222,19 @@ void ProjectDynamic::setOffDiagonal(int cloth_No, std::vector<std::vector<int>>&
 	global_mat_nnz.reserve(estimate_total_constraint);
 	//bending
 	int lbo_length; MatrixXd ATA;
+	std::vector<int> index;
 	if (!mesh_struct.faces.empty()) {
 		for (int i = 0; i < sys_size; ++i) {
 			lbo_length = vertex_lbo[i].size();
+			index.clear();
+			index.resize(lbo_length);
 			ATA = (bending_stiffness * lbo_weight[i] * vertex_lbo[i]) * vertex_lbo[i].transpose();
+			index[0] = i;
+			memcpy(&(index[1]), mesh_struct.vertices[i].neighbor_vertex.data(), 4 * (lbo_length - 1));
 			for (int l = 0; l < lbo_length; ++l) {
 				for (int k = l + 1; k < lbo_length; ++k) {
-					global_mat_nnz.push_back(Triplet<double>(vertex_around_vertex_for_bending[i][l], vertex_around_vertex_for_bending[i][k], ATA.data()[lbo_length * l + k]));
-					global_mat_nnz.push_back(Triplet<double>(vertex_around_vertex_for_bending[i][k], vertex_around_vertex_for_bending[i][l], ATA.data()[lbo_length * k + l]));
+					global_mat_nnz.push_back(Triplet<double>(index[l], index[k], ATA.data()[lbo_length * l + k]));
+					global_mat_nnz.push_back(Triplet<double>(index[k], index[l], ATA.data()[lbo_length * k + l]));
 				}
 			}
 		}
@@ -256,7 +253,6 @@ void ProjectDynamic::setOffDiagonal(int cloth_No, std::vector<std::vector<int>>&
 
 void ProjectDynamic::computeGlobalStepMatrixSingleCloth(SparseMatrix<double, RowMajor>* global_mat, std::vector<double>& global_mat_diagonal_ref,
 	std::vector<double*>& global_collision_mat_diagonal_ref, SimplicialLLT<SparseMatrix<double>>* global_llt, TriangleMeshStruct& mesh_struct,
-	std::vector<std::vector<int>>& vertex_around_vertex_for_bending,
 	std::vector<double>& lbo_weight, std::vector<VectorXd>& vertex_lbo, int sys_size, double bending_stiffness, std::vector<double>& length_stiffness,
 	double position_stiffness, SimplicialLLT<SparseMatrix<double>>* collision_free_global_llt)
 {
@@ -266,16 +262,21 @@ void ProjectDynamic::computeGlobalStepMatrixSingleCloth(SparseMatrix<double, Row
 	global_mat_nnz.reserve(estimate_total_constraint);
 	//bending
 	int lbo_length; MatrixXd ATA;
+	std::vector<int> index;
 	if (!mesh_struct.faces.empty()) {
 		for (int i = 0; i < sys_size; ++i) {
 			lbo_length = vertex_lbo[i].size();
+			index.clear();
+			index.resize(lbo_length);
+			index[0] = i;
+			memcpy(&(index[1]), mesh_struct.vertices[i].neighbor_vertex.data(), 4 * (lbo_length - 1));			
 			ATA = (bending_stiffness * lbo_weight[i] * vertex_lbo[i]) * vertex_lbo[i].transpose();
 			for (int l = 0; l < lbo_length; ++l) {
 				for (int k = l + 1; k < lbo_length; ++k) {
-					global_mat_nnz.push_back(Triplet<double>(vertex_around_vertex_for_bending[i][l], vertex_around_vertex_for_bending[i][k], ATA.data()[lbo_length * l + k]));
-					global_mat_nnz.push_back(Triplet<double>(vertex_around_vertex_for_bending[i][k], vertex_around_vertex_for_bending[i][l], ATA.data()[lbo_length * k + l]));
+					global_mat_nnz.push_back(Triplet<double>(index[l], index[k], ATA.data()[lbo_length * l + k]));
+					global_mat_nnz.push_back(Triplet<double>(index[k], index[l], ATA.data()[lbo_length * k + l]));
 				}
-				global_mat_nnz.push_back(Triplet<double>(vertex_around_vertex_for_bending[i][l], vertex_around_vertex_for_bending[i][l], ATA.data()[lbo_length * l + l]));
+				global_mat_nnz.push_back(Triplet<double>(index[l], index[l], ATA.data()[lbo_length * l + l]));
 			}
 		}
 	}
@@ -314,17 +315,17 @@ void ProjectDynamic::computeGlobalStepMatrixSingleCloth(SparseMatrix<double, Row
 }
 
 void ProjectDynamic::computeVertexLBOSingleCloth(TriangleMeshStruct& mesh_struct, std::vector<VectorXd>& vertex_lbo, std::vector<double>& edge_cot_weight,
-	std::vector<std::vector<int>>& edge_around_vertex_for_bending, std::vector<double>& lbo_weight)
+	std::vector<double>& lbo_weight)
 {
 	double total;
 	double edge_weight;
 	vertex_lbo.resize(mesh_struct.vertices.size());
 	for (int i = 0; i < mesh_struct.vertices.size(); ++i) {
-		vertex_lbo[i].resize(edge_around_vertex_for_bending[i].size() + 1);
+		vertex_lbo[i].resize(mesh_struct.vertices[i].edge.size() + 1);
 		vertex_lbo[i].setZero();
 		total = 0.0;
-		for (int j = 0; j < edge_around_vertex_for_bending[i].size(); ++j) {
-			edge_weight = edge_cot_weight[edge_around_vertex_for_bending[i][j]] / lbo_weight[i];
+		for (int j = 0; j < mesh_struct.vertices[i].edge.size(); ++j) {
+			edge_weight = edge_cot_weight[mesh_struct.vertices[i].edge[j]] / lbo_weight[i];
 			total += edge_weight;
 			vertex_lbo[i].data()[j + 1] = edge_weight;
 		}
@@ -468,6 +469,10 @@ void ProjectDynamic::computeEdgeCotWeightSingleCloth(std::vector<double>& edge_c
 			theta1 = acos(DOT(x13, x23) / (len13 * len23));
 			cotan1 = 1.0 / tan(theta1);
 			edge_cot_weight[i] = -0.5 * (cotan0 + cotan1);
+		}
+		else
+		{
+			edge_cot_weight[i] = 0.0;
 		}
 	}
 }
@@ -1242,7 +1247,7 @@ void ProjectDynamic::solveClothSystemPerThead(int thread_id, bool with_collision
 		cloth_No = cloth_dimension_per_thread[thread_id][i] / 3;
 		dimension = cloth_dimension_per_thread[thread_id][i] % 3;
 		solveClothSystemPerThead(cloth_b[cloth_No][dimension], cloth_u[cloth_No][dimension], (*cloth)[cloth_No].mesh_struct, (*cloth)[cloth_No].length_stiffness,
-			p_edge_length[cloth_No], cloth_No, dimension, vertex_around_vertex_for_bending[cloth_No], vertex_lbo[cloth_No], p_bending[cloth_No],
+			p_edge_length[cloth_No], cloth_No, dimension, vertex_lbo[cloth_No], p_bending[cloth_No],
 			cloth_u_prediction[cloth_No][dimension], thread_id, collision.cloth_target_pos.b_sum[cloth_No], collision.cloth_target_pos.need_update[cloth_No],
 			with_collision, compute_energy);
 
@@ -1347,29 +1352,34 @@ void ProjectDynamic::localBendingProjectionPerThread(int thread_id, bool with_en
 	Vector3d aq; double aqnorm; //double a_rest[3];
 	VectorXd* u;
 	VectorXd* lbo;
-	std::vector<std::vector<int>>* vertex_around_vertex_for_bending_;
+	std::vector<int>* vertex_around_vertex_for_bending_;
 	double bend_stiffness;
 	int* vertex_index_begin_per_thread;
 	Vector3d p;
 	VectorXd* p_bend;
+	TriangleMeshStruct* mesh_struct;
 	if (with_energy) {
 		for (int k = 0; k < total_cloth_num; ++k) {
 			if (!(*cloth)[k].mesh_struct.faces.empty()) {
 				bend_stiffness = (*cloth)[k].bend_stiffness;
 				u = cloth_u[k].data();
-				vertex_around_vertex_for_bending_ = &vertex_around_vertex_for_bending[k];
+				mesh_struct = &(*cloth)[k].mesh_struct;
 				lbo = vertex_lbo[k].data();
 				vertex_index_begin_per_thread = (*cloth)[k].mesh_struct.vertex_index_begin_per_thread.data();
 				for (int i = vertex_index_begin_per_thread[thread_id]; i < vertex_index_begin_per_thread[thread_id + 1]; ++i) {
+					vertex_around_vertex_for_bending_ = &mesh_struct->vertices[i].neighbor_vertex;
 					p_bend = p_bending[k][i].data();
-					size = (*vertex_around_vertex_for_bending_)[i].size();
+					size = vertex_around_vertex_for_bending_->size()+1;
 					for (int j = 0; j < 3; ++j) {
 						q[j].resize(size);
 					}
-					for (int h = 0; h < size; h++) {
-						q[0][h] = u[0].data()[(*vertex_around_vertex_for_bending_)[i][h]];
-						q[1][h] = u[1].data()[(*vertex_around_vertex_for_bending_)[i][h]];
-						q[2][h] = u[2].data()[(*vertex_around_vertex_for_bending_)[i][h]];
+					q[0][0] = u[0].data()[i];
+					q[1][0] = u[1].data()[i];
+					q[2][0] = u[2].data()[i];
+					for (int h = 1; h < size; h++) {
+						q[0][h] = u[0].data()[vertex_around_vertex_for_bending_->data()[h-1]];
+						q[1][h] = u[1].data()[vertex_around_vertex_for_bending_->data()[h-1]];
+						q[2][h] = u[2].data()[vertex_around_vertex_for_bending_->data()[h-1]];
 					}
 					aq.data()[0] = lbo[i].dot(q[0]);
 					aq.data()[1] = lbo[i].dot(q[1]);
@@ -1393,19 +1403,23 @@ void ProjectDynamic::localBendingProjectionPerThread(int thread_id, bool with_en
 			if (!(*cloth)[k].mesh_struct.faces.empty()) {
 				bend_stiffness = (*cloth)[k].bend_stiffness;
 				u = cloth_u[k].data();
-				vertex_around_vertex_for_bending_ = &vertex_around_vertex_for_bending[k];
+				mesh_struct = &(*cloth)[k].mesh_struct;
 				lbo = vertex_lbo[k].data();
 				vertex_index_begin_per_thread = (*cloth)[k].mesh_struct.vertex_index_begin_per_thread.data();
 				for (int i = vertex_index_begin_per_thread[thread_id]; i < vertex_index_begin_per_thread[thread_id + 1]; ++i) {
+					vertex_around_vertex_for_bending_ = &mesh_struct->vertices[i].neighbor_vertex;
 					p_bend = p_bending[k][i].data();
-					size = (*vertex_around_vertex_for_bending_)[i].size();
+					size = vertex_around_vertex_for_bending_->size() + 1;
 					for (int j = 0; j < 3; ++j) {
 						q[j].resize(size);
 					}
-					for (int h = 0; h < size; h++) {
-						q[0][h] = u[0].data()[(*vertex_around_vertex_for_bending_)[i][h]];
-						q[1][h] = u[1].data()[(*vertex_around_vertex_for_bending_)[i][h]];
-						q[2][h] = u[2].data()[(*vertex_around_vertex_for_bending_)[i][h]];
+					q[0][0] = u[0].data()[i];
+					q[1][0] = u[1].data()[i];
+					q[2][0] = u[2].data()[i];
+					for (int h = 1; h < size; h++) {
+						q[0][h] = u[0].data()[vertex_around_vertex_for_bending_->data()[h - 1]];
+						q[1][h] = u[1].data()[vertex_around_vertex_for_bending_->data()[h - 1]];
+						q[2][h] = u[2].data()[vertex_around_vertex_for_bending_->data()[h - 1]];
 					}
 					aq.data()[0] = lbo[i].dot(q[0]);
 					aq.data()[1] = lbo[i].dot(q[1]);
@@ -1470,7 +1484,7 @@ void ProjectDynamic::solveSystemPerThead(int thread_id, bool with_collision, boo
 
 
 void ProjectDynamic::solveClothSystemPerThead(VectorXd& b, VectorXd& u, TriangleMeshStruct& mesh_struct, std::vector<double>& length_stiffness,
-	std::vector<Vector3d>& p_edge_length, int cloth_No, int dimension, std::vector<std::vector<int>>& vertex_around_vertex_for_bending,
+	std::vector<Vector3d>& p_edge_length, int cloth_No, int dimension,
 	std::vector<VectorXd>& vertex_lbo, std::vector<std::vector<VectorXd>>& p_bending, VectorXd& u_prediction, int thread_id,
 	std::vector<std::array<double, 3>>& collision_b_sum, bool* collision_b_need_update, bool with_collision, bool compute_energy)
 {
@@ -1494,8 +1508,9 @@ void ProjectDynamic::solveClothSystemPerThead(VectorXd& b, VectorXd& u, Triangle
 	//bending	
 	if (!mesh_struct.faces.empty()) {
 		for (int i = 0; i < cloth_sys_size[cloth_No]; ++i) {
-			for (int j = 0; j < vertex_lbo[i].size(); ++j) {
-				b.data()[vertex_around_vertex_for_bending[i][j]] += p_bending[i][dimension].data()[j];
+			b.data()[i] += p_bending[i][dimension].data()[0];
+			for (int j = 1; j < vertex_lbo[i].size(); ++j) {
+				b.data()[mesh_struct.vertices[i].neighbor_vertex[j-1]] += p_bending[i][dimension].data()[j];
 			}
 		}
 	}

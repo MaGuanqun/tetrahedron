@@ -14,7 +14,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	initialNeighborPrimitive();
 	collision_time_thread.resize(thread->thread_num);
 	//collision_constraint.testPT();
-	approx_CCD.test();
+	//approx_CCD.test();
 	//CCD::test();
 	//std::cout <<"floor coordinate "<< (*collider)[0].ori_vertices[0][1] << std::endl;
 }

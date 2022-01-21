@@ -85,13 +85,13 @@ private:
 	void computeGlobalStepMatrix();
 	void initialClothPDvariable();
 	void restBendingMeanCurvature();
-	std::vector<std::vector<std::vector<int>>> vertex_around_vertex_for_bending;
+	//std::vector<std::vector<std::vector<int>>> vertex_around_vertex_for_bending;
 	void computeLBOWeightSingleCloth(std::vector<double>& edge_cot_weight, std::vector<double>& lbo_weight, TriangleMeshStruct& mesh_struct,
 		VectorXd& mass_inv, double density, VectorXd& mass);
 	void setAroundVertexPrimitive(TriangleMeshStruct& mesh_struct, std::vector<std::vector<int>>& edge_around_vertex_for_bending,
 		std::vector<std::vector<int>>& vertex_around_vertex_for_bending);
 	void computeVertexLBOSingleCloth(TriangleMeshStruct& mesh_struct, std::vector<VectorXd>& vertex_lbo, std::vector<double>& edge_cot_weight,
-		std::vector<std::vector<int>>& edge_around_vertex_for_bending, std::vector<double>& lbo_weight);
+		std::vector<double>& lbo_weight);
 
 	std::vector<SparseMatrix<double, RowMajor>> cloth_global_mat;
 	std::vector<SparseMatrix<double, RowMajor>> initial_cloth_global_mat;
@@ -103,7 +103,6 @@ private:
 
 	void computeGlobalStepMatrixSingleCloth(SparseMatrix<double, RowMajor>* global_mat, std::vector<double>& global_mat_diagonal_ref,
 		std::vector<double*>& global_collision_mat_diagonal_ref, SimplicialLLT<SparseMatrix<double>>* global_llt, TriangleMeshStruct& mesh_struct,
-		std::vector<std::vector<int>>& vertex_around_vertex_for_bending,
 		std::vector<double>& lbo_weight, std::vector<VectorXd>& vertex_lbo, int sys_size, double bending_stiffness, std::vector<double>& length_stiffness,
 		double position_stiffness, SimplicialLLT<SparseMatrix<double>>* collision_free_global_llt);
 	std::vector<std::vector<double>> rest_mean_curvature_norm;
@@ -122,7 +121,7 @@ private:
 	std::vector<int> tetrahedron_per_thread_begin;
 	std::vector<std::vector<int>> tetrahedron_dimension_per_thread;
 	void restBendingMeanCurvatureSingleCloth(TriangleMeshStruct& mesh_struct, std::vector<double>& rest_mean_curvature_norm,
-		std::vector<std::vector<int>>& vertex_around_vertex_for_bending, std::vector<VectorXd>& vertex_lbo);
+		std::vector<VectorXd>& vertex_lbo);
 	void PDClothPredict();
 	void setClothMatrix(int thread_No);
 	void localEdgeLengthProjectionPerThread(int thread_id, bool with_energy);
@@ -130,7 +129,7 @@ private:
 	void localPositionProjectionPerThread(int thread_id, bool with_energy);
 	void solveClothSystemPerThead(int thread_id, bool with_collision, bool compute_energy);
 	void solveClothSystemPerThead(VectorXd& b, VectorXd& u, TriangleMeshStruct& mesh_struct, std::vector<double>& length_stiffness,
-		std::vector<Vector3d>& p_edge_length, int cloth_No, int dimension, std::vector<std::vector<int>>& vertex_around_vertex_for_bending,
+		std::vector<Vector3d>& p_edge_length, int cloth_No, int dimension,
 		std::vector<VectorXd>& vertex_lbo, std::vector<std::vector<VectorXd>>& p_bending, VectorXd& u_prediction, int thread_id,
 		std::vector<std::array<double, 3>>& collision_b_sum, bool* collision_b_need_update, bool with_collision, bool compute_energy);
 
@@ -194,7 +193,7 @@ private:
 
 	
 	void initialJacobi();
-	void setOffDiagonal(int cloth_No, std::vector<std::vector<int>>& vertex_around_vertex_for_bending,
+	void setOffDiagonal(int cloth_No,
 		std::vector<double>& lbo_weight, std::vector<VectorXd>& vertex_lbo, int sys_size, double bending_stiffness, std::vector<double>& length_stiffness,
 		TriangleMeshStruct& mesh_struct);
 	void computeOffDiagonal();

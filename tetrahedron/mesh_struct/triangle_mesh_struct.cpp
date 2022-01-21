@@ -246,6 +246,9 @@ void TriangleMeshStruct::setEdge()
 			addEdge(triangle_indices[i][1], triangle_indices[i][2], i, triangle_indices[i][0]);
 		}
 	}
+
+	addNeighborVertex();
+
 	for (int i = 0; i < edges.size(); i++) {
 		if (edges[i].face.size() == 1) {
 			vertices[edges[i].vertex[0]].on_border = true;
@@ -287,6 +290,25 @@ void TriangleMeshStruct::setEdge()
 	}
 }
 
+
+
+
+void TriangleMeshStruct::addNeighborVertex()
+{
+	for (int i = 0; i < vertices.size(); ++i) {
+		vertices[i].neighbor_vertex.reserve(vertices[i].edge.size());
+		for (int j = 0; j < vertices[i].edge.size(); ++j)
+		{
+			if (i == edges[vertices[i].edge[j]].vertex[0]) {
+				vertices[i].neighbor_vertex.push_back(edges[vertices[i].edge[j]].vertex[1]);
+			}
+			else {
+				vertices[i].neighbor_vertex.push_back(edges[vertices[i].edge[j]].vertex[0]);
+			}
+		}
+	}
+}
+
 bool TriangleMeshStruct::isEdgeExist(int v0, int v1, int& edge_index)
 {
 
@@ -313,8 +335,8 @@ void TriangleMeshStruct::addEdge(int v0, int v1, int face, int opposite_vertex)
 	faces[face].edge.push_back(edge_index);
 	vertices[v0].edge.push_back(edge_index);
 	vertices[v1].edge.push_back(edge_index);
-	vertices[v0].neighbor_vertex.push_back(v1);
-	vertices[v1].neighbor_vertex.push_back(v0);
+	//vertices[v0].neighbor_vertex.push_back(v1);
+	//vertices[v1].neighbor_vertex.push_back(v0);
 }
 
 

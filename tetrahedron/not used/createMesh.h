@@ -94,33 +94,33 @@ public:
 		//	}
 		//}
 
-		//int col_num = 15;
-		//int row_num = 31;
-		//for (int j = 0; j < row_num; j++) {
-		//	for (int i = 0; i < col_num; i++) {
-		//		//mesh.vertices.push_back(std::array<double, 3>{ 0.7 * (double)j / (double)(row_num - 1) + 0.575, 0.35 * (double)i / (double)(col_num - 1),//+0.9
-		//		//mesh.vertices.push_back(std::array<double, 3>{0.7* (double)i / (double)(col_num - 1) - 0.35,  //+0.9
-		//		//	0.4 * (double)j / (double)(row_num - 1) - 0.285, 0.7 * (double)j / (double)(row_num - 1) - 0.35});//
-		//		mesh.vertices.push_back(std::array<double, 3>{0.35 * (double)i / (double)(col_num - 1) - 0.35,  //+0.9
-		//			0.7 * (double)j / (double)(row_num - 1) - 0.585, 0.1 * (double)j / (double)(row_num - 1) - 0.1});//
-		//	}
-		//}
-
-		int col_num = 101;
-		int row_num = 101;
-		//for (int j = 0; j < row_num; j++) {
-		//	for (int i = 0; i < col_num; i++) {
-		//		mesh.vertices.push_back(std::array<double, 3>{2.0 * (double)i / (double)(col_num - 1) - 1.0,  //+0.9
-		//			1.6 * (double)j / (double)(row_num - 1) - 0.2, 1.2 * (double)j / (double)(row_num - 1) - 0.5});//
-		//	}
-		//}
-
+		int col_num = 31;
+		int row_num = 31;
 		for (int j = 0; j < row_num; j++) {
 			for (int i = 0; i < col_num; i++) {
-				mesh.vertices.push_back(std::array<double, 3>{1.0 * (double)i / (double)(col_num - 1) - 0.45,  //+0.9
-					0.954 * (double)j / (double)(row_num - 1) - 0.6, 0.3 * (double)j / (double)(row_num - 1) - 0.6});// 
+				//mesh.vertices.push_back(std::array<double, 3>{ 0.7 * (double)j / (double)(row_num - 1) + 0.575, 0.35 * (double)i / (double)(col_num - 1),//+0.9
+				//mesh.vertices.push_back(std::array<double, 3>{0.7* (double)i / (double)(col_num - 1) - 0.35,  //+0.9
+				//	0.4 * (double)j / (double)(row_num - 1) - 0.285, 0.7 * (double)j / (double)(row_num - 1) - 0.35});//
+				mesh.vertices.push_back(std::array<double, 3>{0.7 * (double)i / (double)(col_num - 1) - 0.35,  //+0.9
+					0.7 * (double)j / (double)(row_num - 1) - 0.585, 0.1 * (double)j / (double)(row_num - 1) - 0.1});//
 			}
 		}
+
+		//int col_num = 101;
+		//int row_num = 101;
+		////for (int j = 0; j < row_num; j++) {
+		////	for (int i = 0; i < col_num; i++) {
+		////		mesh.vertices.push_back(std::array<double, 3>{2.0 * (double)i / (double)(col_num - 1) - 1.0,  //+0.9
+		////			1.6 * (double)j / (double)(row_num - 1) - 0.2, 1.2 * (double)j / (double)(row_num - 1) - 0.5});//
+		////	}
+		////}
+
+		//for (int j = 0; j < row_num; j++) {
+		//	for (int i = 0; i < col_num; i++) {
+		//		mesh.vertices.push_back(std::array<double, 3>{1.0 * (double)i / (double)(col_num - 1) - 0.45,  //+0.9
+		//			0.954 * (double)j / (double)(row_num - 1) - 0.6, 0.3 * (double)j / (double)(row_num - 1) - 0.6});// 
+		//	}
+		//}
 		
 		//this is for adding force
 		//for (int j = 0; j < row_num; j++) {

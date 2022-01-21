@@ -29,6 +29,6 @@ public:
 private:
 	bool isEdgeExist(int v0, int v1, int& edge_index);
 	void addEdge(int v0, int v1, int face, int opposite_vertex);
-
+	void addNeighborVertex();
 
 };
