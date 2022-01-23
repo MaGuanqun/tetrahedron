@@ -295,6 +295,18 @@ job Thread::create_task(IterationMethod* func, int thread_id, IterationMethodFun
     return k;
 }
 
+job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type, Eigen::VectorXd* u, Eigen::VectorXd* b, double* residual_norm, int cloth_No)
+{
+    job k;
+    switch (function_type)
+    {
+    case JACOBI_ITR:
+        k = job([func, thread_id,u,b,residual_norm,cloth_No]() {func->(thread_id); });
+        break;
+    }
+    return k;
+}
+
 
 job Thread::create_task(IterationMethod* func, int thread_id, std::vector<int>* vertex_index, std::vector<double>* coefficient,
     double* x, double* b, double* result, int* vertex_index_thread_begin, int sys_size)
@@ -334,6 +346,22 @@ void Thread::assignTask(IterationMethod* func, std::vector<int>* vertex_index, s
     {
         // std::cout << threads[i].id << std::endl;
         job j = create_task(func, threads[i].id, vertex_index,coefficient,x,b,result,vertex_index_thread_begin,sys_size);
+        futures.push_back(j.get_future());
+        std::unique_lock<std::mutex> l(threads[i].m);
+        threads[i].jobs.push(std::move(j));
+        // Notify the thread that there is work do to...
+        threads[i].cv.notify_one();
+    }
+    for (auto& f : futures) { f.wait(); }
+    futures.clear();
+}
+
+void Thread::assignTask(IterationMethod* func, Eigen::VectorXd* u, Eigen::VectorXd* b, double* residual_norm, int cloth_No)
+{
+    for (int i = 0; i < thread_num; ++i)
+    {
+        // std::cout << threads[i].id << std::endl;
+        job j = create_task(func, threads[i].id, vertex_index, coefficient, x, b, result, vertex_index_thread_begin, sys_size);
         futures.push_back(j.get_future());
         std::unique_lock<std::mutex> l(threads[i].m);
         threads[i].jobs.push(std::move(j));

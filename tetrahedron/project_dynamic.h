@@ -189,7 +189,7 @@ private:
 	double previous_displacement_norm;
 	bool innerIterationConvergeCondition();
 	void computeInnerEnergyIPCPD();
-
+	void solveClothSystem2(bool compute_energy);
 
 	
 	void initialJacobi();

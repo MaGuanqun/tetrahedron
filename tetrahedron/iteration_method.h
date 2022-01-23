@@ -21,7 +21,8 @@ public:
 
 	void updateConvergenceRate(double conv_rate);
 
-	void setBasicInfo(int object_num, std::vector<int>& sys_size, Thread* thread, std::vector<int>& cloth_per_thread_begin);
+	void setBasicInfo(int object_num, std::vector<int>& sys_size, Thread* thread, std::vector<int>& cloth_per_thread_begin,
+		std::vector<std::vector<VectorXd>>* cloth_b, std::vector<std::vector<VectorXd>>* cloth_u, std::vector<SparseMatrix<double, RowMajor>>* cloth_global_mat);
 	void offDiagonalSize();
 	void initialJacobi();
 	void updateJacobi_R(int thread_id);
@@ -29,6 +30,12 @@ public:
 	void solveByJacobi(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num);
 	void solveBySuperJacobi(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num);
 	void solveByChebyshevSemiIterativeSuperJacobi(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num);
+
+
+
+
+	void JacobiIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No);
+
 
 
 	void estimateJacobiEigenValue(std::vector<std::vector<VectorXd>>& u);
@@ -68,7 +75,10 @@ private:
 	std::vector<SparseMatrix<double, RowMajor>> R_Jacobi;
 	std::vector<VectorXd> global_diagonal_inv;
 
-	
+	std::vector<std::vector<VectorXd>>* cloth_b;
+	std::vector<std::vector<VectorXd>>* cloth_u;
+	std::vector<SparseMatrix<double, RowMajor>>* cloth_global_mat;
+
 
 	std::vector<int>dimension_per_thread;
 

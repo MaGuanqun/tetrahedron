@@ -58,7 +58,7 @@ enum RadixSortFunc {
 };
 
 enum IterationMethodFunc {
-    UPDATE_JACOBI_R
+    UPDATE_JACOBI_R, JACOBI_ITR
 };
 
 

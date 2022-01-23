@@ -257,7 +257,8 @@ void IterationMethod::setConvergenceRate(double conv_rate, int max_itr_num)
 }
 
 
-void IterationMethod::setBasicInfo(int object_num, std::vector<int>&sys_size, Thread* thread, std::vector<int>& cloth_per_thread_begin)
+void IterationMethod::setBasicInfo(int object_num, std::vector<int>&sys_size, Thread* thread, std::vector<int>& cloth_per_thread_begin,
+	std::vector<std::vector<VectorXd>>* cloth_b, std::vector<std::vector<VectorXd>>* cloth_u, std::vector<SparseMatrix<double, RowMajor>>* cloth_global_mat)
 {
 	total_object_num= object_num;
 	this->sys_size=sys_size;
@@ -266,7 +267,19 @@ void IterationMethod::setBasicInfo(int object_num, std::vector<int>&sys_size, Th
 	super_jacobi_spectral_radius_square.resize(object_num);
 	jacobi_spectral_radius_square.resize(object_num);
 	gauss_seidel_spectral_radius_square.resize(object_num);
+
+	this->cloth_b = cloth_b;
+	this->cloth_u = cloth_u;
+	this->cloth_global_mat = cloth_global_mat;
+
+	dimension_per_thread.resize(thread->thread_num + 1, 3);
+	for (int i = 0; i < 3; ++i) {
+		dimension_per_thread[i] = i;
+	}
 }
+
+
+
 
 
 void IterationMethod::updateConvergenceRate(double conv_rate)
@@ -357,6 +370,21 @@ void IterationMethod::solveByJacobi(VectorXd& u, VectorXd& b, SparseMatrix<doubl
 	}
 }
 
+
+void IterationMethod::solveByJacobi()
+{
+
+}
+
+//JACOBI_ITR
+void IterationMethod::JacobiIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No)
+{
+	for (int i = dimension_per_thread[thread_id]; i < dimension_per_thread[thread_id + 1]; ++i)
+	{
+		u[i] = b[i].cwiseProduct(global_diagonal_inv[cloth_No]) + R_Jacobi[cloth_No] * u[i];
+		residual_norm[i] = (b[i] - cloth_global_mat->data()[cloth_No] * u[0]).squaredNorm();
+	}
+}
 
 
 //over-relaxation jacobi (weighted jacobi)

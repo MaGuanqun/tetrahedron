@@ -1483,6 +1483,8 @@ void ProjectDynamic::solveSystemPerThead(int thread_id, bool with_collision, boo
 }
 
 
+
+
 void ProjectDynamic::solveClothSystemPerThead(VectorXd& b, VectorXd& u, TriangleMeshStruct& mesh_struct, std::vector<double>& length_stiffness,
 	std::vector<Vector3d>& p_edge_length, int cloth_No, int dimension,
 	std::vector<VectorXd>& vertex_lbo, std::vector<std::vector<VectorXd>>& p_bending, VectorXd& u_prediction, int thread_id,
@@ -1520,66 +1522,73 @@ void ProjectDynamic::solveClothSystemPerThead(VectorXd& b, VectorXd& u, Triangle
 	}
 	b += (1.0 / (sub_time_step * sub_time_step)) * (cloth_mass[cloth_No].cwiseProduct(u_prediction));
 	if (with_collision) {
-		int itr_num;
 		switch (itr_solver_method)
 		{
 		case DIRECT_SOLVE:
 			u = cloth_llt[cloth_No].solve(b);
-			//std::cout << "direct solve " << std::endl;
-			break;
-		case JACOBI: {			
-			iteration_method.solveByJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
-			//std::cout << "Jacobi "<< itr_num << std::endl;
-		}
-			break;
-		case SUPER_JACOBI: {
-			iteration_method.solveBySuperJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
-			//std::cout << "super jacobi " << itr_num << std::endl;
-		}
-			break;
-		case CHEBYSHEV_SUPER_JACOBI: {
-			iteration_method.solveByChebyshevSemiIterativeSuperJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
-			//std::cout << "chebyshev super jacobi "<< itr_num << std::endl;
-		}
-			break;
-		case GAUSS_SEIDEL: {
-			iteration_method.solveByGaussSeidel(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
-			//std::cout << "gauss_seidel "<< itr_num << std::endl;
-		}
-			break;
-		case GAUSS_SEIDEL_CHEBYSHEV: {
-			iteration_method.solveByChebyshevGaussSeidel(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num,0.6);		
-			//std::cout << "gauss_seidel_chebysev "<< itr_num << std::endl;
-		}
-			break;
-		case CHEBYSHEV_JACOBI: {
-			iteration_method.solveByChebyshevSemiIterativeJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
-			//std::cout <<"chebyshev jacobi "<< itr_num << std::endl;
-		}
-			break;
-		case PCG: {
-			iteration_method.solveByPCG(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
-			//std::cout <<"PCG "<< itr_num << std::endl;
-		}
-			break;
-		case WEIGHTED_JACOBI: {
-			iteration_method.solveByWeightedJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num,2.0/3.0);
-		}
 			break;
 		}
-		if (compute_energy) {
-			VectorXd p0, p1;
-			p0 = u - u_prediction;
-			p1 = p0.cwiseProduct(cloth_mass[cloth_No]);
-			temEnergy[thread_id] += 0.5 / (sub_time_step * sub_time_step) * p0.dot(p1);
-		}
-		ave_iteration[cloth_No][dimension] += itr_num;
 	}
 	else {
 		u = collision_free_cloth_llt[cloth_No].solve(b);
 	}
 }
 
+
+
+void ProjectDynamic::solveClothSystem2(bool compute_energy)
+{
+	int itr_num;
+	switch (itr_solver_method)
+	{
+	case JACOBI: {
+		iteration_method.solveByJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
+		//std::cout << "Jacobi "<< itr_num << std::endl;
+	}
+			   break;
+	case SUPER_JACOBI: {
+		iteration_method.solveBySuperJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
+		//std::cout << "super jacobi " << itr_num << std::endl;
+	}
+					 break;
+	case CHEBYSHEV_SUPER_JACOBI: {
+		iteration_method.solveByChebyshevSemiIterativeSuperJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
+		//std::cout << "chebyshev super jacobi "<< itr_num << std::endl;
+	}
+							   break;
+	case GAUSS_SEIDEL: {
+		iteration_method.solveByGaussSeidel(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
+		//std::cout << "gauss_seidel "<< itr_num << std::endl;
+	}
+					 break;
+	case GAUSS_SEIDEL_CHEBYSHEV: {
+		iteration_method.solveByChebyshevGaussSeidel(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num, 0.6);
+		//std::cout << "gauss_seidel_chebysev "<< itr_num << std::endl;
+	}
+							   break;
+	case CHEBYSHEV_JACOBI: {
+		iteration_method.solveByChebyshevSemiIterativeJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
+		//std::cout <<"chebyshev jacobi "<< itr_num << std::endl;
+	}
+						 break;
+	case PCG: {
+		iteration_method.solveByPCG(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
+		//std::cout <<"PCG "<< itr_num << std::endl;
+	}
+			break;
+	case WEIGHTED_JACOBI: {
+		iteration_method.solveByWeightedJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num, 2.0 / 3.0);
+	}
+						break;
+	}
+	if (compute_energy) {
+		VectorXd p0, p1;
+		p0 = u - u_prediction;
+		p1 = p0.cwiseProduct(cloth_mass[cloth_No]);
+		temEnergy[thread_id] += 0.5 / (sub_time_step * sub_time_step) * p0.dot(p1);
+	}
+	ave_iteration[cloth_No][dimension] += itr_num;
+}
 
 
 

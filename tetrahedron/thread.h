@@ -8,6 +8,8 @@
 #include <condition_variable>
 #include <mutex>
 #include"basic/enum_setting.h"
+#include"external/Eigen/Dense"
+#include"external/Eigen/Sparse"
 
 class ProjectDynamic;
 class TriangleMeshStruct;
@@ -52,7 +54,7 @@ private:
     job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type);
     job create_task(IterationMethod* func, int thread_id, std::vector<int>* vertex_index, std::vector<double>* coefficient,
         double* x, double* b, double* result, int* vertex_index_thread_begin, int sys_size);
-
+    job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type, Eigen::VectorXd* u, Eigen::VectorXd* b, double* residual_norm, int cloth_No);
 
 public:
     Thread();
@@ -92,9 +94,11 @@ public:
         futures.clear();
     }  
 
-
+    void assignTask(IterationMethod* func, Eigen::VectorXd* u, Eigen::VectorXd* b, double* residual_norm, int cloth_No);
     void assignTask(IterationMethod* func, std::vector<int>* vertex_index, std::vector<double>* coefficient,
         double* x, double* b, double* result, int* vertex_index_thread_begin, int sys_size);
+
+   
 
     int thread_num;
 };
