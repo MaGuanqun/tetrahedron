@@ -24,6 +24,8 @@ ProjectDynamic::ProjectDynamic()
 
 void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, Thread* thread)
 {
+	this->cloth = cloth;
+	this->tetrahedron = tetrahedron;
 	sub_time_step = time_step / (double)sub_step_num;
 	this->thread = thread;
 	setForClothPD(cloth);
@@ -33,7 +35,8 @@ void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron
 	total_collider_num = collider->size();
 	this->collider = collider;
 
-	iteration_method.setBasicInfo(total_cloth_num, cloth_sys_size, thread, cloth_per_thread_begin);
+	iteration_method.setBasicInfo(total_cloth_num, cloth_sys_size, thread, cloth_per_thread_begin,
+		&cloth_b, &cloth_u,&cloth_global_mat);
 	iteration_method.initialGlobalDiagonalInv(&cloth_global_mat_diagonal_ref_address);
 	initialJacobi();
 
@@ -46,6 +49,22 @@ void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron
 	
 }
 
+
+
+void ProjectDynamic::setSystemIndexInfo()
+{
+	vertex_begin_per_cloth.resize(cloth->size() + 1);
+	vertex_begin_per_tetrohedron.resize(tetrahedron->size() + 1);
+	vertex_begin_per_cloth[0] = 0;
+	for (int i = 0; i < cloth->size(); ++i) {
+		vertex_begin_per_cloth[i + 1] = vertex_begin_per_cloth[i] + (*cloth)[i].mesh_struct.vertices.size();
+	}
+	for (int i = 0; i < tetrahedron->size(); ++i)
+	{
+
+	}
+
+}
 
 void ProjectDynamic::initialDHatTolerance(double ave_edge_length)
 {
@@ -66,7 +85,6 @@ void ProjectDynamic::setForClothPD(std::vector<Cloth>* cloth)
 	for (int i = 0; i < total_cloth_num; ++i) {
 		cloth_sys_size[i] = (*cloth)[i].mesh_struct.vertices.size();
 	}
-	this->cloth = cloth;
 	std::vector<std::vector<double>> edge_cot_weight;
 	computeEdgeCotWeight(edge_cot_weight);
 	computeLBOWeight(edge_cot_weight);
@@ -640,6 +658,7 @@ void ProjectDynamic::firstPDForIPC(bool& record_matrix)
 		//}
 	}
 	thread->assignTask(this, SOLVE_SYSYTEM_WITHOUT_COLLISION);
+
 	if (record_matrix) {
 		//std::string b_name = "./save_matrix/b_" + std::to_string(*time_stamp) + "_";
 		//for (int i = 0; i < 3; ++i) {
@@ -708,6 +727,7 @@ void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 				current_constraint_energy += temEnergy[i];
 			}
 			thread->assignTask(this, SOLVE_SYSYTEM_WITHOUT_ENERGY);
+			solveClothSystem2(false);
 			local_global_iteration_num++;
 			computeInnerEnergyIPCPD();
 
@@ -820,6 +840,7 @@ void ProjectDynamic::PDsolve()
 				//		<< cloth_u[0][2][i] << std::endl;
 				//}
 			thread->assignTask(this, SOLVE_SYSYTEM);//solve b	
+			solveClothSystem2(true);
 			//for (int i = 0; i < cloth_sys_size[0]; ++i) {
 			//	//std::cout << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "
 			//		<< cloth_u[0][2][i] << std::endl;
@@ -953,7 +974,7 @@ void ProjectDynamic::PDupdateSystemMatrix()
 		break;
 	case CHEBYSHEV_SUPER_JACOBI:
 		thread->assignTask(&iteration_method, UPDATE_JACOBI_R);
-		iteration_method.estimateSuperJacobiEigenValue(cloth_u);
+		iteration_method.estimateSuperJacobiEigenValue(cloth_u,2);
 		break;
 	case GAUSS_SEIDEL_CHEBYSHEV:
 		iteration_method.estimateGaussSeidelEigenValue(cloth_u, cloth_global_mat);
@@ -1542,52 +1563,76 @@ void ProjectDynamic::solveClothSystem2(bool compute_energy)
 	switch (itr_solver_method)
 	{
 	case JACOBI: {
-		iteration_method.solveByJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
+		for (int i = 0; i < total_cloth_num; ++i) {
+			iteration_method.solveByJacobi(cloth_u[i].data(), cloth_b[i].data(), i, itr_num);
+		}		
 		//std::cout << "Jacobi "<< itr_num << std::endl;
 	}
 			   break;
 	case SUPER_JACOBI: {
-		iteration_method.solveBySuperJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
+		for (int i = 0; i < total_cloth_num; ++i) {
+			iteration_method.solveByAJacobi_2(cloth_u[i].data(), cloth_b[i].data(), i, itr_num);
+		}
 		//std::cout << "super jacobi " << itr_num << std::endl;
 	}
-					 break;
+				break;
 	case CHEBYSHEV_SUPER_JACOBI: {
-		iteration_method.solveByChebyshevSemiIterativeSuperJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
+		for (int i = 0; i < total_cloth_num; ++i) {
+			iteration_method.solveByChebyshevSemiIterativeAJacobi2(cloth_u[i].data(), cloth_b[i].data(), i, itr_num);
+		}
 		//std::cout << "chebyshev super jacobi "<< itr_num << std::endl;
 	}
 							   break;
 	case GAUSS_SEIDEL: {
-		iteration_method.solveByGaussSeidel(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
+		for (int i = 0; i < total_cloth_num; ++i) {
+			iteration_method.solveByGaussSeidel(cloth_u[i].data(), cloth_b[i].data(), i, itr_num);
+		}
 		//std::cout << "gauss_seidel "<< itr_num << std::endl;
 	}
 					 break;
 	case GAUSS_SEIDEL_CHEBYSHEV: {
-		iteration_method.solveByChebyshevGaussSeidel(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num, 0.6);
+		for (int i = 0; i < total_cloth_num; ++i) {
+			iteration_method.solveByChebyshevGaussSeidel(cloth_u[i].data(), cloth_b[i].data(), i, itr_num, 0.1);
+		}
 		//std::cout << "gauss_seidel_chebysev "<< itr_num << std::endl;
 	}
 							   break;
 	case CHEBYSHEV_JACOBI: {
-		iteration_method.solveByChebyshevSemiIterativeJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
+		for (int i = 0; i < total_cloth_num; ++i) {
+			iteration_method.solveByChebyshevSemiIterativeJacobi(cloth_u[i].data(), cloth_b[i].data(), i, itr_num);
+		}
 		//std::cout <<"chebyshev jacobi "<< itr_num << std::endl;
 	}
 						 break;
 	case PCG: {
-		iteration_method.solveByPCG(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num);
+		for (int i = 0; i < total_cloth_num; ++i) {
+			iteration_method.solveByPCG(cloth_u[i].data(), cloth_b[i].data(), i, itr_num);
+		}
 		//std::cout <<"PCG "<< itr_num << std::endl;
 	}
 			break;
-	case WEIGHTED_JACOBI: {
-		iteration_method.solveByWeightedJacobi(u, b, cloth_global_mat[cloth_No], cloth_No, itr_num, 2.0 / 3.0);
-	}
-						break;
 	}
 	if (compute_energy) {
+		thread->assignTask(this, COMPUTE_ENERGY);
+		//VectorXd p0, p1;
+		//p0 = u - u_prediction;
+		//p1 = p0.cwiseProduct(cloth_mass[cloth_No]);
+		//temEnergy[thread_id] += 0.5 / (sub_time_step * sub_time_step) * p0.dot(p1);
+	}
+	//ave_iteration[cloth_No][dimension] += itr_num;
+}
+
+//COMPUTE_ENERGY
+void ProjectDynamic::computeEnergyPerThread(int thread_id)
+{
+	for (int i = 0; i < cloth_dimension_per_thread[thread_id].size(); ++i) {
+		int cloth_No = cloth_dimension_per_thread[thread_id][i] / 3;
+		int dimension = cloth_dimension_per_thread[thread_id][i] % 3;
 		VectorXd p0, p1;
-		p0 = u - u_prediction;
+		p0 = cloth_u[cloth_No][dimension] - cloth_u_prediction[cloth_No][dimension];
 		p1 = p0.cwiseProduct(cloth_mass[cloth_No]);
 		temEnergy[thread_id] += 0.5 / (sub_time_step * sub_time_step) * p0.dot(p1);
 	}
-	ave_iteration[cloth_No][dimension] += itr_num;
 }
 
 

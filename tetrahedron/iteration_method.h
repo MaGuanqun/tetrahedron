@@ -35,12 +35,42 @@ public:
 
 
 	void JacobiIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No);
+	void solveByJacobi(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num);
+	void solveByAJacobi_2(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num);
+	void solveByAJacobi_3(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num);
+	void SuperJacobi2IterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No);
+	void SuperJacobi3IterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No);
+	void solveByChebyshevSemiIterativeAJacobi2(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num);
+	void solveByChebyshevSemiIterativeAJacobi3(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num);
+	void solveByChebyshevSemiIterativeJacobi(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num);
+	void solveByPCG(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num);
+	void solveByGaussSeidel(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num);
+	void solveByChebyshevGaussSeidel(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num, double weight);
+
+
+	void PCGIterationPerThread1(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No, double alpha,
+		VectorXd* residual, VectorXd* p);
+	void PCGIterationPerThread2(int thread_id, VectorXd* z, VectorXd* residual, double* rz_k_1, int cloth_No, double alpha,
+		VectorXd* q, VectorXd* p);
+	void ChebyshevSemiIterativeJacobiIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, 
+		int cloth_No, double omega_chebyshev, VectorXd* u_last, VectorXd* u_previous);
+	void ChebyshevSemiIterativeAJacobi2IterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm,
+		int cloth_No, double omega_chebyshev, VectorXd* u_last, VectorXd* u_previous);
+	void ChebyshevSemiIterativeAJacobi3IterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm,
+		int cloth_No, double omega_chebyshev, VectorXd* u_last, VectorXd* u_previous);
+	void GaussSeidelIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No, double omega_chebyshev,
+		VectorXd* u_last, VectorXd* u_previous);
+	void ChebyshevSemiIterativeGaussSeidelIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No, double omega_chebyshev,
+		VectorXd* u_last, VectorXd* u_previous);
+
+
+
 
 
 
 	void estimateJacobiEigenValue(std::vector<std::vector<VectorXd>>& u);
 	void solveByGaussSeidel(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num);
-	void estimateSuperJacobiEigenValue(std::vector<std::vector<VectorXd>>& u);
+	void estimateSuperJacobiEigenValue(std::vector<std::vector<VectorXd>>& u, int A_jacobi_step_size);
 
 	void estimateGaussSeidelEigenValue(std::vector<std::vector<VectorXd>>& u, std::vector<SparseMatrix<double, RowMajor>>& system_matrix);
 	void solveByChebyshevGaussSeidel(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num, double weight);
@@ -90,10 +120,12 @@ private:
 	void updateJacobi(int cloth_No);
 	int max_itr_num;
 	double convergence_rate_2;
-	void superJacobiSingleIteration(VectorXd& u, VectorXd& b, int cloth_No);
+	void superJacobiSingleIteration(VectorXd& u, VectorXd& b, int cloth_No, int super_jacobi_step_size);
 	int super_jacobi_step_size = 2;
-	void estimateSuperJacobiEigenValue(int cloth_No, std::vector<VectorXd>& u);
-	std::vector<double> super_jacobi_spectral_radius_square;
+	void estimateAJacobi2EigenValue(int cloth_No, std::vector<VectorXd>& u);
+	void estimateAJacobi3EigenValue(int cloth_No, std::vector<VectorXd>& u);
+	std::vector<double> a_jacobi_2_spectral_radius_square;
+	std::vector<double> a_jacobi_3_spectral_radius_square;
 	std::vector<double> jacobi_spectral_radius_square;
 	std::vector<double> gauss_seidel_spectral_radius_square;
 
@@ -114,6 +146,12 @@ private:
 	VectorXd RMultiX(AJacobiOperator* A_jacobi_operator, VectorXd& x);
 
 	void RMultiXPlusb(AJacobiOperator* A_jacobi_operator, double* x, double* b, double* result);
+
+
+	std::vector<VectorXd> b_global_inv;
+	std::vector<VectorXd> R_b_global_inv;
+
+	double weight_for_chebyshev_gauss_seidel;
 
 	template <class T>
 	void superJacobiSingleIteration(Matrix<T, -1, 1>& u, Matrix<T, -1, 1>& b, Matrix<T, -1, 1>& global_diagonal_inv, SparseMatrix<T, ColMajor>& R_Jacobi,

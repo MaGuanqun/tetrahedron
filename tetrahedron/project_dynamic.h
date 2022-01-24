@@ -49,6 +49,7 @@ public:
 
 	void updateIterateSolverParameter(double conv_rate);
 	void update_ave_iteration_record(std::vector<std::vector<double>>& ave_itr);
+	void computeEnergyPerThread(int thread_id);
 
 	size_t* time_stamp;
 	Collision collision;
@@ -206,4 +207,7 @@ private:
 
 	int max_inner_iteration_num;
 
+	std::vector<int> vertex_begin_per_cloth;
+	std::vector<int> vertex_begin_per_tetrohedron;
+	void setSystemIndexInfo();
 };

@@ -68,6 +68,9 @@ job Thread::create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread 
     case COMPUTE_DISPLACEMENT:
         k = job([func, thread_id]() {func->computeDisplacement(thread_id); });
         break;
+    case COMPUTE_ENERGY:
+        k = job([func, thread_id]() {func->computeEnergyPerThread(thread_id); });
+        break;
     //case UPDATE_COLLISION_STIFFNESS:
     //    k = job([func, thread_id]() {func->updateCollisionStiffnessClothPerThread(thread_id); });
     //    break;
@@ -295,15 +298,51 @@ job Thread::create_task(IterationMethod* func, int thread_id, IterationMethodFun
     return k;
 }
 
-job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type, Eigen::VectorXd* u, Eigen::VectorXd* b, double* residual_norm, int cloth_No)
+job Thread::create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type, Eigen::VectorXd* u, Eigen::VectorXd* b, double* residual_norm,
+    int obj_No, double omega_chebyshev, Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous)
 {
     job k;
     switch (function_type)
     {
     case JACOBI_ITR:
-        k = job([func, thread_id,u,b,residual_norm,cloth_No]() {func->(thread_id); });
+        k = job([func, thread_id,u,b,residual_norm, obj_No]() {func->JacobiIterationPerThread(thread_id,u,b,residual_norm, obj_No); });
+        break;
+    case A_JACOBI_2_ITR:
+        k = job([func, thread_id, u, b, residual_norm, obj_No]() {func->SuperJacobi2IterationPerThread(thread_id, u, b, residual_norm, obj_No); });
+        break;
+    case A_JACOBI_3_ITR:
+        k = job([func, thread_id, u, b, residual_norm, obj_No]() {func->SuperJacobi3IterationPerThread(thread_id, u, b, residual_norm, obj_No); });
+        break;
+    case CHEBYSHEV_JACOBI_ITR:
+        k = job([func, thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous]() 
+            {func->ChebyshevSemiIterativeJacobiIterationPerThread(thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous); });
+        break;
+    case CHEBYSHEV_A_JACOBI_2_ITR:
+        k = job([func, thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous]()
+            {func->ChebyshevSemiIterativeAJacobi2IterationPerThread(thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous); });
+        break;
+    case CHEBYSHEV_A_JACOBI_3_ITR:
+        k = job([func, thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous]()
+            {func->ChebyshevSemiIterativeAJacobi3IterationPerThread(thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous); });
+        break;
+    case PCG_ITR1:
+        k = job([func, thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous]()
+            {func->PCGIterationPerThread1(thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous); });
+        break;
+    case PCG_ITR2:
+        k = job([func, thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous]()
+            {func->PCGIterationPerThread2(thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous); });
+        break;
+    case GAUSS_SEIDEL_ITR:
+        k = job([func, thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous]()
+            {func->GaussSeidelIterationPerThread(thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous); });
+        break;
+    case CHEBYSHEV_GAUSS_SEIDEL_ITR:
+        k = job([func, thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous]()
+            {func->ChebyshevSemiIterativeGaussSeidelIterationPerThread(thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous); });
         break;
     }
+    
     return k;
 }
 
@@ -356,12 +395,13 @@ void Thread::assignTask(IterationMethod* func, std::vector<int>* vertex_index, s
     futures.clear();
 }
 
-void Thread::assignTask(IterationMethod* func, Eigen::VectorXd* u, Eigen::VectorXd* b, double* residual_norm, int cloth_No)
+void Thread::assignTask(IterationMethod* func, IterationMethodFunc function_type, Eigen::VectorXd* u, Eigen::VectorXd* b, 
+    double* residual_norm, int obj_No, double omega_chebyshev, Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous)
 {
     for (int i = 0; i < thread_num; ++i)
     {
         // std::cout << threads[i].id << std::endl;
-        job j = create_task(func, threads[i].id, vertex_index, coefficient, x, b, result, vertex_index_thread_begin, sys_size);
+        job j = create_task(func, threads[i].id, function_type, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous);
         futures.push_back(j.get_future());
         std::unique_lock<std::mutex> l(threads[i].m);
         threads[i].jobs.push(std::move(j));
