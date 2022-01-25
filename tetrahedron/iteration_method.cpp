@@ -257,29 +257,19 @@ void IterationMethod::setConvergenceRate(double conv_rate, int max_itr_num)
 }
 
 
-void IterationMethod::setBasicInfo(int object_num, std::vector<int>&sys_size, Thread* thread, std::vector<int>& cloth_per_thread_begin,
-	std::vector<std::vector<VectorXd>>* cloth_b, std::vector<std::vector<VectorXd>>* cloth_u, std::vector<SparseMatrix<double, RowMajor>>* cloth_global_mat)
+void IterationMethod::setBasicInfo(int sys_size, Thread* thread,
+	std::vector<VectorXd>* cloth_b, std::vector<VectorXd>* cloth_u, SparseMatrix<double, RowMajor>* global_mat)
 {
-	total_object_num= object_num;
 	this->sys_size=sys_size;
 	this->thread = thread;
-	obj_per_thread_begin = cloth_per_thread_begin;
-	a_jacobi_2_spectral_radius_square.resize(object_num);
-	a_jacobi_3_spectral_radius_square.resize(object_num);
-	jacobi_spectral_radius_square.resize(object_num);
-	gauss_seidel_spectral_radius_square.resize(object_num);
-
-	this->cloth_b = cloth_b;
-	this->cloth_u = cloth_u;
-	this->cloth_global_mat = cloth_global_mat;
-
+	this->global_mat = global_mat;
 	dimension_per_thread.resize(thread->thread_num + 1, 3);
 	for (int i = 0; i < 3; ++i) {
 		dimension_per_thread[i] = i;
 	}
 	b_global_inv.resize(3);
 	R_b_global_inv.resize(3);
-
+	setOffDiagonal();
 }
 
 
@@ -291,60 +281,47 @@ void IterationMethod::updateConvergenceRate(double conv_rate)
 	convergence_rate_2= conv_rate * conv_rate;
 }
 
-void IterationMethod::offDiagonalSize()
+
+void IterationMethod::setOffDiagonal()
 {
-	off_diagonal.resize(total_object_num);
-}
-
-
-void IterationMethod::setOffDiagonal(int obj_No, std::vector<Triplet<double>>&global_mat_nnz)
-{
-	off_diagonal[obj_No].resize(sys_size[obj_No], sys_size[obj_No]);
-	off_diagonal[obj_No].setFromTriplets(global_mat_nnz.begin(), global_mat_nnz.end());
-	off_diagonal[obj_No] *= -1.0;
-}
-
-
-void IterationMethod::initialGlobalDiagonalInv(std::vector<std::vector<double*>>* cloth_global_mat_diagonal_ref_address)
-{
-	this->global_mat_diagonal_ref_address = cloth_global_mat_diagonal_ref_address;
-	global_diagonal_inv.resize(total_object_num);
-	for (int i = 0; i < total_object_num; ++i) {
-		global_diagonal_inv[i].resize(sys_size[i]);
-		for (int j = 0; j < sys_size[i]; ++j) {
-			global_diagonal_inv[i].data()[j] = 1.0 / (*((*cloth_global_mat_diagonal_ref_address)[i][j]));
-		}
+	off_diagonal = (*global_mat);
+	for (int i = 0; i < sys_size; ++i)
+	{
+		off_diagonal.coeffRef(i, i) = 0.0;
 	}
+	off_diagonal *= -1.0;
+}
+
+
+void IterationMethod::initialGlobalDiagonalInv(std::vector<double*>* global_mat_diagonal_ref_address)
+{
+	this->global_mat_diagonal_ref_address = global_mat_diagonal_ref_address;
+	global_diagonal_inv.resize(sys_size);
+	for (int j = 0; j < sys_size; ++j) {
+		global_diagonal_inv.data()[j] = 1.0 / (*((*global_mat_diagonal_ref_address)[j]));
+	}
+
 }
 
 void IterationMethod::initialJacobi()
 {	
 	R_Jacobi = off_diagonal;	
-	for (int i = 0; i < total_object_num; ++i) {
-		for (int j = 0; j < sys_size[i]; ++j) {
-			for (int k = R_Jacobi[i].outerIndexPtr()[j]; k < R_Jacobi[i].outerIndexPtr()[j + 1]; ++k) {
-				R_Jacobi[i].valuePtr()[k] *= global_diagonal_inv[i].data()[j];
-			}
+	for (int j = 0; j < sys_size; ++j) {
+		for (int k = R_Jacobi.outerIndexPtr()[j]; k < R_Jacobi.outerIndexPtr()[j + 1]; ++k) {
+			R_Jacobi.valuePtr()[k] *= global_diagonal_inv.data()[j];
 		}
 	}
-}
-
-//UPDATE_JACOBI_R
-void IterationMethod::updateJacobi_R(int thread_id)
-{
-	for (int i = obj_per_thread_begin[thread_id]; i < obj_per_thread_begin[thread_id + 1]; ++i) {
-		updateJacobi(i);
-	}
+	
 }
 
 
-void IterationMethod::updateJacobi(int cloth_No)
+void IterationMethod::updateJacobi()
 {
-	R_Jacobi[cloth_No] = off_diagonal[cloth_No];
-	for (int i = 0; i < sys_size[cloth_No]; ++i) {
-		global_diagonal_inv[cloth_No].data()[i] = 1.0 / (*((*global_mat_diagonal_ref_address)[cloth_No][i]));
-		for (int k = R_Jacobi[cloth_No].outerIndexPtr()[i]; k < R_Jacobi[cloth_No].outerIndexPtr()[i + 1]; ++k) {
-			R_Jacobi[cloth_No].valuePtr()[k] *= global_diagonal_inv[cloth_No].data()[i];
+	R_Jacobi = off_diagonal;
+	for (int i = 0; i < sys_size; ++i) {
+		global_diagonal_inv.data()[i] = 1.0 / (*((*global_mat_diagonal_ref_address)[i]));
+		for (int k = R_Jacobi.outerIndexPtr()[i]; k < R_Jacobi.outerIndexPtr()[i + 1]; ++k) {
+			R_Jacobi.valuePtr()[k] *= global_diagonal_inv.data()[i];
 		}
 	}
 }
@@ -352,30 +329,15 @@ void IterationMethod::updateJacobi(int cloth_No)
 
 void IterationMethod::updateGlobalDiagonalInv()
 {
-	for (int j = 0; j < total_object_num; ++j) {
-		for (int i = 0; i < sys_size[j]; ++i) {
-			global_diagonal_inv[j].data()[i] = 1.0 / (*((*global_mat_diagonal_ref_address)[j][i]));
-		}
+	
+	for (int i = 0; i < sys_size; ++i) {
+		global_diagonal_inv.data()[i] = 1.0 / (*((*global_mat_diagonal_ref_address)[i]));
 	}
+	
 
 }
 
-void IterationMethod::solveByJacobi(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix,  int cloth_No, int& itr_num)
-{
-	double residual_norm;
-	double b_norm = b.squaredNorm();
-	residual_norm = 2.0 * b_norm;
-	itr_num = 0;
-	while (residual_norm / b_norm > convergence_rate_2 && itr_num < max_itr_num) {
-		//u = b.cwiseProduct(global_diagonal_inv[cloth_No]) + RMultiplyX(u, cloth_No, 0);
-		u = b.cwiseProduct(global_diagonal_inv[cloth_No]) + R_Jacobi[cloth_No] * u;
-		residual_norm = (b - system_matrix * u).squaredNorm();
-		itr_num++;
-	}
-}
-
-
-void IterationMethod::solveByJacobi(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num)
+void IterationMethod::solveByJacobi(VectorXd* u, VectorXd* b, int& itr_num)
 {
 	double residual_norm_per_thread[3];
 	double b_norm_cov = (b[0].squaredNorm() + b[1].squaredNorm() + b[2].squaredNorm())* convergence_rate_2;
@@ -383,11 +345,11 @@ void IterationMethod::solveByJacobi(VectorXd* u, VectorXd* b, int cloth_No, int&
 	itr_num = 0;
 
 	for (int i = 0; i < 3; ++i) {
-		b_global_inv[i] = b[i].cwiseProduct(global_diagonal_inv[cloth_No]);
+		b_global_inv[i] = b[i].cwiseProduct(global_diagonal_inv);
 	}
 	while (residual_norm> b_norm_cov && itr_num < max_itr_num)
 	{
-		thread->assignTask(this, JACOBI_ITR, u, b, residual_norm_per_thread, cloth_No,0.0,u,u);
+		thread->assignTask(this, JACOBI_ITR, u, b, residual_norm_per_thread,0.0,u,u);
 		residual_norm = residual_norm_per_thread[0] + residual_norm_per_thread[1] + residual_norm_per_thread[2];
 		itr_num++;
 	}
@@ -395,47 +357,17 @@ void IterationMethod::solveByJacobi(VectorXd* u, VectorXd* b, int cloth_No, int&
 }
 
 //JACOBI_ITR
-void IterationMethod::JacobiIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No)
+void IterationMethod::JacobiIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm)
 {
 	for (int i = dimension_per_thread[thread_id]; i < dimension_per_thread[thread_id + 1]; ++i)
 	{
-		u[i] = b_global_inv[i] + R_Jacobi[cloth_No] * u[i];
-		residual_norm[i] = (b[i] - cloth_global_mat->data()[cloth_No] * u[i]).squaredNorm();
+		u[i] = b_global_inv[i] + R_Jacobi * u[i];
+		residual_norm[i] = (b[i] - (*global_mat) * u[i]).squaredNorm();
 	}
 }
 
 
-//over-relaxation jacobi (weighted jacobi)
-void IterationMethod::solveByWeightedJacobi(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num, double weight)
-{
-	double residual_norm;
-	double b_norm = b.squaredNorm();
-	residual_norm = 2.0 * b_norm;
-	itr_num = 0;
-	while (residual_norm / b_norm > convergence_rate_2 && itr_num < max_itr_num) {
-		//u = b.cwiseProduct(global_diagonal_inv[cloth_No]) + RMultiplyX(u, cloth_No, 0);
-		u = weight * b.cwiseProduct(global_diagonal_inv[cloth_No]) + weight * R_Jacobi[cloth_No] * u + (1.0 - weight) * u;
-		residual_norm = (b - system_matrix * u).squaredNorm();
-		itr_num++;
-	}
-}
-
-
-void IterationMethod::solveBySuperJacobi(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num)
-{
-	double residual_norm;
-	double b_norm = b.squaredNorm();
-	residual_norm = 2.0 * b_norm;
-	itr_num = 0;
-	while (residual_norm / b_norm > convergence_rate_2 && itr_num < max_itr_num) {
-		superJacobiSingleIteration(u, b, cloth_No,2);
-		residual_norm = (b - system_matrix * u).squaredNorm();
-		itr_num++;
-	}
-
-}
-
-void IterationMethod::solveByAJacobi_2(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num)
+void IterationMethod::solveByAJacobi_2(VectorXd* u, VectorXd* b, int& itr_num)
 {
 	double b_norm_conv = (b[0].squaredNorm() + b[1].squaredNorm() + b[2].squaredNorm())* convergence_rate_2;
 	double residual_norm = 2.0 * b_norm_conv;
@@ -445,12 +377,12 @@ void IterationMethod::solveByAJacobi_2(VectorXd* u, VectorXd* b, int cloth_No, i
 	double residual_norm_per_thread[3];
 
 	for (int i = 0; i < 3; ++i)	{
-		b_global_inv[i] = b[i].cwiseProduct(global_diagonal_inv[cloth_No]);
-		R_b_global_inv[i] = R_Jacobi[cloth_No] * b_global_inv[i] + b_global_inv[i];
+		b_global_inv[i] = b[i].cwiseProduct(global_diagonal_inv);
+		R_b_global_inv[i] = R_Jacobi * b_global_inv[i] + b_global_inv[i];
 	}
 
 	while (residual_norm > b_norm_conv && itr_num < max_itr_num) {
-		thread->assignTask(this, A_JACOBI_2_ITR, u, b, residual_norm_per_thread, cloth_No,0.0,u,u);
+		thread->assignTask(this, A_JACOBI_2_ITR, u, b, residual_norm_per_thread, 0.0,u,u);
 		residual_norm = residual_norm_per_thread[0] + residual_norm_per_thread[1] + residual_norm_per_thread[2];
 		itr_num++;
 	}
@@ -458,7 +390,7 @@ void IterationMethod::solveByAJacobi_2(VectorXd* u, VectorXd* b, int cloth_No, i
 }
 
 
-void IterationMethod::solveByAJacobi_3(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num)
+void IterationMethod::solveByAJacobi_3(VectorXd* u, VectorXd* b, int& itr_num)
 {
 	double b_norm_conv = (b[0].squaredNorm() + b[1].squaredNorm() + b[2].squaredNorm()) * convergence_rate_2;
 	double residual_norm = 2.0 * b_norm_conv;
@@ -468,13 +400,13 @@ void IterationMethod::solveByAJacobi_3(VectorXd* u, VectorXd* b, int cloth_No, i
 	double residual_norm_per_thread[3];
 
 	for (int i = 0; i < 3; ++i) {
-		b_global_inv[i] = b[i].cwiseProduct(global_diagonal_inv[cloth_No]);
-		R_b_global_inv[i] = R_Jacobi[cloth_No] * b_global_inv[i];
-		R_b_global_inv[i] = R_Jacobi[cloth_No] * R_b_global_inv[i] + R_b_global_inv[i] + b_global_inv[i];
+		b_global_inv[i] = b[i].cwiseProduct(global_diagonal_inv);
+		R_b_global_inv[i] = R_Jacobi * b_global_inv[i];
+		R_b_global_inv[i] = R_Jacobi * R_b_global_inv[i] + R_b_global_inv[i] + b_global_inv[i];
 	}
 
 	while (residual_norm > b_norm_conv && itr_num < max_itr_num) {
-		thread->assignTask(this, A_JACOBI_3_ITR, u, b, residual_norm_per_thread, cloth_No,0.0,u,u);
+		thread->assignTask(this, A_JACOBI_3_ITR, u, b, residual_norm_per_thread, 0.0,u,u);
 		residual_norm = residual_norm_per_thread[0] + residual_norm_per_thread[1] + residual_norm_per_thread[2];
 		itr_num++;
 	}
@@ -482,83 +414,45 @@ void IterationMethod::solveByAJacobi_3(VectorXd* u, VectorXd* b, int cloth_No, i
 }
 
 //SUPER_JACOBI_2_ITR
-void IterationMethod::SuperJacobi2IterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No)
+void IterationMethod::SuperJacobi2IterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm)
 {
 	for (int i = dimension_per_thread[thread_id]; i < dimension_per_thread[thread_id + 1]; ++i)
 	{
-		u[i] = R_Jacobi[cloth_No] * (R_Jacobi[cloth_No] * u[i]) + R_b_global_inv[i];
-		residual_norm[i] = (b[i] - cloth_global_mat->data()[cloth_No] * u[i]).squaredNorm();
+		u[i] = R_Jacobi * (R_Jacobi * u[i]) + R_b_global_inv[i];
+		residual_norm[i] = (b[i] - (*global_mat) * u[i]).squaredNorm();
 	}
 }
 
 
 //SUPER_JACOBI_3_ITR
-void IterationMethod::SuperJacobi3IterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No)
+void IterationMethod::SuperJacobi3IterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm)
 {
 	for (int i = dimension_per_thread[thread_id]; i < dimension_per_thread[thread_id + 1]; ++i)
 	{
-		u[i] = R_Jacobi[cloth_No]*(R_Jacobi[cloth_No] * (R_Jacobi[cloth_No] * u[i])) + R_b_global_inv[i];
-		residual_norm[i] = (b[i] - cloth_global_mat->data()[cloth_No] * u[i]).squaredNorm();
+		u[i] = R_Jacobi*(R_Jacobi * (R_Jacobi * u[i])) + R_b_global_inv[i];
+		residual_norm[i] = (b[i] - (*global_mat) * u[i]).squaredNorm();
 	}
 }
 
 
 
-
-
-
-
-void IterationMethod::superJacobiSingleIteration(VectorXd& u, VectorXd& b, int cloth_No, int super_jacobi_step_size)
-{
-	VectorXd R_D_inv_b = b.cwiseProduct(global_diagonal_inv[cloth_No]);
-	VectorXd R_x= R_Jacobi[cloth_No] * u;
-	VectorXd sum_R_b = R_D_inv_b;
-	for (int i = 1; i < super_jacobi_step_size; ++i) {
-		R_D_inv_b = R_Jacobi[cloth_No] * R_D_inv_b;
-		sum_R_b += R_D_inv_b;
-		R_x = R_Jacobi[cloth_No] * R_x;
-	}
-	u = sum_R_b + R_x;
-}
-
-
-
-void IterationMethod::estimateSuperJacobiEigenValue(std::vector<std::vector<VectorXd>>& u, int A_jacobi_step_size)
+void IterationMethod::estimateSuperJacobiEigenValue(std::vector<VectorXd>& u, int A_jacobi_step_size)
 {
 	switch (A_jacobi_step_size)
 	{
 	case 2:
-		for (int i = 0; i < total_object_num; ++i) {
-			estimateAJacobi2EigenValue(i, u[i]);
-		}
+			estimateAJacobi2EigenValue(u);
 		break;
 	case 3:
-		for (int i = 0; i < total_object_num; ++i) {
-			estimateAJacobi3EigenValue(i, u[i]);
-		}
+			estimateAJacobi3EigenValue(u);
 		break;
 	}
 	
 	//std::cout << super_jacobi_spectral_radius_square[0] << std::endl;
 }
-void IterationMethod::estimateJacobiEigenValue(std::vector<std::vector<VectorXd>>& u)
-{
-	for (int i = 0; i < total_object_num; ++i) {
-		estimateJacobiEigenValue(i, u[i]);
-	}
-	//std::cout << jacobi_spectral_radius_square[0] << std::endl;
-}
 
 
-void IterationMethod::estimateGaussSeidelEigenValue(std::vector<std::vector<VectorXd>>& u, std::vector<SparseMatrix<double, RowMajor>>& system_matrix)
-{
-	for (int i = 0; i < total_object_num; ++i) {
-		estimateGaussSeidelEigenValue(i, u[i], system_matrix[i]);
-	}
-	//std::cout << gauss_seidel_spectral_radius_square[0] << std::endl;
-}
-
-void IterationMethod::estimateGaussSeidelEigenValue(int cloth_No, std::vector<VectorXd>& u, SparseMatrix<double, RowMajor>& system_matrix)
+void IterationMethod::estimateGaussSeidelEigenValue(std::vector<VectorXd>& u, SparseMatrix<double, RowMajor>& system_matrix)
 {
 	double vec_norm2 = 0;
 	double u_norm2 = 0;
@@ -566,75 +460,60 @@ void IterationMethod::estimateGaussSeidelEigenValue(int cloth_No, std::vector<Ve
 		vec_norm2 += system_matrix.triangularView<Lower>().solve(system_matrix.triangularView<StrictlyUpper>() * u[i]).squaredNorm();
 		u_norm2 += u[i].squaredNorm();
 	}
-	gauss_seidel_spectral_radius_square[cloth_No] = vec_norm2 / u_norm2;
+	gauss_seidel_spectral_radius_square = vec_norm2 / u_norm2;
 }
 
-void IterationMethod::estimateJacobiEigenValue(int cloth_No, std::vector<VectorXd>& u)
+void IterationMethod::estimateJacobiEigenValue(std::vector<VectorXd>& u)
 {
 	double vec_norm2 = 0;
 	double u_norm2 = 0;
 	for (int j = 0; j < 3; ++j) {
-		vec_norm2 += (R_Jacobi[cloth_No] * u[j]).squaredNorm();
+		vec_norm2 += (R_Jacobi * u[j]).squaredNorm();
 		u_norm2 += u[j].squaredNorm();
 		//std::cout << (R_Jacobi[cloth_No] * u[j]).squaredNorm() / u[j].squaredNorm();
 	}
-	jacobi_spectral_radius_square[cloth_No] = vec_norm2 / u_norm2;
+	jacobi_spectral_radius_square = vec_norm2 / u_norm2;
 }
 
 
-void IterationMethod::estimateAJacobi2EigenValue(int cloth_No, std::vector<VectorXd>& u)
+void IterationMethod::estimateAJacobi2EigenValue(std::vector<VectorXd>& u)
 {
 	VectorXd Vector_change;
 	double vec_norm2=0;
 	double u_norm2=0;
 	for (int j = 0; j < 3; ++j) {
-		Vector_change = R_Jacobi[cloth_No] * (R_Jacobi[cloth_No] * u[j]);
+		Vector_change = R_Jacobi * (R_Jacobi * u[j]);
 		vec_norm2 += Vector_change.squaredNorm();
 		u_norm2 += u[j].squaredNorm();
 	}
-	a_jacobi_2_spectral_radius_square[cloth_No] = vec_norm2 / u_norm2;
+	a_jacobi_2_spectral_radius_square = vec_norm2 / u_norm2;
 }
 
-void IterationMethod::estimateAJacobi3EigenValue(int cloth_No, std::vector<VectorXd>& u)
+void IterationMethod::estimateAJacobi3EigenValue(std::vector<VectorXd>& u)
 {
 	VectorXd Vector_change;
 	double vec_norm2 = 0;
 	double u_norm2 = 0;
 	for (int j = 0; j < 3; ++j) {
-		Vector_change = R_Jacobi[cloth_No] * u[j];
+		Vector_change = R_Jacobi * u[j];
 		for (int i = 1; i < 3; ++i) {
-			Vector_change = R_Jacobi[cloth_No] * Vector_change;
+			Vector_change = R_Jacobi * Vector_change;
 		}
 		vec_norm2 += Vector_change.squaredNorm();
 		u_norm2 += u[j].squaredNorm();
 	}
-	a_jacobi_3_spectral_radius_square[cloth_No] = vec_norm2 / u_norm2;
+	a_jacobi_3_spectral_radius_square = vec_norm2 / u_norm2;
 }
 
 
-void IterationMethod::solveByGaussSeidel(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num)
-{
-	double residual_norm;
-	double b_norm = b.squaredNorm();
-	residual_norm = 2.0 * b_norm;
-	itr_num = 0;
-	while (residual_norm / b_norm > convergence_rate_2 && itr_num < max_itr_num) {
-		u = b - system_matrix.triangularView<StrictlyUpper>() * u;
-		u = system_matrix.triangularView<Lower>().solve(u);
-		residual_norm = (b - system_matrix * u).squaredNorm();
-		itr_num++;
-	}
-}
-
-
-void IterationMethod::solveByGaussSeidel(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num) 
+void IterationMethod::solveByGaussSeidel(VectorXd* u, VectorXd* b, int& itr_num) 
 {
 	double b_norm_conv = (b[0].squaredNorm() + b[1].squaredNorm() + b[2].squaredNorm()) * convergence_rate_2;
 	double residual_norm = 2.0 * b_norm_conv;
 	double residual_norm_per_thread[3];
 	itr_num = 0;
 	while (residual_norm > b_norm_conv && itr_num < max_itr_num) {
-		thread->assignTask(this, GAUSS_SEIDEL_ITR, u, b, residual_norm_per_thread, cloth_No, 0.0, u, u);
+		thread->assignTask(this, GAUSS_SEIDEL_ITR, u, b, residual_norm_per_thread, 0.0, u, u);
 		residual_norm = residual_norm_per_thread[0] + residual_norm_per_thread[1] + residual_norm_per_thread[2];
 		itr_num++;
 	}
@@ -642,19 +521,19 @@ void IterationMethod::solveByGaussSeidel(VectorXd* u, VectorXd* b, int cloth_No,
 
 
 //GAUSS_SEIDEL_ITR
-void IterationMethod::GaussSeidelIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No, double omega_chebyshev,
+void IterationMethod::GaussSeidelIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, double omega_chebyshev,
 	VectorXd* u_last, VectorXd* u_previous)
 {
 	for (int i = dimension_per_thread[thread_id]; i < dimension_per_thread[thread_id + 1]; ++i) {
-		u[i] = cloth_global_mat->data()[cloth_No].triangularView<Lower>().solve(
-			b[i] - cloth_global_mat->data()[cloth_No].triangularView<StrictlyUpper>() * u[i]);
-		residual_norm[i] = (b[i] - cloth_global_mat->data()[cloth_No] * u[i]).squaredNorm();
+		u[i] = (*global_mat).triangularView<Lower>().solve(
+			b[i] - (*global_mat).triangularView<StrictlyUpper>() * u[i]);
+		residual_norm[i] = (b[i] - (*global_mat) * u[i]).squaredNorm();
 	}
 }
 
 
 
-void IterationMethod::solveByChebyshevGaussSeidel(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num, double weight)
+void IterationMethod::solveByChebyshevGaussSeidel(VectorXd* u, VectorXd* b, int& itr_num, double weight)
 {
 	std::vector<VectorXd> u_last(3);
 	for (int i = 0; i < 3; ++i) {
@@ -665,13 +544,13 @@ void IterationMethod::solveByChebyshevGaussSeidel(VectorXd* u, VectorXd* b, int 
 	double b_norm_conv = (b[0].squaredNorm() + b[1].squaredNorm() + b[2].squaredNorm()) * convergence_rate_2;
 	double residual_norm;
 	double residual_norm_per_thread[3];
-	thread->assignTask(this, GAUSS_SEIDEL_ITR, u, b, residual_norm_per_thread, cloth_No, 0.0, u, u);
+	thread->assignTask(this, GAUSS_SEIDEL_ITR, u, b, residual_norm_per_thread, 0.0, u, u);
 	residual_norm = residual_norm_per_thread[0] + residual_norm_per_thread[1] + residual_norm_per_thread[2];
 	itr_num = 1;
 	std::vector<VectorXd> u_previous(3);
 	while (residual_norm > b_norm_conv && itr_num < max_itr_num) {
-		omega_chebyshev = 4.0 / (4.0 - gauss_seidel_spectral_radius_square[cloth_No] * omega_chebyshev);
-		thread->assignTask(this, CHEBYSHEV_GAUSS_SEIDEL_ITR, u, b, residual_norm_per_thread, cloth_No, omega_chebyshev, u_last.data(), u_previous.data());
+		omega_chebyshev = 4.0 / (4.0 - gauss_seidel_spectral_radius_square * omega_chebyshev);
+		thread->assignTask(this, CHEBYSHEV_GAUSS_SEIDEL_ITR, u, b, residual_norm_per_thread, omega_chebyshev, u_last.data(), u_previous.data());
 		residual_norm = residual_norm_per_thread[0] + residual_norm_per_thread[1] + residual_norm_per_thread[2];
 		itr_num++;
 	}
@@ -679,163 +558,115 @@ void IterationMethod::solveByChebyshevGaussSeidel(VectorXd* u, VectorXd* b, int 
 }
 
 //CHEBYSHEV_GAUSS_SEIDEL_ITR
-void IterationMethod::ChebyshevSemiIterativeGaussSeidelIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No, double omega_chebyshev,
+void IterationMethod::ChebyshevSemiIterativeGaussSeidelIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, double omega_chebyshev,
 	VectorXd* u_last, VectorXd* u_previous)
 {
 	for (int i = dimension_per_thread[thread_id]; i < dimension_per_thread[thread_id + 1]; ++i) {
 		u_previous[i] = u[i];
-		u[i] = cloth_global_mat->data()[cloth_No].triangularView<Lower>().solve(b[i] - cloth_global_mat->data()[cloth_No].triangularView<StrictlyUpper>() * u[i]);
+		u[i] = (*global_mat).triangularView<Lower>().solve(b[i] - (*global_mat).triangularView<StrictlyUpper>() * u[i]);
 		u[i] = omega_chebyshev * (weight_for_chebyshev_gauss_seidel * (u[i] - u_previous[i]) + u_previous[i] - u_last[i]) + u_last[i];
 		u_last[i] = u_previous[i];
-		residual_norm[i] = (b[i] - cloth_global_mat->data()[cloth_No] * u[i]).squaredNorm();
+		residual_norm[i] = (b[i] - (*global_mat) * u[i]).squaredNorm();
 	}
 }
-
-
-
-//weighted chebyshev gauss seidel, guarantee convergence
-void IterationMethod::solveByChebyshevGaussSeidel(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num, double weight)
-{
-	VectorXd u_last = u;
-	double residual_norm;
-	double omega_chebyshev = 2.0;
-	double b_norm = b.squaredNorm();	
-	u = b - system_matrix.triangularView<StrictlyUpper>() * u;
-	u = system_matrix.triangularView<Lower>().solve(u);
-	itr_num = 1;
-	residual_norm = (b - system_matrix * u).squaredNorm();
-	VectorXd u_previous;
-	while (residual_norm / b_norm > convergence_rate_2 && itr_num < max_itr_num) {
-		u_previous = u;
-		omega_chebyshev = 4.0 / (4.0 - gauss_seidel_spectral_radius_square[cloth_No] * omega_chebyshev);
-		u = system_matrix.triangularView<Lower>().solve(b - system_matrix.triangularView<StrictlyUpper>() * u);
-		//u = omega_chebyshev * (u - u_last) + u_last;
-		u = omega_chebyshev * (weight * (u - u_previous) + u_previous - u_last) + u_last;
-		u_last = u_previous;
-		residual_norm = (b - system_matrix * u).squaredNorm();
-		itr_num++;
-	}
-}
-
-void IterationMethod::solveByChebyshevSemiIterativeSuperJacobi(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num)
-{
-	VectorXd u_last = u;
-	VectorXd u_previous;
-	double b_norm = b.squaredNorm();
-	double omega_chebyshev = 2.0;
-	double residual_norm;
-	superJacobiSingleIteration(u, b, cloth_No, 2);
-	itr_num = 1;
-	residual_norm = (b - system_matrix * u).squaredNorm();
-	while (residual_norm / b_norm > convergence_rate_2 && itr_num < max_itr_num) {
-		u_previous = u;
-		omega_chebyshev = 4.0 / (4.0 - a_jacobi_2_spectral_radius_square[cloth_No] * omega_chebyshev);
-		superJacobiSingleIteration(u, b, cloth_No, 2);
-		u = omega_chebyshev * (u - u_last) + u_last;
-		u_last = u_previous;
-		itr_num++;
-		residual_norm = (b - system_matrix * u).squaredNorm();
-	}
-}
-
 
 
 
 //CHEBYSHEV_A_JACOBI_2_ITR
-void IterationMethod::ChebyshevSemiIterativeAJacobi2IterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No, double omega_chebyshev,
+void IterationMethod::ChebyshevSemiIterativeAJacobi2IterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, double omega_chebyshev,
 	VectorXd* u_last, VectorXd* u_previous)
 {
 	for (int i = dimension_per_thread[thread_id]; i < dimension_per_thread[thread_id + 1]; ++i) {
 		u_previous[i] = u[i];
-		u[i] = R_b_global_inv[i] + R_Jacobi[cloth_No] * (R_Jacobi[cloth_No] * u[i]);
+		u[i] = R_b_global_inv[i] + R_Jacobi * (R_Jacobi * u[i]);
 		u[i] = omega_chebyshev * (u[i] - u_last[i]) + u_last[i];
 		u_last[i] = u_previous[i];
-		residual_norm[i] = (b[i] - cloth_global_mat->data()[cloth_No] * u[i]).squaredNorm();
+		residual_norm[i] = (b[i] - (*global_mat) * u[i]).squaredNorm();
 	}
 }
 
 
 //CHEBYSHEV_A_JACOBI_3_ITR
-void IterationMethod::ChebyshevSemiIterativeAJacobi3IterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No, double omega_chebyshev,
+void IterationMethod::ChebyshevSemiIterativeAJacobi3IterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, double omega_chebyshev,
 	VectorXd* u_last, VectorXd* u_previous)
 {
 	for (int i = dimension_per_thread[thread_id]; i < dimension_per_thread[thread_id + 1]; ++i) {
 		u_previous[i] = u[i];
-		u[i] = R_b_global_inv[i] + R_Jacobi[cloth_No] *(R_Jacobi[cloth_No] * (R_Jacobi[cloth_No] * u[i]));
+		u[i] = R_b_global_inv[i] + R_Jacobi *(R_Jacobi * (R_Jacobi * u[i]));
 		u[i] = omega_chebyshev * (u[i] - u_last[i]) + u_last[i];
 		u_last[i] = u_previous[i];
-		residual_norm[i] = (b[i] - cloth_global_mat->data()[cloth_No] * u[i]).squaredNorm();
+		residual_norm[i] = (b[i] - (*global_mat) * u[i]).squaredNorm();
 	}
 }
 
 
-void IterationMethod::solveByChebyshevSemiIterativeAJacobi2(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num) {
+void IterationMethod::solveByChebyshevSemiIterativeAJacobi2(VectorXd* u, VectorXd* b, int& itr_num) {
 	std::vector<VectorXd> u_last(3);
 	std::vector<VectorXd> u_previous(3);
 	for (int i = 0; i < 3; ++i) {
 		u_last[i] = u[i];
-		b_global_inv[i] = b[i].cwiseProduct(global_diagonal_inv[cloth_No]);
-		R_b_global_inv[i] = R_Jacobi[cloth_No] * b_global_inv[i] + b_global_inv[i];
+		b_global_inv[i] = b[i].cwiseProduct(global_diagonal_inv);
+		R_b_global_inv[i] = R_Jacobi * b_global_inv[i] + b_global_inv[i];
 	}
 	double b_norm_conv = (b[0].squaredNorm() + b[1].squaredNorm() + b[2].squaredNorm()) * convergence_rate_2;
 	double omega_chebyshev = 2.0;
 	double residual_norm_per_thread[3];
 	double residual_norm;
-	thread->assignTask(this, A_JACOBI_2_ITR, u, b, residual_norm_per_thread, cloth_No, 0.0, u, u);
+	thread->assignTask(this, A_JACOBI_2_ITR, u, b, residual_norm_per_thread, 0.0, u, u);
 	residual_norm = residual_norm_per_thread[0] + residual_norm_per_thread[1] + residual_norm_per_thread[2];
 	itr_num = 1;
 	while (residual_norm > b_norm_conv && itr_num < max_itr_num) {
-		omega_chebyshev = 4.0 / (4.0 - a_jacobi_2_spectral_radius_square[cloth_No] * omega_chebyshev);
-		thread->assignTask(this, CHEBYSHEV_A_JACOBI_2_ITR, u, b, residual_norm_per_thread, cloth_No, omega_chebyshev, u_last.data(), u_previous.data());
+		omega_chebyshev = 4.0 / (4.0 - a_jacobi_2_spectral_radius_square * omega_chebyshev);
+		thread->assignTask(this, CHEBYSHEV_A_JACOBI_2_ITR, u, b, residual_norm_per_thread,  omega_chebyshev, u_last.data(), u_previous.data());
 		residual_norm = residual_norm_per_thread[0] + residual_norm_per_thread[1] + residual_norm_per_thread[2];
 		itr_num++;
 	}
 }
 
-void IterationMethod::solveByChebyshevSemiIterativeAJacobi3(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num) {
+void IterationMethod::solveByChebyshevSemiIterativeAJacobi3(VectorXd* u, VectorXd* b, int& itr_num) {
 	std::vector<VectorXd> u_last(3);
 	std::vector<VectorXd> u_previous(3);
 	for (int i = 0; i < 3; ++i) {
 		u_last[i] = u[i];
-		b_global_inv[i] = b[i].cwiseProduct(global_diagonal_inv[cloth_No]);
-		R_b_global_inv[i] = R_Jacobi[cloth_No] * b_global_inv[i];
-		R_b_global_inv[i] = R_Jacobi[cloth_No] * b_global_inv[i] + R_b_global_inv[i] + b_global_inv[i];
+		b_global_inv[i] = b[i].cwiseProduct(global_diagonal_inv);
+		R_b_global_inv[i] = R_Jacobi * b_global_inv[i];
+		R_b_global_inv[i] = R_Jacobi * b_global_inv[i] + R_b_global_inv[i] + b_global_inv[i];
 	}
 	double b_norm_conv = (b[0].squaredNorm() + b[1].squaredNorm() + b[2].squaredNorm()) * convergence_rate_2;
 	double omega_chebyshev = 2.0;
 	double residual_norm_per_thread[3];
 	double residual_norm;
-	thread->assignTask(this, A_JACOBI_3_ITR, u, b, residual_norm_per_thread, cloth_No, 0.0, u, u);
+	thread->assignTask(this, A_JACOBI_3_ITR, u, b, residual_norm_per_thread,  0.0, u, u);
 	residual_norm = residual_norm_per_thread[0] + residual_norm_per_thread[1] + residual_norm_per_thread[2];
 	itr_num = 1;
 	while (residual_norm > b_norm_conv && itr_num < max_itr_num) {
-		omega_chebyshev = 4.0 / (4.0 - a_jacobi_2_spectral_radius_square[cloth_No] * omega_chebyshev);
-		thread->assignTask(this, CHEBYSHEV_A_JACOBI_3_ITR, u, b, residual_norm_per_thread, cloth_No, omega_chebyshev, u_last.data(), u_previous.data());
+		omega_chebyshev = 4.0 / (4.0 - a_jacobi_2_spectral_radius_square * omega_chebyshev);
+		thread->assignTask(this, CHEBYSHEV_A_JACOBI_3_ITR, u, b, residual_norm_per_thread,  omega_chebyshev, u_last.data(), u_previous.data());
 		residual_norm = residual_norm_per_thread[0] + residual_norm_per_thread[1] + residual_norm_per_thread[2];
 		itr_num++;
 	}
 }
 
 
-void IterationMethod::solveByChebyshevSemiIterativeJacobi(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num)
+void IterationMethod::solveByChebyshevSemiIterativeJacobi(VectorXd* u, VectorXd* b, int& itr_num)
 {
 	std::vector<VectorXd> u_last(3);
 	std::vector<VectorXd> u_previous(3);
 	for (int i = 0; i < 3; ++i) {
 		u_last[i] = u[i];
-		b_global_inv[i] = b[i].cwiseProduct(global_diagonal_inv[cloth_No]);
+		b_global_inv[i] = b[i].cwiseProduct(global_diagonal_inv);
 	}
 	double residual_norm_per_thread[3];
 	double residual_norm;
-	thread->assignTask(this, JACOBI_ITR, u, b, residual_norm_per_thread, cloth_No, 0.0, u, u);
+	thread->assignTask(this, JACOBI_ITR, u, b, residual_norm_per_thread,  0.0, u, u);
 	residual_norm = residual_norm_per_thread[0] + residual_norm_per_thread[1] + residual_norm_per_thread[2];
 
 	double b_norm_conv = (b[0].squaredNorm() + b[1].squaredNorm() + b[2].squaredNorm()) * convergence_rate_2;
 	double omega_chebyshev = 2.0;	
 	itr_num = 1;
 	while (residual_norm  > b_norm_conv && itr_num < max_itr_num) {
-		omega_chebyshev = 4.0 / (4.0 - jacobi_spectral_radius_square[cloth_No] * omega_chebyshev);
-		thread->assignTask(this, CHEBYSHEV_JACOBI_ITR, u, b, residual_norm_per_thread, cloth_No, 
+		omega_chebyshev = 4.0 / (4.0 - jacobi_spectral_radius_square * omega_chebyshev);
+		thread->assignTask(this, CHEBYSHEV_JACOBI_ITR, u, b, residual_norm_per_thread,  
 			omega_chebyshev, u_last.data(), u_previous.data());
 		residual_norm = residual_norm_per_thread[0] + residual_norm_per_thread[1] + residual_norm_per_thread[2];
 		itr_num++;	
@@ -846,77 +677,20 @@ void IterationMethod::solveByChebyshevSemiIterativeJacobi(VectorXd* u, VectorXd*
 
 
 //CHEBYSHEV_JACOBI_ITR
-void IterationMethod::ChebyshevSemiIterativeJacobiIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No, double omega_chebyshev,
+void IterationMethod::ChebyshevSemiIterativeJacobiIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, double omega_chebyshev,
 	VectorXd* u_last, VectorXd* u_previous)
 {
 	for (int i = dimension_per_thread[thread_id]; i < dimension_per_thread[thread_id + 1]; ++i) {
 		u_previous[i] = u[i];
-		u[i] = b_global_inv[i] + R_Jacobi[cloth_No] * u[i];
+		u[i] = b_global_inv[i] + R_Jacobi * u[i];
 		u[i] = omega_chebyshev * (u[i] - u_last[i]) + u_last[i];
 		u_last[i] = u_previous[i];
-		residual_norm[i] = (b[i] - cloth_global_mat->data()[cloth_No] * u[i]).squaredNorm();
+		residual_norm[i] = (b[i] - (*global_mat) * u[i]).squaredNorm();
 	}
 }
 
 
-
-void IterationMethod::solveByChebyshevSemiIterativeJacobi(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num)
-{
-	VectorXd u_last = u;
-	VectorXd B_inv_b = global_diagonal_inv[cloth_No].cwiseProduct(b);
-	//u = b.cwiseProduct(global_diagonal_inv[cloth_No]) + RMultiplyX(u, cloth_No, 0);
-	u = b.cwiseProduct(global_diagonal_inv[cloth_No]) + R_Jacobi[cloth_No] * u;
-	itr_num = 1;
-	double omega_chebyshev = 2.0;
-	VectorXd u_previous;
-	double b_norm = b.squaredNorm();
-	double residual_chebyshev = 2 * b_norm;
-
-	while (residual_chebyshev / b_norm > convergence_rate_2 && itr_num < max_itr_num)
-	{
-		u_previous = u;
-		omega_chebyshev = 4.0 / (4.0 - jacobi_spectral_radius_square[cloth_No] * omega_chebyshev);
-		u = b.cwiseProduct(global_diagonal_inv[cloth_No]) + R_Jacobi[cloth_No] * u;
-		u = omega_chebyshev * (u - u_last) + u_last;
-		u_last = u_previous;
-		itr_num++;
-		residual_chebyshev = (b - system_matrix * u).squaredNorm();
-	}
-}
-
-void IterationMethod::solveByPCG(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num)
-{
-	VectorXd residual;
-	double residual_norm;
-	double b_norm = b.squaredNorm();
-	VectorXd z, p;
-	residual = b - system_matrix * u;
-	z = global_diagonal_inv[cloth_No].cwiseProduct(residual);
-	p = z;
-	double alpha, beta;
-	double rz_k, rz_k_1;
-	rz_k = residual.dot(z);
-	itr_num = 0;
-	while (true)
-	{
-		itr_num++;
-		alpha = rz_k / (system_matrix * p).dot(p);
-		u += alpha * p;
-		residual = b - system_matrix * u;
-		if (residual.squaredNorm() / b_norm < convergence_rate_2 || itr_num >= max_itr_num) {
-			break;
-		}
-		z = global_diagonal_inv[cloth_No].cwiseProduct(residual);
-		rz_k_1 = residual.dot(z);
-		beta = rz_k_1 / rz_k;
-		rz_k = rz_k_1;
-		p = z + beta * p;
-		//std::cout << residual.squaredNorm() / b_norm << std::endl;
-	}
-}
-
-
-void IterationMethod::solveByPCG(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num)
+void IterationMethod::solveByPCG(VectorXd* u, VectorXd* b,  int& itr_num)
 {
 	std::vector<VectorXd> residual(3);
 	double residual_norm;
@@ -925,8 +699,8 @@ void IterationMethod::solveByPCG(VectorXd* u, VectorXd* b, int cloth_No, int& it
 	std::vector<VectorXd> z(3);
 	std::vector<VectorXd> p(3);
 	for (int i = 0; i < 3; ++i) {
-		residual[i] = b[i] - cloth_global_mat->data()[cloth_No] * u[i];
-		z[i] = global_diagonal_inv[cloth_No].cwiseProduct(residual[i]);
+		residual[i] = b[i] - (*global_mat) * u[i];
+		z[i] = global_diagonal_inv.cwiseProduct(residual[i]);
 	}
 	p = z;
 	double alpha, beta;
@@ -937,15 +711,15 @@ void IterationMethod::solveByPCG(VectorXd* u, VectorXd* b, int cloth_No, int& it
 	while (true)
 	{
 		itr_num++;
-		alpha = rz_k / ((cloth_global_mat->data()[cloth_No] * p[0]).dot(p[0]) + 
-			(cloth_global_mat->data()[cloth_No] * p[1]).dot(p[1]) + (cloth_global_mat->data()[cloth_No] * p[2]).dot(p[2]));
-		thread->assignTask(this, PCG_ITR1, u, b, residual_norm_per_thread, cloth_No,
+		alpha = rz_k / (((*global_mat) * p[0]).dot(p[0]) + 
+			((*global_mat) * p[1]).dot(p[1]) + ((*global_mat) * p[2]).dot(p[2]));
+		thread->assignTask(this, PCG_ITR1, u, b, residual_norm_per_thread,
 			alpha, residual.data(), p.data());
 		residual_norm = residual_norm_per_thread[0] + residual_norm_per_thread[1] + residual_norm_per_thread[2];
 		if (residual_norm < b_norm_cov || itr_num >= max_itr_num) {
 			break;
 		}
-		thread->assignTask(this, PCG_ITR2, z.data(), residual.data(), rz_k_1_per_thread, cloth_No,
+		thread->assignTask(this, PCG_ITR2, z.data(), residual.data(), rz_k_1_per_thread,
 			alpha, residual.data(), p.data());
 		rz_k_1 = rz_k_1_per_thread[0] + rz_k_1_per_thread[1] + rz_k_1_per_thread[2];
 		beta = rz_k_1 / rz_k;
@@ -958,22 +732,22 @@ void IterationMethod::solveByPCG(VectorXd* u, VectorXd* b, int cloth_No, int& it
 
 
 //PCG_ITR1
-void IterationMethod::PCGIterationPerThread1(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No, double alpha,
+void IterationMethod::PCGIterationPerThread1(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm,  double alpha,
 	VectorXd* residual, VectorXd* p)
 {
 	for (int i = dimension_per_thread[thread_id]; i < dimension_per_thread[thread_id + 1]; ++i) {
 		u[i] += alpha* p[i];
-		residual[i] = b[i] - cloth_global_mat->data()[cloth_No] * u[i];
+		residual[i] = b[i] - (*global_mat) * u[i];
 		residual_norm[i] = residual[i].squaredNorm();
 	}
 }
 
 //PCG_ITR2
-void IterationMethod::PCGIterationPerThread2(int thread_id, VectorXd* z, VectorXd* residual, double* rz_k_1, int cloth_No, double alpha,
+void IterationMethod::PCGIterationPerThread2(int thread_id, VectorXd* z, VectorXd* residual, double* rz_k_1,  double alpha,
 	VectorXd* q, VectorXd* p)
 {
 	for (int i = dimension_per_thread[thread_id]; i < dimension_per_thread[thread_id + 1]; ++i) {
-		z[i] = global_diagonal_inv[cloth_No].cwiseProduct(residual[i]);
+		z[i] = global_diagonal_inv.cwiseProduct(residual[i]);
 		rz_k_1[i] = residual[i].dot(z[i]);
 	}
 }

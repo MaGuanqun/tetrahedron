@@ -21,68 +21,52 @@ public:
 
 	void updateConvergenceRate(double conv_rate);
 
-	void setBasicInfo(int object_num, std::vector<int>& sys_size, Thread* thread, std::vector<int>& cloth_per_thread_begin,
-		std::vector<std::vector<VectorXd>>* cloth_b, std::vector<std::vector<VectorXd>>* cloth_u, std::vector<SparseMatrix<double, RowMajor>>* cloth_global_mat);
-	void offDiagonalSize();
+	void setBasicInfo(int sys_size, Thread* thread,
+		std::vector<VectorXd>* cloth_b, std::vector<VectorXd>* cloth_u, SparseMatrix<double, RowMajor>* global_mat);
 	void initialJacobi();
-	void updateJacobi_R(int thread_id);
-	void setOffDiagonal(int obj_No, std::vector<Triplet<double>>& global_mat_nnz);
-	void solveByJacobi(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num);
-	void solveBySuperJacobi(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num);
-	void solveByChebyshevSemiIterativeSuperJacobi(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num);
+
+	void JacobiIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm);
+	void solveByJacobi(VectorXd* u, VectorXd* b, int& itr_num);
+	void solveByAJacobi_2(VectorXd* u, VectorXd* b, int& itr_num);
+	void solveByAJacobi_3(VectorXd* u, VectorXd* b, int& itr_num);
+	void SuperJacobi2IterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm);
+	void SuperJacobi3IterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm);
+	void solveByChebyshevSemiIterativeAJacobi2(VectorXd* u, VectorXd* b, int& itr_num);
+	void solveByChebyshevSemiIterativeAJacobi3(VectorXd* u, VectorXd* b, int& itr_num);
+	void solveByChebyshevSemiIterativeJacobi(VectorXd* u, VectorXd* b, int& itr_num);
+	void solveByPCG(VectorXd* u, VectorXd* b, int& itr_num);
+	void solveByGaussSeidel(VectorXd* u, VectorXd* b, int& itr_num);
+	void solveByChebyshevGaussSeidel(VectorXd* u, VectorXd* b, int& itr_num, double weight);
 
 
-
-
-	void JacobiIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No);
-	void solveByJacobi(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num);
-	void solveByAJacobi_2(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num);
-	void solveByAJacobi_3(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num);
-	void SuperJacobi2IterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No);
-	void SuperJacobi3IterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No);
-	void solveByChebyshevSemiIterativeAJacobi2(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num);
-	void solveByChebyshevSemiIterativeAJacobi3(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num);
-	void solveByChebyshevSemiIterativeJacobi(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num);
-	void solveByPCG(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num);
-	void solveByGaussSeidel(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num);
-	void solveByChebyshevGaussSeidel(VectorXd* u, VectorXd* b, int cloth_No, int& itr_num, double weight);
-
-
-	void PCGIterationPerThread1(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No, double alpha,
+	void PCGIterationPerThread1(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm,  double alpha,
 		VectorXd* residual, VectorXd* p);
-	void PCGIterationPerThread2(int thread_id, VectorXd* z, VectorXd* residual, double* rz_k_1, int cloth_No, double alpha,
+	void PCGIterationPerThread2(int thread_id, VectorXd* z, VectorXd* residual, double* rz_k_1,  double alpha,
 		VectorXd* q, VectorXd* p);
 	void ChebyshevSemiIterativeJacobiIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, 
-		int cloth_No, double omega_chebyshev, VectorXd* u_last, VectorXd* u_previous);
+		 double omega_chebyshev, VectorXd* u_last, VectorXd* u_previous);
 	void ChebyshevSemiIterativeAJacobi2IterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm,
-		int cloth_No, double omega_chebyshev, VectorXd* u_last, VectorXd* u_previous);
+		double omega_chebyshev, VectorXd* u_last, VectorXd* u_previous);
 	void ChebyshevSemiIterativeAJacobi3IterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm,
-		int cloth_No, double omega_chebyshev, VectorXd* u_last, VectorXd* u_previous);
-	void GaussSeidelIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No, double omega_chebyshev,
+		double omega_chebyshev, VectorXd* u_last, VectorXd* u_previous);
+	void GaussSeidelIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, double omega_chebyshev,
 		VectorXd* u_last, VectorXd* u_previous);
-	void ChebyshevSemiIterativeGaussSeidelIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, int cloth_No, double omega_chebyshev,
+	void ChebyshevSemiIterativeGaussSeidelIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm, double omega_chebyshev,
 		VectorXd* u_last, VectorXd* u_previous);
 
+	void updateJacobi();
 
+	void estimateGaussSeidelEigenValue(std::vector<VectorXd>& u, SparseMatrix<double, RowMajor>& system_matrix);
+	void estimateJacobiEigenValue(std::vector<VectorXd>& u);
 
+	void estimateSuperJacobiEigenValue(std::vector<VectorXd>& u, int A_jacobi_step_size);
 
-
-
-	void estimateJacobiEigenValue(std::vector<std::vector<VectorXd>>& u);
-	void solveByGaussSeidel(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num);
-	void estimateSuperJacobiEigenValue(std::vector<std::vector<VectorXd>>& u, int A_jacobi_step_size);
-
-	void estimateGaussSeidelEigenValue(std::vector<std::vector<VectorXd>>& u, std::vector<SparseMatrix<double, RowMajor>>& system_matrix);
-	void solveByChebyshevGaussSeidel(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num, double weight);
-
-	void solveByChebyshevSemiIterativeJacobi(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num);
-	void solveByPCG(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num);
 	void updateGlobalDiagonalInv();
-	void initialGlobalDiagonalInv(std::vector<std::vector<double*>>* cloth_global_mat_diagonal_ref_address);
+	void initialGlobalDiagonalInv(std::vector<double*>* cloth_global_mat_diagonal_ref_address);
 	void solveByWeightedJacobi(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num, double weight);
 
 
-	std::vector<SparseMatrix<double, RowMajor>> off_diagonal;
+	SparseMatrix<double, RowMajor> off_diagonal;
 
 	void test();
 
@@ -90,6 +74,8 @@ public:
 		int vertex_index_begin, int vertex_index_end, int sys_size);
 	void testRelativeError();
 private:
+
+	void setOffDiagonal();
 	void testGaussSeidel();
 
 	struct AJacobiOperator
@@ -102,37 +88,29 @@ private:
 	//AJacobiOperator A_jacobi_operator_2;
 	//AJacobiOperator A_jacobi_operator_3;
 
-	std::vector<SparseMatrix<double, RowMajor>> R_Jacobi;
-	std::vector<VectorXd> global_diagonal_inv;
+	SparseMatrix<double, RowMajor> R_Jacobi;
+	VectorXd global_diagonal_inv;
 
-	std::vector<std::vector<VectorXd>>* cloth_b;
-	std::vector<std::vector<VectorXd>>* cloth_u;
-	std::vector<SparseMatrix<double, RowMajor>>* cloth_global_mat;
+	SparseMatrix<double, RowMajor>* global_mat;
 
 
 	std::vector<int>dimension_per_thread;
-
-	std::vector<std::vector<double*>>* global_mat_diagonal_ref_address;//the address to quickly set the diagonal of system matrix A
-	int total_object_num;
-	std::vector<int>sys_size;
+	std::vector<double*>* global_mat_diagonal_ref_address;//the address to quickly set the diagonal of system matrix A
+	int sys_size;
 	Thread* thread;
-	std::vector<int> obj_per_thread_begin;
-	void updateJacobi(int cloth_No);
+
 	int max_itr_num;
 	double convergence_rate_2;
 	void superJacobiSingleIteration(VectorXd& u, VectorXd& b, int cloth_No, int super_jacobi_step_size);
 	int super_jacobi_step_size = 2;
-	void estimateAJacobi2EigenValue(int cloth_No, std::vector<VectorXd>& u);
-	void estimateAJacobi3EigenValue(int cloth_No, std::vector<VectorXd>& u);
-	std::vector<double> a_jacobi_2_spectral_radius_square;
-	std::vector<double> a_jacobi_3_spectral_radius_square;
-	std::vector<double> jacobi_spectral_radius_square;
-	std::vector<double> gauss_seidel_spectral_radius_square;
+	void estimateAJacobi2EigenValue(std::vector<VectorXd>& u);
+	void estimateAJacobi3EigenValue(std::vector<VectorXd>& u);
+	double a_jacobi_2_spectral_radius_square;
+	double a_jacobi_3_spectral_radius_square;
+	double jacobi_spectral_radius_square;
+	double gauss_seidel_spectral_radius_square;
 
-	void estimateGaussSeidelEigenValue(int cloth_No, std::vector<VectorXd>& u, SparseMatrix<double, RowMajor>& system_matrix);
-
-	void estimateJacobiEigenValue(int cloth_No, std::vector<VectorXd>& u);
-
+	
 
 	void createSuperJacobiOperator(AJacobiOperator* A_jacobi_operator, SparseMatrix<double, ColMajor>& R_jacobi,
 		AJacobiOperator* A_jacobi_basic);

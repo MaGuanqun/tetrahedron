@@ -57,7 +57,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 	bool set_anchor[2] = { false,false };
 
-	const char* itr_solver_items_[] = { "Direct", "Jacobi","Chebyshev jacobi","Super Jacobi","Chebyshev super Jacobi", "Gauss Seidel", "PCG", "Chebyshev Gauss Seidel", "Weighted Jacobi"};
+	const char* itr_solver_items_[] = { "Direct", "Jacobi","Chebyshev jacobi","Super Jacobi","Chebyshev super Jacobi", "Gauss Seidel", "PCG", "Chebyshev Gauss Seidel"};
 	char* itr_solver_item = (char*)"Direct";
 	char* itr_solver_items[IM_ARRAYSIZE(itr_solver_items_)];
 	for (int i = 0; i < IM_ARRAYSIZE(itr_solver_items_); ++i) {
@@ -69,6 +69,14 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool record_matrix;
 
 	std::vector<std::vector<double>> iteration_solver_iteration_num;
+
+	//VectorXd a;
+	//a.resize(4);
+	//a[0] = 1; a[1] = 2; a[2] = 3; a[3] = 4;
+	//VectorXd b;
+	//b.resize(4); b[0] = 1;
+	//memcpy(b.data() + 1, a.data() + 1, 24);
+	//std::cout << b << std::endl;
 
 	while (!glfwWindowShouldClose(window))
 	{

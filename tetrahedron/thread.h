@@ -54,7 +54,7 @@ private:
     job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type);
     job create_task(IterationMethod* func, int thread_id, std::vector<int>* vertex_index, std::vector<double>* coefficient,
         double* x, double* b, double* result, int* vertex_index_thread_begin, int sys_size);
-    job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type, Eigen::VectorXd* u, Eigen::VectorXd* b, double* residual_norm, int obj_No,
+    job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type, Eigen::VectorXd* u, Eigen::VectorXd* b, double* residual_norm,
         double omega_chebyshev, Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous);
 
 public:
@@ -96,7 +96,7 @@ public:
     }  
 
     void assignTask(IterationMethod* func, IterationMethodFunc function_type, Eigen::VectorXd* u, Eigen::VectorXd* b, 
-        double* residual_norm, int obj_No,double omega_chebyshev, Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous);
+        double* residual_norm, double omega_chebyshev, Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous);
     void assignTask(IterationMethod* func, std::vector<int>* vertex_index, std::vector<double>* coefficient,
         double* x, double* b, double* result, int* vertex_index_thread_begin, int sys_size);  
 

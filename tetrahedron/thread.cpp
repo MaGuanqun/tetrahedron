@@ -56,14 +56,17 @@ job Thread::create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread 
     case COLLISION_FREE_POSITION:
         k = job([func, thread_id]() {func->computeCollisionFreePosition(thread_id); });
         break;  
-    case SOLVE_SYSYTEM:
-        k = job([func, thread_id]() {func->solveSystemPerThead(thread_id,true,true); });
+    case CONSTRUCT_B:
+        k = job([func, thread_id]() {func->constructbPerThead(thread_id,true); });
         break;
-    case SOLVE_SYSYTEM_WITHOUT_COLLISION:
-        k = job([func, thread_id]() {func->solveSystemPerThead(thread_id, false,false); });
+    case CONSTRUCT_B_WITHOUT_COLLISION:
+        k = job([func, thread_id]() {func->constructbPerThead(thread_id, false); });
         break;
-    case SOLVE_SYSYTEM_WITHOUT_ENERGY:
-        k = job([func, thread_id]() {func->solveSystemPerThead(thread_id, true, false); });
+    case SOLVE_WITH_COLLISION:
+        k = job([func, thread_id]() {func->solveSystemPerThread(thread_id, true); });
+        break;
+    case SOLVE_WITHOUT_COLLISION:
+        k = job([func, thread_id]() {func->solveSystemPerThread(thread_id, false); });
         break;
     case COMPUTE_DISPLACEMENT:
         k = job([func, thread_id]() {func->computeDisplacement(thread_id); });
@@ -76,9 +79,6 @@ job Thread::create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread 
     //    break;
     case UPDATE_UV:
         k = job([func, thread_id]() {func->updateUVPerThread(thread_id); });
-        break;
-    case MATRIX_DECOMPOSITION:
-        k = job([func, thread_id]() {func->matrixDecomposition(thread_id); });
         break;
     case UPDATE_MATRIX: {
         k = job([func, thread_id]() {func->updateMatrixPerThread(thread_id); });
@@ -286,60 +286,48 @@ job Thread::create_task(RadixSort* func, int thread_id, RadixSortFunc function_t
 }
 
 
-job Thread::create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type)
-{
-    job k;
-    switch (function_type)
-    {
-    case UPDATE_JACOBI_R:
-        k = job([func, thread_id]() {func->updateJacobi_R(thread_id); });
-        break;
-    }
-    return k;
-}
-
 job Thread::create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type, Eigen::VectorXd* u, Eigen::VectorXd* b, double* residual_norm,
-    int obj_No, double omega_chebyshev, Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous)
+    double omega_chebyshev, Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous)
 {
     job k;
     switch (function_type)
     {
     case JACOBI_ITR:
-        k = job([func, thread_id,u,b,residual_norm, obj_No]() {func->JacobiIterationPerThread(thread_id,u,b,residual_norm, obj_No); });
+        k = job([func, thread_id,u,b,residual_norm]() {func->JacobiIterationPerThread(thread_id,u,b,residual_norm); });
         break;
     case A_JACOBI_2_ITR:
-        k = job([func, thread_id, u, b, residual_norm, obj_No]() {func->SuperJacobi2IterationPerThread(thread_id, u, b, residual_norm, obj_No); });
+        k = job([func, thread_id, u, b, residual_norm]() {func->SuperJacobi2IterationPerThread(thread_id, u, b, residual_norm); });
         break;
     case A_JACOBI_3_ITR:
-        k = job([func, thread_id, u, b, residual_norm, obj_No]() {func->SuperJacobi3IterationPerThread(thread_id, u, b, residual_norm, obj_No); });
+        k = job([func, thread_id, u, b, residual_norm]() {func->SuperJacobi3IterationPerThread(thread_id, u, b, residual_norm); });
         break;
     case CHEBYSHEV_JACOBI_ITR:
-        k = job([func, thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous]() 
-            {func->ChebyshevSemiIterativeJacobiIterationPerThread(thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous); });
+        k = job([func, thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous]() 
+            {func->ChebyshevSemiIterativeJacobiIterationPerThread(thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous); });
         break;
     case CHEBYSHEV_A_JACOBI_2_ITR:
-        k = job([func, thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous]()
-            {func->ChebyshevSemiIterativeAJacobi2IterationPerThread(thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous); });
+        k = job([func, thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous]()
+            {func->ChebyshevSemiIterativeAJacobi2IterationPerThread(thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous); });
         break;
     case CHEBYSHEV_A_JACOBI_3_ITR:
-        k = job([func, thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous]()
-            {func->ChebyshevSemiIterativeAJacobi3IterationPerThread(thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous); });
+        k = job([func, thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous]()
+            {func->ChebyshevSemiIterativeAJacobi3IterationPerThread(thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous); });
         break;
     case PCG_ITR1:
-        k = job([func, thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous]()
-            {func->PCGIterationPerThread1(thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous); });
+        k = job([func, thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous]()
+            {func->PCGIterationPerThread1(thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous); });
         break;
     case PCG_ITR2:
-        k = job([func, thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous]()
-            {func->PCGIterationPerThread2(thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous); });
+        k = job([func, thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous]()
+            {func->PCGIterationPerThread2(thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous); });
         break;
     case GAUSS_SEIDEL_ITR:
-        k = job([func, thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous]()
-            {func->GaussSeidelIterationPerThread(thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous); });
+        k = job([func, thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous]()
+            {func->GaussSeidelIterationPerThread(thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous); });
         break;
     case CHEBYSHEV_GAUSS_SEIDEL_ITR:
-        k = job([func, thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous]()
-            {func->ChebyshevSemiIterativeGaussSeidelIterationPerThread(thread_id, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous); });
+        k = job([func, thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous]()
+            {func->ChebyshevSemiIterativeGaussSeidelIterationPerThread(thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous); });
         break;
     }
     
@@ -396,12 +384,12 @@ void Thread::assignTask(IterationMethod* func, std::vector<int>* vertex_index, s
 }
 
 void Thread::assignTask(IterationMethod* func, IterationMethodFunc function_type, Eigen::VectorXd* u, Eigen::VectorXd* b, 
-    double* residual_norm, int obj_No, double omega_chebyshev, Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous)
+    double* residual_norm, double omega_chebyshev, Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous)
 {
     for (int i = 0; i < thread_num; ++i)
     {
         // std::cout << threads[i].id << std::endl;
-        job j = create_task(func, threads[i].id, function_type, u, b, residual_norm, obj_No, omega_chebyshev, u_last, u_previous);
+        job j = create_task(func, threads[i].id, function_type, u, b, residual_norm, omega_chebyshev, u_last, u_previous);
         futures.push_back(j.get_future());
         std::unique_lock<std::mutex> l(threads[i].m);
         threads[i].jobs.push(std::move(j));
