@@ -51,7 +51,7 @@ public:
 	void computeEnergyPerThread(int thread_id);
 	void solveSystemPerThread(int thread_id, bool with_collision);
 
-
+	void updateTetrohedronAnchorVertices();
 	size_t* time_stamp;
 	Collision collision;
 private:
@@ -102,6 +102,7 @@ private:
 	SparseMatrix<double, RowMajor> global_mat;
 	SparseMatrix<double, RowMajor> initial_global_mat;
 	std::vector<double>global_mat_diagonal_ref;
+	std::vector<double>ori_global_mat_diagonal_ref;
 	std::vector<double*>global_mat_diagonal_ref_address;
 	SimplicialLLT<SparseMatrix<double>> global_llt;
 	SimplicialLLT<SparseMatrix<double>> collision_free_llt;
@@ -192,4 +193,10 @@ private:
 	std::vector<int> vertex_begin_per_cloth;
 	std::vector<int> vertex_begin_per_tetrahedron;
 	void setSystemIndexInfo();
+
+	void copmuteGlobalStepMatrixSingleTetrahedron(TetrahedronMeshStruct& mesh_struct, std::vector<Triplet<double>>& global_mat_nnz, int sys_size, double& ARAP_stiffness,
+		double& volume_preserve_stiffness, double position_stiffness, int vertex_index_start, Matrix4d& m_for_ARAP);
+	Matrix4d getARAPmatrix();
+	void updateTetrohedronAnchorVertices(int tetrahedron_index, TetrahedronMeshStruct& mesh_struct, int vertex_index_start, double position_stiffness);
+	void localARAPProjectionPerThread(int thread_id, bool with_energy);
 };

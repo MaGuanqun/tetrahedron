@@ -77,6 +77,13 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].recordInitialMesh(single_cloth_info[i]);
 	}
+	
+	std::array<double, 4>tetrahedron_collision_stiffness_per = { 2e5,2e5,2e5, 2e5 };
+	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density,1e6,1e3,1e3, tetrahedron_collision_stiffness_per.data());
+	for (int i = 0; i < tetrahedron_num; ++i) {
+		tetrahedron[i].recordInitialMesh(single_tetrahedron_info);
+	}
+
 
 	project_dynamic.setForPD(&cloth, &tetrahedron,&collider, &thread);
 	setAveEdgeLength();

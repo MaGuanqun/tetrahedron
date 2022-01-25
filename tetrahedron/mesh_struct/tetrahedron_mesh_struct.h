@@ -1,6 +1,9 @@
 #pragma once
 #include"mesh_struct.h"
+#include"../external/Eigen/Dense"
 #include<map>
+using namespace Eigen;
+
 class TetrahedronMeshStruct:public MeshStruct
 {
 public:
@@ -23,6 +26,9 @@ public:
 	void setVolume(int thread_No);
 	double setVolumeMass(double density);
 	std::vector<bool>vertex_on_surface;
+	void prepareForDeformationGradient();
+	std::vector<Matrix3d>PPT_inv;//to record the restshape (PP^T)^-1 for deformation gradient
+	std::vector<Matrix<double, 4, 3>> PT;//to record the restshape P^T for deformation gradient
 private:
 	struct TetrahedronFace {
 		std::array<int,3> index;
@@ -51,5 +57,6 @@ private:
 	};
 	void buildMap(std::map<TetrahedronFace, int>& face_in_tet, int v0, int v1, int v2);
 	double getTetrahedronVolume(double* v1, double* v2, double* v3, double* v4);
+	Matrix<double, 3, 4> constructMatrixP(int tetra_index, Matrix<double, 3, 4> p);
 };
 

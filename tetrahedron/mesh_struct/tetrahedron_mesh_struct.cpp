@@ -130,3 +130,26 @@ void TetrahedronMeshStruct::setVertex()
 		vertices[triangle_indices[i][2]].face.push_back(i);
 	}
 }
+
+
+void TetrahedronMeshStruct::prepareForDeformationGradient()
+{
+	PPT_inv.resize(indices.size());
+	PT.resize(indices.size());
+	Matrix<double, 3, 4> p;
+	for (int i = 0; i < indices.size(); ++i)
+	{
+		constructMatrixP(i, p);
+		PPT_inv[i] = (p * p.transpose()).inverse();
+		PT[i] = p.transpose();
+	}
+}
+
+Matrix<double, 3, 4> TetrahedronMeshStruct::constructMatrixP(int tetra_index, Matrix<double, 3, 4> p)
+{
+	for (int i = 0; i < 4; ++i)
+	{
+		memcpy(p.data()+3*i, vertex_position[indices[tetra_index][i]].data(), 24);
+	}
+	return p;
+}

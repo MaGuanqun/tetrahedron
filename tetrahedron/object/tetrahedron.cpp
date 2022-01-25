@@ -12,6 +12,7 @@ void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mesh_struct.setThreadIndex(total_thread_num);
 	mesh_struct.vertex_for_render = mesh_struct.vertex_position;
 	mesh_struct.getRenderNormal();
+	mesh_struct.prepareForDeformationGradient();
 	mass = mesh_struct.setVolumeMass(density);
 	genBuffer();
 	setBuffer();
@@ -136,4 +137,14 @@ void Tetrahedron::draw(Camera* camera, Shader* object_shader_front)
 		glDrawElements(GL_TRIANGLES, 3 * mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 	}
+}
+
+void Tetrahedron::recordInitialMesh(SingleTetrahedronInfo& single_tetrahedron_info_ref)
+{
+	ori_vertices = mesh_struct.vertex_position;
+	this->single_tetrahedron_info_ref = single_tetrahedron_info_ref;
+	memcpy(collision_stiffness, single_tetrahedron_info_ref.collision_stiffness, 32);
+	position_stiffness = single_tetrahedron_info_ref.position_stiffness;
+	volume_preserve_stiffness = single_tetrahedron_info_ref.volume_preserve_stiffness;
+	ARAP_stiffness = single_tetrahedron_info_ref.ARAP_stiffness;
 }

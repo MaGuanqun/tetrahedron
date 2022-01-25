@@ -230,6 +230,12 @@ void ProjectDynamic::computeGlobalStepMatrix()
 		computeGlobalStepMatrixSingleCloth((*cloth)[i].mesh_struct, global_mat_nnz, lbo_weight[i], vertex_lbo[i], cloth_sys_size[i],
 			(*cloth)[i].bend_stiffness, (*cloth)[i].length_stiffness, (*cloth)[i].position_stiffness, vertex_begin_per_cloth[i]);
 	}
+	Matrix4d arap_matrix = getARAPmatrix();
+	for (int i = 0; i < total_tetrahedron_num; ++i) {
+		copmuteGlobalStepMatrixSingleTetrahedron((*tetrahedron)[i].mesh_struct, global_mat_nnz, tetrahedron_sys_size[i],
+			(*tetrahedron)[i].ARAP_stiffness, (*tetrahedron)[i].volume_preserve_stiffness, (*tetrahedron)[i].position_stiffness,
+			vertex_begin_per_tetrahedron[i], arap_matrix);
+	}
 
 	global_mat.setFromTriplets(global_mat_nnz.begin(), global_mat_nnz.end());
 	global_mat_diagonal_ref_address.resize(sys_size);
@@ -240,10 +246,64 @@ void ProjectDynamic::computeGlobalStepMatrix()
 	for (int i = 0; i < sys_size; ++i) {
 		global_mat_diagonal_ref[i] = *(global_mat_diagonal_ref_address[i]);
 	}
+	ori_global_mat_diagonal_ref = global_mat_diagonal_ref;
 	global_llt.analyzePattern(global_mat);
 	global_llt.factorize(global_mat);
 	collision_free_llt.compute(global_mat);
 	initial_global_mat = global_mat;
+}
+
+void ProjectDynamic::copmuteGlobalStepMatrixSingleTetrahedron(TetrahedronMeshStruct& mesh_struct, std::vector<Triplet<double>>& global_mat_nnz, int sys_size, double& ARAP_stiffness,
+	double& volume_preserve_stiffness, double position_stiffness, int vertex_index_start, Matrix4d& m_for_ARAP)
+{
+	//ARAP + volume preserve: they have the same matrix.
+	Matrix4d m_ARAP = (volume_preserve_stiffness + ARAP_stiffness) * m_for_ARAP;
+	int index[4];
+	for (int i = 0; i < mesh_struct.indices.size(); ++i) {
+		memcpy(index, mesh_struct.indices[i].data(), 16);
+		for (int j = 0; j < 4; ++j){
+			index[j] += vertex_index_start;
+		}
+		for (int j = 0; j < 4; ++j) {
+			for (int k = j + 1; k < 4; ++k) {
+				global_mat_nnz.push_back(Triplet<double>(index[j], index[k], m_ARAP.data()[4 * j + k]));
+				global_mat_nnz.push_back(Triplet<double>(index[k], index[j], m_ARAP.data()[4 * k + j]));
+			}
+			global_mat_nnz.push_back(Triplet<double>(index[j], index[j], m_ARAP.data()[4 * j + j]));
+		}
+	}
+	//position
+	//for (int i = 0; i < mesh_struct.anchor_vertex.size(); ++i) {
+	//	global_mat_nnz.push_back(Triplet<double>(mesh_struct.anchor_vertex[i] + vertex_index_start, mesh_struct.anchor_vertex[i] + vertex_index_start, position_stiffness));
+	//}
+
+}
+
+
+void ProjectDynamic::updateTetrohedronAnchorVertices()
+{
+	for (int i = 0; i < total_tetrahedron_num; ++i)	{
+		updateTetrohedronAnchorVertices(i, (*tetrahedron)[i].mesh_struct, vertex_begin_per_tetrahedron[i], (*tetrahedron)[i].position_stiffness);
+	}
+}
+
+
+void ProjectDynamic::updateTetrohedronAnchorVertices(int tetrahedron_index,TetrahedronMeshStruct& mesh_struct, int vertex_index_start,
+	double position_stiffness)
+{
+	int anchor_vertex_size = mesh_struct.anchor_vertex.size();
+	int* anchor_vertex = mesh_struct.anchor_vertex.data();
+	int system_size = tetrahedron_sys_size[tetrahedron_index];
+	for (int i = 0; i < system_size; ++i){
+		*(global_mat_diagonal_ref_address[i + vertex_index_start]) = ori_global_mat_diagonal_ref[i + vertex_index_start];
+	}
+
+	for (int i = 0; i < anchor_vertex_size; ++i){		
+		*(global_mat_diagonal_ref_address[anchor_vertex[i] + vertex_index_start]) += position_stiffness;
+	}
+	for (int i = 0; i < system_size; ++i) {
+		global_mat_diagonal_ref[i + vertex_index_start] = *(global_mat_diagonal_ref_address[i + vertex_index_start]);
+	}	
 }
 
 void ProjectDynamic::computeGlobalStepMatrixSingleCloth(TriangleMeshStruct& mesh_struct, std::vector<Triplet<double>>& global_mat_nnz,
@@ -493,8 +553,8 @@ void ProjectDynamic::initial()
 	global_mat = initial_global_mat;
 	for (int i = 0; i < sys_size; ++i) {
 		global_mat_diagonal_ref_address[i] = &global_mat.coeffRef(i, i);
-		global_mat_diagonal_ref[i] = *global_mat_diagonal_ref_address[i];
 	}
+	global_mat_diagonal_ref = ori_global_mat_diagonal_ref;
 	reset();
 }
 
@@ -1214,6 +1274,23 @@ void ProjectDynamic::localProjectionPerThread(int thread_id, bool with_energy)
 //		}
 //	}
 //}
+// 
+
+void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energy)
+{
+	int vertex_index_start;
+	int index_end;
+	std::array<int, 4>*tet_index;
+	if (with_energy) {
+		for (int j = 0; j < total_tetrahedron_num; ++j) {
+			vertex_index_start = vertex_begin_per_tetrahedron[j];
+			index_end = (*tetrahedron)[j].mesh_struct.tetrahedron_index_begin_per_thread[thread_id + 1];
+		}
+
+		for(int i=tetrahedron_index_begin_per_thread[thread_id]
+	}
+}
+
 //LOCAL_EDGE_LENGTH_PROJECTION
 void ProjectDynamic::localEdgeLengthProjectionPerThread(int thread_id, bool with_energy)
 {
@@ -1594,4 +1671,12 @@ void ProjectDynamic::update_ave_iteration_record(double& ave_itr)
 
 	ave_iteration /=(double) (max_inner_iteration_num * (outer_iteration_num - 1));	
 	ave_itr = ave_iteration;
+}
+
+Matrix4d ProjectDynamic::getARAPmatrix()
+{
+	Matrix4d A=Matrix4d::Ones();
+	A *= -0.25;
+	A += Matrix4d::Identity();
+	A = A * A.transpose();
 }

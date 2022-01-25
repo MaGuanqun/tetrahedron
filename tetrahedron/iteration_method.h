@@ -80,13 +80,20 @@ private:
 
 	struct AJacobiOperator
 	{
+		std::vector<int>vertex_index;
+		std::vector<double>coefficient;
+	};
+
+
+	struct A_JacobiOperator
+	{
 		std::vector<std::vector<int>> vertex_index;
 		std::vector<std::vector<double>> coefficient;
 	};
 
-	//AJacobiOperator A_jacobi_operator_1;
-	//AJacobiOperator A_jacobi_operator_2;
-	//AJacobiOperator A_jacobi_operator_3;
+	//A_JacobiOperator A_jacobi_operator_1;
+	//A_JacobiOperator A_jacobi_operator_2;
+	//A_JacobiOperator A_jacobi_operator_3;
 
 	SparseMatrix<double, RowMajor> R_Jacobi;
 	VectorXd global_diagonal_inv;
@@ -112,18 +119,18 @@ private:
 
 	
 
-	void createSuperJacobiOperator(AJacobiOperator* A_jacobi_operator, SparseMatrix<double, ColMajor>& R_jacobi,
-		AJacobiOperator* A_jacobi_basic);
-	void createHighOrderSuperJacobiMethod(AJacobiOperator* A_jacobi_operator_basic, AJacobiOperator* A_jacobi_operator_need_to_multi, AJacobiOperator* A_jacobi_operator);
+	void createSuperJacobiOperator(A_JacobiOperator* A_jacobi_operator, SparseMatrix<double, ColMajor>& R_jacobi,
+		A_JacobiOperator* A_jacobi_basic);
+	void createHighOrderSuperJacobiMethod(A_JacobiOperator* A_jacobi_operator_basic, A_JacobiOperator* A_jacobi_operator_need_to_multi, A_JacobiOperator* A_jacobi_operator);
 	
 	double obtainElementValue(std::vector<int>* vertex_index_of_i, std::vector<double>* value_of_i,
 		std::vector<int>* vertex_index_of_j, std::vector<double>* value_of_j, std::vector<int>& indicate_if_vertex_exists);
 
 
-	void testOperator(AJacobiOperator* A_jacobi_operator, SparseMatrix<double, ColMajor>& R_jacobi);
-	VectorXd RMultiX(AJacobiOperator* A_jacobi_operator, VectorXd& x);
+	void testOperator(A_JacobiOperator* A_jacobi_operator, SparseMatrix<double, ColMajor>& R_jacobi);
+	VectorXd RMultiX(A_JacobiOperator* A_jacobi_operator, VectorXd& x);
 
-	void RMultiXPlusb(AJacobiOperator* A_jacobi_operator, double* x, double* b, double* result);
+	void RMultiXPlusb(A_JacobiOperator* A_jacobi_operator, double* x, double* b, double* result);
 
 
 	std::vector<VectorXd> b_global_inv;
@@ -169,7 +176,7 @@ private:
 	template <class T>
 	void solveByChebyshevSemiIterativeSuperJacobi_2(std::vector<Matrix<T, -1, 1>>& u, std::vector<Matrix<T, -1, 1>>& b, SparseMatrix<T, ColMajor>& system_matrix, SparseMatrix<T, ColMajor>& R_Jacobi, Matrix<T, -1, 1>& global_diagonal_inv, double super_jacobi_spectral_radius_square, int& itr_num, std::vector<Matrix<T, -1, 1>>& ground_truth, std::vector<double>& relative_error,
 		double conv_rate_2, int super_jacobi_step_size, std::vector<int>& time,
-		AJacobiOperator* a_jacobi_operator_1, AJacobiOperator* a_jacobi_operator_2)
+		A_JacobiOperator* a_jacobi_operator_1, A_JacobiOperator* a_jacobi_operator_2)
 	{
 		std::vector<int> vertex_index_begin_thread(thread->thread_num + 1);
 		arrangeIndex(thread->thread_num, u[0].size(), vertex_index_begin_thread);
@@ -237,7 +244,7 @@ private:
 	template <class T>
 	void solveByChebyshevSemiIterativeSuperJacobi_3(std::vector<Matrix<T, -1, 1>>& u, std::vector<Matrix<T, -1, 1>>& b, SparseMatrix<T, ColMajor>& system_matrix, SparseMatrix<T, ColMajor>& R_Jacobi, Matrix<T, -1, 1>& global_diagonal_inv, double super_jacobi_spectral_radius_square, int& itr_num, std::vector<Matrix<T, -1, 1>>& ground_truth, std::vector<double>& relative_error,
 		double conv_rate_2, int super_jacobi_step_size, std::vector<int>& time,
-		AJacobiOperator* a_jacobi_operator, AJacobiOperator* a_jacobi_operator2, AJacobiOperator* a_jacobi_operator3)
+		A_JacobiOperator* a_jacobi_operator, A_JacobiOperator* a_jacobi_operator2, A_JacobiOperator* a_jacobi_operator3)
 	{
 		std::vector<int> vertex_index_begin_thread(thread->thread_num + 1);
 		arrangeIndex(thread->thread_num, u[0].size(), vertex_index_begin_thread);
@@ -310,7 +317,7 @@ private:
 	template <class T>
 	void solveBySuperJacobi_2(std::vector<Matrix<T, -1, 1>>& u, std::vector<Matrix<T, -1, 1>>& b, SparseMatrix<T, ColMajor>& system_matrix, SparseMatrix<T, ColMajor>& R_Jacobi, Matrix<T, -1, 1>& global_diagonal_inv, int& itr_num, std::vector<Matrix<T, -1, 1>>& ground_truth, std::vector<double>& relative_error,
 		double conv_rate_2, int super_jacobi_step_size, SparseMatrix<T, ColMajor>& R_Jacobi_2, std::vector<int>& time,
-		AJacobiOperator* a_jacobi_operator_2, AJacobiOperator* a_jacobi_operator_1)
+		A_JacobiOperator* a_jacobi_operator_2, A_JacobiOperator* a_jacobi_operator_1)
 	{
 		std::vector<int> vertex_index_begin_thread(thread->thread_num + 1);
 		arrangeIndex(thread->thread_num, u[0].size(), vertex_index_begin_thread);
@@ -363,7 +370,7 @@ private:
 	template <class T>
 	void solveBySuperJacobi_3(std::vector<Matrix<T, -1, 1>>& u, std::vector<Matrix<T, -1, 1>>& b, SparseMatrix<T, ColMajor>& system_matrix, SparseMatrix<T, ColMajor>& R_Jacobi, Matrix<T, -1, 1>& global_diagonal_inv, int& itr_num, std::vector<Matrix<T, -1, 1>>& ground_truth, std::vector<double>& relative_error,
 		double conv_rate_2, int super_jacobi_step_size, SparseMatrix<T, ColMajor>& R_Jacobi_2, SparseMatrix<T, ColMajor>& R_Jacobi_3, std::vector<int>& time,
-		AJacobiOperator* a_jacobi_operator, AJacobiOperator* a_jacobi_operator2, AJacobiOperator* a_jacobi_operator3)
+		A_JacobiOperator* a_jacobi_operator, A_JacobiOperator* a_jacobi_operator2, A_JacobiOperator* a_jacobi_operator3)
 	{
 		std::vector<int> vertex_index_begin_thread(thread->thread_num + 1);
 		arrangeIndex(thread->thread_num, u[0].size(), vertex_index_begin_thread);
@@ -727,10 +734,10 @@ private:
 		SparseMatrix<T, ColMajor> R_Jacobi_3 = R_Jacobi_2* R_Jacobi;
 		int itr_num;
 
-		AJacobiOperator basic_a_jacobi;
-		AJacobiOperator a_jacobi_1;
-		AJacobiOperator a_jacobi_2;
-		AJacobiOperator a_jacobi_3;
+		A_JacobiOperator basic_a_jacobi;
+		A_JacobiOperator a_jacobi_1;
+		A_JacobiOperator a_jacobi_2;
+		A_JacobiOperator a_jacobi_3;
 		createSuperJacobiOperator(&a_jacobi_1, R_Jacobi, &basic_a_jacobi);
 		createHighOrderSuperJacobiMethod(&basic_a_jacobi, &a_jacobi_1, &a_jacobi_2);
 		createHighOrderSuperJacobiMethod(&basic_a_jacobi, &a_jacobi_2, &a_jacobi_3);
@@ -834,10 +841,10 @@ private:
 		SparseMatrix<T, ColMajor> R_Jacobi_2 = R_Jacobi * R_Jacobi;
 		SparseMatrix<T, ColMajor> R_Jacobi_3 = R_Jacobi_2 * R_Jacobi;
 
-		AJacobiOperator basic_a_jacobi;
-		AJacobiOperator a_jacobi_1;
-		AJacobiOperator a_jacobi_2;
-		AJacobiOperator a_jacobi_3;
+		A_JacobiOperator basic_a_jacobi;
+		A_JacobiOperator a_jacobi_1;
+		A_JacobiOperator a_jacobi_2;
+		A_JacobiOperator a_jacobi_3;
 		createSuperJacobiOperator(&a_jacobi_1, R_Jacobi, &basic_a_jacobi);
 		createHighOrderSuperJacobiMethod(&basic_a_jacobi, &a_jacobi_1, &a_jacobi_2);
 		createHighOrderSuperJacobiMethod(&basic_a_jacobi, &a_jacobi_2, &a_jacobi_3);

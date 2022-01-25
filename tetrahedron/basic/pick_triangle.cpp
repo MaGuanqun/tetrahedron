@@ -48,7 +48,7 @@ void PickTriangle::pickTriangle(std::vector<Cloth>* cloth, std::vector<Collider>
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	decideFinalIndi(cloth, face_index, triangle_index);
-	std::cout <<"select face "<< triangle_index[0] <<" " <<(*cloth)[0].mesh_struct.triangle_indices[triangle_index[0]][0]<<" "<< (*cloth)[0].mesh_struct.triangle_indices[triangle_index[0]][1]<<" "<< (*cloth)[0].mesh_struct.triangle_indices[triangle_index[0]][2]<< std::endl;
+	//std::cout <<"select face "<< triangle_index[0] <<" " <<(*cloth)[0].mesh_struct.triangle_indices[triangle_index[0]][0]<<" "<< (*cloth)[0].mesh_struct.triangle_indices[triangle_index[0]][1]<<" "<< (*cloth)[0].mesh_struct.triangle_indices[triangle_index[0]][2]<< std::endl;
 }
 
 void PickTriangle::writingFBO(std::vector<Cloth>* cloth, std::vector<Collider>* collider, Camera* camera, std::vector<std::vector<bool>>& hide, Shader* shader)

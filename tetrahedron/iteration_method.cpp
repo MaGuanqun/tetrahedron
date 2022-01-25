@@ -11,7 +11,7 @@
 //}
 
 
-void IterationMethod::testOperator(AJacobiOperator* A_jacobi_operator, SparseMatrix<double, ColMajor>& R_jacobi)
+void IterationMethod::testOperator(A_JacobiOperator* A_jacobi_operator, SparseMatrix<double, ColMajor>& R_jacobi)
 {
 	std::cout << A_jacobi_operator->coefficient[0][0] << " " << R_jacobi.valuePtr()[0] << std::endl;
 	int size;
@@ -32,7 +32,7 @@ void IterationMethod::testOperator(AJacobiOperator* A_jacobi_operator, SparseMat
 }
 
 //RX+b result cannot be the same with x or b
-void IterationMethod::RMultiXPlusb(AJacobiOperator* A_jacobi_operator, double* x, double* b, double* result)
+void IterationMethod::RMultiXPlusb(A_JacobiOperator* A_jacobi_operator, double* x, double* b, double* result)
 {
 	int* index;
 	double* coeff;
@@ -77,7 +77,7 @@ void IterationMethod::RMultiXPlusb(std::vector<int>* vertex_index,std::vector<do
 
 
 
-VectorXd IterationMethod::RMultiX(AJacobiOperator* A_jacobi_operator, VectorXd& x)
+VectorXd IterationMethod::RMultiX(A_JacobiOperator* A_jacobi_operator, VectorXd& x)
 {
 	std::vector<int>* index;
 	double* coeff;
@@ -100,8 +100,8 @@ VectorXd IterationMethod::RMultiX(AJacobiOperator* A_jacobi_operator, VectorXd& 
 }
 
 
-void IterationMethod::createSuperJacobiOperator(AJacobiOperator*  A_jacobi_operator, SparseMatrix<double, ColMajor>& R_jacobi,
-	AJacobiOperator* A_jacobi_basic)
+void IterationMethod::createSuperJacobiOperator(A_JacobiOperator*  A_jacobi_operator, SparseMatrix<double, ColMajor>& R_jacobi,
+	A_JacobiOperator* A_jacobi_basic)
 {
 	int sys_size = R_jacobi.rows();
 	A_jacobi_operator->vertex_index.resize(sys_size);
@@ -139,7 +139,7 @@ void IterationMethod::createSuperJacobiOperator(AJacobiOperator*  A_jacobi_opera
 
 
 //A_jacobi_operator_need_to_multi * A_jacobi_operator_basic
-void IterationMethod::createHighOrderSuperJacobiMethod(AJacobiOperator* A_jacobi_operator_basic, AJacobiOperator* A_jacobi_operator_need_to_multi, AJacobiOperator* A_jacobi_operator)
+void IterationMethod::createHighOrderSuperJacobiMethod(A_JacobiOperator* A_jacobi_operator_basic, A_JacobiOperator* A_jacobi_operator_need_to_multi, A_JacobiOperator* A_jacobi_operator)
 {
 	int sys_size = A_jacobi_operator_basic->vertex_index.size();
 	std::vector<bool> is_vertex_used(sys_size,false);

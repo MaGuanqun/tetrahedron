@@ -91,12 +91,14 @@ struct SingleTetrahedronInfo {
 	double density;
 	double position_stiffness;			// stiffness of position constraint
 	double ARAP_stiffness;		
+	double volume_preserve_stiffness;
 	double collision_stiffness[4];			// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point
 	SingleTetrahedronInfo() {};
 	SingleTetrahedronInfo(double density, double position_stiffness,
-		double ARAP_stiffness, double* collision_stiffness) {
+		double ARAP_stiffness, double volume_preserve_stiffness, double* collision_stiffness) {
 		this->density = density;
 		this->position_stiffness = position_stiffness;
+		this->volume_preserve_stiffness = volume_preserve_stiffness;
 		this->ARAP_stiffness = ARAP_stiffness;
 		memcpy(this->collision_stiffness, collision_stiffness, 32);
 	};
@@ -104,6 +106,7 @@ struct SingleTetrahedronInfo {
 	{
 		this->density = single_cloth_info.density;
 		this->position_stiffness = single_cloth_info.position_stiffness;
+		this->volume_preserve_stiffness = single_cloth_info.volume_preserve_stiffness;
 		this->ARAP_stiffness = single_cloth_info.ARAP_stiffness;
 		memcpy(this->collision_stiffness, single_cloth_info.collision_stiffness, 32);
 		return *this;

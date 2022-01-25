@@ -1,6 +1,7 @@
 #pragma once
 #include"mesh_struct.h"
 
+
 class TriangleMeshStruct:public MeshStruct
 {
 public:
@@ -9,7 +10,7 @@ public:
 	std::vector<Vertex> vertices;
 	std::vector<Face> faces;
 	std::vector<Edge> edges;
-
+	
 
 	std::vector<int> edge_index_begin_per_thread;
 
