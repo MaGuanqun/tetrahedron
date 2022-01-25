@@ -283,7 +283,7 @@ void Scene::initialIntersection()
 }
 
 void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe, bool& record_matrix,
-	std::vector<std::vector<double>>& ave_iteration)
+	double& ave_iteration)
 {
 	if (control_parameter[START_SIMULATION] || control_parameter[ONE_FRAME]) {
 		project_dynamic.resetExternalForce();

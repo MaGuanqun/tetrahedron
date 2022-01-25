@@ -43,10 +43,6 @@ void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron
 		&b, &u,&global_mat);
 	iteration_method.initialGlobalDiagonalInv(&global_mat_diagonal_ref_address);
 	iteration_method.initialJacobi();
-	ave_iteration.resize(cloth->size());
-	for (int i = 0; i < ave_iteration.size(); ++i) {
-		ave_iteration[i].resize(3);
-	}
 	//iteration_method.test();
 	//iteration_method.testRelativeError();
 	
@@ -1526,7 +1522,7 @@ void ProjectDynamic::solveClothSystem2(bool compute_energy)
 	if (compute_energy) {
 		thread->assignTask(this, COMPUTE_ENERGY);
 	}
-	//ave_iteration[cloth_No][dimension] += itr_num;
+	ave_iteration += itr_num;
 }
 
 //COMPUTE_ENERGY
@@ -1590,18 +1586,12 @@ void ProjectDynamic::saveSparseMatrix(SparseMatrix<double,RowMajor>& matrix, std
 
 void ProjectDynamic::reset_ave_iteration_record()
 {
-	for (int i = 0; i < ave_iteration.size(); ++i) {
-		memset(ave_iteration[i].data(), 0, 24);
-	}
+	ave_iteration = 0;
 }
 
-void ProjectDynamic::update_ave_iteration_record(std::vector<std::vector<double>>& ave_itr)
+void ProjectDynamic::update_ave_iteration_record(double& ave_itr)
 {
-	for (int i = 0; i < ave_iteration.size(); ++i) {
-		for (int j = 0; j < 3; ++j) {
-			ave_iteration[i][j] /= (max_inner_iteration_num * (outer_iteration_num - 1));
-		}
-	
-	}
+
+	ave_iteration /=(double) (max_inner_iteration_num * (outer_iteration_num - 1));	
 	ave_itr = ave_iteration;
 }

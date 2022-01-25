@@ -68,7 +68,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	double iteration_solver_conve_rate = 1e-7;
 	bool record_matrix;
 
-	std::vector<std::vector<double>> iteration_solver_iteration_num;
+	double iteration_solver_iteration_num;
 
 	//VectorXd a;
 	//a.resize(4);
@@ -175,15 +175,15 @@ void simu_main(GLFWwindow* window, Input* input) {
 				control_parameter[SAVE_OBJ] = true;
 			}
 
-			if (scene.time_stamp == 20 || scene.time_stamp == 50 || scene.time_stamp == 100) {
-				record_matrix = true;
-				control_parameter[SAVE_OBJ] = true;
-			}
+			//if (scene.time_stamp == 20 || scene.time_stamp == 50 || scene.time_stamp == 100) {
+			//	record_matrix = true;
+			//	control_parameter[SAVE_OBJ] = true;
+			//}
 
-			if (scene.time_stamp == 100) {
-				record_matrix = false;
-				control_parameter[SAVE_OBJ] = false;
-			}
+			//if (scene.time_stamp == 100) {
+			//	record_matrix = false;
+			//	control_parameter[SAVE_OBJ] = false;
+			//}
 
 			scene.setTolerance(tolerance_ratio);			
 			scene.updateCloth(&camera, input->mouse.screen_pos, control_parameter, force_coe,record_matrix, iteration_solver_iteration_num);

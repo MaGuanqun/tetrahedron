@@ -563,7 +563,7 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 
 
 
-void ImGuiWindows::iterationSolverInfoWindow(std::vector<std::vector<double>>&solver_iteration_num, int& itr_sovler_method,
+void ImGuiWindows::iterationSolverInfoWindow(double&solver_iteration_num, int& itr_sovler_method,
 	char** itr_solver_items, char*& itr_solver_item, int item_num, double* conv_rate, bool& record_matrix)
 {
 	ImGui::SetNextWindowPos(ImVec2(SCR_WIDTH - 540, 0));
@@ -572,22 +572,9 @@ void ImGuiWindows::iterationSolverInfoWindow(std::vector<std::vector<double>>&so
 	ImGui::Text("Convergence_rate:");
 	ImGui::InputDouble("##Conv_rate", conv_rate,0.0,0.0, "%.2e");
 	std::string tempString;
-	ImGui::TextWrapped("Show iteration number.");
-	const char* dimension[] = { "x-dimension:" ,"y-dimension:","z-dimension:" };
-	for (int i = 0; i < solver_iteration_num.size(); ++i) {
-		ImGui::SetNextItemOpen(true);
-		tempString = "Cloth " + std::to_string(i);
-		tempString += "##iteration_solver";
-		if (ImGui::TreeNode(tempString.c_str()))
-		{
-			for (int j = 0; j < 3; ++j) {
-				ImGui::Text(dimension[j]);
-				ImGui::SameLine();
-				ImGui::Text("%.2f", solver_iteration_num[i][j]);
-			}
-			ImGui::TreePop();
-		}
-	}
+	ImGui::TextWrapped("Ave itr num:");
+	ImGui::SameLine();
+	ImGui::Text("%.2f", solver_iteration_num);
 	ImGui::Text("Solver:");
 	ImGui::SetNextItemWidth(260);
 	if (ImGui::BeginCombo("##Solver", itr_solver_item))

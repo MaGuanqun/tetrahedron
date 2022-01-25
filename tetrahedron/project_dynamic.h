@@ -47,7 +47,7 @@ public:
 	int itr_solver_method;
 
 	void updateIterateSolverParameter(double conv_rate);
-	void update_ave_iteration_record(std::vector<std::vector<double>>& ave_itr);
+	void update_ave_iteration_record(double& ave_itr);
 	void computeEnergyPerThread(int thread_id);
 	void solveSystemPerThread(int thread_id, bool with_collision);
 
@@ -184,7 +184,7 @@ private:
 	void saveMatrix(int dimension, VectorXd& vec, std::string name);
 	void saveSparseMatrix(SparseMatrix<double, RowMajor>& matrix, std::string file_name_matrix);
 
-	std::vector<std::vector<double>> ave_iteration;//the total iteration number of iteration method in a time step
+	double ave_iteration;//the total iteration number of iteration method in a time step
 	void reset_ave_iteration_record();
 
 	int max_inner_iteration_num;
