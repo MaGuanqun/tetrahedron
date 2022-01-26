@@ -408,15 +408,23 @@ void Scene::obtainCursorIntersection(double* pos, Camera* camera, std::vector<st
 	mouse_pos[0] = pos[0];
 	mouse_pos[1] =SCR_HEIGHT-pos[1];
 	int chosen_index[2];
-	pick_triangle.pickTriangle(&cloth, &collider, camera, hide, chosen_index, mouse_pos);
+	bool is_cloth;
+	pick_triangle.pickTriangle(&cloth, &collider, &tetrahedron, camera, hide, chosen_index, is_cloth, mouse_pos);
 	intersection.initialIntersection();
 	//std::cout << chosen_index[0] << std::endl;
 	if (chosen_index[0] > -1) {
 		double cursor_pos[3];
-		intersection.setIntersection(chosen_index);
-		getCursorPos(cursor_pos, cloth[intersection.cloth_No].mesh_struct.vertex_for_render,
-			cloth[intersection.cloth_No].mesh_struct.triangle_indices[intersection.face_index].data());
-		cloth[chosen_index[1]].findAllNeighborVertex(chosen_index[0], cursor_pos, ave_edge_length);
+		intersection.setIntersection(chosen_index, is_cloth);
+		if (is_cloth) {
+			getCursorPos(cursor_pos, cloth[intersection.obj_No].mesh_struct.vertex_for_render,
+				cloth[intersection.obj_No].mesh_struct.triangle_indices[intersection.face_index].data());
+			cloth[chosen_index[1]].findAllNeighborVertex(chosen_index[0], cursor_pos, ave_edge_length);
+		}
+		else {
+			getCursorPos(cursor_pos, tetrahedron[intersection.obj_No].mesh_struct.vertex_for_render,
+				tetrahedron[intersection.obj_No].mesh_struct.triangle_indices[intersection.face_index].data());
+		}
+	
 	}
 }
 
@@ -431,12 +439,26 @@ void Scene::setCursorForce(Camera* camera, double* cursor_screen, float force_co
 {
 	double cursor_pos[3];
 	double force_direction[3];
-	getCursorPos(cursor_pos, cloth[intersection.cloth_No].mesh_struct.vertex_for_render,
-		cloth[intersection.cloth_No].mesh_struct.triangle_indices[intersection.face_index].data());
+
+	if (intersection.is_cloth) {
+		getCursorPos(cursor_pos, cloth[intersection.obj_No].mesh_struct.vertex_for_render,
+			cloth[intersection.obj_No].mesh_struct.triangle_indices[intersection.face_index].data());
+	}
+	else {
+		getCursorPos(cursor_pos, tetrahedron[intersection.obj_No].mesh_struct.vertex_for_render,
+			tetrahedron[intersection.obj_No].mesh_struct.triangle_indices[intersection.face_index].data());
+	}
+	
 	cursor.translate(cursor_pos);
-	//std::cout << cursor_pos[0] << " " << cursor_pos[1] << " " << cursor_pos[2] << std::endl;
+	
 	cursorMovement(camera, cursor_screen, force_direction, force_coe, cursor_pos);
-	project_dynamic.addExternalClothForce(force_direction, cloth[intersection.cloth_No].coe_neighbor_vertex_force, cloth[intersection.cloth_No].neighbor_vertex, intersection.cloth_No);
+	if (intersection.is_cloth) {
+		project_dynamic.addExternalClothForce(force_direction, cloth[intersection.obj_No].coe_neighbor_vertex_force, cloth[intersection.obj_No].neighbor_vertex, intersection.obj_No);
+	}
+	else {
+		project_dynamic.addExternalTetForce(force_direction, tetrahedron[intersection.obj_No].coe_neighbor_vertex_force, tetrahedron[intersection.obj_No].neighbor_vertex, intersection.obj_No);
+	}
+	
 }
 
 void Scene::cursorMovement(Camera* camera, double* cursor_screen, double* force_direction, float force_coe, double* object_position)
