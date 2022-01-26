@@ -295,6 +295,8 @@ void Collision::collisionConstraint(int thread_No)
 		}
 	}
 
+	target_pos== &tet_target_pos_per_thread[thread_No];
+	target_pos->initial();
 }
 
 
@@ -422,10 +424,14 @@ void Collision::updateCollisionPosition()
 void Collision::resumTargetPosition()
 {
 	cloth_target_pos.partialInitial();
+	tet_target_pos.partialInitial();
 	thread->assignTask(this, RESUM_TARGET_POSITION);
 	for (int i = 0; i < thread_num; ++i) {
 		for (int j = 0; j < cloth->size(); ++j) {
 			cloth_target_pos.collision_energy[j] += cloth_target_pos_per_thread[i].collision_energy[j];
+		}
+		for (int j = 0; j < tetrahedron->size(); ++j) {
+			tet_target_pos.collision_energy[j] += tet_target_pos_per_thread[i].collision_energy[j];
 		}
 	}
 }
@@ -433,11 +439,16 @@ void Collision::resumTargetPosition()
 void Collision::sumTargetPosition()
 {
 	cloth_target_pos.initial();
+	tet_target_pos.initial();
 	for (int i = 0; i < thread_num; ++i) {
 		for (int j = 0; j < cloth->size(); ++j) {
 			cloth_target_pos.collision_energy[j] += cloth_target_pos_per_thread[i].collision_energy[j];
 		}
+		for (int j = 0; j < tetrahedron->size(); ++j) {
+			tet_target_pos.collision_energy[j] += tet_target_pos_per_thread[i].collision_energy[j];
+		}
 	}
+
 	thread->assignTask(this, SUM_TARGET_POSITION);
 	
 }
@@ -463,6 +474,21 @@ void Collision::resumTargetPositionPerThread(int thread_id)
 			}
 		}
 	}
+
+	for (int j = 0; j < tetrahedron->size(); ++j) {
+		b_sum = &tet_target_pos.b_sum[j];
+		index_begin = &(*tetrahedron)[j].mesh_struct.vertex_index_begin_per_thread;
+		for (int i = 0; i < thread_num; ++i) {
+			need_update = tet_target_pos_per_thread[i].need_update[j];
+			b_sum_per_thread = &tet_target_pos_per_thread[i].b_sum[j];
+			for (int k = (*index_begin)[thread_id]; k < (*index_begin)[thread_id + 1]; ++k) {
+				if (need_update[k]) {
+					SUM((*b_sum)[k], (*b_sum)[k], (*b_sum_per_thread)[k]);
+				}
+			}
+		}
+	}
+
 }
 //SUM_TARGET_POSITION
 void Collision::sumTargetPositionPerThread(int thread_id)
@@ -493,7 +519,24 @@ void Collision::sumTargetPositionPerThread(int thread_id)
 			}
 		}
 	}
-
+	for (int j = 0; j < tetrahedron->size(); ++j) {
+		global_need_update = tet_target_pos.need_update[j];
+		b_sum = &tet_target_pos.b_sum[j];
+		index_begin = &(*tetrahedron)[j].mesh_struct.vertex_index_begin_per_thread;
+		global_stiffness = tet_target_pos.stiffness[j].data();
+		for (int i = 0; i < thread_num; ++i) {
+			need_update = tet_target_pos_per_thread[i].need_update[j];
+			b_sum_per_thread = &tet_target_pos_per_thread[i].b_sum[j];
+			stiffness = tet_target_pos_per_thread[i].stiffness[j].data();
+			for (int k = (*index_begin)[thread_id]; k < (*index_begin)[thread_id + 1]; ++k) {
+				if (need_update[k]) {
+					global_need_update[k] = true;
+					SUM_((*b_sum)[k], (*b_sum_per_thread)[k]);
+					global_stiffness[k] += stiffness[k];
+				}
+			}
+		}
+	}
 	////std::cout << "collision vertex ";
 	//for (int i = 0; i < (*cloth)[0].ori_vertices.size(); ++i) {
 	//	if (cloth_target_pos.need_update[0][i]) {
@@ -544,6 +587,9 @@ void Collision::collisionDetection(int thread_No)
 				&(*cloth)[cloth_No].mesh_struct, (*cloth)[cloth_No].PC_radius[SELF_EDGE_EDGE], target_pos);
 		}
 	}
+
+	target_pos = &tet_target_pos_per_thread[thread_No];
+	target_pos->initial();
 }
 
 void Collision::colliderTriangleVertexCollisionDetection(int thread_No, int triangle_index, int collider_No,
@@ -612,6 +658,9 @@ void Collision::collisionReDetection(int thread_No)
 				(*cloth)[cloth_No].PC_radius[SELF_EDGE_EDGE], (*cloth)[cloth_No].collision_stiffness[SELF_EDGE_EDGE], target_pos);
 		}
 	}
+
+	target_pos = &tet_target_pos_per_thread[thread_No];
+	target_pos->partialInitial();
 }
 
 
