@@ -22,7 +22,6 @@ void SetTetrahedronAnchor::setCorner(double* screen_pos, bool pre_press_state, s
 		first_corner_in_clip_space[1] = 2.0f * (0.5f - screen_pos[1] / (float)SCR_HEIGHT);
 	}
 	else {
-
 		setClipSpaceRange(screen_pos);
 		transferTo3D(screen_pos, draw_last_corner);
 		setPosition();
@@ -40,7 +39,6 @@ void SetTetrahedronAnchor::setCorner(double* screen_pos, bool pre_press_state, s
 		draw_vertex.initialVertex(all_select_num / 5);
 		for (int i = 0; i < tetrahedron.size(); ++i) {
 			if (!hide[i]) {
-
 				findSurfaceVertex(tetrahedron[i].mesh_struct.vertex_for_render, camera, tetrahedron[i].mesh_struct.anchor_vertex, tetrahedron[i].mesh_struct.vertex_on_surface);
 			}
 		}

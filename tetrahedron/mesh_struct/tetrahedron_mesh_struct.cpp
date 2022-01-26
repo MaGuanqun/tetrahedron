@@ -172,6 +172,5 @@ Matrix<double, 3, 4> TetrahedronMeshStruct::constructMatrixP(int tetra_index)
 		memcpy(p.data()+3*i, vertex_position[indices[tetra_index][i]].data(), 24);
 	}
 	Vector3d center = 0.25 * p.rowwise().sum();
-
 	return p.colwise() - center;
 }

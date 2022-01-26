@@ -101,21 +101,23 @@ void MeshStruct::setEdge()
 		//		faces[vertices[i].face[j]].on_border = true;
 		//	}
 		//}
-		std::fill(triangle_is_used.begin(), triangle_is_used.end(), false);
-		for (int k = 0; k < vertices[i].edge.size(); ++k) {
-			if (edges[vertices[i].edge[k]].vertex[0] == i) {
-				for (int j = 0; j < vertices[edges[vertices[i].edge[k]].vertex[1]].face.size(); ++j) {
-					if (!triangle_is_used[vertices[edges[vertices[i].edge[k]].vertex[1]].face[j]]) {
-						triangle_is_used[vertices[edges[vertices[i].edge[k]].vertex[1]].face[j]] = true;
-						vertices[i].around_face.push_back(vertices[edges[vertices[i].edge[k]].vertex[1]].face[j]);
+		if (!vertices[i].edge.empty()) {
+			std::fill(triangle_is_used.begin(), triangle_is_used.end(), false);
+			for (int k = 0; k < vertices[i].edge.size(); ++k) {
+				if (edges[vertices[i].edge[k]].vertex[0] == i) {
+					for (int j = 0; j < vertices[edges[vertices[i].edge[k]].vertex[1]].face.size(); ++j) {
+						if (!triangle_is_used[vertices[edges[vertices[i].edge[k]].vertex[1]].face[j]]) {
+							triangle_is_used[vertices[edges[vertices[i].edge[k]].vertex[1]].face[j]] = true;
+							vertices[i].around_face.push_back(vertices[edges[vertices[i].edge[k]].vertex[1]].face[j]);
+						}
 					}
 				}
-			}
-			else {
-				for (int j = 0; j < vertices[edges[vertices[i].edge[k]].vertex[0]].face.size(); ++j) {
-					if (!triangle_is_used[vertices[edges[vertices[i].edge[k]].vertex[0]].face[j]]) {
-						triangle_is_used[vertices[edges[vertices[i].edge[k]].vertex[0]].face[j]] = true;
-						vertices[i].around_face.push_back(vertices[edges[vertices[i].edge[k]].vertex[0]].face[j]);
+				else {
+					for (int j = 0; j < vertices[edges[vertices[i].edge[k]].vertex[0]].face.size(); ++j) {
+						if (!triangle_is_used[vertices[edges[vertices[i].edge[k]].vertex[0]].face[j]]) {
+							triangle_is_used[vertices[edges[vertices[i].edge[k]].vertex[0]].face[j]] = true;
+							vertices[i].around_face.push_back(vertices[edges[vertices[i].edge[k]].vertex[0]].face[j]);
+						}
 					}
 				}
 			}
@@ -129,14 +131,16 @@ void MeshStruct::setEdge()
 void MeshStruct::addNeighborVertex()
 {
 	for (int i = 0; i < vertices.size(); ++i) {
-		vertices[i].neighbor_vertex.reserve(vertices[i].edge.size());
-		for (int j = 0; j < vertices[i].edge.size(); ++j)
-		{
-			if (i == edges[vertices[i].edge[j]].vertex[0]) {
-				vertices[i].neighbor_vertex.push_back(edges[vertices[i].edge[j]].vertex[1]);
-			}
-			else {
-				vertices[i].neighbor_vertex.push_back(edges[vertices[i].edge[j]].vertex[0]);
+		if (!vertices[i].edge.empty()) {
+			vertices[i].neighbor_vertex.reserve(vertices[i].edge.size());
+			for (int j = 0; j < vertices[i].edge.size(); ++j)
+			{
+				if (i == edges[vertices[i].edge[j]].vertex[0]) {
+					vertices[i].neighbor_vertex.push_back(edges[vertices[i].edge[j]].vertex[1]);
+				}
+				else {
+					vertices[i].neighbor_vertex.push_back(edges[vertices[i].edge[j]].vertex[0]);
+				}
 			}
 		}
 	}
@@ -179,17 +183,18 @@ void MeshStruct::addArounVertex()
 	std::vector<bool>point_is_used;
 	point_is_used.resize(vertices.size(), true);
 	for (int i = 0; i < vertices.size(); ++i) {
-		std::fill(point_is_used.begin(), point_is_used.end(), false);
-		vertices[i].around_vertex.reserve(3 * vertices[i].neighbor_vertex.size());
-		for (int k = 0; k < vertices[i].neighbor_vertex.size(); ++k) {
-			vertex_index = vertices[i].neighbor_vertex[k];
-			for (int m = 0; m < vertices[vertex_index].neighbor_vertex.size(); ++m) {
-				if (!point_is_used[vertices[vertex_index].neighbor_vertex[m]]) {
-					vertices[i].around_vertex.push_back(vertices[vertex_index].neighbor_vertex[m]);
+		if (!vertices[i].face.empty()) {
+			std::fill(point_is_used.begin(), point_is_used.end(), false);
+			vertices[i].around_vertex.reserve(3 * vertices[i].neighbor_vertex.size());
+			for (int k = 0; k < vertices[i].neighbor_vertex.size(); ++k) {
+				vertex_index = vertices[i].neighbor_vertex[k];
+				for (int m = 0; m < vertices[vertex_index].neighbor_vertex.size(); ++m) {
+					if (!point_is_used[vertices[vertex_index].neighbor_vertex[m]]) {
+						vertices[i].around_vertex.push_back(vertices[vertex_index].neighbor_vertex[m]);
+					}
 				}
 			}
 		}
-
 	}
 }
 
@@ -202,14 +207,16 @@ void MeshStruct::getVertexNormalPerThread(int thread_id)
 	double dot;
 	for (int i = vertex_index_begin_per_thread[thread_id]; i < vertex_index_begin_per_thread[thread_id + 1]; ++i) {
 		face_vertex = &vertices[i].face;
-		current_vertex_normal = vertex_normal[i].data();
-		memcpy(current_vertex_normal, face_normal[(*face_vertex)[0]].data(), 24);
-		for (int k = 1; k < face_vertex->size(); ++k) {
-			SUM_(current_vertex_normal,
-				face_normal[(*face_vertex)[k]]);
+		if (!face_vertex->empty()) {
+			current_vertex_normal = vertex_normal[i].data();
+			memcpy(current_vertex_normal, face_normal[(*face_vertex)[0]].data(), 24);
+			for (int k = 1; k < face_vertex->size(); ++k) {
+				SUM_(current_vertex_normal,
+					face_normal[(*face_vertex)[k]]);
 
-		}
-		normalize(current_vertex_normal);
+			}
+			normalize(current_vertex_normal);
+		}		
 	}
 }
 
@@ -221,19 +228,21 @@ void MeshStruct::getRenderVertexNormalPerThread(int thread_id)
 	double dot;
 	for (int i = vertex_index_begin_per_thread[thread_id]; i < vertex_index_begin_per_thread[thread_id + 1]; ++i) {
 		face_vertex = &vertices[i].face;
-		current_vertex_normal = vertex_normal_for_render[i].data();
-		memcpy(current_vertex_normal, ori_face_normal_for_render[(*face_vertex)[0]].data(), 24);
-		for (int k = 1; k < face_vertex->size(); ++k) {
-			SUM_(current_vertex_normal,
-				ori_face_normal_for_render[(*face_vertex)[k]]);
-		}
-		dot = DOT(current_vertex_normal, current_vertex_normal);
-		if (dot < 1e-20) {
+		if (!face_vertex->empty()) {
+			current_vertex_normal = vertex_normal_for_render[i].data();
 			memcpy(current_vertex_normal, ori_face_normal_for_render[(*face_vertex)[0]].data(), 24);
-		}
-		else {
-			dot = sqrt(dot);
-			DEV_(current_vertex_normal, dot);
+			for (int k = 1; k < face_vertex->size(); ++k) {
+				SUM_(current_vertex_normal,
+					ori_face_normal_for_render[(*face_vertex)[k]]);
+			}
+			dot = DOT(current_vertex_normal, current_vertex_normal);
+			if (dot < 1e-20) {
+				memcpy(current_vertex_normal, ori_face_normal_for_render[(*face_vertex)[0]].data(), 24);
+			}
+			else {
+				dot = sqrt(dot);
+				DEV_(current_vertex_normal, dot);
+			}
 		}
 	}
 

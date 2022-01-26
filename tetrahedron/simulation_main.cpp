@@ -6,7 +6,6 @@
 #include"scene.h"
 #include"render/saveImage.h"
 
-
 void simu_main(GLFWwindow* window, Input* input) {
 	// Set up GUI
 	BasicImGui basic_imgui;
@@ -154,7 +153,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 			}
 		}
 
-		imgui_windows.operationWindow(cloth_stiffness, simulation_parameter, cloth_collision_stiffness, set_stiffness, temp_stiffness, update_cloth_stiffness, set_anchor);
+		imgui_windows.operationWindow(cloth_stiffness, simulation_parameter, cloth_collision_stiffness, set_stiffness, temp_stiffness, 
+			update_cloth_stiffness, set_anchor, !scene.tetrahedron.empty());
 		if (!already_load_model) {
 			if (imgui_windows.loadModel(collider_path, object_path)) {
 				already_load_model = true;

@@ -81,7 +81,7 @@ void PickTriangle::writingFBO(std::vector<Cloth>* cloth, std::vector<Collider>* 
 		if (!hide[TETRAHEDRON_][i]) {
 			shader->use();
 			shader->setInt("picking_base_ID", picking_base_ID);
-			(*collider)[i].simpDraw(camera, shader);
+			(*tetrahedron)[i].simpDraw(camera, shader);
 		}
 		picking_base_ID += (*tetrahedron)[i].mesh_struct.triangle_indices.size();
 	}

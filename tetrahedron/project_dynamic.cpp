@@ -60,7 +60,7 @@ void ProjectDynamic::setSystemIndexInfo()
 	}
 	vertex_begin_per_tetrahedron[0] = vertex_begin_per_cloth[vertex_begin_per_cloth.size() - 1];
 	for (int i = 0; i < tetrahedron->size(); ++i){
-		vertex_begin_per_tetrahedron[i + 1] = vertex_begin_per_tetrahedron[i] + (*tetrahedron)[i].mesh_struct.vertices.size();
+		vertex_begin_per_tetrahedron[i + 1] = vertex_begin_per_tetrahedron[i] + (*tetrahedron)[i].mesh_struct.vertex_position.size();
 	}
 	sys_size = vertex_begin_per_tetrahedron[vertex_begin_per_tetrahedron.size()-1];
 }
@@ -93,7 +93,6 @@ void ProjectDynamic::setForTetrahedronPD()
 	for (int i = 0; i < total_tetrahedron_num; ++i) {
 		computeTetMass((*tetrahedron)[i].mesh_struct.mass.data(), mass_inv, mass, vertex_begin_per_tetrahedron[i], (*tetrahedron)[i].mesh_struct.vertex_for_render.size());
 	}
-
 }
 
 
@@ -261,7 +260,7 @@ void ProjectDynamic::computeGlobalStepMatrix()
 			(*cloth)[i].bend_stiffness, (*cloth)[i].length_stiffness, (*cloth)[i].position_stiffness, vertex_begin_per_cloth[i]);
 	}
 	//set tetrahedron
-	Matrix4d arap_matrix = tet_local_A* tet_local_A.transpose();
+	Matrix4d arap_matrix = tet_local_A.transpose() * tet_local_A;
 	for (int i = 0; i < total_tetrahedron_num; ++i) {
 		copmuteGlobalStepMatrixSingleTetrahedron((*tetrahedron)[i].mesh_struct, global_mat_nnz, tetrahedron_sys_size[i],
 			(*tetrahedron)[i].ARAP_stiffness, (*tetrahedron)[i].volume_preserve_stiffness, (*tetrahedron)[i].position_stiffness,
@@ -280,7 +279,8 @@ void ProjectDynamic::computeGlobalStepMatrix()
 	ori_global_mat_diagonal_ref = global_mat_diagonal_ref;
 	global_llt.analyzePattern(global_mat);
 	global_llt.factorize(global_mat);
-	collision_free_llt.compute(global_mat);
+	collision_free_llt.analyzePattern(global_mat);
+	collision_free_llt.factorize(global_mat);
 	initial_global_mat = global_mat;
 }
 
@@ -288,7 +288,7 @@ void ProjectDynamic::copmuteGlobalStepMatrixSingleTetrahedron(TetrahedronMeshStr
 	double& volume_preserve_stiffness, double position_stiffness, int vertex_index_start, Matrix4d& m_for_ARAP)
 {
 	//ARAP + volume preserve: they have the same matrix.
-	Matrix4d m_ARAP = (volume_preserve_stiffness + ARAP_stiffness) * m_for_ARAP;
+	Matrix4d m_ARAP = (ARAP_stiffness) * m_for_ARAP;//volume_preserve_stiffness + 
 	int index[4];
 	for (int i = 0; i < mesh_struct.indices.size(); ++i) {
 		memcpy(index, mesh_struct.indices[i].data(), 16);
@@ -319,6 +319,8 @@ void ProjectDynamic::updateTetrohedronAnchorVertices()
 	for (int i = 0; i < total_tetrahedron_num; ++i)	{
 		updateTetrohedronAnchorVertices(i, (*tetrahedron)[i].mesh_struct, vertex_begin_per_tetrahedron[i], (*tetrahedron)[i].position_stiffness);
 	}
+	global_llt.factorize(global_mat);
+	collision_free_llt.factorize(global_mat);
 }
 
 
@@ -338,6 +340,7 @@ void ProjectDynamic::updateTetrohedronAnchorVertices(int tetrahedron_index,Tetra
 	for (int i = 0; i < system_size; ++i) {
 		global_mat_diagonal_ref[i + vertex_index_start] = *(global_mat_diagonal_ref_address[i + vertex_index_start]);
 	}	
+
 }
 
 void ProjectDynamic::computeGlobalStepMatrixSingleCloth(TriangleMeshStruct& mesh_struct, std::vector<Triplet<double>>& global_mat_nnz,
@@ -600,6 +603,8 @@ void ProjectDynamic::reset()
 void ProjectDynamic::initial()
 {
 	global_mat = initial_global_mat;
+	global_llt.factorize(global_mat);
+	collision_free_llt.factorize(global_mat);
 	for (int i = 0; i < sys_size; ++i) {
 		global_mat_diagonal_ref_address[i] = &global_mat.coeffRef(i, i);
 	}
@@ -864,6 +869,7 @@ void ProjectDynamic::computeEnergyIPCPD()
 void ProjectDynamic::PDsolve()
 {
 	PDsetPosPredict();
+
 	int itr_num = 0;
 	outer_iteration_num = 0;
 	initialEnergy();
@@ -877,49 +883,44 @@ void ProjectDynamic::PDsolve()
 	for (int i = 0; i < tetrahedron->size(); ++i) {
 		thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL);
 	}
-	////std::cout << "==============================================" << std::endl;
+
 	while (!PDConvergeCondition()) {
-		collision.globalCollision();
-		PDupdateSystemMatrix();
+		//collision.globalCollision();
+		//PDupdateSystemMatrix();
 		initialEnergyOuterInteration();
 		local_global_itr_in_single_outer = 0;
 		while (!PDLocalGlobalConvergeCondition()) {
 			initialEnergyLocalGlobal();
 			if (local_global_itr_in_single_outer > 0) {
-				//time_t t = clock();
-				collision.updateCollisionPosition();
-				////std::cout << clock() - t << std::endl;
+
+				//collision.updateCollisionPosition();
+				
 			}
 			time_t t = clock();
-			//for (int i = 0; i < 1000; ++i) {
-				//thread->assignTask(this, LOCAL_EDGE_LENGTH_PROJECTION);
 			localProjection();
 			for (int i = 0; i < total_thread_num; ++i) {
 				current_constraint_energy += temEnergy[i];
 			}
-			//}
-			////std::cout << "local " << clock() - t << std::endl;
-			//t = clock();
-			//for (int i = 0; i < 1000; ++i) {
-				////std::cout << "===" << std::endl;
-				//for (int i = 0; i < cloth_sys_size[0]; ++i) {
-				//	//std::cout << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "
-				//		<< cloth_u[0][2][i] << std::endl;
-				//}
-			thread->assignTask(this, CONSTRUCT_B);
-			thread->assignTask(this, SOLVE_WITH_COLLISION);
+			thread->assignTask(this, CONSTRUCT_B_WITHOUT_COLLISION);
+			thread->assignTask(this, SOLVE_WITHOUT_COLLISION);
 			solveClothSystem2(true);
-			//for (int i = 0; i < cloth_sys_size[0]; ++i) {
-			//	//std::cout << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "
-			//		<< cloth_u[0][2][i] << std::endl;
+			//std::cout << (1.0 / (sub_time_step * sub_time_step)) * (mass.cwiseProduct(u_prediction[0]))<< std::endl;
+			//std::cout << (1.0 / (sub_time_step * sub_time_step)) * (mass.cwiseProduct(u_prediction[1]))<< std::endl;
+			//std::cout << (1.0 / (sub_time_step * sub_time_step)) * (mass.cwiseProduct(u_prediction[2]))<< std::endl;
+
+
+			//std::cout << "b" << std::endl;
+			//std::cout << b[0] << std::endl;
+			//std::cout << b[1] << std::endl;
+			//std::cout << b[2] << std::endl;
+			//std::cout << " u" << std::endl;
+			//std::cout << u[0] << std::endl;
+			//std::cout << u[1] << std::endl;
+			//std::cout << u[2] << std::endl;
+			//std::cout << "==================" << std::endl;
+			//for (int k = 0; k < total_cloth_num; ++k) {
+			//	current_collision_energy += collision.cloth_target_pos.collision_energy[k];
 			//}
-		//}
-		////std::cout << "global " << clock() - t << std::endl;
-
-
-			for (int k = 0; k < total_cloth_num; ++k) {
-				current_collision_energy += collision.cloth_target_pos.collision_energy[k];
-			}
 			current_constraint_energy += current_collision_energy;
 			for (int i = 0; i < total_thread_num; ++i) {
 				current_PD_energy += temEnergy[i];
@@ -932,22 +933,9 @@ void ProjectDynamic::PDsolve()
 			for (int i = 0; i < tetrahedron->size(); ++i) {
 				thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL);
 			}
-			////std::cout << "result"<< local_global_itr_in_single_outer << std::endl;
-			//for (int j = 0; j < total_cloth_num; ++j) {
-			//	for (int i = 0; i < cloth_sys_size[j]; ++i) {
-			//		//std::cout << cloth_u[j][0].data()[i] << " " << cloth_u[j][1].data()[i] << " " << cloth_u[j][2].data()[i] << std::endl;
-			//	}
-			//}
-			////std::cout << "=======" << std::endl;
 			local_global_itr_in_single_outer++;
 			local_global_iteration_num++;
-			//std::cout << "==iteration number " << local_global_iteration_num << std::endl;
-			//std::cout << "pd position " << std::endl;
-			for (int i = 0; i < cloth_sys_size[0]; ++i) {
-				//std::cout << "    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "	<< cloth_u[0][2][i] << std::endl;
-			}
 		}
-		//std::cout << "==local===global=========" << std::endl;
 		outer_iteration_num++;
 
 	}
@@ -1419,8 +1407,12 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 					}					
 				}
 				center =0.25* q.rowwise().sum();
-				q = q.colwise() - center;
+				q = (q.colwise() - center).eval();
 				transform = q * PT[i] * PPT_inv[i];
+				//if (i == 0) {
+				//	std::cout << q << std::endl;
+				//}
+
 				JacobiSVD<Matrix3d> svd(transform, ComputeFullU | ComputeFullV);
 				if (transform.determinant() < 0) {
 					rotation_2 = svd.matrixV();
@@ -1428,12 +1420,18 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 					rotation_2.data()[1] *= -1.0;
 					rotation_2.data()[2] *= -1.0;
 					transform = svd.matrixU() * rotation_2.transpose();
+					//std::cout << "should not occur" << std::endl;
 				}
 				else {
 					transform = svd.matrixU() * svd.matrixV().transpose();
-				}
-				p = transform * PT[i].transpose();
+				}				
+				p = transform * (PT[i].transpose());
+				//if (i == 0) {
+				//}
 				Ap_ARAP[i] = tet_local_A * (ARAP_stiffness * p).transpose(); //tet_local_A is symmetric, need not to use transpose
+				//std::cout << p << std::endl;
+				//std::cout << Ap_ARAP[i] << std::endl;
+				//std::cout << "===" << std::endl;
 				temEnergy[thread_id] += 0.5 * ARAP_stiffness * (p-q).squaredNorm();
 			}
 		}
@@ -1708,7 +1706,7 @@ void ProjectDynamic::constructbTetPerThead(double* b, TetrahedronMeshStruct& mes
 	int tet_size = mesh_struct.indices.size();
 	for (int i = 0; i < tet_size; ++i) {
 		for (int j = 0; j < 4; ++j) {
-			b[indices[i][j] + vertex_index_start] += p_ARAP[i].data()[3 * dimension + j];
+			b[indices[i][j] + vertex_index_start] += p_ARAP[i].data()[4 * dimension + j];
 		}		
 	}
 	//position

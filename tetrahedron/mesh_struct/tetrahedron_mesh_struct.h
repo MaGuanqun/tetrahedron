@@ -11,7 +11,6 @@ public:
 	{
 		std::vector<int>face;
 	};
-	std::vector<double>mass;
 	std::vector<TetrahedronVertex> vertices;
 	void findSurface();
 	void setThreadIndex(int total_thread_num_);

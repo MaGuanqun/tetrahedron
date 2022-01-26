@@ -395,7 +395,7 @@ void ImGuiWindows::helpMarker(const char* desc)
 
 
 void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_stiffness, double* simulation_parameters, std::vector<std::array<double, 4>>& collision_stiffness,
-	bool* set_stiffness, double* temp_stiffness, UpdateClothStiffness& update_cloth_stiffness, bool* set_anchor_point)
+	bool* set_stiffness, double* temp_stiffness, UpdateClothStiffness& update_cloth_stiffness, bool* set_anchor_point,bool tetrahedron_exist)
 {
 	ImGui::SetNextWindowPos(ImVec2(0, 330));
 	ImGui::SetNextWindowSize(ImVec2(240, 140));
@@ -406,15 +406,17 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 	if (ImGui::Button("Set Stiffness", ImVec2(160, 25))) {
 		set_stiffness[START_SETTING] = true;
 	}
-	if (!set_anchor_point[0]) {
-		if (ImGui::Button("Anchor Vertex", ImVec2(160, 25))) {
-			set_anchor_point[0] = true;
+	if (tetrahedron_exist) {
+		if (!set_anchor_point[0]) {
+			if (ImGui::Button("Anchor Vertex", ImVec2(160, 25))) {
+				set_anchor_point[0] = true;
+			}
 		}
-	}
-	else {
-		if (ImGui::Button("Save Anchor", ImVec2(160, 25))) {
-			set_anchor_point[1] = true;
-			set_anchor_point[0] = false;
+		else {
+			if (ImGui::Button("Save Anchor", ImVec2(160, 25))) {
+				set_anchor_point[1] = true;
+				set_anchor_point[0] = false;
+			}
 		}
 	}
 	//ImGui::PopStyleColor();

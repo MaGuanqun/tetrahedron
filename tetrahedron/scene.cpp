@@ -60,7 +60,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	cloth.resize(cloth_num);
 	tetrahedron.resize(tetrahedron_num);
 	double cloth_density=15.0;
-	double tetrahedron_density = 25.0;
+	double tetrahedron_density = 1.0;
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].loadMesh(preprocessing.ori_simulation_mesh[cloth_index_in_object[i]], cloth_density, &thread);
 	}
@@ -79,7 +79,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	}
 	
 	std::array<double, 4>tetrahedron_collision_stiffness_per = { 2e5,2e5,2e5, 2e5 };
-	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density,1e6,1e3,1e3, tetrahedron_collision_stiffness_per.data());
+	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density,1e3,1,1, tetrahedron_collision_stiffness_per.data());
 	for (int i = 0; i < tetrahedron_num; ++i) {
 		tetrahedron[i].recordInitialMesh(single_tetrahedron_info);
 	}
@@ -299,8 +299,8 @@ void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_par
 			//std::cout << cursor_screen[0] << " " << cursor_screen[1] << " " << force_coe << std::endl;
 			setCursorForce(camera, cursor_screen, force_coe);
 		}
-		//project_dynamic.PDsolve();
-		project_dynamic.PD_IPC_solve(record_matrix);
+		project_dynamic.PDsolve();
+		//project_dynamic.PD_IPC_solve(record_matrix);
 		project_dynamic.update_ave_iteration_record(ave_iteration);
 		time_stamp++;
 	}
@@ -362,10 +362,13 @@ void Scene::selectAnchor(bool* control_parameter, bool* select_anchor, double* s
 		for (int i = 0; i < tetrahedron.size(); ++i) {
 			tetrahedron[i].mesh_struct.setAnchorPosition();
 
-		}
-		
+		}		
 		select_anchor[1] = false;
+		project_dynamic.updateTetrohedronAnchorVertices();
 	}
+
+
+	
 }
 
 void Scene::drawSelectRange(bool* select_anchor, bool press_state, bool pre_press_state)
