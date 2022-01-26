@@ -163,6 +163,8 @@ void TriangleMeshStruct::getFaceNormalPerThread(int thread_id)
 	}
 }
 
+
+
 void TriangleMeshStruct::getRenderNormal()
 {
 	thread->assignTask(this, FACE_NORMAL_RENDER);

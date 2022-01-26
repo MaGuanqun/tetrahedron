@@ -208,36 +208,36 @@ void ImGuiWindows::visualizationControlPanel(bool& reset_camera, std::vector<std
 			ImGui::TreePop();
 		}
 	}
-	for (int i = 0; i < wireframe[TETROHEDRON_].size(); ++i) {
+	for (int i = 0; i < wireframe[TETRAHEDRON_].size(); ++i) {
 		ImGui::SetNextItemOpen(true);
 		tempString = "cloth " + std::to_string(i);
 		if (ImGui::TreeNode(tempString.c_str())) {
-			if (hide[TETROHEDRON_][i]) {
+			if (hide[TETRAHEDRON_][i]) {
 				tempString = "Show##tetrahedron" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					hide[TETROHEDRON_][i] = false;
+					hide[TETRAHEDRON_][i] = false;
 				}
 			}
 			else {
 				tempString = "Hide##tetrahedron" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					hide[TETROHEDRON_][i] = true;
+					hide[TETRAHEDRON_][i] = true;
 				}
 			}
-			if (wireframe[TETROHEDRON_][i]) {
+			if (wireframe[TETRAHEDRON_][i]) {
 				tempString = "Hide WireFrame##tetrahedron" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					wireframe[TETROHEDRON_][i] = false;
+					wireframe[TETRAHEDRON_][i] = false;
 				}
 			}
 			else {
 				tempString = "Show WireFrame##tetrahedron" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					wireframe[TETROHEDRON_][i] = true;
+					wireframe[TETRAHEDRON_][i] = true;
 				}
 			}
 			ImGui::TreePop();

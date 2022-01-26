@@ -204,7 +204,7 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& wireframe,
 	}
 	glDisable(GL_CULL_FACE);
 	for (int j = 0; j < tetrahedron_num; ++j) {
-		if (!hide[TETROHEDRON_][j]) {
+		if (!hide[TETRAHEDRON_][j]) {
 			tetrahedron[j].setSceneShader(light, camera, shadow.far_plane, object_shader_front);
 			tetrahedron[j].draw(camera, object_shader_front);
 		}
@@ -227,7 +227,7 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& wireframe,
 		}
 	}
 	for (int j = 0; j < tetrahedron_num; ++j) {
-		if (wireframe[TETROHEDRON_][j]) {
+		if (wireframe[TETRAHEDRON_][j]) {
 			tetrahedron[j].drawWireframe(camera, wireframe_shader);
 		}
 	}

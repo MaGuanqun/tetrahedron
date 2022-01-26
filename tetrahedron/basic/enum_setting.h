@@ -5,7 +5,7 @@ enum ControlPrameter {
 };
 
 enum ObjectType {
-	COLLIDER_, TETROHEDRON_, CLOTH_
+	COLLIDER_, TETRAHEDRON_, CLOTH_
 };
 
 enum PDFuncSendToThread {
@@ -31,7 +31,7 @@ enum MeshStructFuncSendToThread {
     FACE_NORMAL, VERTEX_NORMAL, FACE_NORMAL_RENDER, VERTEX_NORMAL_RENDER, SET_VOLUME
 };
 enum MeshStructType {
-    TRIANGLE, TETROHEDRON
+    TRIANGLE, TETRAHEDRON
 };
 
 enum Iteration {

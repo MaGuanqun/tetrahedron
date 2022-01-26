@@ -191,7 +191,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 			scene.setTolerance(tolerance_ratio);			
 			scene.updateCloth(&camera, input->mouse.screen_pos, control_parameter, force_coe,record_matrix, iteration_solver_iteration_num);
 			scene.drawScene(&camera, wireframe, hide, control_parameter[SAVE_OBJ]);
-			scene.selectAnchor(control_parameter, set_anchor, input->mouse.screen_pos, input->mouse.left_press, input->mouse.prev_left_press, &camera, hide[TETROHEDRON_]);
+			scene.selectAnchor(control_parameter, set_anchor, input->mouse.screen_pos, input->mouse.left_press, input->mouse.prev_left_press, &camera, hide[TETRAHEDRON_]);
 			scene.obtainConvergenceInfo(convergence_rate, iteration_number);
 
 		}
@@ -231,8 +231,8 @@ void setHideWireframe(std::vector<std::vector<bool>>& hide, std::vector<std::vec
 		wireframe[COLLIDER_].resize(collider_num, false);
 	}
 	if (tetrahedron_num > 0) {
-		hide[TETROHEDRON_].resize(tetrahedron_num, false);
-		wireframe[TETROHEDRON_].resize(tetrahedron_num, false);
+		hide[TETRAHEDRON_].resize(tetrahedron_num, false);
+		wireframe[TETRAHEDRON_].resize(tetrahedron_num, false);
 	}
 	if (cloth_num > 0) {
 		hide[CLOTH_].resize(cloth_num, false);

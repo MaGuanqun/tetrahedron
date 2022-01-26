@@ -187,6 +187,10 @@ void Collision::globalCollisionTime()
 	for (int i = 0; i < cloth->size(); ++i) {
 		thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL);
 	}
+	for (int i = 0; i < tetrahedron->size(); ++i) {
+		thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL);
+	}
+
 	thread->assignTask(this, GLOBAL_COLLISION_TIME);
 	//std::cout << "finish" << std::endl;
 	collision_time = collision_time_thread[0];
@@ -209,6 +213,9 @@ void Collision::solveCollisionConstraint()
 {
 	for (int i = 0; i < cloth->size(); ++i) {
 		thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL_RENDER);
+	}
+	for (int i = 0; i < tetrahedron->size(); ++i) {
+		thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL_RENDER);
 	}
 	thread->assignTask(this, COLLISION_CONSTRAINT);
 	sumTargetPosition();
@@ -402,6 +409,9 @@ void Collision::updateCollisionPosition()
 {
 	for (int i = 0; i < cloth->size(); ++i) {
 		(*cloth)[i].mesh_struct.getNormal();
+	}
+	for (int i = 0; i < tetrahedron->size(); ++i) {
+		(*tetrahedron)[i].mesh_struct.getNormal();
 	}
 	thread->assignTask(this, RE_DETECTION);
 	resumTargetPosition();

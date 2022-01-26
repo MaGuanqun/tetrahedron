@@ -36,7 +36,7 @@ void SetModel::load_getAABB(std::string& path, int& index)
 	
 	}
 	else {
-		ori_mesh.type = TETROHEDRON;
+		ori_mesh.type = TETRAHEDRON;
 		ReadEle read_ele;
 		read_ele.load(path.c_str(), ori_mesh);
 		setTetFrontMaterial(ori_mesh, index);

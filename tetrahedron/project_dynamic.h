@@ -36,6 +36,7 @@ public:
 	void updateUVPerThread(int thread_id);
 	void updateRenderPosition();
 	void addExternalClothForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int cloth_No);
+	void addExternalTetForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int tet_No);
 	void resetExternalForce();
 	void mainProcess();
 	void testLocalProjectionPerThread(int thread_id);
@@ -80,7 +81,7 @@ private:
 
 	std::vector<std::vector<VectorXd>>vertex_lbo;
 	void setForClothPD(std::vector<Cloth>* cloth);
-	void setForTetrahedronPD(std::vector<Tetrahedron>* tetrahedron);
+	void setForTetrahedronPD();
 	void computeEdgeCotWeight(std::vector<std::vector<double>>& edge_cot_weight);
 	void computeEdgeCotWeightSingleCloth(std::vector<double>& edge_cot_weight, TriangleMeshStruct& mesh_struct);
 	void computeLBOWeight(std::vector<std::vector<double>>& edge_cot_weight);
@@ -208,4 +209,5 @@ private:
 		double position_stiffness, int vertex_index_start, std::array<int, 4>* indices, std::vector<int>& anchor_vertex,
 		std::array<double, 3>* anchor_pos);
 	Matrix4d tet_local_A;
+	void computeTetMass(double* mass_, VectorXd& mass_inv, VectorXd& mass, int vertex_index_start, int vertex_num);
 };

@@ -65,7 +65,7 @@ void Shadow::drawShadow(Camera* camera, std::vector<std::vector<bool>>& hide, st
 		}
 	}
 	for (int i = 0; i < tetrahedron.size(); ++i) {
-		if (!hide[TETROHEDRON_][i]) {
+		if (!hide[TETRAHEDRON_][i]) {
 			tetrahedron[i].drawShadow(camera, shadow_shader);
 		}
 	}
