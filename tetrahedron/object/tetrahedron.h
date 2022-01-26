@@ -6,7 +6,7 @@ class Tetrahedron:public Object
 private:
 	void setMeshStruct(double density, OriMesh& ori_mesh);
 	void initialHashAABB();
-
+	
 public:
 	MeshMaterial material;
 	TetrahedronMeshStruct mesh_struct;
@@ -19,12 +19,15 @@ public:
 	void loadMesh(OriMesh& ori_mesh, double density, Thread* thread);
 	void draw(Camera* camera, Shader* object_shader_front);
 	void setSceneShader(Light& light, Camera* camera, float& far_plane, Shader* object_shader_front);
-	SingleTetrahedronInfo single_tetrahedron_info_ref;
+	
 	double density;
 	double ARAP_stiffness;
 	double volume_preserve_stiffness;
 	double position_stiffness;
 	double collision_stiffness[4];
 	void recordInitialMesh(SingleTetrahedronInfo& single_tetrahedron_info_ref);
+	void initial();
+	void reset();
+	SingleTetrahedronInfo single_tetrahedron_info_ref;
 };
 

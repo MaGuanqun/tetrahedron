@@ -172,12 +172,10 @@ void ProjectDynamic::initialTetrahedronPDvariable()
 {
 	tet_local_A = getARAPmatrix();
 	int vertex_start;
-	p_ARAP.resize(total_tetrahedron_num);
-	p_volume_preserve.resize(total_tetrahedron_num);
+	p_ARAP_volume_preserve.resize(total_tetrahedron_num);
 	std::array<double, 3>* position;
 	for (int j = 0; j < total_tetrahedron_num; ++j) {
-		p_ARAP[j].resize((*tetrahedron)[j].mesh_struct.indices.size());
-		p_volume_preserve[j].resize((*tetrahedron)[j].mesh_struct.indices.size());
+		p_ARAP_volume_preserve[j].resize((*tetrahedron)[j].mesh_struct.indices.size());
 		vertex_start = vertex_begin_per_tetrahedron[j];
 		position = (*tetrahedron)[j].mesh_struct.vertex_position.data();
 		for (int i = 0; i < 3; ++i) {
@@ -1382,7 +1380,7 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 	Matrix3d* PPT_inv;
 	Matrix<double, 4, 3>* PT;
 	Matrix3d rotation_2;	
-	Matrix<double, 4, 3>* Ap_ARAP;
+	Matrix<double, 4, 3>* Ap_ARAP_volume_preserve;
 	double ARAP_stiffness;
 	double volume_preserve_stiffness;
 	if (with_energy) {
@@ -1394,7 +1392,7 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 			index_begin = mesh_struct->tetrahedron_index_begin_per_thread[thread_id];
 			PPT_inv = mesh_struct->PPT_inv.data();
 			PT = mesh_struct->PT.data();
-			Ap_ARAP = p_ARAP[j].data();
+			Ap_ARAP_volume_preserve = p_ARAP_volume_preserve[j].data();
 			ARAP_stiffness = (*tetrahedron)[j].ARAP_stiffness;
 			volume_preserve_stiffness = (*tetrahedron)[j].volume_preserve_stiffness;
 			for (int i = index_begin; i < index_end; ++i) {
@@ -1428,9 +1426,9 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 				p = transform * (PT[i].transpose());
 				//if (i == 0) {
 				//}
-				Ap_ARAP[i] = tet_local_A * (ARAP_stiffness * p).transpose(); //tet_local_A is symmetric, need not to use transpose
+				Ap_ARAP_volume_preserve[i] = tet_local_A * (ARAP_stiffness * p).transpose(); //tet_local_A is symmetric, need not to use transpose
 				//std::cout << p << std::endl;
-				//std::cout << Ap_ARAP[i] << std::endl;
+				//std::cout << Ap_ARAP_volume_preserve[i] << std::endl;
 				//std::cout << "===" << std::endl;
 				temEnergy[thread_id] += 0.5 * ARAP_stiffness * (p-q).squaredNorm();
 			}
@@ -1444,7 +1442,7 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 			index_begin = mesh_struct->tetrahedron_index_begin_per_thread[thread_id];
 			PPT_inv = mesh_struct->PPT_inv.data();
 			PT = mesh_struct->PT.data();
-			Ap_ARAP = p_ARAP[j].data();
+			Ap_ARAP_volume_preserve = p_ARAP_volume_preserve[j].data();
 			ARAP_stiffness = (*tetrahedron)[j].ARAP_stiffness;
 			volume_preserve_stiffness = (*tetrahedron)[j].volume_preserve_stiffness;
 			for (int i = index_begin; i < index_end; ++i) {
@@ -1470,7 +1468,7 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 				else {
 					transform = svd.matrixU() * svd.matrixV().transpose();
 				}
-				Ap_ARAP[i] = tet_local_A * ((ARAP_stiffness * transform) * PT[i].transpose()).transpose(); //tet_local_A is symmetric, need not to use transpose
+				Ap_ARAP_volume_preserve[i] = tet_local_A * ((ARAP_stiffness * transform) * PT[i].transpose()).transpose(); //tet_local_A is symmetric, need not to use transpose
 			}
 		}
 	}
@@ -1682,8 +1680,8 @@ void ProjectDynamic::constructbPerThead(int thread_id, bool with_collision)
 	for (int i = 0; i < tetrahedron_dimension_per_thread[thread_id].size(); ++i) {
 		obj_No = tetrahedron_dimension_per_thread[thread_id][i] / 3;
 		dimension = tetrahedron_dimension_per_thread[thread_id][i] % 3;
-		constructbTetPerThead(b[dimension].data(), (*tetrahedron)[obj_No].mesh_struct, p_ARAP[obj_No], obj_No, dimension,
-			p_volume_preserve[obj_No], collision.tet_target_pos.b_sum[obj_No], collision.tet_target_pos.need_update[obj_No],
+		constructbTetPerThead(b[dimension].data(), (*tetrahedron)[obj_No].mesh_struct, p_ARAP_volume_preserve[obj_No], obj_No, dimension,
+			collision.tet_target_pos.b_sum[obj_No], collision.tet_target_pos.need_update[obj_No],
 			with_collision, (*tetrahedron)[obj_No].position_stiffness, vertex_begin_per_tetrahedron[obj_No],
 			(*tetrahedron)[obj_No].mesh_struct.indices.data(), (*tetrahedron)[obj_No].mesh_struct.anchor_vertex,
 			(*tetrahedron)[obj_No].mesh_struct.anchor_position.data());
@@ -1693,7 +1691,7 @@ void ProjectDynamic::constructbPerThead(int thread_id, bool with_collision)
 
 
 void ProjectDynamic::constructbTetPerThead(double* b, TetrahedronMeshStruct& mesh_struct,
-	std::vector<Matrix<double, 4, 3>>& p_ARAP, int tet_No, int dimension, std::vector<Matrix<double, 4, 3>>& p_volume_preserve,
+	std::vector<Matrix<double, 4, 3>>& p_ARAP_volume_preserve, int tet_No, int dimension,
 	std::vector<std::array<double, 3>>& collision_b_sum, bool* collision_b_need_update, bool with_collision,
 	double position_stiffness, int vertex_index_start, std::array<int, 4>* indices, std::vector<int>& anchor_vertex,
 	std::array<double, 3>* anchor_pos)
@@ -1706,7 +1704,7 @@ void ProjectDynamic::constructbTetPerThead(double* b, TetrahedronMeshStruct& mes
 	int tet_size = mesh_struct.indices.size();
 	for (int i = 0; i < tet_size; ++i) {
 		for (int j = 0; j < 4; ++j) {
-			b[indices[i][j] + vertex_index_start] += p_ARAP[i].data()[4 * dimension + j];
+			b[indices[i][j] + vertex_index_start] += p_ARAP_volume_preserve[i].data()[4 * dimension + j];
 		}		
 	}
 	//position

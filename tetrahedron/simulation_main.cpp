@@ -125,7 +125,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 				std::fill(wireframe[i].begin(), wireframe[i].end(), false);
 			}
 			control_parameter[START_SIMULATION] = false;
-			scene.resetCloth();
+			scene.reset();
 			control_parameter[RESET_SIMULATION] = false;
 		}
 		if (control_parameter[INITIAL_SIMULATION]) {
@@ -133,7 +133,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 				std::fill(wireframe[i].begin(), wireframe[i].end(), false);
 			}
 			control_parameter[START_SIMULATION] = false;
-			scene.initialCloth();
+			scene.initial();
 			control_parameter[INITIAL_SIMULATION] = false;
 		}
 		if (scene.intersection.happened && control_parameter[STOP_AFTER_RELEASE_MOUSE] && input->mouse.leftButtonWasReleasedThisFrame()) {

@@ -167,3 +167,31 @@ void Tetrahedron::recordInitialMesh(SingleTetrahedronInfo& single_tetrahedron_in
 	volume_preserve_stiffness = single_tetrahedron_info_ref.volume_preserve_stiffness;
 	ARAP_stiffness = single_tetrahedron_info_ref.ARAP_stiffness;
 }
+
+
+void Tetrahedron::initial()
+{
+	mesh_struct.vertex_position = ori_vertices;
+	mesh_struct.vertex_for_render = ori_vertices;
+	mesh_struct.anchor_vertex.clear();
+	mesh_struct.anchor_position.clear();
+	mesh_struct.getRenderNormal();
+	mesh_struct.getNormal();
+	ARAP_stiffness = single_tetrahedron_info_ref.ARAP_stiffness;
+	volume_preserve_stiffness = single_tetrahedron_info_ref.volume_preserve_stiffness;
+	position_stiffness = single_tetrahedron_info_ref.position_stiffness;
+	std::array<double, 4> collision_stiff_indicator;
+	memcpy(collision_stiffness, single_tetrahedron_info_ref.collision_stiffness, 16);
+
+}
+
+void Tetrahedron::reset()
+{
+	mesh_struct.vertex_position = ori_vertices;
+	mesh_struct.vertex_for_render = ori_vertices;
+	mesh_struct.getRenderNormal();
+	mesh_struct.getNormal();
+	for (int i = 0; i < mesh_struct.anchor_vertex.size(); ++i) {
+		mesh_struct.anchor_position[i] = mesh_struct.vertex_position[mesh_struct.anchor_vertex[i]];
+	}
+}

@@ -253,11 +253,14 @@ void Scene::saveObj()
 	}
 }
 
-void Scene::initialCloth()
+void Scene::initial()
 {
 	project_dynamic.initial();
 	for (int i = 0; i < cloth.size(); ++i) {
 		cloth[i].initial();
+	}
+	for (int i = 0; i < tetrahedron.size(); ++i) {
+		tetrahedron[i].initial();
 	}
 	intersection.initialIntersection();
 	//spatial_hashing.body_time_stamp++;
@@ -267,11 +270,14 @@ void Scene::initialCloth()
 	time_stamp = 0;
 }
 
-void Scene::resetCloth()
+void Scene::reset()
 {
 	project_dynamic.reset();
 	for (int i = 0; i < cloth.size(); ++i) {
 		cloth[i].reset();
+	}
+	for (int i = 0; i < tetrahedron.size(); ++i) {
+		tetrahedron[i].reset();
 	}
 	intersection.initialIntersection();
 	//spatial_hashing.time_stamp++;

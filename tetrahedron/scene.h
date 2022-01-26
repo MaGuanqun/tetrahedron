@@ -21,8 +21,8 @@ public:
 	Shadow shadow;
 	double camera_center[3];
 	bool* control_parameter;
-	void initialCloth();
-	void resetCloth();
+	void initial();
+	void reset();
 	void loadMesh(std::vector<std::string>& collider_path, std::vector<std::string>& object_path);
 	void drawScene(Camera* camera, std::vector<std::vector<bool>>& wireframe, std::vector<std::vector<bool>>& hide, bool start_save_obj);
 	void getClothInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 3>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 4>>& collision_stiffness);
