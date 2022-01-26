@@ -9,14 +9,18 @@ void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	setMeshStruct(density, ori_mesh);
 	mesh_struct.setVertex();
 	mesh_struct.initialNormalSize();
+	mesh_struct.setFace();
+	mesh_struct.setEdge();
+	mesh_struct.addArounVertex();
 	mesh_struct.setThreadIndex(total_thread_num);
 	mesh_struct.vertex_for_render = mesh_struct.vertex_position;
 	mesh_struct.getRenderNormal();
+	mesh_struct.getNormal();
 	mesh_struct.prepareForDeformationGradient();
 	mass = mesh_struct.setVolumeMass(density);
 	genBuffer();
 	setBuffer();
-
+	initialHashAABB();
 }
 
 
@@ -43,6 +47,21 @@ void Tetrahedron::drawWireframe(Camera* camera, Shader* wireframe_shader)
 }
 
 
+void Tetrahedron::initialHashAABB()
+{
+	PC_radius.resize(4);
+	hash_index_for_vertex.resize(mesh_struct.vertices.size());
+	for (int i = 0; i < hash_index_for_vertex.size(); ++i) {
+		hash_index_for_vertex[i].reserve(32);
+	}
+	hash_index_for_edge.resize(mesh_struct.edges.size());
+	for (int i = 0; i < hash_index_for_edge.size(); ++i) {
+		hash_index_for_edge[i].reserve(32);
+	}
+	triangle_AABB.resize(mesh_struct.faces.size());
+	edge_AABB.resize(mesh_struct.edges.size());
+	vertex_AABB.resize(mesh_struct.vertices.size());
+}
 
 void Tetrahedron::setBuffer()
 {

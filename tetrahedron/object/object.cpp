@@ -42,3 +42,63 @@ void Object::getAABB(AABB& target, AABB& aabb0, AABB& aabb1, double radius)
 		target.max[i] = myMax(aabb0.max[i], aabb1.max[i])+radius;
 	}
 }
+
+void Object::setOrder(bool* in_this_triangle, int count, int* index)
+{
+	if (count == 1) {
+		if (in_this_triangle[1]) {
+			int temp = index[0];
+			index[0] = index[1];
+			index[1] = index[2];
+			index[2] = temp;
+		}
+		else if (in_this_triangle[2]) {
+			int temp = index[0];
+			index[0] = index[2];
+			index[2] = index[1];
+			index[1] = temp;
+		}
+	}
+	else if (count == 2) {
+		if (!in_this_triangle[0]) {
+			int temp = index[0];
+			index[0] = index[1];
+			index[1] = index[2];
+			index[2] = temp;
+		}
+		else if (!in_this_triangle[1]) {
+			int temp = index[0];
+			index[0] = index[2];
+			index[2] = index[1];
+			index[1] = temp;
+		}
+	}
+}
+
+void Object::setOrderEdge(bool* in_this_triangle, int count, int* index)
+{
+	if (count == 1) {
+		if (in_this_triangle[1]) {
+			int temp = index[0];
+			index[0] = index[1];
+			index[1] = temp;
+		}
+		else if (in_this_triangle[2]) {
+			int temp = index[0];
+			index[0] = index[2];
+			index[2] = temp;
+		}
+	}
+	else if (count == 2) {
+		if (!in_this_triangle[0]) {
+			int temp = index[0];
+			index[0] = index[2];
+			index[2] = temp;
+		}
+		else if (!in_this_triangle[1]) {
+			int temp = index[2];
+			index[2] = index[1];
+			index[1] = temp;
+		}
+	}
+}

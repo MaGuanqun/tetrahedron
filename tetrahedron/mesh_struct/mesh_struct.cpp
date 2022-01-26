@@ -24,6 +24,217 @@ void MeshStruct::setAnchorPosition()
 	}
 }
 
+void MeshStruct::setVertex()
+{
+	vertices.resize(vertex_position.size());
+	mass.resize(vertex_position.size(), 0.0);
+	int face_num = triangle_indices.size();
+	for (int i = 0; i < face_num; ++i) {
+		vertices[triangle_indices[i][0]].face.push_back(i);
+		vertices[triangle_indices[i][1]].face.push_back(i);
+		vertices[triangle_indices[i][2]].face.push_back(i);
+	}
+
+}
+
+void MeshStruct::setFace()
+{
+	int face_num = triangle_indices.size();
+	faces.resize(face_num);
+	for (int i = 0; i < face_num; ++i) {
+		faces[i].vertex[0] = triangle_indices[i][0];
+		faces[i].vertex[1] = triangle_indices[i][1];
+		faces[i].vertex[2] = triangle_indices[i][2];
+	}
+}
+
+void MeshStruct::setEdge()
+{
+	int face_num = triangle_indices.size();
+	edges.reserve(face_num * 3 / 2);
+	int edgeNo;
+	for (int i = 0; i < face_num; ++i) {
+		if (isEdgeExist(triangle_indices[i][0], triangle_indices[i][1], edgeNo)) {
+			edges[edgeNo].face.push_back(i);
+			edges[edgeNo].opposite_vertex.push_back(triangle_indices[i][2]);
+			faces[i].edge.push_back(edgeNo);
+		}
+		else {
+			addEdge(triangle_indices[i][0], triangle_indices[i][1], i, triangle_indices[i][2]);
+		}
+		if (isEdgeExist(triangle_indices[i][0], triangle_indices[i][2], edgeNo)) {
+			edges[edgeNo].face.push_back(i);
+			edges[edgeNo].opposite_vertex.push_back(triangle_indices[i][1]);
+			faces[i].edge.push_back(edgeNo);
+		}
+		else {
+			addEdge(triangle_indices[i][2], triangle_indices[i][0], i, triangle_indices[i][1]);
+		}
+		if (isEdgeExist(triangle_indices[i][1], triangle_indices[i][2], edgeNo)) {
+			edges[edgeNo].face.push_back(i);
+			edges[edgeNo].opposite_vertex.push_back(triangle_indices[i][0]);
+			faces[i].edge.push_back(edgeNo);
+		}
+		else {
+			addEdge(triangle_indices[i][1], triangle_indices[i][2], i, triangle_indices[i][0]);
+		}
+	}
+
+	addNeighborVertex();
+
+	for (int i = 0; i < edges.size(); i++) {
+		if (edges[i].face.size() == 1) {
+			vertices[edges[i].vertex[0]].on_border = true;
+			vertices[edges[i].vertex[1]].on_border = true;
+			edges[i].is_border = true;
+		}
+	}
+	//for (int i = 0; i < edges.size(); ++i) {
+	//	if (vertices[edges[i].vertex[0]].on_border || vertices[edges[i].vertex[1]].on_border) {
+	//		edges[i].near_border = true;
+	//	}
+	//}
+	std::vector<bool>triangle_is_used(faces.size(), false);
+	for (int i = 0; i < vertices.size(); i++) {
+		//if (vertices[i].on_border) {
+		//	for (int j = 0; j < vertices[i].face.size(); j++) {
+		//		faces[vertices[i].face[j]].on_border = true;
+		//	}
+		//}
+		std::fill(triangle_is_used.begin(), triangle_is_used.end(), false);
+		for (int k = 0; k < vertices[i].edge.size(); ++k) {
+			if (edges[vertices[i].edge[k]].vertex[0] == i) {
+				for (int j = 0; j < vertices[edges[vertices[i].edge[k]].vertex[1]].face.size(); ++j) {
+					if (!triangle_is_used[vertices[edges[vertices[i].edge[k]].vertex[1]].face[j]]) {
+						triangle_is_used[vertices[edges[vertices[i].edge[k]].vertex[1]].face[j]] = true;
+						vertices[i].around_face.push_back(vertices[edges[vertices[i].edge[k]].vertex[1]].face[j]);
+					}
+				}
+			}
+			else {
+				for (int j = 0; j < vertices[edges[vertices[i].edge[k]].vertex[0]].face.size(); ++j) {
+					if (!triangle_is_used[vertices[edges[vertices[i].edge[k]].vertex[0]].face[j]]) {
+						triangle_is_used[vertices[edges[vertices[i].edge[k]].vertex[0]].face[j]] = true;
+						vertices[i].around_face.push_back(vertices[edges[vertices[i].edge[k]].vertex[0]].face[j]);
+					}
+				}
+			}
+		}
+	}
+}
 
 
 
+
+void MeshStruct::addNeighborVertex()
+{
+	for (int i = 0; i < vertices.size(); ++i) {
+		vertices[i].neighbor_vertex.reserve(vertices[i].edge.size());
+		for (int j = 0; j < vertices[i].edge.size(); ++j)
+		{
+			if (i == edges[vertices[i].edge[j]].vertex[0]) {
+				vertices[i].neighbor_vertex.push_back(edges[vertices[i].edge[j]].vertex[1]);
+			}
+			else {
+				vertices[i].neighbor_vertex.push_back(edges[vertices[i].edge[j]].vertex[0]);
+			}
+		}
+	}
+}
+
+bool MeshStruct::isEdgeExist(int v0, int v1, int& edge_index)
+{
+
+	for (int i = 0; i < vertices[v0].edge.size(); ++i) {
+		if (edges[vertices[v0].edge[i]].isSame(v0, v1)) {
+			edge_index = vertices[v0].edge[i];
+			return true;
+		}
+	}
+	return false;
+}
+
+void MeshStruct::addEdge(int v0, int v1, int face, int opposite_vertex)
+{
+	edges.push_back(Edge());
+	int edge_index = edges.size() - 1;
+	edges[edge_index].vertex[0] = v0;
+	edges[edge_index].vertex[1] = v1;
+	edges[edge_index].face.push_back(face);
+	edges[edge_index].opposite_vertex.push_back(opposite_vertex);
+	double tem[3];
+	SUB(tem, vertex_position[v0], vertex_position[v1]);
+	edges[edge_index].length = sqrt(DOT(tem, tem));
+	faces[face].edge.push_back(edge_index);
+	vertices[v0].edge.push_back(edge_index);
+	vertices[v1].edge.push_back(edge_index);
+	//vertices[v0].neighbor_vertex.push_back(v1);
+	//vertices[v1].neighbor_vertex.push_back(v0);
+}
+
+
+void MeshStruct::addArounVertex()
+{
+	int vertex_index;
+	std::vector<bool>point_is_used;
+	point_is_used.resize(vertices.size(), true);
+	for (int i = 0; i < vertices.size(); ++i) {
+		std::fill(point_is_used.begin(), point_is_used.end(), false);
+		vertices[i].around_vertex.reserve(3 * vertices[i].neighbor_vertex.size());
+		for (int k = 0; k < vertices[i].neighbor_vertex.size(); ++k) {
+			vertex_index = vertices[i].neighbor_vertex[k];
+			for (int m = 0; m < vertices[vertex_index].neighbor_vertex.size(); ++m) {
+				if (!point_is_used[vertices[vertex_index].neighbor_vertex[m]]) {
+					vertices[i].around_vertex.push_back(vertices[vertex_index].neighbor_vertex[m]);
+				}
+			}
+		}
+
+	}
+}
+
+
+//VERTEX_NORMAL
+void MeshStruct::getVertexNormalPerThread(int thread_id)
+{
+	std::vector<int>* face_vertex;
+	double* current_vertex_normal;
+	double dot;
+	for (int i = vertex_index_begin_per_thread[thread_id]; i < vertex_index_begin_per_thread[thread_id + 1]; ++i) {
+		face_vertex = &vertices[i].face;
+		current_vertex_normal = vertex_normal[i].data();
+		memcpy(current_vertex_normal, face_normal[(*face_vertex)[0]].data(), 24);
+		for (int k = 1; k < face_vertex->size(); ++k) {
+			SUM_(current_vertex_normal,
+				face_normal[(*face_vertex)[k]]);
+
+		}
+		normalize(current_vertex_normal);
+	}
+}
+
+//VERTEX_NORMAL_RENDER
+void MeshStruct::getRenderVertexNormalPerThread(int thread_id)
+{
+	std::vector<int>* face_vertex;
+	double* current_vertex_normal;
+	double dot;
+	for (int i = vertex_index_begin_per_thread[thread_id]; i < vertex_index_begin_per_thread[thread_id + 1]; ++i) {
+		face_vertex = &vertices[i].face;
+		current_vertex_normal = vertex_normal_for_render[i].data();
+		memcpy(current_vertex_normal, ori_face_normal_for_render[(*face_vertex)[0]].data(), 24);
+		for (int k = 1; k < face_vertex->size(); ++k) {
+			SUM_(current_vertex_normal,
+				ori_face_normal_for_render[(*face_vertex)[k]]);
+		}
+		dot = DOT(current_vertex_normal, current_vertex_normal);
+		if (dot < 1e-20) {
+			memcpy(current_vertex_normal, ori_face_normal_for_render[(*face_vertex)[0]].data(), 24);
+		}
+		else {
+			dot = sqrt(dot);
+			DEV_(current_vertex_normal, dot);
+		}
+	}
+
+}

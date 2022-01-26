@@ -5,7 +5,7 @@ class Tetrahedron:public Object
 {
 private:
 	void setMeshStruct(double density, OriMesh& ori_mesh);
-	
+	void initialHashAABB();
 
 public:
 	MeshMaterial material;

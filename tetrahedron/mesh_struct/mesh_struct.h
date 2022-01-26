@@ -38,6 +38,11 @@ public:
 		}
 	};
 
+	std::vector<Vertex> vertices;
+	std::vector<Face> faces;
+	std::vector<Edge> edges;
+
+
 	std::vector<std::array<double, 3>> vertex_position;
 	std::vector<std::array<int,3>> triangle_indices;//if for tetrahedron, store the surface triangle	
 	std::vector<std::array<double, 3>> vertex_for_render;
@@ -59,14 +64,27 @@ public:
 	std::vector<int> face_index_begin_per_thread;
 	std::vector<int> anchor_index_begin_per_thread;
 	std::vector<int> vertex_index_begin_per_thread;
+	std::vector<int> edge_index_begin_per_thread;
 
 	std::vector<std::array<floating, 3>> f_face_normal_for_render;
 	std::vector<std::array<floating, 3>> f_face_normal;
 	std::vector<std::array<floating, 3>> f_cross_for_approx_CCD;
 	void initialNormalSize();
 	void setAnchorPosition();
+	void setVertex();
+	void setFace();
+	void setEdge();
+	void addArounVertex();
+
+	void getVertexNormalPerThread(int thread_id);
+	void getRenderVertexNormalPerThread(int thread_id);
+
 protected:
 	int type;
+	bool isEdgeExist(int v0, int v1, int& edge_index);
+	void addEdge(int v0, int v1, int face, int opposite_vertex);
+	void addNeighborVertex();
+
 private:
 
 };

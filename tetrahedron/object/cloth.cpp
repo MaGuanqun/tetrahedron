@@ -77,15 +77,21 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mesh_struct.vertex_for_render = mesh_struct.vertex_position;
 	mesh_struct.getRenderNormal();
 	mesh_struct.getNormal();
-	mesh_struct.initialInfo();
 	genBuffer();
 	setBuffer();
-	setArea();
-
-	PC_radius.resize(4);
+	setArea();	
 	setMass(density);
 	mesh_struct.setAnchorPosition();
+	
+	update_stiffness_iteration_number.resize(mesh_struct.vertices.size());	
+	initialHashAABB();
+	setRepresentativePrimitve();
+}
 
+
+void Cloth::initialHashAABB()
+{
+	PC_radius.resize(4);
 	hash_index_for_vertex.resize(mesh_struct.vertices.size());
 	for (int i = 0; i < hash_index_for_vertex.size(); ++i) {
 		hash_index_for_vertex[i].reserve(32);
@@ -94,13 +100,9 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	for (int i = 0; i < hash_index_for_edge.size(); ++i) {
 		hash_index_for_edge[i].reserve(32);
 	}
-	update_stiffness_iteration_number.resize(mesh_struct.vertices.size());
-
 	triangle_AABB.resize(mesh_struct.faces.size());
 	edge_AABB.resize(mesh_struct.edges.size());
 	vertex_AABB.resize(mesh_struct.vertices.size());
-
-	setRepresentativePrimitve();
 }
 
 void Cloth::setMass(double density)
@@ -318,65 +320,7 @@ void Cloth::setRepresentativeEdge(std::vector<MeshStruct::Face>& face, std::vect
 }
 
 
-void Cloth::setOrder(bool* in_this_triangle, int count, int* index)
-{
-	if (count == 1) {
-		if (in_this_triangle[1]) {
-			int temp = index[0];
-			index[0] = index[1];
-			index[1] = index[2];
-			index[2] = temp;
-		}
-		else if (in_this_triangle[2]) {
-			int temp = index[0];
-			index[0] = index[2];
-			index[2] = index[1];
-			index[1] = temp;
-		}
-	}
-	else if (count == 2) {
-		if (!in_this_triangle[0]) {
-			int temp = index[0];
-			index[0] = index[1];
-			index[1] = index[2];
-			index[2] = temp;
-		}
-		else if (!in_this_triangle[1]) {
-			int temp = index[0];
-			index[0] = index[2];
-			index[2] = index[1];
-			index[1] = temp;
-		}
-	}
-}
 
-void Cloth::setOrderEdge(bool* in_this_triangle, int count, int* index)
-{
-	if (count == 1) {
-		if (in_this_triangle[1]) {
-			int temp = index[0];
-			index[0] = index[1];
-			index[1] = temp;
-		}
-		else if (in_this_triangle[2]) {
-			int temp = index[0];
-			index[0] = index[2];
-			index[2] = temp;
-		}
-	}
-	else if (count == 2) {
-		if (!in_this_triangle[0]) {
-			int temp = index[0];
-			index[0] = index[2];
-			index[2] = temp;
-		}
-		else if (!in_this_triangle[1]) {
-			int temp = index[2];
-			index[2] = index[1];
-			index[1] = temp;
-		}
-	}
-}
 
 void Cloth::setTolerance(double* tolerance_ratio, double ave_edge_length)
 {

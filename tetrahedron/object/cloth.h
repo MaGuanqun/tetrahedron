@@ -11,9 +11,7 @@ public:
 	void draw(Camera* camera, Shader* object_shader_front);
 	void setArea();
 	double tolerance;
-	std::vector<double> PC_radius;
-	std::vector<std::vector<int>>hash_index_for_edge;
-	std::vector<std::vector<int>>hash_index_for_vertex;
+	
 	std::vector<int>update_stiffness_iteration_number;
 	void recordInitialMesh(SingleClothInfo& single_cloth_info_ref);
 	SingleClothInfo single_cloth_info_ref;
@@ -36,11 +34,7 @@ public:
 	void obtainAABB();
 	
 
-	std::vector<int> representative_vertex_num;
-	std::vector<int> representative_edge_num;
 
-	std::vector<int> vertex_from_rep_triangle_index;
-	std::vector<int> edge_from_rep_triangle_index;
 
 	void findAllNeighborVertex(int face_index, double cursor_pos[3], double average_edge_length);
 
@@ -58,18 +52,18 @@ public:
 	std::vector<std::vector<std::vector<int>>>collide_vertex_collider_triangle;
 	std::vector<std::vector<std::vector<int>>>collide_edge_cloth_edge;
 
+	
 
 private:
 	void setMeshStruct(double density, OriMesh& ori_mesh);
 
 	void setMass(double density);
 	void setAnchor();
-	void setOrder(bool* in_this_triangle, int count, int* index);
-	void setOrderEdge(bool* in_this_triangle, int count, int* index);
+	
 	void setRepresentativePrimitve();
 	void setRepresentativeVertex(std::vector<MeshStruct::Face>& face, std::vector<MeshStruct::Vertex>& vertex);
 	void setRepresentativeEdge(std::vector<MeshStruct::Face>& face, std::vector<MeshStruct::Edge>& edge);
 	void findNeighborVertex(int vertex_index, int recursion_deepth, std::vector<bool>& is_vertex_used);
-
+	void initialHashAABB();
 };
 

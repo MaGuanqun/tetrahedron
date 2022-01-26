@@ -13,9 +13,7 @@ public:
 	};
 	std::vector<double>mass;
 	std::vector<TetrahedronVertex> vertices;
-	void setVertex();
 	void findSurface();
-	void getRenderVertexNormalPerThread(int thread_id);
 	void setThreadIndex(int total_thread_num_);
 	void getRenderNormal();
 	void getRenderFaceNormalPerThread(int thread_id);
@@ -30,7 +28,6 @@ public:
 	std::vector<Matrix3d>PPT_inv;//to record the restshape (PP^T)^-1 for deformation gradient
 	std::vector<Matrix<double, 4, 3>> PT;//to record the restshape P^T for deformation gradient
 	void getFaceNormalPerThread(int thread_id);
-	void getVertexNormalPerThread(int thread_id);
 	void getNormal();
 
 private:
