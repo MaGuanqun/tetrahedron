@@ -50,7 +50,7 @@ public:
 
 	std::vector<std::array<double, 3>> ori_face_normal_for_render;//not normalized
 	std::vector<std::array<double, 3>> ori_face_normal;//not normalized
-	std::vector<std::array<double, 3>> cross_for_approx_CCD;// (p1(t1)-p0(t1))×(p2(t0)-p0(t0))+(p1(t0)-p0(t0))x(p2(t1)-p0(t1)) t0 is the start of the time step, t1 is the current
+	std::vector<std::array<double, 3>> cross_for_approx_CCD;// (p1(t1)-p0(t1))?p2(t0)-p0(t0))+(p1(t0)-p0(t0))x(p2(t1)-p0(t1)) t0 is the start of the time step, t1 is the current
 
 	Thread* thread;
 	std::vector<double>mass;

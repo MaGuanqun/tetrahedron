@@ -55,6 +55,19 @@ void Collision::initialTargetPos(std::vector<Cloth>* cloth,	std::vector<Tetrahed
 	for (int j = 0; j < cloth->size(); ++j) {
 		cloth_target_pos.initialSet2(j, (*cloth)[j].ori_vertices.size());
 	}
+
+	tet_target_pos_per_thread.resize(thread_num);
+	for (int i = 0; i < tet_target_pos_per_thread.size(); ++i) {
+		tet_target_pos_per_thread[i].initialSet(tetrahedron->size());
+		for (int j = 0; j < tetrahedron->size(); ++j) {
+			tet_target_pos_per_thread[i].initialSet2(j, (*tetrahedron)[j].ori_vertices.size());
+		}
+	}
+	tet_target_pos.initialSet(tetrahedron->size());
+	for (int j = 0; j < tetrahedron->size(); ++j) {
+		tet_target_pos.initialSet2(j, (*tetrahedron)[j].ori_vertices.size());
+	}
+
 }
 
 void Collision::initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread)

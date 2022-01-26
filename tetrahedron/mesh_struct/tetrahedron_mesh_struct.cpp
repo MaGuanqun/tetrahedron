@@ -139,17 +139,20 @@ void TetrahedronMeshStruct::prepareForDeformationGradient()
 	Matrix<double, 3, 4> p;
 	for (int i = 0; i < indices.size(); ++i)
 	{
-		constructMatrixP(i, p);
+		p=constructMatrixP(i);
 		PPT_inv[i] = (p * p.transpose()).inverse();
 		PT[i] = p.transpose();
 	}
 }
 
-Matrix<double, 3, 4> TetrahedronMeshStruct::constructMatrixP(int tetra_index, Matrix<double, 3, 4> p)
+Matrix<double, 3, 4> TetrahedronMeshStruct::constructMatrixP(int tetra_index)
 {
+	Matrix<double, 3, 4> p;
 	for (int i = 0; i < 4; ++i)
 	{
 		memcpy(p.data()+3*i, vertex_position[indices[tetra_index][i]].data(), 24);
 	}
-	return p;
+	Vector3d center = 0.25 * p.rowwise().sum();
+
+	return p.colwise() - center;
 }

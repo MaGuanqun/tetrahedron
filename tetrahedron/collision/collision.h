@@ -74,6 +74,8 @@ public:
 		}
 	};
 	TargetPosition cloth_target_pos;
+	TargetPosition tet_target_pos;
+
 	size_t* time_stamp;
 private:
 	int thread_num;
@@ -116,6 +118,7 @@ private:
 		std::vector<double>& vertex_collision_stiffness, std::vector<double>& triangle_collision_stiffness);
 	void getAABB();
 	std::vector<TargetPosition> cloth_target_pos_per_thread;
+	std::vector<TargetPosition> tet_target_pos_per_thread;
 	void initialTargetPos(std::vector<Cloth>* cloth,std::vector<Tetrahedron>* tetrahedron, Thread* thread);
 	void addTargetPosToSystem(double* b_sum, double& energy, double* current_pos, double* target_pos, double stiffness);
 	void pointColliderTriangleCollisionDetection(int thread_No, int vertex_index, int cloth_No,

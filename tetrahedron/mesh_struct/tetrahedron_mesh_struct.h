@@ -57,6 +57,6 @@ private:
 	};
 	void buildMap(std::map<TetrahedronFace, int>& face_in_tet, int v0, int v1, int v2);
 	double getTetrahedronVolume(double* v1, double* v2, double* v3, double* v4);
-	Matrix<double, 3, 4> constructMatrixP(int tetra_index, Matrix<double, 3, 4> p);
+	Matrix<double, 3, 4> constructMatrixP(int tetra_index);
 };
 

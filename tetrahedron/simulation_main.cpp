@@ -70,13 +70,16 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 	double iteration_solver_iteration_num;
 
-	//VectorXd a;
-	//a.resize(4);
-	//a[0] = 1; a[1] = 2; a[2] = 3; a[3] = 4;
-	//VectorXd b;
-	//b.resize(4); b[0] = 1;
-	//memcpy(b.data() + 1, a.data() + 1, 24);
-	//std::cout << b << std::endl;
+	//Eigen::Matrix<double, 3, 4> a;
+	//a.setOnes();
+	//for (int i = 0; i < 4; ++i) {
+	//	a(0, i) += i;
+	//}
+	//Vector3d b;
+	//b << 2, 3, 4;
+	//a = a.colwise()-b;
+	//a = a.transpose();
+	//std::cout << a << std::endl;
 
 	while (!glfwWindowShouldClose(window))
 	{
