@@ -69,8 +69,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 	double iteration_solver_iteration_num;
 
-	Eigen::Matrix<double, 3, 4> a;
-	a.setOnes();
+	//Eigen::Matrix<double, 3, 4> a;
+	//a.setOnes();
 	//for (int i = 0; i < 4; ++i) {
 	//	a(0, i) += i;
 	//}
@@ -80,6 +80,16 @@ void simu_main(GLFWwindow* window, Input* input) {
 	//a = a.colwise()-b;
 	//a = a.transpose();
 	//std::cout << a << std::endl;
+
+	//Matrix3d a;
+	//for (int i = 0; i < 9; ++i) {
+	//	a.data()[i] = rand();
+	//}
+	//Matrix3d inverse;
+	//inverse3X3(a.data(), inverse.data());
+	//std::cout << a.determinant() << std::endl;
+	//std::cout << a.inverse() << std::endl;
+	//std::cout << inverse << std::endl;
 
 	while (!glfwWindowShouldClose(window))
 	{

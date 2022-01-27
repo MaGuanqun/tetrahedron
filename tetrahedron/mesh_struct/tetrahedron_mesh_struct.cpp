@@ -156,10 +156,12 @@ void TetrahedronMeshStruct::prepareForDeformationGradient()
 	PPT_inv.resize(indices.size());
 	PT.resize(indices.size());
 	Matrix<double, 3, 4> p;
+	Matrix3d ppt;
 	for (int i = 0; i < indices.size(); ++i)
 	{
 		p=constructMatrixP(i);
-		PPT_inv[i] = (p * p.transpose()).inverse();
+		ppt = p * p.transpose();
+		inverse3X3(ppt.data(), PPT_inv[i].data());
 		PT[i] = p.transpose();
 	}
 }

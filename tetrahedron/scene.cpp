@@ -60,7 +60,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	cloth.resize(cloth_num);
 	tetrahedron.resize(tetrahedron_num);
 	double cloth_density=15.0;
-	double tetrahedron_density = 1.0;
+	double tetrahedron_density = 10.0;
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].loadMesh(preprocessing.ori_simulation_mesh[cloth_index_in_object[i]], cloth_density, &thread);
 	}
@@ -79,8 +79,8 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	}
 	
 	std::array<double, 4>tetrahedron_collision_stiffness_per = { 2e5,2e5,2e5, 2e5 };
-	double sigma_limit[2] = { 0.9,1.1 };
-	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density,1e3,1,1, tetrahedron_collision_stiffness_per.data(), sigma_limit);
+	double sigma_limit[2] = { 0.95,1.05 };
+	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density,1e5,1e3,1e3, tetrahedron_collision_stiffness_per.data(), sigma_limit);
 	for (int i = 0; i < tetrahedron_num; ++i) {
 		tetrahedron[i].recordInitialMesh(single_tetrahedron_info);
 	}

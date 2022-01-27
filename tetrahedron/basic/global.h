@@ -191,3 +191,20 @@ inline void arrangeIndex(int total_thread_num, int total_num, std::vector<int>& 
 	}
 	begin[total_thread_num] = total_num;
 }
+
+inline void inverse3X3(double* matrix, double* inverse)
+{
+	double det = matrix[0] * (matrix[8] * matrix[4] - matrix[7] * matrix[5])
+		- matrix[1] * (matrix[8] * matrix[3] - matrix[5] * matrix[6])
+		+ matrix[2] * (matrix[7] * matrix[3] - matrix[4] * matrix[6]);
+	//std::cout << "my determi " << det << std::endl;
+	inverse[0] = (matrix[8] * matrix[4] - matrix[7] * matrix[5]) / det;
+	inverse[1] = (matrix[2] * matrix[7] - matrix[8] * matrix[1]) / det;
+	inverse[2] = (matrix[5] * matrix[1] - matrix[2] * matrix[4]) / det;
+	inverse[3] = (matrix[5] * matrix[6] - matrix[8] * matrix[3]) / det;
+	inverse[4] = (matrix[8] * matrix[0] - matrix[2] * matrix[6]) / det;
+	inverse[5] = (matrix[2] * matrix[3] - matrix[5] * matrix[0]) / det;
+	inverse[6] = (matrix[7] * matrix[3] - matrix[4] * matrix[6]) / det;
+	inverse[7] = (matrix[1] * matrix[6] - matrix[7] * matrix[0]) / det;
+	inverse[8] = (matrix[4] * matrix[0] - matrix[1] * matrix[3]) / det;
+}
