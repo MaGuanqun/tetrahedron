@@ -4,21 +4,29 @@
 void TetrahedronMeshStruct::findSurface()
 {
 	triangle_indices.reserve(indices.size());
+	tet_index_of_surface_face.reserve(indices.size());
 	std::map<TetrahedronFace, int> face_in_tet;
+	std::vector<int> face_tet_index;
+	face_tet_index.reserve(indices.size());
 	int* index;
 	for (int i = 0; i < indices.size(); ++i) {
 		index = indices[i].data();
-		buildMap(face_in_tet, index[0], index[2], index[1]);
-		buildMap(face_in_tet, index[0], index[3], index[2]);
-		buildMap(face_in_tet, index[0], index[1], index[3]);
-		buildMap(face_in_tet, index[1], index[2], index[3]);
+		buildMap(face_in_tet, index[0], index[2], index[1], face_tet_index,i);
+		buildMap(face_in_tet, index[0], index[3], index[2], face_tet_index, i);
+		buildMap(face_in_tet, index[0], index[1], index[3], face_tet_index, i);
+		buildMap(face_in_tet, index[1], index[2], index[3], face_tet_index, i);
 	}
+	int j = 0;
 	for (auto i = face_in_tet.begin(); i != face_in_tet.end(); ++i) {
 		if (i->second == 1) {
 			triangle_indices.push_back(i->first.index);
+			tet_index_of_surface_face.push_back(face_tet_index[j]);
 		}
+		j++;
 	}
+
 	triangle_indices.shrink_to_fit();
+	tet_index_of_surface_face.shrink_to_fit();
 
 	vertex_on_surface.resize(vertex_position.size(),false);
 	for (int i = 0; i < triangle_indices.size(); ++i) {
@@ -28,12 +36,30 @@ void TetrahedronMeshStruct::findSurface()
 	}
 }
 
-void TetrahedronMeshStruct::buildMap(std::map<TetrahedronFace, int>& face_in_tet, int v0, int v1, int v2)
+
+void TetrahedronMeshStruct::recordTetIndexForSurfaceIndex()
+{
+	for (int i = 0; i < indices.size(); ++i) {
+		for (int j = 0; j < 4; ++j) {
+			if (vertex_on_surface[indices[i][j]]) {
+				if (vertices[indices[i][j]].tetrahedron.empty()) {
+					vertices[indices[i][j]].tetrahedron.reserve(5);
+				}
+				vertices[indices[i][j]].tetrahedron.push_back(i);
+			}
+		}	
+	}
+}
+
+void TetrahedronMeshStruct::buildMap(std::map<TetrahedronFace, int>& face_in_tet, int v0, int v1, int v2, std::vector<int>& face_tet_index, int tet_index)
 {
 	TetrahedronFace A(v0, v1, v2);
 	auto ret = face_in_tet.insert({ A,1 });
 	if (!ret.second) {
 		++ret.first->second;
+	}
+	else {
+		face_tet_index.push_back(tet_index);
 	}
 }
 

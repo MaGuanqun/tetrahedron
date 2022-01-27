@@ -14,7 +14,7 @@ public:
 	Cursor();
 	void draw(Camera* camera);
 	void createVertices(double radius, double camera_center[3]);
-	void translate(double u[3]);
+	void translate(double u[3], double cursor_pos[3]);
 private:
 	double R;	
 	double center[3];
@@ -23,6 +23,7 @@ private:
 	int vertice_num;
 	std::vector<std::array<double, 3>>ori_vertices_pos;
 	std::vector<std::array<double,3>>vertices_pos;
+	std::vector<std::array<double,3>>cursor_vertices_pos;
 	std::vector<int>indices;
 	std::vector<std::array<double, 3>>normal;
 
@@ -30,9 +31,10 @@ private:
 	void genBuffer();
 	void setBufferData();
 	unsigned int VAO, VBO[2], EBO;
+	unsigned int VAO2, VBO2[2], EBO2;
 	Shader* shader;
 	Light light;
-	
+	std::vector<std::array<double, 3>>lines;	
 };
 
 #endif // !CURSOR_H

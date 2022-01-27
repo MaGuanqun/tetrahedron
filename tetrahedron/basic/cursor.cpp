@@ -13,6 +13,7 @@ Cursor::Cursor()
 	light.ambient = glm::vec3(0.3, 0.3, 0.3);
 	light.diffuse = glm::vec3(0.7, 0.7, 0.7);
 	light.specular = glm::vec3(0.95, 0.95, 0.95);
+	lines.resize(2);
 }
 
 void Cursor::draw(Camera* camera) {
@@ -36,17 +37,27 @@ void Cursor::draw(Camera* camera) {
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
+
+	glBindVertexArray(VAO2);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	//glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
 }
 
 
-void Cursor::translate(double u[3])
+void Cursor::translate(double u[3], double cursor_pos[3])
 {
 	double trans[3];
 	SUB(trans, u, center);
 	for (int i = 0; i < vertice_num; ++i) {
 		SUM(vertices_pos[i], ori_vertices_pos[i], trans);
 	}
-	
+	SUB(trans, cursor_pos, center);
+	for (int i = 0; i < vertice_num; ++i) {
+		SUM(cursor_vertices_pos[i], ori_vertices_pos[i], trans);
+	}
 }
 
 void Cursor::createVertices(double radius, double camera_center[3])
@@ -87,6 +98,7 @@ void Cursor::createVertices(double radius, double camera_center[3])
 	}
 
 	vertices_pos = ori_vertices_pos;
+	cursor_vertices_pos = ori_vertices_pos;
 	normal.resize(vertice_num);
 	getNormal();
 }
@@ -97,6 +109,9 @@ void Cursor::genBuffer()
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(2, VBO);
 	glGenBuffers(1, &EBO);
+	glGenVertexArrays(1, &VAO2);
+	glGenBuffers(2, VBO2);
+	glGenBuffers(1, &EBO2);
 }
 void Cursor::setBufferData()
 {
@@ -108,6 +123,18 @@ void Cursor::setBufferData()
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
+	glBufferData(GL_ARRAY_BUFFER, normal.size() * sizeof(std::array<double, 3>), normal[0].data(), GL_STATIC_DRAW);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
+	glBindVertexArray(0);
+	glBindVertexArray(VAO2);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO2[0]);
+	glBufferData(GL_ARRAY_BUFFER, cursor_vertices_pos.size() * sizeof(std::array<double, 3>), cursor_vertices_pos[0].data(), GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO2);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(int), &indices[0], GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO2[1]);
 	glBufferData(GL_ARRAY_BUFFER, normal.size() * sizeof(std::array<double, 3>), normal[0].data(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);

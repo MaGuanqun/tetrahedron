@@ -7,17 +7,13 @@ using namespace Eigen;
 class TetrahedronMeshStruct:public MeshStruct
 {
 public:
-	struct TetrahedronVertex
-	{
-		std::vector<int>face;
-	};
-	std::vector<TetrahedronVertex> vertices;
 	void findSurface();
 	void setThreadIndex(int total_thread_num_);
 	void getRenderNormal();
 	void getRenderFaceNormalPerThread(int thread_id);
 	std::vector<std::array<int, 4>> indices;
 	std::vector<double>volume;
+	std::vector<int>tet_index_of_surface_face;
 
 	std::vector<int> tetrahedron_index_begin_per_thread;
 	void setVolume(int thread_No);
@@ -28,7 +24,7 @@ public:
 	std::vector<Matrix<double, 4, 3>> PT;//to record the restshape P^T for deformation gradient
 	void getFaceNormalPerThread(int thread_id);
 	void getNormal();
-
+	void recordTetIndexForSurfaceIndex();
 private:
 	struct TetrahedronFace {
 		std::array<int,3> index;
@@ -55,7 +51,7 @@ private:
 			return false;
 		}
 	};
-	void buildMap(std::map<TetrahedronFace, int>& face_in_tet, int v0, int v1, int v2);
+	void buildMap(std::map<TetrahedronFace, int>& face_in_tet, int v0, int v1, int v2, std::vector<int>& face_tet_index, int tet_index);
 	double getTetrahedronVolume(double* v1, double* v2, double* v3, double* v4);
 	Matrix<double, 3, 4> constructMatrixP(int tetra_index);
 };

@@ -20,8 +20,9 @@ public:
 		std::vector<int>edge;
 		std::vector<int>neighbor_vertex;
 		std::vector<int>around_face;
-		std::vector<int>around_vertex;
+		//std::vector<int>around_vertex;
 		bool on_border = false;
+		std::vector<int>tetrahedron; //only for surface vertex
 	
 	};
 	struct Edge {
@@ -74,7 +75,7 @@ public:
 	void setVertex();
 	void setFace();
 	void setEdge();
-	void addArounVertex();
+	//void addArounVertex();
 
 	void getVertexNormalPerThread(int thread_id);
 	void getRenderVertexNormalPerThread(int thread_id);

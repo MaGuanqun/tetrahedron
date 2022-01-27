@@ -6,7 +6,7 @@ class Tetrahedron:public Object
 private:
 	void setMeshStruct(double density, OriMesh& ori_mesh);
 	void initialHashAABB();
-	
+
 public:
 	MeshMaterial material;
 	TetrahedronMeshStruct mesh_struct;
@@ -30,5 +30,10 @@ public:
 	void initial();
 	void reset();
 	SingleTetrahedronInfo single_tetrahedron_info_ref;
+	void findAllNeighborVertex(int face_index, double cursor_pos[3], double average_edge_length);
+	void findNeighborVertex(int vertex_index, int recursion_deepth, std::vector<bool>& is_vertex_used);
+	void findInnerVertex(std::vector<bool>& is_vertex_used);
+	void setTolerance(double* tolerance_ratio, double ave_edge_length);
+	double tolerance;
 };
 

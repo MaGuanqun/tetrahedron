@@ -1,5 +1,5 @@
 #include"tetrahedron.h"
-
+#include<vector>
 
 void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 {
@@ -11,13 +11,14 @@ void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mesh_struct.initialNormalSize();
 	mesh_struct.setFace();
 	mesh_struct.setEdge();
-	mesh_struct.addArounVertex();
+	//mesh_struct.addArounVertex();
 	mesh_struct.setThreadIndex(total_thread_num);
 	mesh_struct.vertex_for_render = mesh_struct.vertex_position;
 	mesh_struct.getRenderNormal();
 	mesh_struct.getNormal();
 	mesh_struct.prepareForDeformationGradient();
 	mass = mesh_struct.setVolumeMass(density);
+	mesh_struct.recordTetIndexForSurfaceIndex();
 	genBuffer();
 	setBuffer();
 	initialHashAABB();
@@ -194,5 +195,62 @@ void Tetrahedron::reset()
 	mesh_struct.getNormal();
 	for (int i = 0; i < mesh_struct.anchor_vertex.size(); ++i) {
 		mesh_struct.anchor_position[i] = mesh_struct.vertex_position[mesh_struct.anchor_vertex[i]];
+	}
+}
+
+
+void Tetrahedron::findAllNeighborVertex(int face_index, double cursor_pos[3], double average_edge_length)
+{
+	std::vector<bool>is_vertex_used(mesh_struct.vertices.size(), false);
+	neighbor_vertex.clear();
+	neighbor_vertex.push_back(mesh_struct.triangle_indices[face_index][0]);
+	is_vertex_used[mesh_struct.triangle_indices[face_index][0]] = true;
+	findNeighborVertex(mesh_struct.triangle_indices[face_index][0], 0, is_vertex_used);
+	//findInnerVertex(is_vertex_used);
+	coe_neighbor_vertex_force.clear();
+	coe_neighbor_vertex_force.resize(neighbor_vertex.size());
+	double vec3[3];
+	for (int i = 0; i < neighbor_vertex.size(); i++) {
+		SUB(vec3, cursor_pos, mesh_struct.vertex_for_render[neighbor_vertex[i]]);
+		coe_neighbor_vertex_force[i] = gaussian(sqrt(DOT(vec3, vec3)) / average_edge_length, 5.0);
+	}
+}
+
+void Tetrahedron::findNeighborVertex(int vertex_index, int recursion_deepth, std::vector<bool>& is_vertex_used)
+{
+	if (recursion_deepth > 2)
+		return;
+	for (int i = 0; i < mesh_struct.vertices[vertex_index].neighbor_vertex.size(); ++i) {
+		if (!is_vertex_used[mesh_struct.vertices[vertex_index].neighbor_vertex[i]]) {
+			neighbor_vertex.push_back(mesh_struct.vertices[vertex_index].neighbor_vertex[i]);
+			is_vertex_used[mesh_struct.vertices[vertex_index].neighbor_vertex[i]] = true;
+			findNeighborVertex(mesh_struct.vertices[vertex_index].neighbor_vertex[i], recursion_deepth + 1, is_vertex_used);
+		}
+	}
+}
+
+
+
+void Tetrahedron::setTolerance(double* tolerance_ratio, double ave_edge_length)
+{
+	for (int i = 0; i < PC_radius.size(); ++i) {
+		PC_radius[i] = tolerance_ratio[i] * ave_edge_length;
+	}
+	tolerance = 0.5 * ave_edge_length;
+	//tolerance = tolerance_ratio[SELF_POINT_TRIANGLE] * ave_edge_length;
+}
+
+void Tetrahedron::findInnerVertex(std::vector<bool>& is_vertex_used)
+{
+	int size = neighbor_vertex.size();
+	std::vector<int>* vertex_index_;
+	for (int i = 0; i < size; ++i) {
+		vertex_index_ = &mesh_struct.vertices[neighbor_vertex[i]].tetrahedron;
+		for (int j = 0; j < vertex_index_->size(); ++j) {
+			if (!is_vertex_used[vertex_index_->data()[j]]) {
+				neighbor_vertex.push_back(vertex_index_->data()[j]);
+				is_vertex_used[vertex_index_->data()[j]] = true;
+			}
+		}	
 	}
 }

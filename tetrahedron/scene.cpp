@@ -88,7 +88,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 
 	project_dynamic.setForPD(&cloth, &tetrahedron,&collider, &thread);
 	setAveEdgeLength();
-	cursor.createVertices(4.0 * ave_edge_length, camera_center);
+	cursor.createVertices(0.05, camera_center);
 }
 
 void Scene::setWireframwColor()
@@ -340,6 +340,13 @@ void Scene::setAveEdgeLength()
 		edge_size += cloth[i].mesh_struct.edges.size();
 	}
 
+	for (int i = 0; i < tetrahedron.size(); ++i) {
+		for (int j = 0; j < tetrahedron[i].mesh_struct.edges.size(); ++j) {
+			edge_length_temp += tetrahedron[i].mesh_struct.edges[j].length;
+		}
+		edge_size += tetrahedron[i].mesh_struct.edges.size();
+	}
+
 	ave_edge_length = edge_length_temp / (double)edge_size;
 	project_dynamic.initialDHatTolerance(ave_edge_length);
 }
@@ -351,6 +358,9 @@ void Scene::setTolerance(double* tolerance_ratio)
 	}
 	for (int i = 0; i < collider.size(); ++i) {
 		collider[i].setTolerance(tolerance_ratio, ave_edge_length);
+	}
+	for (int i = 0; i < tetrahedron.size(); ++i) {
+		tetrahedron[i].setTolerance(tolerance_ratio, ave_edge_length);
 	}
 	
 }
@@ -431,8 +441,10 @@ void Scene::obtainCursorIntersection(double* pos, Camera* camera, std::vector<st
 			cloth[chosen_index[1]].findAllNeighborVertex(chosen_index[0], cursor_pos, ave_edge_length);
 		}
 		else {
+			std::cout << intersection.face_index << " " << intersection.obj_No << std::endl;
 			getCursorPos(cursor_pos, tetrahedron[intersection.obj_No].mesh_struct.vertex_for_render,
 				tetrahedron[intersection.obj_No].mesh_struct.triangle_indices[intersection.face_index].data());
+			tetrahedron[chosen_index[1]].findAllNeighborVertex(chosen_index[0], cursor_pos, ave_edge_length);
 		}
 	
 	}
@@ -459,13 +471,13 @@ void Scene::setCursorForce(Camera* camera, double* cursor_screen, float force_co
 			tetrahedron[intersection.obj_No].mesh_struct.triangle_indices[intersection.face_index].data());
 	}
 	
-	cursor.translate(cursor_pos);
-	
+	cursor.translate(cursor_pos);	
 	cursorMovement(camera, cursor_screen, force_direction, force_coe, cursor_pos);
 	if (intersection.is_cloth) {
 		project_dynamic.addExternalClothForce(force_direction, cloth[intersection.obj_No].coe_neighbor_vertex_force, cloth[intersection.obj_No].neighbor_vertex, intersection.obj_No);
 	}
 	else {
+		//std::cout << force_direction[0] << " " << force_direction[1] << " " << force_direction[2] << std::endl;
 		project_dynamic.addExternalTetForce(force_direction, tetrahedron[intersection.obj_No].coe_neighbor_vertex_force, tetrahedron[intersection.obj_No].neighbor_vertex, intersection.obj_No);
 	}
 	
