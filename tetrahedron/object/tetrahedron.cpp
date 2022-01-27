@@ -166,6 +166,7 @@ void Tetrahedron::recordInitialMesh(SingleTetrahedronInfo& single_tetrahedron_in
 	position_stiffness = single_tetrahedron_info_ref.position_stiffness;
 	volume_preserve_stiffness = single_tetrahedron_info_ref.volume_preserve_stiffness;
 	ARAP_stiffness = single_tetrahedron_info_ref.ARAP_stiffness;
+	memcpy(sigma_limit, single_tetrahedron_info_ref.sigma_limit, 16);
 }
 
 

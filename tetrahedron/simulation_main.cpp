@@ -69,13 +69,14 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 	double iteration_solver_iteration_num;
 
-	//Eigen::Matrix<double, 3, 4> a;
-	//a.setOnes();
+	Eigen::Matrix<double, 3, 4> a;
+	a.setOnes();
 	//for (int i = 0; i < 4; ++i) {
 	//	a(0, i) += i;
 	//}
 	//Vector3d b;
 	//b << 2, 3, 4;
+	//a=a.asDiagonal()
 	//a = a.colwise()-b;
 	//a = a.transpose();
 	//std::cout << a << std::endl;

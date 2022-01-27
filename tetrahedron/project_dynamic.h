@@ -209,4 +209,5 @@ private:
 		std::array<double, 3>* anchor_pos);
 	Matrix4d tet_local_A;
 	void computeTetMass(double* mass_, VectorXd& mass_inv, VectorXd& mass, int vertex_index_start, int vertex_num);
+	bool getDigonalForVolumePreserve(Vector3d& svd_eigen, double max, double min, Vector3d& sigma);
 };
