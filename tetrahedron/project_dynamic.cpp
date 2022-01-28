@@ -6,7 +6,7 @@ ProjectDynamic::ProjectDynamic()
 	gravity_ = 9.8;
 	total_thread_num = std::thread::hardware_concurrency();
 	temEnergy.resize(total_thread_num);
-	outer_itr_conv_rate = 1e-3;// 7.5e-2; 
+	outer_itr_conv_rate = 1e-2;// 7.5e-2; 
 	local_global_conv_rate = 5e-2;
 	sub_step_num = 1;
 
@@ -691,9 +691,9 @@ void ProjectDynamic::PDPredict()
 {
 	
 	for (int i = 0; i < 3; ++i) {
-		//cloth_u[j][i] = cloth_u_[j][i] + sub_time_step * cloth_v_[j][i] + (0.25 * sub_time_step * sub_time_step) * (cloth_acceleration[j][i]);//sub_time_step * sub_time_step * mass_inv[j].cwiseProduct(f_ext[j][i]);
+		u[i] = u_[i] + sub_time_step * v_[i] + (0.25 * sub_time_step * sub_time_step) * (acceleration[i]);//sub_time_step * sub_time_step * mass_inv[j].cwiseProduct(f_ext[j][i]);
 		u_prediction[i] = u_[i] + sub_time_step * v_[i] + (sub_time_step * sub_time_step) * mass_inv.cwiseProduct(f_ext[i]);
-		u[i] = u_prediction[i];
+		//u[i] = u_prediction[i];
 	}
 	
 }
@@ -902,23 +902,6 @@ void ProjectDynamic::PDsolve()
 			thread->assignTask(this, CONSTRUCT_B_WITHOUT_COLLISION);
 			thread->assignTask(this, SOLVE_WITHOUT_COLLISION);
 			solveClothSystem2(true);
-			//std::cout << (1.0 / (sub_time_step * sub_time_step)) * (mass.cwiseProduct(u_prediction[0]))<< std::endl;
-			//std::cout << (1.0 / (sub_time_step * sub_time_step)) * (mass.cwiseProduct(u_prediction[1]))<< std::endl;
-			//std::cout << (1.0 / (sub_time_step * sub_time_step)) * (mass.cwiseProduct(u_prediction[2]))<< std::endl;
-
-
-			//std::cout << "b" << std::endl;
-			//std::cout << b[0] << std::endl;
-			//std::cout << b[1] << std::endl;
-			//std::cout << b[2] << std::endl;
-			//std::cout << " u" << std::endl;
-			//std::cout << u[0] << std::endl;
-			//std::cout << u[1] << std::endl;
-			//std::cout << u[2] << std::endl;
-			//std::cout << "==================" << std::endl;
-			//for (int k = 0; k < total_cloth_num; ++k) {
-			//	current_collision_energy += collision.cloth_target_pos.collision_energy[k];
-			//}
 			current_constraint_energy += current_collision_energy;
 			for (int i = 0; i < total_thread_num; ++i) {
 				current_PD_energy += temEnergy[i];

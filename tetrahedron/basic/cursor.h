@@ -30,8 +30,9 @@ private:
 	void getNormal();
 	void genBuffer();
 	void setBufferData();
-	unsigned int VAO, VBO[2], EBO;
+	unsigned int VAO1, VBO1[2], EBO1;
 	unsigned int VAO2, VBO2[2], EBO2;
+	unsigned int VAO3, VBO3;
 	Shader* shader;
 	Light light;
 	std::vector<std::array<double, 3>>lines;	

@@ -62,7 +62,8 @@ private:
 	
 	void getCursorPos(double* cursor_pos, std::vector<std::array<double, 3>>& vertex, int* vertex_index);
 	void setCursorForce(Camera* camera, double* cursor_screen, float force_coe);
-	void cursorMovement(Camera* camera, double* cursor_screen, double* force_direction, float force_coe, double* object_position);
+	void cursorMovement(Camera* camera, double* cursor_screen, double* force_direction, float force_coe, 
+		double* object_position, double* cursor_pos_in_space);
 	double max_force_magnitude;
 	SetTetrahedronAnchor set_tetrahedron_anchor;
 

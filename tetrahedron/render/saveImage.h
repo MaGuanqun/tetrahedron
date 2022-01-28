@@ -4,7 +4,10 @@
 #include <direct.h>
 #include"../basic/global.h"
 //#include"../external/FreeImage.h"
-
+#define STB_IMAGE_IMPLEMENTATION
+#include "../external/stb-master/stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "../external/stb-master/stb_image_write.h"
 class SaveImage 
 {
 public:
@@ -38,19 +41,22 @@ public:
 
 	void outputImage(int num)
 	{
-		//glPixelStorei(GL_PACK_ALIGNMENT, 1);
+		glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
-		glReadPixels(0, 0, SCR_WIDTH, SCR_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, pixels);
-		//glReadPixels(0,0, SCR_WIDTH, SCR_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixels);		
+		//glReadPixels(0, 0, SCR_WIDTH, SCR_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, pixels);
+		glReadPixels(0,0, SCR_WIDTH, SCR_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixels);		
 		std::string name = "./screen_record/SCR_" + std::to_string(num);
-		name += ".bmp";
-		FILE* fp = fopen(name.c_str(), "wb+");
-		if (fp == NULL) {
-			std::cout << "Could not open file: %s" << std::endl;
-		}
-		fwrite(header, sizeof(unsigned char), 54, fp);
-		fwrite(pixels, 1, total_bit_size, fp);
-		fclose(fp);
+		name += ".png";
+		stbi_flip_vertically_on_write(true);
+		stbi_write_png(name.c_str(), SCR_WIDTH, SCR_HEIGHT, 3, pixels, SCR_WIDTH * 3);
+		//name += ".bmp";
+		//FILE* fp = fopen(name.c_str(), "wb+");
+		//if (fp == NULL) {
+		//	std::cout << "Could not open file: %s" << std::endl;
+		//}
+		//fwrite(header, sizeof(unsigned char), 54, fp);
+		//fwrite(pixels, 1, total_bit_size, fp);
+		//fclose(fp);
 		//delete[] pixels;
 	}
 private:

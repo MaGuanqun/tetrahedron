@@ -23,7 +23,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool control_parameter[11];
 	memset(control_parameter, 0, 11);
 	ImGuiWindows imgui_windows;
-	float force_coe=10.0;
+	float force_coe=1.0;
 	std::vector<std::vector<bool>> wireframe(3);
 	std::vector<std::vector<bool>> hide(3);
 	std::vector<std::string> collider_path;

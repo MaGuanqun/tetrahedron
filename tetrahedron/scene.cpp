@@ -79,7 +79,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	}
 	
 	std::array<double, 4>tetrahedron_collision_stiffness_per = { 2e5,2e5,2e5, 2e5 };
-	double sigma_limit[2] = { 0.95,1.05 };
+	double sigma_limit[2] = { 0.97,1.03 };
 	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density,1e5,1e3,1e3, tetrahedron_collision_stiffness_per.data(), sigma_limit);
 	for (int i = 0; i < tetrahedron_num; ++i) {
 		tetrahedron[i].recordInitialMesh(single_tetrahedron_info);
@@ -88,7 +88,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 
 	project_dynamic.setForPD(&cloth, &tetrahedron,&collider, &thread);
 	setAveEdgeLength();
-	cursor.createVertices(0.05, camera_center);
+	cursor.createVertices(0.03, camera_center);
 }
 
 void Scene::setWireframwColor()
@@ -470,9 +470,9 @@ void Scene::setCursorForce(Camera* camera, double* cursor_screen, float force_co
 		getCursorPos(cursor_pos, tetrahedron[intersection.obj_No].mesh_struct.vertex_for_render,
 			tetrahedron[intersection.obj_No].mesh_struct.triangle_indices[intersection.face_index].data());
 	}
-	
-	cursor.translate(cursor_pos);	
-	cursorMovement(camera, cursor_screen, force_direction, force_coe, cursor_pos);
+	double cursor_pos_in_space[3];
+	cursorMovement(camera, cursor_screen, force_direction, force_coe, cursor_pos, cursor_pos_in_space);
+	cursor.translate(cursor_pos, cursor_pos_in_space);
 	if (intersection.is_cloth) {
 		project_dynamic.addExternalClothForce(force_direction, cloth[intersection.obj_No].coe_neighbor_vertex_force, cloth[intersection.obj_No].neighbor_vertex, intersection.obj_No);
 	}
@@ -483,9 +483,8 @@ void Scene::setCursorForce(Camera* camera, double* cursor_screen, float force_co
 	
 }
 
-void Scene::cursorMovement(Camera* camera, double* cursor_screen, double* force_direction, float force_coe, double* object_position)
-{
-	double cursor_pos_in_space[3];
+void Scene::cursorMovement(Camera* camera, double* cursor_screen, double* force_direction, float force_coe, double* object_position, double* cursor_pos_in_space)
+{	
 	camera->getCursorPosInSpace(cursor_pos_in_space, cursor_screen, object_position);
 	SUB(force_direction, cursor_pos_in_space, object_position);
 	MULTI(force_direction, force_direction, force_coe);
