@@ -30,6 +30,7 @@ void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron
 	this->thread = thread;
 	setSystemIndexInfo();
 	initialPDvariable();
+	iteration_method.setBasicInfo(sys_size, thread, &global_mat);
 	setForClothPD(cloth);
 	setForTetrahedronPD();	
 	computeGlobalStepMatrix();
@@ -38,9 +39,7 @@ void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron
 	collision.initial(cloth, collider, tetrahedron, thread);
 	total_collider_num = collider->size();
 	this->collider = collider;
-
-	iteration_method.setBasicInfo(sys_size, thread,
-		&b, &u,&global_mat);
+	iteration_method.setOffDiagonal();
 	iteration_method.initialGlobalDiagonalInv(&global_mat_diagonal_ref_address);
 	iteration_method.initialJacobi();
 	//iteration_method.test();
@@ -280,6 +279,18 @@ void ProjectDynamic::computeGlobalStepMatrix()
 	collision_free_llt.analyzePattern(global_mat);
 	collision_free_llt.factorize(global_mat);
 	initial_global_mat = global_mat;
+
+
+	std::vector<std::array<int, 2>> global_mat_coeff_index;
+	std::vector<double> global_mat_coeff;
+	global_mat_coeff_index.resize(global_mat_nnz.size());
+	global_mat_coeff.resize(global_mat_nnz.size());
+	for (int i = 0; i < global_mat_nnz.size(); ++i) {
+		global_mat_coeff_index[i].data()[0] = global_mat_nnz[i].row();
+		global_mat_coeff_index[i].data()[1] = global_mat_nnz[i].col();
+		global_mat_coeff[i] = global_mat_nnz[i].value();
+	}
+	iteration_method.createAJacobiOperator(global_mat_coeff_index, global_mat_coeff,global_mat);
 }
 
 void ProjectDynamic::copmuteGlobalStepMatrixSingleTetrahedron(TetrahedronMeshStruct& mesh_struct, std::vector<Triplet<double>>& global_mat_nnz, int sys_size, double& ARAP_stiffness,

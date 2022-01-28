@@ -7,6 +7,8 @@
 #include"thread.h"
 #include"basic/global.h"
 #include<array>
+#include<map>
+
 
 using namespace Eigen;
 using namespace denseOperation;
@@ -21,8 +23,8 @@ public:
 
 	void updateConvergenceRate(double conv_rate);
 
-	void setBasicInfo(int sys_size, Thread* thread,
-		std::vector<VectorXd>* cloth_b, std::vector<VectorXd>* cloth_u, SparseMatrix<double, RowMajor>* global_mat);
+	void setOffDiagonal();
+	void setBasicInfo(int sys_size, Thread* thread, SparseMatrix<double, RowMajor>* global_mat);
 	void initialJacobi();
 
 	void JacobiIterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm);
@@ -63,7 +65,6 @@ public:
 
 	void updateGlobalDiagonalInv();
 	void initialGlobalDiagonalInv(std::vector<double*>* cloth_global_mat_diagonal_ref_address);
-	void solveByWeightedJacobi(VectorXd& u, VectorXd& b, SparseMatrix<double, RowMajor>& system_matrix, int cloth_No, int& itr_num, double weight);
 
 
 	SparseMatrix<double, RowMajor> off_diagonal;
@@ -73,23 +74,72 @@ public:
 	void RMultiXPlusb(std::vector<int>* vertex_index, std::vector<double>* coefficient, double* x, double* b, double* result,
 		int vertex_index_begin, int vertex_index_end, int sys_size);
 	void testRelativeError();
+	void createAJacobiOperator(std::vector<std::array<int, 2>>& coeff_pos, std::vector<double>& coeff, SparseMatrix<double, RowMajor>& R_jacobi);
 private:
 
-	void setOffDiagonal();
+	
+
+	
 	void testGaussSeidel();
 
-	struct AJacobiOperator
+	struct AJacobiOperator //row major
 	{
 		std::vector<int>vertex_index;
 		std::vector<double>coefficient;
+		std::vector<int>start_index;//start index of every column
 	};
 
+	struct AJacobiOperatorForConstruct
+	{
+		int index[2];
+		AJacobiOperatorForConstruct(int v0, int v1) {
+			index[0] = v0;
+			index[1] = v1;
+		}
+		bool operator<(const AJacobiOperatorForConstruct& t1) const
+		{
+			if (index[0] < t1.index[0])
+				return true;
+			else if (index[0] == t1.index[0]) {
+				if (index[1] < t1.index[1]){
+					return true;
+				}
+			}
+			return false;
+		}
+	};
+
+
+	struct ColIndexWithCoeff
+	{
+		int vertex_index;
+		double coeff;
+		ColIndexWithCoeff(int col_index, double coeff) {
+			vertex_index = col_index;
+			this->coeff = coeff;
+		}
+		bool operator<(const ColIndexWithCoeff& t1) const
+		{
+			if (vertex_index < t1.vertex_index)
+				return true;
+			return false;
+		}
+	};
+
+	struct BasicJacobiOperator 
+	{
+		std::vector<std::vector<ColIndexWithCoeff>> element;
+	};
 
 	struct A_JacobiOperator
 	{
 		std::vector<std::vector<int>> vertex_index;
 		std::vector<std::vector<double>> coefficient;
 	};
+
+	void testIfOperatorIsRight(AJacobiOperator* A_jacobi_operator, BasicJacobiOperator* A_jacobi_operator_);
+
+	void transferAJacobiOperator2BasicOperator(AJacobiOperator* A_jacobi_operator, BasicJacobiOperator* A_jacobi_operator_basic);
 
 	//A_JacobiOperator A_jacobi_operator_1;
 	//A_JacobiOperator A_jacobi_operator_2;
@@ -108,7 +158,6 @@ private:
 
 	int max_itr_num;
 	double convergence_rate_2;
-	void superJacobiSingleIteration(VectorXd& u, VectorXd& b, int cloth_No, int super_jacobi_step_size);
 	int super_jacobi_step_size = 2;
 	void estimateAJacobi2EigenValue(std::vector<VectorXd>& u);
 	void estimateAJacobi3EigenValue(std::vector<VectorXd>& u);
@@ -117,15 +166,23 @@ private:
 	double jacobi_spectral_radius_square;
 	double gauss_seidel_spectral_radius_square;
 
-	
+	void createAJacobiOperator(AJacobiOperator* A_jacobi_operator, std::vector<std::array<int, 2>>& coeff_pos, std::vector<double>& coeff,
+		BasicJacobiOperator* A_jacobi_basic);
 
+	void createSuperJacobiOperator(A_JacobiOperator* A_jacobi_operator, SparseMatrix<double, RowMajor>& R_jacobi,
+		A_JacobiOperator* A_jacobi_basic);
 	void createSuperJacobiOperator(A_JacobiOperator* A_jacobi_operator, SparseMatrix<double, ColMajor>& R_jacobi,
 		A_JacobiOperator* A_jacobi_basic);
 	void createHighOrderSuperJacobiMethod(A_JacobiOperator* A_jacobi_operator_basic, A_JacobiOperator* A_jacobi_operator_need_to_multi, A_JacobiOperator* A_jacobi_operator);
-	
+	void createHighOrderSuperJacobiMethod(BasicJacobiOperator* A_jacobi_operator_basic, AJacobiOperator* A_jacobi_operator_need_to_multi_, AJacobiOperator* A_jacobi_operator_result);
+
+
+	void buildMap(std::map<AJacobiOperatorForConstruct, double>& system, int v0, int v1, double coeff);
+
 	double obtainElementValue(std::vector<int>* vertex_index_of_i, std::vector<double>* value_of_i,
 		std::vector<int>* vertex_index_of_j, std::vector<double>* value_of_j, std::vector<int>& indicate_if_vertex_exists);
-
+	double obtainElementValue(std::vector<ColIndexWithCoeff>* element_of_i,
+		std::vector<ColIndexWithCoeff>* element_of_j, std::vector<int>& indicate_if_vertex_exists);
 
 	void testOperator(A_JacobiOperator* A_jacobi_operator, SparseMatrix<double, ColMajor>& R_jacobi);
 	VectorXd RMultiX(A_JacobiOperator* A_jacobi_operator, VectorXd& x);
