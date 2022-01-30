@@ -183,9 +183,47 @@ void IterationMethod::createAJacobiOperator(std::vector<std::array<int, 2>>& coe
 	AJacobiOperator A_jacobi_operator;
 	BasicJacobiOperator A_jacobi_basic; //column major
 	createAJacobiOperator(&A_jacobi_operator, coeff_pos, coeff, &A_jacobi_basic);
-	//testIfOperatorIsRight(&A_jacobi_operator, &A_jacobi_basic);
+
+	AJacobiOperator A2_jacobi_operator;
+	BasicJacobiOperator A2_jacobi_operator_;
+
+	createAJacobiOperator(&A2_jacobi_operator, R_jacobi, &A2_jacobi_operator_);
+
+	AJacobiOperator A_jacobi_operator_2;
+
+	createHighOrderSuperJacobiMethod(&A_jacobi_basic, &A_jacobi_operator, &A_jacobi_operator_2, &A_jacobi_operator);
+
+	//AJacobiOperator A_jacobi_operator_3;
+	//createHighOrderSuperJacobiMethod(&A_jacobi_basic, &A_jacobi_operator_2, &A_jacobi_operator_3, &A_jacobi_operator);
+
+	//testIfOperatorIsRight(&A_jacobi_operator_3, &A2_jacobi_operator);
+}
 
 
+
+
+void IterationMethod::testIfOperatorIsRight(AJacobiOperator* A_jacobi_operator, AJacobiOperator* A_jacobi_operator_)
+{
+	if (A_jacobi_operator->vertex_index.size() != A_jacobi_operator_->vertex_index.size()) {
+		std::cout << "error size not equal" << std::endl;
+		return;
+	}
+	for (int i = 0; i < A_jacobi_operator->vertex_index.size(); ++i) {
+		if (A_jacobi_operator->vertex_index[i] != A_jacobi_operator_->vertex_index[i]) {
+			std::cout << "vertex_index_not_equal" << std::endl;
+			return;
+		}
+		if (A_jacobi_operator->coefficient[i] != A_jacobi_operator_->coefficient[i]) {
+			std::cout << "vertex_index_not_equal" << std::endl;
+			return;
+		}
+	}
+	for (int i = 0; i < sys_size; ++i) {
+		if (A_jacobi_operator->start_index[i + 1] != A_jacobi_operator_->start_index[i + 1]) {
+			std::cout << "vertex_index_not_equal" << std::endl;
+			return;
+		}
+	}
 }
 
 
@@ -207,6 +245,75 @@ void IterationMethod::testIfOperatorIsRight(AJacobiOperator* A_jacobi_operator, 
 		}
 	}
 
+}
+
+void IterationMethod::createAJacobiOperator(AJacobiOperator* A_jacobi_operator, SparseMatrix<double, RowMajor>& R_jacobi,
+	BasicJacobiOperator* A_jacobi_basic)
+{
+	int sys_size = R_jacobi.rows();
+	A_jacobi_operator->vertex_index.reserve(R_jacobi.nonZeros());
+	A_jacobi_operator->coefficient.reserve(R_jacobi.nonZeros());
+	A_jacobi_operator->start_index.reserve(R_jacobi.rows()+1);
+	A_jacobi_basic->element.resize(sys_size);
+	int inner_size;
+	int inner_index_start;
+
+	for (int i = 0; i < sys_size; ++i) {
+		inner_size = R_jacobi.outerIndexPtr()[i + 1] - R_jacobi.outerIndexPtr()[i];
+		A_jacobi_basic->element[i].reserve(inner_size);
+	}
+	A_jacobi_operator->start_index.push_back(0);
+	for (int i = 0; i < sys_size; ++i) {
+		inner_size = R_jacobi.outerIndexPtr()[i + 1] - R_jacobi.outerIndexPtr()[i];
+		inner_index_start = R_jacobi.outerIndexPtr()[i];
+		A_jacobi_operator->start_index.push_back(A_jacobi_operator->start_index[i] + inner_size);
+		for (int j = 0; j < inner_size; ++j) {
+			A_jacobi_operator->vertex_index.push_back(R_jacobi.innerIndexPtr()[inner_index_start + j]);
+			A_jacobi_operator->coefficient.push_back(R_jacobi.valuePtr()[inner_index_start + j]);
+
+			A_jacobi_basic->element[R_jacobi.innerIndexPtr()[inner_index_start + j]].push_back(
+				ColIndexWithCoeff(i, R_jacobi.valuePtr()[inner_index_start + j]));
+		}
+	}
+}
+
+//UPDATE_JACOBI_OPERATOR
+void IterationMethod::updateJacobiOperator(int thread_id)
+{
+	int vertex_end = vertex_index_begin_thread[thread_id+1];
+	double diagonal_coe;
+	double* coeff = A_jacobi_operator.coefficient.data();
+
+	int end_index;
+
+	for (int i = vertex_index_begin_thread[thread_id]; i < vertex_end; ++i) {
+		diagonal_coe = diagonal_inv.data()[i];
+		end_index = A_jacobi_operator.vertex_index[i + 1];
+		for (int j = A_jacobi_operator.vertex_index[i]; j < end_index; ++j) {
+			A_jacobi_operator.coefficient[j] *= diagonal_coe;
+		}		
+	}
+}
+
+
+void IterationMethod::setRJaocbiDiagonalInv(AJacobiOperator* A_jacobi_operator, AJacobiOperator* off_diagonal_operator)
+{
+	(*off_diagonal_operator) = (*A_jacobi_operator);
+	int sys_size = off_diagonal_operator->start_index.size() - 1;
+	diagonal_inv.resize(sys_size);
+	int col_end;
+	for (int j = 0; j < sys_size; ++j) {
+		col_end = off_diagonal_operator->start_index[j + 1];
+		for (int i = off_diagonal_operator->start_index[j]; i < col_end; ++i) {
+			if (off_diagonal_operator->vertex_index[i] == j) {
+				diagonal_inv[j] = 1.0 / off_diagonal_operator->coefficient[i];
+				off_diagonal_operator->coefficient[i] = 0.0;
+			}
+			else {
+				off_diagonal_operator->coefficient[i] *= -1.0;
+			}
+		}
+	}
 }
 
 void IterationMethod::createAJacobiOperator(AJacobiOperator* A_jacobi_operator, std::vector<std::array<int,2>>& coeff_pos, std::vector<double>& coeff,
@@ -235,8 +342,6 @@ void IterationMethod::createAJacobiOperator(AJacobiOperator* A_jacobi_operator, 
 	vertex_index = &A_jacobi_operator->vertex_index;
 	coefficient = &A_jacobi_operator->coefficient;
 	start_index = &A_jacobi_operator->start_index;
-
-	std::cout << sys_size << std::endl;
 
 	for (auto i = system.begin(); i != system.end(); ++i) {
 		if (i->first.index[0] != j) {			
@@ -273,7 +378,9 @@ void IterationMethod::buildMap(std::map<AJacobiOperatorForConstruct, double>& sy
 }
 
 //A_jacobi_operator_need_to_multi * A_jacobi_operator_basic
-void IterationMethod::createHighOrderSuperJacobiMethod(BasicJacobiOperator* A_jacobi_operator_basic, AJacobiOperator* A_jacobi_operator_need_to_multi_, AJacobiOperator* A_jacobi_operator_result)
+//A_jacobi_operator_right is the row major version of A_jacobi_operator_basic
+void IterationMethod::createHighOrderSuperJacobiMethod(BasicJacobiOperator* A_jacobi_operator_basic, AJacobiOperator* A_jacobi_operator_need_to_multi_, 
+	AJacobiOperator* A_jacobi_operator_result, AJacobiOperator* A_jacobi_operator_right)
 {
 
 	BasicJacobiOperator A_jacobi_operator_need_to_multi;
@@ -294,6 +401,7 @@ void IterationMethod::createHighOrderSuperJacobiMethod(BasicJacobiOperator* A_ja
 
 
 	std::vector<ColIndexWithCoeff>* result_element;
+	std::vector<std::vector<std::array<int, 4>>>* matrix_multiple_index;
 
 	int end_index_of_col;
 
@@ -302,12 +410,13 @@ void IterationMethod::createHighOrderSuperJacobiMethod(BasicJacobiOperator* A_ja
 	int column_index;
 	int need_to_multi_index_size;
 
+	std::vector<int> multiple_index;
+
 	for (int i = 0; i < sys_size; ++i) {		
 		need_to_multi_element = &A_jacobi_operator_need_to_multi.element[i];
 		need_to_multi_index_size = need_to_multi_element->size();
 		result_element = &A_jacobi_operator.element[i];
 		result_element->reserve(3 * need_to_multi_index_size);
-
 		for (int j = 0; j < need_to_multi_index_size; ++j) {
 			basic_index_in_need_to_multi = need_to_multi_element->data()[j].vertex_index;
 			basic_element = &A_jacobi_operator_basic->element[basic_index_in_need_to_multi];		
@@ -316,9 +425,10 @@ void IterationMethod::createHighOrderSuperJacobiMethod(BasicJacobiOperator* A_ja
 				column_index = basic_element->data()[k].vertex_index;
 				if (!is_vertex_used[column_index]) {
 					is_vertex_used[column_index] = true;
-					element_value = obtainElementValue(need_to_multi_element, &A_jacobi_operator_basic->element[column_index],indicate_if_vertex_exists);
-					result_element->push_back(ColIndexWithCoeff(column_index, element_value));
-
+					multiple_index.clear();
+					element_value = obtainElementValue(need_to_multi_element, &A_jacobi_operator_basic->element[column_index],indicate_if_vertex_exists,
+						multiple_index,i, column_index);
+					result_element->push_back(ColIndexWithCoeff(column_index, element_value, multiple_index));
 				}
 			}
 		}
@@ -333,11 +443,38 @@ void IterationMethod::createHighOrderSuperJacobiMethod(BasicJacobiOperator* A_ja
 		std::sort(A_jacobi_operator.element[i].begin(), A_jacobi_operator.element[i].end());
 	}
 
+	transferBasicOperator2AJacobi(A_jacobi_operator_result, &A_jacobi_operator, A_jacobi_operator_need_to_multi_, A_jacobi_operator_right);
 }
+
+
+//AJacobiOperator* A_jacobi_operator_result, AJacobiOperator* left_operator, AJacobiOperator* right_operator
+
+//A_jacobi_operator_2 = A_jacobi_operator* A_jacobi_operator
+void IterationMethod::update2AJaocbiIterationMatrix(int thread_id)
+{
+	int vertex_index_start, vertex_index_end; 
+
+	int* start_index = A_jacobi_operator_2.start_index.data();
+	std::vector<int>* vertex_index = &A_jacobi_operator_2.vertex_index;
+	std::vector<double>* coefficient = &A_jacobi_operator_2.coefficient;
+	std::vector<int>* left_multiplier_index = &A_jacobi_operator_2.left_multiplier_index;
+	std::vector<int>* right_multiplier_index = &A_jacobi_operator_2.right_multiplier_index;
+	std::vector<int>* multiplier_start_per_element = &A_jacobi_operator_2.multiplier_start_per_element;
+
+	int vertex_end = vertex_index_begin_thread[thread_id + 1];
+	for (int i = vertex_index_begin_thread[thread_id]; i < vertex_end; ++i) { //row index=i;
+		vertex_index_start = start_index[i];
+		vertex_index_end = start_index[i + 1];
+		for (int j = vertex_index_start; j < vertex_index_end; ++j) { //col_index=j
+
+		}
+	}
+}
+
 
 void IterationMethod::transferAJacobiOperator2BasicOperator(AJacobiOperator* A_jacobi_operator, BasicJacobiOperator* A_jacobi_operator_basic)
 {
-	int sys_size = A_jacobi_operator->start_index[A_jacobi_operator->start_index.size() - 1];
+	int sys_size = A_jacobi_operator->start_index.size() - 1;
 	A_jacobi_operator_basic->element.resize(sys_size);
 	int* start_index = A_jacobi_operator->start_index.data();
 	int* vertex_index = A_jacobi_operator->vertex_index.data();
@@ -351,6 +488,77 @@ void IterationMethod::transferAJacobiOperator2BasicOperator(AJacobiOperator* A_j
 			A_jacobi_operator_basic->element[i].push_back(ColIndexWithCoeff(vertex_index[j], coefficient[j]));
 		}
 	}
+	
+}
+
+void IterationMethod::transferBasicOperator2AJacobi(AJacobiOperator* A_jacobi_operator, BasicJacobiOperator* A_jacobi_operator_basic,
+	AJacobiOperator* left_multipler_operator, AJacobiOperator* right_multipler_operator)
+{
+	int sys_size = A_jacobi_operator_basic->element.size();
+	A_jacobi_operator->start_index.reserve(sys_size+1);
+	int count=0;
+	int multipler_count = 0;
+	for (int i = 0; i < sys_size; ++i) {
+		count += A_jacobi_operator_basic->element[i].size();
+		for (int j = 0; j < A_jacobi_operator_basic->element[i].size(); ++j) {
+			multipler_count += A_jacobi_operator_basic->element[i][j].index_for_matrix_multiplication.size();
+		}
+	}
+	A_jacobi_operator->vertex_index.reserve(count);
+	A_jacobi_operator->coefficient.reserve(count);
+	A_jacobi_operator->multiplier_start_per_element.reserve(count + 1);
+	A_jacobi_operator->left_multiplier_index.reserve(multipler_count);
+	A_jacobi_operator->right_multiplier_index.reserve(multipler_count);
+
+	std::vector<ColIndexWithCoeff>* element;
+
+	std::vector<int>* start_index = &A_jacobi_operator->start_index;
+	std::vector<int>* vertex_index = &A_jacobi_operator->vertex_index;
+	std::vector<double>* coefficient = &A_jacobi_operator->coefficient;
+
+	std::vector<int>* left_multiplier_index = &A_jacobi_operator->left_multiplier_index;
+	std::vector<int>* right_multiplier_index = &A_jacobi_operator->right_multiplier_index;
+	std::vector<int>* multiplier_start_per_element = &A_jacobi_operator->multiplier_start_per_element;
+
+	std::vector<int>* index_for_matrix_multiplication;
+
+	start_index->push_back(0);
+
+	int right_col_index;
+
+	multiplier_start_per_element->push_back(0);
+
+	for (int i = 0; i < sys_size; ++i) {		
+		element = &A_jacobi_operator_basic->element[i];
+		start_index->push_back(start_index->data()[i] + element->size());
+		for (int j = 0; j < element->size(); ++j) {
+			right_col_index = element->data()[j].vertex_index;
+			vertex_index->push_back(right_col_index);
+			coefficient->push_back(element->data()[j].coeff);
+			index_for_matrix_multiplication = &element->data()[j].index_for_matrix_multiplication;
+
+			//[i,index_for_matrix_multiplication], [index_for_matrix_multiplication,element->vertex_index]
+			for (int k = 0; k < index_for_matrix_multiplication->size(); ++k) {
+				left_multiplier_index->push_back(obtainIndexInAJacobiOperator(i, index_for_matrix_multiplication->data()[k],
+					left_multipler_operator));
+				right_multiplier_index->push_back(obtainIndexInAJacobiOperator(index_for_matrix_multiplication->data()[k], right_col_index, 
+					right_multipler_operator));
+			}
+			multiplier_start_per_element->push_back(left_multiplier_index->size());
+		}
+	}
+}
+
+int IterationMethod::obtainIndexInAJacobiOperator(int row_index, int col_index, AJacobiOperator* A_jacobi_operator)
+{
+	int start_index = A_jacobi_operator->start_index[row_index];
+	int end_index = A_jacobi_operator->start_index[row_index + 1];
+	for (int i = start_index; i < end_index; ++i) {
+		if (A_jacobi_operator->vertex_index[i] == col_index) {
+			return i;
+		}
+	}
+	return -1;
 }
 
 
@@ -440,9 +648,12 @@ void IterationMethod::createHighOrderSuperJacobiMethod(A_JacobiOperator* A_jacob
 }
 
 //to obtain the value of the element (A_jacobi_operator->vertex_index[i],A_jacobi_operator->vertex_index[k])
+//multiple_index means the index of left right multipler to obtain an element
 double IterationMethod::obtainElementValue(std::vector<ColIndexWithCoeff>* element_of_i,
-	std::vector<ColIndexWithCoeff>* element_of_j, std::vector<int>& indicate_if_vertex_exists)
+	std::vector<ColIndexWithCoeff>* element_of_j, std::vector<int>& indicate_if_vertex_exists, std::vector<int>& multiple_index,
+	int left_row_index,	int right_column_index)
 {
+	multiple_index.reserve(element_of_i->size() + element_of_j->size());
 	double value = 0;
 
 	for (int i = 0; i < element_of_i->size(); ++i)
@@ -455,6 +666,7 @@ double IterationMethod::obtainElementValue(std::vector<ColIndexWithCoeff>* eleme
 		if (indicate_if_vertex_exists[element_of_j->data()[j].vertex_index] > -1)
 		{
 			value += element_of_j->data()[j].coeff * element_of_i->data()[indicate_if_vertex_exists[element_of_j->data()[j].vertex_index]].coeff;
+			multiple_index.push_back(element_of_j->data()[j].vertex_index);
 		}
 	}
 
@@ -514,6 +726,8 @@ void IterationMethod::setBasicInfo(int sys_size, Thread* thread, SparseMatrix<do
 	}
 	b_global_inv.resize(3);
 	R_b_global_inv.resize(3);
+	vertex_index_begin_thread.resize(thread->thread_num + 1);
+	arrangeIndex(thread->thread_num, sys_size, vertex_index_begin_thread);
 }
 
 
@@ -544,7 +758,6 @@ void IterationMethod::initialGlobalDiagonalInv(std::vector<double*>* global_mat_
 	for (int j = 0; j < sys_size; ++j) {
 		global_diagonal_inv.data()[j] = 1.0 / (*((*global_mat_diagonal_ref_address)[j]));
 	}
-
 }
 
 void IterationMethod::initialJacobi()

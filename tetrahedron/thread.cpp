@@ -291,6 +291,18 @@ job Thread::create_task(RadixSort* func, int thread_id, RadixSortFunc function_t
     return k;
 }
 
+job Thread::create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type)
+{
+    job k;
+    switch (function_type)
+    {
+    case JACOBI_ITR:
+        k = job([func, thread_id]() {func->updateJacobiOperator(thread_id); });
+        break;
+    }
+    return k;
+}
+
 
 job Thread::create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type, Eigen::VectorXd* u, Eigen::VectorXd* b, double* residual_norm,
     double omega_chebyshev, Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous)

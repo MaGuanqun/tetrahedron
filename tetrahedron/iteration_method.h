@@ -75,10 +75,16 @@ public:
 		int vertex_index_begin, int vertex_index_end, int sys_size);
 	void testRelativeError();
 	void createAJacobiOperator(std::vector<std::array<int, 2>>& coeff_pos, std::vector<double>& coeff, SparseMatrix<double, RowMajor>& R_jacobi);
+
+	void updateJacobiOperator(int thread_id);
+
+	void update2AJaocbiIterationMatrix(int thread_id);
+
 private:
 
-	
+	std::vector<int> vertex_index_begin_thread;
 
+	
 	
 	void testGaussSeidel();
 
@@ -87,7 +93,16 @@ private:
 		std::vector<int>vertex_index;
 		std::vector<double>coefficient;
 		std::vector<int>start_index;//start index of every column
+		std::vector<int>left_multiplier_index;
+		std::vector<int>right_multiplier_index;
+		std::vector<int>multiplier_start_per_element;
+
 	};
+
+	//struct IndexForMatrixMultiplication
+	//{
+	//	std::vector<std::vector<std::vector<std::array<int, 4>>>> index;//first two for left, last two for right
+	//};
 
 	struct AJacobiOperatorForConstruct
 	{
@@ -114,9 +129,17 @@ private:
 	{
 		int vertex_index;
 		double coeff;
+		std::vector<int> index_for_matrix_multiplication;
+		ColIndexWithCoeff() {};
 		ColIndexWithCoeff(int col_index, double coeff) {
 			vertex_index = col_index;
 			this->coeff = coeff;
+		}
+		//index_for_matrix_multiplication:: the col index of left multipler and row index of right multipler, [x,index_for_matrix_multiplication],[index_for_matrix_multiplication,vertex_index]
+		ColIndexWithCoeff(int col_index, double coeff, std::vector<int>& index_for_matrix_multiplication) {		
+			vertex_index = col_index;
+			this->coeff = coeff;
+			this->index_for_matrix_multiplication = index_for_matrix_multiplication;
 		}
 		bool operator<(const ColIndexWithCoeff& t1) const
 		{
@@ -137,19 +160,40 @@ private:
 		std::vector<std::vector<double>> coefficient;
 	};
 
+
+	AJacobiOperator A_jacobi_operator;
+	AJacobiOperator A_jacobi_operator_2;
+	AJacobiOperator A_jacobi_operator_3;
+
+	AJacobiOperator off_diagonal_operator;
+
+
+	std::vector<double> diagonal_inv;
+
+	int obtainIndexInAJacobiOperator(int row_index, int col_index, AJacobiOperator* A_jacobi_operator);
+
+	//void recordCorrespondingCoeffIndex(AJacobiOperator* A_jacobi_operator, AJacobiOperator* A_jacobi_operator_basic_left, AJacobiOperator* A_jacobi_operator_basic_right);
+
+
+	void setRJaocbiDiagonalInv(AJacobiOperator* A_jacobi_operator, AJacobiOperator* off_diagonal_operator);
+
 	void testIfOperatorIsRight(AJacobiOperator* A_jacobi_operator, BasicJacobiOperator* A_jacobi_operator_);
+	void testIfOperatorIsRight(AJacobiOperator* A_jacobi_operator, AJacobiOperator* A_jacobi_operator_);
 
 	void transferAJacobiOperator2BasicOperator(AJacobiOperator* A_jacobi_operator, BasicJacobiOperator* A_jacobi_operator_basic);
-
+	void transferBasicOperator2AJacobi(AJacobiOperator* A_jacobi_operator, BasicJacobiOperator* A_jacobi_operator_basic,
+		AJacobiOperator* left_multipler_operator, AJacobiOperator* right_multipler_operator);
 	//A_JacobiOperator A_jacobi_operator_1;
 	//A_JacobiOperator A_jacobi_operator_2;
 	//A_JacobiOperator A_jacobi_operator_3;
 
+	void createAJacobiOperator(AJacobiOperator* A_jacobi_operator, SparseMatrix<double, RowMajor>& R_jacobi,
+		BasicJacobiOperator* A_jacobi_basic);
+
 	SparseMatrix<double, RowMajor> R_Jacobi;
 	VectorXd global_diagonal_inv;
 
-	SparseMatrix<double, RowMajor>* global_mat;
-
+	SparseMatrix<double, RowMajor>* global_mat;	
 
 	std::vector<int>dimension_per_thread;
 	std::vector<double*>* global_mat_diagonal_ref_address;//the address to quickly set the diagonal of system matrix A
@@ -174,7 +218,8 @@ private:
 	void createSuperJacobiOperator(A_JacobiOperator* A_jacobi_operator, SparseMatrix<double, ColMajor>& R_jacobi,
 		A_JacobiOperator* A_jacobi_basic);
 	void createHighOrderSuperJacobiMethod(A_JacobiOperator* A_jacobi_operator_basic, A_JacobiOperator* A_jacobi_operator_need_to_multi, A_JacobiOperator* A_jacobi_operator);
-	void createHighOrderSuperJacobiMethod(BasicJacobiOperator* A_jacobi_operator_basic, AJacobiOperator* A_jacobi_operator_need_to_multi_, AJacobiOperator* A_jacobi_operator_result);
+	void createHighOrderSuperJacobiMethod(BasicJacobiOperator* A_jacobi_operator_basic, AJacobiOperator* A_jacobi_operator_need_to_multi_, 
+		AJacobiOperator* A_jacobi_operator_result, AJacobiOperator* A_jacobi_operator_right);
 
 
 	void buildMap(std::map<AJacobiOperatorForConstruct, double>& system, int v0, int v1, double coeff);
@@ -182,7 +227,9 @@ private:
 	double obtainElementValue(std::vector<int>* vertex_index_of_i, std::vector<double>* value_of_i,
 		std::vector<int>* vertex_index_of_j, std::vector<double>* value_of_j, std::vector<int>& indicate_if_vertex_exists);
 	double obtainElementValue(std::vector<ColIndexWithCoeff>* element_of_i,
-		std::vector<ColIndexWithCoeff>* element_of_j, std::vector<int>& indicate_if_vertex_exists);
+		std::vector<ColIndexWithCoeff>* element_of_j, std::vector<int>& indicate_if_vertex_exists,
+		std::vector<int>& multiple_index, int left_row_index,
+		int right_column_index);
 
 	void testOperator(A_JacobiOperator* A_jacobi_operator, SparseMatrix<double, ColMajor>& R_jacobi);
 	VectorXd RMultiX(A_JacobiOperator* A_jacobi_operator, VectorXd& x);
