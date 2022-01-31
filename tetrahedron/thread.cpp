@@ -296,8 +296,14 @@ job Thread::create_task(IterationMethod* func, int thread_id, IterationMethodFun
     job k;
     switch (function_type)
     {
-    case JACOBI_ITR:
+    case UPDATE_JACOBI_OPERATOR:
         k = job([func, thread_id]() {func->updateJacobiOperator(thread_id); });
+        break;
+    case UPDATE_2_A_JACOBI_ITR_MATRIX:
+        k = job([func, thread_id]() {func->update2AJaocbiIterationMatrix(thread_id); });
+        break;
+    case UPDATE_3_A_JACOBI_ITR_MATRIX:
+        k = job([func, thread_id]() {func->update3AJaocbiIterationMatrix(thread_id); });
         break;
     }
     return k;

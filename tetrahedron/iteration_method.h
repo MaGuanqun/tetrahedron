@@ -74,16 +74,18 @@ public:
 	void RMultiXPlusb(std::vector<int>* vertex_index, std::vector<double>* coefficient, double* x, double* b, double* result,
 		int vertex_index_begin, int vertex_index_end, int sys_size);
 	void testRelativeError();
-	void createAJacobiOperator(std::vector<std::array<int, 2>>& coeff_pos, std::vector<double>& coeff, SparseMatrix<double, RowMajor>& R_jacobi);
+	void createAJacobiOperator(std::vector<std::array<int, 2>>& coeff_pos, std::vector<double>& coeff);
 
 	void updateJacobiOperator(int thread_id);
 
 	void update2AJaocbiIterationMatrix(int thread_id);
+	void update3AJaocbiIterationMatrix(int thread_id);
 
 private:
 
 	std::vector<int> vertex_index_begin_thread;
-
+	std::vector<int> A_jacobi_2_index_per_thread;
+	std::vector<int> A_jacobi_3_index_per_thread;
 	
 	
 	void testGaussSeidel();
@@ -93,9 +95,9 @@ private:
 		std::vector<int>vertex_index;
 		std::vector<double>coefficient;
 		std::vector<int>start_index;//start index of every column
-		std::vector<int>left_multiplier_index;
+		std::vector<int>left_multiplier_index;//the corresponding indices of right and left multiplier for one element, we combine all items for elements
 		std::vector<int>right_multiplier_index;
-		std::vector<int>multiplier_start_per_element;
+		std::vector<int>multiplier_start_per_element;//
 
 	};
 
@@ -175,7 +177,8 @@ private:
 	//void recordCorrespondingCoeffIndex(AJacobiOperator* A_jacobi_operator, AJacobiOperator* A_jacobi_operator_basic_left, AJacobiOperator* A_jacobi_operator_basic_right);
 
 
-	void setRJaocbiDiagonalInv(AJacobiOperator* A_jacobi_operator, AJacobiOperator* off_diagonal_operator);
+	void setRJaocbiDiagonalInv(AJacobiOperator* A_jacobi_operator, AJacobiOperator* off_diagonal_operator,
+		std::vector<double>& diagonal_inv);
 
 	void testIfOperatorIsRight(AJacobiOperator* A_jacobi_operator, BasicJacobiOperator* A_jacobi_operator_);
 	void testIfOperatorIsRight(AJacobiOperator* A_jacobi_operator, AJacobiOperator* A_jacobi_operator_);
@@ -217,8 +220,8 @@ private:
 		A_JacobiOperator* A_jacobi_basic);
 	void createSuperJacobiOperator(A_JacobiOperator* A_jacobi_operator, SparseMatrix<double, ColMajor>& R_jacobi,
 		A_JacobiOperator* A_jacobi_basic);
-	void createHighOrderSuperJacobiMethod(A_JacobiOperator* A_jacobi_operator_basic, A_JacobiOperator* A_jacobi_operator_need_to_multi, A_JacobiOperator* A_jacobi_operator);
-	void createHighOrderSuperJacobiMethod(BasicJacobiOperator* A_jacobi_operator_basic, AJacobiOperator* A_jacobi_operator_need_to_multi_, 
+	void createHighOrderAJacobiMethod(A_JacobiOperator* A_jacobi_operator_basic, A_JacobiOperator* A_jacobi_operator_need_to_multi, A_JacobiOperator* A_jacobi_operator);
+	void createHighOrderAJacobiMethod(BasicJacobiOperator* A_jacobi_operator_basic, AJacobiOperator* A_jacobi_operator_need_to_multi_, 
 		AJacobiOperator* A_jacobi_operator_result, AJacobiOperator* A_jacobi_operator_right);
 
 
@@ -843,8 +846,8 @@ private:
 		A_JacobiOperator a_jacobi_2;
 		A_JacobiOperator a_jacobi_3;
 		createSuperJacobiOperator(&a_jacobi_1, R_Jacobi, &basic_a_jacobi);
-		createHighOrderSuperJacobiMethod(&basic_a_jacobi, &a_jacobi_1, &a_jacobi_2);
-		createHighOrderSuperJacobiMethod(&basic_a_jacobi, &a_jacobi_2, &a_jacobi_3);
+		createHighOrderAJacobiMethod(&basic_a_jacobi, &a_jacobi_1, &a_jacobi_2);
+		createHighOrderAJacobiMethod(&basic_a_jacobi, &a_jacobi_2, &a_jacobi_3);
 
 		//for (int i = 0; i < siz; ++i)
 		//{
@@ -950,8 +953,8 @@ private:
 		A_JacobiOperator a_jacobi_2;
 		A_JacobiOperator a_jacobi_3;
 		createSuperJacobiOperator(&a_jacobi_1, R_Jacobi, &basic_a_jacobi);
-		createHighOrderSuperJacobiMethod(&basic_a_jacobi, &a_jacobi_1, &a_jacobi_2);
-		createHighOrderSuperJacobiMethod(&basic_a_jacobi, &a_jacobi_2, &a_jacobi_3);
+		createHighOrderAJacobiMethod(&basic_a_jacobi, &a_jacobi_1, &a_jacobi_2);
+		createHighOrderAJacobiMethod(&basic_a_jacobi, &a_jacobi_2, &a_jacobi_3);
 
 
 		if (super_jacobi_step_size == 2) {

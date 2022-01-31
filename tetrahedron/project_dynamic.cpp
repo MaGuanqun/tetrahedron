@@ -292,14 +292,14 @@ void ProjectDynamic::computeGlobalStepMatrix()
 		global_mat_coeff[i] = global_mat_nnz[i].value();
 	}
 
-	
-
-	SparseMatrix<double, RowMajor> global_mat_2 = global_mat;
-	iteration_method.createAJacobiOperator(global_mat_coeff_index, global_mat_coeff, global_mat_2);
 
 	iteration_method.setOffDiagonal();
 	iteration_method.initialGlobalDiagonalInv(&global_mat_diagonal_ref_address);
 	iteration_method.initialJacobi();
+
+	iteration_method.createAJacobiOperator(global_mat_coeff_index, global_mat_coeff);
+
+
 	
 }
 
