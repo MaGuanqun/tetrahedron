@@ -84,6 +84,10 @@ job Thread::create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread 
         k = job([func, thread_id]() {func->updateMatrixPerThread(thread_id); });
         break;
     }
+    case UPDATE_DIAGONAL: {
+        k = job([func, thread_id]() {func->updateDiagonalPerThread(thread_id); });
+        break;
+    }
     //case LOCAL_EDGE_LENGTH_PROJECTION:
     //    k = job([func, thread_id]() {func->localEdgeLengthProjectionPerThread(thread_id); });
     //    break;
@@ -369,6 +373,45 @@ job Thread::create_task(IterationMethod* func, int thread_id, std::vector<int>* 
     return k;
 }
 
+
+job Thread::create_task(IterationMethod* func, IterationMethodFunc function_type, int thread_id, int* vertex_index, double* coefficient, int* vertex_index_start,
+    Eigen::VectorXd* x, Eigen::VectorXd* b, Eigen::VectorXd* result, double* residual_norm, int* vertex_index_thread_begin,
+    Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous)
+{
+    job k;
+    switch (function_type)
+    {
+    case R_MULTIPLY_X_PLUS_B:
+        k = job([func, thread_id, vertex_index, coefficient, vertex_index_start, x, b, result, vertex_index_thread_begin]()
+            {func->RMultiXPlusb(vertex_index, coefficient, vertex_index_start, x, b, result, vertex_index_thread_begin[thread_id],
+                vertex_index_thread_begin[thread_id + 1]); });
+        break;
+    case COMPUTE_RESIDUAL:
+        k = job([func, thread_id, vertex_index, coefficient, vertex_index_start, x, b, result, residual_norm, vertex_index_thread_begin]()
+            {func->computeResidual(vertex_index, coefficient, vertex_index_start, x, b, result, &residual_norm[thread_id], vertex_index_thread_begin[thread_id],
+                vertex_index_thread_begin[thread_id + 1]); });
+        break;
+    case CHEBYSHEV_A_JACOBI_ITERATION: {
+        k = job([func, thread_id, vertex_index, coefficient, vertex_index_start, x, b, result, residual_norm, vertex_index_thread_begin,
+            u_last, u_previous]()
+            {func->ChebyshevAJacobiIterationPerThread(vertex_index, coefficient, vertex_index_start, x, b, result, residual_norm, vertex_index_thread_begin[thread_id],
+                vertex_index_thread_begin[thread_id + 1], u_last, u_previous); });
+        break;
+    }
+    case ESTIMATE_A_JACOBI_2_EIGEN_VALUE:
+        k = job([func, thread_id, coefficient, residual_norm, x, vertex_index_thread_begin]()
+            {func->estimateAJacobi2EigenValue(x, &coefficient[thread_id], &residual_norm[thread_id], vertex_index_thread_begin[thread_id],
+                vertex_index_thread_begin[thread_id + 1]); });
+        break;
+    case ESTIMATE_A_JACOBI_3_EIGEN_VALUE:
+        k = job([func, thread_id, coefficient, residual_norm, x, vertex_index_thread_begin]()
+            {func->estimateAJacobi3EigenValue(x, &coefficient[thread_id], &residual_norm[thread_id], vertex_index_thread_begin[thread_id],
+                vertex_index_thread_begin[thread_id + 1]); });
+        break;
+    }
+    return k;
+}
+
 void Thread::thread_func(ThreadData* pData)
 {
     std::unique_lock<std::mutex> l(pData->m, std::defer_lock);
@@ -414,6 +457,25 @@ void Thread::assignTask(IterationMethod* func, IterationMethodFunc function_type
     {
         // std::cout << threads[i].id << std::endl;
         job j = create_task(func, threads[i].id, function_type, u, b, residual_norm, omega_chebyshev, u_last, u_previous);
+        futures.push_back(j.get_future());
+        std::unique_lock<std::mutex> l(threads[i].m);
+        threads[i].jobs.push(std::move(j));
+        // Notify the thread that there is work do to...
+        threads[i].cv.notify_one();
+    }
+    for (auto& f : futures) { f.wait(); }
+    futures.clear();
+}
+
+void Thread::assignTask(IterationMethod* func, IterationMethodFunc function_type, int* vertex_index, double* coefficient, int* vertex_index_start,
+    Eigen::VectorXd* x, Eigen::VectorXd* b, Eigen::VectorXd* result, double* residual_norm, int* vertex_index_thread_begin,
+    Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous)
+{
+    for (int i = 0; i < thread_num; ++i)
+    {
+        // std::cout << threads[i].id << std::endl;
+        job j = create_task(func, function_type, threads[i].id, vertex_index, coefficient, vertex_index_start,  x, b, result, 
+            residual_norm, vertex_index_thread_begin, u_last, u_previous);
         futures.push_back(j.get_future());
         std::unique_lock<std::mutex> l(threads[i].m);
         threads[i].jobs.push(std::move(j));

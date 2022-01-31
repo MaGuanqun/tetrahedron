@@ -30,6 +30,7 @@ public:
 	void PD_IPC_solve(bool& record_matrix);
 	int local_global_iteration_num, outer_iteration_num;
 	void updateMatrixPerThread(int thread_No);
+	void updateDiagonalPerThread(int thread_No);
 	void localProjectionPerThread(int thread_id, bool with_energy);
 	
 	void constructbPerThead(int thread_id, bool with_collision);

@@ -51,11 +51,16 @@ private:
     job create_task(TetrahedronMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);
     job create_task(Collision* func, int thread_id, CollisionFuncSendToThread function_type);
     job create_task(RadixSort* func, int thread_id, RadixSortFunc function_type, int key_id);
+
     job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type);
     job create_task(IterationMethod* func, int thread_id, std::vector<int>* vertex_index, std::vector<double>* coefficient,
         double* x, double* b, double* result, int* vertex_index_thread_begin, int sys_size);
+    job create_task(IterationMethod* func, IterationMethodFunc function_type, int thread_id, int* vertex_index, double* coefficient, int* vertex_index_start,
+        Eigen::VectorXd* x, Eigen::VectorXd* b, Eigen::VectorXd* result, double* residual_norm, int* vertex_index_thread_begin,
+        Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous);
     job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type, Eigen::VectorXd* u, Eigen::VectorXd* b, double* residual_norm,
         double omega_chebyshev, Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous);
+
 
 public:
     Thread();
@@ -97,9 +102,13 @@ public:
 
     void assignTask(IterationMethod* func, IterationMethodFunc function_type, Eigen::VectorXd* u, Eigen::VectorXd* b, 
         double* residual_norm, double omega_chebyshev, Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous);
+    void assignTask(IterationMethod* func, IterationMethodFunc function_type, int* vertex_index, double* coefficient, int* vertex_index_start,
+        Eigen::VectorXd* x, Eigen::VectorXd* b, Eigen::VectorXd* result, double* residual_norm, int* vertex_index_thread_begin,
+        Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous);
+
     void assignTask(IterationMethod* func, std::vector<int>* vertex_index, std::vector<double>* coefficient,
         double* x, double* b, double* result, int* vertex_index_thread_begin, int sys_size);  
-
+   
     int thread_num;
 };
 

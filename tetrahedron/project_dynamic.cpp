@@ -340,6 +340,11 @@ void ProjectDynamic::updateTetrohedronAnchorVertices()
 	}
 	global_llt.factorize(global_mat);
 	collision_free_llt.factorize(global_mat);
+
+	for (int i = 0; i < total_tetrahedron_num; ++i) {
+		iteration_method.updateDiagonalWithAnchorVertices((*tetrahedron)[i].mesh_struct.anchor_vertex.size(), (*tetrahedron)[i].mesh_struct.anchor_vertex.data(),
+			tetrahedron_sys_size[i], vertex_begin_per_tetrahedron[i], (*tetrahedron)[i].position_stiffness);
+	}
 }
 
 
@@ -628,6 +633,10 @@ void ProjectDynamic::initial()
 		global_mat_diagonal_ref_address[i] = &global_mat.coeffRef(i, i);
 	}
 	global_mat_diagonal_ref = ori_global_mat_diagonal_ref;
+	iteration_method.original_diagonal = iteration_method.original_initial_diagonal;
+	for (int i = 0; i < sys_size; ++i) {
+		iteration_method.original_diagonal_inv[i] = 1.0 / iteration_method.original_diagonal[i];
+	}
 	reset();
 }
 
@@ -1006,31 +1015,42 @@ void ProjectDynamic::initialEnergyLocalGlobal()
 void ProjectDynamic::PDupdateSystemMatrix()
 {
 	//updateMatrix();
-	thread->assignTask(this, UPDATE_MATRIX);
+	
 	
 	switch (itr_solver_method)
 	{
 	case DIRECT_SOLVE:
+		thread->assignTask(this, UPDATE_MATRIX);
 		global_llt.factorize(global_mat);
 		break;
 	case JACOBI:
+		thread->assignTask(this, UPDATE_MATRIX);
 		iteration_method.updateJacobi();
 		break;
 	case SUPER_JACOBI:
-		iteration_method.updateJacobi();
+		thread->assignTask(this, UPDATE_DIAGONAL);
+		thread->assignTask(&iteration_method, UPDATE_JACOBI_OPERATOR);
+		thread->assignTask(&iteration_method, UPDATE_2_A_JACOBI_ITR_MATRIX);
+		//iteration_method.updateJacobi();
 		break;
 	case CHEBYSHEV_SUPER_JACOBI:
-		iteration_method.updateJacobi();
-		iteration_method.estimateSuperJacobiEigenValue(u, 2);
+		thread->assignTask(this, UPDATE_DIAGONAL);
+		thread->assignTask(&iteration_method, UPDATE_JACOBI_OPERATOR);
+		thread->assignTask(&iteration_method, UPDATE_2_A_JACOBI_ITR_MATRIX);
+		//iteration_method.updateJacobi();
+		iteration_method.estimateSuperJacobiEigenValue(u.data(), 2);
 		break;
 	case GAUSS_SEIDEL_CHEBYSHEV:
+		thread->assignTask(this, UPDATE_MATRIX);
 		iteration_method.estimateGaussSeidelEigenValue(u, global_mat);
 		break;
 	case CHEBYSHEV_JACOBI:
+		thread->assignTask(this, UPDATE_MATRIX);
 		iteration_method.updateJacobi();
 		iteration_method.estimateJacobiEigenValue(u);
 		break;
 	case PCG:
+		thread->assignTask(this, UPDATE_MATRIX);
 		iteration_method.updateGlobalDiagonalInv();
 		break;
 	}
@@ -1139,7 +1159,48 @@ void ProjectDynamic::computeDisplacement(int thread_No)
 }
 
 
-
+//UPDATE_DIAGONAL
+void ProjectDynamic::updateDiagonalPerThread(int thread_No)
+{
+	int collision_num = 0;
+	std::vector<int>* vertex_index_begin_per_thread;
+	bool* need_update;
+	double* stiffness;
+	int vertex_index_start;
+	double* ori_diagonal = iteration_method.original_diagonal.data();
+	double* current_diagonal_inv = iteration_method.diagonal_inv.data();
+	double* ori_diagonal_inv = iteration_method.original_diagonal_inv.data();
+	//update_cloth
+	for (int j = 0; j < total_cloth_num; ++j) {
+		vertex_index_start = vertex_begin_per_cloth[j];
+		need_update = collision.cloth_target_pos.need_update[j];
+		stiffness = collision.cloth_target_pos.stiffness[j].data();
+		vertex_index_begin_per_thread = &(*cloth)[j].mesh_struct.vertex_index_begin_per_thread;
+		for (int i = (*vertex_index_begin_per_thread)[thread_No]; i < (*vertex_index_begin_per_thread)[thread_No + 1]; ++i) {
+			if (need_update[i]) {
+				current_diagonal_inv[i + vertex_index_start] = 1.0 / (ori_diagonal[i + vertex_index_start] + stiffness[i]);
+			}
+			else {
+				current_diagonal_inv[i + vertex_index_start] = ori_diagonal_inv[i + vertex_index_start];
+			}
+		}
+	}
+	//update tetrahedron
+	for (int j = 0; j < total_tetrahedron_num; ++j) {
+		vertex_index_start = vertex_begin_per_tetrahedron[j];
+		need_update = collision.tet_target_pos.need_update[j];
+		stiffness = collision.tet_target_pos.stiffness[j].data();
+		vertex_index_begin_per_thread = &(*tetrahedron)[j].mesh_struct.vertex_index_begin_per_thread;
+		for (int i = (*vertex_index_begin_per_thread)[thread_No]; i < (*vertex_index_begin_per_thread)[thread_No + 1]; ++i) {
+			if (need_update[i]) {
+				current_diagonal_inv[i + vertex_index_start] = 1.0 / (ori_diagonal[i + vertex_index_start] + stiffness[i]);
+			}
+			else {
+				current_diagonal_inv[i + vertex_index_start] = ori_diagonal_inv[i + vertex_index_start];
+			}
+		}
+	}
+}
 
 
 
@@ -1153,14 +1214,14 @@ void ProjectDynamic::updateMatrixPerThread(int thread_No)
 	double* diagonal_ref;
 	double** diagonal_ref_address;
 	int vertex_index_start;
+	diagonal_ref = global_mat_diagonal_ref.data();
+	diagonal_ref_address = global_mat_diagonal_ref_address.data();
 	//update_cloth
 	for (int j = 0; j < total_cloth_num; ++j) {
 		vertex_index_start = vertex_begin_per_cloth[j];
 		need_update = collision.cloth_target_pos.need_update[j];
 		stiffness = collision.cloth_target_pos.stiffness[j].data();
-		vertex_index_begin_per_thread = &(*cloth)[j].mesh_struct.vertex_index_begin_per_thread;
-		diagonal_ref = global_mat_diagonal_ref.data();
-		diagonal_ref_address = global_mat_diagonal_ref_address.data();
+		vertex_index_begin_per_thread = &(*cloth)[j].mesh_struct.vertex_index_begin_per_thread;		
 		for (int i = (*vertex_index_begin_per_thread)[thread_No]; i < (*vertex_index_begin_per_thread)[thread_No + 1]; ++i) {
 			*(diagonal_ref_address[i + vertex_index_start]) = diagonal_ref[i + vertex_index_start];
 			////std::cout << i << " " << *(diagonal_ref_address[i]) << std::endl;
@@ -1176,8 +1237,6 @@ void ProjectDynamic::updateMatrixPerThread(int thread_No)
 		need_update = collision.tet_target_pos.need_update[j];
 		stiffness = collision.tet_target_pos.stiffness[j].data();
 		vertex_index_begin_per_thread = &(*tetrahedron)[j].mesh_struct.vertex_index_begin_per_thread;
-		diagonal_ref = global_mat_diagonal_ref.data();
-		diagonal_ref_address = global_mat_diagonal_ref_address.data();
 		for (int i = (*vertex_index_begin_per_thread)[thread_No]; i < (*vertex_index_begin_per_thread)[thread_No + 1]; ++i) {
 			*(diagonal_ref_address[i + vertex_index_start]) = diagonal_ref[i + vertex_index_start];
 			////std::cout << i << " " << *(diagonal_ref_address[i]) << std::endl;
@@ -1896,44 +1955,32 @@ void ProjectDynamic::solveClothSystem2(bool compute_energy)
 	}
 			   break;
 	case SUPER_JACOBI: {
-		for (int i = 0; i < total_cloth_num; ++i) {
 			iteration_method.solveByAJacobi_2(u.data(), b.data(), itr_num);
-		}
 		//std::cout << "super jacobi " << itr_num << std::endl;
 	}
 				break;
 	case CHEBYSHEV_SUPER_JACOBI: {
-		for (int i = 0; i < total_cloth_num; ++i) {
 			iteration_method.solveByChebyshevSemiIterativeAJacobi2(u.data(), b.data(), itr_num);
-		}
 		//std::cout << "chebyshev super jacobi "<< itr_num << std::endl;
 	}
 							   break;
 	case GAUSS_SEIDEL: {
-		for (int i = 0; i < total_cloth_num; ++i) {
 			iteration_method.solveByGaussSeidel(u.data(), b.data(), itr_num);
-		}
 		//std::cout << "gauss_seidel "<< itr_num << std::endl;
 	}
 					 break;
 	case GAUSS_SEIDEL_CHEBYSHEV: {
-		for (int i = 0; i < total_cloth_num; ++i) {
 			iteration_method.solveByChebyshevGaussSeidel(u.data(), b.data(), itr_num, 0.1);
-		}
 		//std::cout << "gauss_seidel_chebysev "<< itr_num << std::endl;
 	}
 							   break;
 	case CHEBYSHEV_JACOBI: {
-		for (int i = 0; i < total_cloth_num; ++i) {
 			iteration_method.solveByChebyshevSemiIterativeJacobi(u.data(), b.data(), itr_num);
-		}
 		//std::cout <<"chebyshev jacobi "<< itr_num << std::endl;
 	}
 						 break;
 	case PCG: {
-		for (int i = 0; i < total_cloth_num; ++i) {
 			iteration_method.solveByPCG(u.data(), b.data(), itr_num);
-		}
 		//std::cout <<"PCG "<< itr_num << std::endl;
 	}
 			break;

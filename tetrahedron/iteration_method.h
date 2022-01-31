@@ -6,6 +6,7 @@
 //#include "external/spectral/MatOp/SparseGenMatProd.h"
 #include"thread.h"
 #include"basic/global.h"
+#include"collision/collision.h"
 #include<array>
 #include<map>
 
@@ -61,7 +62,7 @@ public:
 	void estimateGaussSeidelEigenValue(std::vector<VectorXd>& u, SparseMatrix<double, RowMajor>& system_matrix);
 	void estimateJacobiEigenValue(std::vector<VectorXd>& u);
 
-	void estimateSuperJacobiEigenValue(std::vector<VectorXd>& u, int A_jacobi_step_size);
+	void estimateSuperJacobiEigenValue(VectorXd* u, int A_jacobi_step_size);
 
 	void updateGlobalDiagonalInv();
 	void initialGlobalDiagonalInv(std::vector<double*>* cloth_global_mat_diagonal_ref_address);
@@ -70,9 +71,13 @@ public:
 	SparseMatrix<double, RowMajor> off_diagonal;
 
 	void test();
-
+	void RMultiXPlusb(int* vertex_index, double* coefficient, int* vertex_index_start, VectorXd* x, VectorXd* b, VectorXd* result,
+		int vertex_index_begin, int vertex_index_end);
+	void computeResidual(int* global_matrix_vertex_index, double* global_matrix_coefficient, int* global_matrix_vertex_index_start,
+		VectorXd* x, VectorXd* b, VectorXd* b_, double* residual_norm, int vertex_index_begin, int vertex_index_end);
 	void RMultiXPlusb(std::vector<int>* vertex_index, std::vector<double>* coefficient, double* x, double* b, double* result,
 		int vertex_index_begin, int vertex_index_end, int sys_size);
+	
 	void testRelativeError();
 	void createAJacobiOperator(std::vector<std::array<int, 2>>& coeff_pos, std::vector<double>& coeff);
 
@@ -81,12 +86,28 @@ public:
 	void update2AJaocbiIterationMatrix(int thread_id);
 	void update3AJaocbiIterationMatrix(int thread_id);
 
+	std::vector<double> diagonal_inv;
+	std::vector<double> original_diagonal_inv;
+	std::vector<double> original_diagonal;
+
+	std::vector<double> original_initial_diagonal;
+
+	void estimateAJacobi2EigenValue(VectorXd* u, double* u_norm, double* Ru_norm, int vertex_index_start, int vertex_index_end);
+	void estimateAJacobi3EigenValue(VectorXd* u, double* u_norm, double* Ru_norm, int vertex_index_start, int vertex_index_end);
+
+	void ChebyshevAJacobiIterationPerThread(int* vertex_index, double* coefficient, int* vertex_index_start, VectorXd* x, VectorXd* b, VectorXd* result,
+		double* omega_chebyshev, int vertex_index_begin, int vertex_index_end, VectorXd* u_last, VectorXd* u_previous);
+	void updateDiagonalWithAnchorVertices(int anchor_vertex_size, int* anchor_vertex, int system_size, int vertex_index_start, double position_stiffness);
 private:
 
 	std::vector<int> vertex_index_begin_thread;
 	std::vector<int> A_jacobi_2_index_per_thread;
 	std::vector<int> A_jacobi_3_index_per_thread;
 	
+
+	std::vector<VectorXd> x_temp;//this is to store stemm result for iteration method
+	std::vector<VectorXd> u_last_for_chebyshev;
+	std::vector<VectorXd> u_previous_for_chebyshev;
 	
 	void testGaussSeidel();
 
@@ -169,8 +190,8 @@ private:
 
 	AJacobiOperator off_diagonal_operator;
 
+	AJacobiOperator global_matrix_operator;
 
-	std::vector<double> diagonal_inv;
 
 	int obtainIndexInAJacobiOperator(int row_index, int col_index, AJacobiOperator* A_jacobi_operator);
 
@@ -178,7 +199,7 @@ private:
 
 
 	void setRJaocbiDiagonalInv(AJacobiOperator* A_jacobi_operator, AJacobiOperator* off_diagonal_operator,
-		std::vector<double>& diagonal_inv);
+		std::vector<double>& diagonal_inv, std::vector<double>& ori_diagonal, std::vector<double>& ori_diagonal_inv);
 
 	void testIfOperatorIsRight(AJacobiOperator* A_jacobi_operator, BasicJacobiOperator* A_jacobi_operator_);
 	void testIfOperatorIsRight(AJacobiOperator* A_jacobi_operator, AJacobiOperator* A_jacobi_operator_);
@@ -206,8 +227,8 @@ private:
 	int max_itr_num;
 	double convergence_rate_2;
 	int super_jacobi_step_size = 2;
-	void estimateAJacobi2EigenValue(std::vector<VectorXd>& u);
-	void estimateAJacobi3EigenValue(std::vector<VectorXd>& u);
+	void estimateAJacobi2EigenValue(VectorXd* u);
+	void estimateAJacobi3EigenValue(VectorXd* u);
 	double a_jacobi_2_spectral_radius_square;
 	double a_jacobi_3_spectral_radius_square;
 	double jacobi_spectral_radius_square;
