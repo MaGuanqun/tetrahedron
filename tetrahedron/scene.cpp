@@ -381,7 +381,7 @@ void Scene::selectAnchor(bool* control_parameter, bool* select_anchor, double* s
 
 		}		
 		select_anchor[1] = false;
-		project_dynamic.updateTetrohedronAnchorVertices();
+		project_dynamic.updateTetrahedronAnchorVertices();
 	}
 
 

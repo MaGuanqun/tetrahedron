@@ -86,11 +86,9 @@ public:
 	void update2AJaocbiIterationMatrix(int thread_id);
 	void update3AJaocbiIterationMatrix(int thread_id);
 
-	std::vector<double> diagonal_inv;
-	std::vector<double> original_diagonal_inv;
-	std::vector<double> original_diagonal;
 
-	std::vector<double> original_initial_diagonal;
+
+
 
 	void estimateAJacobi2EigenValue(VectorXd* u, double* u_norm, double* Ru_norm, int vertex_index_start, int vertex_index_end);
 	void estimateAJacobi3EigenValue(VectorXd* u, double* u_norm, double* Ru_norm, int vertex_index_start, int vertex_index_end);
@@ -98,12 +96,20 @@ public:
 	void ChebyshevAJacobiIterationPerThread(int* vertex_index, double* coefficient, int* vertex_index_start, VectorXd* x, VectorXd* b, VectorXd* result,
 		double* omega_chebyshev, int vertex_index_begin, int vertex_index_end, VectorXd* u_last, VectorXd* u_previous);
 	void updateDiagonalWithAnchorVertices(int anchor_vertex_size, int* anchor_vertex, int system_size, int vertex_index_start, double position_stiffness);
+	void initialRecordDiagonal_Operator();
+	void setOperatorCollisionFree();
+	void updateDiagonalPerThread(int index_start, int index_end, int obj_index_start, double* stiffness, bool* need_update);
 private:
 
 	std::vector<int> vertex_index_begin_thread;
 	std::vector<int> A_jacobi_2_index_per_thread;
 	std::vector<int> A_jacobi_3_index_per_thread;
 	
+	std::vector<double> diagonal_inv;
+	std::vector<double> original_diagonal_inv;
+	std::vector<double> original_diagonal;
+	std::vector<double> original_initial_diagonal;
+
 
 	std::vector<VectorXd> x_temp;//this is to store stemm result for iteration method
 	std::vector<VectorXd> u_last_for_chebyshev;
@@ -118,7 +124,8 @@ private:
 		std::vector<int>start_index;//start index of every column
 		std::vector<int>left_multiplier_index;//the corresponding indices of right and left multiplier for one element, we combine all items for elements
 		std::vector<int>right_multiplier_index;
-		std::vector<int>multiplier_start_per_element;//
+		std::vector<int>multiplier_start_per_element;
+		std::vector<int>index_of_diagonal;
 
 	};
 
@@ -190,7 +197,12 @@ private:
 
 	AJacobiOperator off_diagonal_operator;
 
-	AJacobiOperator global_matrix_operator;
+	AJacobiOperator global_matrix_operator; 
+
+	std::vector<double>ori_A_jacobi_operator_coefficient;
+	std::vector<double>ori_A_jacobi_operator_2_coefficient;
+	std::vector<double>ori_A_jacobi_operator_3_coefficient;
+
 
 
 	int obtainIndexInAJacobiOperator(int row_index, int col_index, AJacobiOperator* A_jacobi_operator);
@@ -199,7 +211,7 @@ private:
 
 
 	void setRJaocbiDiagonalInv(AJacobiOperator* A_jacobi_operator, AJacobiOperator* off_diagonal_operator,
-		std::vector<double>& diagonal_inv, std::vector<double>& ori_diagonal, std::vector<double>& ori_diagonal_inv);
+		std::vector<double>& diagonal_inv, std::vector<double>& ori_diagonal, std::vector<double>& ori_diagonal_inv, AJacobiOperator* global_matrix_operator);
 
 	void testIfOperatorIsRight(AJacobiOperator* A_jacobi_operator, BasicJacobiOperator* A_jacobi_operator_);
 	void testIfOperatorIsRight(AJacobiOperator* A_jacobi_operator, AJacobiOperator* A_jacobi_operator_);

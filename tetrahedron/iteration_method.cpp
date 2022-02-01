@@ -71,13 +71,14 @@ void IterationMethod::computeResidual(int* global_matrix_vertex_index, double* g
 		for (int i = vertex_index_begin; i < vertex_index_end; ++i)	{
 			vertex_end = global_matrix_vertex_index_start[i + 1];
 			temp_diff = 0;
-			for (int j = global_matrix_vertex_index[i]; j < vertex_end; ++j) {
+			for (int j = global_matrix_vertex_index_start[i]; j < vertex_end; ++j) {
 				temp_diff += global_matrix_coefficient[j] * x_dimension[global_matrix_vertex_index[j]];
 			}
 			temp_diff = b_dimension[i] - temp_diff;
 			(*residual_norm) += temp_diff * temp_diff;
 		}
 	}
+	//std::cout << (*residual_norm) << std::endl;
 	
 }
 
@@ -210,11 +211,8 @@ void IterationMethod::createAJacobiOperator(std::vector<std::array<int, 2>>& coe
 {
 	BasicJacobiOperator A_jacobi_basic; //column major
 	createAJacobiOperator(&A_jacobi_operator, coeff_pos, coeff, &A_jacobi_basic);
-	global_matrix_operator.vertex_index = A_jacobi_operator.vertex_index;
-	global_matrix_operator.start_index = A_jacobi_operator.start_index;
-	global_matrix_operator.coefficient = A_jacobi_operator.coefficient;
 
-	setRJaocbiDiagonalInv(&A_jacobi_operator, &off_diagonal_operator, diagonal_inv, original_diagonal, original_diagonal_inv);
+	setRJaocbiDiagonalInv(&A_jacobi_operator, &off_diagonal_operator, diagonal_inv, original_diagonal, original_diagonal_inv,&global_matrix_operator);
 	original_initial_diagonal = original_diagonal;
 
 	//create structure of 2-order A jacobi
@@ -228,7 +226,10 @@ void IterationMethod::createAJacobiOperator(std::vector<std::array<int, 2>>& coe
 	thread->assignTask(this, UPDATE_JACOBI_OPERATOR);
 	thread->assignTask(this, UPDATE_2_A_JACOBI_ITR_MATRIX);
 	thread->assignTask(this, UPDATE_3_A_JACOBI_ITR_MATRIX);
-
+	
+	ori_A_jacobi_operator_2_coefficient = A_jacobi_operator_2.coefficient;
+	ori_A_jacobi_operator_3_coefficient = A_jacobi_operator_3.coefficient;
+	ori_A_jacobi_operator_coefficient = A_jacobi_operator.coefficient;
 
 	//AJacobiOperator A2_jacobi_operator;
 	//BasicJacobiOperator A2_jacobi_operator_;
@@ -240,6 +241,32 @@ void IterationMethod::createAJacobiOperator(std::vector<std::array<int, 2>>& coe
 }
 
 
+void IterationMethod::setOperatorCollisionFree()
+{
+	A_jacobi_operator_2.coefficient = ori_A_jacobi_operator_2_coefficient;
+	A_jacobi_operator_3.coefficient = ori_A_jacobi_operator_3_coefficient;
+	A_jacobi_operator.coefficient = ori_A_jacobi_operator_coefficient;
+}
+
+void IterationMethod::initialRecordDiagonal_Operator()
+{
+	original_diagonal = original_initial_diagonal;
+	for (int i = 0; i < sys_size; ++i) {
+		original_diagonal_inv[i] = 1.0 / original_diagonal[i];
+	}
+	diagonal_inv = original_diagonal_inv;
+	thread->assignTask(this, UPDATE_JACOBI_OPERATOR);
+	thread->assignTask(this, UPDATE_2_A_JACOBI_ITR_MATRIX);
+	thread->assignTask(this, UPDATE_3_A_JACOBI_ITR_MATRIX);
+	ori_A_jacobi_operator_2_coefficient = A_jacobi_operator_2.coefficient;
+	ori_A_jacobi_operator_3_coefficient = A_jacobi_operator_3.coefficient;
+	ori_A_jacobi_operator_coefficient = A_jacobi_operator.coefficient;
+	for (int i = 0; i < sys_size; ++i) {
+		global_matrix_operator.coefficient[global_matrix_operator.index_of_diagonal[i]] = original_diagonal[i];
+	}
+}
+
+
 void IterationMethod::updateDiagonalWithAnchorVertices(int anchor_vertex_size, int* anchor_vertex, int system_size, int vertex_index_start, double position_stiffness)
 {
 	memcpy(original_diagonal.data() + vertex_index_start, original_initial_diagonal.data() + vertex_index_start, 8 * system_size);
@@ -247,7 +274,39 @@ void IterationMethod::updateDiagonalWithAnchorVertices(int anchor_vertex_size, i
 		original_diagonal[anchor_vertex[i] + vertex_index_start] += position_stiffness;
 	}
 	for (int i = 0; i < system_size; ++i) {
-		original_diagonal[i + vertex_index_start] = 1.0 / original_initial_diagonal[i + vertex_index_start];
+		original_diagonal_inv[i + vertex_index_start] = 1.0 / original_diagonal[i + vertex_index_start];
+		global_matrix_operator.coefficient[global_matrix_operator.index_of_diagonal[i + vertex_index_start]] = original_diagonal[i + vertex_index_start];
+	}
+	diagonal_inv = original_diagonal_inv;
+	thread->assignTask(this, UPDATE_JACOBI_OPERATOR);
+	thread->assignTask(this, UPDATE_2_A_JACOBI_ITR_MATRIX);
+	thread->assignTask(this, UPDATE_3_A_JACOBI_ITR_MATRIX);
+	ori_A_jacobi_operator_2_coefficient = A_jacobi_operator_2.coefficient;
+	ori_A_jacobi_operator_3_coefficient = A_jacobi_operator_3.coefficient;
+	ori_A_jacobi_operator_coefficient = A_jacobi_operator.coefficient;
+}
+
+
+
+void IterationMethod::updateDiagonalPerThread(int index_start, int index_end, int obj_index_start, double* stiffness, bool* need_update)
+{
+	double* ori_diagonal = original_diagonal.data();
+	double* current_diagonal_inv = diagonal_inv.data();
+	double* ori_diagonal_inv = original_diagonal_inv.data();
+	double* global_mat_coeff = global_matrix_operator.coefficient.data();
+	int* global_mat_digonal_index = global_matrix_operator.index_of_diagonal.data();
+
+
+	for (int i = index_start; i < index_end; ++i) {
+		if (need_update[i]) {
+			global_mat_coeff[global_mat_digonal_index[i + obj_index_start]] = ori_diagonal[i + obj_index_start] + stiffness[i];
+			current_diagonal_inv[i + obj_index_start] = 1.0 / (ori_diagonal[i + obj_index_start] + stiffness[i]);
+
+		}
+		else {
+			global_mat_coeff[global_mat_digonal_index[i + obj_index_start]] = ori_diagonal[i + obj_index_start];
+			current_diagonal_inv[i + obj_index_start] = ori_diagonal_inv[i + obj_index_start];
+		}
 	}
 }
 
@@ -349,8 +408,13 @@ void IterationMethod::updateJacobiOperator(int thread_id)
 
 
 void IterationMethod::setRJaocbiDiagonalInv(AJacobiOperator* A_jacobi_operator, AJacobiOperator* off_diagonal_operator, 
-	std::vector<double>& diagonal_inv, std::vector<double>& ori_diagonal, std::vector<double>& ori_diagonal_inv)
+	std::vector<double>& diagonal_inv, std::vector<double>& ori_diagonal, std::vector<double>& ori_diagonal_inv, AJacobiOperator* global_matrix_operator)
 {
+	global_matrix_operator->vertex_index = A_jacobi_operator->vertex_index;
+	global_matrix_operator->start_index = A_jacobi_operator->start_index;
+	global_matrix_operator->coefficient = A_jacobi_operator->coefficient;
+	global_matrix_operator->index_of_diagonal.resize(sys_size);
+
 	(*off_diagonal_operator) = (*A_jacobi_operator);
 	int sys_size = off_diagonal_operator->start_index.size() - 1;
 	diagonal_inv.resize(sys_size);
@@ -365,6 +429,7 @@ void IterationMethod::setRJaocbiDiagonalInv(AJacobiOperator* A_jacobi_operator, 
 				diagonal_inv[j] = 1.0 / ori_diagonal[j];
 				ori_diagonal_inv[j] = diagonal_inv[j];
 				off_diagonal_operator->coefficient[i] = 0.0;
+				global_matrix_operator->index_of_diagonal[j] = i;
 			}
 			else {
 				off_diagonal_operator->coefficient[i] *= -1.0;
@@ -873,7 +938,6 @@ void IterationMethod::initialJacobi()
 			R_Jacobi.valuePtr()[k] *= global_diagonal_inv.data()[j];
 		}
 	}
-	
 }
 
 
@@ -928,7 +992,7 @@ void IterationMethod::JacobiIterationPerThread(int thread_id, VectorXd* u, Vecto
 	}
 }
 
-//SUPER_JACOBI_2_ITR
+//A_JACOBI_2_ITR
 void IterationMethod::SuperJacobi2IterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm)
 {
 	for (int i = dimension_per_thread[thread_id]; i < dimension_per_thread[thread_id + 1]; ++i)
@@ -966,19 +1030,20 @@ void IterationMethod::solveByAJacobi_2(VectorXd* u, VectorXd* b, int& itr_num)
 		A_jacobi_operator.start_index.data(), b_global_inv.data(), b_global_inv.data(), R_b_global_inv.data(), residual_norm_per_thread.data(),
 		vertex_index_begin_thread.data(),u,u);
 
-
 	while (residual_norm > b_norm_conv && itr_num < max_itr_num) {
 		if (itr_num % 2 == 0) {
 			thread->assignTask(this, R_MULTIPLY_X_PLUS_B, A_jacobi_operator_2.vertex_index.data(), A_jacobi_operator_2.coefficient.data(),
 				A_jacobi_operator_2.start_index.data(), u, R_b_global_inv.data(), x_temp.data(), residual_norm_per_thread.data(), vertex_index_begin_thread.data(), u, u);
 			thread->assignTask(this, COMPUTE_RESIDUAL, global_matrix_operator.vertex_index.data(), global_matrix_operator.coefficient.data(),
 				global_matrix_operator.start_index.data(), x_temp.data(), b, b, residual_norm_per_thread.data(), vertex_index_begin_thread.data(), u, u);
+
 		}
 		else {
 			thread->assignTask(this, R_MULTIPLY_X_PLUS_B, A_jacobi_operator_2.vertex_index.data(), A_jacobi_operator_2.coefficient.data(),
 				A_jacobi_operator_2.start_index.data(), x_temp.data(), R_b_global_inv.data(), u, residual_norm_per_thread.data(), vertex_index_begin_thread.data(), u, u);
 			thread->assignTask(this, COMPUTE_RESIDUAL, global_matrix_operator.vertex_index.data(), global_matrix_operator.coefficient.data(),
 				global_matrix_operator.start_index.data(), u, b, b, residual_norm_per_thread.data(), vertex_index_begin_thread.data(), u, u);
+
 		}
 		residual_norm = residual_norm_per_thread[0];
 		for(int i=1;i<thread->thread_num;++i){
@@ -997,7 +1062,7 @@ void IterationMethod::solveByAJacobi_2(VectorXd* u, VectorXd* b, int& itr_num)
 
 
 
-//SUPER_JACOBI_3_ITR
+//A_JACOBI_3_ITR
 void IterationMethod::SuperJacobi3IterationPerThread(int thread_id, VectorXd* u, VectorXd* b, double* residual_norm)
 {
 	for (int i = dimension_per_thread[thread_id]; i < dimension_per_thread[thread_id + 1]; ++i)
@@ -1064,10 +1129,11 @@ void IterationMethod::estimateAJacobi2EigenValue(VectorXd* u)
 
 	std::vector<double> u_norm(thread->thread_num,0.0);
 	std::vector<double> Ru_norm(thread->thread_num,0.0);
-	int* vertex_index; int* vertex_index_start;
-	VectorXd* b; VectorXd* result;
+
+	int vertex_index[1]; int vertex_index_start[1];
+	VectorXd b; VectorXd result; b.resize(1); result.resize(1);
 	thread->assignTask(this, ESTIMATE_A_JACOBI_2_EIGEN_VALUE, vertex_index, u_norm.data(), vertex_index_start,
-		u, b, result, Ru_norm.data(), vertex_index_begin_thread.data(), u, u);
+		u, &b, &result, Ru_norm.data(), vertex_index_begin_thread.data(), u, u);
 
 	double total_u_norm = u_norm[0];
 	double total_Ru_norm = Ru_norm[0];
@@ -1096,10 +1162,10 @@ void IterationMethod::estimateAJacobi3EigenValue(VectorXd* u)
 
 	std::vector<double> u_norm(thread->thread_num, 0.0);
 	std::vector<double> Ru_norm(thread->thread_num, 0.0);
-	int* vertex_index; int* vertex_index_start;
-	VectorXd* b; VectorXd* result;
+	int vertex_index[1]; int vertex_index_start[1];
+	VectorXd b; VectorXd result; b.resize(1); result.resize(1);
 	thread->assignTask(this, ESTIMATE_A_JACOBI_3_EIGEN_VALUE, vertex_index, u_norm.data(), vertex_index_start,
-		u, b, result, Ru_norm.data(), vertex_index_begin_thread.data(), u, u);
+		u, &b, &result, Ru_norm.data(), vertex_index_begin_thread.data(), u, u);
 	double total_u_norm = u_norm[0];
 	double total_Ru_norm = Ru_norm[0];
 	for (int i = 1; i < thread->thread_num; ++i) {
@@ -1291,7 +1357,7 @@ void IterationMethod::ChebyshevAJacobiIterationPerThread(int* vertex_index, doub
 
 //for input variables, RX+d result cannot be the same with x or d
 //to compute residual, also send in operator for global_matrix
-//R_MULTIPLY_X
+//R_MULTIPLY_X_PLUS_B
 void IterationMethod::RMultiXPlusb(int* vertex_index, double* coefficient, int* vertex_index_start, VectorXd* x, VectorXd* b, VectorXd* result,
 	int vertex_index_begin, int vertex_index_end)
 {

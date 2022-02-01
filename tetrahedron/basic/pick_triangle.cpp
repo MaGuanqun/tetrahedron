@@ -45,7 +45,7 @@ void PickTriangle::pickTriangle(std::vector<Cloth>* cloth, std::vector<Collider>
 	for (int i = 0; i < tetrahedron->size(); ++i) {
 		total_face_num += (*tetrahedron)[i].mesh_struct.triangle_indices.size();
 	}
-	std::cout << total_face_num << " " << (*tetrahedron)[0].mesh_struct.triangle_indices.size() << std::endl;
+	//std::cout << total_face_num << " " << (*tetrahedron)[0].mesh_struct.triangle_indices.size() << std::endl;
 	int face_index;
 	writingFBO(cloth, collider, tetrahedron, camera, hide, shader);
 	decideTriangle(face_index, total_face_num, &picking_FBO, pos);
