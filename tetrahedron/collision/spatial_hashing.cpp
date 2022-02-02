@@ -15,7 +15,7 @@ void SpatialHashing::initialHashCellLength(std::vector<Cloth>* cloth, double& ce
 		edge_num += edge->size();
 	}
 	ave_length /= (double)edge_num;
-	cell_length = ave_length;
+	cell_length = ave_length*1.2;
 }
 
 void SpatialHashing::setInObject(std::vector<Cloth>* cloth, std::vector<Collider>* collider, 

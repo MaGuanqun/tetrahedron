@@ -120,30 +120,30 @@ void Collision::globalCollision()
 	getAABB();
 	time_t t1 = clock();
 	if (use_BVH) {
-		for (int i = 0; i < 100; ++i) {
+		//for (int i = 0; i < 100; ++i) {
 			buildBVH();
-		}
+		//}
 	}
 	else {		
-		for (int i = 0; i < 100; ++i) {
+		//for (int i = 0; i < 100; ++i) {
 			spatial_hashing.buildSpatialHashing();
-		}				
+		//}				
 	}
-	std::cout << "build " << clock() - t1 << std::endl;
-	t1 = clock();
-	for (int i = 0; i < 100; ++i) {
+	//std::cout << "build " << clock() - t1 << std::endl;
+	//t1 = clock();
+	//for (int i = 0; i < 100; ++i) {
 		thread->assignTask(this, FIND_TRIANGLE_PAIRS);
-	}
-	std::cout << "find triangle pair " << clock() - t1 << std::endl;
+	//}
+	//std::cout << "find triangle pair " << clock() - t1 << std::endl;
 
-	//testCollision();
+	////testCollision();
 
 	//t1 = clock();
-	//for (int i = 0; i < 1000; ++i) {
+	//for (int i = 0; i < 100; ++i) {
 		thread->assignTask(this, FIND_PRIMITIVE_AROUND);
 
 	//}
-	////std::cout << "find around primitive " << clock() - t1 << std::endl;
+	//std::cout << "find around primitive " << clock() - t1 << std::endl;
 	////std::cout << "search " << clock() - t1 << std::endl;
 	thread->assignTask(this, GLOBAL_COLLISION_DETECTION);
 	sumTargetPosition();

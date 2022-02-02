@@ -327,8 +327,8 @@ void Cloth::setTolerance(double* tolerance_ratio, double ave_edge_length)
 	for (int i = 0; i < PC_radius.size(); ++i) {
 		PC_radius[i] = tolerance_ratio[i] * ave_edge_length;
 	}
-	tolerance = 0.5*ave_edge_length;
-	//tolerance = tolerance_ratio[SELF_POINT_TRIANGLE] * ave_edge_length;
+	//tolerance = 0.5*ave_edge_length;
+	tolerance = tolerance_ratio[SELF_POINT_TRIANGLE] * ave_edge_length;
 }
 
 

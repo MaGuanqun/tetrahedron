@@ -6,8 +6,8 @@ ProjectDynamic::ProjectDynamic()
 	gravity_ = 9.8;
 	total_thread_num = std::thread::hardware_concurrency();
 	temEnergy.resize(total_thread_num);
-	outer_itr_conv_rate = 1e-2;// 7.5e-2; 
-	local_global_conv_rate = 5e-2;
+	outer_itr_conv_rate = 5e-3;// 7.5e-2; 
+	local_global_conv_rate = 1e-2;
 	sub_step_num = 1;
 
 	use_dierct_solve_for_coarest_mesh = true;
