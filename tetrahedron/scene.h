@@ -23,7 +23,7 @@ public:
 	bool* control_parameter;
 	void initial();
 	void reset();
-	void loadMesh(std::vector<std::string>& collider_path, std::vector<std::string>& object_path);
+	void loadMesh(std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio);
 	void drawScene(Camera* camera, std::vector<std::vector<bool>>& wireframe, std::vector<std::vector<bool>>& hide, bool start_save_obj);
 	void getClothInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 3>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 4>>& collision_stiffness);
 	void updateCloth(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe, bool& record_matrix,

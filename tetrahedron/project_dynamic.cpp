@@ -22,14 +22,15 @@ ProjectDynamic::ProjectDynamic()
 
 }
 
-void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, Thread* thread)
+void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, 
+	Thread* thread,double* tolerance_ratio)
 {
 	this->cloth = cloth;
 	this->tetrahedron = tetrahedron;
 	sub_time_step = time_step / (double)sub_step_num;
 	this->thread = thread;
 
-	collision.initial(cloth, collider, tetrahedron, thread);
+	collision.initial(cloth, collider, tetrahedron, thread, tolerance_ratio);
 	total_collider_num = collider->size();
 	this->collider = collider;
 

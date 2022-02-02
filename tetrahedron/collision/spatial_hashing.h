@@ -10,7 +10,8 @@
 class SpatialHashing
 {
 public:
-	void setInObject(std::vector<Cloth>* cloth, std::vector<Collider>* collider,std::vector<Tetrahedron>* tetrahedron, Thread* thread);
+	void setInObject(std::vector<Cloth>* cloth, std::vector<Collider>* collider,std::vector<Tetrahedron>* tetrahedron, 
+		Thread* thread, double* tolerance_ratio);
 	void getSceneAABB(int thread_No);
 	void triangleHashing(int thread_No);
 	void buildSpatialHashing();
@@ -21,7 +22,7 @@ private:
 	std::vector<Cloth>* cloth;
 	std::vector<Collider>* collider;
 	std::vector<Tetrahedron>* tetrahedron;
-	void initialHashCellLength(std::vector<Cloth>* cloth, double& cell_length);
+	void initialHashCellLength(std::vector<Cloth>* cloth, double& cell_length, double* tolerance_ratio);
 	double cell_length;//this is the size of spatial hashing cell, = average edge length
 	double thread_num;
 

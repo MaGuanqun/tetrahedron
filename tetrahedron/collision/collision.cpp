@@ -1,7 +1,7 @@
 #include"collision.h"
 
 void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider, 
-	std::vector<Tetrahedron>* tetrahedron, Thread* thread)
+	std::vector<Tetrahedron>* tetrahedron, Thread* thread, double* tolerance_ratio)
 {
 	this->cloth = cloth;
 	this->collider = collider;
@@ -9,7 +9,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	this->thread = thread;
 	initialBVH(cloth, collider, tetrahedron, thread);
 	initialTargetPos(cloth, tetrahedron, thread);
-	initialSpatialHashing(cloth, collider, tetrahedron, thread);
+	initialSpatialHashing(cloth, collider, tetrahedron, thread, tolerance_ratio);
 	use_BVH = false;
 	initialNeighborPrimitive();
 	collision_time_thread.resize(thread->thread_num);
@@ -88,9 +88,10 @@ void Collision::initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* col
 	//}
 }
 
-void Collision::initialSpatialHashing(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread)
+void Collision::initialSpatialHashing(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread,
+	double* tolerance_ratio)
 {
-	spatial_hashing.setInObject(cloth, collider, tetrahedron, thread);
+	spatial_hashing.setInObject(cloth, collider, tetrahedron, thread, tolerance_ratio);
 }
 
 

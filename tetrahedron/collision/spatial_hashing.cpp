@@ -2,7 +2,7 @@
 
 
 
-void SpatialHashing::initialHashCellLength(std::vector<Cloth>* cloth, double& cell_length)
+void SpatialHashing::initialHashCellLength(std::vector<Cloth>* cloth, double& cell_length, double* tolerance_ratio)
 {
 	double ave_length = 0;
 	int edge_num = 0;
@@ -10,18 +10,22 @@ void SpatialHashing::initialHashCellLength(std::vector<Cloth>* cloth, double& ce
 	for (int i = 0; i < cloth->size(); ++i) {
 		edge = &(*cloth)[i].mesh_struct.edges;
 		for(int j=0;j< edge->size();++j){
+			//if (ave_length < (*edge)[j].length) {
+			//	ave_length = (*edge)[j].length;
+			//}
 			ave_length += (*edge)[j].length;
 		}
 		edge_num += edge->size();
 	}
 	ave_length /= (double)edge_num;
-	cell_length = ave_length*1.2;
+	cell_length = ave_length*(1.0+ 2.0 *tolerance_ratio[SELF_POINT_TRIANGLE]);
+	//std::cout << "ave_length" << " " << ave_length << std::endl;
 }
 
 void SpatialHashing::setInObject(std::vector<Cloth>* cloth, std::vector<Collider>* collider, 
-	std::vector<Tetrahedron>* tetrahedron, Thread* thread)
+	std::vector<Tetrahedron>* tetrahedron, Thread* thread, double* tolerance_ratio)
 {
-	initialHashCellLength(cloth, cell_length);
+	initialHashCellLength(cloth, cell_length, tolerance_ratio);
 	this->cloth = cloth;
 	this->collider = collider;
 	this->tetrahedron = tetrahedron;
@@ -294,12 +298,15 @@ void SpatialHashing::triangleHashing(int thread_No)
 	spatial_hashing_triangle_->clear();
 	spatial_hashing_value_->clear();
 	int vector_size;
+
+	int triangle_end;
 	for (int i = 0; i < cloth->size(); ++i) {
 		aabb = (*cloth)[i].triangle_AABB.data();		
 		triangle_begin = (*cloth)[i].mesh_struct.face_index_begin_per_thread.data();
 		hash_value = cloth_triangle_hash[i].data();
 		vector_size = spatial_hashing_triangle_->size();
-		for (int j = triangle_begin[thread_No]; j < triangle_begin[thread_No + 1]; ++j) {
+		triangle_end = triangle_begin[thread_No + 1];
+		for (int j = triangle_begin[thread_No]; j < triangle_end; ++j) {
 			clothTriangleHashingValue(aabb[j], spatial_hashing_triangle_,spatial_hashing_value_, j,&hash_value[j]);
 		}
 		spatial_hashing_cloth_->insert(spatial_hashing_cloth_->end(), spatial_hashing_triangle_->size() - vector_size, i);
@@ -340,7 +347,7 @@ void SpatialHashing::clothTriangleHashingValue(AABB& aabb, std::vector<int>* spa
 		min_index[j] = (int)floor((aabb.min[j]- scene_aabb.min[j]) / cell_length);
 		max_index[j] = (int)floor((aabb.max[j] - scene_aabb.min[j]) / cell_length) + 1;
 	}
-	int size = (max_index[0] - min_index[0]) * (max_index[1] - min_index[1]) * (max_index[2] - min_index[2]);
+	//int size = (max_index[0] - min_index[0]) * (max_index[1] - min_index[1]) * (max_index[2] - min_index[2]);
 	hash_value->clear();
 	int value;
 	for (int index_y = min_index[1]; index_y < max_index[1]; ++index_y) {

@@ -18,7 +18,8 @@ class Collision
 public:
 	double collision_time;
 
-	void initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread);
+	void initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread,
+		double* tolerance_ratio);
 	void initialDHatTolerance(double ave_edge_length);
 	void findAllTrianglePairs(int thread_No);
 	void globalCollision();
@@ -138,7 +139,8 @@ private:
 	void edgeSelfEdgeCollisionReDetection(int thread_No, int edge_index, int cloth_No, std::vector<std::vector<int>>* collide_edge_edge, TriangleMeshStruct* edge_mesh,
 		double radius0, std::vector<double>& collision_stiffness, TargetPosition* target_postion_);
 	void resumTargetPosition();
-	void initialSpatialHashing(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread);
+	void initialSpatialHashing(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, 
+		Thread* thread, double* tolerance_ratio);
 	void initialNeighborPrimitive();
 	void colliderTriangleVertexCollisionDetection(int thread_No, int triangle_index, int collider_No,
 		std::vector<std::vector<int>>* triangle_neighbor_vertex, std::vector<std::vector<int>>* collide_triangle_vertex, MeshStruct* triangle_mesh, double radius0,

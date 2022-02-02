@@ -35,7 +35,7 @@ void Scene::updateConvRate(double* convergence_rate)
 	project_dynamic.local_global_conv_rate = convergence_rate[LOCAL_GLOBAL];
 }
 
-void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::string>& object_path)
+void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio)
 {
 	Preprocessing preprocessing;
 	preprocessing.load_all_model(collider_path, object_path);
@@ -59,6 +59,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	tetrahedron_num = tetrahedron_index_in_object.size();
 	cloth.resize(cloth_num);
 	tetrahedron.resize(tetrahedron_num);
+	setTolerance(tolerance_ratio);
 	double cloth_density=15.0;
 	double tetrahedron_density = 10.0;
 	for (int i = 0; i < cloth_num; ++i) {
@@ -86,7 +87,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	}
 
 
-	project_dynamic.setForPD(&cloth, &tetrahedron,&collider, &thread);
+	project_dynamic.setForPD(&cloth, &tetrahedron,&collider, &thread, tolerance_ratio);
 	setAveEdgeLength();
 	cursor.createVertices(0.03, camera_center);
 }

@@ -169,14 +169,14 @@ void simu_main(GLFWwindow* window, Input* input) {
 		if (!already_load_model) {
 			if (imgui_windows.loadModel(collider_path, object_path)) {
 				already_load_model = true;
-				scene.loadMesh(collider_path, object_path);
+				scene.loadMesh(collider_path, object_path, tolerance_ratio);
 				glm::vec3 camera_pos = glm::vec3(0.6 * scene.shadow.camera_from_origin + scene.camera_center[0], scene.camera_center[1], -0.8 * scene.shadow.camera_from_origin + scene.camera_center[2]);
 				camera.updateCamera(camera_pos, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(scene.camera_center[0], scene.camera_center[1], scene.camera_center[2]));
 				scene.getClothInfo(cloth_info, cloth_mass, cloth_stiffness, simulation_parameter, cloth_collision_stiffness);
 				scene.getTetrahedronInfo(tetrahedron_info, tetrahedron_mass, tetrahedron_stiffness, simulation_parameter, tetrahedron_collision_stiffness);
 				camera_from_origin = scene.shadow.camera_from_origin;				
 				setHideWireframe(hide, wireframe, scene.collider.size(), scene.cloth.size(), scene.tetrahedron.size());
-				scene.setTolerance(tolerance_ratio);
+				
 			
 				//scene.testBVH();
 			}
