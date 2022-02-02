@@ -34,6 +34,31 @@ void TetrahedronMeshStruct::findSurface()
 			vertex_on_surface[triangle_indices[i][j]] = true;
 		}		
 	}
+	vertex_index_on_sureface.reserve(vertex_position.size());
+	vertex_surface_index.resize(vertex_position.size(),-1);
+	for (int i = 0; i < vertex_on_surface.size(); ++i) {
+		if (vertex_on_surface[i]) {
+			vertex_index_on_sureface.push_back(i);
+			vertex_surface_index[i] = vertex_index_on_sureface.size() - 1;
+		}
+	}
+	vertex_index_on_sureface.shrink_to_fit();
+}
+
+
+void TetrahedronMeshStruct::setVertexIndexOnSurfaceEdgeTriangle()
+{
+	edge_vertex_index_on_surface.resize(edges.size());
+	triangle_index_on_surface.resize(triangle_indices.size());
+	for (int i = 0; i < edge_vertex_index_on_surface.size(); ++i) {
+		edge_vertex_index_on_surface[i][0] = vertex_surface_index[edges[i].vertex[0]];
+		edge_vertex_index_on_surface[i][1] = vertex_surface_index[edges[i].vertex[1]];
+	}
+	for (int i = 0; i < triangle_index_on_surface.size(); ++i) {
+		triangle_index_on_surface[i][0] = vertex_surface_index[triangle_index_on_surface[i][0]];
+		triangle_index_on_surface[i][1] = vertex_surface_index[triangle_index_on_surface[i][1]];
+		triangle_index_on_surface[i][2] = vertex_surface_index[triangle_index_on_surface[i][2]];
+	}
 }
 
 
@@ -104,12 +129,12 @@ void TetrahedronMeshStruct::setThreadIndex(int total_thread_num_)
 {
 	int total_thread_num = total_thread_num_ + 1;
 
-	vertex_index_begin_per_thread.resize(total_thread_num, 0);
+	vertex_index_on_surface_begin_per_thread.resize(total_thread_num, 0);
 	anchor_index_begin_per_thread.resize(total_thread_num, 0);
 	face_index_begin_per_thread.resize(total_thread_num, 0);
 	tetrahedron_index_begin_per_thread.resize(total_thread_num, 0);
 
-	arrangeIndex(total_thread_num_, vertex_position.size(), vertex_index_begin_per_thread);
+	arrangeIndex(total_thread_num_, vertex_index_on_sureface.size(), vertex_index_on_surface_begin_per_thread);
 	arrangeIndex(total_thread_num_, anchor_vertex.size(), anchor_index_begin_per_thread);
 	arrangeIndex(total_thread_num_, triangle_indices.size(), face_index_begin_per_thread);
 	arrangeIndex(total_thread_num_, indices.size(), tetrahedron_index_begin_per_thread);
@@ -133,47 +158,7 @@ void TetrahedronMeshStruct::getNormal()
 }
 
 
-//FACE_NORMAL_RENDER
-void TetrahedronMeshStruct::getRenderFaceNormalPerThread(int thread_id)
-{
-	double e0[3], e2[3];
-	for (int j = face_index_begin_per_thread[thread_id]; j < face_index_begin_per_thread[thread_id + 1]; ++j) {
-		SUB(e2, vertex_for_render[triangle_indices[j][1]], vertex_for_render[triangle_indices[j][0]]);
-		SUB(e0, vertex_for_render[triangle_indices[j][2]], vertex_for_render[triangle_indices[j][0]]);
-		CROSS(face_normal_for_render[j].data(), e2, e0);
-		memcpy(ori_face_normal_for_render[j].data(), face_normal_for_render[j].data(), 24);
-		normalize(face_normal_for_render[j].data());
-	}
-}
 
-//FACE_NORMAL
-void TetrahedronMeshStruct::getFaceNormalPerThread(int thread_id)
-{
-	double e0[3], e2[3];
-	double e3[3], e4[3];
-	double* current_face_normal;
-	int* triangle_vertex;
-	double f_cross[3];
-	for (int j = face_index_begin_per_thread[thread_id]; j < face_index_begin_per_thread[thread_id + 1]; ++j) {
-		triangle_vertex = triangle_indices[j].data();
-		current_face_normal = face_normal[j].data();
-		SUB(e2, vertex_position[triangle_vertex[1]], vertex_position[triangle_vertex[0]]);
-		SUB(e0, vertex_position[triangle_vertex[2]], vertex_position[triangle_vertex[0]]);
-		CROSS(current_face_normal, e2, e0);
-		memcpy(ori_face_normal[j].data(), current_face_normal, 24);
-		triangle_normal_magnitude_reciprocal[j] = 1.0 / sqrt(DOT(current_face_normal, current_face_normal));
-		normalize(current_face_normal);
-
-		SUB(e3, vertex_for_render[triangle_vertex[1]], vertex_for_render[triangle_vertex[0]]);
-		SUB(e4, vertex_for_render[triangle_vertex[2]], vertex_for_render[triangle_vertex[0]]);
-
-		current_face_normal = cross_for_approx_CCD[j].data();
-
-		CROSS(current_face_normal, e3, e0);
-		CROSS(f_cross, e2, e4);
-		SUM_(current_face_normal, f_cross);
-	}
-}
 
 
 
@@ -201,4 +186,49 @@ Matrix<double, 3, 4> TetrahedronMeshStruct::constructMatrixP(int tetra_index)
 	}
 	Vector3d center = 0.25 * p.rowwise().sum();
 	return p.colwise() - center;
+}
+
+//VERTEX_NORMAL
+void TetrahedronMeshStruct::getVertexNormalPerThread(int thread_id)
+{
+	std::vector<int>* face_vertex;
+	double* current_vertex_normal;
+	double dot;
+	for (int i = vertex_index_on_surface_begin_per_thread[thread_id]; i < vertex_index_on_surface_begin_per_thread[thread_id + 1]; ++i) {
+		face_vertex = &vertices[vertex_index_on_sureface[i]].face;
+		current_vertex_normal = vertex_normal[vertex_index_on_sureface[i]].data();
+		memcpy(current_vertex_normal, face_normal[(*face_vertex)[0]].data(), 24);
+		for (int k = 1; k < face_vertex->size(); ++k) {
+			SUM_(current_vertex_normal,
+				face_normal[(*face_vertex)[k]]);
+
+		}
+		normalize(current_vertex_normal);		
+	}
+}
+
+//VERTEX_NORMAL_RENDER
+void TetrahedronMeshStruct::getRenderVertexNormalPerThread(int thread_id)
+{
+	std::vector<int>* face_vertex;
+	double* current_vertex_normal;
+	double dot;
+	for (int i = vertex_index_on_surface_begin_per_thread[thread_id]; i < vertex_index_on_surface_begin_per_thread[thread_id + 1]; ++i) {
+		face_vertex = &vertices[vertex_index_on_sureface[i]].face;
+		current_vertex_normal = vertex_normal_for_render[vertex_index_on_sureface[i]].data();
+		memcpy(current_vertex_normal, ori_face_normal_for_render[(*face_vertex)[0]].data(), 24);
+		for (int k = 1; k < face_vertex->size(); ++k) {
+			SUM_(current_vertex_normal,
+				ori_face_normal_for_render[(*face_vertex)[k]]);
+		}
+		dot = DOT(current_vertex_normal, current_vertex_normal);
+		if (dot < 1e-20) {
+			memcpy(current_vertex_normal, ori_face_normal_for_render[(*face_vertex)[0]].data(), 24);
+		}
+		else {
+			dot = sqrt(dot);
+			DEV_(current_vertex_normal, dot);
+		}
+	}
+
 }

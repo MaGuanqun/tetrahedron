@@ -10,7 +10,7 @@ public:
 	void findSurface();
 	void setThreadIndex(int total_thread_num_);
 	void getRenderNormal();
-	void getRenderFaceNormalPerThread(int thread_id);
+	//void getRenderFaceNormalPerThread(int thread_id);
 	std::vector<std::array<int, 4>> indices;
 	std::vector<double>volume;
 	std::vector<int>tet_index_of_surface_face;
@@ -19,12 +19,25 @@ public:
 	void setVolume(int thread_No);
 	double setVolumeMass(double density);
 	std::vector<bool>vertex_on_surface;
+	std::vector<int>vertex_index_on_sureface; //size is the surface vertex size, surface index -> vertex index
+	std::vector<int> vertex_surface_index;//size is the global vertex size, verted index -> surface index
+	std::vector<int> vertex_index_on_surface_begin_per_thread;
+	
+
 	void prepareForDeformationGradient();
 	std::vector<Matrix3d>PPT_inv;//to record the restshape (PP^T)^-1 for deformation gradient
 	std::vector<Matrix<double, 4, 3>> PT;//to record the restshape P^T for deformation gradient
-	void getFaceNormalPerThread(int thread_id);
+	//void getFaceNormalPerThread(int thread_id);
 	void getNormal();
 	void recordTetIndexForSurfaceIndex();
+
+	void getVertexNormalPerThread(int thread_id);
+	void getRenderVertexNormalPerThread(int thread_id);
+
+	std::vector<std::array<int, 2>> edge_vertex_index_on_surface;
+	std::vector<std::array<int, 3>> triangle_index_on_surface;
+	void setVertexIndexOnSurfaceEdgeTriangle();
+
 private:
 	struct TetrahedronFace {
 		std::array<int,3> index;

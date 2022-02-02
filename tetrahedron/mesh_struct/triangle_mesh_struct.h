@@ -10,11 +10,14 @@ public:
 	void setThreadIndex(int total_thread_num_);
 	void getNormal();
 	void getRenderNormal();
-	void getRenderFaceNormalPerThread(int thread_id);
-	void getFaceNormalPerThread(int thread_id);
+	
 	
 	void initialInfo();
 	
+	std::vector<int> vertex_index_begin_per_thread;
+
+	void getVertexNormalPerThread(int thread_id);
+	void getRenderVertexNormalPerThread(int thread_id);
 	//void getVertexNormal();
 private:
 

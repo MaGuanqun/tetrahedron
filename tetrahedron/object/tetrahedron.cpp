@@ -11,6 +11,7 @@ void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mesh_struct.initialNormalSize();
 	mesh_struct.setFace();
 	mesh_struct.setEdge();
+	mesh_struct.setVertexIndexOnSurfaceEdgeTriangle();
 	//mesh_struct.addArounVertex();
 	mesh_struct.setThreadIndex(total_thread_num);
 	mesh_struct.vertex_for_render = mesh_struct.vertex_position;
@@ -47,11 +48,50 @@ void Tetrahedron::drawWireframe(Camera* camera, Shader* wireframe_shader)
 	}
 }
 
+void Tetrahedron::obtainAABB()
+{
+	thread->assignTask(this, VERTEX_AABB);
+	//thread->assignTask(this, EDGE_AABB);
+	thread->assignTask(this, EDGE_TRIANGLE_AABB);
+}
+
+
+//VERTEX_AABB
+void Tetrahedron::getVertexAABBPerThread(int thread_No)
+{
+	std::vector<std::array<double, 3>>* vertex_render = &mesh_struct.vertex_for_render;
+	std::vector<std::array<double, 3>>* vertex = &mesh_struct.vertex_position;
+	int index_end = mesh_struct.vertex_index_on_surface_begin_per_thread[thread_No + 1];
+	int* vertex_index_on_surface = mesh_struct.vertex_index_on_sureface.data();
+	for (int i = mesh_struct.vertex_index_on_surface_begin_per_thread[thread_No]; i < index_end; ++i) {
+		vertex_AABB[i].obtainAABB((*vertex_render)[vertex_index_on_surface[i]].data(), (*vertex)[vertex_index_on_surface[i]].data(), tolerance);	// 
+	}
+}
+
+//EDGE_TRIANGLE_AABB
+void Tetrahedron::getEdgeTriangleAABBPerThread(int thread_No)
+{
+	std::array<int,2>* edge = mesh_struct.edge_vertex_index_on_surface.data();
+	int* vertex_index;
+	int index_end = mesh_struct.edge_index_begin_per_thread[thread_No + 1];
+	for (int i = mesh_struct.edge_index_begin_per_thread[thread_No]; i < index_end; ++i) {
+		vertex_index = edge[i].data();
+		getAABB(edge_AABB[i], vertex_AABB[vertex_index[0]], vertex_AABB[vertex_index[1]]);
+	}
+	std::array<int, 3>* face = mesh_struct.triangle_index_on_surface.data();
+	index_end = mesh_struct.face_index_begin_per_thread[thread_No + 1];
+	for (int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < index_end; ++i) {
+		vertex_index = face[i].data();
+		getAABB(triangle_AABB[i], vertex_AABB[vertex_index[0]], vertex_AABB[vertex_index[1]], vertex_AABB[vertex_index[2]]);
+	}
+}
+
+
 
 void Tetrahedron::initialHashAABB()
 {
 	PC_radius.resize(4);
-	hash_index_for_vertex.resize(mesh_struct.vertices.size());
+	hash_index_for_vertex.resize(mesh_struct.vertex_index_on_sureface.size());
 	for (int i = 0; i < hash_index_for_vertex.size(); ++i) {
 		hash_index_for_vertex[i].reserve(32);
 	}
@@ -61,7 +101,7 @@ void Tetrahedron::initialHashAABB()
 	}
 	triangle_AABB.resize(mesh_struct.faces.size());
 	edge_AABB.resize(mesh_struct.edges.size());
-	vertex_AABB.resize(mesh_struct.vertices.size());
+	vertex_AABB.resize(mesh_struct.vertex_index_on_sureface.size());
 }
 
 void Tetrahedron::setBuffer()
@@ -252,5 +292,59 @@ void Tetrahedron::findInnerVertex(std::vector<bool>& is_vertex_used)
 				is_vertex_used[vertex_index_->data()[j]] = true;
 			}
 		}	
+	}
+}
+
+void Tetrahedron::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num, int collider_num, bool use_BVH)
+{
+	int obj_num = cloth_num + tetrahedron_num;
+	triangle_neighbor_obj_triangle.resize(mesh_struct.triangle_indices.size());
+	for (int i = 0; i < mesh_struct.triangle_indices.size(); ++i) {
+		triangle_neighbor_obj_triangle[i].resize(obj_num);
+		for (int j = 0; j < obj_num; ++j) {
+			triangle_neighbor_obj_triangle[i][j].reserve(10);
+		}
+	}
+
+	vertex_neighbor_obj_traingle.resize(mesh_struct.vertex_position.size());
+	collide_vertex_obj_triangle.resize(mesh_struct.vertex_position.size());
+	for (int i = 0; i < vertex_neighbor_obj_traingle.size(); ++i) {
+		vertex_neighbor_obj_traingle[i].resize(obj_num);
+		collide_vertex_obj_triangle[i].resize(obj_num);
+		for (int j = 0; j < obj_num; ++j) {
+			vertex_neighbor_obj_traingle[i][j].reserve(10);
+			collide_vertex_obj_triangle[i][j].reserve(10);
+		}
+	}
+
+	edge_neighbor_obj_edge.resize(mesh_struct.edges.size());
+	collide_edge_obj_edge.resize(mesh_struct.edges.size());
+	for (int i = 0; i < edge_neighbor_obj_edge.size(); ++i) {
+		edge_neighbor_obj_edge[i].resize(obj_num);
+		collide_edge_obj_edge[i].resize(obj_num);
+		for (int j = 0; j < obj_num; ++j) {
+			edge_neighbor_obj_edge[i][j].reserve(10);
+			collide_edge_obj_edge[i][j].reserve(10);
+		}
+	}
+
+	if (use_BVH) {
+		triangle_neighbor_collider_triangle.resize(mesh_struct.triangle_indices.size());
+		for (int i = 0; i < mesh_struct.triangle_indices.size(); ++i) {
+			triangle_neighbor_collider_triangle[i].resize(collider_num);
+			for (int j = 0; j < collider_num; ++j) {
+				triangle_neighbor_collider_triangle[i][j].reserve(10);
+			}
+		}
+		vertex_neighbor_collider_triangle.resize(mesh_struct.vertex_position.size());
+		collide_vertex_collider_triangle.resize(mesh_struct.vertex_position.size());
+		for (int i = 0; i < vertex_neighbor_collider_triangle.size(); ++i) {
+			vertex_neighbor_collider_triangle[i].resize(collider_num);
+			collide_vertex_collider_triangle[i].resize(collider_num);
+			for (int j = 0; j < collider_num; ++j) {
+				vertex_neighbor_collider_triangle[i][j].reserve(10);
+				collide_vertex_collider_triangle[i][j].reserve(10);
+			}
+		}
 	}
 }

@@ -64,7 +64,7 @@ public:
 
 	std::vector<int> face_index_begin_per_thread;
 	std::vector<int> anchor_index_begin_per_thread;
-	std::vector<int> vertex_index_begin_per_thread;
+	
 	std::vector<int> edge_index_begin_per_thread;
 
 	std::vector<std::array<floating, 3>> f_face_normal_for_render;
@@ -77,8 +77,10 @@ public:
 	void setEdge();
 	//void addArounVertex();
 
-	void getVertexNormalPerThread(int thread_id);
-	void getRenderVertexNormalPerThread(int thread_id);
+
+
+	void getRenderFaceNormalPerThread(int thread_id);
+	void getFaceNormalPerThread(int thread_id);
 
 protected:
 	int type;

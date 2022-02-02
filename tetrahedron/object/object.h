@@ -45,5 +45,5 @@ public:
 	std::vector<int> representative_edge_num;
 	std::vector<int> vertex_from_rep_triangle_index;
 	std::vector<int> edge_from_rep_triangle_index;
-
+	std::vector<std::vector<std::vector<int>>>triangle_neighbor_obj_triangle;
 };

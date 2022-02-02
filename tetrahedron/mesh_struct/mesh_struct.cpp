@@ -199,51 +199,46 @@ void MeshStruct::addEdge(int v0, int v1, int face, int opposite_vertex)
 //}
 
 
-//VERTEX_NORMAL
-void MeshStruct::getVertexNormalPerThread(int thread_id)
-{
-	std::vector<int>* face_vertex;
-	double* current_vertex_normal;
-	double dot;
-	for (int i = vertex_index_begin_per_thread[thread_id]; i < vertex_index_begin_per_thread[thread_id + 1]; ++i) {
-		face_vertex = &vertices[i].face;
-		if (!face_vertex->empty()) {
-			current_vertex_normal = vertex_normal[i].data();
-			memcpy(current_vertex_normal, face_normal[(*face_vertex)[0]].data(), 24);
-			for (int k = 1; k < face_vertex->size(); ++k) {
-				SUM_(current_vertex_normal,
-					face_normal[(*face_vertex)[k]]);
 
-			}
-			normalize(current_vertex_normal);
-		}		
+
+//FACE_NORMAL_RENDER
+void MeshStruct::getRenderFaceNormalPerThread(int thread_id)
+{
+	double e0[3], e2[3];
+	for (int j = face_index_begin_per_thread[thread_id]; j < face_index_begin_per_thread[thread_id + 1]; ++j) {
+		SUB(e2, vertex_for_render[triangle_indices[j][1]], vertex_for_render[triangle_indices[j][0]]);
+		SUB(e0, vertex_for_render[triangle_indices[j][2]], vertex_for_render[triangle_indices[j][0]]);
+		CROSS(face_normal_for_render[j].data(), e2, e0);
+		memcpy(ori_face_normal_for_render[j].data(), face_normal_for_render[j].data(), 24);
+		normalize(face_normal_for_render[j].data());
 	}
 }
 
-//VERTEX_NORMAL_RENDER
-void MeshStruct::getRenderVertexNormalPerThread(int thread_id)
+//FACE_NORMAL
+void MeshStruct::getFaceNormalPerThread(int thread_id)
 {
-	std::vector<int>* face_vertex;
-	double* current_vertex_normal;
-	double dot;
-	for (int i = vertex_index_begin_per_thread[thread_id]; i < vertex_index_begin_per_thread[thread_id + 1]; ++i) {
-		face_vertex = &vertices[i].face;
-		if (!face_vertex->empty()) {
-			current_vertex_normal = vertex_normal_for_render[i].data();
-			memcpy(current_vertex_normal, ori_face_normal_for_render[(*face_vertex)[0]].data(), 24);
-			for (int k = 1; k < face_vertex->size(); ++k) {
-				SUM_(current_vertex_normal,
-					ori_face_normal_for_render[(*face_vertex)[k]]);
-			}
-			dot = DOT(current_vertex_normal, current_vertex_normal);
-			if (dot < 1e-20) {
-				memcpy(current_vertex_normal, ori_face_normal_for_render[(*face_vertex)[0]].data(), 24);
-			}
-			else {
-				dot = sqrt(dot);
-				DEV_(current_vertex_normal, dot);
-			}
-		}
-	}
+	double e0[3], e2[3];
+	double e3[3], e4[3];
+	double* current_face_normal;
+	int* triangle_vertex;
+	double f_cross[3];
+	for (int j = face_index_begin_per_thread[thread_id]; j < face_index_begin_per_thread[thread_id + 1]; ++j) {
+		triangle_vertex = triangle_indices[j].data();
+		current_face_normal = face_normal[j].data();
+		SUB(e2, vertex_position[triangle_vertex[1]], vertex_position[triangle_vertex[0]]);
+		SUB(e0, vertex_position[triangle_vertex[2]], vertex_position[triangle_vertex[0]]);
+		CROSS(current_face_normal, e2, e0);
+		memcpy(ori_face_normal[j].data(), current_face_normal, 24);
+		triangle_normal_magnitude_reciprocal[j] = 1.0 / sqrt(DOT(current_face_normal, current_face_normal));
+		normalize(current_face_normal);
 
+		SUB(e3, vertex_for_render[triangle_vertex[1]], vertex_for_render[triangle_vertex[0]]);
+		SUB(e4, vertex_for_render[triangle_vertex[2]], vertex_for_render[triangle_vertex[0]]);
+
+		current_face_normal = cross_for_approx_CCD[j].data();
+
+		CROSS(current_face_normal, e3, e0);
+		CROSS(f_cross, e2, e4);
+		SUM_(current_face_normal, f_cross);
+	}
 }

@@ -16,13 +16,16 @@ public:
 	void triangleHashing(int thread_No);
 	void buildSpatialHashing();
 	void setHashTogether(int thread_No);
-	void searchTriangle(AABB& aabb, int obj_No, int triangle_index, std::vector<int>* cloth_neighbor_index, bool is_collider, int thread_No);
+	void searchTriangle(AABB& aabb, int input_obj_No, int triangle_index, std::vector<int>* obj_neighbor_index, bool is_collider, int thread_No);
 private:
 	Thread* thread;
 	std::vector<Cloth>* cloth;
 	std::vector<Collider>* collider;
 	std::vector<Tetrahedron>* tetrahedron;
-	void initialHashCellLength(std::vector<Cloth>* cloth, double& cell_length, double* tolerance_ratio);
+
+	int tetrahedron_begin_obj_index;
+
+	void initialHashCellLength(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, double& cell_length, double* tolerance_ratio);
 	double cell_length;//this is the size of spatial hashing cell, = average edge length
 	double thread_num;
 
@@ -39,24 +42,24 @@ private:
 
 	std::vector<std::vector<int>> spatial_hashing_value_per_thread;
 	std::vector<int> spatial_hashing_value;
-	std::vector<std::vector<int>>spatial_hashing_cloth_index_per_thread;
-	std::vector<int> spatial_hashing_cloth_index;
+	std::vector<std::vector<int>>spatial_hashing_obj_index_per_thread;
+	std::vector<int> spatial_hashing_obj_index;
 	std::vector<std::vector<int>>spatial_hashing_triangle_index_per_thread;
 	std::vector<int> spatial_hashing_triangle_index;
 
 
-	void clothTriangleHashingValue(AABB& aabb, std::vector<int>* spatial_hashing_triangle_index, std::vector<int>* spatial_hashing_value, int triangle_index, std::vector<int>* hash_value);
+	void triangleHashingValue(AABB& aabb, std::vector<int>* spatial_hashing_triangle_index, std::vector<int>* spatial_hashing_value, int triangle_index, std::vector<int>* hash_value);
 	void obtainTriangleHashingValue(AABB& aabb, std::vector<int>* hash_value);
 	RadixSort radix_sort;
 	void testRadixSort();
 
 
-	std::vector<std::vector<std::vector<int>>> cloth_triangle_hash;
+	std::vector<std::vector<std::vector<int>>> obj_triangle_hash;
 	void initialTriangleHash();
 	void setHashTogether();
 	std::vector<int>hash_value_begin;
 	std::vector<int> prifix_sum;
 	void setPrifixSum();
-	bool*** cloth_is_used;
+	bool*** obj_is_used;
 };
 

@@ -365,33 +365,34 @@ void Cloth::findNeighborVertex(int vertex_index, int recursion_deepth, std::vect
 
 void Cloth::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num, int collider_num, bool use_BVH)
 {
-	triangle_neighbor_cloth_triangle.resize(mesh_struct.triangle_indices.size());
+	int obj_num = cloth_num + tetrahedron_num;
+	triangle_neighbor_obj_triangle.resize(mesh_struct.triangle_indices.size());
 	for (int i = 0; i < mesh_struct.triangle_indices.size(); ++i) {
-		triangle_neighbor_cloth_triangle[i].resize(cloth_num);
-		for (int j = 0; j < cloth_num; ++j) {
-			triangle_neighbor_cloth_triangle[i][j].reserve(10);
+		triangle_neighbor_obj_triangle[i].resize(obj_num);
+		for (int j = 0; j < obj_num; ++j) {
+			triangle_neighbor_obj_triangle[i][j].reserve(10);
 		}
 	}
 
-	vertex_neighbor_cloth_traingle.resize(mesh_struct.vertex_position.size());
-	collide_vertex_cloth_triangle.resize(mesh_struct.vertex_position.size());
-	for (int i = 0; i < vertex_neighbor_cloth_traingle.size(); ++i) {
-		vertex_neighbor_cloth_traingle[i].resize(cloth_num);
-		collide_vertex_cloth_triangle[i].resize(cloth_num);
-		for (int j = 0; j < cloth_num; ++j) {
-			vertex_neighbor_cloth_traingle[i][j].reserve(10);
-			collide_vertex_cloth_triangle[i][j].reserve(10);
+	vertex_neighbor_obj_traingle.resize(mesh_struct.vertex_position.size());
+	collide_vertex_obj_triangle.resize(mesh_struct.vertex_position.size());
+	for (int i = 0; i < vertex_neighbor_obj_traingle.size(); ++i) {
+		vertex_neighbor_obj_traingle[i].resize(obj_num);
+		collide_vertex_obj_triangle[i].resize(obj_num);
+		for (int j = 0; j < obj_num; ++j) {
+			vertex_neighbor_obj_traingle[i][j].reserve(10);
+			collide_vertex_obj_triangle[i][j].reserve(10);
 		}
 	}
 
-	edge_neighbor_cloth_edge.resize(mesh_struct.edges.size());
-	collide_edge_cloth_edge.resize(mesh_struct.edges.size());
-	for (int i = 0; i < edge_neighbor_cloth_edge.size(); ++i) {
-		edge_neighbor_cloth_edge[i].resize(cloth_num);
-		collide_edge_cloth_edge[i].resize(cloth_num);
-		for (int j = 0; j < cloth_num; ++j) {
-			edge_neighbor_cloth_edge[i][j].reserve(10);
-			collide_edge_cloth_edge[i][j].reserve(10);
+	edge_neighbor_obj_edge.resize(mesh_struct.edges.size());
+	collide_edge_obj_edge.resize(mesh_struct.edges.size());
+	for (int i = 0; i < edge_neighbor_obj_edge.size(); ++i) {
+		edge_neighbor_obj_edge[i].resize(obj_num);
+		collide_edge_obj_edge[i].resize(obj_num);
+		for (int j = 0; j < obj_num; ++j) {
+			edge_neighbor_obj_edge[i][j].reserve(10);
+			collide_edge_obj_edge[i][j].reserve(10);
 		}
 	}
 
@@ -405,7 +406,7 @@ void Cloth::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num
 		}
 		vertex_neighbor_collider_triangle.resize(mesh_struct.vertex_position.size());
 		collide_vertex_collider_triangle.resize(mesh_struct.vertex_position.size());
-		for (int i = 0; i < vertex_neighbor_cloth_traingle.size(); ++i) {
+		for (int i = 0; i < vertex_neighbor_collider_triangle.size(); ++i) {
 			vertex_neighbor_collider_triangle[i].resize(collider_num);
 			collide_vertex_collider_triangle[i].resize(collider_num);
 			for (int j = 0; j < collider_num; ++j) {
