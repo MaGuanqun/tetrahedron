@@ -35,7 +35,8 @@ public:
 	void getRenderVertexNormalPerThread(int thread_id);
 
 	std::vector<std::array<int, 2>> edge_vertex_index_on_surface;
-	std::vector<std::array<int, 3>> triangle_index_on_surface;
+	
+
 	void setVertexIndexOnSurfaceEdgeTriangle();
 
 private:

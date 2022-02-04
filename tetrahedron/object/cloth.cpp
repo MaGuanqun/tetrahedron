@@ -151,22 +151,14 @@ void Cloth::recordInitialMesh(SingleClothInfo& single_cloth_info_ref)
 	ori_vertices = mesh_struct.vertex_position;
 	this->single_cloth_info_ref = single_cloth_info_ref;
 	length_stiffness.resize(mesh_struct.edges.size());
-	collision_stiffness.resize(4);
-	for (int i = 0; i < 4; ++i) {
-		collision_stiffness[i].resize(mesh_struct.vertices.size(), single_cloth_info_ref.collision_stiffness[i]);
-	}	
+	memcpy(collision_stiffness, single_cloth_info_ref.collision_stiffness, 32);
 	memcpy(collision_stiffness_initial, single_cloth_info_ref.collision_stiffness, 32);
 	bend_stiffness = single_cloth_info_ref.bending_stiffness;
 	position_stiffness = single_cloth_info_ref.position_stiffness;
 	std::fill(length_stiffness.begin(), length_stiffness.end(), single_cloth_info_ref.length_stiffness);	
-	collision_stiffness_time_step_starts = collision_stiffness;
 	std::array<double, 4> collision_stiff_indicator;
 	for (int i = 0; i < 4; ++i) {
 		collision_stiff_indicator[i] = collision_stiffness_update_indicator * single_cloth_info_ref.collision_stiffness[i];
-	}
-	collision_stiffness_time_step_starts_indicator.resize(4);
-	for (int i = 0; i < 4; ++i) {
-		collision_stiffness_time_step_starts_indicator[i].resize(mesh_struct.vertices.size(), collision_stiff_indicator[i]);
 	}
 	
 }
@@ -186,10 +178,7 @@ void Cloth::initial()
 	for (int i = 0; i < 4; ++i) {
 		collision_stiff_indicator[i] = collision_stiffness_update_indicator * single_cloth_info_ref.collision_stiffness[i];
 	}
-	for (int i = 0; i < 4; ++i) {
-		std::fill(collision_stiffness_time_step_starts[i].begin(), collision_stiffness_time_step_starts[i].end(), single_cloth_info_ref.collision_stiffness[i]);
-		std::fill(collision_stiffness_time_step_starts_indicator[i].begin(), collision_stiffness_time_step_starts_indicator[i].end(), collision_stiff_indicator[i]);
-	}
+	memcpy(collision_stiffness, single_cloth_info_ref.collision_stiffness, 16);
 }
 
 void Cloth::initialMouseChosenVertex()
@@ -261,65 +250,6 @@ void Cloth::obtainAABB()
 }
 
 
-void Cloth::setRepresentativePrimitve()
-{
-	representative_vertex_num.resize(mesh_struct.faces.size(), 0);
-	representative_edge_num.resize(mesh_struct.faces.size(), 0);
-	setRepresentativeVertex(mesh_struct.faces, mesh_struct.vertices);
-	setRepresentativeEdge(mesh_struct.faces, mesh_struct.edges);
-	vertex_from_rep_triangle_index.resize(mesh_struct.vertex_position.size(),-1);
-	edge_from_rep_triangle_index.resize(mesh_struct.edges.size(),-1);
-	for (int i = 0; i < mesh_struct.faces.size(); ++i) {
-		for (int j = 0; j < representative_vertex_num[i]; ++j) {
-			vertex_from_rep_triangle_index[mesh_struct.faces[i].vertex[j]] = i;
-		}
-		for (int j = 0; j < representative_edge_num[i]; ++j) {
-			edge_from_rep_triangle_index[mesh_struct.faces[i].edge[j]] = i;
-		}
-	}
-}
-
-void Cloth::setRepresentativeVertex(std::vector<MeshStruct::Face>& face, std::vector<MeshStruct::Vertex>& vertex)
-{
-	int count;
-	bool in_this_triangle[3];
-	std::vector<bool> is_used(vertex.size(), false);
-	for (int i = 0; i < face.size(); ++i) {
-		count = 0;
-		memset(in_this_triangle, 0, 3);
-		for (int j = 0; j < 3; ++j) {
-			if (!is_used[face[i].vertex[j]]) {
-				count++;
-				is_used[face[i].vertex[j]] = true;
-				in_this_triangle[j] = true;
-			}		
-		}
-		representative_vertex_num[i] = count;
-		setOrder(in_this_triangle, count, face[i].vertex);
-	}
-}
-
-void Cloth::setRepresentativeEdge(std::vector<MeshStruct::Face>& face, std::vector<MeshStruct::Edge>& edge)
-{
-	int count;
-	bool in_this_triangle[3];
-	std::vector<bool> is_used(edge.size(), false);
-	for (int i = 0; i < face.size(); ++i) {
-		count = 0;
-		memset(in_this_triangle, 0, 3);
-		for (int j = 0; j < 3; ++j) {
-			if (!is_used[face[i].edge[j]]) {
-				count++;
-				is_used[face[i].edge[j]] = true;
-				in_this_triangle[j] = true;
-			}
-		}
-		representative_edge_num[i] = count;
-		setOrderEdge(in_this_triangle, count, face[i].edge.data());
-	}
-}
-
-
 
 
 void Cloth::setTolerance(double* tolerance_ratio, double ave_edge_length)
@@ -374,13 +304,13 @@ void Cloth::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num
 		}
 	}
 
-	vertex_neighbor_obj_traingle.resize(mesh_struct.vertex_position.size());
+	vertex_neighbor_obj_triangle.resize(mesh_struct.vertex_position.size());
 	collide_vertex_obj_triangle.resize(mesh_struct.vertex_position.size());
-	for (int i = 0; i < vertex_neighbor_obj_traingle.size(); ++i) {
-		vertex_neighbor_obj_traingle[i].resize(obj_num);
+	for (int i = 0; i < vertex_neighbor_obj_triangle.size(); ++i) {
+		vertex_neighbor_obj_triangle[i].resize(obj_num);
 		collide_vertex_obj_triangle[i].resize(obj_num);
 		for (int j = 0; j < obj_num; ++j) {
-			vertex_neighbor_obj_traingle[i][j].reserve(10);
+			vertex_neighbor_obj_triangle[i][j].reserve(10);
 			collide_vertex_obj_triangle[i][j].reserve(10);
 		}
 	}
@@ -416,6 +346,25 @@ void Cloth::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num
 		}
 	}	
 }
+
+void Cloth::setRepresentativePrimitve()
+{
+	representative_vertex_num.resize(mesh_struct.faces.size(), 0);
+	representative_edge_num.resize(mesh_struct.faces.size(), 0);
+	setRepresentativeVertex(mesh_struct.surface_triangle_index_in_order, mesh_struct.vertices);
+	setRepresentativeEdge(mesh_struct.faces, mesh_struct.edges);
+	vertex_from_rep_triangle_index.resize(mesh_struct.vertex_position.size(), -1);
+	edge_from_rep_triangle_index.resize(mesh_struct.edges.size(), -1);
+	for (int i = 0; i < mesh_struct.faces.size(); ++i) {
+		for (int j = 0; j < representative_vertex_num[i]; ++j) {
+			vertex_from_rep_triangle_index[mesh_struct.surface_triangle_index_in_order[i][j]] = i;
+		}
+		for (int j = 0; j < representative_edge_num[i]; ++j) {
+			edge_from_rep_triangle_index[mesh_struct.faces[i].edge[j]] = i;
+		}
+	}
+}
+
 
 //void Cloth::test() //ttest representative triangle
 //{

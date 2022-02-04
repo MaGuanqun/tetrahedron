@@ -8,6 +8,7 @@ private:
 	void initialHashAABB();
 	void getVertexAABBPerThread(int thread_No);
 	void getEdgeTriangleAABBPerThread(int thread_No);
+	void setRepresentativePrimitve();
 public:
 	void obtainAABB();
 	MeshMaterial material;
@@ -37,13 +38,14 @@ public:
 	void findInnerVertex(std::vector<bool>& is_vertex_used);
 	void setTolerance(double* tolerance_ratio, double ave_edge_length);
 	double tolerance;
-	std::vector<std::vector<std::vector<int>>>vertex_neighbor_obj_traingle;//except collider
-	std::vector<std::vector<std::vector<int>>>vertex_neighbor_collider_triangle;
+	std::vector<std::vector<std::vector<int>>>surface_vertex_neighbor_obj_triangle;//except collider
+	std::vector<std::vector<std::vector<int>>>surface_vertex_neighbor_collider_triangle;
 	std::vector<std::vector<std::vector<int>>>edge_neighbor_obj_edge;//except collider
 	std::vector<std::vector<std::vector<int>>>collide_vertex_obj_triangle;//except collider
 	std::vector<std::vector<std::vector<int>>>collide_vertex_collider_triangle;
 	std::vector<std::vector<std::vector<int>>>collide_edge_obj_edge;//except collider
 	std::vector<std::vector<std::vector<int>>>triangle_neighbor_collider_triangle;
 	void initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num, int collider_num, bool use_BVH);
+	std::vector<int> surface_vertex_from_rep_triangle_index;
 };
 

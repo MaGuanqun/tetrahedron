@@ -9,7 +9,7 @@ class MeshStruct
 {
 public:
 	struct Face {
-		int vertex[3];
+		//int vertex[3];
 		std::vector<int> edge;
 		double area;
 		std::vector<int>vertex_around;
@@ -81,6 +81,8 @@ public:
 
 	void getRenderFaceNormalPerThread(int thread_id);
 	void getFaceNormalPerThread(int thread_id);
+
+	std::vector<std::array<int, 3>> surface_triangle_index_in_order;//this is for representative triangle
 
 protected:
 	int type;

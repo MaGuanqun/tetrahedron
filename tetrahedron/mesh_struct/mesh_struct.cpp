@@ -41,11 +41,12 @@ void MeshStruct::setFace()
 {
 	int face_num = triangle_indices.size();
 	faces.resize(face_num);
-	for (int i = 0; i < face_num; ++i) {
-		faces[i].vertex[0] = triangle_indices[i][0];
-		faces[i].vertex[1] = triangle_indices[i][1];
-		faces[i].vertex[2] = triangle_indices[i][2];
-	}
+	surface_triangle_index_in_order = triangle_indices;
+	//for (int i = 0; i < face_num; ++i) {
+	//	faces[i].vertex[0] = triangle_indices[i][0];
+	//	faces[i].vertex[1] = triangle_indices[i][1];
+	//	faces[i].vertex[2] = triangle_indices[i][2];
+	//}
 }
 
 void MeshStruct::setEdge()

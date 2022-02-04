@@ -103,17 +103,18 @@ void Collider::setTolerance(double* tolerance_ratio, double ave_edge_length)
 
 void Collider::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num)
 {
-	triangle_neighbor_cloth_triangle.resize(mesh_struct.triangle_indices.size());
-	triangle_neighbor_cloth_vertex.resize(mesh_struct.triangle_indices.size());
-	collider_triangle_cloth_vertex.resize(mesh_struct.triangle_indices.size());
+	triangle_neighbor_obj_triangle.resize(mesh_struct.triangle_indices.size());
+	triangle_neighbor_obj_vertex.resize(mesh_struct.triangle_indices.size());
+	collider_triangle_obj_vertex.resize(mesh_struct.triangle_indices.size());
+	int obj_num = cloth_num + tetrahedron_num;
 	for (int i = 0; i < mesh_struct.triangle_indices.size(); ++i) {
-		triangle_neighbor_cloth_triangle[i].resize(cloth_num);
-		triangle_neighbor_cloth_vertex[i].resize(cloth_num);
-		collider_triangle_cloth_vertex[i].resize(cloth_num);
-		for (int j = 0; j < cloth_num; ++j) {
-			triangle_neighbor_cloth_triangle[i][j].reserve(10);
-			triangle_neighbor_cloth_vertex[i][j].reserve(10);
-			collider_triangle_cloth_vertex[i][j].reserve(10);
+		triangle_neighbor_obj_triangle[i].resize(obj_num);
+		triangle_neighbor_obj_vertex[i].resize(obj_num);
+		collider_triangle_obj_vertex[i].resize(obj_num);
+		for (int j = 0; j < obj_num; ++j) {
+			triangle_neighbor_obj_triangle[i][j].reserve(10);
+			triangle_neighbor_obj_vertex[i][j].reserve(10);
+			collider_triangle_obj_vertex[i][j].reserve(10);
 		}
 	}
 }

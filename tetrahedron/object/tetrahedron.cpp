@@ -11,7 +11,6 @@ void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mesh_struct.initialNormalSize();
 	mesh_struct.setFace();
 	mesh_struct.setEdge();
-	mesh_struct.setVertexIndexOnSurfaceEdgeTriangle();
 	//mesh_struct.addArounVertex();
 	mesh_struct.setThreadIndex(total_thread_num);
 	mesh_struct.vertex_for_render = mesh_struct.vertex_position;
@@ -21,7 +20,8 @@ void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mass = mesh_struct.setVolumeMass(density);
 	mesh_struct.recordTetIndexForSurfaceIndex();
 	genBuffer();
-	setBuffer();
+	setBuffer();	
+	setRepresentativePrimitve();
 	initialHashAABB();
 }
 
@@ -45,6 +45,27 @@ void Tetrahedron::drawWireframe(Camera* camera, Shader* wireframe_shader)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glDrawElements(GL_TRIANGLES, 3*mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
+	}
+}
+
+
+void Tetrahedron::setRepresentativePrimitve()
+{
+	representative_vertex_num.resize(mesh_struct.faces.size(), 0);
+	representative_edge_num.resize(mesh_struct.faces.size(), 0);
+	setRepresentativeVertex(mesh_struct.surface_triangle_index_in_order, mesh_struct.vertices);
+	mesh_struct.setVertexIndexOnSurfaceEdgeTriangle();
+	setRepresentativeEdge(mesh_struct.faces, mesh_struct.edges);
+	surface_vertex_from_rep_triangle_index.resize(mesh_struct.vertex_index_on_sureface.size(), -1);
+	edge_from_rep_triangle_index.resize(mesh_struct.edges.size(), -1);
+	
+	for (int i = 0; i < mesh_struct.faces.size(); ++i) {
+		for (int j = 0; j < representative_vertex_num[i]; ++j) {
+			surface_vertex_from_rep_triangle_index[mesh_struct.surface_triangle_index_in_order[i][j]] = i;
+		}
+		for (int j = 0; j < representative_edge_num[i]; ++j) {
+			edge_from_rep_triangle_index[mesh_struct.faces[i].edge[j]] = i;
+		}
 	}
 }
 
@@ -78,7 +99,7 @@ void Tetrahedron::getEdgeTriangleAABBPerThread(int thread_No)
 		vertex_index = edge[i].data();
 		getAABB(edge_AABB[i], vertex_AABB[vertex_index[0]], vertex_AABB[vertex_index[1]]);
 	}
-	std::array<int, 3>* face = mesh_struct.triangle_index_on_surface.data();
+	std::array<int, 3>* face = mesh_struct.surface_triangle_index_in_order.data();
 	index_end = mesh_struct.face_index_begin_per_thread[thread_No + 1];
 	for (int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < index_end; ++i) {
 		vertex_index = face[i].data();
@@ -306,13 +327,13 @@ void Tetrahedron::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedr
 		}
 	}
 
-	vertex_neighbor_obj_traingle.resize(mesh_struct.vertex_position.size());
-	collide_vertex_obj_triangle.resize(mesh_struct.vertex_position.size());
-	for (int i = 0; i < vertex_neighbor_obj_traingle.size(); ++i) {
-		vertex_neighbor_obj_traingle[i].resize(obj_num);
+	surface_vertex_neighbor_obj_triangle.resize(mesh_struct.vertex_index_on_sureface.size());
+	collide_vertex_obj_triangle.resize(mesh_struct.vertex_index_on_sureface.size());
+	for (int i = 0; i < surface_vertex_neighbor_obj_triangle.size(); ++i) {
+		surface_vertex_neighbor_obj_triangle[i].resize(obj_num);
 		collide_vertex_obj_triangle[i].resize(obj_num);
 		for (int j = 0; j < obj_num; ++j) {
-			vertex_neighbor_obj_traingle[i][j].reserve(10);
+			surface_vertex_neighbor_obj_triangle[i][j].reserve(10);
 			collide_vertex_obj_triangle[i][j].reserve(10);
 		}
 	}
@@ -336,13 +357,13 @@ void Tetrahedron::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedr
 				triangle_neighbor_collider_triangle[i][j].reserve(10);
 			}
 		}
-		vertex_neighbor_collider_triangle.resize(mesh_struct.vertex_position.size());
-		collide_vertex_collider_triangle.resize(mesh_struct.vertex_position.size());
-		for (int i = 0; i < vertex_neighbor_collider_triangle.size(); ++i) {
-			vertex_neighbor_collider_triangle[i].resize(collider_num);
+		surface_vertex_neighbor_collider_triangle.resize(mesh_struct.vertex_index_on_sureface.size());
+		collide_vertex_collider_triangle.resize(mesh_struct.vertex_index_on_sureface.size());
+		for (int i = 0; i < surface_vertex_neighbor_collider_triangle.size(); ++i) {
+			surface_vertex_neighbor_collider_triangle[i].resize(collider_num);
 			collide_vertex_collider_triangle[i].resize(collider_num);
 			for (int j = 0; j < collider_num; ++j) {
-				vertex_neighbor_collider_triangle[i][j].reserve(10);
+				surface_vertex_neighbor_collider_triangle[i][j].reserve(10);
 				collide_vertex_collider_triangle[i][j].reserve(10);
 			}
 		}
