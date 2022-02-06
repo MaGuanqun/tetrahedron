@@ -1,3 +1,4 @@
+#pragma once
 #ifndef THREAD_H
 #define THREAD_H
 #include <thread>
@@ -37,35 +38,10 @@ struct ThreadData
 
 class Thread
 {
-private:
-    ThreadData* threads;
-    std::vector<std::future<void>> futures;
-
-    void thread_func(ThreadData* pData);
-    job create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread function_type);
-    job create_task(TriangleMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);// int jobNumber
-    job create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncSendToThread function_type);
-    job create_task(Cloth* func, int thread_id, ObjectFunc function_type);
-    job create_task(Collider* func, int thread_id, ObjectFunc function_type);
-    job create_task(BVH* func, int thread_id, BVHFunc function_type);
-    job create_task(TetrahedronMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);
-    job create_task(Collision* func, int thread_id, CollisionFuncSendToThread function_type);
-    job create_task(RadixSort* func, int thread_id, RadixSortFunc function_type, int key_id);
-
-    job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type);
-    job create_task(IterationMethod* func, int thread_id, std::vector<int>* vertex_index, std::vector<double>* coefficient,
-        double* x, double* b, double* result, int* vertex_index_thread_begin, int sys_size);
-    job create_task(IterationMethod* func, IterationMethodFunc function_type, int thread_id, int* vertex_index, double* coefficient, int* vertex_index_start,
-        Eigen::VectorXd* x, Eigen::VectorXd* b, Eigen::VectorXd* result, double* residual_norm, int* vertex_index_thread_begin,
-        Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous);
-    job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type, Eigen::VectorXd* u, Eigen::VectorXd* b, double* residual_norm,
-        double omega_chebyshev, Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous);
-
-
 public:
     Thread();
     void initial();
-	~Thread();
+    ~Thread();
     template <class T, typename U>
     void assignTask(T* func, U taskType)
     {
@@ -89,7 +65,7 @@ public:
         {
             // std::cout << threads[i].id << std::endl;
             job j = create_task(func, threads[i].id, taskType, key_id);
-           
+
             futures.push_back(j.get_future());
             std::unique_lock<std::mutex> l(threads[i].m);
             threads[i].jobs.push(std::move(j));
@@ -98,21 +74,46 @@ public:
         }
         for (auto& f : futures) { f.wait(); }
         futures.clear();
-    }  
+    }
 
-    void assignTask(IterationMethod* func, IterationMethodFunc function_type, Eigen::VectorXd* u, Eigen::VectorXd* b, 
+    void assignTask(IterationMethod* func, IterationMethodFunc function_type, Eigen::VectorXd* u, Eigen::VectorXd* b,
         double* residual_norm, double omega_chebyshev, Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous);
     void assignTask(IterationMethod* func, IterationMethodFunc function_type, int* vertex_index, double* coefficient, int* vertex_index_start,
         Eigen::VectorXd* x, Eigen::VectorXd* b, Eigen::VectorXd* result, double* residual_norm, int* vertex_index_thread_begin,
         Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous);
 
     void assignTask(IterationMethod* func, std::vector<int>* vertex_index, std::vector<double>* coefficient,
-        double* x, double* b, double* result, int* vertex_index_thread_begin, int sys_size);  
-   
+        double* x, double* b, double* result, int* vertex_index_thread_begin, int sys_size);
+
     int thread_num;
+
+private:
+    ThreadData* threads;
+    std::vector<std::future<void>> futures;
+
+    void thread_func(ThreadData* pData);  
+    job create_task(TriangleMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);// int jobNumber
+    job create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncSendToThread function_type);
+    job create_task(Cloth* func, int thread_id, ObjectFunc function_type);
+    job create_task(Collider* func, int thread_id, ObjectFunc function_type);
+    job create_task(BVH* func, int thread_id, BVHFunc function_type);
+    job create_task(TetrahedronMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);
+    job create_task(Collision* func, int thread_id, CollisionFuncSendToThread function_type);
+    job create_task(RadixSort* func, int thread_id, RadixSortFunc function_type, int key_id);
+
+    job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type);
+    job create_task(IterationMethod* func, int thread_id, std::vector<int>* vertex_index, std::vector<double>* coefficient,
+        double* x, double* b, double* result, int* vertex_index_thread_begin, int sys_size);
+    job create_task(IterationMethod* func, IterationMethodFunc function_type, int thread_id, int* vertex_index, double* coefficient, int* vertex_index_start,
+        Eigen::VectorXd* x, Eigen::VectorXd* b, Eigen::VectorXd* result, double* residual_norm, int* vertex_index_thread_begin,
+        Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous);
+    job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type, Eigen::VectorXd* u, Eigen::VectorXd* b, double* residual_norm,
+        double omega_chebyshev, Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous);
+    job create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread function_type);
+
 };
 
 
 #endif // !THREAD_H
 
-#pragma once
+

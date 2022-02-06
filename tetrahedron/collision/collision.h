@@ -136,8 +136,8 @@ private:
 		double radius, int edge_index, int compare_edge_index, int edge_cloth_No, int compare_cloth_No, TargetPosition* target_position, bool new_collision_registration,
 		double collision_stiffness, double compare_collision_stiffness);
 	void sumTargetPosition();
-	void pointSelfTriangleCollisionReDetection(int thread_No, int vertex_index, int cloth_No,std::vector<std::vector<int>>* collide_vertex_triangle,
-		MeshStruct* vertex_mesh, double radius0, std::vector<double>* collision_stiffness, TargetPosition* target_postion_);
+	void pointSelfTriangleCollisionReDetection(int thread_No, int vertex_index, int cloth_No,std::vector<int>* collide_vertex_triangle,
+		MeshStruct* vertex_mesh, double radius0, double collision_stiffness, TargetPosition* target_postion_);
 	void pointColliderTriangleCollisionReDetection(int thread_No, int vertex_index, int cloth_No, std::vector<std::vector<int>>* collide_vertex_triangle,
 		MeshStruct* vertex_mesh, double radius0, std::vector<double>* collision_stiffness, TargetPosition* target_postion_);
 	void edgeSelfEdgeCollisionReDetection(int thread_No, int edge_index, int cloth_No, std::vector<std::vector<int>>* collide_edge_edge, TriangleMeshStruct* edge_mesh,

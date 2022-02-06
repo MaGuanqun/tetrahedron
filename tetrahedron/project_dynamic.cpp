@@ -29,7 +29,7 @@ void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron
 	this->tetrahedron = tetrahedron;
 	sub_time_step = time_step / (double)sub_step_num;
 	this->thread = thread;
-
+	tetrahedron_begin_obj_index = cloth->size();
 	collision.initial(cloth, collider, tetrahedron, thread, tolerance_ratio);
 	total_collider_num = collider->size();
 	this->collider = collider;
@@ -871,7 +871,7 @@ void ProjectDynamic::computeInnerEnergyIPCPD()
 	previous_itr_PD_energy = current_PD_energy;
 	current_collision_energy = 1e-15;
 	for (int k = 0; k < total_cloth_num; ++k) {
-		current_collision_energy += collision.cloth_target_pos.collision_energy[k];
+		current_collision_energy += collision.obj_target_pos.collision_energy[k];
 	}
 	current_PD_energy = temEnergy[0];
 	for (int i = 1; i < total_thread_num; ++i) {
@@ -888,7 +888,7 @@ void ProjectDynamic::computeEnergyIPCPD()
 	previous_PD_energy = current_PD_energy;
 	current_collision_energy = 1e-15;
 	for (int k = 0; k < total_cloth_num; ++k) {
-		current_collision_energy += collision.cloth_target_pos.collision_energy[k];
+		current_collision_energy += collision.obj_target_pos.collision_energy[k];
 	}
 	current_PD_energy = temEnergy[0];
 	for (int i = 1; i < total_thread_num; ++i) {
@@ -1086,7 +1086,7 @@ void ProjectDynamic::updateCollisionMatrix()
 void ProjectDynamic::computeCollisionFreePosition(int thread_No)
 {
 	int index_end;
-	MeshStruct* mesh_struct;
+	
 	double collision_time = collision.collision_time;
 	std::array<double, 3>* q_pre;
 	std::array<double, 3>* q_end;
@@ -1096,6 +1096,7 @@ void ProjectDynamic::computeCollisionFreePosition(int thread_No)
 	u_z = u[2].data();
 	int vertex_index_start;
 	//cloth
+	MeshStruct* mesh_struct;
 	for (int i = 0; i < cloth->size(); ++i) {
 		mesh_struct = &(*cloth)[i].mesh_struct;
 		index_end = mesh_struct->vertex_index_begin_per_thread[thread_No + 1];
@@ -1166,15 +1167,17 @@ void ProjectDynamic::updateDiagonalPerThread(int thread_No)
 
 	//update_cloth
 	for (int j = 0; j < total_cloth_num; ++j) {
-		iteration_method.updateDiagonalPerThread((*cloth)[j].mesh_struct.vertex_index_begin_per_thread[thread_No],
-			(*cloth)[j].mesh_struct.vertex_index_begin_per_thread[thread_No + 1], vertex_begin_per_cloth[j], collision.cloth_target_pos.stiffness[j].data(),
-			collision.cloth_target_pos.need_update[j]);
+		iteration_method.updateClothDiagonalPerThread((*cloth)[j].mesh_struct.vertex_index_begin_per_thread[thread_No],
+			(*cloth)[j].mesh_struct.vertex_index_begin_per_thread[thread_No + 1], vertex_begin_per_cloth[j], collision.obj_target_pos.stiffness[j].data(),
+			collision.obj_target_pos.need_update[j]);
 	}
 	//update tetrahedron
+	int tet_index;
 	for (int j = 0; j < total_tetrahedron_num; ++j) {
-		iteration_method.updateDiagonalPerThread((*tetrahedron)[j].mesh_struct.vertex_index_begin_per_thread[thread_No],
+		tet_index = tetrahedron_begin_obj_index + j;
+		iteration_method.updateTetDiagonalPerThread((*tetrahedron)[j].mesh_struct.vertex_index_begin_per_thread[thread_No],
 			(*tetrahedron)[j].mesh_struct.vertex_index_begin_per_thread[thread_No + 1], vertex_begin_per_tetrahedron[j], 
-			collision.tet_target_pos.stiffness[j].data(),collision.tet_target_pos.need_update[j]);
+			collision.obj_target_pos.stiffness[tet_index].data(),collision.obj_target_pos.need_update[tet_index], (*tetrahedron)[j].mesh_struct.vertex_index_on_sureface.data());
 	}
 }
 
@@ -1184,7 +1187,7 @@ void ProjectDynamic::updateDiagonalPerThread(int thread_No)
 void ProjectDynamic::updateMatrixPerThread(int thread_No)
 {
 	int collision_num = 0;
-	std::vector<int>* vertex_index_begin_per_thread;
+	int* vertex_index_begin_per_thread;
 	bool* need_update;
 	double* stiffness;
 	double* diagonal_ref;
@@ -1195,10 +1198,10 @@ void ProjectDynamic::updateMatrixPerThread(int thread_No)
 	//update_cloth
 	for (int j = 0; j < total_cloth_num; ++j) {
 		vertex_index_start = vertex_begin_per_cloth[j];
-		need_update = collision.cloth_target_pos.need_update[j];
-		stiffness = collision.cloth_target_pos.stiffness[j].data();
-		vertex_index_begin_per_thread = &(*cloth)[j].mesh_struct.vertex_index_begin_per_thread;		
-		for (int i = (*vertex_index_begin_per_thread)[thread_No]; i < (*vertex_index_begin_per_thread)[thread_No + 1]; ++i) {
+		need_update = collision.obj_target_pos.need_update[j];
+		stiffness = collision.obj_target_pos.stiffness[j].data();
+		vertex_index_begin_per_thread = (*cloth)[j].mesh_struct.vertex_index_begin_per_thread.data();		
+		for (int i = vertex_index_begin_per_thread[thread_No]; i < vertex_index_begin_per_thread[thread_No + 1]; ++i) {
 			*(diagonal_ref_address[i + vertex_index_start]) = diagonal_ref[i + vertex_index_start];
 			////std::cout << i << " " << *(diagonal_ref_address[i]) << std::endl;
 			if (need_update[i]) {
@@ -1208,16 +1211,18 @@ void ProjectDynamic::updateMatrixPerThread(int thread_No)
 		}
 	}
 	//update tetrahedron
+	int* vertex_index_on_surface;
 	for (int j = 0; j < total_tetrahedron_num; ++j) {
 		vertex_index_start = vertex_begin_per_tetrahedron[j];
-		need_update = collision.tet_target_pos.need_update[j];
-		stiffness = collision.tet_target_pos.stiffness[j].data();
-		vertex_index_begin_per_thread = &(*tetrahedron)[j].mesh_struct.vertex_index_begin_per_thread;
-		for (int i = (*vertex_index_begin_per_thread)[thread_No]; i < (*vertex_index_begin_per_thread)[thread_No + 1]; ++i) {
-			*(diagonal_ref_address[i + vertex_index_start]) = diagonal_ref[i + vertex_index_start];
+		need_update = collision.obj_target_pos.need_update[j+tetrahedron_begin_obj_index];
+		stiffness = collision.obj_target_pos.stiffness[j+ tetrahedron_begin_obj_index].data();
+		vertex_index_begin_per_thread = (*tetrahedron)[j].mesh_struct.vertex_index_on_surface_begin_per_thread.data();
+		vertex_index_on_surface = (*tetrahedron)[j].mesh_struct.vertex_index_on_sureface.data();
+		for (int i = vertex_index_begin_per_thread[thread_No]; i < vertex_index_begin_per_thread[thread_No + 1]; ++i) {
+			*(diagonal_ref_address[vertex_index_on_surface[i] + vertex_index_start]) = diagonal_ref[vertex_index_on_surface[i] + vertex_index_start];
 			////std::cout << i << " " << *(diagonal_ref_address[i]) << std::endl;
 			if (need_update[i]) {
-				*(diagonal_ref_address[i + vertex_index_start]) += stiffness[i];
+				*(diagonal_ref_address[vertex_index_on_surface[i] + vertex_index_start]) += stiffness[i];
 				////std::cout<<"update "<<i << " " << *(diagonal_ref_address[i]) << std::endl;
 			}
 		}
@@ -1817,7 +1822,7 @@ void ProjectDynamic::constructbPerThead(int thread_id, bool with_collision)
 		dimension = cloth_dimension_per_thread[thread_id][i] % 3;
 		constructbPerThead(b[dimension].data(), (*cloth)[obj_No].mesh_struct,
 			p_edge_length[obj_No], obj_No, dimension, vertex_lbo[obj_No], p_bending[obj_No],
-			thread_id, collision.cloth_target_pos.b_sum[obj_No], collision.cloth_target_pos.need_update[obj_No],
+			thread_id, collision.obj_target_pos.b_sum[obj_No], collision.obj_target_pos.need_update[obj_No],
 			with_collision, vertex_begin_per_cloth[obj_No]);
 
 	}
@@ -1826,10 +1831,11 @@ void ProjectDynamic::constructbPerThead(int thread_id, bool with_collision)
 		obj_No = tetrahedron_dimension_per_thread[thread_id][i] / 3;
 		dimension = tetrahedron_dimension_per_thread[thread_id][i] % 3;
 		constructbTetPerThead(b[dimension].data(), (*tetrahedron)[obj_No].mesh_struct, p_ARAP_volume_preserve[obj_No], obj_No, dimension,
-			collision.tet_target_pos.b_sum[obj_No], collision.tet_target_pos.need_update[obj_No],
+			collision.obj_target_pos.b_sum[obj_No+tetrahedron_begin_obj_index], collision.obj_target_pos.need_update[obj_No + tetrahedron_begin_obj_index],
 			with_collision, (*tetrahedron)[obj_No].position_stiffness, vertex_begin_per_tetrahedron[obj_No],
 			(*tetrahedron)[obj_No].mesh_struct.indices.data(), (*tetrahedron)[obj_No].mesh_struct.anchor_vertex,
-			(*tetrahedron)[obj_No].mesh_struct.anchor_position.data());
+			(*tetrahedron)[obj_No].mesh_struct.anchor_position.data(), collision.obj_target_pos.b_sum[obj_No + tetrahedron_begin_obj_index].size(),
+			(*tetrahedron)[obj_No].mesh_struct.vertex_index_on_sureface.data());
 
 	}
 }
@@ -1839,11 +1845,17 @@ void ProjectDynamic::constructbTetPerThead(double* b, TetrahedronMeshStruct& mes
 	std::vector<Matrix<double, 4, 3>>& p_ARAP_volume_preserve, int tet_No, int dimension,
 	std::vector<std::array<double, 3>>& collision_b_sum, bool* collision_b_need_update, bool with_collision,
 	double position_stiffness, int vertex_index_start, std::array<int, 4>* indices, std::vector<int>& anchor_vertex,
-	std::array<double, 3>* anchor_pos)
+	std::array<double, 3>* anchor_pos, int surface_index_num, int* surface_vertex_index)
 {
 	memset(b + vertex_index_start, 0, 8 * tetrahedron_sys_size[tet_No]);
 	//collision
-
+	if (with_collision) {
+		for (int i = 0; i < surface_index_num; ++i) {
+			if (collision_b_need_update[i]) {
+				b[surface_vertex_index[i] + vertex_index_start] += collision_b_sum[i][dimension];
+			}
+		}
+	}
 
 	//ARAP + volime_preserve
 	int tet_size = mesh_struct.indices.size();

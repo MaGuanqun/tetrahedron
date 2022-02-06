@@ -132,7 +132,10 @@ void TetrahedronMeshStruct::setThreadIndex(int total_thread_num_)
 	anchor_index_begin_per_thread.resize(total_thread_num, 0);
 	face_index_begin_per_thread.resize(total_thread_num, 0);
 	tetrahedron_index_begin_per_thread.resize(total_thread_num, 0);
+	vertex_index_begin_per_thread.resize(total_thread_num, 0);
 
+
+	arrangeIndex(total_thread_num_, vertex_position.size(), vertex_index_begin_per_thread);
 	arrangeIndex(total_thread_num_, vertex_index_on_sureface.size(), vertex_index_on_surface_begin_per_thread);
 	arrangeIndex(total_thread_num_, anchor_vertex.size(), anchor_index_begin_per_thread);
 	arrangeIndex(total_thread_num_, triangle_indices.size(), face_index_begin_per_thread);

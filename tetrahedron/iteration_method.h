@@ -98,7 +98,8 @@ public:
 	void updateDiagonalWithAnchorVertices(int anchor_vertex_size, int* anchor_vertex, int system_size, int vertex_index_start, double position_stiffness);
 	void initialRecordDiagonal_Operator();
 	void setOperatorCollisionFree();
-	void updateDiagonalPerThread(int index_start, int index_end, int obj_index_start, double* stiffness, bool* need_update);
+	void updateClothDiagonalPerThread(int index_start, int index_end, int obj_index_start, double* stiffness, bool* need_update);
+	void updateTetDiagonalPerThread(int index_start, int index_end, int obj_index_start, double* stiffness, bool* need_update, int* vertex_index_on_sureface);
 private:
 
 	std::vector<int> vertex_index_begin_thread;

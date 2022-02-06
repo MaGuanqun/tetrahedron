@@ -111,7 +111,7 @@ public:
 		for (int j = 0; j < row_num; j++) {
 			for (int i = 0; i < col_num; i++) {
 				mesh.vertices.push_back(std::array<double, 3>{2.0 * (double)i / (double)(col_num - 1) - 1.0,  //+0.9
-					1.6 * (double)j / (double)(row_num - 1) - 0.2, 1.2 * (double)j / (double)(row_num - 1) - 0.5});//
+					1.8 * (double)j / (double)(row_num - 1) - 0.6, 0.4 * (double)j / (double)(row_num - 1) - 0.2});//
 			}
 		}
 

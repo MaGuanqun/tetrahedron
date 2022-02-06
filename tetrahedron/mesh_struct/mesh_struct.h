@@ -77,7 +77,7 @@ public:
 	void setEdge();
 	//void addArounVertex();
 
-
+	std::vector<int> vertex_index_begin_per_thread;
 
 	void getRenderFaceNormalPerThread(int thread_id);
 	void getFaceNormalPerThread(int thread_id);
