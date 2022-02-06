@@ -730,20 +730,22 @@ void Collision::collisionDetection(int thread_No)
 			mesh_struct = &(*cloth)[j].mesh_struct;
 			PC_radius0 = (*cloth)[j].PC_radius[SELF_EDGE_EDGE];
 			vertex_collision_stiffness0 = (*cloth)[j].collision_stiffness[SELF_EDGE_EDGE];
+			index_begin = (*cloth)[j].mesh_struct.edge_index_begin_per_thread.data();
 		}
 		else {
 			obj_No = j - tetrahedron_begin_obj_index;
 			mesh_struct = &(*tetrahedron)[obj_No].mesh_struct;
 			PC_radius0 = (*tetrahedron)[obj_No].PC_radius[SELF_EDGE_EDGE];
 			vertex_collision_stiffness0 = (*tetrahedron)[obj_No].collision_stiffness[SELF_EDGE_EDGE];
+			index_begin = (*tetrahedron)[obj_No].mesh_struct.vertex_index_begin_per_thread.data();
 		}		
 		
 		for (int i = index_begin[thread_No]; i < index_begin[thread_No + 1]; ++i) {
-			if (j < tetrahedron_begin_obj_index) {
+			if (j < tetrahedron_begin_obj_index) {				
 				vertex_neighbor_obj_triangle = (*cloth)[j].edge_neighbor_obj_edge[i].data();
 				collide_edge_obj_edge = (*cloth)[j].collide_edge_obj_edge[i].data();
 			}
-			else {
+			else {				
 				vertex_neighbor_obj_triangle = (*tetrahedron)[obj_No].edge_neighbor_obj_edge[i].data();
 				collide_edge_obj_edge = (*tetrahedron)[obj_No].collide_edge_obj_edge[i].data();
 			}

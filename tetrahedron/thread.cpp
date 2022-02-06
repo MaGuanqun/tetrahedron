@@ -186,6 +186,28 @@ job Thread::create_task(Cloth* func, int thread_id, ObjectFunc function_type)// 
 }
 
 
+job Thread::create_task(Tetrahedron* func, int thread_id, ObjectFunc function_type)// int jobNumber
+{
+    job k;
+    switch (function_type)
+    {
+    case EDGE_TRIANGLE_AABB:
+        k = job([func, thread_id]() {func->getEdgeTriangleAABBPerThread(thread_id); });
+        break;
+        //case TRIANGLE_AABB:
+        //    
+        //    break;
+        //case EDGE_AABB:
+        //    k = job([func, thread_id]() {func->getEdgeAABBPerThread(thread_id); });
+        //    break;
+    case VERTEX_AABB:
+        k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id); });
+        break;
+    }
+    return k;
+}
+
+
 job Thread::create_task(Collider* func, int thread_id, ObjectFunc function_type)// int jobNumber
 {
     job k;

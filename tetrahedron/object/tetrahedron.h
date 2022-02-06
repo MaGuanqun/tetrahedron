@@ -6,10 +6,11 @@ class Tetrahedron:public Object
 private:
 	void setMeshStruct(double density, OriMesh& ori_mesh);
 	void initialHashAABB();
-	void getVertexAABBPerThread(int thread_No);
-	void getEdgeTriangleAABBPerThread(int thread_No);
+	
 	void setRepresentativePrimitve();
 public:
+	void getVertexAABBPerThread(int thread_No);
+	void getEdgeTriangleAABBPerThread(int thread_No);
 	void obtainAABB();
 	MeshMaterial material;
 	TetrahedronMeshStruct mesh_struct;

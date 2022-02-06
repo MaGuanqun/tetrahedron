@@ -110,6 +110,7 @@ private:
     job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type, Eigen::VectorXd* u, Eigen::VectorXd* b, double* residual_norm,
         double omega_chebyshev, Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous);
     job create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread function_type);
+    job create_task(Tetrahedron* func, int thread_id, ObjectFunc function_type);// int jobNumber
 
 };
 
