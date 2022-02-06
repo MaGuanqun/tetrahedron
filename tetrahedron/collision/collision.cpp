@@ -722,7 +722,7 @@ void Collision::collisionDetection(int thread_No)
 		}
 	}
 
-	std::vector<int>* edge_neighbor_obj_edge;
+	std::vector<int>* edge_neighbor_obj_edge; 
 	std::vector<int>* collide_edge_obj_edge;
 
 	for (int j = 0; j < total_obj_num; ++j) {
