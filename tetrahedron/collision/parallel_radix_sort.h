@@ -22,6 +22,10 @@ public:
 	void deleteArray();
 	void initialMortonArray(unsigned int max_length);
 	void deleteMortonArray();
+	void copyArray(int thread_No);
+	void copyArrayMorton(int thread_No);
+
+
 private:
 	Thread* thread;
 	void findHighestBit(unsigned int size, int& key_num);

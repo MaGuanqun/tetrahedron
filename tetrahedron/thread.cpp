@@ -312,6 +312,9 @@ job Thread::create_task(RadixSort* func, int thread_id, RadixSortFunc function_t
     case SET_COUNT_BUCKET_MORTON:
         k = job([func, thread_id, key_id]() {func->setCountBucketMorton(thread_id, key_id); });
         break;
+    case COPY_ARRAY:
+        k = job([func, thread_id]() {func->copyArray(thread_id); });
+        break;
     }
 
     return k;

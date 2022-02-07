@@ -97,13 +97,21 @@ void RadixSort::lsdSort(unsigned int* value, unsigned int* triangle_index, unsig
         thread->assignTask(this, REORDER, j);
     }
     if (key_num % 2 == 1) {
-        memcpy(value, stack_value, 4 * list_size);
-        memcpy(triangle_index, stack_triangle_index, 4 * list_size);
-        memcpy(hash_cloth_No, stack_hash_cloth_No, 4 * list_size);
+        thread->assignTask(this, COPY_ARRAY, 0);
+        //memcpy(value, stack_value, 4 * list_size);
+        //memcpy(triangle_index, stack_triangle_index, 4 * list_size);
+        //memcpy(hash_cloth_No, stack_hash_cloth_No, 4 * list_size);
 
     }
 }
 
+//COPY_ARRAY
+void RadixSort::copyArray(int thread_No)
+{
+    memcpy(value + array_index_begin[thread_No], stack_value + array_index_begin[thread_No], 4 * (array_index_begin[thread_No + 1] - array_index_begin[thread_No]));
+    memcpy(triangle_index + array_index_begin[thread_No], stack_triangle_index + array_index_begin[thread_No], 4 * (array_index_begin[thread_No + 1] - array_index_begin[thread_No]));
+    memcpy(hash_cloth_No + array_index_begin[thread_No], stack_hash_cloth_No + array_index_begin[thread_No], 4 * (array_index_begin[thread_No + 1] - array_index_begin[thread_No]));
+}
 
 void RadixSort::lsdSort(std::vector<uint64_t>* value, unsigned int* triangle_index)
 {

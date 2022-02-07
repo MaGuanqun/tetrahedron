@@ -70,7 +70,7 @@ void SpatialHashing::setInObject(std::vector<Cloth>* cloth, std::vector<Collider
 	initialTriangleHash();
 	hash_value_begin.resize(thread_num,0);
 	radix_sort.initial(thread);
-	//testRadixSort();
+	testRadixSort();
 	radix_sort.initialArray(64 * total_triangle_num);
 	obj_is_used = new bool** [thread_num];
 	for (int i = 0; i < thread_num; ++i) {
@@ -110,7 +110,7 @@ void SpatialHashing::initialTriangleHash()
 
 void SpatialHashing::testRadixSort()
 {
-	unsigned int vec_size = 4e5;
+	unsigned int vec_size = 4e4;
 	std::vector<unsigned int> value;
 	std::vector<unsigned int> triangle_index;
 	std::vector<unsigned int> hash_cloth_No;
@@ -118,7 +118,7 @@ void SpatialHashing::testRadixSort()
 	triangle_index.reserve(vec_size);
 	hash_cloth_No.reserve(vec_size);
 	time_t t1 = clock();
-	for (unsigned int j = 0; j < 100; ++j) {
+	for (unsigned int j = 0; j < 1000; ++j) {
 		int size = 100 * 100 * 100;
 		value.clear();
 		triangle_index.clear();
@@ -136,9 +136,10 @@ void SpatialHashing::testRadixSort()
 	}
 	t1 = clock() - t1;
 	std::cout << "index " << t1 << std::endl;
-	time_t t = clock();
+	
 	radix_sort.initialArray(vec_size);
-	for (unsigned int j = 0; j < 100; ++j) {
+	time_t t = clock();
+	for (unsigned int j = 0; j < 1000; ++j) {
 		unsigned int size = 100 * 100 * 100;
 		value.clear();
 		triangle_index.clear();
@@ -158,14 +159,20 @@ void SpatialHashing::testRadixSort()
 		//}
 		//std::cout << std::endl;
 		radix_sort.radixSort(size, value.data(), triangle_index.data(), hash_cloth_No.data(), value.size());
+		//for (unsigned int i = 0; i < value.size() - 1; ++i) {
+		//	if (value[i] > value[i + 1]) {
+		//		std::cout << "error"<<value[i]<<" "<<value[i+1]<< std::endl;
+		//	}
+		//}
 	}
+	std::cout << "time " << clock() - t << " " << clock() - t - t1 << std::endl;
 	radix_sort.deleteArray();
 	//for (int i = 0; i < vec_size; ++i) {
 	//	std::cout << cell[i][1] << " ";
 	//}
 	//std::cout << std::endl;
 	//}
-	std::cout <<"time "<< clock() - t<<" "<< clock() - t - t1 << std::endl;
+	
 }
 
 void SpatialHashing::setSpatialHashing()
