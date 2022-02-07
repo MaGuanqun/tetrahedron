@@ -82,9 +82,9 @@ void Tetrahedron::getVertexAABBPerThread(int thread_No)
 {
 	std::vector<std::array<double, 3>>* vertex_render = &mesh_struct.vertex_for_render;
 	std::vector<std::array<double, 3>>* vertex = &mesh_struct.vertex_position;
-	int index_end = mesh_struct.vertex_index_on_surface_begin_per_thread[thread_No + 1];
+	unsigned int index_end = mesh_struct.vertex_index_on_surface_begin_per_thread[thread_No + 1];
 	int* vertex_index_on_surface = mesh_struct.vertex_index_on_sureface.data();
-	for (int i = mesh_struct.vertex_index_on_surface_begin_per_thread[thread_No]; i < index_end; ++i) {
+	for (unsigned int i = mesh_struct.vertex_index_on_surface_begin_per_thread[thread_No]; i < index_end; ++i) {
 		vertex_AABB[i].obtainAABB((*vertex_render)[vertex_index_on_surface[i]].data(), (*vertex)[vertex_index_on_surface[i]].data(), tolerance);	// 
 	}
 }
@@ -94,14 +94,14 @@ void Tetrahedron::getEdgeTriangleAABBPerThread(int thread_No)
 {
 	std::array<int,2>* edge = mesh_struct.edge_vertex_index_on_surface.data();
 	int* vertex_index;
-	int index_end = mesh_struct.edge_index_begin_per_thread[thread_No + 1];
-	for (int i = mesh_struct.edge_index_begin_per_thread[thread_No]; i < index_end; ++i) {
+	unsigned int index_end = mesh_struct.edge_index_begin_per_thread[thread_No + 1];
+	for (unsigned int i = mesh_struct.edge_index_begin_per_thread[thread_No]; i < index_end; ++i) {
 		vertex_index = edge[i].data();
 		getAABB(edge_AABB[i], vertex_AABB[vertex_index[0]], vertex_AABB[vertex_index[1]]);
 	}
 	std::array<int, 3>* face = mesh_struct.surface_triangle_index_in_order.data();
 	index_end = mesh_struct.face_index_begin_per_thread[thread_No + 1];
-	for (int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < index_end; ++i) {
+	for (unsigned int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < index_end; ++i) {
 		vertex_index = face[i].data();
 		getAABB(triangle_AABB[i], vertex_AABB[vertex_index[0]], vertex_AABB[vertex_index[1]], vertex_AABB[vertex_index[2]]);
 	}

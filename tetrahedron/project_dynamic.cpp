@@ -91,7 +91,7 @@ void ProjectDynamic::setForClothPD(std::vector<Cloth>* cloth)
 
 void ProjectDynamic::setForTetrahedronPD()
 {
-	for (int i = 0; i < total_tetrahedron_num; ++i) {
+	for (unsigned int i = 0; i < total_tetrahedron_num; ++i) {
 		computeTetMass((*tetrahedron)[i].mesh_struct.mass.data(), mass_inv, mass, vertex_begin_per_tetrahedron[i], (*tetrahedron)[i].mesh_struct.vertex_for_render.size());
 	}
 }
@@ -110,7 +110,7 @@ void ProjectDynamic::restBendingMeanCurvature()
 	rest_mean_curvature_norm.resize(total_cloth_num);
 	int neighbor, ve;
 	double vertex_curvature[3];
-	for (int k = 0; k < total_cloth_num; ++k) {
+	for (unsigned int k = 0; k < total_cloth_num; ++k) {
 		restBendingMeanCurvatureSingleCloth((*cloth)[k].mesh_struct, rest_mean_curvature_norm[k], vertex_lbo[k]);
 	}
 }
@@ -120,14 +120,14 @@ void ProjectDynamic::restBendingMeanCurvatureSingleCloth(TriangleMeshStruct& mes
 {
 	rest_mean_curvature_norm.resize(mesh_struct.vertices.size());
 	VectorXd q;
-	int size;
+	unsigned int size;
 	double vertex_curvature[3];
-	for (int i = 0; i < mesh_struct.vertices.size(); ++i) {
+	for (unsigned int i = 0; i < mesh_struct.vertices.size(); ++i) {
 		size = vertex_lbo[i].size();
 		q.resize(size);
-		for (int j = 0; j < 3; ++j) {
+		for (unsigned int j = 0; j < 3; ++j) {
 			q[0] = mesh_struct.vertex_position[i][j];
-			for (int h = 1; h < size; h++) {
+			for (unsigned int h = 1; h < size; h++) {
 				q[h] = mesh_struct.vertex_position[mesh_struct.vertices[i].neighbor_vertex[h-1]][j];
 			}
 			vertex_curvature[j] = dotProductX_(vertex_lbo[i], q);
@@ -144,17 +144,17 @@ void ProjectDynamic::initialPDvariable()
 {
 	total_cloth_num = cloth->size();
 	cloth_sys_size.resize(total_cloth_num);
-	for (int i = 0; i < total_cloth_num; ++i) {
+	for (unsigned int i = 0; i < total_cloth_num; ++i) {
 		cloth_sys_size[i] = (*cloth)[i].mesh_struct.vertices.size();
 	}
 	total_tetrahedron_num = tetrahedron->size();
 	tetrahedron_sys_size.resize(total_tetrahedron_num);
-	for (int i = 0; i < total_tetrahedron_num; ++i) {
+	for (unsigned int i = 0; i < total_tetrahedron_num; ++i) {
 		tetrahedron_sys_size[i] = (*tetrahedron)[i].mesh_struct.vertex_position.size();
 	}
 	u.resize(3);
 	v.resize(3);
-	for (int i = 0; i < 3; ++i) {
+	for (unsigned int i = 0; i < 3; ++i) {
 		u[i].resize(sys_size);	u[i].setZero();
 		v[i].resize(sys_size); v[i].setZero();
 	}
@@ -172,15 +172,15 @@ void ProjectDynamic::initialPDvariable()
 void ProjectDynamic::initialTetrahedronPDvariable()
 {
 	tet_local_A = getARAPmatrix();
-	int vertex_start;
+	unsigned int vertex_start;
 	p_ARAP_volume_preserve.resize(total_tetrahedron_num);
 	std::array<double, 3>* position;
-	for (int j = 0; j < total_tetrahedron_num; ++j) {
+	for (unsigned int j = 0; j < total_tetrahedron_num; ++j) {
 		p_ARAP_volume_preserve[j].resize((*tetrahedron)[j].mesh_struct.indices.size());
 		vertex_start = vertex_begin_per_tetrahedron[j];
 		position = (*tetrahedron)[j].mesh_struct.vertex_position.data();
-		for (int i = 0; i < 3; ++i) {
-			for (int k = 0; k < tetrahedron_sys_size[j]; ++k) {
+		for (unsigned int i = 0; i < 3; ++i) {
+			for (unsigned int k = 0; k < tetrahedron_sys_size[j]; ++k) {
 				u[i].data()[vertex_start + k] = position[k][i];
 			}
 		}
@@ -189,21 +189,21 @@ void ProjectDynamic::initialTetrahedronPDvariable()
 
 void ProjectDynamic::initialClothPDvariable()
 {
-	int vertex_start;
+	unsigned int vertex_start;
 	p_edge_length.resize(total_cloth_num);
 	p_bending.resize(total_cloth_num);	
 	std::array<double, 3>* position;
-	for (int j = 0; j < total_cloth_num; ++j) {
+	for (unsigned int j = 0; j < total_cloth_num; ++j) {
 		p_edge_length[j].resize((*cloth)[j].mesh_struct.edges.size());
 		p_bending[j].resize(cloth_sys_size[j]);
 		vertex_start = vertex_begin_per_cloth[j];
 		position= (*cloth)[j].mesh_struct.vertex_position.data();
-		for (int i = 0; i < 3; ++i) {
-			for (int k = 0; k < cloth_sys_size[j]; ++k) {				
+		for (unsigned int i = 0; i < 3; ++i) {
+			for (unsigned int k = 0; k < cloth_sys_size[j]; ++k) {
 				u[i].data()[vertex_start + k] = position[k][i];
 			}
 		}
-		for (int i = 0; i < cloth_sys_size[j]; ++i) {
+		for (unsigned int i = 0; i < cloth_sys_size[j]; ++i) {
 			p_bending[j][i].resize(3);
 		}
 	}
@@ -212,34 +212,34 @@ void ProjectDynamic::setIndexPerThread()
 {
 	cloth_per_thread_begin.resize(total_thread_num + 1);
 	if (total_cloth_num > 0) {
-		arrangeIndex(total_thread_num, total_cloth_num, cloth_per_thread_begin);
+		arrangeIndex(total_thread_num, total_cloth_num, cloth_per_thread_begin.data());
 	}
 	cloth_dimension_per_thread.resize(total_thread_num);
-	int total_num = total_cloth_num * 3;
-	for (int i = 0; i < total_num; ++i) {
+	unsigned int total_num = total_cloth_num * 3;
+	for (unsigned int i = 0; i < total_num; ++i) {
 		cloth_dimension_per_thread[i % total_thread_num].push_back(i);
 	}
 	tetrahedron_per_thread_begin.resize(total_thread_num + 1);
 	if (total_tetrahedron_num > 0) {
-		arrangeIndex(total_thread_num, total_tetrahedron_num, tetrahedron_per_thread_begin);
+		arrangeIndex(total_thread_num, total_tetrahedron_num, tetrahedron_per_thread_begin.data());
 	}
 	tetrahedron_dimension_per_thread.resize(total_thread_num);
 	total_num = total_tetrahedron_num * 3;
-	for (int i = 0; i < total_num; ++i) {
+	for (unsigned int i = 0; i < total_num; ++i) {
 		tetrahedron_dimension_per_thread[i % total_thread_num].push_back(i);
 	}
 
 	system_vertex_index_per_thread.resize(total_thread_num + 1);
-	arrangeIndex(total_thread_num, sys_size, system_vertex_index_per_thread);
+	arrangeIndex(total_thread_num, sys_size, system_vertex_index_per_thread.data());
 
 	dimension_per_thread.resize(total_thread_num + 1);
-	arrangeIndex(total_thread_num, 3, dimension_per_thread);
+	arrangeIndex(total_thread_num, 3, dimension_per_thread.data());
 }
 
 void ProjectDynamic::computeVertexLBO(std::vector<std::vector<double>>& edge_cot_weight)
 {
 	vertex_lbo.resize(total_cloth_num);
-	for (int k = 0; k < total_cloth_num; ++k) {
+	for (unsigned int k = 0; k < total_cloth_num; ++k) {
 		computeVertexLBOSingleCloth((*cloth)[k].mesh_struct, vertex_lbo[k], edge_cot_weight[k], lbo_weight[k]);
 	}
 }
@@ -251,16 +251,16 @@ void ProjectDynamic::computeGlobalStepMatrix()
 {
 	global_mat.resize(sys_size, sys_size);
 	std::vector<Triplet<double>>global_mat_nnz;
-	int estimate_total_constraint = 40 * sys_size; //to estimate the size of global_mat_nnz
+	unsigned int estimate_total_constraint = 40 * sys_size; //to estimate the size of global_mat_nnz
 	global_mat_nnz.reserve(estimate_total_constraint);
 	//set cloth
-	for (int i = 0; i < total_cloth_num; ++i) {
+	for (unsigned int i = 0; i < total_cloth_num; ++i) {
 		computeGlobalStepMatrixSingleCloth((*cloth)[i].mesh_struct, global_mat_nnz, lbo_weight[i], vertex_lbo[i], cloth_sys_size[i],
 			(*cloth)[i].bend_stiffness, (*cloth)[i].length_stiffness, (*cloth)[i].position_stiffness, vertex_begin_per_cloth[i]);
 	}
 	//set tetrahedron
 	Matrix4d arap_matrix = tet_local_A.transpose() * tet_local_A;
-	for (int i = 0; i < total_tetrahedron_num; ++i) {
+	for (unsigned int i = 0; i < total_tetrahedron_num; ++i) {
 		copmuteGlobalStepMatrixSingleTetrahedron((*tetrahedron)[i].mesh_struct, global_mat_nnz, tetrahedron_sys_size[i],
 			(*tetrahedron)[i].ARAP_stiffness, (*tetrahedron)[i].volume_preserve_stiffness, (*tetrahedron)[i].position_stiffness,
 			vertex_begin_per_tetrahedron[i], arap_matrix);
@@ -269,10 +269,10 @@ void ProjectDynamic::computeGlobalStepMatrix()
 	global_mat.setFromTriplets(global_mat_nnz.begin(), global_mat_nnz.end());
 	global_mat_diagonal_ref_address.resize(sys_size);
 	global_mat_diagonal_ref.resize(sys_size);
-	for (int i = 0; i < sys_size; ++i) {
+	for (unsigned int i = 0; i < sys_size; ++i) {
 		global_mat_diagonal_ref_address[i] = &global_mat.coeffRef(i, i);
 	}
-	for (int i = 0; i < sys_size; ++i) {
+	for (unsigned int i = 0; i < sys_size; ++i) {
 		global_mat_diagonal_ref[i] = *(global_mat_diagonal_ref_address[i]);
 	}
 	ori_global_mat_diagonal_ref = global_mat_diagonal_ref;
@@ -310,13 +310,13 @@ void ProjectDynamic::copmuteGlobalStepMatrixSingleTetrahedron(TetrahedronMeshStr
 	//ARAP + volume preserve: they have the same matrix.
 	Matrix4d m_ARAP = (volume_preserve_stiffness + ARAP_stiffness) * m_for_ARAP;//
 	int index[4];
-	for (int i = 0; i < mesh_struct.indices.size(); ++i) {
+	for (unsigned int i = 0; i < mesh_struct.indices.size(); ++i) {
 		memcpy(index, mesh_struct.indices[i].data(), 16);
-		for (int j = 0; j < 4; ++j){
+		for (unsigned int j = 0; j < 4; ++j){
 			index[j] += vertex_index_start;
 		}
-		for (int j = 0; j < 4; ++j) {
-			for (int k = j + 1; k < 4; ++k) {
+		for (unsigned int j = 0; j < 4; ++j) {
+			for (unsigned int k = j + 1; k < 4; ++k) {
 				global_mat_nnz.push_back(Triplet<double>(index[j], index[k], m_ARAP.data()[4 * j + k]));
 				global_mat_nnz.push_back(Triplet<double>(index[k], index[j], m_ARAP.data()[4 * k + j]));
 			}
@@ -336,13 +336,13 @@ void ProjectDynamic::copmuteGlobalStepMatrixSingleTetrahedron(TetrahedronMeshStr
 
 void ProjectDynamic::updateTetrahedronAnchorVertices()
 {
-	for (int i = 0; i < total_tetrahedron_num; ++i)	{
+	for (unsigned int i = 0; i < total_tetrahedron_num; ++i)	{
 		updateTetrahedronAnchorVertices(i, (*tetrahedron)[i].mesh_struct, vertex_begin_per_tetrahedron[i], (*tetrahedron)[i].position_stiffness);
 	}
 	global_llt.factorize(global_mat);
 	collision_free_llt.factorize(global_mat);
 
-	for (int i = 0; i < total_tetrahedron_num; ++i) {
+	for (unsigned int i = 0; i < total_tetrahedron_num; ++i) {
 		iteration_method.updateDiagonalWithAnchorVertices((*tetrahedron)[i].mesh_struct.anchor_vertex.size(), (*tetrahedron)[i].mesh_struct.anchor_vertex.data(),
 			tetrahedron_sys_size[i], vertex_begin_per_tetrahedron[i], (*tetrahedron)[i].position_stiffness);
 	}
@@ -352,17 +352,17 @@ void ProjectDynamic::updateTetrahedronAnchorVertices()
 void ProjectDynamic::updateTetrahedronAnchorVertices(int tetrahedron_index,TetrahedronMeshStruct& mesh_struct, int vertex_index_start,
 	double position_stiffness)
 {
-	int anchor_vertex_size = mesh_struct.anchor_vertex.size();
+	unsigned int anchor_vertex_size = mesh_struct.anchor_vertex.size();
 	int* anchor_vertex = mesh_struct.anchor_vertex.data();
-	int system_size = tetrahedron_sys_size[tetrahedron_index];
-	for (int i = 0; i < system_size; ++i){
+	unsigned int system_size = tetrahedron_sys_size[tetrahedron_index];
+	for (unsigned int i = 0; i < system_size; ++i){
 		*(global_mat_diagonal_ref_address[i + vertex_index_start]) = ori_global_mat_diagonal_ref[i + vertex_index_start];
 	}
 
-	for (int i = 0; i < anchor_vertex_size; ++i){		
+	for (unsigned int i = 0; i < anchor_vertex_size; ++i){
 		*(global_mat_diagonal_ref_address[anchor_vertex[i] + vertex_index_start]) += position_stiffness;
 	}
-	for (int i = 0; i < system_size; ++i) {
+	for (unsigned int i = 0; i < system_size; ++i) {
 		global_mat_diagonal_ref[i + vertex_index_start] = *(global_mat_diagonal_ref_address[i + vertex_index_start]);
 	}	
 
@@ -375,22 +375,22 @@ void ProjectDynamic::computeGlobalStepMatrixSingleCloth(TriangleMeshStruct& mesh
 	double position_stiffness, int vertex_index_start)
 {	
 	//bending
-	int lbo_length; MatrixXd ATA;
+	unsigned int lbo_length; MatrixXd ATA;
 	std::vector<int> index;
 	if (!mesh_struct.faces.empty()) {
-		for (int i = 0; i < sys_size; ++i) {
+		for (unsigned int i = 0; i < sys_size; ++i) {
 			lbo_length = vertex_lbo[i].size();
 			index.clear();
 			index.resize(lbo_length);
 			index[0] = i;
 			memcpy(&(index[1]), mesh_struct.vertices[i].neighbor_vertex.data(), 4 * (lbo_length - 1));		
-			for (int j = 0; j < index.size(); ++j)
+			for (unsigned int j = 0; j < index.size(); ++j)
 			{
 				index[j] += vertex_index_start;
 			}
 			ATA = (bending_stiffness * lbo_weight[i] * vertex_lbo[i]) * vertex_lbo[i].transpose();
-			for (int l = 0; l < lbo_length; ++l) {
-				for (int k = l + 1; k < lbo_length; ++k) {
+			for (unsigned int l = 0; l < lbo_length; ++l) {
+				for (unsigned int k = l + 1; k < lbo_length; ++k) {
 					global_mat_nnz.push_back(Triplet<double>(index[l], index[k], ATA.data()[lbo_length * l + k]));
 					global_mat_nnz.push_back(Triplet<double>(index[k], index[l], ATA.data()[lbo_length * k + l]));
 				}
@@ -474,15 +474,15 @@ void ProjectDynamic::computeGravity()
 	}
 	double gravity_accerlation[3] = { 0, -gravity_,0 };
 	std::vector<double>* mass_;
-	int vertex_index_start;
+	unsigned int vertex_index_start;
 
 	//set cloth
-	for (int j = 0; j < total_cloth_num; ++j) {
+	for (unsigned int j = 0; j < total_cloth_num; ++j) {
 		mass_ = &(*cloth)[j].mesh_struct.mass;
 		vertex_index_start = vertex_begin_per_cloth[j];
-		for (int i = 0; i < 3; ++i) {
+		for (unsigned int i = 0; i < 3; ++i) {
 			if (cloth_sys_size[j] > 1) {			
-				for (int k = 0; k < cloth_sys_size[j]; ++k) {
+				for (unsigned int k = 0; k < cloth_sys_size[j]; ++k) {
 					total_gravity[i][vertex_index_start + k] = gravity_accerlation[i] * (*mass_)[k];
 				}
 			}
@@ -490,12 +490,12 @@ void ProjectDynamic::computeGravity()
 	}
 
 	//set tetrahedron
-	for (int j = 0; j < total_tetrahedron_num; ++j) {
+	for (unsigned int j = 0; j < total_tetrahedron_num; ++j) {
 		mass_ = &(*tetrahedron)[j].mesh_struct.mass;
 		vertex_index_start = vertex_begin_per_tetrahedron[j];
-		for (int i = 0; i < 3; ++i) {
+		for (unsigned int i = 0; i < 3; ++i) {
 			if (tetrahedron_sys_size[j] > 1) {
-				for (int k = 0; k < tetrahedron_sys_size[j]; ++k) {
+				for (unsigned int k = 0; k < tetrahedron_sys_size[j]; ++k) {
 					total_gravity[i][vertex_index_start + k] = gravity_accerlation[i] * (*mass_)[k];
 				}
 			}
@@ -542,7 +542,7 @@ void ProjectDynamic::computeLBOWeight(std::vector<std::vector<double>>& edge_cot
 	lbo_weight.resize(total_cloth_num);
 	mass_inv.resize(sys_size);
 	mass.resize(sys_size);
-	for (int j = 0; j < total_cloth_num; ++j) {
+	for (unsigned int j = 0; j < total_cloth_num; ++j) {
 		lbo_weight[j].resize(cloth_sys_size[j], 0.0);
 		computeLBOWeightSingleCloth(edge_cot_weight[j], lbo_weight[j], (*cloth)[j].mesh_struct, mass_inv, (*cloth)[j].density, mass, vertex_begin_per_cloth[j]);
 	}
@@ -556,7 +556,7 @@ void ProjectDynamic::computeEdgeCotWeight(std::vector<std::vector<double>>& edge
 	double x10[3], x20[3];
 	double x13[3], x23[3];
 	double theta0, theta1;
-	for (int j = 0; j < total_cloth_num; ++j) {
+	for (unsigned int j = 0; j < total_cloth_num; ++j) {
 		computeEdgeCotWeightSingleCloth(edge_cot_weight[j], (*cloth)[j].mesh_struct);
 	}
 }
@@ -601,26 +601,26 @@ void ProjectDynamic::reset()
 {
 	int vertex_index_start;
 	//cloth
-	for (int j = 0; j < total_cloth_num; ++j) {
+	for (unsigned int j = 0; j < total_cloth_num; ++j) {
 		vertex_index_start = vertex_begin_per_cloth[j];
-		for (int i = 0; i < cloth_sys_size[j]; ++i) {
-			for (int k = 0; k < 3; ++k) {
+		for (unsigned int i = 0; i < cloth_sys_size[j]; ++i) {
+			for (unsigned int k = 0; k < 3; ++k) {
 				u[k].data()[vertex_index_start + i] = (*cloth)[j].ori_vertices[i][k];
 			}
 		}		
 	}
 	//tetrahedron
-	for (int j = 0; j < total_tetrahedron_num; ++j) {
+	for (unsigned int j = 0; j < total_tetrahedron_num; ++j) {
 		vertex_index_start = vertex_begin_per_tetrahedron[j];
-		for (int i = 0; i < tetrahedron_sys_size[j]; ++i) {
-			for (int k = 0; k < 3; ++k) {
+		for (unsigned int i = 0; i < tetrahedron_sys_size[j]; ++i) {
+			for (unsigned int k = 0; k < 3; ++k) {
 				u[k].data()[vertex_index_start + i] = (*tetrahedron)[j].ori_vertices[i][k];
 			}
 		}
 	}
 	f_ext = total_gravity;
 	u_ = u;
-	for (int i = 0; i < 3; ++i) {
+	for (unsigned int i = 0; i < 3; ++i) {
 		v[i].setZero();
 		v_[i].setZero();
 		acceleration[i].setZero();
@@ -632,7 +632,7 @@ void ProjectDynamic::initial()
 	global_mat = initial_global_mat;
 	global_llt.factorize(global_mat);
 	collision_free_llt.factorize(global_mat);
-	for (int i = 0; i < sys_size; ++i) {
+	for (unsigned int i = 0; i < sys_size; ++i) {
 		global_mat_diagonal_ref_address[i] = &global_mat.coeffRef(i, i);
 	}
 	global_mat_diagonal_ref = ori_global_mat_diagonal_ref;
@@ -643,21 +643,21 @@ void ProjectDynamic::initial()
 
 void ProjectDynamic::updateModelPosition()
 {
-	int vertex_index_start;
+	unsigned int vertex_index_start;
 	std::array<double, 3>* vertex_position;
-	for (int j = 0; j < total_cloth_num; ++j) {
+	for (unsigned int j = 0; j < total_cloth_num; ++j) {
 		vertex_index_start = vertex_begin_per_cloth[j];
 		vertex_position = (*cloth)[j].mesh_struct.vertex_position.data();
-		for (int i = 0; i < cloth_sys_size[j]; ++i) {
+		for (unsigned int i = 0; i < cloth_sys_size[j]; ++i) {
 			vertex_position[i][0] = u[0].data()[i + vertex_index_start];
 			vertex_position[i][1] = u[1].data()[i + vertex_index_start];
 			vertex_position[i][2] = u[2].data()[i + vertex_index_start];
 		}
 	}
-	for (int j = 0; j < total_tetrahedron_num; ++j) {
+	for (unsigned int j = 0; j < total_tetrahedron_num; ++j) {
 		vertex_position = (*tetrahedron)[j].mesh_struct.vertex_position.data();
 		vertex_index_start = vertex_begin_per_tetrahedron[j];
-		for (int i = 0; i < tetrahedron_sys_size[j]; ++i) {
+		for (unsigned int i = 0; i < tetrahedron_sys_size[j]; ++i) {
 			vertex_position[i][0] = u[0].data()[i + vertex_index_start];
 			vertex_position[i][1] = u[1].data()[i + vertex_index_start];
 			vertex_position[i][2] = u[2].data()[i + vertex_index_start];
@@ -669,18 +669,18 @@ void ProjectDynamic::updateModelPosition()
 void ProjectDynamic::updateRenderPositionIPC()
 {
 	TriangleMeshStruct* mesh_struct;
-	for (int j = 0; j < total_cloth_num; ++j) {
+	for (unsigned int j = 0; j < total_cloth_num; ++j) {
 		mesh_struct = &(*cloth)[j].mesh_struct;
 		thread->assignTask(mesh_struct, FACE_NORMAL_RENDER);
 		thread->assignTask(mesh_struct, VERTEX_NORMAL_RENDER);
 	}
 	TetrahedronMeshStruct* mesh_struct_;
-	for (int j = 0; j < total_tetrahedron_num; ++j) {
+	for (unsigned int j = 0; j < total_tetrahedron_num; ++j) {
 		mesh_struct_ = &(*tetrahedron)[j].mesh_struct;
 		thread->assignTask(mesh_struct_, FACE_NORMAL_RENDER);
 		thread->assignTask(mesh_struct_, VERTEX_NORMAL_RENDER);
 	}
-	for (int j = 0; j < total_collider_num; ++j) {
+	for (unsigned int j = 0; j < total_collider_num; ++j) {
 		mesh_struct = &(*collider)[j].mesh_struct;
 		thread->assignTask(mesh_struct, FACE_NORMAL_RENDER);
 		thread->assignTask(mesh_struct, VERTEX_NORMAL_RENDER);
@@ -692,19 +692,19 @@ void ProjectDynamic::updateRenderPosition()
 {
 	TriangleMeshStruct* mesh_struct;
 	TetrahedronMeshStruct* mesh_struct_;
-	for (int j = 0; j < total_cloth_num; ++j) {
+	for (unsigned int j = 0; j < total_cloth_num; ++j) {
 		mesh_struct = &(*cloth)[j].mesh_struct;
 		mesh_struct->vertex_for_render = mesh_struct->vertex_position;
 		mesh_struct->face_normal_for_render = mesh_struct->face_normal;
 		thread->assignTask(mesh_struct, VERTEX_NORMAL_RENDER);
 	}
-	for (int j = 0; j < total_tetrahedron_num; ++j) {
+	for (unsigned int j = 0; j < total_tetrahedron_num; ++j) {
 		mesh_struct_ = &(*tetrahedron)[j].mesh_struct;
 		mesh_struct_->vertex_for_render = mesh_struct_->vertex_position;
 		mesh_struct_->face_normal_for_render = mesh_struct_->face_normal;
 		thread->assignTask(mesh_struct_, VERTEX_NORMAL_RENDER);
 	}
-	for (int j = 0; j < total_collider_num; ++j) {
+	for (unsigned int j = 0; j < total_collider_num; ++j) {
 		mesh_struct = &(*collider)[j].mesh_struct;
 		mesh_struct->vertex_for_render = mesh_struct->vertex_position;
 		mesh_struct->face_normal_for_render = mesh_struct->face_normal;
@@ -721,7 +721,7 @@ void ProjectDynamic::PDsetPosPredict()
 void ProjectDynamic::PDPredict()
 {
 	
-	for (int i = 0; i < 3; ++i) {
+	for (unsigned int i = 0; i < 3; ++i) {
 		u[i] = u_[i] + sub_time_step * v_[i] + (0.25 * sub_time_step * sub_time_step) * (acceleration[i]);//sub_time_step * sub_time_step * mass_inv[j].cwiseProduct(f_ext[j][i]);
 		u_prediction[i] = u_[i] + sub_time_step * v_[i] + (sub_time_step * sub_time_step) * mass_inv.cwiseProduct(f_ext[i]);
 		//u[i] = u_prediction[i];
@@ -737,7 +737,7 @@ void ProjectDynamic::firstPDForIPC(bool& record_matrix)
 	thread->assignTask(this, LOCAL_PROJECTION);
 
 	current_constraint_energy = temEnergy[0];
-	for (int i = 1; i < total_thread_num; ++i) {
+	for (unsigned int i = 1; i < total_thread_num; ++i) {
 		current_constraint_energy += temEnergy[i];
 	}
 
@@ -772,7 +772,7 @@ void ProjectDynamic::firstPDForIPC(bool& record_matrix)
 	collision.collisionCulling();
 
 	current_PD_energy = temEnergy[0];
-	for (int i = 1; i < total_thread_num; ++i) {
+	for (unsigned int i = 1; i < total_thread_num; ++i) {
 		current_PD_energy += temEnergy[i];
 	}
 	current_PD_energy += current_constraint_energy;
@@ -784,7 +784,7 @@ void ProjectDynamic::firstPDForIPC(bool& record_matrix)
 	//		<< cloth_u[0][2][i] << std::endl;
 	//}
 	//std::cout << "first local-global without collision" << std::endl;
-	for (int i = 0; i < cloth_sys_size[0]; ++i) {
+	for (unsigned int i = 0; i < cloth_sys_size[0]; ++i) {
 		//std::cout << "    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "<< cloth_u[0][2][i] << std::endl;
 	}
 }
@@ -823,7 +823,7 @@ void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 		while (!innerIterationConvergeCondition()) {
 			thread->assignTask(this, LOCAL_PROJECTION_WITHOUT_ENERGY);
 			current_constraint_energy = temEnergy[0];
-			for (int i = 1; i < total_thread_num; ++i) {
+			for (unsigned int i = 1; i < total_thread_num; ++i) {
 				current_constraint_energy += temEnergy[i];
 			}
 			thread->assignTask(this, CONSTRUCT_B);
@@ -870,11 +870,11 @@ void ProjectDynamic::computeInnerEnergyIPCPD()
 {
 	previous_itr_PD_energy = current_PD_energy;
 	current_collision_energy = 1e-15;
-	for (int k = 0; k < total_cloth_num; ++k) {
+	for (unsigned int k = 0; k < total_cloth_num; ++k) {
 		current_collision_energy += collision.obj_target_pos.collision_energy[k];
 	}
 	current_PD_energy = temEnergy[0];
-	for (int i = 1; i < total_thread_num; ++i) {
+	for (unsigned int i = 1; i < total_thread_num; ++i) {
 		current_PD_energy += temEnergy[i];
 	}
 	current_PD_energy += current_constraint_energy + current_constraint_energy;
@@ -887,11 +887,11 @@ void ProjectDynamic::computeEnergyIPCPD()
 	previous_collision_energy = current_collision_energy;
 	previous_PD_energy = current_PD_energy;
 	current_collision_energy = 1e-15;
-	for (int k = 0; k < total_cloth_num; ++k) {
+	for (unsigned int k = 0; k < total_cloth_num; ++k) {
 		current_collision_energy += collision.obj_target_pos.collision_energy[k];
 	}
 	current_PD_energy = temEnergy[0];
-	for (int i = 1; i < total_thread_num; ++i) {
+	for (unsigned int i = 1; i < total_thread_num; ++i) {
 		current_PD_energy += temEnergy[i];
 	}
 	current_PD_energy += current_constraint_energy + current_constraint_energy;
@@ -906,13 +906,13 @@ void ProjectDynamic::PDsolve()
 	outer_iteration_num = 0;
 	initialEnergy();
 	local_global_iteration_num = 0;
-	for (int i = 0; i < collider->size(); ++i) {
+	for (unsigned int i = 0; i < collider->size(); ++i) {
 		thread->assignTask(&(*collider)[i].mesh_struct, FACE_NORMAL);
 	}
-	for (int i = 0; i < cloth->size(); ++i) {
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL);
 	}
-	for (int i = 0; i < tetrahedron->size(); ++i) {
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL);
 	}
 	std::cout << "===" << std::endl;
@@ -928,22 +928,22 @@ void ProjectDynamic::PDsolve()
 			}
 			time_t t = clock();
 			localProjection();
-			for (int i = 0; i < total_thread_num; ++i) {
+			for (unsigned int i = 0; i < total_thread_num; ++i) {
 				current_constraint_energy += temEnergy[i];
 			}
 			thread->assignTask(this, CONSTRUCT_B);
 			thread->assignTask(this, SOLVE_WITH_COLLISION);
 			solveClothSystem2(true);
 			current_constraint_energy += current_collision_energy;
-			for (int i = 0; i < total_thread_num; ++i) {
+			for (unsigned int i = 0; i < total_thread_num; ++i) {
 				current_PD_energy += temEnergy[i];
 			}
 			current_PD_energy += current_constraint_energy;
 			updateModelPosition();
-			for (int i = 0; i < cloth->size(); ++i) {
+			for (unsigned int i = 0; i < cloth->size(); ++i) {
 				thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL);
 			}
-			for (int i = 0; i < tetrahedron->size(); ++i) {
+			for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 				thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL);
 			}
 			local_global_itr_in_single_outer++;
@@ -965,11 +965,11 @@ void ProjectDynamic::updateUVPerThread(int thread_id)
 	VectorXd* this_u_;
 	VectorXd* this_v_;
 	VectorXd* this_acceleration;
-	for (int j = 0; j < 3; ++j)
+	for (unsigned int j = 0; j < 3; ++j)
 	{
 		this_v = &v[j]; this_u = &u[j]; this_u_ = &u_[j]; this_v_ = &v_[j];
 		this_acceleration = &acceleration[j];
-		for (int i = system_vertex_index_per_thread[thread_id]; i < system_vertex_index_per_thread[thread_id + 1]; ++i) {
+		for (unsigned int i = system_vertex_index_per_thread[thread_id]; i < system_vertex_index_per_thread[thread_id + 1]; ++i) {
 			this_v->data()[i] = (this_u->data()[i] - this_u_->data()[i]) / sub_time_step;
 			this_v->data()[i] *= 0.98;
 			this_acceleration->data()[i] = (this_v->data()[i] - this_v_->data()[i]) / sub_time_step;
@@ -1065,14 +1065,14 @@ void ProjectDynamic::updateCollisionMatrix()
 {
 	std::vector<int>* anchor_index;
 	int vertex_index_start;
-	for (int i = 0; i < total_cloth_num; ++i) {
+	for (unsigned int i = 0; i < total_cloth_num; ++i) {
 		anchor_index = &(*cloth)[i].mesh_struct.anchor_vertex;
 		vertex_index_start = vertex_begin_per_cloth[i];
 		for (int j = 0; j < anchor_index->size(); ++j) {
 			*(global_mat_diagonal_ref_address[(*anchor_index)[j]+ vertex_index_start]) += (*cloth)[i].position_stiffness;
 		}
 	}
-	for (int i = 0; i < total_tetrahedron_num; ++i) {
+	for (unsigned int i = 0; i < total_tetrahedron_num; ++i) {
 		anchor_index = &(*tetrahedron)[i].mesh_struct.anchor_vertex;
 		vertex_index_start = vertex_begin_per_tetrahedron[i];
 		for (int j = 0; j < anchor_index->size(); ++j) {
@@ -1085,7 +1085,7 @@ void ProjectDynamic::updateCollisionMatrix()
 //COLLISION_FREE_POSITION
 void ProjectDynamic::computeCollisionFreePosition(int thread_No)
 {
-	int index_end;
+	unsigned int index_end;
 	
 	double collision_time = collision.collision_time;
 	std::array<double, 3>* q_pre;
@@ -1094,16 +1094,16 @@ void ProjectDynamic::computeCollisionFreePosition(int thread_No)
 	u_x = u[0].data();
 	u_y = u[1].data();
 	u_z = u[2].data();
-	int vertex_index_start;
+	unsigned int vertex_index_start;
 	//cloth
 	MeshStruct* mesh_struct;
-	for (int i = 0; i < cloth->size(); ++i) {
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		mesh_struct = &(*cloth)[i].mesh_struct;
 		index_end = mesh_struct->vertex_index_begin_per_thread[thread_No + 1];
 		q_end = mesh_struct->vertex_position.data();
 		q_pre = mesh_struct->vertex_for_render.data();
 		vertex_index_start = vertex_begin_per_cloth[i];
-		for (int j = mesh_struct->vertex_index_begin_per_thread[thread_No]; j < index_end; ++j) {
+		for (unsigned int j = mesh_struct->vertex_index_begin_per_thread[thread_No]; j < index_end; ++j) {
 			q_pre[j][0] += collision_time * (q_end[j][0] - q_pre[j][0]);
 			q_pre[j][1] += collision_time * (q_end[j][1] - q_pre[j][1]);
 			q_pre[j][2] += collision_time * (q_end[j][2] - q_pre[j][2]);
@@ -1114,13 +1114,13 @@ void ProjectDynamic::computeCollisionFreePosition(int thread_No)
 	}
 
 	//tetrahedron
-	for (int i = 0; i < tetrahedron->size(); ++i) {
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		mesh_struct = &(*tetrahedron)[i].mesh_struct;
 		index_end = mesh_struct->vertex_index_begin_per_thread[thread_No + 1];
 		q_end = mesh_struct->vertex_position.data();
 		q_pre = mesh_struct->vertex_for_render.data();
 		vertex_index_start = vertex_begin_per_tetrahedron[i];
-		for (int j = mesh_struct->vertex_index_begin_per_thread[thread_No]; j < index_end; ++j) {
+		for (unsigned int j = mesh_struct->vertex_index_begin_per_thread[thread_No]; j < index_end; ++j) {
 			q_pre[j][0] += collision_time * (q_end[j][0] - q_pre[j][0]);
 			q_pre[j][1] += collision_time * (q_end[j][1] - q_pre[j][1]);
 			q_pre[j][2] += collision_time * (q_end[j][2] - q_pre[j][2]);
@@ -1135,7 +1135,7 @@ void ProjectDynamic::computeCollisionFreePosition(int thread_No)
 //COMPUTE_DISPLACEMENT
 void ProjectDynamic::computeDisplacement(int thread_No)
 {
-	int index_end;
+	unsigned int index_end;
 	double* u_x; double* u_y; double* u_z;
 	double* u_pre_x; double* u_pre_y; double* u_pre_z;
 	double x, y, z;
@@ -1148,7 +1148,7 @@ void ProjectDynamic::computeDisplacement(int thread_No)
 	u_pre_x = u_previous_itr[0].data();
 	u_pre_y = u_previous_itr[1].data();
 	u_pre_z = u_previous_itr[2].data();
-	for (int j = system_vertex_index_per_thread[thread_No]; j < system_vertex_index_per_thread[thread_No + 1]; ++j) {
+	for (unsigned int j = system_vertex_index_per_thread[thread_No]; j < system_vertex_index_per_thread[thread_No + 1]; ++j) {
 		x = u_x[j] - u_pre_x[j];
 		y = u_y[j] - u_pre_y[j];
 		z = u_z[j] - u_pre_z[j];
@@ -1166,14 +1166,14 @@ void ProjectDynamic::updateDiagonalPerThread(int thread_No)
 	
 
 	//update_cloth
-	for (int j = 0; j < total_cloth_num; ++j) {
+	for (unsigned int j = 0; j < total_cloth_num; ++j) {
 		iteration_method.updateClothDiagonalPerThread((*cloth)[j].mesh_struct.vertex_index_begin_per_thread[thread_No],
 			(*cloth)[j].mesh_struct.vertex_index_begin_per_thread[thread_No + 1], vertex_begin_per_cloth[j], collision.obj_target_pos.stiffness[j].data(),
 			collision.obj_target_pos.need_update[j]);
 	}
 	//update tetrahedron
-	int tet_index;
-	for (int j = 0; j < total_tetrahedron_num; ++j) {
+	unsigned int tet_index;
+	for (unsigned int j = 0; j < total_tetrahedron_num; ++j) {
 		tet_index = tetrahedron_begin_obj_index + j;
 		iteration_method.updateTetDiagonalPerThread((*tetrahedron)[j].mesh_struct.vertex_index_begin_per_thread[thread_No],
 			(*tetrahedron)[j].mesh_struct.vertex_index_begin_per_thread[thread_No + 1], vertex_begin_per_tetrahedron[j], 
@@ -1187,21 +1187,21 @@ void ProjectDynamic::updateDiagonalPerThread(int thread_No)
 void ProjectDynamic::updateMatrixPerThread(int thread_No)
 {
 	int collision_num = 0;
-	int* vertex_index_begin_per_thread;
+	unsigned int* vertex_index_begin_per_thread;
 	bool* need_update;
 	double* stiffness;
 	double* diagonal_ref;
 	double** diagonal_ref_address;
-	int vertex_index_start;
+	unsigned int vertex_index_start;
 	diagonal_ref = global_mat_diagonal_ref.data();
 	diagonal_ref_address = global_mat_diagonal_ref_address.data();
 	//update_cloth
-	for (int j = 0; j < total_cloth_num; ++j) {
+	for (unsigned int j = 0; j < total_cloth_num; ++j) {
 		vertex_index_start = vertex_begin_per_cloth[j];
 		need_update = collision.obj_target_pos.need_update[j];
 		stiffness = collision.obj_target_pos.stiffness[j].data();
 		vertex_index_begin_per_thread = (*cloth)[j].mesh_struct.vertex_index_begin_per_thread.data();		
-		for (int i = vertex_index_begin_per_thread[thread_No]; i < vertex_index_begin_per_thread[thread_No + 1]; ++i) {
+		for (unsigned int i = vertex_index_begin_per_thread[thread_No]; i < vertex_index_begin_per_thread[thread_No + 1]; ++i) {
 			*(diagonal_ref_address[i + vertex_index_start]) = diagonal_ref[i + vertex_index_start];
 			////std::cout << i << " " << *(diagonal_ref_address[i]) << std::endl;
 			if (need_update[i]) {
@@ -1212,13 +1212,13 @@ void ProjectDynamic::updateMatrixPerThread(int thread_No)
 	}
 	//update tetrahedron
 	int* vertex_index_on_surface;
-	for (int j = 0; j < total_tetrahedron_num; ++j) {
+	for (unsigned int j = 0; j < total_tetrahedron_num; ++j) {
 		vertex_index_start = vertex_begin_per_tetrahedron[j];
 		need_update = collision.obj_target_pos.need_update[j+tetrahedron_begin_obj_index];
 		stiffness = collision.obj_target_pos.stiffness[j+ tetrahedron_begin_obj_index].data();
 		vertex_index_begin_per_thread = (*tetrahedron)[j].mesh_struct.vertex_index_on_surface_begin_per_thread.data();
 		vertex_index_on_surface = (*tetrahedron)[j].mesh_struct.vertex_index_on_sureface.data();
-		for (int i = vertex_index_begin_per_thread[thread_No]; i < vertex_index_begin_per_thread[thread_No + 1]; ++i) {
+		for (unsigned int i = vertex_index_begin_per_thread[thread_No]; i < vertex_index_begin_per_thread[thread_No + 1]; ++i) {
 			*(diagonal_ref_address[vertex_index_on_surface[i] + vertex_index_start]) = diagonal_ref[vertex_index_on_surface[i] + vertex_index_start];
 			////std::cout << i << " " << *(diagonal_ref_address[i]) << std::endl;
 			if (need_update[i]) {
@@ -1265,7 +1265,7 @@ bool ProjectDynamic::IPC_PDConvergeCondition()
 				//std::cout << outer_iteration_num << std::endl;
 			thread->assignTask(this, COMPUTE_DISPLACEMENT);
 			displacement_norm = displacement_norm_thread[0];
-			for (int i = 1; i < total_thread_num; ++i) {
+			for (unsigned int i = 1; i < total_thread_num; ++i) {
 				//if (displacement_norm < displacement_norm_thread[i]) {
 					displacement_norm += displacement_norm_thread[i];
 				//}
@@ -1411,9 +1411,9 @@ void ProjectDynamic::localProjectionPerThread(int thread_id, bool with_energy)
 
 void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energy)
 {
-	int vertex_index_start;
-	int index_end;
-	int index_begin;
+	unsigned int vertex_index_start;
+	unsigned int index_end;
+	unsigned int index_begin;
 	Matrix<double, 3, 4> q;
 	TetrahedronMeshStruct* mesh_struct;
 	int* vertex_index;
@@ -1440,7 +1440,7 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 	if (with_energy) {
 		Matrix<double, 3, 4> p;
 		Matrix<double, 3, 4> p_volume_preserve;
-		for (int j = 0; j < total_tetrahedron_num; ++j) {
+		for (unsigned int j = 0; j < total_tetrahedron_num; ++j) {
 			vertex_index_start = vertex_begin_per_tetrahedron[j];
 			mesh_struct = &(*tetrahedron)[j].mesh_struct;
 			index_end = mesh_struct->tetrahedron_index_begin_per_thread[thread_id + 1];
@@ -1453,10 +1453,10 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 			volume_preserve_min = (*tetrahedron)[j].sigma_limit[0];
 			volume_preserve_max = (*tetrahedron)[j].sigma_limit[1];
 			
-			for (int i = index_begin; i < index_end; ++i) {
+			for (unsigned int i = index_begin; i < index_end; ++i) {
 				vertex_index = mesh_struct->indices[i].data();
 				//set matrix q
-				for (int k = 0; k < 4; ++k) {
+				for (unsigned int k = 0; k < 4; ++k) {
 					temp_vertex_index = vertex_index[k] + vertex_index_start;
 					for (int l = 0; l < 3; ++l) {
 						q.data()[3 * k + l] = u[l].data()[temp_vertex_index];
@@ -1486,8 +1486,8 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 					transform_for_volume_perserve = transform;
 				}
 				else {
-					for (int k = 0; k < 3; ++k) {
-						for (int kk = 0; kk < 3; ++kk) {
+					for (unsigned int k = 0; k < 3; ++k) {
+						for (unsigned int kk = 0; kk < 3; ++kk) {
 							transform_for_volume_perserve.data()[3 * k + kk] = sigma.data()[k] * rotation_2.data()[3 * k + kk];
 						}
 					}
@@ -1520,7 +1520,7 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 	else {
 		Matrix<double, 3, 4> p;
 		Matrix<double, 3, 4> p_volume_preserve;
-		for (int j = 0; j < total_tetrahedron_num; ++j) {
+		for (unsigned int j = 0; j < total_tetrahedron_num; ++j) {
 			vertex_index_start = vertex_begin_per_tetrahedron[j];
 			mesh_struct = &(*tetrahedron)[j].mesh_struct;
 			index_end = mesh_struct->tetrahedron_index_begin_per_thread[thread_id + 1];
@@ -1533,7 +1533,7 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 			volume_preserve_min = (*tetrahedron)[j].sigma_limit[0];
 			volume_preserve_max = (*tetrahedron)[j].sigma_limit[1];
 
-			for (int i = index_begin; i < index_end; ++i) {
+			for (unsigned int i = index_begin; i < index_end; ++i) {
 				vertex_index = mesh_struct->indices[i].data();
 				//set matrix q
 				for (int k = 0; k < 4; ++k) {
@@ -1565,8 +1565,8 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 					transform_for_volume_perserve = transform;
 				}
 				else {
-					for (int k = 0; k < 3; ++k) {
-						for (int kk = 0; kk < 3; ++kk) {
+					for (unsigned int k = 0; k < 3; ++k) {
+						for (unsigned int kk = 0; kk < 3; ++kk) {
 							transform_for_volume_perserve.data()[3 * k + kk] = sigma.data()[k] * rotation_2.data()[3 * k + kk];
 						}
 					}
@@ -1627,19 +1627,19 @@ bool ProjectDynamic::getDigonalForVolumePreserve(Vector3d& svd_eigen, double max
 //LOCAL_EDGE_LENGTH_PROJECTION
 void ProjectDynamic::localEdgeLengthProjectionPerThread(int thread_id, bool with_energy)
 {
-	int vertex_index_start;
+	unsigned int vertex_index_start;
 	if (with_energy) {		
 		Vector3d q0, q1, q01;
 		double curLen;
 		MeshStruct::Edge* edges;
-		int* edge_index_begin_per_thread;
+		unsigned int* edge_index_begin_per_thread;
 		double* length_stiffness;
-		for (int j = 0; j < total_cloth_num; ++j) {
+		for (unsigned int j = 0; j < total_cloth_num; ++j) {
 			vertex_index_start = vertex_begin_per_cloth[j];
 			edges = (*cloth)[j].mesh_struct.edges.data();
 			edge_index_begin_per_thread = (*cloth)[j].mesh_struct.edge_index_begin_per_thread.data();
 			length_stiffness = (*cloth)[j].length_stiffness.data();
-			for (int i = edge_index_begin_per_thread[thread_id]; i < edge_index_begin_per_thread[thread_id + 1]; ++i) {
+			for (unsigned int i = edge_index_begin_per_thread[thread_id]; i < edge_index_begin_per_thread[thread_id + 1]; ++i) {
 				q0.data()[0] = u[0].data()[edges[i].vertex[0] + vertex_index_start];
 				q1.data()[0] = u[0].data()[edges[i].vertex[1] + vertex_index_start];
 				q0.data()[1] = u[1].data()[edges[i].vertex[0] + vertex_index_start];
@@ -1657,14 +1657,14 @@ void ProjectDynamic::localEdgeLengthProjectionPerThread(int thread_id, bool with
 		Vector3d q0, q1, q01;
 		double curLen;
 		MeshStruct::Edge* edges;
-		int* edge_index_begin_per_thread;
+		unsigned int* edge_index_begin_per_thread;
 		double* length_stiffness;
-		for (int j = 0; j < total_cloth_num; ++j) {
+		for (unsigned int j = 0; j < total_cloth_num; ++j) {
 			vertex_index_start = vertex_begin_per_cloth[j];
 			edges = (*cloth)[j].mesh_struct.edges.data();
 			edge_index_begin_per_thread = (*cloth)[j].mesh_struct.edge_index_begin_per_thread.data();
 			length_stiffness = (*cloth)[j].length_stiffness.data();
-			for (int i = edge_index_begin_per_thread[thread_id]; i < edge_index_begin_per_thread[thread_id + 1]; ++i) {
+			for (unsigned int i = edge_index_begin_per_thread[thread_id]; i < edge_index_begin_per_thread[thread_id + 1]; ++i) {
 				q0.data()[0] = u[0].data()[edges[i].vertex[0] + vertex_index_start];
 				q1.data()[0] = u[0].data()[edges[i].vertex[1] + vertex_index_start];
 				q0.data()[1] = u[1].data()[edges[i].vertex[0] + vertex_index_start];
@@ -1682,35 +1682,35 @@ void ProjectDynamic::localEdgeLengthProjectionPerThread(int thread_id, bool with
 
 void ProjectDynamic::localBendingProjectionPerThread(int thread_id, bool with_energy)
 {
-	int size; std::vector<VectorXd>q(3);
+	unsigned int size; std::vector<VectorXd>q(3);
 	Vector3d aq; double aqnorm; //double a_rest[3];
 	VectorXd* lbo;
 	std::vector<int>* vertex_around_vertex_for_bending_;
 	double bend_stiffness;
-	int* vertex_index_begin_per_thread;
+	unsigned int* vertex_index_begin_per_thread;
 	Vector3d p;
 	VectorXd* p_bend;
 	TriangleMeshStruct* mesh_struct;
 	int vertex_index_start;
 	if (with_energy) {
-		for (int k = 0; k < total_cloth_num; ++k) {
+		for (unsigned int k = 0; k < total_cloth_num; ++k) {
 			vertex_index_start = vertex_begin_per_cloth[k];
 			if (!(*cloth)[k].mesh_struct.faces.empty()) {
 				bend_stiffness = (*cloth)[k].bend_stiffness;
 				mesh_struct = &(*cloth)[k].mesh_struct;
 				lbo = vertex_lbo[k].data();
 				vertex_index_begin_per_thread = (*cloth)[k].mesh_struct.vertex_index_begin_per_thread.data();
-				for (int i = vertex_index_begin_per_thread[thread_id]; i < vertex_index_begin_per_thread[thread_id + 1]; ++i) {
+				for (unsigned int i = vertex_index_begin_per_thread[thread_id]; i < vertex_index_begin_per_thread[thread_id + 1]; ++i) {
 					vertex_around_vertex_for_bending_ = &mesh_struct->vertices[i].neighbor_vertex;
 					p_bend = p_bending[k][i].data();
 					size = vertex_around_vertex_for_bending_->size()+1;
-					for (int j = 0; j < 3; ++j) {
+					for (unsigned int j = 0; j < 3; ++j) {
 						q[j].resize(size);
 					}
 					q[0][0] = u[0].data()[i + vertex_index_start];
 					q[1][0] = u[1].data()[i + vertex_index_start];
 					q[2][0] = u[2].data()[i + vertex_index_start];
-					for (int h = 1; h < size; h++) {
+					for (unsigned int h = 1; h < size; h++) {
 						q[0][h] = u[0].data()[vertex_around_vertex_for_bending_->data()[h-1] + vertex_index_start];
 						q[1][h] = u[1].data()[vertex_around_vertex_for_bending_->data()[h-1] + vertex_index_start];
 						q[2][h] = u[2].data()[vertex_around_vertex_for_bending_->data()[h-1] + vertex_index_start];
@@ -1733,24 +1733,24 @@ void ProjectDynamic::localBendingProjectionPerThread(int thread_id, bool with_en
 		}
 	}
 	else {
-		for (int k = 0; k < total_cloth_num; ++k) {
+		for (unsigned int k = 0; k < total_cloth_num; ++k) {
 			if (!(*cloth)[k].mesh_struct.faces.empty()) {
 				bend_stiffness = (*cloth)[k].bend_stiffness;
 				mesh_struct = &(*cloth)[k].mesh_struct;
 				lbo = vertex_lbo[k].data();
 				vertex_index_begin_per_thread = (*cloth)[k].mesh_struct.vertex_index_begin_per_thread.data();
 				vertex_index_start = vertex_begin_per_cloth[k];
-				for (int i = vertex_index_begin_per_thread[thread_id]; i < vertex_index_begin_per_thread[thread_id + 1]; ++i) {
+				for (unsigned int i = vertex_index_begin_per_thread[thread_id]; i < vertex_index_begin_per_thread[thread_id + 1]; ++i) {
 					vertex_around_vertex_for_bending_ = &mesh_struct->vertices[i].neighbor_vertex;
 					p_bend = p_bending[k][i].data();
 					size = vertex_around_vertex_for_bending_->size() + 1;
-					for (int j = 0; j < 3; ++j) {
+					for (unsigned int j = 0; j < 3; ++j) {
 						q[j].resize(size);
 					}
 					q[0][0] = u[0].data()[i + vertex_index_start];
 					q[1][0] = u[1].data()[i + vertex_index_start];
 					q[2][0] = u[2].data()[i + vertex_index_start];
-					for (int h = 1; h < size; h++) {
+					for (unsigned int h = 1; h < size; h++) {
 						q[0][h] = u[0].data()[vertex_around_vertex_for_bending_->data()[h - 1] + vertex_index_start];
 						q[1][h] = u[1].data()[vertex_around_vertex_for_bending_->data()[h - 1] + vertex_index_start];
 						q[2][h] = u[2].data()[vertex_around_vertex_for_bending_->data()[h - 1] + vertex_index_start];
@@ -1779,11 +1779,11 @@ void ProjectDynamic::localPositionProjectionPerThread(int thread_id, bool with_e
 		double delta_q[3];
 		TriangleMeshStruct* mesh_struct;
 		int vertex_index_start;
-		for (int j = 0; j < total_cloth_num; ++j) {
+		for (unsigned int j = 0; j < total_cloth_num; ++j) {
 			vertex_index_start = vertex_begin_per_cloth[j];
 			if (!(*cloth)[j].mesh_struct.anchor_vertex.empty()) {
 				mesh_struct = &(*cloth)[j].mesh_struct;
-				for (int i = mesh_struct->anchor_index_begin_per_thread[thread_id]; i < mesh_struct->anchor_index_begin_per_thread[thread_id + 1]; ++i)
+				for (unsigned int i = mesh_struct->anchor_index_begin_per_thread[thread_id]; i < mesh_struct->anchor_index_begin_per_thread[thread_id + 1]; ++i)
 				{
 					delta_q[0] = u[0].data()[mesh_struct->anchor_vertex[i] + vertex_index_start] - mesh_struct->anchor_position[i][0];
 					delta_q[1] = u[1].data()[mesh_struct->anchor_vertex[i] + vertex_index_start] - mesh_struct->anchor_position[i][1];
@@ -1793,11 +1793,11 @@ void ProjectDynamic::localPositionProjectionPerThread(int thread_id, bool with_e
 			}
 		}
 		TetrahedronMeshStruct* mesh_struct2;
-		for (int j = 0; j < total_tetrahedron_num; ++j) {
+		for (unsigned int j = 0; j < total_tetrahedron_num; ++j) {
 			vertex_index_start = vertex_begin_per_tetrahedron[j];
 			if (!(*tetrahedron)[j].mesh_struct.anchor_vertex.empty()) {
 				mesh_struct2 = &(*tetrahedron)[j].mesh_struct;
-				for (int i = mesh_struct2->anchor_index_begin_per_thread[thread_id]; i < mesh_struct2->anchor_index_begin_per_thread[thread_id + 1]; ++i)
+				for (unsigned int i = mesh_struct2->anchor_index_begin_per_thread[thread_id]; i < mesh_struct2->anchor_index_begin_per_thread[thread_id + 1]; ++i)
 				{
 					delta_q[0] = u[0].data()[mesh_struct2->anchor_vertex[i] + vertex_index_start] - mesh_struct2->anchor_position[i][0];
 					delta_q[1] = u[1].data()[mesh_struct2->anchor_vertex[i] + vertex_index_start] - mesh_struct2->anchor_position[i][1];
@@ -1880,7 +1880,7 @@ void ProjectDynamic::constructbPerThead(double* b, TriangleMeshStruct& mesh_stru
 	memset(b + vertex_index_start, 0, 8 * cloth_sys_size[cloth_No]);
 	//collision
 	if (with_collision) {
-		for (int i = 0; i < cloth_sys_size[cloth_No]; ++i) {
+		for (unsigned int i = 0; i < cloth_sys_size[cloth_No]; ++i) {
 			if (collision_b_need_update[i]) {
 				b[i + vertex_index_start] += collision_b_sum[i][dimension];
 			}
@@ -1896,9 +1896,9 @@ void ProjectDynamic::constructbPerThead(double* b, TriangleMeshStruct& mesh_stru
 	//}
 	//bending	
 	if (!mesh_struct.faces.empty()) {
-		for (int i = 0; i < cloth_sys_size[cloth_No]; ++i) {
+		for (unsigned int i = 0; i < cloth_sys_size[cloth_No]; ++i) {
 			b[i + vertex_index_start] += p_bending[i][dimension].data()[0];
-			for (int j = 1; j < vertex_lbo[i].size(); ++j) {
+			for (unsigned int j = 1; j < vertex_lbo[i].size(); ++j) {
 				b[mesh_struct.vertices[i].neighbor_vertex[j-1] + vertex_index_start] += p_bending[i][dimension].data()[j];
 			}
 		}
@@ -1914,7 +1914,7 @@ void ProjectDynamic::constructbPerThead(double* b, TriangleMeshStruct& mesh_stru
 //SOLVE_WITHOUT_COLLISION
 void ProjectDynamic::solveSystemPerThread(int thread_id, bool with_collision)
 {
-	for (int i = dimension_per_thread[thread_id]; i < dimension_per_thread[thread_id+1]; ++i) {
+	for (unsigned int i = dimension_per_thread[thread_id]; i < dimension_per_thread[thread_id+1]; ++i) {
 		b[i] += (1.0 / (sub_time_step * sub_time_step)) * (mass.cwiseProduct(u_prediction[i]));
 		if (with_collision) {
 			switch (itr_solver_method)
@@ -1988,7 +1988,7 @@ void ProjectDynamic::solveClothSystem2(bool compute_energy)
 void ProjectDynamic::computeEnergyPerThread(int thread_id)
 {
 	temEnergy[thread_id] = 0.0;
-	for (int i = dimension_per_thread[thread_id]; i < dimension_per_thread[thread_id+1]; ++i) {
+	for (unsigned int i = dimension_per_thread[thread_id]; i < dimension_per_thread[thread_id+1]; ++i) {
 		VectorXd p0, p1;
 		p0 = u[i] - u_prediction[i];
 		p1 = p0.cwiseProduct(mass);
@@ -2001,9 +2001,9 @@ void ProjectDynamic::computeEnergyPerThread(int thread_id)
 void ProjectDynamic::addExternalClothForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int cloth_No)
 {
 	if (!coe.empty()) {
-		int vertex_index_start = vertex_begin_per_cloth[cloth_No];
-		for (int i = 0; i < coe.size(); ++i) {
-			for (int j = 0; j < 3; ++j) {
+		unsigned int vertex_index_start = vertex_begin_per_cloth[cloth_No];
+		for (unsigned int i = 0; i < coe.size(); ++i) {
+			for (unsigned int j = 0; j < 3; ++j) {
 				f_ext[j].data()[neighbor_vertex[i]+ vertex_index_start] += coe[i] * neighbor_vertex_force_direction[j];
 			}
 		}
@@ -2013,9 +2013,9 @@ void ProjectDynamic::addExternalClothForce(double* neighbor_vertex_force_directi
 void ProjectDynamic::addExternalTetForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int tet_No)
 {
 	if (!coe.empty()) {
-		int vertex_index_start = vertex_begin_per_tetrahedron[tet_No];
-		for (int i = 0; i < coe.size(); ++i) {
-			for (int j = 0; j < 3; ++j) {
+		unsigned int vertex_index_start = vertex_begin_per_tetrahedron[tet_No];
+		for (unsigned int i = 0; i < coe.size(); ++i) {
+			for (unsigned int j = 0; j < 3; ++j) {
 				f_ext[j].data()[neighbor_vertex[i] + vertex_index_start] += coe[i] * neighbor_vertex_force_direction[j];
 			}
 		}
@@ -2030,10 +2030,10 @@ void ProjectDynamic::resetExternalForce()
 void ProjectDynamic::mainProcess()
 {
 	PDsetPosPredict();
-	for (int i = 0; i < total_cloth_num; ++i) {
+	for (unsigned int i = 0; i < total_cloth_num; ++i) {
 		(*cloth)[i].mesh_struct.getNormal();
 	}
-	for (int i = 0; i < total_tetrahedron_num; ++i) {
+	for (unsigned int i = 0; i < total_tetrahedron_num; ++i) {
 		(*tetrahedron)[i].mesh_struct.getNormal();
 	}
 

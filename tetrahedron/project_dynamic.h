@@ -58,18 +58,18 @@ public:
 	size_t* time_stamp;
 	Collision collision;
 private:
-	int tetrahedron_begin_obj_index;
+	unsigned int tetrahedron_begin_obj_index;
 	int local_global_itr_in_single_outer;
-	int total_thread_num;
+	unsigned int total_thread_num;
 	std::vector<double> temEnergy;
 	int sub_step_num;
 	bool use_dierct_solve_for_coarest_mesh;
 	int super_jacobi_step_size;
 	int max_it;
 	int max_jacobi_itr_num;
-	int total_cloth_num, total_tetrahedron_num, total_collider_num;
-	std::vector<int>cloth_sys_size, tetrahedron_sys_size;
-	int sys_size;
+	unsigned int total_cloth_num, total_tetrahedron_num, total_collider_num;
+	std::vector<unsigned int>cloth_sys_size, tetrahedron_sys_size;
+	unsigned int sys_size;
 	std::vector<Cloth>* cloth;
 	std::vector<Tetrahedron>* tetrahedron;
 	std::vector<Collider>* collider;
@@ -125,13 +125,13 @@ private:
 	std::vector<VectorXd> u_;
 	std::vector<VectorXd> acceleration;
 
-	std::vector<int>system_vertex_index_per_thread;
+	std::vector<unsigned int>system_vertex_index_per_thread;
 
-	std::vector<int>dimension_per_thread;
+	std::vector<unsigned int>dimension_per_thread;
 
-	std::vector<int> cloth_per_thread_begin; 
+	std::vector<unsigned int> cloth_per_thread_begin; 
 	std::vector<std::vector<int>> cloth_dimension_per_thread;//every sytem need to solve Ax=b, when construct b, we rearrange the xyz dimensions of every b to different thread
-	std::vector<int> tetrahedron_per_thread_begin;
+	std::vector<unsigned int> tetrahedron_per_thread_begin;
 	std::vector<std::vector<int>> tetrahedron_dimension_per_thread;
 	void restBendingMeanCurvatureSingleCloth(TriangleMeshStruct& mesh_struct, std::vector<double>& rest_mean_curvature_norm,
 		std::vector<VectorXd>& vertex_lbo);
@@ -194,8 +194,8 @@ private:
 
 	int max_inner_iteration_num;
 
-	std::vector<int> vertex_begin_per_cloth;
-	std::vector<int> vertex_begin_per_tetrahedron;
+	std::vector<unsigned int> vertex_begin_per_cloth;
+	std::vector<unsigned int> vertex_begin_per_tetrahedron;
 	void setSystemIndexInfo();
 
 	void copmuteGlobalStepMatrixSingleTetrahedron(TetrahedronMeshStruct& mesh_struct, std::vector<Triplet<double>>& global_mat_nnz, int sys_size, double& ARAP_stiffness,

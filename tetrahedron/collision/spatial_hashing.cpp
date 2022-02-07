@@ -26,7 +26,7 @@ void SpatialHashing::initialHashCellLength(std::vector<Cloth>* cloth, std::vecto
 	}
 	ave_length /= (double)edge_num;
 	cell_length = ave_length*(1.0+ 2.0 *tolerance_ratio[SELF_POINT_TRIANGLE]);
-	std::cout << "ave_length" << " " << ave_length << std::endl;
+	//std::cout << "ave_length" << " " << ave_length << std::endl;
 }
 
 void SpatialHashing::setInObject(std::vector<Cloth>* cloth, std::vector<Collider>* collider, 
@@ -70,7 +70,8 @@ void SpatialHashing::setInObject(std::vector<Cloth>* cloth, std::vector<Collider
 	initialTriangleHash();
 	hash_value_begin.resize(thread_num,0);
 	radix_sort.initial(thread);
-
+	//testRadixSort();
+	radix_sort.initialArray(64 * total_triangle_num);
 	obj_is_used = new bool** [thread_num];
 	for (int i = 0; i < thread_num; ++i) {
 		obj_is_used[i] = new bool* [cloth->size()+tetrahedron->size()];
@@ -83,7 +84,7 @@ void SpatialHashing::setInObject(std::vector<Cloth>* cloth, std::vector<Collider
 			memset(obj_is_used[i][j+ tetrahedron_begin_obj_index], 0, (*tetrahedron)[j].mesh_struct.triangle_indices.size());
 		}
 	}
-	//testRadixSort();
+	//
 	
 }
 
@@ -109,25 +110,25 @@ void SpatialHashing::initialTriangleHash()
 
 void SpatialHashing::testRadixSort()
 {
-	int vec_size = 4e5;
-	std::vector<int> value;
-	std::vector<int> triangle_index;
-	std::vector<int> hash_cloth_No;
+	unsigned int vec_size = 4e5;
+	std::vector<unsigned int> value;
+	std::vector<unsigned int> triangle_index;
+	std::vector<unsigned int> hash_cloth_No;
 	value.reserve(vec_size);
 	triangle_index.reserve(vec_size);
 	hash_cloth_No.reserve(vec_size);
 	time_t t1 = clock();
-	for (int j = 0; j < 100; ++j) {
+	for (unsigned int j = 0; j < 100; ++j) {
 		int size = 100 * 100 * 100;
 		value.clear();
 		triangle_index.clear();
 		hash_cloth_No.clear();
-		for (int i = 0; i < vec_size; ++i) {
+		for (unsigned int i = 0; i < vec_size; ++i) {
 			value.push_back(rand() % size);
 			triangle_index.push_back(i);
 			hash_cloth_No.push_back(0);
 		}
-		for (int i = 0; i < vec_size; ++i) {
+		for (unsigned int i = 0; i < vec_size; ++i) {
 			if (i % 2 == 0) {
 				value[i] += 100000;
 			}
@@ -136,17 +137,18 @@ void SpatialHashing::testRadixSort()
 	t1 = clock() - t1;
 	std::cout << "index " << t1 << std::endl;
 	time_t t = clock();
-	for (int j = 0; j < 100; ++j) {
-		int size = 100 * 100 * 100;
+	radix_sort.initialArray(vec_size);
+	for (unsigned int j = 0; j < 100; ++j) {
+		unsigned int size = 100 * 100 * 100;
 		value.clear();
 		triangle_index.clear();
 		hash_cloth_No.clear();
-		for (int i = 0; i < vec_size; ++i) {
+		for (unsigned int i = 0; i < vec_size; ++i) {
 			value.push_back(rand() % size);
 			triangle_index.push_back(i);
 			hash_cloth_No.push_back(0);
 		}
-		for (int i = 0; i < vec_size; ++i) {
+		for (unsigned int i = 0; i < vec_size; ++i) {
 			if (i % 2 == 0) {
 				value[i] += 100000;
 			}
@@ -155,8 +157,9 @@ void SpatialHashing::testRadixSort()
 		//	std::cout << cell[i][1] << " ";
 		//}
 		//std::cout << std::endl;
-		radix_sort.radixSort(size, &value, &triangle_index, &hash_cloth_No);
+		radix_sort.radixSort(size, value.data(), triangle_index.data(), hash_cloth_No.data(), value.size());
 	}
+	radix_sort.deleteArray();
 	//for (int i = 0; i < vec_size; ++i) {
 	//	std::cout << cell[i][1] << " ";
 	//}
@@ -168,8 +171,8 @@ void SpatialHashing::testRadixSort()
 void SpatialHashing::setSpatialHashing()
 {
 	getSceneAABB();
-	for (int i = 0; i < 3; ++i) {
-		cell_number[i] = (int)floor((scene_aabb.max[i] - scene_aabb.min[i]) / cell_length) + 1;
+	for (unsigned int i = 0; i < 3; ++i) {
+		cell_number[i] = (unsigned int)floor((scene_aabb.max[i] - scene_aabb.min[i]) / cell_length) + 1;
 		hash_max_index[i] = cell_number[i] - 1;
 	}
 	cell_num0_cell_num1 = cell_number[0] * cell_number[1];
@@ -180,7 +183,8 @@ void SpatialHashing::buildSpatialHashing()
 	setSpatialHashing();
 	thread->assignTask(this, TRIANGLE_HASHING);
 	setHashTogether();
-	radix_sort.radixSort(cell_number[0] * cell_number[1] * cell_number[2], &spatial_hashing_value, &spatial_hashing_triangle_index, &spatial_hashing_obj_index);
+	radix_sort.radixSort(cell_number[0] * cell_number[1] * cell_number[2], spatial_hashing_value.data(), spatial_hashing_triangle_index.data(), spatial_hashing_obj_index.data(),
+		spatial_hashing_value.size());
 	setPrifixSum();
 }
 
@@ -214,22 +218,23 @@ void SpatialHashing::setPrifixSum()
 	prifix_sum[prifix_sum.size() - 1] = t;
 }
 
-void SpatialHashing::searchTriangle(AABB& aabb,int input_obj_No, int triangle_index, std::vector<int>* obj_neighbor_index, bool is_collider, int thread_No)
+void SpatialHashing::searchTriangle(AABB& aabb, unsigned int input_obj_No, unsigned int triangle_index, 
+	std::vector<int>* obj_neighbor_index, bool is_collider, unsigned int thread_No)
 {
-	std::vector<int>cloth_index_record;	std::vector<int>triangle_index_record;
+	std::vector<unsigned int>cloth_index_record;	std::vector<unsigned int>triangle_index_record;
 	cloth_index_record.reserve(20);
 	triangle_index_record.reserve(20);
 	bool** obj_is_used_ = obj_is_used[thread_No];
-	int hash_cell_index_end;
-	int obj_No; int current_triangle_index;
-	int obj_num = cloth->size() + tetrahedron->size();
-	for (int i = 0; i < obj_num; ++i) {
+	unsigned int hash_cell_index_end;
+	unsigned int obj_No; unsigned int current_triangle_index;
+	unsigned int obj_num = cloth->size() + tetrahedron->size();
+	for (unsigned int i = 0; i < obj_num; ++i) {
 		obj_neighbor_index[i].clear();
 		obj_neighbor_index[i].reserve(10);
 	}
 
-	std::vector<int>hash_value_;
-	std::vector<int>*hash_value;
+	std::vector<unsigned int>hash_value_;
+	std::vector<unsigned int>*hash_value;
 	if (is_collider) {
 		obtainTriangleHashingValue(aabb, &hash_value_);
 		hash_value = &hash_value_;
@@ -237,9 +242,9 @@ void SpatialHashing::searchTriangle(AABB& aabb,int input_obj_No, int triangle_in
 	else {
 		hash_value = &obj_triangle_hash[input_obj_No][triangle_index];
 	}
-	for (int i = 0; i < hash_value->size(); ++i) {
+	for (unsigned int i = 0; i < hash_value->size(); ++i) {
 		hash_cell_index_end = prifix_sum[(*hash_value)[i]+1];
-		for (int j = prifix_sum[(*hash_value)[i]]; j < hash_cell_index_end; ++j) {
+		for (unsigned int j = prifix_sum[(*hash_value)[i]]; j < hash_cell_index_end; ++j) {
 			obj_No = spatial_hashing_obj_index[j];
 			current_triangle_index = spatial_hashing_triangle_index[j];
 			if (!obj_is_used_[obj_No][current_triangle_index]) {
@@ -260,15 +265,15 @@ void SpatialHashing::searchTriangle(AABB& aabb,int input_obj_No, int triangle_in
 		}
 	}
 	
-	for (int i = 0; i < triangle_index_record.size(); ++i) {
+	for (unsigned int i = 0; i < triangle_index_record.size(); ++i) {
 		obj_is_used_[cloth_index_record[i]][triangle_index_record[i]] = false;
 	}
 }
 
 void SpatialHashing::setHashTogether()
 {
-	int total_hash_num = spatial_hashing_value_per_thread[0].size();
-	for (int i = 1; i < thread_num; ++i) {
+	unsigned int total_hash_num = spatial_hashing_value_per_thread[0].size();
+	for (unsigned int i = 1; i < thread_num; ++i) {
 		hash_value_begin[i] = total_hash_num;
 		total_hash_num+= spatial_hashing_value_per_thread[i].size();
 		
@@ -291,12 +296,12 @@ void SpatialHashing::setHashTogether(int thread_No)
 //TRIANGLE_HASHING
 void SpatialHashing::triangleHashing(int thread_No)
 {
-	int* triangle_begin;
+	unsigned int* triangle_begin;
 	AABB* aabb;
-	std::vector<int>* spatial_hashing_value_;
-	std::vector<int>* spatial_hashing_obj_;
-	std::vector<int>* spatial_hashing_triangle_;
-	std::vector<int>* hash_value;
+	std::vector<unsigned int>* spatial_hashing_value_;
+	std::vector<unsigned int>* spatial_hashing_obj_;
+	std::vector<unsigned int>* spatial_hashing_triangle_;
+	std::vector<unsigned int>* hash_value;
 	spatial_hashing_obj_ = &spatial_hashing_obj_index_per_thread[thread_No];
 	spatial_hashing_triangle_ = &spatial_hashing_triangle_index_per_thread[thread_No];
 	spatial_hashing_value_ = &spatial_hashing_value_per_thread[thread_No];
@@ -305,74 +310,75 @@ void SpatialHashing::triangleHashing(int thread_No)
 	spatial_hashing_value_->clear();
 	int vector_size;
 
-	int triangle_end;
-	for (int i = 0; i < cloth->size(); ++i) {
+	unsigned int triangle_end;
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		aabb = (*cloth)[i].triangle_AABB.data();		
 		triangle_begin = (*cloth)[i].mesh_struct.face_index_begin_per_thread.data();
 		hash_value = obj_triangle_hash[i].data();
 		vector_size = spatial_hashing_triangle_->size();
 		triangle_end = triangle_begin[thread_No + 1];
-		for (int j = triangle_begin[thread_No]; j < triangle_end; ++j) {
+		for (unsigned int j = triangle_begin[thread_No]; j < triangle_end; ++j) {
 			triangleHashingValue(aabb[j], spatial_hashing_triangle_,spatial_hashing_value_, j,&hash_value[j]);
 		}
 		spatial_hashing_obj_->insert(spatial_hashing_obj_->end(), spatial_hashing_triangle_->size() - vector_size, i);
 	}
 
-	for (int i = 0; i < tetrahedron->size(); ++i) {
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		aabb = (*tetrahedron)[i].triangle_AABB.data();
 		triangle_begin = (*tetrahedron)[i].mesh_struct.face_index_begin_per_thread.data();
 		hash_value = obj_triangle_hash[i+tetrahedron_begin_obj_index].data();
 		vector_size = spatial_hashing_triangle_->size();
 		triangle_end = triangle_begin[thread_No + 1];
-		for (int j = triangle_begin[thread_No]; j < triangle_end; ++j) {
+		for (unsigned int j = triangle_begin[thread_No]; j < triangle_end; ++j) {
 			triangleHashingValue(aabb[j], spatial_hashing_triangle_, spatial_hashing_value_, j, &hash_value[j]);
 		}
 		spatial_hashing_obj_->insert(spatial_hashing_obj_->end(), spatial_hashing_triangle_->size() - vector_size, i+tetrahedron_begin_obj_index);
 	}
 }
 
-void SpatialHashing::obtainTriangleHashingValue(AABB& aabb, std::vector<int>* hash_value)
+void SpatialHashing::obtainTriangleHashingValue(AABB& aabb, std::vector<unsigned int>* hash_value)
 {
-	int min_index[3];
-	int max_index[3];
-	int index_z_multi;
-	int index_y_multi;
-	for (int j = 0; j < 3; ++j) {
-		min_index[j] = (int)floor((aabb.min[j] - scene_aabb.min[j]) / cell_length);
-		max_index[j] = (int)floor((aabb.max[j] - scene_aabb.min[j]) / cell_length) + 1;
+	unsigned int min_index[3];
+	unsigned int max_index[3];
+	unsigned int index_z_multi;
+	unsigned int index_y_multi;
+	for (unsigned int j = 0; j < 3; ++j) {
+		min_index[j] = (unsigned int)floor((aabb.min[j] - scene_aabb.min[j]) / cell_length);
+		max_index[j] = (unsigned int)floor((aabb.max[j] - scene_aabb.min[j]) / cell_length) + 1;
 	}
-	int size = (max_index[0] - min_index[0]) * (max_index[1] - min_index[1]) * (max_index[2] - min_index[2]);
+	unsigned int size = (max_index[0] - min_index[0]) * (max_index[1] - min_index[1]) * (max_index[2] - min_index[2]);
 	//hash_value.clear();
 	hash_value->reserve(size);
-	for (int index_y = min_index[1]; index_y < max_index[1]; ++index_y) {
+	for (unsigned int index_y = min_index[1]; index_y < max_index[1]; ++index_y) {
 		index_y_multi = index_y * cell_number[0];
-		for (int index_z = min_index[2]; index_z < max_index[2]; ++index_z) {
+		for (unsigned int index_z = min_index[2]; index_z < max_index[2]; ++index_z) {
 			index_z_multi = index_z * cell_num0_cell_num1;
-			for (int index_x = min_index[0]; index_x < max_index[0]; ++index_x) {
+			for (unsigned int index_x = min_index[0]; index_x < max_index[0]; ++index_x) {
 				hash_value->push_back(index_x + index_y_multi + index_z_multi);
 			}
 		}
 	}
 }
 
-void SpatialHashing::triangleHashingValue(AABB& aabb, std::vector<int>* spatial_hashing_triangle_index, std::vector<int>* spatial_hashing_value, int triangle_index, std::vector<int>* hash_value)
+void SpatialHashing::triangleHashingValue(AABB& aabb, std::vector<unsigned int>* spatial_hashing_triangle_index, 
+	std::vector<unsigned int>* spatial_hashing_value, unsigned int triangle_index, std::vector<unsigned int>* hash_value)
 {
-	int min_index[3];
-	int max_index[3];
-	int index_z_multi;
-	int index_y_multi;	
-	for (int j = 0; j < 3; ++j) {
-		min_index[j] = (int)floor((aabb.min[j]- scene_aabb.min[j]) / cell_length);
-		max_index[j] = (int)floor((aabb.max[j] - scene_aabb.min[j]) / cell_length) + 1;
+	unsigned int min_index[3];
+	unsigned int max_index[3];
+	unsigned int index_z_multi;
+	unsigned int index_y_multi;
+	for (unsigned int j = 0; j < 3; ++j) {
+		min_index[j] = (unsigned int)floor((aabb.min[j]- scene_aabb.min[j]) / cell_length);
+		max_index[j] = (unsigned int)floor((aabb.max[j] - scene_aabb.min[j]) / cell_length) + 1;
 	}
 	//int size = (max_index[0] - min_index[0]) * (max_index[1] - min_index[1]) * (max_index[2] - min_index[2]);
 	hash_value->clear();
-	int value;
-	for (int index_y = min_index[1]; index_y < max_index[1]; ++index_y) {
+	unsigned int value;
+	for (unsigned int index_y = min_index[1]; index_y < max_index[1]; ++index_y) {
 		index_y_multi = index_y * cell_number[0];
-		for (int index_z = min_index[2]; index_z < max_index[2]; ++index_z) {
+		for (unsigned int index_z = min_index[2]; index_z < max_index[2]; ++index_z) {
 			index_z_multi = index_z * cell_num0_cell_num1;
-			for (int index_x = min_index[0]; index_x < max_index[0]; ++index_x) {
+			for (unsigned int index_x = min_index[0]; index_x < max_index[0]; ++index_x) {
 				value = index_x + index_y_multi + index_z_multi;
 				hash_value->push_back(value);
 			}

@@ -463,23 +463,23 @@ void Collision::sumTargetPosition()
 //RESUM_TARGET_POSITION
 void Collision::resumTargetPositionPerThread(int thread_id)
 {
-	std::vector<int>* index_begin;
+	unsigned int* index_begin;
 	bool* need_update;
 	std::vector<std::array<double, 3>>* b_sum;
 	std::vector<std::array<double, 3>>* b_sum_per_thread;
 
-	for (int j = 0; j <total_obj_num; ++j) {
+	for (unsigned int j = 0; j <total_obj_num; ++j) {
 		b_sum = &obj_target_pos.b_sum[j]; 
 		if(j<tetrahedron_begin_obj_index){
-			index_begin = &(*cloth)[j].mesh_struct.vertex_index_begin_per_thread;
+			index_begin = (*cloth)[j].mesh_struct.vertex_index_begin_per_thread.data();
 		}
 		else {
-			index_begin = &(*tetrahedron)[j- tetrahedron_begin_obj_index].mesh_struct.vertex_index_on_surface_begin_per_thread;
+			index_begin = (*tetrahedron)[j- tetrahedron_begin_obj_index].mesh_struct.vertex_index_on_surface_begin_per_thread.data();
 		}
-		for (int i = 0; i < thread_num; ++i) {			
+		for (unsigned int i = 0; i < thread_num; ++i) {
 			need_update = obj_target_pos_per_thread[i].need_update[j];
 			b_sum_per_thread = &obj_target_pos_per_thread[i].b_sum[j];
-			for (int k = (*index_begin)[thread_id]; k < (*index_begin)[thread_id + 1]; ++k) {
+			for (unsigned int k = index_begin[thread_id]; k < index_begin[thread_id + 1]; ++k) {
 				if (need_update[k]) {
 					SUM((*b_sum)[k], (*b_sum)[k], (*b_sum_per_thread)[k]);
 				}
@@ -493,7 +493,7 @@ void Collision::resumTargetPositionPerThread(int thread_id)
 //SUM_TARGET_POSITION
 void Collision::sumTargetPositionPerThread(int thread_id)
 {
-	std::vector<int>* index_begin;
+	unsigned int* index_begin;
 	bool* need_update;
 	std::vector<std::array<double, 3>>* b_sum;
 	std::vector<std::array<double, 3>>* b_sum_per_thread;
@@ -501,21 +501,21 @@ void Collision::sumTargetPositionPerThread(int thread_id)
 	double* stiffness;
 	double* global_stiffness;
 
-	for (int j = 0; j < total_obj_num; ++j) {
+	for (unsigned int j = 0; j < total_obj_num; ++j) {
 		global_need_update = obj_target_pos.need_update[j];
 		b_sum = &obj_target_pos.b_sum[j];
 		if (j < tetrahedron_begin_obj_index) {
-			index_begin = &(*cloth)[j].mesh_struct.vertex_index_begin_per_thread;
+			index_begin = (*cloth)[j].mesh_struct.vertex_index_begin_per_thread.data();
 		}
 		else {
-			index_begin = &(*tetrahedron)[j - tetrahedron_begin_obj_index].mesh_struct.vertex_index_on_surface_begin_per_thread;
+			index_begin = (*tetrahedron)[j - tetrahedron_begin_obj_index].mesh_struct.vertex_index_on_surface_begin_per_thread.data();
 		}
 		global_stiffness = obj_target_pos.stiffness[j].data();
-		for (int i = 0; i < thread_num; ++i) {
+		for (unsigned int i = 0; i < thread_num; ++i) {
 			need_update = obj_target_pos_per_thread[i].need_update[j];
 			b_sum_per_thread = &obj_target_pos_per_thread[i].b_sum[j];
 			stiffness = obj_target_pos_per_thread[i].stiffness[j].data();
-			for (int k = (*index_begin)[thread_id]; k < (*index_begin)[thread_id + 1]; ++k) {
+			for (unsigned int k = index_begin[thread_id]; k < index_begin[thread_id + 1]; ++k) {
 				if (need_update[k]) {
 					global_need_update[k] = true;
 					SUM_((*b_sum)[k],(*b_sum_per_thread)[k]);
@@ -538,7 +538,7 @@ void Collision::collisionReDetection(int thread_No)
 {
 	TargetPosition* target_pos = &obj_target_pos_per_thread[thread_No];
 	target_pos->partialInitial();
-	int* index_begin;
+	unsigned int* index_begin;
 
 	std::vector<int>* vertex_neighbor_obj_triangle;
 	std::vector<int>* collide_vertex_obj_triangle;
@@ -555,7 +555,7 @@ void Collision::collisionReDetection(int thread_No)
 
 
 	if (use_BVH) {
-		for (int j = 0; j < total_obj_num; ++j) {
+		for (unsigned int j = 0; j < total_obj_num; ++j) {
 			if (j<tetrahedron_begin_obj_index) {
 				index_begin = (*cloth)[j].mesh_struct.vertex_index_begin_per_thread.data();
 				end = index_begin[thread_No + 1];
@@ -571,7 +571,7 @@ void Collision::collisionReDetection(int thread_No)
 				vertex_collision_stiffness0 = (*tetrahedron)[obj_No].collision_stiffness[SELF_POINT_TRIANGLE];
 				vertex_collision_stiffness1 = (*tetrahedron)[obj_No].collision_stiffness[BODY_POINT_TRIANGLE];
 			}	
-			for (int i = index_begin[thread_No]; i < index_begin[thread_No + 1]; ++i) {
+			for (unsigned int i = index_begin[thread_No]; i < index_begin[thread_No + 1]; ++i) {
 				if (j < tetrahedron_begin_obj_index) {
 					vertex_neighbor_obj_triangle = (*cloth)[j].vertex_neighbor_obj_triangle[i].data();
 					collide_vertex_obj_triangle = (*cloth)[j].collide_vertex_obj_triangle[i].data();
@@ -624,14 +624,14 @@ void Collision::collisionDetection(int thread_No)
 {
 	TargetPosition* target_pos = &obj_target_pos_per_thread[thread_No];
 	target_pos->initial();
-	int* index_begin;
+	unsigned int* index_begin;
 
 	std::vector<int>* vertex_neighbor_obj_triangle;
 	std::vector<int>* collide_vertex_obj_triangle;
 	std::vector<int>* vertex_neighbor_collider_triangle;
 	std::vector<int>* collide_vertex_collider_triangle;
-	int end;
-	int obj_No;
+	unsigned int end;
+	unsigned int obj_No;
 	MeshStruct* mesh_struct;
 
 	double PC_radius0;
@@ -639,7 +639,7 @@ void Collision::collisionDetection(int thread_No)
 	double vertex_collision_stiffness0; 
 	double vertex_collision_stiffness1; 
 	if (use_BVH) {
-		for (int j = 0; j < total_obj_num; ++j) {
+		for (unsigned int j = 0; j < total_obj_num; ++j) {
 			if (j < tetrahedron_begin_obj_index) {
 				index_begin = (*cloth)[j].mesh_struct.vertex_index_begin_per_thread.data();
 				end = index_begin[thread_No + 1];
@@ -656,7 +656,7 @@ void Collision::collisionDetection(int thread_No)
 				vertex_collision_stiffness1 = (*tetrahedron)[obj_No].collision_stiffness[BODY_POINT_TRIANGLE];
 			}			
 			
-			for (int i = index_begin[thread_No]; i < end; ++i) {
+			for (unsigned int i = index_begin[thread_No]; i < end; ++i) {
 				if (j < tetrahedron_begin_obj_index) {
 					vertex_neighbor_obj_triangle = (*cloth)[j].vertex_neighbor_obj_triangle[i].data();
 					collide_vertex_obj_triangle = (*cloth)[j].collide_vertex_obj_triangle[i].data();					
@@ -1474,9 +1474,9 @@ void Collision::test()
 
 
 
-void Collision::searchTriangle(AABB& aabb, int compare_index, int obj_No, std::vector<std::vector<int>>* obj_neighbor_index, std::vector<std::vector<int>>* collider_neighbor_index)
+void Collision::searchTriangle(AABB& aabb, unsigned int compare_index, unsigned int obj_No, std::vector<std::vector<int>>* obj_neighbor_index, std::vector<std::vector<int>>* collider_neighbor_index)
 {
-	for (int i = obj_No; i < total_obj_num; ++i) {
+	for (unsigned int i = obj_No; i < total_obj_num; ++i) {
 		(*obj_neighbor_index)[i].clear();
 		if (i < tetrahedron_begin_obj_index) {
 			obj_BVH[i].search(aabb, compare_index, i == obj_No, &((*obj_neighbor_index)[i]), 1, 0, (*cloth)[i].triangle_AABB.size());
@@ -1486,7 +1486,7 @@ void Collision::searchTriangle(AABB& aabb, int compare_index, int obj_No, std::v
 		}
 			
 	}
-	for (int i = 0; i < collider->size(); ++i) {
+	for (unsigned int i = 0; i < collider->size(); ++i) {
 		(*collider_neighbor_index)[i].clear();
 		collider_BVH[i].search(aabb, compare_index, false, &((*collider_neighbor_index)[i]), 1, 0, (*collider)[i].triangle_AABB.size());
 	}
@@ -1496,14 +1496,14 @@ void Collision::searchTriangle(AABB& aabb, int compare_index, int obj_No, std::v
 //FIND_TRIANGLE_PAIRS
 void Collision::findAllTrianglePairs(int thread_No)
 {
-	int* thread_begin;
-	int end;
-	int obj_No;
+	unsigned int* thread_begin;
+	unsigned int end;
+	unsigned int obj_No;
 	if (use_BVH) {
-		for (int i = 0; i < cloth->size(); ++i) {
+		for (unsigned int i = 0; i < cloth->size(); ++i) {
 			thread_begin = (*cloth)[i].mesh_struct.face_index_begin_per_thread.data();
 			end = thread_begin[thread_No + 1];
-			for (int j = thread_begin[thread_No]; j < end; ++j) {
+			for (unsigned int j = thread_begin[thread_No]; j < end; ++j) {
 				searchTriangle((*cloth)[i].triangle_AABB[j], j, i, &(*cloth)[i].triangle_neighbor_obj_triangle[j],
 					&(*cloth)[i].triangle_neighbor_collider_triangle[j]);
 			}
@@ -1511,15 +1511,15 @@ void Collision::findAllTrianglePairs(int thread_No)
 
 	}
 	else {
-		for (int i = 0; i < cloth->size(); ++i) { 
+		for (unsigned int i = 0; i < cloth->size(); ++i) {
 			thread_begin = (*cloth)[i].mesh_struct.face_index_begin_per_thread.data();
 			end = thread_begin[thread_No + 1];
-			for (int j = thread_begin[thread_No]; j < end; ++j) {
+			for (unsigned int j = thread_begin[thread_No]; j < end; ++j) {
 				spatial_hashing.searchTriangle((*cloth)[i].triangle_AABB[j],i, j,(*cloth)[i].triangle_neighbor_obj_triangle[j].data(),
 					false,thread_No);
 			}
 		}
-		for (int i = 0; i < collider->size(); ++i) {
+		for (unsigned int i = 0; i < collider->size(); ++i) {
 			thread_begin = (*collider)[i].mesh_struct.face_index_begin_per_thread.data();
 			end = thread_begin[thread_No + 1];
 			for (int j = thread_begin[thread_No]; j < end; ++j) {
@@ -1527,11 +1527,11 @@ void Collision::findAllTrianglePairs(int thread_No)
 					true, thread_No);							
 			}
 		}
-		for (int i = 0; i < tetrahedron->size(); ++i) {
+		for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 			thread_begin = (*collider)[i].mesh_struct.face_index_begin_per_thread.data();
 			end = thread_begin[thread_No + 1];
 			obj_No = tetrahedron_begin_obj_index + i;
-			for (int j = thread_begin[thread_No]; j < end; ++j) {
+			for (unsigned int j = thread_begin[thread_No]; j < end; ++j) {
 				spatial_hashing.searchTriangle((*tetrahedron)[i].triangle_AABB[j], obj_No, j, (*tetrahedron)[i].triangle_neighbor_obj_triangle[j].data(),
 					true, thread_No);
 			}
@@ -1554,7 +1554,7 @@ void Collision::findPrimitivesAround(int thread_No)
 
 void Collision::findVertexAroundColliderTriangle(int thread_No)
 {
-	int* thread_begin;
+	unsigned int* thread_begin;
 	std::vector<std::vector<std::vector<int>>>* triangle_neighbor_triangle;
 	std::vector<std::vector<std::vector<int>>>* triangle_neighbor_vertex; //triangle index near vertex
 	int* rep_vertex_num; // record of vertex's representative triangle index
@@ -1567,16 +1567,16 @@ void Collision::findVertexAroundColliderTriangle(int thread_No)
 	int cloth_triangle_index;
 
 	std::array<int,3>* faces;
-	int obj_No;
-	int start, end;
-	for (int i = 0; i < collider->size(); ++i) {
+	unsigned int obj_No;
+	unsigned int start, end;
+	for (unsigned int i = 0; i < collider->size(); ++i) {
 		thread_begin = (*collider)[i].mesh_struct.face_index_begin_per_thread.data();
 		triangle_aabb = &(*collider)[i].triangle_AABB;
 		triangle_neighbor_vertex = &(*collider)[i].triangle_neighbor_obj_vertex;
 		triangle_neighbor_triangle = &(*collider)[i].triangle_neighbor_obj_triangle;
 		start = thread_begin[thread_No];
 		end = thread_begin[thread_No+1];
-		for (int k = 0; k < total_obj_num; ++k) {
+		for (unsigned int k = 0; k < total_obj_num; ++k) {
 			if (k < tetrahedron_begin_obj_index) {
 				compared_vertex_aabb = &(*cloth)[k].vertex_AABB;
 				rep_vertex_num = (*cloth)[k].representative_vertex_num.data();
@@ -1589,14 +1589,14 @@ void Collision::findVertexAroundColliderTriangle(int thread_No)
 				faces = (*tetrahedron)[obj_No].mesh_struct.surface_triangle_index_in_order.data();
 			}
 			
-			for (int j = start; j < end; ++j) {
+			for (unsigned int j = start; j < end; ++j) {
 				triangle_neighbor_this_obj_vertex = &(*triangle_neighbor_vertex)[j][k];
 				triangle_neighbor_this_obj_triangle = &(*triangle_neighbor_triangle)[j][k];
 				triangle_neighbor_this_obj_vertex->clear();				
 				triangle_neighbor_this_obj_vertex->reserve(triangle_neighbor_this_obj_triangle->size());
-				for (int m = 0; m < triangle_neighbor_this_obj_triangle->size(); ++m) {
+				for (unsigned int m = 0; m < triangle_neighbor_this_obj_triangle->size(); ++m) {
 					cloth_triangle_index = (*triangle_neighbor_this_obj_triangle)[m];
-					for (int n = 0; n < rep_vertex_num[cloth_triangle_index]; ++n) {
+					for (unsigned int n = 0; n < rep_vertex_num[cloth_triangle_index]; ++n) {
 						if ((*triangle_aabb)[j].AABB_intersection((*compared_vertex_aabb)[faces[cloth_triangle_index][n]])) {
 							triangle_neighbor_this_obj_vertex->push_back(faces[cloth_triangle_index][n]);
 						}
@@ -1609,7 +1609,7 @@ void Collision::findVertexAroundColliderTriangle(int thread_No)
 
 void Collision::findObjTriangleAroundVertex(int thread_No)
 {
-	int* thread_begin;
+	unsigned int* thread_begin;
 	std::vector<std::vector<std::vector<int>>>* triangle_neighbor_triangle;
 	std::vector<std::vector<std::vector<int>>>* vertex_neighbor_triangle; //triangle index near vertex
 	std::vector<int>* vertex_from_rep_triangle_index; // record of vertex's representative triangle index
@@ -1621,10 +1621,10 @@ void Collision::findObjTriangleAroundVertex(int thread_No)
 	std::vector<AABB>* vertex_aabb;
 	std::vector<AABB>* compared_triangle_aabb;
 
-	int obj_No;
+	unsigned int obj_No;
 
-	int start, end;
-	for (int i = 0; i < total_obj_num; ++i) {
+	unsigned int start, end;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		if (i < tetrahedron_begin_obj_index) {
 			thread_begin = (*cloth)[i].mesh_struct.vertex_index_begin_per_thread.data();
 			triangle_neighbor_triangle = &(*cloth)[i].triangle_neighbor_obj_triangle;
@@ -1644,7 +1644,7 @@ void Collision::findObjTriangleAroundVertex(int thread_No)
 		start = thread_begin[thread_No];
 		end = thread_begin[thread_No+1];
 
-		for (int k = 0; k < total_obj_num; ++k) {
+		for (unsigned int k = 0; k < total_obj_num; ++k) {
 			if (k < tetrahedron_begin_obj_index) {
 				compared_triangle_aabb = &(*cloth)[k].triangle_AABB;
 			}
@@ -1652,7 +1652,7 @@ void Collision::findObjTriangleAroundVertex(int thread_No)
 				compared_triangle_aabb = &(*tetrahedron)[k-tetrahedron_begin_obj_index].triangle_AABB;
 			}
 			if (i != k) {
-				for (int j = start; j < end; ++j) {
+				for (unsigned int j = start; j < end; ++j) {
 					vertex_neighbor_this_obj_triangle = &(*vertex_neighbor_triangle)[j][k];
 					triangle_neighbor_this_obj_triangle = &(*triangle_neighbor_triangle)[(*vertex_from_rep_triangle_index)[j]][k];//vertex's represent triangle index = (*vertex_from_rep_triangle_index)[j];
 					vertex_neighbor_this_obj_triangle->clear();
@@ -1671,12 +1671,12 @@ void Collision::findObjTriangleAroundVertex(int thread_No)
 				else {
 					face_indices = &(*tetrahedron)[k - tetrahedron_begin_obj_index].mesh_struct.surface_triangle_index_in_order;
 				}
-				for (int j = start; j < end; ++j) {
+				for (unsigned int j = start; j < end; ++j) {
 					vertex_neighbor_this_obj_triangle = &(*vertex_neighbor_triangle)[j][k];
 					triangle_neighbor_this_obj_triangle = &(*triangle_neighbor_triangle)[(*vertex_from_rep_triangle_index)[j]][k];//vertex's represent triangle index = (*vertex_from_rep_triangle_index)[j];
 					vertex_neighbor_this_obj_triangle->clear();
 					vertex_neighbor_this_obj_triangle->reserve(triangle_neighbor_this_obj_triangle->size());
-					for (int m = 0; m < triangle_neighbor_this_obj_triangle->size(); ++m) {
+					for (unsigned int m = 0; m < triangle_neighbor_this_obj_triangle->size(); ++m) {
 						if (!vertexInTriangle((*face_indices)[(*triangle_neighbor_this_obj_triangle)[m]].data(), j)) {
 							if ((*vertex_aabb)[j].AABB_intersection((*compared_triangle_aabb)[(*triangle_neighbor_this_obj_triangle)[m]])) {
 								vertex_neighbor_this_obj_triangle->push_back((*triangle_neighbor_this_obj_triangle)[m]);
@@ -1692,7 +1692,7 @@ void Collision::findObjTriangleAroundVertex(int thread_No)
 
 void Collision::findColliderTriangleAroundVertex(int thread_No)
 {
-	int* thread_begin;
+	unsigned int* thread_begin;
 	std::vector<std::vector<std::vector<int>>>* triangle_neighbor_triangle;
 	std::vector<std::vector<std::vector<int>>>* vertex_neighbor_triangle; //triangle index near vertex
 	std::vector<int>* vertex_from_rep_triangle_index; // record of vertex's representative triangle index
@@ -1702,9 +1702,9 @@ void Collision::findColliderTriangleAroundVertex(int thread_No)
 
 	std::vector<AABB>* vertex_aabb;
 	std::vector<AABB>* compared_triangle_aabb;
-	int obj_No;
-	int start, end;
-	for (int i = 0; i < total_obj_num; ++i) {
+	unsigned int obj_No;
+	unsigned int start, end;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		if (i < tetrahedron_begin_obj_index) {
 			thread_begin = (*cloth)[i].mesh_struct.vertex_index_begin_per_thread.data();
 			vertex_from_rep_triangle_index = &(*cloth)[i].vertex_from_rep_triangle_index;
@@ -1722,14 +1722,14 @@ void Collision::findColliderTriangleAroundVertex(int thread_No)
 		}		
 		start = thread_begin[thread_No];
 		end = thread_begin[thread_No + 1];
-		for (int k = 0; k < collider->size(); ++k) {
+		for (unsigned int k = 0; k < collider->size(); ++k) {
 			compared_triangle_aabb = &(*collider)[k].triangle_AABB;
-			for (int j = start; j < end; ++j) {
+			for (unsigned int j = start; j < end; ++j) {
 				vertex_neighbor_this_obj_triangle = &(*vertex_neighbor_triangle)[j][k];
 				triangle_neighbor_this_obj_triangle = &(*triangle_neighbor_triangle)[(*vertex_from_rep_triangle_index)[j]][k];//vertex's represent triangle index = (*vertex_from_rep_triangle_index)[j];
 				vertex_neighbor_this_obj_triangle->clear();
 				vertex_neighbor_this_obj_triangle->reserve(triangle_neighbor_this_obj_triangle->size());
-				for (int m = 0; m < triangle_neighbor_this_obj_triangle->size(); ++m) {
+				for (unsigned int m = 0; m < triangle_neighbor_this_obj_triangle->size(); ++m) {
 					if ((*vertex_aabb)[j].AABB_intersection((*compared_triangle_aabb)[(*triangle_neighbor_this_obj_triangle)[m]])) {
 						(*vertex_neighbor_this_obj_triangle).push_back((*triangle_neighbor_this_obj_triangle)[m]);
 					}
@@ -1743,7 +1743,7 @@ void Collision::findColliderTriangleAroundVertex(int thread_No)
 void Collision::findEdgeAroundEdge(int thread_No)
 {
 	std::vector<std::array<int, 3>>* face_indices;//the record of every triangle's index
-	int* thread_begin;
+	unsigned int* thread_begin;
 	std::vector<std::vector<std::vector<int>>>* triangle_neighbor_triangle;
 	std::vector<std::vector<std::vector<int>>>* edge_neighbor_edge; //edge index near edge
 	std::vector<int>* edge_from_rep_triangle_index; // record of edge's representative triangle index
@@ -1761,8 +1761,8 @@ void Collision::findEdgeAroundEdge(int thread_No)
 	std::vector<AABB>* edge_aabb;
 	std::vector<AABB>* compared_edge_aabb;
 	int compare_edge_index;
-	int obj_No, obj_No2;
-	for (int i = 0; i < total_obj_num; ++i) {
+	unsigned int obj_No, obj_No2;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		if (i < tetrahedron_begin_obj_index) {
 			thread_begin = (*cloth)[i].mesh_struct.edge_index_begin_per_thread.data();
 			triangle_neighbor_triangle = &(*cloth)[i].triangle_neighbor_obj_triangle;
@@ -1780,7 +1780,7 @@ void Collision::findEdgeAroundEdge(int thread_No)
 			edge = &(*tetrahedron)[obj_No].mesh_struct.edges;
 			edge_aabb = &(*tetrahedron)[obj_No].edge_AABB;
 		}
-		for (int k = i; k < total_obj_num; ++k) {
+		for (unsigned int k = i; k < total_obj_num; ++k) {
 			if (k < tetrahedron_begin_obj_index) {
 				compared_edge_aabb = &(*cloth)[k].edge_AABB;
 				representative_edge_num = &(*cloth)[k].representative_edge_num;
@@ -1793,7 +1793,7 @@ void Collision::findEdgeAroundEdge(int thread_No)
 				face = &(*tetrahedron)[obj_No2].mesh_struct.faces;
 			}
 			if (i != k) {
-				for (int j = thread_begin[thread_No]; j < thread_begin[thread_No + 1]; ++j) {
+				for (unsigned int j = thread_begin[thread_No]; j < thread_begin[thread_No + 1]; ++j) {
 					edge_neighbor_one_obj_edge = &(*edge_neighbor_edge)[j][k];
 					triangle_neighbor_one_obj_triangle = &(*triangle_neighbor_triangle)[(*edge_from_rep_triangle_index)[j]][k];
 					edge_neighbor_one_obj_edge->clear();
@@ -1809,7 +1809,7 @@ void Collision::findEdgeAroundEdge(int thread_No)
 				}
 			}
 			else {
-				for (int j = thread_begin[thread_No]; j < thread_begin[thread_No + 1]; ++j) {
+				for (unsigned int j = thread_begin[thread_No]; j < thread_begin[thread_No + 1]; ++j) {
 					edge_neighbor_one_obj_edge = &(*edge_neighbor_edge)[j][k];
 					triangle_neighbor_one_obj_triangle = &(*triangle_neighbor_triangle)[(*edge_from_rep_triangle_index)[j]][k];
 					edge_neighbor_one_obj_edge->clear();

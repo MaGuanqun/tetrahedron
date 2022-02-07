@@ -79,7 +79,8 @@ void Collider::getVertexAABBPerThread(int thread_No)
 {
 	std::vector<std::array<double, 3>>* vertex_render = &mesh_struct.vertex_for_render;
 	std::vector<std::array<double, 3>>* vertex = &mesh_struct.vertex_position;
-	for (int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < mesh_struct.vertex_index_begin_per_thread[thread_No + 1]; ++i) {
+	unsigned int end = mesh_struct.vertex_index_begin_per_thread[thread_No + 1];
+	for (unsigned int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i <end; ++i) {
 		vertex_AABB[i].obtainAABB((*vertex_render)[i].data(), (*vertex)[i].data(), tolerance);// 
 	}
 }
@@ -89,7 +90,8 @@ void Collider::getTriangleAABBPerThread(int thread_No)
 {
 	std::array<int,3>* face = mesh_struct.triangle_indices.data();
 	int* vertex_index;
-	for (int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < mesh_struct.face_index_begin_per_thread[thread_No + 1]; ++i) {
+	unsigned int end = mesh_struct.face_index_begin_per_thread[thread_No + 1];
+	for (unsigned int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < end; ++i) {
 		vertex_index = face[i].data();
 		getAABB(triangle_AABB[i], vertex_AABB[vertex_index[0]], vertex_AABB[vertex_index[1]], vertex_AABB[vertex_index[2]]);
 	}

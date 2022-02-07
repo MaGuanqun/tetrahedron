@@ -12,7 +12,7 @@ public:
 	//	MortonCode64 morton;
 	//};
 
-	void init(int triangle_num, std::vector<int>& triangle_index_begin_per_thread, Thread* thread);
+	void init(int triangle_num, std::vector<unsigned int>& triangle_index_begin_per_thread, Thread* thread);
 	void buildBVH(std::vector<AABB>* triangle_AABB);
 	void calCenterPerThread(int thread_No);
 	void calMortonCode(int thread_No);
@@ -24,9 +24,9 @@ private:
 	//std::vector<SortStruct> list;
 
 	std::vector<uint64_t> morton_list;
-	std::vector<int>triangle_list;
+	std::vector<unsigned int>triangle_list;
 
-	std::vector<int>triangle_index_begin_per_thread;
+	std::vector<unsigned int>triangle_index_begin_per_thread;
 	std::vector<std::array<double, 3>> aabb_min_per_thread;
 	std::vector<std::array<double, 3>> aabb_max_per_thread;
 	void setMortonCode();

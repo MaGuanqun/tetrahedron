@@ -15,13 +15,13 @@ public:
 	std::vector<double>volume;
 	std::vector<int>tet_index_of_surface_face;
 
-	std::vector<int> tetrahedron_index_begin_per_thread;
+	std::vector<unsigned int> tetrahedron_index_begin_per_thread;
 	void setVolume(int thread_No);
 	double setVolumeMass(double density);
 	std::vector<bool>vertex_on_surface;
 	std::vector<int>vertex_index_on_sureface; //size is the surface vertex size, surface index -> vertex index
 	std::vector<int> vertex_surface_index;//size is the global vertex size, verted index -> surface index
-	std::vector<int> vertex_index_on_surface_begin_per_thread;
+	std::vector<unsigned int> vertex_index_on_surface_begin_per_thread;
 	
 
 	void prepareForDeformationGradient();

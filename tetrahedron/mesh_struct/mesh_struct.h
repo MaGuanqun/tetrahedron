@@ -62,10 +62,10 @@ public:
 	std::vector<double>mass;
 	std::vector<double>triangle_normal_magnitude_reciprocal;
 
-	std::vector<int> face_index_begin_per_thread;
-	std::vector<int> anchor_index_begin_per_thread;
+	std::vector<unsigned int> face_index_begin_per_thread;
+	std::vector<unsigned int> anchor_index_begin_per_thread;
 	
-	std::vector<int> edge_index_begin_per_thread;
+	std::vector<unsigned int> edge_index_begin_per_thread;
 
 	std::vector<std::array<floating, 3>> f_face_normal_for_render;
 	std::vector<std::array<floating, 3>> f_face_normal;
@@ -77,7 +77,7 @@ public:
 	void setEdge();
 	//void addArounVertex();
 
-	std::vector<int> vertex_index_begin_per_thread;
+	std::vector<unsigned int> vertex_index_begin_per_thread;
 
 	void getRenderFaceNormalPerThread(int thread_id);
 	void getFaceNormalPerThread(int thread_id);

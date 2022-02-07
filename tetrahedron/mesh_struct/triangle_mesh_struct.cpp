@@ -188,13 +188,13 @@ void TriangleMeshStruct::setThreadIndex(int total_thread_num_)
 	anchor_index_begin_per_thread.resize(total_thread_num, 0);
 	face_index_begin_per_thread.resize(total_thread_num, 0);
 
-	arrangeIndex(total_thread_num_, vertices.size(), vertex_index_begin_per_thread);
-	arrangeIndex(total_thread_num_, anchor_vertex.size(), anchor_index_begin_per_thread);
-	arrangeIndex(total_thread_num_, triangle_indices.size(), face_index_begin_per_thread);
+	arrangeIndex(total_thread_num_, vertices.size(), vertex_index_begin_per_thread.data());
+	arrangeIndex(total_thread_num_, anchor_vertex.size(), anchor_index_begin_per_thread.data());
+	arrangeIndex(total_thread_num_, triangle_indices.size(), face_index_begin_per_thread.data());
 
 	if (!edges.empty()) {
 		edge_index_begin_per_thread.resize(total_thread_num, 0);
-		arrangeIndex(total_thread_num_, edges.size(), edge_index_begin_per_thread);
+		arrangeIndex(total_thread_num_, edges.size(), edge_index_begin_per_thread.data());
 	}	
 }
 

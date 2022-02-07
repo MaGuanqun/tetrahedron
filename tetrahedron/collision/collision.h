@@ -78,10 +78,10 @@ public:
 
 	size_t* time_stamp;
 private:
-	int tetrahedron_begin_obj_index;
-	int total_obj_num;
+	unsigned int tetrahedron_begin_obj_index;
+	unsigned int total_obj_num;
 
-	int thread_num;
+	unsigned int thread_num;
 	std::vector<BVH> obj_BVH; //cloth + tetrahedron
 	std::vector<BVH> collider_BVH;
 
@@ -106,7 +106,7 @@ private:
 
 	void buildBVH();
 	void initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread);
-	void searchTriangle(AABB& aabb, int compare_index, int obj_No, std::vector<std::vector<int>>* obj_neighbor_index, std::vector<std::vector<int>>* collider_neighbor_index);
+	void searchTriangle(AABB& aabb, unsigned int compare_index, unsigned int obj_No, std::vector<std::vector<int>>* obj_neighbor_index, std::vector<std::vector<int>>* collider_neighbor_index);
 	void findObjTriangleAroundVertex(int thread_No);
 	void findColliderTriangleAroundVertex(int thread_No);
 	void findVertexAroundColliderTriangle(int thread_No);
