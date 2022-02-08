@@ -11,7 +11,7 @@ public:
 	void initial(Thread* thread);
 	
 	void radixSort(unsigned int spatial_hashing_index_size, unsigned int* value, unsigned int* triangle_index,
-		unsigned int* hash_cloth_No, unsigned int list_size);
+		unsigned int* hash_cloth_No, unsigned int list_size, unsigned int& largest_count);
 	void reorder(int thread_No, int key_id);
 	void setCountBucket(int thread_No, int key_id);
 	void setCountBucketMorton(int thread_No, int key_id);
@@ -37,7 +37,8 @@ private:
 	void addCount(unsigned int array_begin, unsigned int array_end, unsigned int* count_bucket, unsigned int move_byte, unsigned int* array);
 	void addCount(unsigned int array_begin, int array_end, unsigned int* count_bucket, int move_byte, uint64_t* array);
 	void reorder(std::array<int, 3>* array, std::array<int, 3>* stack, int move_byte, int* index_bucket, int size);
-	void lsdSort(unsigned int* value, unsigned int* triangle_index, unsigned int* hash_cloth_No, unsigned int list_size);
+	void lsdSort(unsigned int* value, unsigned int* triangle_index, unsigned int* hash_cloth_No, unsigned int list_size,
+		unsigned int& largest_count);
 	void lsdSort(std::vector<uint64_t>* value, unsigned int* triangle_index);
 	std::vector<unsigned int> array_index_begin;
 	unsigned int* value;
@@ -55,5 +56,7 @@ private:
 
 	void reorder(unsigned int* value, unsigned int* stack_value, unsigned int* triangle_index, unsigned int* stack_triangle_index, unsigned int* hash_cloth_No, unsigned int* stack_hash_cloth_No, unsigned int move_byte, unsigned int* index_bucket, unsigned int array_index_start, unsigned int array_index_end);
 	void reorder(uint64_t* value, uint64_t* stack_value, unsigned int* triangle_index, unsigned int* stack_triangle_index, unsigned int move_byte, unsigned int* index_bucket, unsigned int array_index_start, unsigned int array_index_end);
+
+	
 };
 

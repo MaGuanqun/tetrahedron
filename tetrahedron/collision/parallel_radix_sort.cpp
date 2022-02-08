@@ -70,23 +70,40 @@ void RadixSort::radixSort(uint64_t max_morton_code, std::vector<uint64_t>* morto
 }
 
 void RadixSort::radixSort(unsigned int spatial_hashing_index_size, unsigned int* value, unsigned int* triangle_index, 
-    unsigned int* hash_cloth_No, unsigned int list_size)
+    unsigned int* hash_cloth_No, unsigned int list_size, unsigned int& largest_count)
+    //largest count is the count of elements which has is 11111111 in the largest part
 {
     arrangeIndex(thread->thread_num, list_size, array_index_begin.data());
 	findHighestBit(spatial_hashing_index_size, key_num);
     this->value = value;
     this->triangle_index = triangle_index;
     this->hash_cloth_No = hash_cloth_No;
-    lsdSort(value, triangle_index, hash_cloth_No, list_size);
+
+    //std::cout <<"key num "<< key_num << " " << value[0] << std::endl;
+    //for (int i = 0; i < list_size; ++i) {
+    //    if (value[i] > 0xffff) {
+    //        std::cout << value[i] << " " << i << std::endl;
+    //    }
+    //}
+   
+    lsdSort(value, triangle_index, hash_cloth_No, list_size, largest_count);
 }
 
 
-void RadixSort::lsdSort(unsigned int* value, unsigned int* triangle_index, unsigned int* hash_cloth_No, unsigned int list_size)
+void RadixSort::lsdSort(unsigned int* value, unsigned int* triangle_index, unsigned int* hash_cloth_No, unsigned int list_size,
+    unsigned int& largest_count)
 {
     int s, t;
     for (int j = 0; j < key_num; ++j) {
         thread->assignTask(this, SET_COUNT_BUCKET,j);
         s = 0;
+        if (j == key_num - 1) {
+            largest_count = histogram[0][255];
+            for (int i = 1; i < thread_num; ++i) {
+                largest_count+= histogram[i][255];
+            }
+            std::cout << "largest_count" << largest_count << std::endl;
+        }
         for (int i = 0; i < 0x100; ++i) {
             for (int k = 0; k < thread_num; ++k) {
                 t = s + histogram[k][i];
@@ -119,6 +136,7 @@ void RadixSort::lsdSort(std::vector<uint64_t>* value, unsigned int* triangle_ind
     for (int j = 0; j < key_num; ++j) {
         thread->assignTask(this, SET_COUNT_BUCKET_MORTON, j);
         s = 0;
+        std::cout <<"value size"<< value->size() << std::endl;
         for (int i = 0; i < 0x100; ++i) {
             for (int k = 0; k < thread_num; ++k) {
                 t = s + histogram[k][i];
@@ -129,7 +147,7 @@ void RadixSort::lsdSort(std::vector<uint64_t>* value, unsigned int* triangle_ind
         thread->assignTask(this, MORTON_REORDER, j);
     }
     if (key_num % 2 == 1) {
-        memcpy(value, stack_morton_value, 4 * value->size());
+        memcpy(value->data(), stack_morton_value, 8 * value->size());
         memcpy(triangle_index, stack_triangle_index, 4 * value->size());
     }
 }

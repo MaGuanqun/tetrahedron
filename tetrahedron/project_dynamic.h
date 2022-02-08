@@ -196,6 +196,7 @@ private:
 
 	std::vector<unsigned int> vertex_begin_per_cloth;
 	std::vector<unsigned int> vertex_begin_per_tetrahedron;
+
 	void setSystemIndexInfo();
 
 	void copmuteGlobalStepMatrixSingleTetrahedron(TetrahedronMeshStruct& mesh_struct, std::vector<Triplet<double>>& global_mat_nnz, int sys_size, double& ARAP_stiffness,

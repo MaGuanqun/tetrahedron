@@ -41,27 +41,42 @@ private:
 	//std::vector<std::vector<std::array<int, 3>>> spatial_hashing_triangle_per_thread;
 	//std::vector<std::array<int, 3>> spatial_hashing_triangle;
 
-	std::vector<std::vector<unsigned int>> spatial_hashing_value_per_thread;
-	std::vector<unsigned int> spatial_hashing_value;
-	std::vector<std::vector<unsigned int>>spatial_hashing_obj_index_per_thread;
-	std::vector<unsigned int> spatial_hashing_obj_index;
-	std::vector<std::vector<unsigned int>>spatial_hashing_triangle_index_per_thread;
-	std::vector<unsigned int> spatial_hashing_triangle_index;
-
+	//std::vector<std::vector<unsigned int>> spatial_hashing_value_per_thread;
+	unsigned int* spatial_hashing_value;
+	//std::vector<std::vector<unsigned int>>spatial_hashing_obj_index_per_thread;
+	unsigned int* spatial_hashing_obj_index;
+	//std::vector<std::vector<unsigned int>>spatial_hashing_triangle_index_per_thread;
+	unsigned int* spatial_hashing_triangle_index;
+	
+	unsigned int max_cell_count;
+	
+	std::vector<unsigned int> triangle_begin_per_obj;
+	//std::vector<unsigned int> triangle_begin_per_tetrahedron;
 
 	void triangleHashingValue(AABB& aabb, std::vector<unsigned int>* spatial_hashing_triangle_index,
 		std::vector<unsigned int>* spatial_hashing_value, unsigned int triangle_index, std::vector<unsigned int>* hash_value);
+
+	void triangleHashValue(AABB& aabb, unsigned int* spatial_hashing_triangle_index,
+		unsigned int* spatial_hashing_value, unsigned int triangle_index, unsigned int* spatial_hashing_obj_index, unsigned int obj_index);
+
 	void obtainTriangleHashingValue(AABB& aabb, std::vector<unsigned int>* hash_value);
 	RadixSort radix_sort;
 	void testRadixSort();
 
+	unsigned int total_hash_size;
 
-	std::vector<std::vector<std::vector<unsigned int>>> obj_triangle_hash;
+	unsigned int hash_table_size;
+
+	unsigned int* obj_triangle_hash;
+	//std::vector<std::vector<std::vector<unsigned int>>> obj_triangle_hash;
 	void initialTriangleHash();
 	void setHashTogether();
 	std::vector<int>hash_value_begin;
 	std::vector<int> prifix_sum;
 	void setPrifixSum();
 	bool*** obj_is_used;
+
+	unsigned int largest_count_in_hash_value_list;
+	unsigned int actual_hash_value_count;//total_hash_size-largest_count_in_hash_value_list
 };
 

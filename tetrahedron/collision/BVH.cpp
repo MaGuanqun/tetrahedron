@@ -19,6 +19,8 @@ void BVH::init(int triangle_num, std::vector<unsigned int>&triangle_index_begin_
 	aabb_list.resize(maxNodeIndex(1, 0, triangle_num) + 1);
 	radix_sort.initial(thread);
 	radix_sort.initialMortonArray(triangle_num);
+
+	std::cout << "BVH construct " << aabb_list.size()<<" "<< new2old.size() << std::endl;
 }
 
 void BVH::buildBVH(std::vector<AABB>* triangle_AABB)
@@ -109,12 +111,18 @@ void BVH::setMortonCode()
 	}
 	//TWO_POINTS_CENTER(center, min, v_max);
 	thread->assignTask(this, CAL_MORTON);
-	
 
 
 
 	//std::sort(list.begin(), list.end(), morton_compare);
 	radix_sort.radixSort(calMaxMortonCode(v_max, min), &morton_list, triangle_list.data());
+	//for (int i = 1; i < morton_list.size(); ++i) {
+	//	//std::cout << morton_list[i] << std::endl;
+	//	if (morton_list[i] < morton_list[i - 1]) {
+	//		std::cout << "error morton code" << std::endl;
+	//	}
+	//}
+
 
 	for (unsigned int i = 0; i < new2old.size(); ++i) {
 		//new2old[i] = list[i].order;
