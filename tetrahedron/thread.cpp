@@ -304,6 +304,9 @@ job Thread::create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncS
     case PREFIX_SUM_THREAD_2:
         k = job([func, thread_id]() {func->prifixSum3(thread_id); });
         break;
+    case MEMSET_PREFIX:
+        k = job([func, thread_id]() {func->memsetThread(thread_id); });
+        break;
     }
     return k;
 }
