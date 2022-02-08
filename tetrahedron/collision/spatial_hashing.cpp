@@ -73,6 +73,7 @@ void SpatialHashing::setInObject(std::vector<Cloth>* cloth, std::vector<Collider
 	hash_value_count_start_thread = new unsigned int[thread_num];
 	memset(prefix_sum_thread_start, 0, 4 * thread_num);
 
+	initialParallePrefix();
 	radix_sort.initial(thread);
 	//testRadixSort();
 	//testPrefixSumTime();
@@ -114,6 +115,23 @@ void SpatialHashing::setInObject(std::vector<Cloth>* cloth, std::vector<Collider
 	actual_hash_value_count = 1;
 
 
+}
+
+void SpatialHashing::initialParallePrefix()
+{
+	stage = log2(thread_num) + 1;
+	d_for_prefix_sum = new unsigned int[stage+1];
+	for (int i = 0; i < stage+1; ++i) {
+		d_for_prefix_sum[i] = pow(2, i);
+	}
+	prefix_k_start_range = new unsigned int* [stage];
+	for (unsigned int k = 0; k < stage; ++k) {
+		prefix_k_start_range[k] = new unsigned int [thread_num + 1];
+	}
+	prefix_k_end_range = new unsigned int* [stage];
+	for (unsigned int k = 0; k < stage; ++k) {
+		prefix_k_end_range[k] = new unsigned int[thread_num + 1];
+	}
 }
 
 
@@ -253,16 +271,18 @@ void SpatialHashing::setPrifixSum()
 		}
 	}
 
-	
-
 	prifix_sum.resize(hash_table_size + 1);
-	arrangeIndex(thread_num, prifix_sum.size(), total_hash_count_start_per_thread);
-	thread->assignTask(this, MEMSET_PREFIX);
-	arrangeIndex(thread_num, actual_hash_value_count, actual_hash_count_start_per_thread);
-	prepareForActualHashValueCount();
+	memset(prifix_sum.data(), 0, 4 * prifix_sum.size());
+	/*arrangeIndex(thread_num, prifix_sum.size(), total_hash_count_start_per_thread);
+	thread->assignTask(this, MEMSET_PREFIX);*/
+	//arrangeIndex(thread_num, actual_hash_value_count, actual_hash_count_start_per_thread);
+	//prepareForActualHashValueCount();
 	//thread->assignTask(this, PREPARE_FOR_ACTUAL_HASH_VALUE_COUNT_THREAD);
-	thread->assignTask(this, ADD_COUNT_FOR_PRIFIX_SUM);
+	//thread->assignTask(this, ADD_COUNT_FOR_PRIFIX_SUM);
 
+	for (int i = 0; i < actual_hash_value_count; ++i) {
+		prifix_sum[spatial_hashing_value[i]]++;
+	}
 	//testPrifixSum1();
 	//unsigned int* value_address;
 	//unsigned int k;
@@ -280,31 +300,61 @@ void SpatialHashing::setPrifixSum()
 	//	}
 	//}
 	
-	for (int i = 0; i < thread_num; ++i) {
-		total_hash_count_start_per_thread_move_1[i] = total_hash_count_start_per_thread[i] + 1;
-	}
-	total_hash_count_start_per_thread_move_1[thread_num] = total_hash_count_start_per_thread[thread_num];
+	//for (int i = 0; i < thread_num; ++i) {
+	//	total_hash_count_start_per_thread_move_1[i] = total_hash_count_start_per_thread[i] + 1;
+	//}
+	//total_hash_count_start_per_thread_move_1[thread_num] = total_hash_count_start_per_thread[thread_num];
 
-	thread->assignTask(this, PREFIX_SUM_THREAD_1);
-	hash_value_count_start_thread[0] = prifix_sum[0];
-	for (int i = 1; i < thread_num; ++i) {
-		hash_value_count_start_thread[i] = prifix_sum[total_hash_count_start_per_thread[i]];
-		prefix_sum_thread_start[i] = prifix_sum[total_hash_count_start_per_thread[i] - 1] + prefix_sum_thread_start[i - 1];
-	}
-	thread->assignTask(this, PREFIX_SUM_THREAD_2);
+	//thread->assignTask(this, PREFIX_SUM_THREAD_1);
+	//hash_value_count_start_thread[0] = prifix_sum[0];
+	//for (int i = 1; i < thread_num; ++i) {
+	//	hash_value_count_start_thread[i] = prifix_sum[total_hash_count_start_per_thread[i]];
+	//	prefix_sum_thread_start[i] = prifix_sum[total_hash_count_start_per_thread[i] - 1] + prefix_sum_thread_start[i - 1];
+	//}
+	//thread->assignTask(this, PREFIX_SUM_THREAD_2);
 	//for (int i = 0; i < actual_hash_value_count; ++i) {
 	//	prifix_sum[spatial_hashing_value[i]]++;
 	//}
-	//int s = 0; int t;
-	//for (int i = 0; i < prifix_sum.size(); ++i) {
-	//	t = s + prifix_sum[i];
-	//	prifix_sum[i] = s;
-	//	s = t;
-	//}
-	//prifix_sum[prifix_sum.size() - 1] = t;
+	int s = 0; int t;
+	for (int i = 0; i < prifix_sum.size(); ++i) {
+		t = s + prifix_sum[i];
+		prifix_sum[i] = s;
+		s = t;
+	}
+	prifix_sum[prifix_sum.size() - 1] = t;
 	//testPrifixSum1();
 }
 
+
+void SpatialHashing::prefixSumParallel()
+{
+	
+}
+
+void SpatialHashing::prefixSumParallelUpSweep(int thread_No, unsigned int stage)
+{
+	//int d_2 = d_for_prefix_sum[stage];
+	//int d_2_1 = d_for_prefix_sum[stage + 1];
+	//int end = total_hash_count_start_per_thread[thread_No + 1];
+	//int start = total_hash_count_start_per_thread[thread_No];
+	//if(start)
+	//for(int k= start;k<end;k+=)
+}
+
+//https://stackoverflow.com/questions/10053629/parallel-prefix-sum-fastest-implementation
+void SpatialHashing::setStartK(unsigned int thread_num_plus_1, unsigned int total_length)
+{
+	for (unsigned int i = 0; i < stage; ++i) {
+		prefix_k_start_range[i][0] = 0;
+		for (unsigned int k = 1; k < thread_num_plus_1; ++k) {
+			prefix_k_start_range[i][k] = d_for_prefix_sum[i + 1] * (total_hash_count_start_per_thread[k] / d_for_prefix_sum[i + 1]);
+		}
+		prefix_k_start_range[i][0] = 0;
+		for (unsigned int k = 1; k < thread_num_plus_1; ++k) {
+			prefix_k_start_range[i][k] = d_for_prefix_sum[i + 1] * (total_hash_count_start_per_thread[k] / d_for_prefix_sum[i + 1]);
+		}
+	}
+}
 
 void SpatialHashing::testPrefixSumTime()
 {

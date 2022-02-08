@@ -24,6 +24,8 @@ public:
 	void prepareForActualHashValueCountThread(int thread_No);
 	void memsetThread(int thread_No);
 
+	void prefixSumParallelUpSweep(int thread_No, unsigned int stage);
+
 private:
 	Thread* thread;
 	std::vector<Cloth>* cloth;
@@ -95,5 +97,14 @@ private:
 	void testPrifixSum1();
 	void testPrefixSumTime();
 	void prepareForActualHashValueCount();
+	void prefixSumParallel();
+
+	unsigned int* d_for_prefix_sum;//2^d
+	unsigned int stage; //log(thread_num)
+	void initialParallePrefix();
+	void setStartK(unsigned int thread_num_plus_1, unsigned int total_length);
+
+	unsigned int** prefix_k_start_range;
+	unsigned int** prefix_k_end_range;
 };
 
