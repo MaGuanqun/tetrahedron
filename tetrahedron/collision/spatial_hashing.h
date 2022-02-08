@@ -22,6 +22,7 @@ public:
 	void prifixSum2(int thread_No);
 	void prifixSum3(int thread_No);
 	void prepareForActualHashValueCountThread(int thread_No);
+	void memsetThread(int thread_No);
 
 private:
 	Thread* thread;
@@ -91,6 +92,8 @@ private:
 	unsigned int* prefix_sum_thread_start;//record the count before the start index
 
 	unsigned int* hash_value_count_start_thread;//we record the count of every start of total_hash_count_start_per_thread of prefix_sum
-
+	void testPrifixSum1();
+	void testPrefixSumTime();
+	void prepareForActualHashValueCount();
 };
 
