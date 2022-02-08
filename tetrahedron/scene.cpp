@@ -18,6 +18,7 @@ Scene::Scene()
 	genShader();	
 	project_dynamic.collision.time_stamp = &time_stamp;
 	project_dynamic.time_stamp = &time_stamp;
+
 }
 
 

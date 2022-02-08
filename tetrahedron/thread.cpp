@@ -290,6 +290,20 @@ job Thread::create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncS
     case SET_HASH_TOGETHER:
         k = job([func, thread_id]() {func->setHashTogether(thread_id); });
         break;
+    case PREPARE_FOR_ACTUAL_HASH_VALUE_COUNT_THREAD: {
+        k = job([func, thread_id]() {func->prepareForActualHashValueCountThread(thread_id); });
+        break;
+    }
+    case ADD_COUNT_FOR_PRIFIX_SUM: {
+        k = job([func, thread_id]() {func->prifixSum1(thread_id); });
+        break;
+    }
+    case PREFIX_SUM_THREAD_1:
+        k = job([func, thread_id]() {func->prifixSum2(thread_id); });
+        break;
+    case PREFIX_SUM_THREAD_2:
+        k = job([func, thread_id]() {func->prifixSum3(thread_id); });
+        break;
     }
     return k;
 }

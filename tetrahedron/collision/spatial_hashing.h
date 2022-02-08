@@ -18,6 +18,11 @@ public:
 	void setHashTogether(int thread_No);
 	void searchTriangle(AABB& aabb, unsigned int input_obj_No, unsigned int triangle_index,
 		std::vector<int>* obj_neighbor_index, bool is_collider, unsigned int thread_No);
+	void prifixSum1(int thread_No);
+	void prifixSum2(int thread_No);
+	void prifixSum3(int thread_No);
+	void prepareForActualHashValueCountThread(int thread_No);
+
 private:
 	Thread* thread;
 	std::vector<Cloth>* cloth;
@@ -28,7 +33,7 @@ private:
 
 	void initialHashCellLength(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, double& cell_length, double* tolerance_ratio);
 	double cell_length;//this is the size of spatial hashing cell, = average edge length
-	double thread_num;
+	unsigned int thread_num;
 
 	AABB scene_aabb;
 	std::vector<std::array<double, 3>>scene_aabb_max_thread;
@@ -78,5 +83,14 @@ private:
 
 	unsigned int largest_count_in_hash_value_list;
 	unsigned int actual_hash_value_count;//total_hash_size-largest_count_in_hash_value_list
+
+	unsigned int* actual_hash_count_start_per_thread;
+	unsigned int* total_hash_count_start_per_thread;
+	unsigned int* total_hash_count_start_per_thread_move_1;//all index add 1
+
+	unsigned int* prefix_sum_thread_start;//record the count before the start index
+
+	unsigned int* hash_value_count_start_thread;//we record the count of every start of total_hash_count_start_per_thread of prefix_sum
+
 };
 
