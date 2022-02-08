@@ -72,7 +72,7 @@ void SpatialHashing::setInObject(std::vector<Cloth>* cloth, std::vector<Collider
 	spatial_hashing_triangle_index= new unsigned int[total_hash_size];
 
 	memset(spatial_hashing_value, -1, 4 * total_hash_size);
-	std::cout << "spatial_hashing_value"<< spatial_hashing_value[0] << std::endl;
+	//std::cout << "spatial_hashing_value"<< spatial_hashing_value[0] << std::endl;
 	//for (int i = 0; i < thread_num; ++i) {
 	//	spatial_hashing_triangle_per_thread[i].reserve(64 * total_cloth_num / thread_num);
 	//}
@@ -145,7 +145,7 @@ void SpatialHashing::testRadixSort()
 		}
 	}
 	t1 = clock() - t1;
-	std::cout << "index " << t1 << std::endl;
+	//std::cout << "index " << t1 << std::endl;
 	
 	radix_sort.initialArray(vec_size);
 	time_t t = clock();

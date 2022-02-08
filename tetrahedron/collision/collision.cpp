@@ -134,7 +134,7 @@ void Collision::globalCollision()
 	time_t t1 = clock();
 	//if (use_BVH) {
 		//for (int i = 0; i < 100; ++i) {
-			buildBVH();
+			//buildBVH();
 		//}
 	//}
 	//else {		
@@ -177,7 +177,7 @@ void Collision::collisionCulling()
 {
 	getAABB();
 
-	buildBVH();
+	//buildBVH();
 	spatial_hashing.buildSpatialHashing();			
 	
 	//for (int i = 0; i < collider->size(); ++i) {
