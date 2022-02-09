@@ -11,7 +11,7 @@ class SpatialHashing
 {
 public:
 	void setInObject(std::vector<Cloth>* cloth, std::vector<Collider>* collider,std::vector<Tetrahedron>* tetrahedron, 
-		Thread* thread, double* tolerance_ratio);
+		Thread* thread, double* tolerance_ratio, unsigned int max_cell_count, bool for_construct_patch);
 	void getSceneAABB(int thread_No);
 	void triangleHashing(int thread_No);
 	void buildSpatialHashing();
@@ -27,13 +27,17 @@ public:
 	void prefixSumParallelUp(int thread_No, unsigned int stage);
 	void prefixSumParallelDown(int thread_No, unsigned int stage);
 
+	void findPatch(std::vector<std::vector<std::vector<unsigned int>>>* triangle_patch_);	
+
 private:
+	void deleteArray();
 	Thread* thread;
 	std::vector<Cloth>* cloth;
 	std::vector<Collider>* collider;
 	std::vector<Tetrahedron>* tetrahedron;
 
 	unsigned int tetrahedron_begin_obj_index;
+	unsigned int collider_begin_obj_index;
 
 	void initialHashCellLength(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, double& cell_length, double* tolerance_ratio);
 	double cell_length;//this is the size of spatial hashing cell, = average edge length
@@ -80,7 +84,7 @@ private:
 	//std::vector<std::vector<std::vector<unsigned int>>> obj_triangle_hash;
 	void initialTriangleHash();
 	void setHashTogether();
-	std::vector<int>hash_value_begin;
+	//std::vector<int>hash_value_begin;
 	std::vector<unsigned int> prifix_sum;
 	void setPrifixSum();
 	bool*** obj_is_used;
@@ -105,6 +109,11 @@ private:
 	unsigned int* d_for_prefix_sum;//2^d
 
 	unsigned int* prefix_sum_1_address;
+
+	int total_obj_num;
+	bool for_construct_patch;
+
+	
 
 };
 

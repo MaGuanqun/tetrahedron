@@ -9,9 +9,9 @@ private:
 	
 	void setRepresentativePrimitve();
 public:
-	void getVertexAABBPerThread(int thread_No);
+	void getVertexAABBPerThread(int thread_No, bool has_tolerance);
 	void getEdgeTriangleAABBPerThread(int thread_No);
-	void obtainAABB();
+	void obtainAABB(bool has_tolerace);
 	MeshMaterial material;
 	TetrahedronMeshStruct mesh_struct;
 	void drawShadow(Camera* camera, Shader* shader);

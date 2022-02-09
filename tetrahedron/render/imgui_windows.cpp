@@ -108,6 +108,19 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 		ImGui::TreePop();
 	}
 
+	if (control_parameter[DRAW_MESH_PATCH]) {
+		if (ImGui::Button("Hide mesh patch", ImVec2(160, 25)))
+		{
+			control_parameter[DRAW_MESH_PATCH] = false;
+		}
+	}
+	else {
+		if (ImGui::Button("Show mesh patch", ImVec2(160, 25)))
+		{
+			control_parameter[DRAW_MESH_PATCH] = true;
+			control_parameter[START_SIMULATION] = false;
+		}
+	}
 	ImGui::End();
 
 	if (control_parameter[SET_CURSOR_FORCE]) {
@@ -122,6 +135,7 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 		ImGui::TextWrapped("Force depends on force coefficient and cursor moving speed.");
 		ImGui::End();
 	}
+
 }
 
 

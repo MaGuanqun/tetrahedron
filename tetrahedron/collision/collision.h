@@ -10,6 +10,7 @@
 #include"../external/Eigen/Dense"
 #include"collision_constraint.h"
 #include"CCD.h"
+#include"mesh_patch.h"
 
 using namespace Eigen;
 
@@ -77,6 +78,8 @@ public:
 	TargetPosition obj_target_pos;
 
 	size_t* time_stamp;
+	void drawMeshPatch(Camera* camera);
+
 private:
 	unsigned int tetrahedron_begin_obj_index;
 	unsigned int total_obj_num;
@@ -174,4 +177,13 @@ private:
 	double eta;//for setting gap in ccd
 	void testTwoVectorsAreSame(std::vector<std::vector<int>>& vec1, std::vector<std::vector<int>>& vec2, unsigned int obj_index,
 		unsigned int triangle_index);
+
+	std::vector<std::vector<std::vector<unsigned int>>> triangle_patch;
+
+	void findPatchOfObjects();
+
+	MeshPatch mesh_patch;
+
+	void getAABBWithoutCollision();
+
 };

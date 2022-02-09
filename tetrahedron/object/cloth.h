@@ -30,8 +30,8 @@ public:
 
 	//void getTriangleAABBPerThread(int thread_No);
 	void getEdgeTriangleAABBPerThread(int thread_No);
-	void getVertexAABBPerThread(int thread_No);
-	void obtainAABB();
+	void getVertexAABBPerThread(int thread_No, bool has_tolerance);
+	void obtainAABB(bool has_tolerace);
 	
 
 

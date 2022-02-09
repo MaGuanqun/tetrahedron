@@ -9,6 +9,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	this->collider = collider;
 	this->tetrahedron = tetrahedron;
 	this->thread = thread;
+	findPatchOfObjects();
 	initialBVH(cloth, collider, tetrahedron, thread);
 	initialTargetPos(cloth, tetrahedron, thread);
 	initialSpatialHashing(cloth, collider, tetrahedron, thread, tolerance_ratio);
@@ -29,6 +30,21 @@ void Collision::initialDHatTolerance(double ave_edge_length)
 	tolerance_2 = tolerance* tolerance;
 	//std::cout << "d_hat_2 " << d_hat_2 << std::endl;
 	
+}
+
+
+void Collision::findPatchOfObjects()
+{
+	getAABBWithoutCollision();
+	mesh_patch.initialPatch(cloth, collider, tetrahedron, thread, &triangle_patch);
+	mesh_patch.setBuffer(0,tetrahedron_begin_obj_index);
+
+
+}
+
+void Collision::drawMeshPatch(Camera* camera)
+{
+	mesh_patch.draw(camera);
 }
 
 void Collision::initialNeighborPrimitive()
@@ -95,20 +111,33 @@ void Collision::initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* col
 void Collision::initialSpatialHashing(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread,
 	double* tolerance_ratio)
 {
-	spatial_hashing.setInObject(cloth, collider, tetrahedron, thread, tolerance_ratio);
+	spatial_hashing.setInObject(cloth, collider, tetrahedron, thread, tolerance_ratio,18,false);
 }
 
 
 void Collision::getAABB()
 {
 	for (int i = 0; i < cloth->size(); ++i) {
-		(*cloth)[i].obtainAABB();
+		(*cloth)[i].obtainAABB(true);
 	}
 	for (int i = 0; i < collider->size(); ++i) {
-		(*collider)[i].obtainAABB();
+		(*collider)[i].obtainAABB(true);
 	}
 	for (int i = 0; i < tetrahedron->size(); ++i) {
-		(*tetrahedron)[i].obtainAABB();
+		(*tetrahedron)[i].obtainAABB(true);
+	}
+}
+
+void Collision::getAABBWithoutCollision()
+{
+	for (int i = 0; i < cloth->size(); ++i) {
+		(*cloth)[i].obtainAABB(false);
+	}
+	for (int i = 0; i < collider->size(); ++i) {
+		(*collider)[i].obtainAABB(false);
+	}
+	for (int i = 0; i < tetrahedron->size(); ++i) {
+		(*tetrahedron)[i].obtainAABB(false);
 	}
 }
 

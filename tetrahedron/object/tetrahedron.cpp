@@ -69,23 +69,36 @@ void Tetrahedron::setRepresentativePrimitve()
 	}
 }
 
-void Tetrahedron::obtainAABB()
+void Tetrahedron::obtainAABB(bool has_tolerace)
 {
-	thread->assignTask(this, VERTEX_AABB);
+	if (has_tolerace) {
+		thread->assignTask(this, VERTEX_AABB);
+	}
+	else {
+		thread->assignTask(this, VERTEX_AABB_WITHOUT_TOLERANCE);
+	}
 	//thread->assignTask(this, EDGE_AABB);
 	thread->assignTask(this, EDGE_TRIANGLE_AABB);
 }
 
 
 //VERTEX_AABB
-void Tetrahedron::getVertexAABBPerThread(int thread_No)
+//VERTEX_AABB_WITHOUT_TOLERANCE
+void Tetrahedron::getVertexAABBPerThread(int thread_No, bool has_tolerance)
 {
 	std::vector<std::array<double, 3>>* vertex_render = &mesh_struct.vertex_for_render;
 	std::vector<std::array<double, 3>>* vertex = &mesh_struct.vertex_position;
 	unsigned int index_end = mesh_struct.vertex_index_on_surface_begin_per_thread[thread_No + 1];
 	int* vertex_index_on_surface = mesh_struct.vertex_index_on_sureface.data();
-	for (unsigned int i = mesh_struct.vertex_index_on_surface_begin_per_thread[thread_No]; i < index_end; ++i) {
-		vertex_AABB[i].obtainAABB((*vertex_render)[vertex_index_on_surface[i]].data(), (*vertex)[vertex_index_on_surface[i]].data(), tolerance);	// 
+	if (has_tolerance) {
+		for (unsigned int i = mesh_struct.vertex_index_on_surface_begin_per_thread[thread_No]; i < index_end; ++i) {
+			vertex_AABB[i].obtainAABB((*vertex_render)[vertex_index_on_surface[i]].data(), (*vertex)[vertex_index_on_surface[i]].data(), tolerance);	// 
+		}
+	}
+	else{
+		for (unsigned int i = mesh_struct.vertex_index_on_surface_begin_per_thread[thread_No]; i < index_end; ++i) {
+			vertex_AABB[i].obtainAABB((*vertex_render)[vertex_index_on_surface[i]].data(), (*vertex)[vertex_index_on_surface[i]].data(), 0.0);	// 
+		}
 	}
 }
 

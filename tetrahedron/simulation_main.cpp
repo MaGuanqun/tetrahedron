@@ -20,8 +20,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 	Camera camera(cameraPos, normalize(glm::vec3(0.0f, 1.0f, 0.0f)));
 	float zoom_value = 1.0;
 	CoordinateSystem coordinateSystem;
-	bool control_parameter[11];
-	memset(control_parameter, 0, 11);
+	bool control_parameter[12];
+	memset(control_parameter, 0, 12);
 	ImGuiWindows imgui_windows;
 	float force_coe=1.0;
 	std::vector<std::vector<bool>> wireframe(3);
@@ -201,7 +201,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 			scene.setTolerance(tolerance_ratio);			
 			scene.updateCloth(&camera, input->mouse.screen_pos, control_parameter, force_coe,record_matrix, iteration_solver_iteration_num);
-			scene.drawScene(&camera, wireframe, hide, control_parameter[SAVE_OBJ]);
+			scene.drawScene(&camera, wireframe, hide, control_parameter[SAVE_OBJ], control_parameter[DRAW_MESH_PATCH]);
 			scene.selectAnchor(control_parameter, set_anchor, input->mouse.screen_pos, input->mouse.left_press, input->mouse.prev_left_press, &camera, hide[TETRAHEDRON_]);
 			scene.obtainConvergenceInfo(convergence_rate, iteration_number);
 

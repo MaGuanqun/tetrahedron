@@ -179,7 +179,10 @@ job Thread::create_task(Cloth* func, int thread_id, ObjectFunc function_type)// 
     //    k = job([func, thread_id]() {func->getEdgeAABBPerThread(thread_id); });
     //    break;
     case VERTEX_AABB:
-        k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id); });
+        k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id,true); });
+        break;
+    case VERTEX_AABB_WITHOUT_TOLERANCE:
+        k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id, false); });
         break;
     }
     return k;
@@ -201,7 +204,10 @@ job Thread::create_task(Tetrahedron* func, int thread_id, ObjectFunc function_ty
         //    k = job([func, thread_id]() {func->getEdgeAABBPerThread(thread_id); });
         //    break;
     case VERTEX_AABB:
-        k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id); });
+        k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id,true); });
+        break;
+    case VERTEX_AABB_WITHOUT_TOLERANCE:
+        k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id, false); });
         break;
     }
     return k;
@@ -220,7 +226,10 @@ job Thread::create_task(Collider* func, int thread_id, ObjectFunc function_type)
     //    k = job([func, thread_id]() {func->getTriangleAABBPerThread(thread_id); });
     //    break;
     case VERTEX_AABB:
-        k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id); });
+        k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id,true); });
+        break;
+    case VERTEX_AABB_WITHOUT_TOLERANCE:
+        k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id, false); });
         break;
     }
     return k;
