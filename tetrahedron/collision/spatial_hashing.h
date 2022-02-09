@@ -24,7 +24,8 @@ public:
 	void prepareForActualHashValueCountThread(int thread_No);
 	void memsetThread(int thread_No);
 
-	void prefixSumParallelUpSweep(int thread_No, unsigned int stage);
+	void prefixSumParallelUp(int thread_No, unsigned int stage);
+	void prefixSumParallelDown(int thread_No, unsigned int stage);
 
 private:
 	Thread* thread;
@@ -80,7 +81,7 @@ private:
 	void initialTriangleHash();
 	void setHashTogether();
 	std::vector<int>hash_value_begin;
-	std::vector<int> prifix_sum;
+	std::vector<unsigned int> prifix_sum;
 	void setPrifixSum();
 	bool*** obj_is_used;
 
@@ -102,11 +103,8 @@ private:
 	void initialParallePrefix();
 
 	unsigned int* d_for_prefix_sum;//2^d
-	unsigned int stage; //log(thread_num)
-	void setStartK(unsigned int thread_num_plus_1, unsigned int total_length);
 
-	unsigned int** prefix_k_start_range;
-	unsigned int** prefix_k_end_range;
+	unsigned int* prefix_sum_1_address;
 
 };
 

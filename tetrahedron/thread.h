@@ -59,7 +59,7 @@ public:
         futures.clear();
     }
     template <class T, typename U>
-    void assignTask(T* func, U taskType, int key_id)
+    void assignTask(T* func, U taskType, unsigned int key_id)
     {
         for (int i = 0; i < thread_num; ++i)
         {
@@ -94,12 +94,13 @@ private:
     void thread_func(ThreadData* pData);  
     job create_task(TriangleMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);// int jobNumber
     job create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncSendToThread function_type);
+    job create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncSendToThread function_type, unsigned int key_id);
     job create_task(Cloth* func, int thread_id, ObjectFunc function_type);
     job create_task(Collider* func, int thread_id, ObjectFunc function_type);
     job create_task(BVH* func, int thread_id, BVHFunc function_type);
     job create_task(TetrahedronMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);
     job create_task(Collision* func, int thread_id, CollisionFuncSendToThread function_type);
-    job create_task(RadixSort* func, int thread_id, RadixSortFunc function_type, int key_id);
+    job create_task(RadixSort* func, int thread_id, RadixSortFunc function_type, unsigned int key_id);
 
     job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type);
     job create_task(IterationMethod* func, int thread_id, std::vector<int>* vertex_index, std::vector<double>* coefficient,

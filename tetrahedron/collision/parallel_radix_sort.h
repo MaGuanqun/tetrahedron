@@ -12,12 +12,12 @@ public:
 	
 	void radixSort(unsigned int spatial_hashing_index_size, unsigned int* value, unsigned int* triangle_index,
 		unsigned int* hash_cloth_No, unsigned int list_size, unsigned int& largest_count);
-	void reorder(int thread_No, int key_id);
-	void setCountBucket(int thread_No, int key_id);
-	void setCountBucketMorton(int thread_No, int key_id);
+	void reorder(int thread_No, unsigned int key_id);
+	void setCountBucket(int thread_No, unsigned int key_id);
+	void setCountBucketMorton(int thread_No, unsigned int key_id);
 
 	void radixSort(uint64_t max_morton_code, std::vector<uint64_t>* morton_value, unsigned int* triangle_index);
-	void reorderMorton(int thread_No, int key_id);
+	void reorderMorton(int thread_No, unsigned int key_id);
 	void initialArray(unsigned int max_length);
 	void deleteArray();
 	void initialMortonArray(unsigned int max_length);
@@ -28,11 +28,11 @@ public:
 
 private:
 	Thread* thread;
-	void findHighestBit(unsigned int size, int& key_num);
-	void findHighestBit(uint64_t size, int& key_num);
+	void findHighestBit(unsigned int size, unsigned int& key_num);
+	void findHighestBit(uint64_t size, unsigned int& key_num);
 	int leading_zeros(unsigned int value);
 	int leading_zeros(uint64_t value);
-	int key_num;
+	unsigned int key_num;
 	void addCount(int size, unsigned int* count_bucket, unsigned int move_byte, std::array<int, 3>* array);
 	void addCount(unsigned int array_begin, unsigned int array_end, unsigned int* count_bucket, unsigned int move_byte, unsigned int* array);
 	void addCount(unsigned int array_begin, int array_end, unsigned int* count_bucket, int move_byte, uint64_t* array);

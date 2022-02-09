@@ -312,7 +312,22 @@ job Thread::create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncS
 }
 
 
-job Thread::create_task(RadixSort* func, int thread_id, RadixSortFunc function_type, int key_id)
+job Thread::create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncSendToThread function_type, unsigned int key_id)
+{
+    job k;
+    switch (function_type)
+    {
+    case PREFIX_SUM_UP:
+        k = job([func, thread_id, key_id]() {func->prefixSumParallelUp(thread_id, key_id); });
+        break;
+    case PREFIX_SUM_DOWN:
+        k = job([func, thread_id, key_id]() {func->prefixSumParallelDown(thread_id, key_id); });
+        break;
+    }
+    return k;
+}
+
+job Thread::create_task(RadixSort* func, int thread_id, RadixSortFunc function_type, unsigned int key_id)
 {
     job k;
     switch (function_type)
@@ -336,6 +351,10 @@ job Thread::create_task(RadixSort* func, int thread_id, RadixSortFunc function_t
 
     return k;
 }
+
+
+
+
 
 job Thread::create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type)
 {

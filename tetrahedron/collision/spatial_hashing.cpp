@@ -92,7 +92,7 @@ void SpatialHashing::setInObject(std::vector<Cloth>* cloth, std::vector<Collider
 	hash_value_begin.resize(thread_num,0);
 	radix_sort.initial(thread);
 	//testRadixSort();
-	//testPrefixSumTime();
+	testPrefixSumTime();
 
 
 	radix_sort.initialArray(total_hash_size);
@@ -137,18 +137,10 @@ void SpatialHashing::initialTriangleHash()
 
 void SpatialHashing::initialParallePrefix()
 {
-	stage = log2(thread_num) + 1;
-	d_for_prefix_sum = new unsigned int[stage + 1];
-	for (int i = 0; i < stage + 1; ++i) {
+	unsigned int stage = 32;
+	d_for_prefix_sum = new unsigned int[stage];
+	for (int i = 0; i < stage; ++i) {
 		d_for_prefix_sum[i] = pow(2, i);
-	}
-	prefix_k_start_range = new unsigned int* [stage];
-	for (unsigned int k = 0; k < stage; ++k) {
-		prefix_k_start_range[k] = new unsigned int[thread_num + 1];
-	}
-	prefix_k_end_range = new unsigned int* [stage];
-	for (unsigned int k = 0; k < stage; ++k) {
-		prefix_k_end_range[k] = new unsigned int[thread_num + 1];
 	}
 }
 
@@ -250,97 +242,67 @@ void SpatialHashing::buildSpatialHashing()
 }
 
 
-void SpatialHashing::setPrifixSum()
-{
-	//std::cout << "running... " << std::endl;
-	//for (int i = 1; i < spatial_hashing_value.size(); ++i) {
-	//	if (spatial_hashing_value[i] - spatial_hashing_value[i - 1] < 0) {
-	//		std::cout << "order error " << spatial_hashing_value[i] << " " << spatial_hashing_value[i - 1] << std::endl;
-	//	}
-	//	if (spatial_hashing_triangle_index[i]< 0 || spatial_hashing_triangle_index[i]>(*cloth)[0].mesh_struct.triangle_indices.size()) {
-	//		std::cout << "triangle index error " << spatial_hashing_triangle_index[i]<< std::endl;
-	//	}
-	//	if (spatial_hashing_cloth_index[i] != 0) {
-	//		std::cout << "cloth index error " << spatial_hashing_cloth_index[i] << std::endl;
-	//	}
-	//}
-	actual_hash_value_count = total_hash_size - largest_count_in_hash_value_list;
-	for (unsigned int i = actual_hash_value_count; i < total_hash_size; ++i) {
-		if (spatial_hashing_value[i] == UINT_MAX) {
-			actual_hash_value_count = i;
-			break;
-		}
-	}
 
-	
-
-	prifix_sum.resize(hash_table_size + 1);
-	arrangeIndex(thread_num, prifix_sum.size(), total_hash_count_start_per_thread);
-	//memset(prifix_sum.data(), 0, 4 * prifix_sum.size());
-	thread->assignTask(this, MEMSET_PREFIX);
-	arrangeIndex(thread_num, actual_hash_value_count, actual_hash_count_start_per_thread);
-	//thread->assignTask(this, PREPARE_FOR_ACTUAL_HASH_VALUE_COUNT_THREAD);
-	prepareForActualHashValueCount();
-
-	thread->assignTask(this, ADD_COUNT_FOR_PRIFIX_SUM);
-
-	//unsigned int* value_address;
-	//unsigned int k;
-	//for (unsigned int i = 1; i < thread_num; ++i) {
-	//	k = 1;
-	//	value_address = spatial_hashing_value + actual_hash_count_start_per_thread[i];
-	//	while (*(value_address - k) == *(value_address)) {
-	//		k++;
-	//	}
-	//	if (k < actual_hash_count_start_per_thread[i]) {
-	//		actual_hash_count_start_per_thread[i] -= k - 1;
-	//	}
-	//	else {
-	//		actual_hash_count_start_per_thread[i] = 0;
-	//	}
-	//}
-
-	
-	for (int i = 0; i < thread_num; ++i) {
-		total_hash_count_start_per_thread_move_1[i] = total_hash_count_start_per_thread[i] + 1;
-	}
-	total_hash_count_start_per_thread_move_1[thread_num] = total_hash_count_start_per_thread[thread_num];
-
-	thread->assignTask(this, PREFIX_SUM_THREAD_1);
-	hash_value_count_start_thread[0] = prifix_sum[0];
-	for (int i = 1; i < thread_num; ++i) {
-		hash_value_count_start_thread[i] = prifix_sum[total_hash_count_start_per_thread[i]];
-		prefix_sum_thread_start[i] = prifix_sum[total_hash_count_start_per_thread[i] - 1] + prefix_sum_thread_start[i - 1];
-	}
-
-	thread->assignTask(this, PREFIX_SUM_THREAD_2);
-
-	//for (int i = 0; i < actual_hash_value_count; ++i) {
-	//	prifix_sum[spatial_hashing_value[i]]++;
-	//}
-	//int s = 0; int t;
-	//for (int i = 0; i < prifix_sum.size(); ++i) {
-	//	t = s + prifix_sum[i];
-	//	prifix_sum[i] = s;
-	//	s = t;
-	//}
-	//prifix_sum[prifix_sum.size() - 1] = t;
-	//testPrifixSum1();
-}
 
 void SpatialHashing::prefixSumParallel()
 {
-
+	unsigned int stage = log2(hash_table_size);
+	std::cout << "stage " << stage << std::endl;
+	for (unsigned int i = 0; i < stage; ++i) {
+		thread->assignTask(this, PREFIX_SUM_UP, i);
+	}
+	for (int i = stage - 1; i >= 0; --i) {
+		thread->assignTask(this, PREFIX_SUM_DOWN, i);
+	}
 }
 
-void SpatialHashing::prefixSumParallelUpSweep(int thread_No, unsigned int stage)
+//PREFIX_SUM_UP
+void SpatialHashing::prefixSumParallelUp(int thread_No, unsigned int stage)
 {
-	//int d_2 = d_for_prefix_sum[stage];
-	//int d_2_1 = d_for_prefix_sum[stage + 1];
-	//int end = total_hash_count_start_per_thread[thread_No + 1];
-	//int start = total_hash_count_start_per_thread[thread_No];
-	//if(start)
-	//for(int k= start;k<end;k+=)
+
+	unsigned int d_1 = d_for_prefix_sum[stage + 1];
+	unsigned int d = d_for_prefix_sum[stage];
+
+	unsigned int size = (hash_table_size / d_1) / thread_num;
+
+	if ((hash_table_size / d_1) % thread_num != 0) {
+		size++;
+	}
+	unsigned int start = d_1 * thread_No * size;
+	unsigned int end = d_1 * (thread_No+1) * size ;	
+
+	if (end > hash_table_size) {//
+		end = hash_table_size;
+	}
+	std::cout << start << " " << end << " " << d_1<<" "<< hash_table_size << std::endl;
+	for (unsigned int i = start; i < end; i += d_1) {
+		if (d_1 == 1024) {
+			std::cout << i + d_1 - 1 << std::endl;
+		}
+		*(prefix_sum_1_address + i + d_1 - 1) += *(prefix_sum_1_address + i + d-1);
+	}	
+}
+
+//PREFIX_SUM_DOWN
+void SpatialHashing::prefixSumParallelDown(int thread_No, unsigned int stage)
+{
+	unsigned int d_1 = d_for_prefix_sum[stage + 1];
+	unsigned int d = d_for_prefix_sum[stage];
+	unsigned int size = (hash_table_size / d_1) / thread_num;
+	if ((hash_table_size / d_1) % thread_num != 0) {
+		size++;
+	}
+	unsigned int start = d_1 * thread_No * size + d_1 - 1;
+	unsigned int end = d_1 * (thread_No+1) * size + d_1 - 1;
+
+	if (end + d > hash_table_size) {
+		end = hash_table_size - d;
+	}
+
+	for (unsigned int i = start; i < end; i += d_1) {
+		*(prefix_sum_1_address + i + d) += *(prefix_sum_1_address + i);
+	}
+	
 }
 
 void SpatialHashing::testPrefixSumTime()
@@ -390,7 +352,7 @@ void SpatialHashing::testPrefixSumTime()
 	std::cout << "actual_hash_value_count " << actual_hash_value_count << std::endl;
 
 	prifix_sum.resize(hash_table_size + 1);
-
+	prefix_sum_1_address = prifix_sum.data() + 1;
 	arrangeIndex(thread_num, prifix_sum.size(), total_hash_count_start_per_thread);
 
 	//
@@ -411,7 +373,7 @@ void SpatialHashing::testPrefixSumTime()
 		//thread->assignTask(this, PREPARE_FOR_ACTUAL_HASH_VALUE_COUNT_THREAD);
 		prepareForActualHashValueCount();
 		thread->assignTask(this, ADD_COUNT_FOR_PRIFIX_SUM);
-		for (int i = 0; i < thread_num; ++i) {
+		/*for (int i = 0; i < thread_num; ++i) {
 			total_hash_count_start_per_thread_move_1[i] = total_hash_count_start_per_thread[i] + 1;
 		}
 		total_hash_count_start_per_thread_move_1[thread_num] = total_hash_count_start_per_thread[thread_num];
@@ -421,15 +383,90 @@ void SpatialHashing::testPrefixSumTime()
 			hash_value_count_start_thread[i] = prifix_sum[total_hash_count_start_per_thread[i]];
 			prefix_sum_thread_start[i] = prifix_sum[total_hash_count_start_per_thread[i] - 1] + prefix_sum_thread_start[i - 1];
 		}
-		thread->assignTask(this, PREFIX_SUM_THREAD_2);
+		thread->assignTask(this, PREFIX_SUM_THREAD_2);*/
+		prefixSumParallel();
 	}
 	std::cout << "time parallel sum count " << clock() - t1 << std::endl;
-	testPrifixSum1();
+	//testPrifixSum1();
 
 	delete[] spatial_hashing_value;
 
 }
 
+void SpatialHashing::setPrifixSum()
+{
+	//std::cout << "running... " << std::endl;
+	//for (int i = 1; i < spatial_hashing_value.size(); ++i) {
+	//	if (spatial_hashing_value[i] - spatial_hashing_value[i - 1] < 0) {
+	//		std::cout << "order error " << spatial_hashing_value[i] << " " << spatial_hashing_value[i - 1] << std::endl;
+	//	}
+	//	if (spatial_hashing_triangle_index[i]< 0 || spatial_hashing_triangle_index[i]>(*cloth)[0].mesh_struct.triangle_indices.size()) {
+	//		std::cout << "triangle index error " << spatial_hashing_triangle_index[i]<< std::endl;
+	//	}
+	//	if (spatial_hashing_cloth_index[i] != 0) {
+	//		std::cout << "cloth index error " << spatial_hashing_cloth_index[i] << std::endl;
+	//	}
+	//}
+	actual_hash_value_count = total_hash_size - largest_count_in_hash_value_list;
+	for (unsigned int i = actual_hash_value_count; i < total_hash_size; ++i) {
+		if (spatial_hashing_value[i] == UINT_MAX) {
+			actual_hash_value_count = i;
+			break;
+		}
+	}
+
+
+	prifix_sum.resize(hash_table_size + 1);
+	prefix_sum_1_address = prifix_sum.data() + 1;
+	arrangeIndex(thread_num, prifix_sum.size(), total_hash_count_start_per_thread);
+	//memset(prifix_sum.data(), 0, 4 * prifix_sum.size());
+	thread->assignTask(this, MEMSET_PREFIX);
+	arrangeIndex(thread_num, actual_hash_value_count, actual_hash_count_start_per_thread);
+	//thread->assignTask(this, PREPARE_FOR_ACTUAL_HASH_VALUE_COUNT_THREAD);
+	prepareForActualHashValueCount();
+
+	thread->assignTask(this, ADD_COUNT_FOR_PRIFIX_SUM);
+
+	//unsigned int* value_address;
+	//unsigned int k;
+	//for (unsigned int i = 1; i < thread_num; ++i) {
+	//	k = 1;
+	//	value_address = spatial_hashing_value + actual_hash_count_start_per_thread[i];
+	//	while (*(value_address - k) == *(value_address)) {
+	//		k++;
+	//	}
+	//	if (k < actual_hash_count_start_per_thread[i]) {
+	//		actual_hash_count_start_per_thread[i] -= k - 1;
+	//	}
+	//	else {
+	//		actual_hash_count_start_per_thread[i] = 0;
+	//	}
+	//}
+
+	prefixSumParallel();
+	//for (int i = 0; i < thread_num; ++i) {
+	//	total_hash_count_start_per_thread_move_1[i] = total_hash_count_start_per_thread[i] + 1;
+	//}
+	//total_hash_count_start_per_thread_move_1[thread_num] = total_hash_count_start_per_thread[thread_num];
+	//thread->assignTask(this, PREFIX_SUM_THREAD_1);
+	//hash_value_count_start_thread[0] = prifix_sum[0];
+	//for (int i = 1; i < thread_num; ++i) {
+	//	hash_value_count_start_thread[i] = prifix_sum[total_hash_count_start_per_thread[i]];
+	//	prefix_sum_thread_start[i] = prifix_sum[total_hash_count_start_per_thread[i] - 1] + prefix_sum_thread_start[i - 1];
+	//}
+	//thread->assignTask(this, PREFIX_SUM_THREAD_2);
+	//for (int i = 0; i < actual_hash_value_count; ++i) {
+	//	prifix_sum[spatial_hashing_value[i]]++;
+	//}
+	//int s = 0; int t;
+	//for (int i = 0; i < prifix_sum.size(); ++i) {
+	//	t = s + prifix_sum[i];
+	//	prifix_sum[i] = s;
+	//	s = t;
+	//}
+	//prifix_sum[prifix_sum.size() - 1] = t;
+	//testPrifixSum1();
+}
 void SpatialHashing::testPrifixSum1()
 {
 	std::vector<int> prifix_sum_;
@@ -540,7 +577,7 @@ void SpatialHashing::prifixSum1(int thread_No)
 {
 	unsigned int end = actual_hash_count_start_per_thread[thread_No + 1];
 	for (unsigned int i = actual_hash_count_start_per_thread[thread_No]; i < end; ++i) {
-		prifix_sum[spatial_hashing_value[i]]++;
+		(*(prefix_sum_1_address + spatial_hashing_value[i]))++;
 	}
 }
 

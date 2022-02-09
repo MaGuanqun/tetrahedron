@@ -14,18 +14,18 @@ void RadixSort::initial(Thread* thread)
 
 }
 
-void RadixSort::findHighestBit(unsigned int size, int& key_num)
+void RadixSort::findHighestBit(unsigned int size, unsigned  int& key_num)
 {
-	int highest_bit = 32 - leading_zeros(size);
+	unsigned int highest_bit = 32 - leading_zeros(size);
     key_num = highest_bit / BIT_PER_KEY;
     if (highest_bit % BIT_PER_KEY > 0) {
         key_num += 1;
     }
 }
 
-void RadixSort::findHighestBit(uint64_t size, int& key_num)
+void RadixSort::findHighestBit(uint64_t size, unsigned int& key_num)
 {
-    int highest_bit = 64 - leading_zeros(size);
+    unsigned int highest_bit = 64 - leading_zeros(size);
     key_num = highest_bit / BIT_PER_KEY;
     if (highest_bit % BIT_PER_KEY > 0) {
         key_num += 1;
@@ -94,7 +94,7 @@ void RadixSort::lsdSort(unsigned int* value, unsigned int* triangle_index, unsig
     unsigned int& largest_count)
 {
     int s, t;
-    for (int j = 0; j < key_num; ++j) {
+    for (unsigned int j = 0; j < key_num; ++j) {
         thread->assignTask(this, SET_COUNT_BUCKET,j);
         s = 0;
         if (j == key_num - 1) {
@@ -128,6 +128,9 @@ void RadixSort::copyArray(int thread_No)
     memcpy(triangle_index + array_index_begin[thread_No], stack_triangle_index + array_index_begin[thread_No], 4 * (array_index_begin[thread_No + 1] - array_index_begin[thread_No]));
     memcpy(hash_cloth_No + array_index_begin[thread_No], stack_hash_cloth_No + array_index_begin[thread_No], 4 * (array_index_begin[thread_No + 1] - array_index_begin[thread_No]));
 }
+
+
+
 
 void RadixSort::lsdSort(std::vector<uint64_t>* value, unsigned int* triangle_index)
 {
@@ -180,7 +183,7 @@ void RadixSort::lsdSort(std::vector<uint64_t>* value, unsigned int* triangle_ind
 
 
 //SET_COUNT_BUCKET
-void RadixSort::setCountBucket(int thread_No, int key_id)
+void RadixSort::setCountBucket(int thread_No, unsigned int key_id)
 {
     unsigned int* count_bucket;
     count_bucket = histogram[thread_No];
@@ -194,7 +197,7 @@ void RadixSort::setCountBucket(int thread_No, int key_id)
 }
 
 //SET_COUNT_BUCKET_MORTON
-void RadixSort::setCountBucketMorton(int thread_No, int key_id)
+void RadixSort::setCountBucketMorton(int thread_No, unsigned int key_id)
 {
     unsigned int* count_bucket;
     count_bucket = histogram[thread_No];
@@ -208,7 +211,7 @@ void RadixSort::setCountBucketMorton(int thread_No, int key_id)
 }
 
 //REORDER
-void RadixSort::reorder(int thread_No, int key_id)
+void RadixSort::reorder(int thread_No, unsigned int key_id)
 {
     if (key_id % 2 == 0) {
         reorder(value, stack_value, triangle_index, stack_triangle_index, hash_cloth_No, stack_hash_cloth_No,  8 * key_id, histogram[thread_No], array_index_begin[thread_No], array_index_begin[thread_No+1]);
@@ -220,7 +223,7 @@ void RadixSort::reorder(int thread_No, int key_id)
 
 
 //MORTON_REORDER
-void RadixSort::reorderMorton(int thread_No, int key_id)
+void RadixSort::reorderMorton(int thread_No, unsigned int key_id)
 {
     if (key_id % 2 == 0) {
         reorder(morton_value->data(), stack_morton_value, triangle_index, stack_triangle_index, 8 * key_id, histogram[thread_No], array_index_begin[thread_No], array_index_begin[thread_No + 1]);
