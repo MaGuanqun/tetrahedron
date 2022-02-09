@@ -90,11 +90,11 @@ private:
 
 	unsigned int* actual_hash_count_start_per_thread;
 	unsigned int* total_hash_count_start_per_thread;
-	unsigned int* total_hash_count_start_per_thread_move_1;//all index add 1
+	//unsigned int* total_hash_count_start_per_thread_move_1;//all index add 1
 
 	unsigned int* prefix_sum_thread_start;//record the count before the start index
 
-	unsigned int* hash_value_count_start_thread;//we record the count of every start of total_hash_count_start_per_thread of prefix_sum
+	//unsigned int* hash_value_count_start_thread;//we record the count of every start of total_hash_count_start_per_thread of prefix_sum
 	void prepareForActualHashValueCount();
 	void testPrefixSumTime();
 	void testPrifixSum1();
