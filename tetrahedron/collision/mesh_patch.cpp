@@ -3,13 +3,14 @@
 
 
 void MeshPatch::initialPatch(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron,
-	Thread* thread, std::vector<std::vector<std::vector<unsigned int>>>* triangle_patch)
+	Thread* thread, std::vector<std::vector<std::vector<unsigned int>>>* triangle_patch, std::vector<std::vector<std::vector<unsigned int>>>* patch_vertex)
 {
 	this->cloth = cloth;
 	this->tetrahedron = tetrahedron;
 	this->collider = collider;
 	this->thread = thread;
 	this->triangle_patch = triangle_patch;
+	this->patch_vertex = patch_vertex;
 	setInObjectData();
 }
 
@@ -26,6 +27,59 @@ void MeshPatch::setInObjectData()
 	//	(double)tetrahedron->data()[0].mesh_struct.triangle_indices.size()/(double)triangle_patch->data()[0].size() << std::endl;
 }
 
+
+void MeshPatch::findVertex()
+{
+	patch_index_start_per_thread.resize(triangle_patch->size());
+	patch_vertex->resize(triangle_patch->size());
+	for (unsigned int i = 0; i < patch_index_start_per_thread.size(); ++i) {
+		patch_index_start_per_thread[i].resize(thread->thread_num + 1);
+		patch_vertex->data()[i].resize(triangle_patch->data()[i].size());
+		for (unsigned int j = 0; j < patch_vertex->data()[i].size(); ++j) {
+			patch_vertex->data()[i][j].reserve(triangle_patch->data()[i][j].size());
+		}
+	}
+
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		arrangeIndex(thread->thread_num, triangle_patch->data()[i].size(), patch_index_start_per_thread[i].data());
+	}
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		arrangeIndex(thread->thread_num, triangle_patch->data()[i+cloth->size()].size(), patch_index_start_per_thread[i+cloth->size()].data());
+	}
+	for (unsigned int i = 0; i < collider->size(); ++i) {
+		arrangeIndex(thread->thread_num, triangle_patch->data()[i + cloth->size()+tetrahedron->size()].size(), 
+			patch_index_start_per_thread[i + cloth->size() + tetrahedron->size()].data());
+	}
+	is_vertex_used.resize(thread->thread_num);
+}
+
+void MeshPatch::findVertex(int thread_No)
+{
+	for (int i = 0; i < cloth->size(); ++i) {
+		is_vertex_used[thread_No].resize(cloth->data()[i].mesh_struct.vertex_position.size(),false);
+		//findVertex()
+	}
+}
+
+void MeshPatch::findVertex(std::vector<bool>& is_vertex_used, std::vector<std::array<int,3>>& triangle_indices,
+	std::vector<unsigned int>* patch, unsigned int start, unsigned int end, std::vector<unsigned int>* patch_vertex)
+{
+	unsigned int triangle_index;
+	for (unsigned int i = start; i < end; ++i) {
+		for (unsigned int j = 0; j < patch[i].size(); ++j) {
+			triangle_index = patch[i][j];
+			for (unsigned int k = 0; k < 3; ++k) {
+				if (!is_vertex_used[triangle_indices[triangle_index][k]]) {
+					patch_vertex[i].push_back(triangle_indices[triangle_index][k]);
+					is_vertex_used[triangle_indices[triangle_index][k]] = true;
+				}
+			}
+		}
+		for (unsigned int j = 0; j < patch_vertex[i].size(); ++j) {
+			is_vertex_used[patch_vertex[i][j]] = false;
+		}
+	}
+}
 
 void MeshPatch::genBuffer()
 {
@@ -151,3 +205,4 @@ void MeshPatch::draw(Camera* camera)
 	glBindVertexArray(0);
 	
 }
+
