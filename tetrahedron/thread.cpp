@@ -9,6 +9,7 @@
 #include"collision/collision.h"
 #include"collision/parallel_radix_sort.h"
 #include"iteration_method.h"
+#include"collision/mesh_patch.h"
 
 Thread::Thread()
 {
@@ -477,6 +478,22 @@ job Thread::create_task(IterationMethod* func, IterationMethodFunc function_type
         k = job([func, thread_id, coefficient, residual_norm, x, vertex_index_thread_begin]()
             {func->estimateAJacobi3EigenValue(x, &coefficient[thread_id], &residual_norm[thread_id], vertex_index_thread_begin[thread_id],
                 vertex_index_thread_begin[thread_id + 1]); });
+        break;
+    }
+    return k;
+}
+
+
+job Thread::create_task(MeshPatch* func, int thread_id, MeshPatchFunc function_type)
+{
+    job k;
+    switch (function_type)
+    {
+    case FIND_VERTEX:
+        k = job([func, thread_id]() {func->findVertex(thread_id); });
+        break;
+    case PATCH_AABB:
+        k = job([func, thread_id]() {func->obtainAABB(thread_id); });
         break;
     }
     return k;

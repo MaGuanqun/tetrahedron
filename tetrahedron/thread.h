@@ -23,6 +23,7 @@ class Collision;
 class SpatialHashing;
 class RadixSort;
 class IterationMethod;
+class MeshPatch;
 
 using job = std::packaged_task<void()>;
 
@@ -112,6 +113,7 @@ private:
         double omega_chebyshev, Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous);
     job create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread function_type);
     job create_task(Tetrahedron* func, int thread_id, ObjectFunc function_type);// int jobNumber
+    job create_task(MeshPatch* func, int thread_id, MeshPatchFunc function_type);
 
 };
 

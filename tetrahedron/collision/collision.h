@@ -178,8 +178,6 @@ private:
 	void testTwoVectorsAreSame(std::vector<std::vector<int>>& vec1, std::vector<std::vector<int>>& vec2, unsigned int obj_index,
 		unsigned int triangle_index);
 
-	std::vector<std::vector<std::vector<unsigned int>>> triangle_patch;
-
 	void findPatchOfObjects();
 
 	MeshPatch mesh_patch;

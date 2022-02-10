@@ -46,6 +46,7 @@ void RadixSort::deleteArray()
     delete[] stack_value;
     delete[] stack_triangle_index;
     delete[] stack_hash_cloth_No;
+    delete[] histogram;
 }
 
 void RadixSort::initialMortonArray(unsigned int max_length)
@@ -58,6 +59,7 @@ void RadixSort::deleteMortonArray()
 {
     delete[] stack_morton_value;
     delete[] stack_triangle_index;
+    delete[] histogram;
 }
 
 void RadixSort::radixSort(uint64_t max_morton_code, std::vector<uint64_t>* morton_value, unsigned int* triangle_index)

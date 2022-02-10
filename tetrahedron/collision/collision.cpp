@@ -36,7 +36,7 @@ void Collision::initialDHatTolerance(double ave_edge_length)
 void Collision::findPatchOfObjects()
 {
 	getAABBWithoutCollision();
-	mesh_patch.initialPatch(cloth, collider, tetrahedron, thread, &triangle_patch);
+	mesh_patch.initialPatch(cloth, collider, tetrahedron, thread);
 	mesh_patch.setBuffer(0,tetrahedron_begin_obj_index);
 
 

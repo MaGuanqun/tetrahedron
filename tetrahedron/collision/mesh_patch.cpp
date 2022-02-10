@@ -3,14 +3,14 @@
 
 
 void MeshPatch::initialPatch(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron,
-	Thread* thread, std::vector<std::vector<std::vector<unsigned int>>>* triangle_patch, std::vector<std::vector<std::vector<unsigned int>>>* patch_vertex)
+	Thread* thread)//std::vector<std::vector<std::vector<unsigned int>>>* triangle_patch, std::vector<std::vector<std::vector<unsigned int>>>* patch_vertex
 {
 	this->cloth = cloth;
 	this->tetrahedron = tetrahedron;
 	this->collider = collider;
 	this->thread = thread;
-	this->triangle_patch = triangle_patch;
-	this->patch_vertex = patch_vertex;
+	total_obj_num = cloth->size() + tetrahedron->size() + collider->size();
+	tetrahedron_end_index = cloth->size() + tetrahedron->size();
 	setInObjectData();
 }
 
@@ -22,46 +22,115 @@ void MeshPatch::setInObjectData()
 	double tolerance[4] = { 1.0,1.0,1.0,1.0 }; //here, spatial hashing cell length =tolerance * max_length
 	spatial_hashing.setInObject(cloth, collider, tetrahedron, thread, tolerance,8,true);	
 	spatial_hashing.buildSpatialHashing();
-	spatial_hashing.findPatch(triangle_patch);
-	//std::cout << triangle_patch->data()[0].size()<<" "<<
-	//	(double)tetrahedron->data()[0].mesh_struct.triangle_indices.size()/(double)triangle_patch->data()[0].size() << std::endl;
+	spatial_hashing.findPatch(&triangle_patch);
+	findVertex();
+	//std::cout << triangle_patch.data()[0].size()<<" "<<
+	//	(double)tetrahedron->data()[0].mesh_struct.triangle_indices.size()/(double)triangle_patch.data()[0].size() << std::endl;
 }
 
 
 void MeshPatch::findVertex()
 {
-	patch_index_start_per_thread.resize(triangle_patch->size());
-	patch_vertex->resize(triangle_patch->size());
+	patch_index_start_per_thread.resize(triangle_patch.size());
+	patch_vertex.resize(triangle_patch.size());
 	for (unsigned int i = 0; i < patch_index_start_per_thread.size(); ++i) {
 		patch_index_start_per_thread[i].resize(thread->thread_num + 1);
-		patch_vertex->data()[i].resize(triangle_patch->data()[i].size());
-		for (unsigned int j = 0; j < patch_vertex->data()[i].size(); ++j) {
-			patch_vertex->data()[i][j].reserve(triangle_patch->data()[i][j].size());
+		patch_vertex.data()[i].resize(triangle_patch.data()[i].size());
+		for (unsigned int j = 0; j < patch_vertex.data()[i].size(); ++j) {
+			patch_vertex.data()[i][j].reserve(triangle_patch.data()[i][j].size());
 		}
 	}
 
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
-		arrangeIndex(thread->thread_num, triangle_patch->data()[i].size(), patch_index_start_per_thread[i].data());
+		arrangeIndex(thread->thread_num, triangle_patch.data()[i].size(), patch_index_start_per_thread[i].data());
 	}
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
-		arrangeIndex(thread->thread_num, triangle_patch->data()[i+cloth->size()].size(), patch_index_start_per_thread[i+cloth->size()].data());
+		arrangeIndex(thread->thread_num, triangle_patch.data()[i+cloth->size()].size(), patch_index_start_per_thread[i+cloth->size()].data());
 	}
 	for (unsigned int i = 0; i < collider->size(); ++i) {
-		arrangeIndex(thread->thread_num, triangle_patch->data()[i + cloth->size()+tetrahedron->size()].size(), 
+		arrangeIndex(thread->thread_num, triangle_patch.data()[i + cloth->size()+tetrahedron->size()].size(), 
 			patch_index_start_per_thread[i + cloth->size() + tetrahedron->size()].data());
 	}
-	is_vertex_used.resize(thread->thread_num);
+	thread->assignTask(this, FIND_VERTEX);
+	patch_AABB.resize(total_obj_num);
+	for (int i = 0; i < total_obj_num; ++i) {
+		patch_AABB[i].resize(patch_vertex[i].size());
+	}
+	thread->assignTask(this, PATCH_AABB);
 }
 
+//FIND_VERTEX
 void MeshPatch::findVertex(int thread_No)
-{
-	for (int i = 0; i < cloth->size(); ++i) {
-		is_vertex_used[thread_No].resize(cloth->data()[i].mesh_struct.vertex_position.size(),false);
-		//findVertex()
+{	
+	int vertex_num;
+	std::array<int, 3>* triangle_indices;
+	std::vector<bool>is_vertex_used;
+	for (int i = 0; i < total_obj_num; ++i) {
+		if (i < cloth->size()) {
+			vertex_num = cloth->data()[i].mesh_struct.vertex_position.size();
+			triangle_indices = cloth->data()[i].mesh_struct.triangle_indices.data();
+			is_vertex_used.resize(vertex_num, false);
+			findVertex(is_vertex_used, triangle_indices, triangle_patch.data()[i].data(),
+				patch_index_start_per_thread[i][thread_No], patch_index_start_per_thread[i][thread_No + 1], patch_vertex.data()[i].data());
+		}
+		else if (i < tetrahedron_end_index) {
+			vertex_num = tetrahedron->data()[i-cloth->size()].mesh_struct.vertex_index_on_sureface.size();
+			triangle_indices = tetrahedron->data()[i - cloth->size()].mesh_struct.triangle_indices.data();
+			is_vertex_used.resize(vertex_num, false);
+			findTetVertex(is_vertex_used, triangle_indices, triangle_patch.data()[i].data(),
+				patch_index_start_per_thread[i][thread_No], patch_index_start_per_thread[i][thread_No + 1], 
+				patch_vertex.data()[i].data(), tetrahedron->data()[i - cloth->size()].mesh_struct.vertex_surface_index);
+		}
+		else {
+			vertex_num = collider->data()[i - tetrahedron_end_index].mesh_struct.vertex_position.size();
+			triangle_indices = collider->data()[i - tetrahedron_end_index].mesh_struct.triangle_indices.data();
+			is_vertex_used.resize(vertex_num, false);
+			findVertex(is_vertex_used, triangle_indices, triangle_patch.data()[i].data(),
+				patch_index_start_per_thread[i][thread_No], patch_index_start_per_thread[i][thread_No + 1], patch_vertex.data()[i].data());
+		}
+	
 	}
 }
 
-void MeshPatch::findVertex(std::vector<bool>& is_vertex_used, std::vector<std::array<int,3>>& triangle_indices,
+
+//PATCH_AABB
+void MeshPatch::obtainAABB(int thread_No)
+{
+	AABB* aabb;
+	unsigned int start, end;
+	std::vector<unsigned int>* vertex_patch;
+	AABB* vertex_aabb;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		if (i < cloth->size()) {
+			vertex_aabb = cloth->data()[i].vertex_AABB.data();
+		}
+		else if (i < tetrahedron_end_index) {
+			vertex_aabb = tetrahedron->data()[i-cloth->size()].vertex_AABB.data();
+		}
+		else {
+			vertex_aabb = collider->data()[i - tetrahedron_end_index].vertex_AABB.data();
+		}
+		aabb = patch_AABB[i].data();
+		start = patch_index_start_per_thread[i][thread_No];
+		end = patch_index_start_per_thread[i][thread_No + 1];
+		vertex_patch = patch_vertex.data()[i].data();
+		obtainAABB(aabb, start, end, vertex_patch, vertex_aabb);
+	}
+
+}
+
+void MeshPatch::obtainAABB(AABB* aabb, unsigned int start, unsigned int end, std::vector<unsigned int>* vertex_patch, 
+	AABB* vertex_aabb)
+{
+	for (unsigned int i = start; i < end; ++i) {
+		aabb[i] = vertex_aabb[vertex_patch[i][0]];
+		for (unsigned int j = 1; j < vertex_patch[i].size(); ++j) {
+			getAABB(aabb[i], vertex_aabb[vertex_patch[i][j]]);
+		}
+	}
+}
+
+void MeshPatch::findVertex(std::vector<bool>& is_vertex_used, std::array<int,3>* triangle_indices,
 	std::vector<unsigned int>* patch, unsigned int start, unsigned int end, std::vector<unsigned int>* patch_vertex)
 {
 	unsigned int triangle_index;
@@ -78,6 +147,29 @@ void MeshPatch::findVertex(std::vector<bool>& is_vertex_used, std::vector<std::a
 		for (unsigned int j = 0; j < patch_vertex[i].size(); ++j) {
 			is_vertex_used[patch_vertex[i][j]] = false;
 		}
+		patch_vertex[i].shrink_to_fit();
+	}
+}
+
+void MeshPatch::findTetVertex(std::vector<bool>& is_vertex_used, std::array<int, 3>* triangle_indices,
+	std::vector<unsigned int>* patch, unsigned int start, unsigned int end, std::vector<unsigned int>* patch_vertex, 
+	std::vector<int>& surface_vertex_index)
+{
+	unsigned int triangle_index;
+	for (unsigned int i = start; i < end; ++i) {
+		for (unsigned int j = 0; j < patch[i].size(); ++j) {
+			triangle_index = patch[i][j];
+			for (unsigned int k = 0; k < 3; ++k) {
+				if (!is_vertex_used[surface_vertex_index[triangle_indices[triangle_index][k]]]) {
+					patch_vertex[i].push_back(surface_vertex_index[triangle_indices[triangle_index][k]]);
+					is_vertex_used[surface_vertex_index[triangle_indices[triangle_index][k]]] = true;
+				}
+			}
+		}
+		for (unsigned int j = 0; j < patch_vertex[i].size(); ++j) {
+			is_vertex_used[patch_vertex[i][j]] = false;
+		}
+		patch_vertex[i].shrink_to_fit();
 	}
 }
 
@@ -113,7 +205,7 @@ void MeshPatch::setBuffer(unsigned int obj_index, unsigned int tetrahedron_start
 		indices = tetrahedron->data()[obj_index - tetrahedron_start_index].mesh_struct.triangle_indices.data();
 		position = tetrahedron->data()[obj_index - tetrahedron_start_index].mesh_struct.vertex_position.data();
 	}
-	std::vector<unsigned int>* patch = triangle_patch->data()[obj_index].data();
+	std::vector<unsigned int>* patch = triangle_patch.data()[obj_index].data();
 	for (int i = 0; i < size;++i) {
 		for (int j = 0; j < 3; ++j) {
 			pos[3 * i + j] = { position[indices[i][j]][0], position[indices[i][j]][1], position[indices[i][j]][2] };
@@ -123,9 +215,9 @@ void MeshPatch::setBuffer(unsigned int obj_index, unsigned int tetrahedron_start
 	std::array<double, 3> color_;
 
 	int resi;
-	unsigned int k = 256 * 256 * 256 / triangle_patch->data()[obj_index].size();
+	unsigned int k = 256 * 256 * 256 / triangle_patch.data()[obj_index].size();
 	unsigned int color_index;
-	for (unsigned int i = 0; i < triangle_patch->data()[obj_index].size(); ++i) {
+	for (unsigned int i = 0; i < triangle_patch.data()[obj_index].size(); ++i) {
 		color_index = i * k;
 		resi = color_index % 65536;
 		color_ = { 1.0 - (double)(color_index / 65536) / 255.0, (double)(resi / 256) / 255.0, (double)(resi % 256) / 255.0 };	
@@ -166,13 +258,13 @@ void MeshPatch::test(unsigned int obj_index, unsigned int tetrahedron_start_inde
 		triangle_size = tetrahedron->data()[obj_index - tetrahedron_start_index].mesh_struct.triangle_indices.size();
 	}
 	std::vector<bool> is_used(triangle_size, false);
-	for (int i = 0; i < triangle_patch->data()[obj_index].size(); ++i) {
-		for (int j = 0; j < triangle_patch->data()[obj_index][i].size(); ++j) {
-			if (is_used[triangle_patch->data()[obj_index][i][j]]) {
+	for (int i = 0; i < triangle_patch.data()[obj_index].size(); ++i) {
+		for (int j = 0; j < triangle_patch.data()[obj_index][i].size(); ++j) {
+			if (is_used[triangle_patch.data()[obj_index][i][j]]) {
 				std::cout << "one triangle occurs in two patches" << std::endl;
 			}
 			else {
-				is_used[triangle_patch->data()[obj_index][i][j]] = true;
+				is_used[triangle_patch.data()[obj_index][i][j]] = true;
 			}
 		}
 	}
@@ -185,9 +277,9 @@ void MeshPatch::test(unsigned int obj_index, unsigned int tetrahedron_start_inde
 
 void MeshPatch::test()
 {
-	for (int i = 0; i < triangle_patch->data()[0].size(); ++i) {
-		for (int j = 0; j < triangle_patch->data()[0][i].size(); ++j) {
-			std::cout << triangle_patch->data()[0][i][j] << " ";
+	for (int i = 0; i < triangle_patch.data()[0].size(); ++i) {
+		for (int j = 0; j < triangle_patch.data()[0][i].size(); ++j) {
+			std::cout << triangle_patch.data()[0][i][j] << " ";
 		}
 		std::cout << std::endl;
 	}
@@ -206,3 +298,14 @@ void MeshPatch::draw(Camera* camera)
 	
 }
 
+void MeshPatch::getAABB(AABB& target, AABB& aabb0)
+{
+	for (int i = 0; i < 3; ++i) {
+		if (target.min[i] > aabb0.min[i]) {
+			target.min[i] = aabb0.min[i];
+		}
+		if (target.max[i] < aabb0.max[i]) {
+			target.max[i] = aabb0.max[i];
+		}
+	}
+}
