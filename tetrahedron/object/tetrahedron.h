@@ -45,7 +45,7 @@ public:
 	std::vector<std::vector<std::vector<int>>>collide_vertex_obj_triangle;//except collider
 	std::vector<std::vector<std::vector<int>>>collide_vertex_collider_triangle;
 	std::vector<std::vector<std::vector<int>>>collide_edge_obj_edge;//except collider
-	std::vector<std::vector<std::vector<int>>>triangle_neighbor_collider_triangle;
+	std::vector<std::vector<std::vector<unsigned int>>>triangle_neighbor_collider_triangle;
 	void initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num, int collider_num, bool use_BVH);
 	std::vector<int> surface_vertex_from_rep_triangle_index;
 };

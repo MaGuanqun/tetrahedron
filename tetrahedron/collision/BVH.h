@@ -16,15 +16,16 @@ public:
 	void buildBVH(std::vector<AABB>* triangle_AABB);
 	void calCenterPerThread(int thread_No);
 	void calMortonCode(int thread_No);
-	void search(AABB& aabb, int compare_index, bool search_same_object, std::vector<int>* neighbor_list, int n, int b, int e);private:
-	
+	void search(AABB& aabb, unsigned int compare_index, bool search_same_object, std::vector<unsigned int>* neighbor_list, unsigned int n, unsigned int b, unsigned int e);
+	void updateBVH(std::vector<AABB>* aabb);
+	void updateNodeValue(int thread_No);
 private:
 
 	std::vector<std::array<double, 3>> aabb_center;
 	//std::vector<SortStruct> list;
 
 	std::vector<uint64_t> morton_list;
-	std::vector<unsigned int>triangle_list;
+	std::vector<unsigned int>new2old;
 
 	std::vector<unsigned int>triangle_index_begin_per_thread;
 	std::vector<std::array<double, 3>> aabb_min_per_thread;
@@ -36,8 +37,8 @@ private:
 	//double center[3];
 	double min[3];
 	const int multi = 10000;
-	Thread* thread;
-	std::vector<int> new2old;
+	Thread* thread;	
+	std::vector<unsigned int> old2new;
 	int maxNodeIndex(int node_index, int b, int e);
 	std::vector<AABB> aabb_list;
 	void initBVHRecursive(std::vector<AABB>* triangle_AABB, int node_index, int b, int e);
@@ -47,6 +48,18 @@ private:
 	uint64_t mortonCode64(uint32_t x, uint32_t y, uint32_t z);
 	uint64_t calMaxMortonCode(double* max, double* min);
 
+	unsigned int leaf_start_index;
 
 	void test();
+
+	unsigned int assumed_thread_num;
+	std::vector<unsigned int>start_leaf_node_per_thread;
+	unsigned int triangle_num;
+	unsigned int last_node_start_index;
+	void setLeafNode();
+	unsigned int total_layers;
+	unsigned int final_multi_thread_layers;
+
+
+	void obtainAABB(AABB& result, AABB& left, AABB& right);
 };

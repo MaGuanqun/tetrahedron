@@ -1501,8 +1501,8 @@ void Collision::test()
 
 
 
-void Collision::searchTriangle(AABB& aabb, unsigned int compare_index, unsigned int obj_No, std::vector<std::vector<int>>* obj_neighbor_index, 
-	std::vector<std::vector<int>>* collider_neighbor_index, bool is_collider)
+void Collision::searchTriangle(AABB& aabb, unsigned int compare_index, unsigned int obj_No, std::vector<std::vector<unsigned int>>* obj_neighbor_index,
+	std::vector<std::vector<unsigned int>>* collider_neighbor_index, bool is_collider)
 {
 	if (!is_collider) {
 		for (unsigned int i = 0; i < total_obj_num; ++i) {
@@ -1634,12 +1634,12 @@ void Collision::findPrimitivesAround(int thread_No)
 void Collision::findVertexAroundColliderTriangle(int thread_No)
 {
 	unsigned int* thread_begin;
-	std::vector<std::vector<std::vector<int>>>* triangle_neighbor_triangle;
+	std::vector<std::vector<std::vector<unsigned int>>>* triangle_neighbor_triangle;
 	std::vector<std::vector<std::vector<int>>>* triangle_neighbor_vertex; //triangle index near vertex
 	int* rep_vertex_num; // record of vertex's representative triangle index
 
 	std::vector<int>* triangle_neighbor_this_obj_vertex; //vector to record the triangle index near vertex which triangle and vertex in same cloth
-	std::vector<int>* triangle_neighbor_this_obj_triangle;//vector to record the triangle index near triangle in same cloth
+	std::vector<unsigned int>* triangle_neighbor_this_obj_triangle;//vector to record the triangle index near triangle in same cloth
 
 	std::vector<AABB>* triangle_aabb;
 	std::vector<AABB>* compared_vertex_aabb;
@@ -1689,13 +1689,13 @@ void Collision::findVertexAroundColliderTriangle(int thread_No)
 void Collision::findObjTriangleAroundVertex(int thread_No)
 {
 	unsigned int* thread_begin;
-	std::vector<std::vector<std::vector<int>>>* triangle_neighbor_triangle;
+	std::vector<std::vector<std::vector<unsigned int>>>* triangle_neighbor_triangle;
 	std::vector<std::vector<std::vector<int>>>* vertex_neighbor_triangle; //triangle index near vertex
 	std::vector<int>* vertex_from_rep_triangle_index; // record of vertex's representative triangle index
 
 	std::vector<std::array<int, 3>>* face_indices;//the record of every triangle's index
 	std::vector<int>* vertex_neighbor_this_obj_triangle; //vector to record the triangle index near vertex which triangle and vertex in same cloth
-	std::vector<int>* triangle_neighbor_this_obj_triangle;//vector to record the triangle index near triangle in same cloth
+	std::vector<unsigned int>* triangle_neighbor_this_obj_triangle;//vector to record the triangle index near triangle in same cloth
 
 	std::vector<AABB>* vertex_aabb;
 	std::vector<AABB>* compared_triangle_aabb;
@@ -1772,12 +1772,12 @@ void Collision::findObjTriangleAroundVertex(int thread_No)
 void Collision::findColliderTriangleAroundVertex(int thread_No)
 {
 	unsigned int* thread_begin;
-	std::vector<std::vector<std::vector<int>>>* triangle_neighbor_triangle;
+	std::vector<std::vector<std::vector<unsigned int>>>* triangle_neighbor_triangle;
 	std::vector<std::vector<std::vector<int>>>* vertex_neighbor_triangle; //triangle index near vertex
 	std::vector<int>* vertex_from_rep_triangle_index; // record of vertex's representative triangle index
 
 	std::vector<int>* vertex_neighbor_this_obj_triangle; //vector to record the triangle index near vertex which triangle and vertex in same cloth
-	std::vector<int>* triangle_neighbor_this_obj_triangle;//vector to record the triangle index near triangle in same cloth
+	std::vector<unsigned int>* triangle_neighbor_this_obj_triangle;//vector to record the triangle index near triangle in same cloth
 
 	std::vector<AABB>* vertex_aabb;
 	std::vector<AABB>* compared_triangle_aabb;
@@ -1823,12 +1823,12 @@ void Collision::findEdgeAroundEdge(int thread_No)
 {
 	std::vector<std::array<int, 3>>* face_indices;//the record of every triangle's index
 	unsigned int* thread_begin;
-	std::vector<std::vector<std::vector<int>>>* triangle_neighbor_triangle;
+	std::vector<std::vector<std::vector<unsigned int>>>* triangle_neighbor_triangle;
 	std::vector<std::vector<std::vector<int>>>* edge_neighbor_edge; //edge index near edge
 	std::vector<int>* edge_from_rep_triangle_index; // record of edge's representative triangle index
 
 	std::vector<int>* edge_neighbor_one_obj_edge; //vector to record the edge index near edge which triangle and vertex in same cloth
-	std::vector<int>* triangle_neighbor_one_obj_triangle;//vector to record the triangle index near triangle in same cloth
+	std::vector<unsigned int>* triangle_neighbor_one_obj_triangle;//vector to record the triangle index near triangle in same cloth
 
 	std::vector<int>* representative_edge_num;
 

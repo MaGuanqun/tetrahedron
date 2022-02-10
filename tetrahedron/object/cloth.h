@@ -41,7 +41,7 @@ public:
 	void setTolerance(double* tolerance_ratio, double ave_edge_length);
 
 
-	std::vector<std::vector<std::vector<int>>>triangle_neighbor_collider_triangle;
+	std::vector<std::vector<std::vector<unsigned int>>>triangle_neighbor_collider_triangle;
 	void initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num, int collider_num, bool use_BVH);
 
 	std::vector<std::vector<std::vector<int>>>vertex_neighbor_obj_triangle;//except collider

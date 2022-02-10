@@ -46,6 +46,6 @@ public:
 	std::vector<int> representative_vertex_num; //for  tetrahedron, this is the vertex num of surface vertex
 	std::vector<int> representative_edge_num;
 	std::vector<int> edge_from_rep_triangle_index;
-	std::vector<std::vector<std::vector<int>>>triangle_neighbor_obj_triangle;
+	std::vector<std::vector<std::vector<unsigned int>>>triangle_neighbor_obj_triangle;
 
 };

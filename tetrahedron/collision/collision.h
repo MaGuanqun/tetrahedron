@@ -109,8 +109,8 @@ private:
 
 	void buildBVH();
 	void initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread);
-	void searchTriangle(AABB& aabb, unsigned int compare_index, unsigned int obj_No, std::vector<std::vector<int>>* obj_neighbor_index, 
-		std::vector<std::vector<int>>* collider_neighbor_index, bool is_collider);
+	void searchTriangle(AABB& aabb, unsigned int compare_index, unsigned int obj_No, std::vector<std::vector<unsigned int>>* obj_neighbor_index,
+		std::vector<std::vector<unsigned int>>* collider_neighbor_index, bool is_collider);
 	void findObjTriangleAroundVertex(int thread_No);
 	void findColliderTriangleAroundVertex(int thread_No);
 	void findVertexAroundColliderTriangle(int thread_No);

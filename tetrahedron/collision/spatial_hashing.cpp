@@ -688,7 +688,7 @@ void SpatialHashing::memsetThread(int thread_No)
 
 
 void SpatialHashing::searchTriangle(AABB& aabb, unsigned int input_obj_No, unsigned int triangle_index, 
-	std::vector<int>* obj_neighbor_index, bool is_collider, unsigned int thread_No)
+	std::vector<unsigned int>* obj_neighbor_index, bool is_collider, unsigned int thread_No)
 {
 	std::vector<unsigned int>cloth_index_record;	std::vector<unsigned int>triangle_index_record;
 	cloth_index_record.reserve(20);

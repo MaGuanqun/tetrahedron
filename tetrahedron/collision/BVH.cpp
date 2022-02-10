@@ -6,21 +6,50 @@
 
 void BVH::init(int triangle_num, std::vector<unsigned int>&triangle_index_begin_per_thread, Thread* thread)
 {
+	this->triangle_num = triangle_num;
 	aabb_center.resize(triangle_num);
 	//list.resize(triangle_num);
 	morton_list.resize(triangle_num);
-	triangle_list.resize(triangle_num);
 	this->triangle_index_begin_per_thread = triangle_index_begin_per_thread;
 	total_thread_num = std::thread::hardware_concurrency();
 	aabb_min_per_thread.resize(total_thread_num);
 	aabb_max_per_thread.resize(total_thread_num);
 	this->thread = thread;
 	new2old.resize(triangle_num);
+	old2new.resize(triangle_num);
 	aabb_list.resize(maxNodeIndex(1, 0, triangle_num) + 1);
 	radix_sort.initial(thread);
 	radix_sort.initialMortonArray(triangle_num);
 
-	std::cout << "BVH construct " << aabb_list.size()<<" "<< new2old.size() << std::endl;
+	
+
+	//here we assume the thread_num is 2^x.
+	
+	//std::cout << "BVH construct " << aabb_list.size()<<" "<< new2old.size() << std::endl;
+	setLeafNode();
+
+}
+
+
+void BVH::setLeafNode()
+{
+	leaf_start_index = aabb_list.size() - triangle_num;
+	final_multi_thread_layers = floor(log2(total_thread_num));
+	assumed_thread_num =pow(2, final_multi_thread_layers);
+	total_layers = ceil(log2(triangle_num));
+	
+	start_leaf_node_per_thread.resize(assumed_thread_num + 1);
+	arrangeIndex(total_thread_num, pow(2, (int)ceil(log2(triangle_num))), start_leaf_node_per_thread.data());
+	if (assumed_thread_num < total_thread_num) {
+		start_leaf_node_per_thread.resize(total_thread_num + 1);
+		for (int i = assumed_thread_num + 1; i < start_leaf_node_per_thread.size(); ++i) {
+			start_leaf_node_per_thread[i] = start_leaf_node_per_thread[assumed_thread_num];
+		}
+	}
+	for (int i = 0; i < total_thread_num; ++i) {
+		start_leaf_node_per_thread[i] += leaf_start_index + 1;
+	}
+	last_node_start_index = pow(2, (int)ceil(log2(triangle_num)));
 }
 
 void BVH::buildBVH(std::vector<AABB>* triangle_AABB)
@@ -30,7 +59,60 @@ void BVH::buildBVH(std::vector<AABB>* triangle_AABB)
 	initBVHRecursive(triangle_AABB, 1, 0, triangle_AABB->size());
 }
 
-void BVH::search(AABB& aabb, int compare_index, bool search_same_object, std::vector<int>* neighbor_list, int n, int b, int e)
+
+void BVH::updateBVH(std::vector<AABB>* aabb)
+{
+	this->triangle_AABB = triangle_AABB;
+	setMortonCode();
+
+}
+
+void BVH::updateNodeValue(int thread_No)
+{
+	
+	for (unsigned int i = start_leaf_node_per_thread[thread_No]; i < start_leaf_node_per_thread[thread_No + 1]; ++i) {
+		if (i >= aabb_list.size()) {
+			return;
+		}
+			aabb_list[i] = triangle_AABB->data()[new2old[i- last_node_start_index]];
+	}
+	
+	if (total_layers - 1 >= final_multi_thread_layers) {
+		unsigned int end_index = start_leaf_node_per_thread[thread_No + 1] / 2;
+		for (unsigned int i = start_leaf_node_per_thread[thread_No] / 2; i < end_index; ++i) {
+			if (i < leaf_start_index) {
+				obtainAABB(aabb_list[i], aabb_list[2 * i], aabb_list[2 * i + 1]);
+			}
+			else {
+				aabb_list[i] = triangle_AABB->data()[new2old[]];
+			}
+		}
+	}
+	
+
+}
+
+
+void BVH::obtainAABB(AABB& result, AABB& left, AABB& right)
+{
+	result = left;
+	for (unsigned int i = 0; i < 3; ++i) {
+		if (result.min[i] > right.min[i]) {
+			result.min[i] = right.min[i];
+		}
+		if (result.max[i] < right.max[i]) {
+			result.max[i] < right.max[i];
+		}
+	}
+}
+
+void BVH::recursiveUpdate(unsigned int start_index, unsigned int end_index, )
+{
+
+}
+
+
+void BVH::search(AABB& aabb, unsigned int compare_index, bool search_same_object, std::vector<unsigned int>* neighbor_list, unsigned int n, unsigned int b, unsigned int e)
 {
 	if (!aabb.AABB_intersection(aabb_list[n])) {
 		return;
@@ -46,9 +128,9 @@ void BVH::search(AABB& aabb, int compare_index, bool search_same_object, std::ve
 		}
 		return;
 	}
-	int m = b + (e - b) / 2;
-	int child_left = 2 * n;
-	int child_right = 2 * n + 1;
+	unsigned int m = b + (e - b) / 2;
+	unsigned int child_left = 2 * n;
+	unsigned int child_right = 2 * n + 1;
 
 	search(aabb, compare_index, search_same_object, neighbor_list, child_left, b, m);
 	search(aabb, compare_index, search_same_object, neighbor_list, child_right, m, e);
@@ -65,8 +147,8 @@ void BVH::calCenterPerThread(int thread_No)
 	aabb_max = aabb_max_per_thread[thread_No].data();
 	for (int i = triangle_index_begin_per_thread[thread_No]; i < triangle_index_begin_per_thread[thread_No + 1]; ++i) {
 		center = aabb_center[i].data();
-		min = (*triangle_AABB)[i].min;
-		max = (*triangle_AABB)[i].max;		
+		min = triangle_AABB->data()[i].min;
+		max = triangle_AABB->data()[i].max;		
 		TWO_POINTS_CENTER(center, min, max);
 		for (int j = 0; j < 3; ++j) {
 			if (aabb_min[j] > min[j]) {
@@ -90,7 +172,7 @@ void BVH::calMortonCode(int thread_No)
 		//list[i].morton = MortonCode64(unsigned int(center_[0]), unsigned int(center_[1]), unsigned int(center_[2]));
 		//list[i].order = i;
 		morton_list[i] = mortonCode64(unsigned int(center_[0]), unsigned int(center_[1]), unsigned int(center_[2]));
-		triangle_list[i] = i;
+		new2old[i] = i;
 	}
 }
 
@@ -115,7 +197,7 @@ void BVH::setMortonCode()
 
 
 	//std::sort(list.begin(), list.end(), morton_compare);
-	radix_sort.radixSort(calMaxMortonCode(v_max, min), &morton_list, triangle_list.data());
+	radix_sort.radixSort(calMaxMortonCode(v_max, min), &morton_list, new2old.data());
 	//for (int i = 1; i < morton_list.size(); ++i) {
 	//	//std::cout << morton_list[i] << std::endl;
 	//	if (morton_list[i] < morton_list[i - 1]) {
@@ -125,8 +207,7 @@ void BVH::setMortonCode()
 
 
 	for (unsigned int i = 0; i < new2old.size(); ++i) {
-		//new2old[i] = list[i].order;
-		new2old[i] = triangle_list[i];
+		old2new[new2old[i]] = i;
 	}
 }
 
@@ -134,7 +215,7 @@ void BVH::setMortonCode()
 void BVH::initBVHRecursive(std::vector<AABB>* triangle_AABB, int node_index, int b, int e)
 {
 	if (b + 1 == e) {
-		aabb_list[node_index] = (*triangle_AABB)[new2old[b]];
+		aabb_list[node_index] = triangle_AABB->data()[new2old[b]];
 		return;
 	}
 	int m = b + (e - b) / 2;

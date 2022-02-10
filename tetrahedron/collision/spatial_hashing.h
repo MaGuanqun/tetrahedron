@@ -17,7 +17,7 @@ public:
 	void buildSpatialHashing();
 	void setHashTogether(int thread_No);
 	void searchTriangle(AABB& aabb, unsigned int input_obj_No, unsigned int triangle_index,
-		std::vector<int>* obj_neighbor_index, bool is_collider, unsigned int thread_No);
+		std::vector<unsigned int>* obj_neighbor_index, bool is_collider, unsigned int thread_No);
 	void prifixSum1(int thread_No);
 	void prifixSum2(int thread_No);
 	void prifixSum3(int thread_No);
