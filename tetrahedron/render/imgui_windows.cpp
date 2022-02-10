@@ -319,6 +319,11 @@ bool ImGuiWindows::loadModel(std::vector<std::string>& collider_path, std::vecto
 				ImGui::TextWrapped(object_path[i].c_str());
 			}
 		}
+		if (ImGui::Button("Cancel", ImVec2(160, 25))) {
+			object_path.clear();
+			collider_path.clear();
+		}
+		ImGui::SameLine();
 		if (ImGui::Button("Confirm", ImVec2(160, 25))) {
 			finished_loading = true;
 		}

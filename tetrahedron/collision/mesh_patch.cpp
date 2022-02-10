@@ -18,10 +18,12 @@ void MeshPatch::initialPatch(std::vector<Cloth>* cloth, std::vector<Collider>* c
 void MeshPatch::setInObjectData()
 {
 	SpatialHashing spatial_hashing;
-	double tolerance[4] = { 2.0,2.0,2.0,2.0 }; //here, spatial hashing cell length =tolerance * max_length
+	double tolerance[4] = { 1.0,1.0,1.0,1.0 }; //here, spatial hashing cell length =tolerance * max_length
 	spatial_hashing.setInObject(cloth, collider, tetrahedron, thread, tolerance,8,true);	
 	spatial_hashing.buildSpatialHashing();
 	spatial_hashing.findPatch(triangle_patch);
+	//std::cout << triangle_patch->data()[0].size()<<" "<<
+	//	(double)tetrahedron->data()[0].mesh_struct.triangle_indices.size()/(double)triangle_patch->data()[0].size() << std::endl;
 }
 
 
@@ -96,6 +98,35 @@ void MeshPatch::setBuffer(unsigned int obj_index, unsigned int tetrahedron_start
 	glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
 	glBindVertexArray(0);	
 
+	//test(obj_index, tetrahedron_start_index);
+
+}
+
+void MeshPatch::test(unsigned int obj_index, unsigned int tetrahedron_start_index)
+{
+	int triangle_size;
+	if (obj_index < tetrahedron_start_index) {
+		triangle_size = cloth->data()[obj_index].mesh_struct.triangle_indices.size();
+	}
+	else {
+		triangle_size = tetrahedron->data()[obj_index - tetrahedron_start_index].mesh_struct.triangle_indices.size();
+	}
+	std::vector<bool> is_used(triangle_size, false);
+	for (int i = 0; i < triangle_patch->data()[obj_index].size(); ++i) {
+		for (int j = 0; j < triangle_patch->data()[obj_index][i].size(); ++j) {
+			if (is_used[triangle_patch->data()[obj_index][i][j]]) {
+				std::cout << "one triangle occurs in two patches" << std::endl;
+			}
+			else {
+				is_used[triangle_patch->data()[obj_index][i][j]] = true;
+			}
+		}
+	}
+	for (int i = 0; i < is_used.size(); ++i) {
+		if (!is_used[i]) {
+			std::cout << "patches lost index" << std::endl;
+		}
+	}
 }
 
 void MeshPatch::test()
@@ -109,8 +140,7 @@ void MeshPatch::test()
 }
 
 void MeshPatch::draw(Camera* camera)
-{
-	
+{	
 	shader->use();
 	shader->setMat4("model", glm::mat4(1.0));
 	shader->setMat4("projection", camera->GetProjectMatrix());

@@ -220,23 +220,23 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& wireframe,
 				collider[j].draw(camera, object_shader_front);
 			}
 		}
-
-		for (int i = 0; i < collider.size(); ++i) {
-			if (wireframe[COLLIDER_][i]) {
-				collider[i].drawWireframe(camera, wireframe_shader);
-			}
+	}
+	for (int i = 0; i < collider.size(); ++i) {
+		if (wireframe[COLLIDER_][i]) {
+			collider[i].drawWireframe(camera, wireframe_shader);
 		}
-		for (int j = 0; j < cloth_num; ++j) {
-			if (wireframe[CLOTH_][j]) {
-				cloth[j].drawWireframe(camera, wireframe_shader);
-			}
+	}
+	for (int j = 0; j < cloth_num; ++j) {
+		if (wireframe[CLOTH_][j]) {
+			cloth[j].drawWireframe(camera, wireframe_shader);
 		}
-		for (int j = 0; j < tetrahedron_num; ++j) {
-			if (wireframe[TETRAHEDRON_][j]) {
-				tetrahedron[j].drawWireframe(camera, wireframe_shader);
-			}
+	}
+	for (int j = 0; j < tetrahedron_num; ++j) {
+		if (wireframe[TETRAHEDRON_][j]) {
+			tetrahedron[j].drawWireframe(camera, wireframe_shader);
 		}
-
+	}
+	if (!draw_mesh_patch) {
 		//drawTriangle1.draw(camera, glm::vec3(0.0, 1.0, 0.0));
 		if (intersection.happened) {
 			cursor.draw(camera);

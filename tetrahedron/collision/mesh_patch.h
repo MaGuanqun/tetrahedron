@@ -26,6 +26,7 @@ private:
 	
 	unsigned int draw_element_num;
 	void test();
+	void test(unsigned int obj_index, unsigned int tetrahedron_start_index);
 };
 
 
