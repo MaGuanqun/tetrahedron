@@ -122,12 +122,14 @@ void ReadEle::saveTetrahedronIndex(std::vector<std::vector<std::string>>& result
 		}
 	}
 	if (result[result.size() - 1][0] != "#") {
-		for (int j = 1; j < 5; j++) {
-			if (result[result.size() - 1][j] == "0") {
-				start_from_zero = true;
+		if (result[result.size() - 1].size() > 1) {
+			for (int j = 1; j < 5; j++) {
+				if (result[result.size() - 1][j] == "0") {
+					start_from_zero = true;
+				}
+				mesh.indices.push_back(stoi(result[result.size() - 1][j]));
 			}
-			mesh.indices.push_back(stoi(result[result.size() - 1][j]));
-		}
+		}		
 	}
 	if (!start_from_zero) {
 		for (int i = 0; i < mesh.indices.size(); ++i) {

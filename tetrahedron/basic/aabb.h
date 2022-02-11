@@ -12,6 +12,18 @@ struct AABB
 		memcpy(max, aabb.max, 24);
 		return *this;
 	}
+	bool operator==(const AABB& rhs) 
+	{
+		for (unsigned int i = 0; i < 3; ++i) {
+			if (min[i] != rhs.min[i]) {
+				return false;
+			}
+			if (max[i] != rhs.max[i]) {
+				return false;
+			}
+		}
+		return true;
+	}
 
 	bool AABB_intersection(AABB& a2)
 	{

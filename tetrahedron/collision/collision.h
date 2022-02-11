@@ -184,4 +184,6 @@ private:
 
 	void getAABBWithoutCollision();
 
+	void testBVHUpdate();
+
 };

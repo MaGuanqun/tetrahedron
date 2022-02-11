@@ -3,6 +3,11 @@
 //const auto morton_compare(const BVH::SortStruct& a, const BVH::SortStruct& b) {
 //	return (a.morton < b.morton);
 //};
+BVH::~BVH()
+{
+	delete[] is_node_leaf;
+}
+
 
 void BVH::init(int triangle_num, std::vector<unsigned int>&triangle_index_begin_per_thread, Thread* thread)
 {
@@ -16,11 +21,16 @@ void BVH::init(int triangle_num, std::vector<unsigned int>&triangle_index_begin_
 	aabb_max_per_thread.resize(total_thread_num);
 	this->thread = thread;
 	new2old.resize(triangle_num);
-	old2new.resize(triangle_num);
+	old2new.resize(triangle_num);	
+
 	aabb_list.resize(maxNodeIndex(1, 0, triangle_num) + 1);
+	is_node_leaf = new bool[aabb_list.size()];
+	memset(is_node_leaf, 0, sizeof(bool)* aabb_list.size());
+	triangle_node_index.resize(triangle_num);
+	recordNodeInfo(1, 0, triangle_num);
+
 	radix_sort.initial(thread);
 	radix_sort.initialMortonArray(triangle_num);
-
 	
 
 	//here we assume the thread_num is 2^x.
@@ -33,7 +43,6 @@ void BVH::init(int triangle_num, std::vector<unsigned int>&triangle_index_begin_
 
 void BVH::setLeafNode()
 {
-	leaf_start_index = aabb_list.size() - triangle_num;
 	final_multi_thread_layers = floor(log2(total_thread_num));
 	assumed_thread_num =pow(2, final_multi_thread_layers);
 	total_layers = ceil(log2(triangle_num));
@@ -48,10 +57,10 @@ void BVH::setLeafNode()
 		}
 	}
 	
-	for (int i = 0; i < total_thread_num; ++i) {
+	for (int i = 0; i < start_leaf_node_per_thread.size(); ++i) {
 		start_leaf_node_per_thread[i] += last_layer_start_index;
 	}
-
+	
 }
 
 void BVH::buildBVH(std::vector<AABB>* triangle_AABB)
@@ -71,46 +80,42 @@ void BVH::updateBVH(std::vector<AABB>* aabb)
 		initBVHRecursive(triangle_AABB, 1, 0, triangle_AABB->size());
 	}
 	else {
+		thread->assignTask(this, UPDATE_LAST_LAYER_NODE_VALUE);
 		thread->assignTask(this, UPDATE_NODE_VALUE);
 		unsigned int start, end;
 		start = assumed_thread_num / 2;
 		end = assumed_thread_num;
-		for (unsigned int i = final_multi_thread_layers - 1; i >= 0; ++i) {
+		for (int j = final_multi_thread_layers - 1; j >= 0; --j) {
 			for (int i = start; i < end; ++i) {
 				obtainAABB(aabb_list[i], aabb_list[2 * i], aabb_list[2 * i + 1]);
 			}
 			start /= 2;
 			end /= 2;
 		}
+		std::cout << "is node 4070*2+1 " <<(int)is_node_leaf[4070*2+1]<<" end" << std::endl;
 	}
 }
 
 
+//UPDATE_LAST_LAYER_NODE_VALUE
+void BVH::updateNodeValueLastLayer(int thread_No)
+{
+	for (unsigned int i = triangle_index_begin_per_thread[thread_No]; i < triangle_index_begin_per_thread[thread_No + 1]; ++i) {
+		aabb_list[triangle_node_index[i]] = triangle_AABB->data()[new2old[i]];
+	}
+}
 
 //UPDATE_NODE_VALUE
 void BVH::updateNodeValue(int thread_No)
-{
-	
-	for (unsigned int i = start_leaf_node_per_thread[thread_No]; i < start_leaf_node_per_thread[thread_No + 1]; ++i) {
-		if (i >= aabb_list.size()) {
-			break;
-		}
-		aabb_list[i] = triangle_AABB->data()[new2old[i- last_layer_start_index]];
-	}
-	
+{	
 	if (total_layers >= final_multi_thread_layers) {
-		int q = aabb_list.size() - last_layer_start_index - leaf_start_index;
 		unsigned int end_index = start_leaf_node_per_thread[thread_No + 1] / 2;
 		for (unsigned int i = start_leaf_node_per_thread[thread_No] / 2; i < end_index; ++i) {
-			if (i < leaf_start_index) {
+			if (!is_node_leaf[i]) {				
 				obtainAABB(aabb_list[i], aabb_list[2 * i], aabb_list[2 * i + 1]);
-			}
-			else {
-				aabb_list[i] = triangle_AABB->data()[new2old[i+q]];
 			}
 		}
 		//recursiveUpdate(start_leaf_node_per_thread[thread_No] / 4, start_leaf_node_per_thread[thread_No + 1] / 4);
-
 		unsigned int start_index = start_leaf_node_per_thread[thread_No] / 4;
 		end_index = start_leaf_node_per_thread[thread_No + 1] / 4;
 		while (true)
@@ -138,7 +143,7 @@ void BVH::obtainAABB(AABB& result, AABB& left, AABB& right)
 			result.min[i] = right.min[i];
 		}
 		if (result.max[i] < right.max[i]) {
-			result.max[i] < right.max[i];
+			result.max[i] = right.max[i];
 		}
 	}
 }
@@ -280,12 +285,35 @@ int BVH::maxNodeIndex(int node_index, int b, int e)
 	if (b + 1 == e) {
 		return node_index;
 	}
+
+
 	int m = b + (e - b) / 2;
 	int child_left = 2 * node_index;
 	int child_right = 2 * node_index + 1;
 	return std::max(maxNodeIndex(child_left, b, m), maxNodeIndex(child_right, m, e));
 }
 
+void BVH::recordNodeInfo(int node_index, int b, int e)
+{
+	if (node_index == 4070 * 2 + 1) {
+		std::cout <<"+1 "<< b << " " << e << std::endl;
+	}
+	if (node_index == 4070 * 2) {
+		std::cout <<"not +1 "<< b << " " << e << std::endl;
+	}
+	if (b + 1 == e) {
+		is_node_leaf[node_index] = true;
+		triangle_node_index[b] = node_index;
+		return;
+	}
+
+
+	int m = b + (e - b) / 2;
+	int child_left = 2 * node_index;
+	int child_right = 2 * node_index + 1;
+	recordNodeInfo(child_left, b, m);
+	recordNodeInfo(child_right, m, e);
+}
 
 uint64_t BVH::splitBy3Bits21(uint32_t x)
 {

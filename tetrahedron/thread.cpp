@@ -250,7 +250,11 @@ job Thread::create_task(BVH* func, int thread_id, BVHFunc function_type)// int j
     case UPDATE_NODE_VALUE:
         k = job([func, thread_id]() {func->updateNodeValue(thread_id); });
         break;
+    case UPDATE_LAST_LAYER_NODE_VALUE:
+        k = job([func, thread_id]() {func->updateNodeValueLastLayer(thread_id); });
+        break;
     }
+
     return k;
 }
 
