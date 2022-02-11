@@ -39,17 +39,19 @@ void BVH::setLeafNode()
 	total_layers = ceil(log2(triangle_num));
 	
 	start_leaf_node_per_thread.resize(assumed_thread_num + 1);
-	arrangeIndex(total_thread_num, pow(2, (int)ceil(log2(triangle_num))), start_leaf_node_per_thread.data());
+	last_layer_start_index = pow(2, (int)ceil(log2(triangle_num)));
+	arrangeIndex(total_thread_num, last_layer_start_index, start_leaf_node_per_thread.data());
 	if (assumed_thread_num < total_thread_num) {
 		start_leaf_node_per_thread.resize(total_thread_num + 1);
 		for (int i = assumed_thread_num + 1; i < start_leaf_node_per_thread.size(); ++i) {
 			start_leaf_node_per_thread[i] = start_leaf_node_per_thread[assumed_thread_num];
 		}
 	}
+	
 	for (int i = 0; i < total_thread_num; ++i) {
-		start_leaf_node_per_thread[i] += leaf_start_index + 1;
+		start_leaf_node_per_thread[i] += last_layer_start_index;
 	}
-	last_node_start_index = pow(2, (int)ceil(log2(triangle_num)));
+
 }
 
 void BVH::buildBVH(std::vector<AABB>* triangle_AABB)
@@ -62,35 +64,70 @@ void BVH::buildBVH(std::vector<AABB>* triangle_AABB)
 
 void BVH::updateBVH(std::vector<AABB>* aabb)
 {
-	this->triangle_AABB = triangle_AABB;
+	this->triangle_AABB = aabb;
 	setMortonCode();
 
+	if (triangle_AABB->size() <= assumed_thread_num / 2) {
+		initBVHRecursive(triangle_AABB, 1, 0, triangle_AABB->size());
+	}
+	else {
+		thread->assignTask(this, UPDATE_NODE_VALUE);
+		unsigned int start, end;
+		start = assumed_thread_num / 2;
+		end = assumed_thread_num;
+		for (unsigned int i = final_multi_thread_layers - 1; i >= 0; ++i) {
+			for (int i = start; i < end; ++i) {
+				obtainAABB(aabb_list[i], aabb_list[2 * i], aabb_list[2 * i + 1]);
+			}
+			start /= 2;
+			end /= 2;
+		}
+	}
 }
 
+
+
+//UPDATE_NODE_VALUE
 void BVH::updateNodeValue(int thread_No)
 {
 	
 	for (unsigned int i = start_leaf_node_per_thread[thread_No]; i < start_leaf_node_per_thread[thread_No + 1]; ++i) {
 		if (i >= aabb_list.size()) {
-			return;
+			break;
 		}
-			aabb_list[i] = triangle_AABB->data()[new2old[i- last_node_start_index]];
+		aabb_list[i] = triangle_AABB->data()[new2old[i- last_layer_start_index]];
 	}
 	
-	if (total_layers - 1 >= final_multi_thread_layers) {
+	if (total_layers >= final_multi_thread_layers) {
+		int q = aabb_list.size() - last_layer_start_index - leaf_start_index;
 		unsigned int end_index = start_leaf_node_per_thread[thread_No + 1] / 2;
 		for (unsigned int i = start_leaf_node_per_thread[thread_No] / 2; i < end_index; ++i) {
 			if (i < leaf_start_index) {
 				obtainAABB(aabb_list[i], aabb_list[2 * i], aabb_list[2 * i + 1]);
 			}
 			else {
-				aabb_list[i] = triangle_AABB->data()[new2old[]];
+				aabb_list[i] = triangle_AABB->data()[new2old[i+q]];
 			}
 		}
+		//recursiveUpdate(start_leaf_node_per_thread[thread_No] / 4, start_leaf_node_per_thread[thread_No + 1] / 4);
+
+		unsigned int start_index = start_leaf_node_per_thread[thread_No] / 4;
+		end_index = start_leaf_node_per_thread[thread_No + 1] / 4;
+		while (true)
+		{
+			if (start_index == end_index) {
+				break;
+			}
+			for (int i = start_index; i < end_index; ++i) {
+				obtainAABB(aabb_list[i], aabb_list[2 * i], aabb_list[2 * i + 1]);
+			}
+			start_index /= 2;
+			end_index /= 2;
+		}
 	}
-	
 
 }
+
 
 
 void BVH::obtainAABB(AABB& result, AABB& left, AABB& right)
@@ -106,9 +143,16 @@ void BVH::obtainAABB(AABB& result, AABB& left, AABB& right)
 	}
 }
 
-void BVH::recursiveUpdate(unsigned int start_index, unsigned int end_index, )
+void BVH::recursiveUpdate(unsigned int start_index, unsigned int end_index)
 {
+	if (start_index == end_index) {
+		return;
+	}
+	for (int i = start_index; i < end_index; ++i) {
+		obtainAABB(aabb_list[i], aabb_list[2 * i], aabb_list[2 * i + 1]);
+	}
 
+	recursiveUpdate(start_index / 2, end_index / 2);
 }
 
 

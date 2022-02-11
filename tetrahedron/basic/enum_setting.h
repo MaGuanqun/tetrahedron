@@ -53,7 +53,7 @@ enum ObjectFunc {
 };
 
 enum BVHFunc {
-    CAL_CENTER, CAL_MORTON
+    CAL_CENTER, CAL_MORTON, UPDATE_NODE_VALUE
 };
 
 enum RadixSortFunc {

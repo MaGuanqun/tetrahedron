@@ -247,6 +247,9 @@ job Thread::create_task(BVH* func, int thread_id, BVHFunc function_type)// int j
     case CAL_MORTON:
         k = job([func, thread_id]() {func->calMortonCode(thread_id); });
         break;
+    case UPDATE_NODE_VALUE:
+        k = job([func, thread_id]() {func->updateNodeValue(thread_id); });
+        break;
     }
     return k;
 }

@@ -55,11 +55,12 @@ private:
 	unsigned int assumed_thread_num;
 	std::vector<unsigned int>start_leaf_node_per_thread;
 	unsigned int triangle_num;
-	unsigned int last_node_start_index;
+	unsigned int last_layer_start_index;
 	void setLeafNode();
 	unsigned int total_layers;
 	unsigned int final_multi_thread_layers;
 
 
 	void obtainAABB(AABB& result, AABB& left, AABB& right);
+	void recursiveUpdate(unsigned int start_index, unsigned int end_index);
 };
