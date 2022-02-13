@@ -19,9 +19,9 @@ protected:
 
 	glm::vec3 wireframe_color;
 
-	void getAABB(AABB& target, AABB& aabb0, AABB& aabb1, AABB& aabb2);
-	void getAABB(AABB& target, AABB& aabb0, AABB& aabb1, double radius);
-	void getAABB(AABB& target, AABB& aabb0, AABB& aabb1);
+	void getAABB(double* target, double* aabb0, double* aabb1, double* aabb2);
+	void getAABB(double* target, double* aabb0, double* aabb1, double radius);
+	void getAABB(double* target, double* aabb0, double* aabb1);
 	Thread* thread;
 	void setOrder(bool* in_this_triangle, int count, int* index);
 	void setOrderEdge(bool* in_this_triangle, int count, int* index);	
@@ -34,9 +34,9 @@ public:
 	std::vector<int>neighbor_vertex;
 	void setWireframwColor(double* color);
 	double density;
-	std::vector<AABB>triangle_AABB;
-	std::vector<AABB>edge_AABB;
-	std::vector<AABB>vertex_AABB;
+	std::vector<std::array<double, 6>>triangle_AABB;
+	std::vector<std::array<double, 6>>edge_AABB;
+	std::vector<std::array<double, 6>>vertex_AABB;
 	std::vector<std::array<double, 3>> ori_vertices;
 
 	std::vector<double> PC_radius;

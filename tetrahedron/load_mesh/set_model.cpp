@@ -75,12 +75,16 @@ void SetModel::setBackMaterial(OriMesh& ori_mesh){
 
 void SetModel::getAABB()
 {
-	memcpy(aabb.max, &ori_mesh.vertices[0], 24);
-	memcpy(aabb.min, &ori_mesh.vertices[0], 24);
+	memcpy(aabb.data(), &ori_mesh.vertices[0], 24);
+	memcpy(aabb.data()+3, &ori_mesh.vertices[0], 24);
 	for (int i = 1; i < ori_mesh.vertices.size(); ++i) {
 		for (int j = 0; j < 3; ++j) {
-			aabb.max[j] = myMax(aabb.max[j], ori_mesh.vertices[i][j]);
-			aabb.min[j] = myMin(aabb.min[j], ori_mesh.vertices[i][j]);
+			if (aabb[j] > ori_mesh.vertices[i][j]) {
+				aabb[j] = ori_mesh.vertices[i][j];
+			}
+			if (aabb[j + 3] < ori_mesh.vertices[i][j]) {
+				aabb[j + 3] = ori_mesh.vertices[i][j];
+			}
 		}
 	}
 

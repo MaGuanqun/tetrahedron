@@ -92,12 +92,12 @@ void Tetrahedron::getVertexAABBPerThread(int thread_No, bool has_tolerance)
 	int* vertex_index_on_surface = mesh_struct.vertex_index_on_sureface.data();
 	if (has_tolerance) {
 		for (unsigned int i = mesh_struct.vertex_index_on_surface_begin_per_thread[thread_No]; i < index_end; ++i) {
-			vertex_AABB[i].obtainAABB((*vertex_render)[vertex_index_on_surface[i]].data(), (*vertex)[vertex_index_on_surface[i]].data(), tolerance);	// 
+			AABB::obtainAABB(vertex_AABB[i].data(),(*vertex_render)[vertex_index_on_surface[i]].data(), (*vertex)[vertex_index_on_surface[i]].data(), tolerance);	// 
 		}
 	}
 	else{
 		for (unsigned int i = mesh_struct.vertex_index_on_surface_begin_per_thread[thread_No]; i < index_end; ++i) {
-			vertex_AABB[i].obtainAABB((*vertex_render)[vertex_index_on_surface[i]].data(), (*vertex)[vertex_index_on_surface[i]].data(), 0.0);	// 
+			AABB::obtainAABB(vertex_AABB[i].data(), (*vertex_render)[vertex_index_on_surface[i]].data(), (*vertex)[vertex_index_on_surface[i]].data());	// 
 		}
 	}
 }
@@ -110,13 +110,13 @@ void Tetrahedron::getEdgeTriangleAABBPerThread(int thread_No)
 	unsigned int index_end = mesh_struct.edge_index_begin_per_thread[thread_No + 1];
 	for (unsigned int i = mesh_struct.edge_index_begin_per_thread[thread_No]; i < index_end; ++i) {
 		vertex_index = edge[i].data();
-		getAABB(edge_AABB[i], vertex_AABB[vertex_index[0]], vertex_AABB[vertex_index[1]]);
+		getAABB(edge_AABB[i].data(), vertex_AABB[vertex_index[0]].data(), vertex_AABB[vertex_index[1]].data());
 	}
 	std::array<int, 3>* face = mesh_struct.surface_triangle_index_in_order.data();
 	index_end = mesh_struct.face_index_begin_per_thread[thread_No + 1];
 	for (unsigned int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < index_end; ++i) {
 		vertex_index = face[i].data();
-		getAABB(triangle_AABB[i], vertex_AABB[vertex_index[0]], vertex_AABB[vertex_index[1]], vertex_AABB[vertex_index[2]]);
+		getAABB(triangle_AABB[i].data(), vertex_AABB[vertex_index[0]].data(), vertex_AABB[vertex_index[1]].data(), vertex_AABB[vertex_index[2]].data());
 	}
 }
 

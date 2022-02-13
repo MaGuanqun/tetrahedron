@@ -16,7 +16,7 @@ public:
 	void triangleHashing(int thread_No);
 	void buildSpatialHashing();
 	void setHashTogether(int thread_No);
-	void searchTriangle(AABB& aabb, unsigned int input_obj_No, unsigned int triangle_index,
+	void searchTriangle(double* aabb, unsigned int input_obj_No, unsigned int triangle_index,
 		std::vector<unsigned int>* obj_neighbor_index, bool is_collider, unsigned int thread_No);
 	void prifixSum1(int thread_No);
 	void prifixSum2(int thread_No);
@@ -43,9 +43,8 @@ private:
 	double cell_length;//this is the size of spatial hashing cell, = average edge length
 	unsigned int thread_num;
 
-	AABB scene_aabb;
-	std::vector<std::array<double, 3>>scene_aabb_max_thread;
-	std::vector<std::array<double, 3>>scene_aabb_min_thread;
+	double scene_aabb[6];
+	std::vector<std::array<double, 6>>scene_aabb_thread;
 	void getSceneAABB();
 	unsigned int cell_number[3];
 	unsigned int cell_num0_cell_num1;
@@ -66,13 +65,13 @@ private:
 	std::vector<unsigned int> triangle_begin_per_obj;
 	//std::vector<unsigned int> triangle_begin_per_tetrahedron;
 
-	void triangleHashingValue(AABB& aabb, std::vector<unsigned int>* spatial_hashing_triangle_index,
+	void triangleHashingValue(double* aabb, std::vector<unsigned int>* spatial_hashing_triangle_index,
 		std::vector<unsigned int>* spatial_hashing_value, unsigned int triangle_index, std::vector<unsigned int>* hash_value);
 
-	void triangleHashValue(AABB& aabb, unsigned int* spatial_hashing_triangle_index,
+	void triangleHashValue(double* aabb, unsigned int* spatial_hashing_triangle_index,
 		unsigned int* spatial_hashing_value, unsigned int triangle_index, unsigned int* spatial_hashing_obj_index, unsigned int obj_index);
 
-	void obtainTriangleHashingValue(AABB& aabb, std::vector<unsigned int>* hash_value);
+	void obtainTriangleHashingValue(double* aabb, std::vector<unsigned int>* hash_value);
 	RadixSort radix_sort;
 	void testRadixSort();
 

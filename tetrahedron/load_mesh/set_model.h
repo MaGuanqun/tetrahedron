@@ -14,7 +14,7 @@ public:
 		double scaler;
 	};
 
-	AABB aabb;
+	std::array<double,6> aabb;
 	OriMesh ori_mesh;
 	RegularizationInfo regularization_info;
 	void load_getAABB(std::string& path, int& index);

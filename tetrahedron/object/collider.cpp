@@ -88,12 +88,12 @@ void Collider::getVertexAABBPerThread(int thread_No, bool has_tolerance)
 	unsigned int end = mesh_struct.vertex_index_begin_per_thread[thread_No + 1];
 	if (has_tolerance) {
 		for (unsigned int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < end; ++i) {
-			vertex_AABB[i].obtainAABB((*vertex_render)[i].data(), (*vertex)[i].data(), tolerance);// 
+			AABB::obtainAABB(vertex_AABB[i].data(),(*vertex_render)[i].data(), (*vertex)[i].data(), tolerance);// 
 		}
 	}
 	else {
 		for (unsigned int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < end; ++i) {
-			vertex_AABB[i].obtainAABB((*vertex_render)[i].data(), (*vertex)[i].data(), 0.0);// 
+			AABB::obtainAABB(vertex_AABB[i].data(),(*vertex_render)[i].data(), (*vertex)[i].data());// 
 		}
 	}
 }
@@ -106,7 +106,8 @@ void Collider::getTriangleAABBPerThread(int thread_No)
 	unsigned int end = mesh_struct.face_index_begin_per_thread[thread_No + 1];
 	for (unsigned int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < end; ++i) {
 		vertex_index = face[i].data();
-		getAABB(triangle_AABB[i], vertex_AABB[vertex_index[0]], vertex_AABB[vertex_index[1]], vertex_AABB[vertex_index[2]]);
+		getAABB(triangle_AABB[i].data(), vertex_AABB[vertex_index[0]].data(), 
+			vertex_AABB[vertex_index[1]].data(), vertex_AABB[vertex_index[2]].data());
 	}
 }
 

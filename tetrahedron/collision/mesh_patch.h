@@ -13,7 +13,7 @@ public:
 	void findVertex(int thread_No);
 	void obtainAABB(int thread_No);
 
-	std::vector<std::vector<AABB>> patch_AABB;
+	std::vector<std::vector<std::array<double,6>>> patch_AABB;
 
 private:
 	std::vector<Cloth>* cloth;
@@ -43,9 +43,9 @@ private:
 		std::vector<int>& surface_vertex_index);
 	unsigned int total_obj_num;
 	unsigned int tetrahedron_end_index;
-	void getAABB(AABB& target, AABB& aabb0);
+	void getAABB(double* target, double* aabb0);
 
-	void obtainAABB(AABB* aabb, unsigned int start, unsigned int end, std::vector<unsigned int>* vertex_patch, AABB* vertex_aabb);
+	void obtainAABB(std::array<double,6>* aabb, unsigned int start, unsigned int end, std::vector<unsigned int>* vertex_patch, std::array<double, 6>* vertex_aabb);
 
 };
 

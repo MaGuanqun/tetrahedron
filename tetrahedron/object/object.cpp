@@ -13,33 +13,39 @@ void Object::setWireframwColor(double* color)
 	wireframe_color = glm::vec3(color[0], color[1], color[2]);
 }
 
-void Object::getAABB(AABB& target, AABB& aabb0, AABB& aabb1, AABB& aabb2)
+void Object::getAABB(double* target, double* aabb0, double* aabb1, double* aabb2)
 {
 	for (int i = 0; i < 3; ++i) {
-		target.min[i] = myMin(aabb0.min[i], aabb1.min[i]);
-		target.max[i] = myMax(aabb0.max[i], aabb1.max[i]);
-		if (target.min[i] > aabb2.min[i]) {
-			target.min[i] = aabb2.min[i];
-		}
-		if (target.max[i] < aabb2.max[i]) {
-			target.max[i] = aabb2.max[i];
-		}
+		target[i] = myMin(aabb0[i], aabb1[i]);		
+		if (target[i] > aabb2[i]) {
+			target[i] = aabb2[i];
+		}		
 	}	
-}
-
-void Object::getAABB(AABB& target, AABB& aabb0, AABB& aabb1)
-{
-	for (int i = 0; i < 3; ++i) {
-		target.min[i] = myMin(aabb0.min[i], aabb1.min[i]);
-		target.max[i] = myMax(aabb0.max[i], aabb1.max[i]);
+	for (int i = 3; i < 6; ++i) {
+		target[i] = myMax(aabb0[i], aabb1[i]);
+		if (target[i] < aabb2[i]) {
+			target[i] = aabb2[i];
+		}
 	}
 }
 
-void Object::getAABB(AABB& target, AABB& aabb0, AABB& aabb1, double radius)
+void Object::getAABB(double* target, double* aabb0, double* aabb1)
 {
 	for (int i = 0; i < 3; ++i) {
-		target.min[i] = myMin(aabb0.min[i], aabb1.min[i])-radius;
-		target.max[i] = myMax(aabb0.max[i], aabb1.max[i])+radius;
+		target[i] = myMin(aabb0[i], aabb1[i]);
+	}
+	for (int i = 3; i < 6; ++i) {
+		target[i] = myMax(aabb0[i], aabb1[i]);
+	}
+}
+
+void Object::getAABB(double* target, double* aabb0, double* aabb1, double radius)
+{
+	for (int i = 0; i < 3; ++i) {
+		target[i] = myMin(aabb0[i], aabb1[i]) - radius;
+	}
+	for (int i = 3; i < 6; ++i) {
+		target[i] = myMax(aabb0[i], aabb1[i]) + radius;
 	}
 }
 

@@ -12,6 +12,8 @@ void MeshPatch::initialPatch(std::vector<Cloth>* cloth, std::vector<Collider>* c
 	total_obj_num = cloth->size() + tetrahedron->size() + collider->size();
 	tetrahedron_end_index = cloth->size() + tetrahedron->size();
 	setInObjectData();
+
+	std::cout << "patch " << triangle_patch[0].size() << std::endl;
 }
 
 
@@ -96,10 +98,10 @@ void MeshPatch::findVertex(int thread_No)
 //PATCH_AABB
 void MeshPatch::obtainAABB(int thread_No)
 {
-	AABB* aabb;
+	std::array<double, 6>* aabb;
 	unsigned int start, end;
 	std::vector<unsigned int>* vertex_patch;
-	AABB* vertex_aabb;
+	std::array<double, 6>* vertex_aabb;
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		if (i < cloth->size()) {
 			vertex_aabb = cloth->data()[i].vertex_AABB.data();
@@ -119,13 +121,13 @@ void MeshPatch::obtainAABB(int thread_No)
 
 }
 
-void MeshPatch::obtainAABB(AABB* aabb, unsigned int start, unsigned int end, std::vector<unsigned int>* vertex_patch, 
-	AABB* vertex_aabb)
+void MeshPatch::obtainAABB(std::array<double, 6>* aabb, unsigned int start, unsigned int end, std::vector<unsigned int>* vertex_patch,
+	std::array<double, 6>* vertex_aabb)
 {
 	for (unsigned int i = start; i < end; ++i) {
 		aabb[i] = vertex_aabb[vertex_patch[i][0]];
 		for (unsigned int j = 1; j < vertex_patch[i].size(); ++j) {
-			getAABB(aabb[i], vertex_aabb[vertex_patch[i][j]]);
+			getAABB(aabb[i].data(), vertex_aabb[vertex_patch[i][j]].data());
 		}
 	}
 }
@@ -298,14 +300,16 @@ void MeshPatch::draw(Camera* camera)
 	
 }
 
-void MeshPatch::getAABB(AABB& target, AABB& aabb0)
+void MeshPatch::getAABB(double* target, double* aabb0)
 {
-	for (int i = 0; i < 3; ++i) {
-		if (target.min[i] > aabb0.min[i]) {
-			target.min[i] = aabb0.min[i];
+	for (unsigned int i = 0; i < 3; ++i) {
+		if (target[i] > aabb0[i]) {
+			target[i] = aabb0[i];
 		}
-		if (target.max[i] < aabb0.max[i]) {
-			target.max[i] = aabb0.max[i];
+	}
+	for (unsigned int i = 3; i < 6; ++i) {	
+		if (target[i] < aabb0[i]) {
+			target[i] = aabb0[i];
 		}
 	}
 }

@@ -143,6 +143,12 @@ dest[0]=0.5*(v0[0]+v1[0]);\
 dest[1]=0.5*(v0[1]+v1[1]);\
 dest[2]=0.5*(v0[2]+v1[2]);
 
+#undef AABB_CENTER
+#define AABB_CENTER(dest,v0)\
+dest[0]=0.5*(v0[0]+v0[3]);\
+dest[1]=0.5*(v0[1]+v0[4]);\
+dest[2]=0.5*(v0[2]+v0[5]);
+
 #undef DIFF_SIGN
 #define DIFF_SIGN(v0,v1) ((v0>0&&v1<0)||(v0<0||v1>0))
 
