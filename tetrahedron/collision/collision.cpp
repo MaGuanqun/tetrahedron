@@ -65,37 +65,36 @@ void Collision::initialNeighborPrimitive()
 
 void Collision::testBVHUpdate()
 {
-	BVH test_bvh;
-	test_bvh.init((*tetrahedron)[0].mesh_struct.triangle_indices.size(), (*tetrahedron)[0].mesh_struct.face_index_begin_per_thread, thread);
-	
-	test_bvh.updateBVH(&(*tetrahedron)[0].triangle_AABB);
-	int j = 0;
-
-	//for (int i = 0; i < test_bvh.triangle_node_index.size(); ++i) {
-	//	std::cout << test_bvh.triangle_node_index[i] << std::endl;
-	//}
-
-	//for (int i = 0; i < (*tetrahedron)[0].mesh_struct.triangle_indices.size(); ++i) {
-	//	if (!(test_bvh.aabb_list[test_bvh.triangle_node_index[i]] == obj_BVH[0].aabb_list[test_bvh.triangle_node_index[i]])) {
-	//	std::cout << test_bvh.aabb_list[i].max[0] << " " << test_bvh.aabb_list[i].max[1] << " " << test_bvh.aabb_list[i].max[2] << " "
-	//		<< test_bvh.aabb_list[i].min[0] << " " << test_bvh.aabb_list[i].min[1] << " " << test_bvh.aabb_list[i].min[2] << std::endl;
-	//	std::cout << obj_BVH[0].aabb_list[i].max[0] << " " << obj_BVH[0].aabb_list[i].max[1] << " " << obj_BVH[0].aabb_list[i].max[2] << " "
-	//		<< obj_BVH[0].aabb_list[i].min[0] << " " << obj_BVH[0].aabb_list[i].min[1] << " " << obj_BVH[0].aabb_list[i].min[2] << std::endl;
+	//BVH test_bvh;
+	//test_bvh.init((*tetrahedron)[0].mesh_struct.triangle_indices.size(), (*tetrahedron)[0].mesh_struct.face_index_begin_per_thread, thread);	
+	//test_bvh.updateBVH(&(*tetrahedron)[0].triangle_AABB);
+	//int j = 0;
+	////for (int i = 0; i < test_bvh.triangle_node_index.size(); ++i) {
+	////	std::cout << test_bvh.triangle_node_index[i] << std::endl;
+	////}
+	////for (int i = 0; i < (*tetrahedron)[0].mesh_struct.triangle_indices.size(); ++i) {
+	////	if (!(test_bvh.aabb_list[test_bvh.triangle_node_index[i]] == obj_BVH[0].aabb_list[test_bvh.triangle_node_index[i]])) {
+	////	std::cout << test_bvh.aabb_list[i].max[0] << " " << test_bvh.aabb_list[i].max[1] << " " << test_bvh.aabb_list[i].max[2] << " "
+	////		<< test_bvh.aabb_list[i].min[0] << " " << test_bvh.aabb_list[i].min[1] << " " << test_bvh.aabb_list[i].min[2] << std::endl;
+	////	std::cout << obj_BVH[0].aabb_list[i].max[0] << " " << obj_BVH[0].aabb_list[i].max[1] << " " << obj_BVH[0].aabb_list[i].max[2] << " "
+	////		<< obj_BVH[0].aabb_list[i].min[0] << " " << obj_BVH[0].aabb_list[i].min[1] << " " << obj_BVH[0].aabb_list[i].min[2] << std::endl;
+	////		j++;
+	////	}
+	////}
+	//for (int i = 1; i < test_bvh.aabb_list.size(); ++i) {
+	//	if (!(test_bvh.aabb_list[i] == obj_BVH[0].aabb_list[i])) {
+	//		std::cout << i << std::endl;
+	//		std::cout << test_bvh.aabb_list[i].max[0] << " " << test_bvh.aabb_list[i].max[1] << " " << test_bvh.aabb_list[i].max[2] << " "
+	//			<< test_bvh.aabb_list[i].min[0] << " " << test_bvh.aabb_list[i].min[1] << " " << test_bvh.aabb_list[i].min[2] << std::endl;
+	//		std::cout << obj_BVH[0].aabb_list[i].max[0] << " " << obj_BVH[0].aabb_list[i].max[1] << " " << obj_BVH[0].aabb_list[i].max[2] << " "
+	//			<< obj_BVH[0].aabb_list[i].min[0] << " " << obj_BVH[0].aabb_list[i].min[1] << " " << obj_BVH[0].aabb_list[i].min[2] << std::endl;
 	//		j++;
 	//	}
 	//}
-	for (int i = 1; i < test_bvh.aabb_list.size(); ++i) {
-		if (!(test_bvh.aabb_list[i] == obj_BVH[0].aabb_list[i])) {
-			std::cout << i << std::endl;
-			std::cout << test_bvh.aabb_list[i].max[0] << " " << test_bvh.aabb_list[i].max[1] << " " << test_bvh.aabb_list[i].max[2] << " "
-				<< test_bvh.aabb_list[i].min[0] << " " << test_bvh.aabb_list[i].min[1] << " " << test_bvh.aabb_list[i].min[2] << std::endl;
-			std::cout << obj_BVH[0].aabb_list[i].max[0] << " " << obj_BVH[0].aabb_list[i].max[1] << " " << obj_BVH[0].aabb_list[i].max[2] << " "
-				<< obj_BVH[0].aabb_list[i].min[0] << " " << obj_BVH[0].aabb_list[i].min[1] << " " << obj_BVH[0].aabb_list[i].min[2] << std::endl;
-			j++;
-		}
+	//std::cout <<j<<" "<< test_bvh.aabb_list.size() << " run test bvh update" << std::endl;
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		obj_BVH[i - tetrahedron_begin_obj_index].test(&tetrahedron->data()[0].triangle_AABB);
 	}
-	std::cout <<j<<" "<< test_bvh.aabb_list.size() << " run test bvh update" << std::endl;
-	
 }
 
 void Collision::initialTargetPos(std::vector<Cloth>* cloth,	std::vector<Tetrahedron>* tetrahedron, Thread* thread)
@@ -188,7 +187,7 @@ void Collision::buildBVH()
 		}
 	}
 
-	//testBVHUpdate();
+	testBVHUpdate();
 	//for (int i = 0; i < collider->size(); ++i) {
 	//	collider_BVH[i].buildBVH(&(*collider)[i].triangle_AABB);
 	//}

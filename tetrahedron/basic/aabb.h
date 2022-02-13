@@ -1,6 +1,60 @@
 #pragma once
 #include"global.h"
 
+//bool AABB_intersection(double* a, double* b)
+//{
+//	if (a[3] < b[0]) {
+//		return false;
+//	}
+//	if (a[0] > b[3]) {
+//		return false;
+//	}
+//	if (a[4] < b[1]) {
+//		return false;
+//	}
+//	if (a[1] > b[4]) {
+//		return false;
+//	}
+//	if (a[5] < b[2]) {
+//		return false;
+//	}
+//	if (a[2] > b[5]) {
+//		return false;
+//	}
+//	return true;
+//}
+//
+//void obtainAABB(double* result, double* a, double* b, double* c)
+//{
+//	for (int i = 0; i < 3; ++i) {
+//		result[i] = myMin(a[i], b[i]);
+//		if (result[i] > c[i]) {
+//			result[i] = c[i];
+//		}
+//	}
+//	for (int i = 3; i < 6; ++i) {
+//		result[i] = myMax(a[i], b[i]);
+//		if (result[i] < c[i]) {
+//			result[i] = c[i];
+//		}
+//	}
+//}
+//void obtainAABB(double* result, double* a, double* b)//
+//{
+//	for (int i = 0; i < 3; ++i) {
+//		result[i] = myMin(a[i], b[i]);
+//		result[i + 3] = myMax(a[i], b[i]);
+//	}
+//}
+//
+//void obtainAABB(double* result, double* a, double* b, double tolerance)//
+//{
+//	for (int i = 0; i < 3; ++i) {
+//		result[i] = myMin(a[i], b[i]) - tolerance;
+//		result[i + 3] = myMax(a[i], b[i]) + tolerance;
+//	}
+//}
+
 struct AABB
 {
 	double min[3];

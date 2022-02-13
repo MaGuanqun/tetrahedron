@@ -14,10 +14,12 @@ public:
 	~BVH();
 
 	void init(int triangle_num, std::vector<unsigned int>& triangle_index_begin_per_thread, Thread* thread);
+	//single thread
 	void buildBVH(std::vector<AABB>* triangle_AABB);
 	void calCenterPerThread(int thread_No);
 	void calMortonCode(int thread_No);
 	void search(AABB& aabb, unsigned int compare_index, bool search_same_object, std::vector<unsigned int>* neighbor_list, unsigned int n, unsigned int b, unsigned int e);
+	//multi thread
 	void updateBVH(std::vector<AABB>* aabb);
 	void updateNodeValue(int thread_No);
 	void updateNodeValueLastLayer(int thread_No);
@@ -26,7 +28,7 @@ public:
 
 
 	std::vector<unsigned int> triangle_node_index; //triangle -> node index
-
+	void test(std::vector<AABB>* aabb);
 private:
 
 	std::vector<std::array<double, 3>> aabb_center;
@@ -73,4 +75,8 @@ private:
 	bool* is_node_leaf;
 
 	void recordNodeInfo(int node_index, int b, int e);
+
+	void test_buildBVH(std::vector<AABB>* triangle_AABB);
+	void test_updateBVH(std::vector<AABB>* triangle_AABB);
+	double v_max[3];
 };
