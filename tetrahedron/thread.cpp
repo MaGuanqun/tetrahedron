@@ -263,6 +263,9 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     job k;
     switch (function_type)
     {
+    case FIND_PATCH_PAIRS:
+        k = job([func, thread_id]() {func->findAllPatchPairs(thread_id); });
+        break;
     case FIND_TRIANGLE_PAIRS:
         k = job([func, thread_id]() {func->findAllTrianglePairs(thread_id); });
         break;
@@ -495,13 +498,19 @@ job Thread::create_task(MeshPatch* func, int thread_id, MeshPatchFunc function_t
 {
     job k;
     switch (function_type)
-    {
-    case FIND_VERTEX:
-        k = job([func, thread_id]() {func->findVertex(thread_id); });
-        break;
+    {  
     case PATCH_AABB:
         k = job([func, thread_id]() {func->obtainAABB(thread_id); });
         break;
+    case DECIDE_TRIANGLE_INDEX_SIZE:
+        k = job([func, thread_id]() {func->decideTriangleIndexSize(thread_id); });
+        break;
+    case FIND_TRIANGLE_INDEX:
+        k = job([func, thread_id]() {func->findNotedTrueTriangleIndex(thread_id); });
+        break;
+    case FIND_VERTEX:
+        k = job([func, thread_id]() {func->findVertex(thread_id); });
+        break;   
     }
     return k;
 }

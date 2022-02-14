@@ -5,6 +5,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 {
 	tetrahedron_begin_obj_index = cloth->size();
 	total_obj_num = cloth->size() + tetrahedron->size();
+	total_obj_with_collider = total_obj_num + collider->size();
 	this->cloth = cloth;
 	this->collider = collider;
 	this->tetrahedron = tetrahedron;
@@ -132,14 +133,21 @@ void Collision::initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* col
 {
 	obj_BVH.resize(total_obj_num);
 	//collider_BVH.resize(collider->size());
+
 	for (int i = 0; i < total_obj_num; ++i) {
-		if (i < tetrahedron_begin_obj_index) {
-			obj_BVH[i].init((*cloth)[i].mesh_struct.faces.size(), (*cloth)[i].mesh_struct.face_index_begin_per_thread, thread);
-		}
-		else {
-			obj_BVH[i].init((*tetrahedron)[i- tetrahedron_begin_obj_index].mesh_struct.triangle_indices.size(), (*tetrahedron)[i- tetrahedron_begin_obj_index].mesh_struct.face_index_begin_per_thread, thread);
-		}
+		obj_BVH[i].init(mesh_patch.patch_AABB[i].size(), mesh_patch.patch_index_start_per_thread[i], thread);
+		
 	}
+
+
+	//for (int i = 0; i < total_obj_num; ++i) {
+	//	if (i < tetrahedron_begin_obj_index) {
+	//		obj_BVH[i].init((*cloth)[i].mesh_struct.faces.size(), (*cloth)[i].mesh_struct.face_index_begin_per_thread, thread);
+	//	}
+	//	else {
+	//		obj_BVH[i].init((*tetrahedron)[i- tetrahedron_begin_obj_index].mesh_struct.triangle_indices.size(), (*tetrahedron)[i- tetrahedron_begin_obj_index].mesh_struct.face_index_begin_per_thread, thread);
+	//	}
+	//}
 	//for (int i = 0; i < collider->size(); ++i) {
 	//	collider_BVH[i].init((*collider)[i].mesh_struct.faces.size(), (*collider)[i].mesh_struct.face_index_begin_per_thread, thread);
 	//}
@@ -164,6 +172,7 @@ void Collision::getAABB()
 	for (int i = 0; i < tetrahedron->size(); ++i) {
 		(*tetrahedron)[i].obtainAABB(true);
 	}
+	thread->assignTask(&mesh_patch, PATCH_AABB);
 }
 
 void Collision::getAABBWithoutTolerance()
@@ -181,16 +190,18 @@ void Collision::getAABBWithoutTolerance()
 
 void Collision::buildBVH()
 {
+	double* aabb;
 	for (int i = 0; i < total_obj_num; ++i) {
 		if (i < tetrahedron_begin_obj_index) {
-			obj_BVH[i].buildBVH((*cloth)[i].triangle_AABB.data());
+			aabb = cloth->data()[i].obj_aabb;
 		}
 		else {
-			obj_BVH[i].buildBVH((*tetrahedron)[i- tetrahedron_begin_obj_index].triangle_AABB.data());
+			aabb = tetrahedron->data()[i-tetrahedron_begin_obj_index].obj_aabb;
 		}
+		obj_BVH[i].updateBVH(mesh_patch.patch_AABB[i].data(),mesh_patch.patch_is_intersect[i], aabb);		
 	}
 
-	testBVHUpdate();
+	//testBVHUpdate();
 	//for (int i = 0; i < collider->size(); ++i) {
 	//	collider_BVH[i].buildBVH(&(*collider)[i].triangle_AABB);
 	//}
@@ -201,20 +212,15 @@ void Collision::globalCollision()
 {
 	getAABB();
 	time_t t1 = clock();
-	if (use_BVH) {
-		///for (int i = 0; i < 100; ++i) {
-			buildBVH();
-		//}
-	}
-	else {		
+	getSceneAABB();
+	buildBVH();	
 		//for (int i = 0; i < 100; ++i) {
-			spatial_hashing.buildSpatialHashing();
+	spatial_hashing.buildSpatialHashing();
 		//}				
-	}
 	//std::cout << "build " << clock() - t1 << std::endl;
 	//t1 = clock();
 	//for (int i = 0; i < 100; ++i) {
-		thread->assignTask(this, FIND_TRIANGLE_PAIRS);
+	thread->assignTask(this, FIND_TRIANGLE_PAIRS);
 	//}
 	//std::cout << "find triangle pair " << clock() - t1 << std::endl;
 
@@ -245,13 +251,11 @@ void Collision::testCulling()
 void Collision::collisionCulling()
 {
 	getAABB();
-	if (use_BVH) {
-		buildBVH();
-	}
-	else {
-		spatial_hashing.buildSpatialHashing();
-	}	//
-		
+	getSceneAABB();
+	buildBVH();
+	thread->assignTask(this, FIND_PATCH_PAIRS);
+	mesh_patch.test();
+	spatial_hashing.buildSpatialHashing();	
 	
 	//for (int i = 0; i < collider->size(); ++i) {
 	//	thread->assignTask(&(*collider)[i].mesh_struct, FACE_NORMAL);
@@ -267,6 +271,39 @@ void Collision::collisionCulling()
 	//testCulling();
 }
 
+
+
+void Collision::getSceneAABB()
+{
+	memset(scene_aabb + 3, 0xFE, 24); //set double to -5.31401e+303
+	memset(scene_aabb, 0x7F, 24); //set double to 1.38242e+306
+	double* aabb_;
+	for (unsigned int i = 0; i < total_obj_with_collider; ++i) {
+		if (i < tetrahedron_begin_obj_index) {
+			aabb_ = cloth->data()[i].obj_aabb;
+		}
+		else if (i < total_obj_num) {
+			aabb_ = tetrahedron->data()[i- tetrahedron_begin_obj_index].obj_aabb;
+		}
+		else {
+			aabb_ = collider->data()[i - total_obj_num].obj_aabb;
+		}
+		for (unsigned int j = 0; j < 3; ++j) {
+			if (scene_aabb[j] > aabb_[j]) {
+				scene_aabb[j] = aabb_[j];
+			}
+		}
+		for (unsigned int j = 3; j < 6; ++j) {
+			if (scene_aabb[j] < aabb_[j]) {
+				scene_aabb[j] = aabb_[j];
+			}
+		}
+	}
+	for (int i = 0; i < 3; ++i) {
+		scene_aabb[i + 3] += 0.1;
+		scene_aabb[i] -= 0.1;
+	}
+}
 
 void Collision::globalCollisionTime()
 {
@@ -1544,6 +1581,14 @@ void Collision::test()
 }
 
 
+void Collision::searchPatch(double* aabb, unsigned int compare_index, unsigned int obj_No, bool& intersect)
+{	
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		if (obj_BVH[i].searchIfPatchIntersect(aabb, compare_index, i == obj_No, 1, 0, mesh_patch.patch_AABB[i].size())) {
+			intersect = true;
+		}	
+	}
+}
 
 void Collision::searchTriangle(double* aabb, unsigned int compare_index, unsigned int obj_No, std::vector<std::vector<unsigned int>>* obj_neighbor_index,
 	std::vector<std::vector<unsigned int>>* collider_neighbor_index, bool is_collider)
@@ -1577,6 +1622,23 @@ void Collision::searchTriangle(double* aabb, unsigned int compare_index, unsigne
 	//	collider_BVH[i].search(aabb, compare_index, false, &((*collider_neighbor_index)[i]), 1, 0, (*collider)[i].triangle_AABB.size());
 	//}
 }
+
+//FIND_PATCH_PAIRS
+void Collision::findAllPatchPairs(int thread_No)
+{
+	unsigned int* thread_begin;
+	unsigned int end;
+	unsigned int obj_No;
+
+	for (unsigned int i = 0; i < total_obj_with_collider; ++i) {
+		thread_begin = mesh_patch.patch_index_start_per_thread[i].data();
+		end = thread_begin[thread_No + 1];
+		for (unsigned int j = thread_begin[thread_No]; j < end; ++j) {
+			searchPatch(mesh_patch.patch_AABB[i][j].data(), j, i, mesh_patch.patch_is_intersect[i][j]);
+		}
+	}
+}
+
 
 
 //FIND_TRIANGLE_PAIRS

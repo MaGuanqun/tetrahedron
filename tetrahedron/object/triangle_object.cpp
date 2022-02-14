@@ -93,3 +93,4 @@ void TriangleObject::reset()
 //	*object_shader_front = Shader("./shader/object_triangle.vs", "./shader/object_triangle.fs");
 //}
 
+

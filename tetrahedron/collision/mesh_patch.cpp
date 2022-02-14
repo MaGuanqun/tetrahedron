@@ -1,6 +1,10 @@
 #include"mesh_patch.h"
 
-
+MeshPatch::~MeshPatch()
+{
+	delete[] patch_is_intersect;
+	delete shader;
+}
 
 void MeshPatch::initialPatch(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron,
 	Thread* thread)//std::vector<std::vector<std::vector<unsigned int>>>* triangle_patch, std::vector<std::vector<std::vector<unsigned int>>>* patch_vertex
@@ -11,6 +15,7 @@ void MeshPatch::initialPatch(std::vector<Cloth>* cloth, std::vector<Collider>* c
 	this->thread = thread;
 	total_obj_num = cloth->size() + tetrahedron->size() + collider->size();
 	tetrahedron_end_index = cloth->size() + tetrahedron->size();
+	total_thread_num = thread->thread_num;
 	setInObjectData();
 
 	std::cout << "patch " << triangle_patch[0].size() << std::endl;
@@ -36,29 +41,55 @@ void MeshPatch::findVertex()
 	patch_index_start_per_thread.resize(triangle_patch.size());
 	patch_vertex.resize(triangle_patch.size());
 	for (unsigned int i = 0; i < patch_index_start_per_thread.size(); ++i) {
-		patch_index_start_per_thread[i].resize(thread->thread_num + 1);
+		patch_index_start_per_thread[i].resize(total_thread_num + 1);
 		patch_vertex.data()[i].resize(triangle_patch.data()[i].size());
 		for (unsigned int j = 0; j < patch_vertex.data()[i].size(); ++j) {
 			patch_vertex.data()[i][j].reserve(triangle_patch.data()[i][j].size());
 		}
 	}
-
+	
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
-		arrangeIndex(thread->thread_num, triangle_patch.data()[i].size(), patch_index_start_per_thread[i].data());
+		arrangeIndex(total_thread_num, triangle_patch.data()[i].size(), patch_index_start_per_thread[i].data());
 	}
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
-		arrangeIndex(thread->thread_num, triangle_patch.data()[i+cloth->size()].size(), patch_index_start_per_thread[i+cloth->size()].data());
+		arrangeIndex(total_thread_num, triangle_patch.data()[i+cloth->size()].size(), patch_index_start_per_thread[i+cloth->size()].data());
 	}
 	for (unsigned int i = 0; i < collider->size(); ++i) {
-		arrangeIndex(thread->thread_num, triangle_patch.data()[i + cloth->size()+tetrahedron->size()].size(), 
+		arrangeIndex(total_thread_num, triangle_patch.data()[i + cloth->size()+tetrahedron->size()].size(), 
 			patch_index_start_per_thread[i + cloth->size() + tetrahedron->size()].data());
 	}
 	thread->assignTask(this, FIND_VERTEX);
 	patch_AABB.resize(total_obj_num);
+	patch_is_intersect=new bool*[total_obj_num];
 	for (int i = 0; i < total_obj_num; ++i) {
 		patch_AABB[i].resize(patch_vertex[i].size());
+		patch_is_intersect[i]=new bool[patch_vertex[i].size()];
 	}
 	thread->assignTask(this, PATCH_AABB);
+	
+	triangle_index_noted_as_true.resize(total_obj_num);
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		triangle_index_noted_as_true[i].reserve(cloth->data()[i].mesh_struct.triangle_indices.size());
+	}
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		triangle_index_noted_as_true[i + cloth->size()].reserve(tetrahedron->data()[i].mesh_struct.triangle_indices.size());
+	}
+	for (unsigned int i = 0; i < collider->size(); ++i) {
+		triangle_index_noted_as_true[i + cloth->size() + tetrahedron->size()].reserve(collider->data()[i].mesh_struct.triangle_indices.size());
+	}
+	triangle_size_start_per_thread.resize(total_obj_num); 
+	triangle_index_noted_begin_per_thread.resize(total_obj_num);
+	//triangle_patch_noted_true.resize(total_obj_num);
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		//triangle_patch_noted_true[i].resize(total_thread_num);
+		
+		triangle_size_start_per_thread[i].resize(total_thread_num+1,0);
+		triangle_index_noted_begin_per_thread[i].resize(total_thread_num+1,0);
+		//for (int j = 0; j < total_thread_num; ++j) {			
+		//		triangle_patch_noted_true[i][j].reserve(triangle_patch[i].size());
+		//}
+	}
+	
 }
 
 //FIND_VERTEX
@@ -117,6 +148,7 @@ void MeshPatch::obtainAABB(int thread_No)
 		end = patch_index_start_per_thread[i][thread_No + 1];
 		vertex_patch = patch_vertex.data()[i].data();
 		obtainAABB(aabb, start, end, vertex_patch, vertex_aabb);
+		memset(patch_is_intersect[i] + start, 0, (end - start));
 	}
 
 }
@@ -277,15 +309,15 @@ void MeshPatch::test(unsigned int obj_index, unsigned int tetrahedron_start_inde
 	}
 }
 
-void MeshPatch::test()
-{
-	for (int i = 0; i < triangle_patch.data()[0].size(); ++i) {
-		for (int j = 0; j < triangle_patch.data()[0][i].size(); ++j) {
-			std::cout << triangle_patch.data()[0][i][j] << " ";
-		}
-		std::cout << std::endl;
-	}
-}
+//void MeshPatch::test()
+//{
+//	for (int i = 0; i < triangle_patch.data()[0].size(); ++i) {
+//		for (int j = 0; j < triangle_patch.data()[0][i].size(); ++j) {
+//			std::cout << triangle_patch.data()[0][i][j] << " ";
+//		}
+//		std::cout << std::endl;
+//	}
+//}
 
 void MeshPatch::draw(Camera* camera)
 {	
@@ -312,4 +344,103 @@ void MeshPatch::getAABB(double* target, double* aabb0)
 			target[i] = aabb0[i];
 		}
 	}
+}
+
+void MeshPatch::findAllNotedTrueTriangle()
+{
+	thread->assignTask(this, DECIDE_TRIANGLE_INDEX_SIZE);
+	for (unsigned int j = 0; j < total_obj_num; ++j) {
+		for (unsigned int i = 2; i < total_thread_num + 1; ++i) {
+			triangle_size_start_per_thread[j][i] += triangle_size_start_per_thread[j][i - 1];
+		}
+		triangle_index_noted_as_true[j].resize(triangle_size_start_per_thread[j][total_thread_num]);
+	}
+
+	thread->assignTask(this, FIND_TRIANGLE_INDEX);
+
+	for (unsigned int j = 0; j < total_obj_num; ++j) {
+		arrangeIndex(total_thread_num, triangle_index_noted_as_true[j].size(), triangle_index_noted_begin_per_thread[j].data());
+	}
+}
+
+//decide noted true triangle size
+//DECIDE_TRIANGLE_INDEX_SIZE
+void MeshPatch::decideTriangleIndexSize(int thread_No)
+{
+	unsigned int end;
+	bool* is_intersect;
+	unsigned int* tri_size;
+	//std::vector<unsigned int>* patch;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		tri_size = &triangle_size_start_per_thread[i][thread_No+1];
+		(*tri_size) = 0;
+		is_intersect = patch_is_intersect[i];
+		end = patch_index_start_per_thread[i][thread_No + 1];
+		//patch = &triangle_patch_noted_true[i][thread_No];
+		//patch->clear();
+		for (int j = patch_index_start_per_thread[i][thread_No]; j < end; ++j) {
+			if (is_intersect[j]) {
+				//patch->push_back(j);
+				(*tri_size) += triangle_patch[i][j].size();
+			}
+		}
+	}
+}
+
+//FIND_TRIANGLE_INDEX
+void MeshPatch::findNotedTrueTriangleIndex(int thread_No)
+{
+	unsigned int end;
+	bool* is_intersect;
+	unsigned int* tri_size;
+	unsigned int* tri_start;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		tri_size = &triangle_size_start_per_thread[i][thread_No + 1];
+		(*tri_size) = 0;
+		is_intersect = patch_is_intersect[i];
+		end = patch_index_start_per_thread[i][thread_No + 1];
+		tri_start = triangle_index_noted_as_true[i].data() + triangle_size_start_per_thread[i][thread_No];
+		for (int j = patch_index_start_per_thread[i][thread_No]; j < end; ++j) {
+			if (is_intersect[j]) {
+				memcpy(tri_start, triangle_patch[i][j].data(), 4 * triangle_patch[i][j].size());
+			}
+		}
+	}
+}
+
+
+void MeshPatch::findAllNotedTrueTriangleSingleThread()
+{
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		triangle_index_noted_as_true[i].clear();
+		for (int j = 0; j < triangle_patch[i].size(); ++j) {
+			if (patch_is_intersect[i][j]) {
+				triangle_index_noted_as_true[i].insert(triangle_index_noted_as_true[i].end(), triangle_patch[i][j].begin(),
+					triangle_patch[i][j].end());
+			}
+		}
+	}
+}
+
+void MeshPatch::test()
+{
+	time_t t = clock();
+	//for (unsigned int i = 0; i < 1000; ++i) {
+		findAllNotedTrueTriangleSingleThread();
+	//}
+	std::vector<std::vector<unsigned int>> triangle_index_noted_as_true_;
+	triangle_index_noted_as_true_ = triangle_index_noted_as_true;
+
+	findAllNotedTrueTriangle();
+	for (int i = 0; i < total_obj_num; ++i) {
+		if (triangle_index_noted_as_true_[i].size() != triangle_index_noted_as_true[i].size()) {
+			std::cout << "error size"<< triangle_index_noted_as_true_[i].size()<<" "<< triangle_index_noted_as_true[i].size() << std::endl;
+		}
+		for (int j = 0; j < triangle_index_noted_as_true_[i].size(); ++j) {
+			if (triangle_index_noted_as_true_[i][j] != triangle_index_noted_as_true[i][j]) {
+				std::cout << " error index " << triangle_index_noted_as_true_[i][j] << " " << triangle_index_noted_as_true[i][j] << std::endl;
+			}
+		}
+	}
+	std::cout<<"finished " << triangle_index_noted_as_true_[0].size() << std::endl;
 }

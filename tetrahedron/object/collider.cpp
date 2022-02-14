@@ -39,6 +39,7 @@ void Collider::loadMesh(OriMesh& ori_mesh, Thread* thread)
 {
 	this->thread = thread;
 	total_thread_num = std::thread::hardware_concurrency();
+	obj_aabb_per_thread.resize(total_thread_num);
 	setMeshStruct(ori_mesh);
 	mesh_struct.thread = thread;
 	mesh_struct.initialNormalSize();
@@ -54,6 +55,7 @@ void Collider::loadMesh(OriMesh& ori_mesh, Thread* thread)
 	ori_vertices = mesh_struct.vertex_position;
 	triangle_AABB.resize(mesh_struct.faces.size());
 	vertex_AABB.resize(mesh_struct.vertex_position.size());
+	
 }
 
 void Collider::setMeshStruct(OriMesh& ori_mesh)
@@ -76,6 +78,8 @@ void Collider::obtainAABB(bool has_tolerace)
 		thread->assignTask(this, VERTEX_AABB_WITHOUT_TOLERANCE);
 	}
 	thread->assignTask(this, EDGE_TRIANGLE_AABB);
+
+	combineObjAABB();
 }
 
 
@@ -83,17 +87,41 @@ void Collider::obtainAABB(bool has_tolerace)
 //VERTEX_AABB_WITHOUT_TOLERANCE
 void Collider::getVertexAABBPerThread(int thread_No, bool has_tolerance)
 {
+	double* aabb = obj_aabb_per_thread[thread_No].data();
+	memset(aabb + 3, 0xFE, 24); //set double to -5.31401e+303
+	memset(aabb, 0x7F, 24); //set double to 1.38242e+306
+
 	std::vector<std::array<double, 3>>* vertex_render = &mesh_struct.vertex_for_render;
 	std::vector<std::array<double, 3>>* vertex = &mesh_struct.vertex_position;
 	unsigned int end = mesh_struct.vertex_index_begin_per_thread[thread_No + 1];
 	if (has_tolerance) {
 		for (unsigned int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < end; ++i) {
 			AABB::obtainAABB(vertex_AABB[i].data(),(*vertex_render)[i].data(), (*vertex)[i].data(), tolerance);// 
+			for (unsigned int j = 0; j < 3; ++j){
+				if (aabb[j] > vertex_AABB[i][j]) {
+					aabb[j] = vertex_AABB[i][j];
+				}
+			}
+			for (unsigned int j = 3; j < 6; ++j){
+				if (aabb[j] < vertex_AABB[i][j]) {
+					aabb[j] = vertex_AABB[i][j];
+				}
+			}
 		}
 	}
 	else {
 		for (unsigned int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < end; ++i) {
 			AABB::obtainAABB(vertex_AABB[i].data(),(*vertex_render)[i].data(), (*vertex)[i].data());// 
+			for (unsigned int j = 0; j < 3; ++j){
+				if (aabb[j] > vertex_AABB[i][j]) {
+					aabb[j] = vertex_AABB[i][j];
+				}
+			}
+			for (unsigned int j = 3; j < 6; ++j){
+				if (aabb[j] < vertex_AABB[i][j]) {
+					aabb[j] = vertex_AABB[i][j];
+				}
+			}
 		}
 	}
 }

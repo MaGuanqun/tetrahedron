@@ -51,7 +51,6 @@ void SpatialHashing::setInObject(std::vector<Cloth>* cloth, std::vector<Collider
 	this->thread = thread;
 	thread_num = thread->thread_num;
 	scene_aabb_thread.resize(thread_num);
-
 	if (for_construct_patch) {
 		collider_begin_obj_index = cloth->size() + tetrahedron->size();
 		triangle_begin_per_obj.resize(cloth->size() + tetrahedron->size() + collider->size() + 1);
@@ -240,6 +239,18 @@ void SpatialHashing::testRadixSort()
 	
 }
 
+void SpatialHashing::setSpatialHashingPatch(double* scene_aabb)
+{
+	memcpy(this->scene_aabb, scene_aabb,48);
+	for (unsigned int i = 0; i < 3; ++i) {
+		cell_number[i] = (unsigned int)floor((scene_aabb[i + 3] - scene_aabb[i]) / cell_length) + 1;
+		hash_max_index[i] = cell_number[i] - 1;
+	}
+	cell_num0_cell_num1 = cell_number[0] * cell_number[1];
+	hash_table_size = cell_number[0] * cell_number[1] * cell_number[2];
+	memset(spatial_hashing_value, -1, 4 * actual_hash_value_count);
+}
+
 void SpatialHashing::setSpatialHashing()
 {
 	getSceneAABB();
@@ -274,7 +285,11 @@ void SpatialHashing::buildSpatialHashing()
 	}
 }
 
+void SpatialHashing::buildSpatialHashingPatchTriangle(double* scene_aabb)
+{
+	setSpatialHashingPatch(scene_aabb);
 
+}
 
 void SpatialHashing::findPatch(std::vector<std::vector<std::vector<unsigned int>>>* triangle_patch_)
 {
@@ -804,22 +819,17 @@ void SpatialHashing::setHashTogether(int thread_No)
 	//memcpy(&spatial_hashing_triangle_index[hash_value_begin[thread_No]], spatial_hashing_triangle_index_per_thread[thread_No].data(), 4 * spatial_hashing_value_per_thread[thread_No].size());
 }
 
+//PATCH_TRIANGLE_HASHING
+//void SpatialHashing::patchTriangleHashing(int thread_No)
+//{
+//
+//}
 
 //TRIANGLE_HASHING
 void SpatialHashing::triangleHashing(int thread_No)
 {
 	unsigned int* triangle_begin;
 	std::array<double,6>* aabb;
-	//std::vector<unsigned int>* spatial_hashing_value_;
-	//std::vector<unsigned int>* spatial_hashing_obj_;
-	//std::vector<unsigned int>* spatial_hashing_triangle_;
-	//std::vector<unsigned int>* hash_value;
-	//spatial_hashing_obj_ = &spatial_hashing_obj_index_per_thread[thread_No];
-	//spatial_hashing_triangle_ = &spatial_hashing_triangle_index_per_thread[thread_No];
-	//spatial_hashing_value_ = &spatial_hashing_value_per_thread[thread_No];
-	//spatial_hashing_obj_->clear();
-	//spatial_hashing_triangle_->clear();
-	//spatial_hashing_value_->clear();
 	int vector_size;
 	unsigned int triangle_index_total;
 	unsigned int triangle_end;

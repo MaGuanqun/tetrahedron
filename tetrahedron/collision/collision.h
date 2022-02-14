@@ -36,6 +36,7 @@ public:
 	void test();
 	void collisionCulling();
 	void globalCollisionTime();
+	void findAllPatchPairs(int thread_No);
 	struct TargetPosition
 	{
 		std::vector<std::vector<std::array<double, 3>>>b_sum; // add on the b vector in projectDynamic.cpp
@@ -80,9 +81,13 @@ public:
 	size_t* time_stamp;
 	void drawMeshPatch(Camera* camera);
 
+	void getSceneAABB();
+
 private:
+
 	unsigned int tetrahedron_begin_obj_index;
-	unsigned int total_obj_num;
+	unsigned int total_obj_num;//except collider
+	unsigned int total_obj_with_collider;// include collider
 
 	unsigned int thread_num;
 	std::vector<BVH> obj_BVH; //cloth + tetrahedron
@@ -185,5 +190,7 @@ private:
 	void getAABBWithoutTolerance();
 
 	void testBVHUpdate();
+	void searchPatch(double* aabb, unsigned int compare_index, unsigned int obj_No, bool& intersect);
 
+	double scene_aabb[6];
 };

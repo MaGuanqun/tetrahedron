@@ -29,6 +29,8 @@ public:
 
 	void findPatch(std::vector<std::vector<std::vector<unsigned int>>>* triangle_patch_);	
 
+	void buildSpatialHashingPatchTriangle(double* scene_aabb);
+
 private:
 	void deleteArray();
 	Thread* thread;
@@ -50,6 +52,7 @@ private:
 	unsigned int cell_num0_cell_num1;
 	unsigned int hash_max_index[3];
 	void setSpatialHashing();
+	void setSpatialHashingPatch(double* scene_aabb);
 	//std::vector<std::vector<std::array<int, 3>>> spatial_hashing_triangle_per_thread;
 	//std::vector<std::array<int, 3>> spatial_hashing_triangle;
 

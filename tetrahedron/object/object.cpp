@@ -8,6 +8,23 @@ void Object::genBuffer()
 }
 
 
+void Object::combineObjAABB()
+{
+	memcpy(obj_aabb, obj_aabb_per_thread[0].data(), 48);
+	for (unsigned int i = 1; i < total_thread_num; ++i) {
+		for (unsigned int j = 0; j < 3; ++j) {
+			if (obj_aabb[j] > obj_aabb_per_thread[i][j]) {
+				obj_aabb[j] = obj_aabb_per_thread[i][j];
+			}
+		}
+		for (unsigned int j = 3; j < 6; ++j) {
+			if (obj_aabb[j] < obj_aabb_per_thread[i][j]) {
+				obj_aabb[j] = obj_aabb_per_thread[i][j];
+			}
+		}
+	}
+}
+
 void Object::setWireframwColor(double* color)
 {
 	wireframe_color = glm::vec3(color[0], color[1], color[2]);

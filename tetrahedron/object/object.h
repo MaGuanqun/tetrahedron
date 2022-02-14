@@ -27,6 +27,10 @@ protected:
 	void setOrderEdge(bool* in_this_triangle, int count, int* index);	
 	void setRepresentativeEdge(std::vector<MeshStruct::Face>& face, std::vector<MeshStruct::Edge>& edge);
 	void setRepresentativeVertex(std::vector<std::array<int, 3>>& face, std::vector<MeshStruct::Vertex>& vertex);
+
+	std::vector<std::array<double, 6>> obj_aabb_per_thread;
+
+	void combineObjAABB();
 private:
 public:
 	double mass;
@@ -47,5 +51,7 @@ public:
 	std::vector<int> representative_edge_num;
 	std::vector<int> edge_from_rep_triangle_index;
 	std::vector<std::vector<std::vector<unsigned int>>>triangle_neighbor_obj_triangle;
+
+	double obj_aabb[6];
 
 };

@@ -17,7 +17,6 @@ void BVH::init(int triangle_num, std::vector<unsigned int>&triangle_index_begin_
 	morton_list.resize(triangle_num);
 	this->triangle_index_begin_per_thread = triangle_index_begin_per_thread;
 	total_thread_num = std::thread::hardware_concurrency();
-	aabb_per_thread.resize(total_thread_num);
 	this->thread = thread;
 	new2old.resize(triangle_num);
 	old2new.resize(triangle_num);	
@@ -66,17 +65,21 @@ void BVH::setLeafNode()
 	
 }
 
-void BVH::buildBVH(std::array<double, 6>* triangle_AABB)
+void BVH::buildBVH(std::array<double, 6>* triangle_AABB, bool* is_patch_intersect, double* obj_aabb)
 {
 	this->triangle_AABB = triangle_AABB;
+	this->is_patch_intersect = is_patch_intersect;
+	this->obj_aabb = obj_aabb;
 	setMortonCode();
 	initBVHRecursive(triangle_AABB, 1, 0, triangle_num);
 }
 
 
-void BVH::updateBVH(std::array<double, 6>* aabb)
+void BVH::updateBVH(std::array<double, 6>* aabb, bool* is_patch_intersect, double* obj_aabb)
 {
 	this->triangle_AABB = aabb;
+	this->is_patch_intersect = is_patch_intersect;
+	this->obj_aabb = obj_aabb;
 	setMortonCode();
 
 	if (triangle_num <= assumed_thread_num >> 1) {
@@ -152,6 +155,38 @@ void BVH::recursiveUpdate(unsigned int start_index, unsigned int end_index)
 }
 
 
+bool BVH::searchIfPatchIntersect(double* aabb, unsigned int compare_index, bool search_same_object, unsigned int n, unsigned int b, unsigned int e)
+{
+	if (!AABB::AABB_intersection(aabb, aabb_list[n].data())) {
+		return false;
+	}
+	if (e == b + 1) {
+		if (search_same_object) {
+			if (compare_index != new2old[b]) {
+				if (!is_patch_intersect[new2old[b]]) {
+					is_patch_intersect[new2old[b]] = true;
+				}
+				return true;
+			}
+		}
+		else {
+			if (!is_patch_intersect[new2old[b]]) {
+				is_patch_intersect[new2old[b]] = true;
+			}
+			return true;
+		}
+		return false;
+	}
+	unsigned int m = b + (e - b) / 2;
+	unsigned int child_left = 2 * n;
+	unsigned int child_right = 2 * n + 1;
+	bool intersect_left;
+	bool intersect_right;
+	intersect_left = searchIfPatchIntersect(aabb, compare_index, search_same_object, child_left, b, m);
+	intersect_right = searchIfPatchIntersect(aabb, compare_index, search_same_object, child_right, m, e);
+	return intersect_left || intersect_right;
+}
+
 void BVH::search(double* aabb, unsigned int compare_index, bool search_same_object, std::vector<unsigned int>* neighbor_list, unsigned int n, unsigned int b, unsigned int e)
 {
 	if (!AABB::AABB_intersection(aabb,aabb_list[n].data())) {
@@ -180,23 +215,11 @@ void BVH::search(double* aabb, unsigned int compare_index, bool search_same_obje
 //CAL_CENTER
 void BVH::calCenterPerThread(int thread_No)
 {
-	aabb_per_thread[thread_No] = std::array{ DBL_MAX,DBL_MAX ,DBL_MAX,DBL_MIN,DBL_MIN ,DBL_MIN};
-	double* center; double* tri_aabb; double* aabb_;
-	aabb_ = aabb_per_thread[thread_No].data();
+	double* center; double* tri_aabb; 
 	for (int i = triangle_index_begin_per_thread[thread_No]; i < triangle_index_begin_per_thread[thread_No + 1]; ++i) {
 		center = aabb_center[i].data();
 		tri_aabb = triangle_AABB[i].data();
 		AABB_CENTER(center, tri_aabb);
-		for (int j = 0; j < 3; ++j) {
-			if (aabb_[j] > tri_aabb[j]) {
-				aabb_[j] = tri_aabb[j];
-			}			
-		}		
-		for (int j = 3; j < 6; ++j) {
-			if (aabb_[j] < center[j]) {
-				aabb_[j] = center[j];
-			}
-		}
 	}
 }
 
@@ -218,20 +241,6 @@ void BVH::calMortonCode(int thread_No)
 void BVH::setMortonCode()
 {
 	thread->assignTask(this, CAL_CENTER);
-
-	memcpy(obj_aabb, aabb_per_thread[0].data(), 48);
-	for (int i = 1; i < total_thread_num; ++i) {
-		for (int j = 0; j < 3; ++j) {
-			obj_aabb[j] = myMin(obj_aabb[j], aabb_per_thread[i][j]);
-			
-		}
-		for (int j = 3; j < 6; ++j) {
-			obj_aabb[j] = myMax(obj_aabb[j], aabb_per_thread[i][j]);
-		}
-	}
-	for (int i = 0; i < 3; ++i) {
-		obj_aabb[i] -= 1e-7;
-	}
 	//TWO_POINTS_CENTER(center, min, v_max);
 	thread->assignTask(this, CAL_MORTON);
 	//std::sort(list.begin(), list.end(), morton_compare);
