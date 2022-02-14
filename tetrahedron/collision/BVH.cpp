@@ -106,7 +106,8 @@ void BVH::updateBVH(std::array<double, 6>* aabb)
 void BVH::updateNodeValueLastLayer(int thread_No)
 {
 	for (unsigned int i = triangle_index_begin_per_thread[thread_No]; i < triangle_index_begin_per_thread[thread_No + 1]; ++i) {
-		aabb_list[triangle_node_index[i]] = triangle_AABB[new2old[i]];
+		memcpy(aabb_list[triangle_node_index[i]].data(), triangle_AABB[new2old[i]].data(), 48);
+	//	aabb_list[triangle_node_index[i]] = triangle_AABB[new2old[i]];
 	}
 }
 
@@ -247,10 +248,13 @@ void BVH::setMortonCode()
 }
 
 
+
+
 void BVH::initBVHRecursive(std::array<double, 6>* triangle_AABB, int node_index, int b, int e)
 {
 	if (b + 1 == e) {
-		aabb_list[node_index] = triangle_AABB[new2old[b]];
+		memcpy(aabb_list[node_index].data(), triangle_AABB[new2old[b]].data(), 48);
+		//aabb_list[node_index] = triangle_AABB[new2old[b]];
 		return;
 	}
 	int m = b + (e - b) / 2;
@@ -359,28 +363,37 @@ void BVH::test(std::array<double, 6>* aabb)
 	//	}
 	//}
 	//std::vector<std::array<double, 6>>test_aabb = *triangle_AABB;
-	for (int i = 0; i < triangle_num; ++i) {
-		for (int j = 0; j < 6; ++j) {
-			std::cout << triangle_AABB[i][j] << " ";
-		}
-		std::cout << std::endl;
-	}
+	//for (int i = 0; i < triangle_num; ++i) {
+	//	for (int j = 0; j < 6; ++j) {
+	//		std::cout << triangle_AABB[i][j] << " ";
+	//	}
+	//	std::cout << std::endl;
+	//}
 	this->triangle_AABB = triangle_AABB;
 	int itr_num = 1000;
 	int k = 0;
 	time_t t = clock();
 	for (int i = 0; i < itr_num; ++i) {
 		setMortonCode();
-		k++;
+		//k++;
 	}
 	std::cout << "morton code1 1 " << clock() - t << std::endl;
-	std::cout << k << std::endl;
+	//std::cout << k << std::endl;
+	//t = clock();
+	//for (int i = 0; i < itr_num; ++i) {
+	//	//setMortonCode();
+	//	//setMortonCode2();
+	//	//setMortonCode3();
+	//	test_updateBVH(aabb);
+	//	//k++;
+	//}
+	//std::cout << "multi thread " << clock() - t << std::endl;
 	k = 0;
 	t = clock();
 	for (int i = 0; i < itr_num; ++i) {
 		setMortonCode();
 		test_buildBVH(aabb);
-		k++;
+		//k++;
 	}
 	std::cout << "total update 1 " << clock() - t << std::endl;
 	std::cout << k << std::endl;
@@ -389,7 +402,7 @@ void BVH::test(std::array<double, 6>* aabb)
 	for (int i = 0; i < itr_num; ++i) {
 		setMortonCode();
 		test_updateBVH(aabb);
-		k++;
+		//k++;
 	}
 	std::cout << "total update 1 " << clock() - t << std::endl;
 	std::cout << k << std::endl;
@@ -402,26 +415,26 @@ void BVH::test(std::array<double, 6>* aabb)
 		//setMortonCode2();
 		//setMortonCode3();
 		test_buildBVH(aabb);
-		k++;
+		//k++;
 	}
 	std::cout << "single thread " << clock() - t << std::endl;
-	std::cout << k << std::endl;
-	k = 0;
-	t = clock();
-	for (int i = 0; i < itr_num; ++i) {
-		setMortonCode();
-		k++;
-	}
-	std::cout << "morton code 2 " << clock() - t << std::endl;
-	std::cout << k << std::endl;
-	k = 0;
+	//std::cout << k << std::endl;
+	//k = 0;
+	//t = clock();
+	//for (int i = 0; i < itr_num; ++i) {
+	//	setMortonCode();
+	//	//k++;
+	//}
+	//std::cout << "morton code 2 " << clock() - t << std::endl;
+	//std::cout << k << std::endl;
+	//k = 0;
 	t = clock();
 	for (int i = 0; i < itr_num; ++i) {
 		//setMortonCode();
 		//setMortonCode2();
 		//setMortonCode3();
 		test_updateBVH(aabb);
-		k++;
+		//k++;
 	}
 	std::cout << "multi thread " << clock() - t << std::endl;
 	std::cout << k << std::endl;

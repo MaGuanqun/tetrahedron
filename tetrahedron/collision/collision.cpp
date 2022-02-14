@@ -92,9 +92,12 @@ void Collision::testBVHUpdate()
 	//	}
 	//}
 	//std::cout <<j<<" "<< test_bvh.aabb_list.size() << " run test bvh update" << std::endl;
-	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
-		obj_BVH[i - tetrahedron_begin_obj_index].test(tetrahedron->data()[0].triangle_AABB.data());
-	}
+	//for (unsigned int i = 0; i < cloth->size(); ++i) {
+	//	obj_BVH[i].test(cloth->data()[0].triangle_AABB.data());
+	//}
+	//for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+	//	obj_BVH[i - tetrahedron_begin_obj_index].test(tetrahedron->data()[0].triangle_AABB.data());
+	//}
 }
 
 void Collision::initialTargetPos(std::vector<Cloth>* cloth,	std::vector<Tetrahedron>* tetrahedron, Thread* thread)
