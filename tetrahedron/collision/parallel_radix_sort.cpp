@@ -2,16 +2,21 @@
 
 #define BIT_PER_KEY 8
 
-void RadixSort::initial(Thread* thread)
+void RadixSort::initial(Thread* thread, bool is_single_thread)
 {
-	this->thread = thread;
-    thread_num = thread->thread_num;
-    array_index_begin.resize(thread_num+1);
-    histogram=new unsigned int*[thread_num];
-    for (int i = 0; i < thread_num; ++i) {
-        histogram[i] = new unsigned int[256];
+    this->is_single_thread = is_single_thread;
+    if (is_single_thread) {
+        histogram_single_thread = new unsigned int[256];
     }
-
+    else {
+        this->thread = thread;
+        thread_num = thread->thread_num;
+        array_index_begin.resize(thread_num + 1);
+        histogram = new unsigned int* [thread_num];
+        for (int i = 0; i < thread_num; ++i) {
+            histogram[i] = new unsigned int[256];
+        }
+    }
 }
 
 void RadixSort::findHighestBit(unsigned int size, unsigned  int& key_num)
@@ -39,6 +44,7 @@ void RadixSort::initialArray(unsigned int max_length)
     stack_value = new unsigned int[max_length];
     stack_triangle_index= new unsigned int[max_length];
     stack_hash_cloth_No = new unsigned int[max_length];
+    this->array_size = max_length;
 }
 
 void RadixSort::deleteArray()
@@ -46,20 +52,31 @@ void RadixSort::deleteArray()
     delete[] stack_value;
     delete[] stack_triangle_index;
     delete[] stack_hash_cloth_No;
-    delete[] histogram;
+    if (is_single_thread) {
+        delete[] histogram_single_thread;
+    }
+    else {
+        delete[] histogram;
+    }  
 }
 
 void RadixSort::initialMortonArray(unsigned int max_length)
 {
     stack_morton_value = new uint64_t[max_length];
     stack_triangle_index = new unsigned int[max_length];
+    this->array_size = max_length;
 }
 
 void RadixSort::deleteMortonArray()
 {
     delete[] stack_morton_value;
     delete[] stack_triangle_index;
-    delete[] histogram;
+    if (is_single_thread) {
+        delete[] histogram_single_thread;
+    }
+    else {
+        delete[] histogram;
+    }
 }
 
 void RadixSort::radixSort(uint64_t max_morton_code, std::vector<uint64_t>* morton_value, unsigned int* triangle_index)
@@ -72,23 +89,47 @@ void RadixSort::radixSort(uint64_t max_morton_code, std::vector<uint64_t>* morto
 }
 
 void RadixSort::radixSort(unsigned int spatial_hashing_index_size, unsigned int* value, unsigned int* triangle_index, 
-    unsigned int* hash_cloth_No, unsigned int list_size, unsigned int& largest_count)
+    unsigned int* hash_cloth_No, unsigned int list_size)
     //largest count is the count of elements which has is 11111111 in the largest part
 {
-    arrangeIndex(thread->thread_num, list_size, array_index_begin.data());
-	findHighestBit(spatial_hashing_index_size, key_num);
+    findHighestBit(spatial_hashing_index_size, key_num);
+   
     this->value = value;
     this->triangle_index = triangle_index;
     this->hash_cloth_No = hash_cloth_No;
 
-    //std::cout <<"key num "<< key_num << " " << value[0] << std::endl;
-    //for (int i = 0; i < list_size; ++i) {
-    //    if (value[i] > 0xffff) {
-    //        std::cout << value[i] << " " << i << std::endl;
-    //    }
-    //}
-   
-    lsdSort(value, triangle_index, hash_cloth_No, list_size, largest_count);
+    if (is_single_thread) {
+        lsdSortSingleThread(value, triangle_index, hash_cloth_No, list_size, array_size);
+    }
+    else {
+        arrangeIndex(thread->thread_num, list_size, array_index_begin.data());
+        lsdSort(value, triangle_index, hash_cloth_No, list_size, array_size);
+    }
+}
+
+
+void RadixSort::lsdSortSingleThread(unsigned int* value, unsigned int* triangle_index, unsigned int* hash_cloth_No, unsigned int list_size,
+    unsigned int& largest_count)
+{
+    int s, t;
+    for (unsigned int j = 0; j < key_num; ++j) {
+        setCountBucket(j);        
+        if (j == key_num - 1) {
+            largest_count = histogram_single_thread[255];
+        }
+        s = 0;
+        for (int i = 0; i < 0x100; ++i) {
+            t = s + histogram_single_thread[i];
+            histogram_single_thread[i] = s;
+            s = t;
+        }
+        reorder(j);
+    }
+    if (key_num % 2 == 1) {
+        memcpy(value, stack_value, 4 * list_size);
+        memcpy(triangle_index, stack_triangle_index, 4 * list_size);
+        memcpy(hash_cloth_No, stack_hash_cloth_No, 4 * list_size);
+    }
 }
 
 
@@ -183,6 +224,17 @@ void RadixSort::lsdSort(std::vector<uint64_t>* value, unsigned int* triangle_ind
 //    }
 //}
 
+void RadixSort::setCountBucket(unsigned int key_id)
+{
+    memset(histogram_single_thread, 0, 4 * 0x100);
+    if (key_id % 2 == 0) {
+        addCount(0, array_size, histogram_single_thread, 8 * key_id, value);
+    }
+    else {
+        addCount(0, array_size, histogram_single_thread, 8 * key_id, stack_value);
+    }
+}
+
 
 //SET_COUNT_BUCKET
 void RadixSort::setCountBucket(int thread_No, unsigned int key_id)
@@ -211,6 +263,17 @@ void RadixSort::setCountBucketMorton(int thread_No, unsigned int key_id)
         addCount(array_index_begin[thread_No], array_index_begin[thread_No + 1], count_bucket, 8 * key_id, stack_morton_value);
     }
 }
+
+void RadixSort::reorder(unsigned int key_id)
+{
+    if (key_id % 2 == 0) {
+        reorder(value, stack_value, triangle_index, stack_triangle_index, hash_cloth_No, stack_hash_cloth_No, 8 * key_id, histogram_single_thread, 0, array_size);
+    }
+    else {
+        reorder(stack_value, value, stack_triangle_index, triangle_index, stack_hash_cloth_No, hash_cloth_No, 8 * key_id, histogram_single_thread, 0, array_size);
+    }
+}
+
 
 //REORDER
 void RadixSort::reorder(int thread_No, unsigned int key_id)
