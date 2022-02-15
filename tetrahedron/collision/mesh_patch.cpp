@@ -392,17 +392,15 @@ void MeshPatch::findNotedTrueTriangleIndex(int thread_No)
 {
 	unsigned int end;
 	bool* is_intersect;
-	unsigned int* tri_size;
 	unsigned int* tri_start;
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
-		tri_size = &triangle_size_start_per_thread[i][thread_No + 1];
-		(*tri_size) = 0;
 		is_intersect = patch_is_intersect[i];
 		end = patch_index_start_per_thread[i][thread_No + 1];
 		tri_start = triangle_index_noted_as_true[i].data() + triangle_size_start_per_thread[i][thread_No];
 		for (int j = patch_index_start_per_thread[i][thread_No]; j < end; ++j) {
 			if (is_intersect[j]) {
 				memcpy(tri_start, triangle_patch[i][j].data(), 4 * triangle_patch[i][j].size());
+				tri_start += triangle_patch[i][j].size();
 			}
 		}
 	}
@@ -425,13 +423,17 @@ void MeshPatch::findAllNotedTrueTriangleSingleThread()
 void MeshPatch::test()
 {
 	time_t t = clock();
-	//for (unsigned int i = 0; i < 1000; ++i) {
+	for (unsigned int i = 0; i < 1000; ++i) {
 		findAllNotedTrueTriangleSingleThread();
-	//}
+	}
+	std::cout << "single thread time " << clock() - t << std::endl;
 	std::vector<std::vector<unsigned int>> triangle_index_noted_as_true_;
 	triangle_index_noted_as_true_ = triangle_index_noted_as_true;
-
-	findAllNotedTrueTriangle();
+	t = clock();
+	for (unsigned int i = 0; i < 1000; ++i) {
+		findAllNotedTrueTriangle();
+	}
+	std::cout << "multi thread time " << clock() - t << std::endl;
 	for (int i = 0; i < total_obj_num; ++i) {
 		if (triangle_index_noted_as_true_[i].size() != triangle_index_noted_as_true[i].size()) {
 			std::cout << "error size"<< triangle_index_noted_as_true_[i].size()<<" "<< triangle_index_noted_as_true[i].size() << std::endl;

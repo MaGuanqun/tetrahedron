@@ -61,6 +61,8 @@ private:
 	unsigned int total_thread_num;
 
 	//std::vector<std::vector<std::vector<unsigned int>>> triangle_patch_noted_true;
+
+	
 };
 
 
