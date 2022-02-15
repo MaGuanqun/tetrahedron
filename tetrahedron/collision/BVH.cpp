@@ -27,7 +27,7 @@ void BVH::init(int triangle_num, std::vector<unsigned int>&triangle_index_begin_
 	triangle_node_index.resize(triangle_num);
 	recordNodeInfo(1, 0, triangle_num);
 
-	radix_sort.initial(thread);
+	radix_sort.initial(thread,false);
 	radix_sort.initialMortonArray(triangle_num);
 	
 

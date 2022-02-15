@@ -89,7 +89,7 @@ void RadixSort::radixSort(uint64_t max_morton_code, std::vector<uint64_t>* morto
 }
 
 void RadixSort::radixSort(unsigned int spatial_hashing_index_size, unsigned int* value, unsigned int* triangle_index, 
-    unsigned int* hash_cloth_No, unsigned int list_size)
+    unsigned int* hash_cloth_No, unsigned int& largest_count)
     //largest count is the count of elements which has is 11111111 in the largest part
 {
     findHighestBit(spatial_hashing_index_size, key_num);
@@ -99,11 +99,11 @@ void RadixSort::radixSort(unsigned int spatial_hashing_index_size, unsigned int*
     this->hash_cloth_No = hash_cloth_No;
 
     if (is_single_thread) {
-        lsdSortSingleThread(value, triangle_index, hash_cloth_No, list_size, array_size);
+        lsdSortSingleThread(value, triangle_index, hash_cloth_No, array_size, largest_count);        
     }
     else {
-        arrangeIndex(thread->thread_num, list_size, array_index_begin.data());
-        lsdSort(value, triangle_index, hash_cloth_No, list_size, array_size);
+        arrangeIndex(thread->thread_num, array_size, array_index_begin.data());
+        lsdSort(value, triangle_index, hash_cloth_No, array_size, largest_count);
     }
 }
 

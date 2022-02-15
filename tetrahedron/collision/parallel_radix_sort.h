@@ -11,7 +11,7 @@ public:
 	void initial(Thread* thread, bool is_single_thread);
 	
 	void radixSort(unsigned int spatial_hashing_index_size, unsigned int* value, unsigned int* triangle_index,
-		unsigned int* hash_cloth_No, unsigned int list_size);
+		unsigned int* hash_cloth_No, unsigned int& largest_count);
 	void reorder(int thread_No, unsigned int key_id);
 	void setCountBucket(int thread_No, unsigned int key_id);
 	void setCountBucketMorton(int thread_No, unsigned int key_id);

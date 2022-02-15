@@ -91,7 +91,7 @@ void SpatialHashing::setInObject(std::vector<Cloth>* cloth, std::vector<Collider
 		initialParallePrefix();
 		prifix_sum.resize(200 * 200 * 200);
 		prifix_sum[0] = 0;
-		radix_sort.initial(thread);
+		radix_sort.initial(thread,false);
 		//testRadixSort();
 		//testPrefixSumTime();
 	}
@@ -222,7 +222,7 @@ void SpatialHashing::testRadixSort()
 		//	std::cout << cell[i][1] << " ";
 		//}
 		//std::cout << std::endl;
-		radix_sort.radixSort(size, value.data(), triangle_index.data(), hash_cloth_No.data(), value.size(), count);
+		radix_sort.radixSort(size, value.data(), triangle_index.data(), hash_cloth_No.data(), count);
 		//for (unsigned int i = 0; i < value.size() - 1; ++i) {
 		//	if (value[i] > value[i + 1]) {
 		//		std::cout << "error"<<value[i]<<" "<<value[i+1]<< std::endl;
@@ -280,7 +280,7 @@ void SpatialHashing::buildSpatialHashing()
 	if (!for_construct_patch) {
 		memcpy(obj_triangle_hash, spatial_hashing_value, total_hash_size * 4);
 		radix_sort.radixSort(hash_table_size, spatial_hashing_value, spatial_hashing_triangle_index, spatial_hashing_obj_index,
-			total_hash_size, largest_count_in_hash_value_list);
+			largest_count_in_hash_value_list);
 		setPrifixSum();
 	}
 }
@@ -490,7 +490,7 @@ void SpatialHashing::testPrefixSumTime()
 		}
 	}
 	radix_sort.radixSort(hash_table_size, spatial_hashing_value, triangle_index.data(), hash_cloth_No.data(),
-		max_count_hash_triangle, largest_count_in_hash_value_list);
+		largest_count_in_hash_value_list);
 	radix_sort.deleteArray();
 
 	actual_hash_value_count = max_count_hash_triangle - largest_count_in_hash_value_list;
