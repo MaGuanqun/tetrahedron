@@ -19,12 +19,14 @@ public:
 
 	std::vector<std::vector<unsigned int>> triangle_index_noted_as_true;
 	std::vector<std::vector<unsigned int>> triangle_index_noted_begin_per_thread;
+	
 
 	void findAllNotedTrueTriangle();
 	void decideTriangleIndexSize(int thread_No);
 	void findNotedTrueTriangleIndex(int thread_No);
 	void findAllNotedTrueTriangleSingleThread();
 	void test();
+	void findVertexPatchIndex(int thread_No);
 private:
 	std::vector<Cloth>* cloth;
 	std::vector<Tetrahedron>* tetrahedron;
@@ -32,6 +34,7 @@ private:
 	Thread* thread;
 	std::vector<std::vector<std::vector<unsigned int>>> triangle_patch;
 	std::vector<std::vector<std::vector<unsigned int>>> patch_vertex; //for tetrahedron, index in toal not surface
+	std::vector<std::vector<std::vector<unsigned int>>> patch_neighbor_patch;//has common vertex
 
 	void setInObjectData();
 
@@ -62,7 +65,13 @@ private:
 
 	//std::vector<std::vector<std::vector<unsigned int>>> triangle_patch_noted_true;
 
-	
+	void findPatchNeighborPatch();
+	bool*** is_vertex_used;
+	std::vector<std::vector<std::vector<unsigned int>>> vertex_contain_patch_index;
+
+	void findVertexPatchIndex();
+	std::vector<unsigned int> obj_index_begin_per_thread;
+	void findVertexPatchIndexSingleObj(int obj_No);
 };
 
 

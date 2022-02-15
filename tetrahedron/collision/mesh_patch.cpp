@@ -446,3 +446,45 @@ void MeshPatch::test()
 	}
 	std::cout<<"finished " << triangle_index_noted_as_true_[0].size() << std::endl;
 }
+
+void MeshPatch::findPatchNeighborPatch()
+{
+	patch_neighbor_patch.resize(total_obj_num);
+	vertex_contain_patch_index.resize(total_obj_num);
+	unsigned int vertex_size;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		patch_neighbor_patch[i].resize(triangle_patch[i].size());
+		for (unsigned int j = 0; j < triangle_patch[i].size(); ++j) {
+			patch_neighbor_patch[i][j].reserve(50);
+		}
+
+		if (i < cloth->size()) {
+			vertex_size = cloth->data()[i].mesh_struct.vertex_position.size();
+		}
+		else if (i < tetrahedron_end_index) {
+			vertex_size = tetrahedron->data()[i - cloth->size()].mesh_struct.vertex_position.size();
+		}
+		else {
+			vertex_size = collider->data()[i - tetrahedron_end_index].mesh_struct.vertex_position.size();
+		}
+		vertex_contain_patch_index[i].resize(vertex_size);
+		for (unsigned int j = 0; j < vertex_size; ++j) {
+			vertex_contain_patch_index[i][j].reserve(50);
+		}
+	}
+	obj_index_begin_per_thread.resize(total_thread_num + 1);
+	arrangeIndex(total_thread_num, total_obj_num, obj_index_begin_per_thread.data());
+
+}
+void MeshPatch::findVertexPatchIndex(int thread_No)
+{
+	for (int i = obj_index_begin_per_thread[thread_No]; i < obj_index_begin_per_thread[thread_No + 1];++i) {
+
+
+	}
+}
+
+void MeshPatch::findVertexPatchIndexSingleObj(int obj_No)
+{
+
+}
