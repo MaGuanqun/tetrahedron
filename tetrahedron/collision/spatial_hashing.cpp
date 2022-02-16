@@ -42,6 +42,8 @@ void SpatialHashing::setInObject(std::vector<Cloth>* cloth, std::vector<Collider
 	std::vector<Tetrahedron>* tetrahedron, Thread* thread, double* tolerance_ratio,
 	unsigned int max_cell_count, bool for_construct_patch)
 {
+	has_collider = !collider->empty();
+
 	this->for_construct_patch = for_construct_patch;
 	tetrahedron_begin_obj_index = cloth->size();
 	initialHashCellLength(cloth, tetrahedron, cell_length, tolerance_ratio);
@@ -51,71 +53,158 @@ void SpatialHashing::setInObject(std::vector<Cloth>* cloth, std::vector<Collider
 	this->thread = thread;
 	thread_num = thread->thread_num;
 	scene_aabb_thread.resize(thread_num);
-	if (for_construct_patch) {
-		collider_begin_obj_index = cloth->size() + tetrahedron->size();
-		triangle_begin_per_obj.resize(cloth->size() + tetrahedron->size() + collider->size() + 1);
-		total_obj_num = cloth->size() + tetrahedron->size() + collider->size();
+	total_obj_num = cloth->size() + tetrahedron->size() + collider->size();
+	triangle_begin_per_obj_per_thread.resize(thread_num);
+	triangle_begin_per_obj_per_thread_collider.resize(thread_num);
+	collider_begin_obj_index = cloth->size() + tetrahedron->size();
+	for (unsigned int i = 0; i < thread_num; ++i) {
+		triangle_begin_per_obj_per_thread[i].resize(collider_begin_obj_index);
+		triangle_begin_per_obj_per_thread_collider[i].resize(collider->size());
 	}
-	else {
-		triangle_begin_per_obj.resize(cloth->size() + tetrahedron->size() + 1);
-		total_obj_num = cloth->size() + tetrahedron->size();
-	}
-	
-
-	int total_triangle_num = 0;
-	for (int i = 0; i < cloth->size(); ++i) {
-		triangle_begin_per_obj[i] = total_triangle_num;
-		total_triangle_num += cloth->data()[i].mesh_struct.triangle_indices.size();
-	}
-	for (int i = 0; i < tetrahedron->size(); ++i) {
-		triangle_begin_per_obj[i+tetrahedron_begin_obj_index] = total_triangle_num;
-		total_triangle_num += tetrahedron->data()[i].mesh_struct.triangle_indices.size();
-	}
-
-	if (for_construct_patch) {
+	for (unsigned int j = 0; j < thread_num; ++j) {
+		unsigned int total_triangle_num = 0;
+		unsigned int total_triangle_num_collider = 0;
+		for (unsigned int i = 0; i < cloth->size(); ++i) {
+			triangle_begin_per_obj_per_thread[j][i] = total_triangle_num;
+			total_triangle_num += cloth->data()[i].mesh_struct.face_index_begin_per_thread[j+1] - cloth->data()[i].mesh_struct.face_index_begin_per_thread[j];
+		}
+		for (int i = 0; i < tetrahedron->size(); ++i) {
+			triangle_begin_per_obj_per_thread[j][i + tetrahedron_begin_obj_index] = total_triangle_num;
+			total_triangle_num += tetrahedron->data()[i].mesh_struct.face_index_begin_per_thread[j + 1] - tetrahedron->data()[i].mesh_struct.face_index_begin_per_thread[j];
+		}
 		for (int i = 0; i < collider->size(); ++i) {
-			triangle_begin_per_obj[i + collider_begin_obj_index] = total_triangle_num;
-			total_triangle_num += collider->data()[i].mesh_struct.triangle_indices.size();
+			triangle_begin_per_obj_per_thread_collider[j][i] = total_triangle_num_collider;
+			total_triangle_num_collider += collider->data()[i].mesh_struct.face_index_begin_per_thread[j + 1] - collider->data()[i].mesh_struct.face_index_begin_per_thread[j];
 		}
 	}
-	triangle_begin_per_obj[triangle_begin_per_obj.size()-1] = total_triangle_num;
+	for (unsigned int j = 0; j < thread_num; ++j) {
+		for (unsigned int i = 1; i < collider_begin_obj_index; ++i) {
+			triangle_begin_per_obj_per_thread[j][i] += triangle_begin_per_obj_per_thread[j][i - 1];
+		}
+		for (unsigned int i = 1; i < collider->size(); ++i) {
+			triangle_begin_per_obj_per_thread_collider[j][i] += triangle_begin_per_obj_per_thread_collider[j][i - 1];
+		}
+		for (unsigned int i = 0; i < collider_begin_obj_index; ++i) {
+			if (i < cloth->size()) {
+				triangle_begin_per_obj_per_thread[j][i] -= cloth->data()[i].mesh_struct.face_index_begin_per_thread[j];
+			}
+			else{
+				triangle_begin_per_obj_per_thread[j][i] -= tetrahedron->data()[i- cloth->size()].mesh_struct.face_index_begin_per_thread[j];
+			}
+			std::cout <<"could be negative "<< triangle_begin_per_obj_per_thread[j][i] << std::endl;
+		}
+		for (unsigned int i = 0; i < collider->size(); ++i) {
+			triangle_begin_per_obj_per_thread_collider[j][i] -= collider->data()[i].mesh_struct.face_index_begin_per_thread[j];
+		}
+	}
+
 
 	this->max_cell_count = max_cell_count;
 
 	if (!for_construct_patch) {
-		actual_hash_count_start_per_thread = new unsigned int[thread_num + 1];
-		total_hash_count_start_per_thread = new unsigned int[thread_num + 1];
-		prefix_sum_thread_start = new unsigned int[thread_num];
-		memset(prefix_sum_thread_start, 0, 4 * thread_num);
+		//actual_hash_count_start_per_thread = new unsigned int[thread_num + 1];
+		//total_hash_count_start_per_thread = new unsigned int[thread_num + 1];
+		//prefix_sum_thread_start = new unsigned int[thread_num];
+		//memset(prefix_sum_thread_start, 0, 4 * thread_num);
 
 		initialParallePrefix();
-		prifix_sum.resize(200 * 200 * 200);
-		prifix_sum[0] = 0;
-		radix_sort.initial(thread,false);
+
+		prifix_sum.resize(thread_num);
+		prifix_sum_collider.resize(thread_num);
+		hash_index_count_per_thread.resize(thread_num);
+		hash_index_count_per_thread_collider.resize(thread_num);
+		for (unsigned int i = 0; i < thread_num; ++i) {
+			prifix_sum[i].reserve(100 * 100 * 100 / thread_num);
+			if (has_collider) {
+				prifix_sum_collider[i].reserve(100 * 100 * 100 / thread_num);
+				hash_index_count_per_thread_collider[i].reserve(100 * 100 * 100 / thread_num);
+			}
+			hash_index_count_per_thread[i].reserve(100 * 100 * 100 / thread_num);
+		}
+		
+		radix_sort = new RadixSort[thread_num];
+		radix_sort_collider = new RadixSort[thread_num];
+		for (unsigned int i = 0; i < thread_num; ++i) {
+			radix_sort[i].initial(thread, true);
+			radix_sort_collider[i].initial(thread, true);
+		}
 		//testRadixSort();
 		//testPrefixSumTime();
 	}
 
-	total_hash_size = max_cell_count * total_triangle_num;
-	spatial_hashing_value = new unsigned int[total_hash_size];
-	spatial_hashing_obj_index = new unsigned int[total_hash_size];
-	spatial_hashing_triangle_index= new unsigned int[total_hash_size];
+	//total_hash_size = max_cell_count * total_triangle_num;
+	triangle_number_per_thread.resize(thread_num,0);
+	triangle_number_per_thread_collider.resize(thread_num,0);
+	for (unsigned int i = 0; i < thread_num; ++i) {
+		for (int j = 0; j < cloth->size(); ++j) {
+			triangle_number_per_thread[i] += cloth->data()[j].mesh_struct.face_index_begin_per_thread[i + 1]
+				- cloth->data()[j].mesh_struct.face_index_begin_per_thread[i];
+		}
+		for (int j = 0; j < tetrahedron->size(); ++j) {
+			triangle_number_per_thread[i] += tetrahedron->data()[j].mesh_struct.face_index_begin_per_thread[i + 1]
+				- tetrahedron->data()[j].mesh_struct.face_index_begin_per_thread[i];
+		}
+		for (int j = 0; j < collider->size(); ++j) {
+			triangle_number_per_thread_collider[i] += collider->data()[j].mesh_struct.face_index_begin_per_thread[i + 1]
+				- collider->data()[j].mesh_struct.face_index_begin_per_thread[i];
+		}
+	}
+	total_hash_size_per_thread.resize(thread_num);
+	total_hash_size_per_thread_collider.resize(thread_num);
+	for (int i = 0; i < thread_num; ++i) {
+		total_hash_size_per_thread[i] = triangle_number_per_thread[i] * max_cell_count;
+		total_hash_size_per_thread_collider[i] = triangle_number_per_thread_collider[i] * max_cell_count;
+	}
+	spatial_hashing_value = new unsigned int*[thread_num];
+	spatial_hashing_obj_index = new unsigned int*[thread_num];
+	spatial_hashing_triangle_index= new unsigned int*[thread_num];
 
-	memset(spatial_hashing_value, -1, 4 * total_hash_size);	
-	
+	spatial_hashing_value_collider = new unsigned int* [thread_num];
+	spatial_hashing_obj_index_collider = new unsigned int* [thread_num];
+	spatial_hashing_triangle_index_collider = new unsigned int* [thread_num];
+
+	for (int i = 0; i < thread_num; ++i) {
+		spatial_hashing_value[i] = new unsigned int[total_hash_size_per_thread[i]];
+		spatial_hashing_obj_index[i] = new unsigned int[total_hash_size_per_thread[i]];
+		spatial_hashing_triangle_index[i] = new unsigned int[total_hash_size_per_thread[i]];
+		memset(spatial_hashing_value[i], -1, 4 * total_hash_size_per_thread[i]);
+
+		if (has_collider && triangle_number_per_thread_collider[i]!=0) {
+			spatial_hashing_value_collider[i] = new unsigned int[total_hash_size_per_thread_collider[i]];
+			spatial_hashing_obj_index_collider[i] = new unsigned int[total_hash_size_per_thread_collider[i]];
+			spatial_hashing_triangle_index_collider[i] = new unsigned int[total_hash_size_per_thread_collider[i]];
+			memset(spatial_hashing_value_collider[i], -1, 4 * total_hash_size_per_thread_collider[i]);
+		}
+	}
+
 	if (!for_construct_patch) {
-		obj_triangle_hash = new unsigned int[total_hash_size];
-		radix_sort.initialArray(total_hash_size);
-		obj_is_used = new bool** [thread_num];
+		for (unsigned int i = 0; i < thread_num; ++i) {
+			radix_sort[i].initialArray(total_hash_size_per_thread[i]);
+		}
+		if (has_collider) {
+			for (unsigned int i = 0; i < thread_num; ++i) {
+				if (triangle_number_per_thread_collider[i] != 0) {
+					radix_sort_collider[i].initialArray(total_hash_size_per_thread_collider[i]);
+				}
+			}
+		}
+		
+		obj_is_used0 = new bool** [thread_num];
+		obj_is_used1 = new bool** [thread_num];
 		for (int i = 0; i < thread_num; ++i) {
-			obj_is_used[i] = new bool* [total_obj_num];
+			obj_is_used0[i] = new bool* [collider_begin_obj_index];
+			obj_is_used1[i] = new bool* [collider_begin_obj_index];
 			for (int j = 0; j < cloth->size(); ++j) {
-				obj_is_used[i][j] = new bool[(*cloth)[j].mesh_struct.triangle_indices.size()];
-				memset(obj_is_used[i][j], 0, (*cloth)[j].mesh_struct.triangle_indices.size());
+				obj_is_used0[i][j] = new bool[(*cloth)[j].mesh_struct.triangle_indices.size()];
+				obj_is_used1[i][j] = new bool[(*cloth)[j].mesh_struct.triangle_indices.size()];
+				memset(obj_is_used0[i][j], 0, (*cloth)[j].mesh_struct.triangle_indices.size());
+				memset(obj_is_used1[i][j], 0, (*cloth)[j].mesh_struct.triangle_indices.size());
 			}
 			for (int j = 0; j < tetrahedron->size(); ++j) {
-				obj_is_used[i][j + tetrahedron_begin_obj_index] = new bool[(*tetrahedron)[j].mesh_struct.triangle_indices.size()];
-				memset(obj_is_used[i][j + tetrahedron_begin_obj_index], 0, (*tetrahedron)[j].mesh_struct.triangle_indices.size());
+				obj_is_used0[i][j + tetrahedron_begin_obj_index] = new bool[(*tetrahedron)[j].mesh_struct.triangle_indices.size()];
+				obj_is_used1[i][j + tetrahedron_begin_obj_index] = new bool[(*tetrahedron)[j].mesh_struct.triangle_indices.size()];
+				memset(obj_is_used0[i][j + tetrahedron_begin_obj_index], 0, (*tetrahedron)[j].mesh_struct.triangle_indices.size());
+				memset(obj_is_used1[i][j + tetrahedron_begin_obj_index], 0, (*tetrahedron)[j].mesh_struct.triangle_indices.size());
 			}
 			/*if (for_construct_patch) {
 				for (int j = 0; j < collider->size(); ++j) {
@@ -124,9 +213,57 @@ void SpatialHashing::setInObject(std::vector<Cloth>* cloth, std::vector<Collider
 				}
 			}*/
 		}
+		if (has_collider) {
+			collider_is_used0 = new bool** [thread_num];
+			for (int i = 0; i < thread_num; ++i) {
+				collider_is_used0[i] = new bool* [collider->size()];
+				for (int j = 0; j < collider->size(); ++j) {
+					collider_is_used0[i][j] = new bool[(*collider)[j].mesh_struct.triangle_indices.size()];
+					memset(collider_is_used0[i][j], 0, (*collider)[j].mesh_struct.triangle_indices.size());
+				}
+			}
+		}
 	}
 	//
-	actual_hash_value_count = 1;
+	actual_hash_value_end_index_ref.resize(thread_num);
+	actual_hash_value_end_index_ref_collider.resize(thread_num);
+	actual_exist_cell_begin_per_thread.resize(thread_num + 1);
+	actual_hash_value_count_per_thread.resize(thread_num,0);
+	actual_hash_value_count_per_thread_collider.resize(thread_num,0);
+
+	triangle_pair.resize(thread_num);
+	triangle_pair_with_collider.resize(thread_num);
+
+	int total_triangle_num=0;
+	for (int i = 0; i < cloth->size(); ++i) {
+		total_triangle_num += cloth->data()[i].mesh_struct.triangle_indices.size();
+	}
+	for (int i = 0; i < tetrahedron->size(); ++i) {
+		total_triangle_num += tetrahedron->data()[i].mesh_struct.triangle_indices.size();
+	}	
+	for (unsigned int i = 0; i < thread_num; ++i) {
+		triangle_pair[i].reserve(2 * total_triangle_num);
+		triangle_pair_with_collider[i].reserve(2 * total_triangle_num);
+	}
+
+	obj_tri_aabb.resize(collider_begin_obj_index);
+	for (unsigned int i = 0; i < collider_begin_obj_index; ++i) {
+		if (i < cloth->size()) {
+			obj_tri_aabb[i] = cloth->data()[i].triangle_AABB.data();
+		}
+		else {
+			obj_tri_aabb[i] = tetrahedron->data()[i].triangle_AABB.data();
+		}
+	}
+
+	if (has_collider) {
+		collider_tri_aabb.resize(collider->size());
+		for (unsigned int i = 0; i < collider->size(); ++i) {
+			collider_tri_aabb[i] = collider->data()[i].triangle_AABB.data();
+		}
+	}
+
+
 }
 
 
@@ -136,6 +273,12 @@ void SpatialHashing::deleteArray()
 	delete[] spatial_hashing_value;
 	delete[] spatial_hashing_obj_index;
 	delete[] spatial_hashing_triangle_index;
+	delete[] spatial_hashing_value_collider;
+	delete[] spatial_hashing_obj_index_collider;
+	delete[] spatial_hashing_triangle_index_collider;
+
+	delete[] radix_sort;
+	delete[] radix_sort_collider;
 }
 
 
@@ -200,37 +343,37 @@ void SpatialHashing::testRadixSort()
 	t1 = clock() - t1;
 	//std::cout << "index " << t1 << std::endl;
 	
-	radix_sort.initialArray(vec_size);
-	time_t t = clock();
-	unsigned int count;
-	for (unsigned int j = 0; j < 100; ++j) {
-		unsigned int size = 100 * 100 * 100;
-		value.clear();
-		triangle_index.clear();
-		hash_cloth_No.clear();
-		for (unsigned int i = 0; i < vec_size; ++i) {
-			value.push_back(rand() % size);
-			triangle_index.push_back(i);
-			hash_cloth_No.push_back(0);
-		}
-		for (unsigned int i = 0; i < vec_size; ++i) {
-			if (i % 2 == 0) {
-				value[i] += 100000;
-			}
-		}
-		//for (int i = 0; i < vec_size; ++i) {
-		//	std::cout << cell[i][1] << " ";
-		//}
-		//std::cout << std::endl;
-		radix_sort.radixSort(size, value.data(), triangle_index.data(), hash_cloth_No.data(), count);
-		//for (unsigned int i = 0; i < value.size() - 1; ++i) {
-		//	if (value[i] > value[i + 1]) {
-		//		std::cout << "error"<<value[i]<<" "<<value[i+1]<< std::endl;
-		//	}
-		//}
-	}
-	std::cout << "time " << clock() - t << " " << clock() - t - t1 << std::endl;
-	radix_sort.deleteArray();
+	//radix_sort.initialArray(vec_size);
+	//time_t t = clock();
+	//unsigned int count;
+	//for (unsigned int j = 0; j < 100; ++j) {
+	//	unsigned int size = 100 * 100 * 100;
+	//	value.clear();
+	//	triangle_index.clear();
+	//	hash_cloth_No.clear();
+	//	for (unsigned int i = 0; i < vec_size; ++i) {
+	//		value.push_back(rand() % size);
+	//		triangle_index.push_back(i);
+	//		hash_cloth_No.push_back(0);
+	//	}
+	//	for (unsigned int i = 0; i < vec_size; ++i) {
+	//		if (i % 2 == 0) {
+	//			value[i] += 100000;
+	//		}
+	//	}
+	//	//for (int i = 0; i < vec_size; ++i) {
+	//	//	std::cout << cell[i][1] << " ";
+	//	//}
+	//	//std::cout << std::endl;
+	//	radix_sort.radixSort(size, value.data(), triangle_index.data(), hash_cloth_No.data(), count);
+	//	//for (unsigned int i = 0; i < value.size() - 1; ++i) {
+	//	//	if (value[i] > value[i + 1]) {
+	//	//		std::cout << "error"<<value[i]<<" "<<value[i+1]<< std::endl;
+	//	//	}
+	//	//}
+	//}
+	//std::cout << "time " << clock() - t << " " << clock() - t - t1 << std::endl;
+	//radix_sort.deleteArray();
 	//for (int i = 0; i < vec_size; ++i) {
 	//	std::cout << cell[i][1] << " ";
 	//}
@@ -262,25 +405,14 @@ void SpatialHashing::setSpatialHashing()
 	cell_num0_cell_num1 = cell_number[0] * cell_number[1];
 	hash_table_size = cell_number[0] * cell_number[1] * cell_number[2];
 
-	//if (for_construct_patch) {
-	//	std::cout << cell_number[0] << " " << cell_number[1] << " " << cell_number[2] << std::endl;
-	//	std::cout << scene_aabb.max[0] << " " << scene_aabb.max[1] << " " << scene_aabb.max[2] << std::endl;
-	//	std::cout << scene_aabb.min[0] << " " << scene_aabb.min[1] << " " << scene_aabb.min[2] << std::endl;
-	//	std::cout << &cloth->data()[0].mesh_struct.edges[0].length << std::endl;
-	//}
-
-	memset(spatial_hashing_value, -1, 4 * actual_hash_value_count);
 }
 
 void SpatialHashing::buildSpatialHashing()
 {
 	setSpatialHashing();
 	thread->assignTask(this, TRIANGLE_HASHING);
-	//setHashTogether();
 	if (!for_construct_patch) {
-		memcpy(obj_triangle_hash, spatial_hashing_value, total_hash_size * 4);
-		radix_sort.radixSort(hash_table_size, spatial_hashing_value, spatial_hashing_triangle_index, spatial_hashing_obj_index,
-			largest_count_in_hash_value_list);
+		//memcpy(obj_triangle_hash, spatial_hashing_value, total_hash_size * 4);	
 		setPrifixSum();
 	}
 }
@@ -458,86 +590,223 @@ void SpatialHashing::prefixSumParallelDown(int thread_No, unsigned int stage)
 
 void SpatialHashing::testPrefixSumTime()
 {
-	delete[] spatial_hashing_value;
-	unsigned int hash_size_dimension = 120;
-	hash_table_size = hash_size_dimension * hash_size_dimension * hash_size_dimension;
-	unsigned int triangle_number = 200000;
-	unsigned int max_per_triangle = 27;
-	unsigned int max_count_hash_triangle = max_per_triangle * triangle_number;
-	radix_sort.initialArray(max_count_hash_triangle);
-	spatial_hashing_value = new unsigned int[max_count_hash_triangle];
-	memset(spatial_hashing_value, -1, 4 * max_count_hash_triangle);
-	unsigned int size[3];
-	unsigned int start[3];
+	//delete[] spatial_hashing_value;
+	//unsigned int hash_size_dimension = 120;
+	//hash_table_size = hash_size_dimension * hash_size_dimension * hash_size_dimension;
+	//unsigned int triangle_number = 200000;
+	//unsigned int max_per_triangle = 27;
+	//unsigned int max_count_hash_triangle = max_per_triangle * triangle_number;
+	//radix_sort.initialArray(max_count_hash_triangle);
+	//spatial_hashing_value = new unsigned int[max_count_hash_triangle];
+	//memset(spatial_hashing_value, -1, 4 * max_count_hash_triangle);
+	//unsigned int size[3];
+	//unsigned int start[3];
 
-	std::vector<unsigned int> triangle_index(max_count_hash_triangle, 0);
-	std::vector<unsigned int> hash_cloth_No(max_count_hash_triangle, 0);
-	for (unsigned int i = 0; i < triangle_number; ++i) {
-		size[0] = 1 + rand() % 3;
-		size[1] = 1 + rand() % 3;
-		size[2] = 1 + rand() % 3;
-		start[0] = 3 + rand() % (hash_size_dimension - 20);
-		start[1] = 3 + rand() % (hash_size_dimension - 20);
-		start[2] = 3 + rand() % (hash_size_dimension - 20);
-		unsigned int note = 0;
-		for (unsigned int j = start[0]; j < start[0] + size[0]; ++j) {
-			for (unsigned int k = start[1]; k < start[1] + size[1]; ++k) {
-				for (unsigned int l = start[2]; l < start[2] + size[2]; ++l) {
-					spatial_hashing_value[max_per_triangle * i + note] = j + hash_size_dimension * k + hash_size_dimension * hash_size_dimension * l;
-					note++;
+	//std::vector<unsigned int> triangle_index(max_count_hash_triangle, 0);
+	//std::vector<unsigned int> hash_cloth_No(max_count_hash_triangle, 0);
+	//for (unsigned int i = 0; i < triangle_number; ++i) {
+	//	size[0] = 1 + rand() % 3;
+	//	size[1] = 1 + rand() % 3;
+	//	size[2] = 1 + rand() % 3;
+	//	start[0] = 3 + rand() % (hash_size_dimension - 20);
+	//	start[1] = 3 + rand() % (hash_size_dimension - 20);
+	//	start[2] = 3 + rand() % (hash_size_dimension - 20);
+	//	unsigned int note = 0;
+	//	for (unsigned int j = start[0]; j < start[0] + size[0]; ++j) {
+	//		for (unsigned int k = start[1]; k < start[1] + size[1]; ++k) {
+	//			for (unsigned int l = start[2]; l < start[2] + size[2]; ++l) {
+	//				spatial_hashing_value[max_per_triangle * i + note] = j + hash_size_dimension * k + hash_size_dimension * hash_size_dimension * l;
+	//				note++;
+	//			}
+	//		}
+	//	}
+	//}
+	//radix_sort.radixSort(hash_table_size, spatial_hashing_value, triangle_index.data(), hash_cloth_No.data(),
+	//	largest_count_in_hash_value_list);
+	//radix_sort.deleteArray();
+
+	//actual_hash_value_count = max_count_hash_triangle - largest_count_in_hash_value_list;
+	//for (unsigned int i = actual_hash_value_count; i < max_count_hash_triangle; ++i) {
+	//	if (spatial_hashing_value[i] == UINT_MAX) {
+	//		actual_hash_value_count = i;
+	//		break;
+	//	}
+	//}
+	//std::cout << "actual_hash_value_count " << actual_hash_value_count << std::endl;
+
+	//prifix_sum.resize(hash_table_size + 1);
+	//prefix_sum_1_address = prifix_sum.data() + 1;
+	//arrangeIndex(thread_num, hash_table_size, total_hash_count_start_per_thread);
+
+	////
+
+	//time_t t1 = clock();
+	//
+	//for (int j = 0; j < 1000; ++j) {		
+	//	arrangeIndex(thread_num, actual_hash_value_count, actual_hash_count_start_per_thread);
+	//	thread->assignTask(this, MEMSET_PREFIX);
+	//	//thread->assignTask(this, PREPARE_FOR_ACTUAL_HASH_VALUE_COUNT_THREAD);		
+	//	prepareForActualHashValueCount();
+	//	thread->assignTask(this, ADD_COUNT_FOR_PRIFIX_SUM);
+	//}
+	//std::cout << "time parallel sum count " << clock() - t1 << std::endl;
+	//t1 = clock();
+	//for (int j = 0; j < 1000; ++j) {
+	//	arrangeIndex(thread_num, actual_hash_value_count, actual_hash_count_start_per_thread);
+	//	thread->assignTask(this, MEMSET_PREFIX);
+	//	//thread->assignTask(this, PREPARE_FOR_ACTUAL_HASH_VALUE_COUNT_THREAD);
+	//	prepareForActualHashValueCount();
+	//	thread->assignTask(this, ADD_COUNT_FOR_PRIFIX_SUM);
+	//	thread->assignTask(this, PREFIX_SUM_THREAD_1);
+	//	for (int i = 1; i < thread_num; ++i) {
+	//		prefix_sum_thread_start[i] = *(prefix_sum_1_address + total_hash_count_start_per_thread[i] - 1) + prefix_sum_thread_start[i - 1];
+	//	}
+	//	thread->assignTask(this, PREFIX_SUM_THREAD_2);
+	//	//prefixSumParallel();
+	//}
+	//std::cout << "time parallel sum count " << clock() - t1 << std::endl;
+	//testPrifixSum1();
+
+	//delete[] spatial_hashing_value;
+
+}
+
+
+
+void SpatialHashing::findAllTrianglePairs(int thread_No)
+{
+	unsigned int last_cell_index = actual_exist_cell_begin_per_thread[thread_No + 1];
+
+	std::vector<unsigned int> cell_triangle_index;
+	std::vector<unsigned int> cell_obj_index;
+	std::vector<unsigned int> cell_collider_triangle_index;
+	std::vector<unsigned int> cell_collider_index;
+
+	cell_triangle_index.reserve(30);
+	cell_obj_index.reserve(30);
+	cell_collider_triangle_index.reserve(30);
+	cell_collider_index.reserve(30);
+
+	unsigned int previous_tri_num;
+	unsigned int current_thread_triangle_num;
+
+	bool** obj_is_used0_ = obj_is_used0[thread_No];
+	bool** obj_is_used1_ = obj_is_used1[thread_No];
+
+	bool** collider_is_used0_ = collider_is_used0[thread_No];
+
+	for (unsigned int i = 0; i < collider_begin_obj_index; ++i) {
+		if (i < cloth->size()) {
+			memset(obj_is_used0_[i], 0, cloth->data()[i].mesh_struct.triangle_indices.size());
+			memset(obj_is_used1_[i], 0, cloth->data()[i].mesh_struct.triangle_indices.size());
+		}
+		else {
+			memset(obj_is_used0_[i], 0, tetrahedron->data()[i-cloth->size()].mesh_struct.triangle_indices.size());
+			memset(obj_is_used1_[i], 0, tetrahedron->data()[i-cloth->size()].mesh_struct.triangle_indices.size());
+		}
+	}
+	for (unsigned int i = 0; i < collider->size(); ++i) {
+		memset(collider_is_used0_[i], 0, collider->data()[i].mesh_struct.triangle_indices.size());
+	}
+
+	std::vector<unsigned int>* triangle_pair_;
+	std::vector<unsigned int>* triangle_pair_with_collider_;
+
+	triangle_pair_ = &triangle_pair[thread_No];
+	triangle_pair_with_collider_ = &triangle_pair_with_collider[thread_No];
+
+	double* aabb_1;
+
+	unsigned int obj_index_0, obj_index_1, triangle_index_0, triangle_index_1;
+
+	for (unsigned int cell_index = actual_exist_cell_begin_per_thread[thread_No];
+		cell_index < last_cell_index; ++cell_index) {
+		cell_triangle_index.clear();
+		cell_obj_index.clear();
+		cell_collider_triangle_index.clear();
+		cell_collider_index.clear();
+
+		for (unsigned int t = 0; t < thread_num; ++t) {
+			current_thread_triangle_num = prifix_sum[t][cell_index + 1] - prifix_sum[t][cell_index];
+			if (current_thread_triangle_num > 0) {
+				previous_tri_num = cell_triangle_index.size();
+				cell_triangle_index.resize(previous_tri_num + current_thread_triangle_num);
+				cell_obj_index.resize(previous_tri_num + current_thread_triangle_num);
+				memcpy(cell_triangle_index.data() + previous_tri_num, spatial_hashing_triangle_index[t] + prifix_sum[t][cell_index], 4 * current_thread_triangle_num);
+				memcpy(cell_obj_index.data() + previous_tri_num, spatial_hashing_obj_index[t] + prifix_sum[t][cell_index], 4 * current_thread_triangle_num);
+			}
+		}
+		if (has_collider) {
+			for (unsigned int t = 0; t < thread_num; ++t) {
+				current_thread_triangle_num = prifix_sum_collider[t][(cell_index<<1) + 1] - prifix_sum_collider[t][cell_index<<1];
+				if (current_thread_triangle_num > 0) {
+					previous_tri_num = cell_collider_triangle_index.size();
+					cell_collider_triangle_index.resize(previous_tri_num + current_thread_triangle_num);
+					cell_collider_index.resize(previous_tri_num + current_thread_triangle_num);
+					memcpy(cell_collider_triangle_index.data() + previous_tri_num,
+						spatial_hashing_triangle_index_collider[t] + prifix_sum_collider[t][cell_index<<1], 4 * current_thread_triangle_num);
+					memcpy(cell_collider_index.data() + previous_tri_num,
+						spatial_hashing_obj_index_collider[t] + prifix_sum_collider[t][cell_index<<1], 4 * current_thread_triangle_num);
+				}				
+			}
+		}
+		//there exist collision
+	
+		if (cell_triangle_index.size() > 1 || (!cell_collider_triangle_index.empty())) {
+			for (unsigned int i = 0; i < cell_triangle_index.size(); ++i) {
+				obj_index_0 = cell_obj_index[i]; triangle_index_0 = cell_triangle_index[i];
+				aabb_1 = obj_tri_aabb[obj_index_0][triangle_index_0].data();				
+				for (unsigned int j = i + 1; j < cell_triangle_index.size(); ++j) {
+					obj_index_1 = cell_obj_index[j];
+					triangle_index_1 = cell_triangle_index[j];
+					if (obj_index_0 < obj_index_1 || (obj_index_0 == obj_index_1 && triangle_index_0 < triangle_index_1)) {
+						if (!(obj_is_used0_[obj_index_0][triangle_index_0] && obj_is_used1_[obj_index_1][triangle_index_1])) {
+							obj_is_used0_[obj_index_0][triangle_index_0] = true;
+							obj_is_used1_[obj_index_1][triangle_index_1] = true;
+							if (AABB::AABB_intersection(aabb_1, obj_tri_aabb[obj_index_1][triangle_index_1].data())) {
+								triangle_pair_->emplace_back(triangle_index_0);
+								triangle_pair_->emplace_back(obj_index_0);
+								triangle_pair_->emplace_back(triangle_index_1);
+								triangle_pair_->emplace_back(obj_index_1);
+							}
+						}
+					}
+					else {
+						if (!(obj_is_used0_[obj_index_1][triangle_index_1] && obj_is_used1_[obj_index_0][triangle_index_0])) {
+							obj_is_used0_[obj_index_1][triangle_index_1] = true;
+							obj_is_used1_[obj_index_0][triangle_index_0] = true;
+							if (AABB::AABB_intersection(aabb_1, obj_tri_aabb[obj_index_1][triangle_index_1].data())) {
+								triangle_pair_->emplace_back(triangle_index_1);
+								triangle_pair_->emplace_back(obj_index_1);
+								triangle_pair_->emplace_back(triangle_index_0);
+								triangle_pair_->emplace_back(obj_index_0);						
+							}
+						}
+					}
+				}
+				for (unsigned int j = 0; j < cell_collider_triangle_index.size(); ++j) {
+					obj_index_1 = cell_collider_index[j] ;
+					triangle_index_1 = cell_collider_triangle_index[j];
+					if (!(obj_is_used0_[obj_index_0][triangle_index_0] && collider_is_used0_[obj_index_1][triangle_index_1])) {
+						obj_is_used0_[obj_index_0][triangle_index_0] = true;
+						collider_is_used0_[obj_index_1][triangle_index_1] = true;
+						if (AABB::AABB_intersection(aabb_1, collider_tri_aabb[obj_index_1][triangle_index_1].data())) {							
+							triangle_pair_with_collider_->emplace_back(triangle_index_0);
+							triangle_pair_with_collider_->emplace_back(obj_index_0);
+							triangle_pair_with_collider_->emplace_back(triangle_index_1);
+							triangle_pair_with_collider_->emplace_back(obj_index_1);
+						}
+					}
 				}
 			}
 		}
 	}
-	radix_sort.radixSort(hash_table_size, spatial_hashing_value, triangle_index.data(), hash_cloth_No.data(),
-		largest_count_in_hash_value_list);
-	radix_sort.deleteArray();
-
-	actual_hash_value_count = max_count_hash_triangle - largest_count_in_hash_value_list;
-	for (unsigned int i = actual_hash_value_count; i < max_count_hash_triangle; ++i) {
-		if (spatial_hashing_value[i] == UINT_MAX) {
-			actual_hash_value_count = i;
-			break;
-		}
-	}
-	std::cout << "actual_hash_value_count " << actual_hash_value_count << std::endl;
-
-	prifix_sum.resize(hash_table_size + 1);
-	prefix_sum_1_address = prifix_sum.data() + 1;
-	arrangeIndex(thread_num, hash_table_size, total_hash_count_start_per_thread);
-
-	//
-
-	time_t t1 = clock();
 	
-	for (int j = 0; j < 1000; ++j) {		
-		arrangeIndex(thread_num, actual_hash_value_count, actual_hash_count_start_per_thread);
-		thread->assignTask(this, MEMSET_PREFIX);
-		//thread->assignTask(this, PREPARE_FOR_ACTUAL_HASH_VALUE_COUNT_THREAD);		
-		prepareForActualHashValueCount();
-		thread->assignTask(this, ADD_COUNT_FOR_PRIFIX_SUM);
-	}
-	std::cout << "time parallel sum count " << clock() - t1 << std::endl;
-	t1 = clock();
-	for (int j = 0; j < 1000; ++j) {
-		arrangeIndex(thread_num, actual_hash_value_count, actual_hash_count_start_per_thread);
-		thread->assignTask(this, MEMSET_PREFIX);
-		//thread->assignTask(this, PREPARE_FOR_ACTUAL_HASH_VALUE_COUNT_THREAD);
-		prepareForActualHashValueCount();
-		thread->assignTask(this, ADD_COUNT_FOR_PRIFIX_SUM);
-		thread->assignTask(this, PREFIX_SUM_THREAD_1);
-		for (int i = 1; i < thread_num; ++i) {
-			prefix_sum_thread_start[i] = *(prefix_sum_1_address + total_hash_count_start_per_thread[i] - 1) + prefix_sum_thread_start[i - 1];
-		}
-		thread->assignTask(this, PREFIX_SUM_THREAD_2);
-		//prefixSumParallel();
-	}
-	std::cout << "time parallel sum count " << clock() - t1 << std::endl;
-	testPrifixSum1();
-
-	delete[] spatial_hashing_value;
-
 }
+
+
+
+
 
 void SpatialHashing::setPrifixSum()
 {
@@ -552,38 +821,130 @@ void SpatialHashing::setPrifixSum()
 	//	if (spatial_hashing_cloth_index[i] != 0) {
 	//		std::cout << "cloth index error " << spatial_hashing_cloth_index[i] << std::endl;
 	//	}
-	//}
-	actual_hash_value_count = total_hash_size - largest_count_in_hash_value_list;
-	for (unsigned int i = actual_hash_value_count; i < total_hash_size; ++i) {
-		if (spatial_hashing_value[i] == UINT_MAX) {
-			actual_hash_value_count = i;
-			break;
+	//
+	
+	//initial prefix sum in TRIANGLE_HASHING, clear() & push_back(0)
+	std::vector<unsigned int*> index_per_thread(thread_num);
+	std::vector<unsigned int*> index_per_thread_collider(thread_num);
+	std::vector<unsigned int> start_index(thread_num, 0);
+	std::vector<unsigned int> start_index_collider(thread_num, 0);
+	std::vector<unsigned int> record_collider_index_start(thread_num, 0);
+	//std::vector<unsigned int> record_collider_index_end(thread_num, 0);
+
+	for (unsigned int i = 0; i < thread_num; ++i) {
+		index_per_thread[i] = spatial_hashing_value[i];
+	}
+	if (has_collider) {
+		for (unsigned int i = 0; i < thread_num; ++i) {
+			index_per_thread_collider[i] = spatial_hashing_value_collider[i];
 		}
 	}
+	unsigned int current_hash_index = 0;
+	bool end_loop;
+	while (true)
+	{
+		end_loop = (index_per_thread[0]== actual_hash_value_end_index_ref[0]);
+		for (unsigned int i = 1; i < thread_num; ++i) {
+			end_loop = end_loop && (index_per_thread[i] == actual_hash_value_end_index_ref[i]);
+		}
+		if (end_loop) {
+			break;
+		}
+		current_hash_index = UINT_MAX;
+		for (unsigned int i = 0; i < thread_num; ++i) {
+			if(index_per_thread[i] != actual_hash_value_end_index_ref[i]){
+				if (current_hash_index > *(index_per_thread[i])) {
+					current_hash_index = *(index_per_thread[i]);
+				}
+			}
+			
+		}	
+		for (unsigned int i = 0; i < thread_num; ++i) {
+			prifix_sum[i].push_back(prifix_sum[i].back());		
+			if (start_index[i] != hash_index_count_per_thread[i].size()) {
+				if (*(index_per_thread[i]) == current_hash_index)
+				{
+					prifix_sum[i].back() += hash_index_count_per_thread[i][start_index[i]];
+					index_per_thread[i] += hash_index_count_per_thread[i][start_index[i]];
+					start_index[i]++;
+				}
+			}
+		}
 
+		if (has_collider) 
+		{
+			for (unsigned int i = 0; i < thread_num; ++i) {
+				if (start_index_collider[i] < hash_index_count_per_thread_collider[i].size()) {
+					while (*(index_per_thread_collider[i]) < current_hash_index)
+					{
+						index_per_thread_collider[i] += hash_index_count_per_thread_collider[i][start_index_collider[i]];
+						start_index_collider[i]++;
+						record_collider_index_start[i] += hash_index_count_per_thread_collider[i][start_index_collider[i]];
+						if (start_index_collider[i] == hash_index_count_per_thread_collider[i].size()) {
+							break;
+						}
+					}
+				}
+				prifix_sum_collider[i].push_back(record_collider_index_start[i]);
 
-	prifix_sum.resize(hash_table_size + 1);
-	prifix_sum[0] = 0;
-
-	prefix_sum_1_address = prifix_sum.data() + 1;
-
-
-	arrangeIndex(thread_num, hash_table_size, total_hash_count_start_per_thread);
-	//memset(prifix_sum.data(), 0, 4 * prifix_sum.size());
-	thread->assignTask(this, MEMSET_PREFIX);
-	arrangeIndex(thread_num, actual_hash_value_count, actual_hash_count_start_per_thread);
-	prepareForActualHashValueCount();
-
-	thread->assignTask(this, ADD_COUNT_FOR_PRIFIX_SUM);
-
-	//prefixSumParallel();
-	thread->assignTask(this, PREFIX_SUM_THREAD_1);
-	for (int i = 1; i < thread_num; ++i) {
-		prefix_sum_thread_start[i] = *(prefix_sum_1_address + total_hash_count_start_per_thread[i] - 1) + prefix_sum_thread_start[i - 1];
+				if (start_index_collider[i] < hash_index_count_per_thread_collider[i].size()) {
+					if (*(index_per_thread_collider[i]) == current_hash_index)
+					{						
+						index_per_thread_collider[i] += hash_index_count_per_thread_collider[i][start_index_collider[i]];
+						start_index_collider[i]++;
+						record_collider_index_start[i] += hash_index_count_per_thread_collider[i][start_index_collider[i]];
+					}
+				}
+				prifix_sum_collider[i].push_back(record_collider_index_start[i]);
+			}
+			
+		}
+		
 	}
-	thread->assignTask(this, PREFIX_SUM_THREAD_2);
+
+	arrangeIndex(thread_num, prifix_sum[0].size()-1, actual_exist_cell_begin_per_thread.data());
 	//testPrifixSum1();
 }
+
+
+//single thread
+//void SpatialHashing::setPrifixSum()
+//{
+//	//initial prefix sum in TRIANGLE_HASHING, clear() & push_back(0)
+//	std::vector<unsigned int*> index_per_thread(thread_num);
+//	for (unsigned int i = 0; i < thread_num; ++i) {
+//		index_per_thread[i] = spatial_hashing_value[i];
+//	}
+//	unsigned int current_hash_index = 0;
+//	bool end_loop;
+//	while (true)
+//	{
+//		end_loop = (index_per_thread[0] == actual_hash_value_end_index_ref[0]);
+//		current_hash_index = *(index_per_thread[0]);
+//		for (unsigned int i = 1; i < thread_num; ++i) {
+//			if (current_hash_index > *(index_per_thread[i])) {
+//				current_hash_index = *(index_per_thread[i]);
+//			}
+//			end_loop = end_loop && (index_per_thread[i] == actual_hash_value_end_index_ref[i]);
+//		}
+//		if (end_loop) {
+//			break;
+//		}
+//		for (unsigned int i = 0; i < thread_num; ++i) {
+//			prifix_sum[i].push_back(prifix_sum[i].back());
+//			while (*(index_per_thread[i]) == current_hash_index)
+//			{
+//				prifix_sum[i].back()++;
+//				if (index_per_thread[i] == actual_hash_value_end_index_ref[i]) {
+//					break;
+//				}
+//				index_per_thread[i]++;
+//			}
+//		}
+//	}
+//	//testPrifixSum1();
+//}
+
 void SpatialHashing::testPrifixSum1()
 {
 	std::vector<int> prifix_sum_;
@@ -829,49 +1190,112 @@ void SpatialHashing::setHashTogether(int thread_No)
 void SpatialHashing::triangleHashing(int thread_No)
 {
 	unsigned int* triangle_begin;
-	std::array<double,6>* aabb;
+	std::array<double, 6>* aabb;
 	int vector_size;
 	unsigned int triangle_index_total;
 	unsigned int triangle_end;
-	for (unsigned int i = 0; i < cloth->size(); ++i) {
-		aabb = (*cloth)[i].triangle_AABB.data();		
-		triangle_begin = (*cloth)[i].mesh_struct.face_index_begin_per_thread.data();
-		//hash_value = obj_triangle_hash[i].data();
-		//vector_size = spatial_hashing_triangle_->size();
-		triangle_end = triangle_begin[thread_No + 1];
-		for (unsigned int j = triangle_begin[thread_No]; j < triangle_end; ++j) {
-			triangle_index_total = max_cell_count * (triangle_begin_per_obj[i] + j);
-			triangleHashValue(aabb[j].data(), spatial_hashing_triangle_index+ triangle_index_total,
-				spatial_hashing_value+ triangle_index_total, j, spatial_hashing_obj_index + triangle_index_total,i);
-		}
-	}
+	unsigned int largest_count_in_hash_value_list;
+		
+		unsigned int* spatial_hashing_triangle_index_ = spatial_hashing_triangle_index[thread_No];
+		unsigned int* spatial_hashing_value_ = spatial_hashing_value[thread_No];
+		unsigned int* spatial_hashing_obj_index_ = spatial_hashing_obj_index[thread_No];
 
-	unsigned int obj_No;
-	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
-		obj_No = i + tetrahedron_begin_obj_index;
-		aabb = (*tetrahedron)[i].triangle_AABB.data();
-		triangle_begin = (*tetrahedron)[i].mesh_struct.face_index_begin_per_thread.data();
-		triangle_end = triangle_begin[thread_No + 1];
-		for (unsigned int j = triangle_begin[thread_No]; j < triangle_end; ++j) {
-			triangle_index_total = max_cell_count * (triangle_begin_per_obj[obj_No] + j);
-			triangleHashValue(aabb[j].data(), spatial_hashing_triangle_index + triangle_index_total,
-				spatial_hashing_value + triangle_index_total, j, spatial_hashing_obj_index + triangle_index_total, obj_No);
-		}
-	}
 
-	if (for_construct_patch) {
+		memset(spatial_hashing_value_, -1, 4 * actual_hash_value_count_per_thread[thread_No]);
+
+		for (unsigned int i = 0; i < cloth->size(); ++i) {
+			aabb = (*cloth)[i].triangle_AABB.data();
+			triangle_begin = (*cloth)[i].mesh_struct.face_index_begin_per_thread.data();
+			triangle_end = triangle_begin[thread_No + 1];
+			for (unsigned int j = triangle_begin[thread_No]; j < triangle_end; ++j) {
+				triangle_index_total = max_cell_count * (triangle_begin_per_obj_per_thread[thread_No][i] + j);
+				triangleHashValue(aabb[j].data(), spatial_hashing_triangle_index_ + triangle_index_total,
+					spatial_hashing_value_ + triangle_index_total, j, spatial_hashing_obj_index_ + triangle_index_total, i);
+			}
+		}
+
+		unsigned int obj_No;
+		for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+			obj_No = i + tetrahedron_begin_obj_index;
+			aabb = (*tetrahedron)[i].triangle_AABB.data();
+			triangle_begin = (*tetrahedron)[i].mesh_struct.face_index_begin_per_thread.data();
+			triangle_end = triangle_begin[thread_No + 1];
+			for (unsigned int j = triangle_begin[thread_No]; j < triangle_end; ++j) {
+				triangle_index_total = max_cell_count * (triangle_begin_per_obj_per_thread[thread_No][obj_No] + j);
+				triangleHashValue(aabb[j].data(), spatial_hashing_triangle_index_ + triangle_index_total,
+					spatial_hashing_value_ + triangle_index_total, j, spatial_hashing_obj_index_ + triangle_index_total, obj_No);
+			}
+		}
+		
+		radix_sort[thread_No].radixSort(hash_table_size, spatial_hashing_value_, spatial_hashing_triangle_index_, spatial_hashing_obj_index_,
+			largest_count_in_hash_value_list);
+		actual_hash_value_count_per_thread[thread_No] = total_hash_size_per_thread[thread_No];
+		actual_hash_value_end_index_ref[thread_No] = spatial_hashing_value[thread_No] + total_hash_size_per_thread[thread_No];
+		for (unsigned int i = total_hash_size_per_thread[thread_No] - largest_count_in_hash_value_list;
+			i < total_hash_size_per_thread[thread_No]; ++i) {
+			if (spatial_hashing_value_[i] == UINT_MAX) {
+				actual_hash_value_end_index_ref[thread_No] = spatial_hashing_value[thread_No] + i;
+				actual_hash_value_count_per_thread[thread_No] = i;
+				break;
+			}
+		}
+		prifix_sum[thread_No].clear();
+		prifix_sum[thread_No].push_back(0);
+		countHashIndexPerThread(thread_No, actual_hash_value_count_per_thread[thread_No], &hash_index_count_per_thread[thread_No],
+			spatial_hashing_value_);
+
+	if (has_collider) {
+		unsigned int* spatial_hashing_triangle_index_collider_ = spatial_hashing_triangle_index_collider[thread_No];
+		unsigned int* spatial_hashing_value_collider_ = spatial_hashing_value_collider[thread_No];
+		unsigned int* spatial_hashing_obj_index_collider_ = spatial_hashing_obj_index_collider[thread_No];
+		memset(spatial_hashing_value_collider_, -1, 4 * actual_hash_value_count_per_thread_collider[thread_No]);
 		for (unsigned int i = 0; i < collider->size(); ++i) {
-			obj_No = i + collider_begin_obj_index;
 			aabb = (*collider)[i].triangle_AABB.data();
 			triangle_begin = (*collider)[i].mesh_struct.face_index_begin_per_thread.data();
 			triangle_end = triangle_begin[thread_No + 1];
 			for (unsigned int j = triangle_begin[thread_No]; j < triangle_end; ++j) {
-				triangle_index_total = max_cell_count * (triangle_begin_per_obj[obj_No] + j);
-				triangleHashValue(aabb[j].data(), spatial_hashing_triangle_index + triangle_index_total,
-					spatial_hashing_value + triangle_index_total, j, spatial_hashing_obj_index + triangle_index_total, obj_No);
+				triangle_index_total = max_cell_count * (triangle_begin_per_obj_per_thread_collider[thread_No][i] + j);
+				triangleHashValue(aabb[j].data(), spatial_hashing_triangle_index_collider_ + triangle_index_total,
+					spatial_hashing_value_collider_ + triangle_index_total, j, spatial_hashing_obj_index_collider_ + triangle_index_total, obj_No);
 			}
 		}
+		radix_sort_collider[thread_No].radixSort(hash_table_size, spatial_hashing_value_collider_, spatial_hashing_triangle_index_collider_, spatial_hashing_obj_index_collider_,
+			largest_count_in_hash_value_list);
+		actual_hash_value_count_per_thread_collider[thread_No] = total_hash_size_per_thread_collider[thread_No];
+		actual_hash_value_end_index_ref_collider[thread_No] = spatial_hashing_value_collider[thread_No] + total_hash_size_per_thread_collider[thread_No];
+		for (unsigned int i = total_hash_size_per_thread_collider[thread_No] - largest_count_in_hash_value_list;
+			i < total_hash_size_per_thread_collider[thread_No]; ++i) {
+			if (spatial_hashing_value_collider_[i] == UINT_MAX) {
+				actual_hash_value_end_index_ref_collider[thread_No] = spatial_hashing_value_collider[thread_No] + i;
+				actual_hash_value_count_per_thread_collider[thread_No] = i;
+				break;
+			}
+		}
+		prifix_sum_collider[thread_No].clear();
+		countHashIndexPerThread(thread_No, actual_hash_value_count_per_thread_collider[thread_No],
+			&hash_index_count_per_thread_collider[thread_No], spatial_hashing_value_collider_);
+		
+	}
+}
 
+void SpatialHashing::countHashIndexPerThread(int thread_No, unsigned int actual_count, std::vector<unsigned int>* hash_index_count,
+	unsigned int* spatial_hashing_value_)
+{
+	hash_index_count->clear();
+	unsigned int hash_index = spatial_hashing_value_[0];
+	unsigned int* end = spatial_hashing_value_ + actual_count;
+
+	while (true) {
+		hash_index_count->push_back(0);
+		while (*spatial_hashing_value_== hash_index)
+		{
+			hash_index_count->back()++;
+			spatial_hashing_value_++;
+			if (end == spatial_hashing_value_) {
+				return;
+			}
+		}
+		hash_index = *spatial_hashing_value_;
 	}
 }
 

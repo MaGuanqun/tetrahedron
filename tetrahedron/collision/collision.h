@@ -193,4 +193,14 @@ private:
 	void searchPatch(double* aabb, unsigned int compare_index, unsigned int obj_No, bool& intersect);
 
 	double scene_aabb[6];
+
+	void findPointTrianglePair(int thread_No);
+	void initialCollidePairInfo();
+
+	std::vector<std::vector<unsigned int>> point_triangle_pair; //except collider, inner vector store tri_1 index, obj_1_index, tri_2_index, obj_2_index
+	std::vector<std::vector<unsigned int>> point_collider_triangle_pair;  //except collider, inner vector store tri_1 index, obj_1_index, tri_2_index, obj_2_index
+	std::vector<std::vector<unsigned int>> edge_edge_pair;  //except collider, inner vector store tri_1 index, obj_1_index, tri_2_index, obj_2_index
+
+
+	std::vector<std::array<double, 6>> obj_tri_aabb;
 };
