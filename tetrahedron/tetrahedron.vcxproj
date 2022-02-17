@@ -160,7 +160,6 @@
     <ClCompile Include="collision\collision.cpp" />
     <ClCompile Include="collision\collision_constraint.cpp" />
     <ClCompile Include="collision\expansion.cpp" />
-    <ClCompile Include="collision\mesh_patch.cpp" />
     <ClCompile Include="collision\TightCCD.cpp" />
     <ClCompile Include="collision\interval.cpp" />
     <ClCompile Include="collision\parallel_radix_sort.cpp" />
@@ -220,7 +219,6 @@
     <ClInclude Include="collision\parallel_radix_sort.h" />
     <ClInclude Include="collision\predictive_contact.h" />
     <ClInclude Include="collision\spatial_hashing.h" />
-    <ClInclude Include="collision\mesh_patch.h" />
     <ClInclude Include="external\imgui\imgui.h" />
     <ClInclude Include="external\imgui\imgui_impl_glfw.h" />
     <ClInclude Include="external\imgui\imgui_impl_opengl3.h" />

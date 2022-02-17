@@ -16,20 +16,20 @@ public:
 	void triangleHashing(int thread_No);
 	void buildSpatialHashing();
 	void setHashTogether(int thread_No);
-	void searchTriangle(double* aabb, unsigned int input_obj_No, unsigned int triangle_index,
-		std::vector<unsigned int>* obj_neighbor_index, bool is_collider, unsigned int thread_No);
-	void prifixSum1(int thread_No);
-	void prifixSum2(int thread_No);
-	void prifixSum3(int thread_No);
-	void prepareForActualHashValueCountThread(int thread_No);
-	void memsetThread(int thread_No);
+	//void searchTriangle(double* aabb, unsigned int input_obj_No, unsigned int triangle_index,
+	//	std::vector<unsigned int>* obj_neighbor_index, bool is_collider, unsigned int thread_No);
+	//void prifixSum1(int thread_No);
+	//void prifixSum2(int thread_No);
+	//void prifixSum3(int thread_No);
+	//void prepareForActualHashValueCountThread(int thread_No);
+	//void memsetThread(int thread_No);
 
-	void prefixSumParallelUp(int thread_No, unsigned int stage);
-	void prefixSumParallelDown(int thread_No, unsigned int stage);
+	//void prefixSumParallelUp(int thread_No, unsigned int stage);
+	//void prefixSumParallelDown(int thread_No, unsigned int stage);
 
-	void findPatch(std::vector<std::vector<std::vector<unsigned int>>>* triangle_patch_);	
+	//void findPatch(std::vector<std::vector<std::vector<unsigned int>>>* triangle_patch_);	
 
-	void buildSpatialHashingPatchTriangle(double* scene_aabb);
+	//void buildSpatialHashingPatchTriangle(double* scene_aabb);
 	std::vector<unsigned int> actual_exist_cell_begin_per_thread;
 
 	void findAllTrianglePairs(int thread_No);
@@ -58,7 +58,7 @@ private:
 	unsigned int cell_num0_cell_num1;
 	unsigned int hash_max_index[3];
 	void setSpatialHashing();
-	void setSpatialHashingPatch(double* scene_aabb);
+	//void setSpatialHashingPatch(double* scene_aabb);
 	//std::vector<std::vector<std::array<int, 3>>> spatial_hashing_triangle_per_thread;
 	//std::vector<std::array<int, 3>> spatial_hashing_triangle;
 
@@ -132,12 +132,12 @@ private:
 	//unsigned int* prefix_sum_thread_start;//record the count before the start index
 
 	//unsigned int* hash_value_count_start_thread;//we record the count of every start of total_hash_count_start_per_thread of prefix_sum
-	void prepareForActualHashValueCount();
-	void testPrefixSumTime();
-	void testPrifixSum1();
+	//void prepareForActualHashValueCount();
+	//void testPrefixSumTime();
+	//void testPrifixSum1();
 
-	void prefixSumParallel();
-	void initialParallePrefix();
+	//void prefixSumParallel();
+	//void initialParallePrefix();
 
 	unsigned int* d_for_prefix_sum;//2^d
 

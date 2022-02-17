@@ -243,7 +243,7 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& wireframe,
 		}
 	}
 	else {
-		project_dynamic.collision.drawMeshPatch(camera);
+		//project_dynamic.collision.drawMeshPatch(camera);
 	}
 
 	if (start_save_obj) {

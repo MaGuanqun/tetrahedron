@@ -66,7 +66,7 @@ void Object::getAABB(double* target, double* aabb0, double* aabb1, double radius
 	}
 }
 
-void Object::setOrder(bool* in_this_triangle, int count, int* index)
+void Object::setOrder(bool* in_this_triangle, unsigned int count, int* index)
 {
 	if (count == 1) {
 		if (in_this_triangle[1]) {
@@ -98,7 +98,7 @@ void Object::setOrder(bool* in_this_triangle, int count, int* index)
 	}
 }
 
-void Object::setOrderEdge(bool* in_this_triangle, int count, int* index)
+void Object::setOrderEdge(bool* in_this_triangle, unsigned int count, int* index)
 {
 	if (count == 1) {
 		if (in_this_triangle[1]) {
@@ -131,7 +131,7 @@ void Object::setOrderEdge(bool* in_this_triangle, int count, int* index)
 
 void Object::setRepresentativeEdge(std::vector<MeshStruct::Face>& face, std::vector<MeshStruct::Edge>& edge)
 {
-	int count;
+	unsigned int count;
 	bool in_this_triangle[3];
 	std::vector<bool> is_used(edge.size(), false);
 	for (int i = 0; i < face.size(); ++i) {
@@ -152,7 +152,7 @@ void Object::setRepresentativeEdge(std::vector<MeshStruct::Face>& face, std::vec
 
 void Object::setRepresentativeVertex(std::vector<std::array<int,3>>& face, std::vector<MeshStruct::Vertex>& vertex)
 {
-	int count;
+	unsigned int count;
 	bool in_this_triangle[3];
 	std::vector<bool> is_used(vertex.size(), false);
 	for (int i = 0; i < face.size(); ++i) {

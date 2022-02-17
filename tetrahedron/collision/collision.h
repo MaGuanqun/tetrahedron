@@ -10,7 +10,7 @@
 #include"../external/Eigen/Dense"
 #include"collision_constraint.h"
 #include"CCD.h"
-#include"mesh_patch.h"
+//#include"mesh_patch.h"
 
 using namespace Eigen;
 
@@ -22,7 +22,7 @@ public:
 	void initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread,
 		double* tolerance_ratio);
 	void initialDHatTolerance(double ave_edge_length);
-	void findAllTrianglePairs(int thread_No);
+	//void findAllTrianglePairs(int thread_No);
 	void globalCollision();
 	void findPrimitivesAround(int thread_No);
 	void collisionDetection(int thread_No);
@@ -36,7 +36,7 @@ public:
 	void test();
 	void collisionCulling();
 	void globalCollisionTime();
-	void findAllPatchPairs(int thread_No);
+	//void findAllPatchPairs(int thread_No);
 	struct TargetPosition
 	{
 		std::vector<std::vector<std::array<double, 3>>>b_sum; // add on the b vector in projectDynamic.cpp
@@ -79,9 +79,11 @@ public:
 	TargetPosition obj_target_pos;
 
 	size_t* time_stamp;
-	void drawMeshPatch(Camera* camera);
+	//void drawMeshPatch(Camera* camera);
 
 	void getSceneAABB();
+
+	void findPointTriangleEdgeEdgePair(int thread_No);
 
 private:
 
@@ -90,8 +92,8 @@ private:
 	unsigned int total_obj_with_collider;// include collider
 
 	unsigned int thread_num;
-	std::vector<BVH> obj_BVH; //cloth + tetrahedron
-	std::vector<BVH> collider_BVH;
+	//std::vector<BVH> obj_BVH; //cloth + tetrahedron
+	//std::vector<BVH> collider_BVH;
 
 	std::vector<Cloth>* cloth;
 	std::vector<Collider>* collider;
@@ -101,7 +103,7 @@ private:
 	PredictiveContact predictive_contact;
 
 	SpatialHashing spatial_hashing;
-	bool use_BVH;
+	//bool use_BVH;
 
 
 	std::vector<double>collision_time_thread;
@@ -112,16 +114,16 @@ private:
 	double d_hat;
 	double tolerance_2;// distance to report a collision
 
-	void buildBVH();
-	void initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread);
+	//void buildBVH();
+	//void initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread);
 	void searchTriangle(double* aabb, unsigned int compare_index, unsigned int obj_No, std::vector<std::vector<unsigned int>>* obj_neighbor_index,
 		std::vector<std::vector<unsigned int>>* collider_neighbor_index, bool is_collider);
 	void findObjTriangleAroundVertex(int thread_No);
 	void findColliderTriangleAroundVertex(int thread_No);
 	void findVertexAroundColliderTriangle(int thread_No);
 	void findEdgeAroundEdge(int thread_No);
-	inline bool vertexInTriangle(int* face_index, int vertex_index);
-	inline bool edgeEdgeconnected(int* edge1, int* edge2);
+	//inline bool vertexInTriangle(int* face_index, int vertex_index);
+	//inline bool edgeEdgeconnected(int* edge1, int* edge2);
 	void pointSelfTriangleCollisionDetection(int thread_No, int vertex_index, int cloth_No,
 		std::vector<int>* vertex_neighbor_triangle, std::vector<int>* collide_vertex_triangle, MeshStruct* vertex_mesh, 
 		double radius0, TargetPosition* target_pos, double vertex_collision_stiffness);
@@ -185,22 +187,36 @@ private:
 
 	void findPatchOfObjects();
 
-	MeshPatch mesh_patch;
+	//MeshPatch mesh_patch;
 
 	void getAABBWithoutTolerance();
 
-	void testBVHUpdate();
+	//void testBVHUpdate();
 	void searchPatch(double* aabb, unsigned int compare_index, unsigned int obj_No, bool& intersect);
 
 	double scene_aabb[6];
 
-	void findPointTrianglePair(int thread_No);
+	
 	void initialCollidePairInfo();
 
-	std::vector<std::vector<unsigned int>> point_triangle_pair; //except collider, inner vector store tri_1 index, obj_1_index, tri_2_index, obj_2_index
-	std::vector<std::vector<unsigned int>> point_collider_triangle_pair;  //except collider, inner vector store tri_1 index, obj_1_index, tri_2_index, obj_2_index
-	std::vector<std::vector<unsigned int>> edge_edge_pair;  //except collider, inner vector store tri_1 index, obj_1_index, tri_2_index, obj_2_index
+	std::vector<std::vector<unsigned int>> point_triangle_pair; //except collider, inner vector store vertex_1 index, obj_1_index, tri_2_index, obj_2_index
+	std::vector<std::vector<unsigned int>> point_collider_triangle_pair;  //except collider, inner vector store vertex_1 index, obj_1_index, tri_2_index, obj_2_index
+	std::vector<std::vector<unsigned int>> edge_edge_pair;  //except collider, inner vector store edge_1 index, obj_1_index, edge_2_index, obj_2_index
 
 
-	std::vector<std::array<double, 6>> obj_tri_aabb;
+	//reorganize the data of different objects
+	std::vector<std::array<double, 6>*> obj_tri_aabb;
+	std::vector<std::array<double, 6>*> vertex_aabb;
+	std::vector<std::array<double, 6>*> edge_aabb;
+
+	std::vector<std::array<double, 6>*> obj_tri_aabb_collider;
+
+	std::vector<unsigned int*> representative_vertex_num;
+	std::vector<unsigned int*> representative_edge_num;
+	std::vector<std::array<int, 3>*> triangle_index_in_order;
+	std::vector<MeshStruct::Face*> faces;
+	std::vector<MeshStruct::Edge*> edges;
+
+	void reorganzieDataOfObjects();
+	bool has_collider;
 };

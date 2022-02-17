@@ -9,7 +9,7 @@
 #include"collision/collision.h"
 #include"collision/parallel_radix_sort.h"
 #include"iteration_method.h"
-#include"collision/mesh_patch.h"
+//#include"collision/mesh_patch.h"
 
 Thread::Thread()
 {
@@ -263,14 +263,12 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     job k;
     switch (function_type)
     {
-    case FIND_PATCH_PAIRS:
-        k = job([func, thread_id]() {func->findAllPatchPairs(thread_id); });
-        break;
-    case FIND_TRIANGLE_PAIRS:
-        k = job([func, thread_id]() {func->findAllTrianglePairs(thread_id); });
-        break;
+    //case FIND_PATCH_PAIRS:
+    //    k = job([func, thread_id]() {func->findAllPatchPairs(thread_id); });
+    //    break;  
     case  FIND_PRIMITIVE_AROUND:
-        k = job([func, thread_id]() {func->findPrimitivesAround(thread_id); });
+        k = job([func, thread_id]() {func->findPointTriangleEdgeEdgePair(thread_id); });
+      //  k = job([func, thread_id]() {func->findPrimitivesAround(thread_id); });
         break;
     case GLOBAL_COLLISION_TIME:
         k = job([func, thread_id]() {func->collisionTime(thread_id); });
@@ -290,6 +288,9 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     case SUM_TARGET_POSITION:
         k = job([func, thread_id]() {func->sumTargetPositionPerThread(thread_id); });
         break;
+    //case FIND_TRIANGLE_PAIRS:
+    //    k = job([func, thread_id]() {func->findAllTrianglePairs(thread_id); });
+    //    break;
     }
     return k;
 }
@@ -307,26 +308,29 @@ job Thread::create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncS
     case SCENE_AABB:
         k = job([func, thread_id]() {func->getSceneAABB(thread_id); });
         break;
-    case SET_HASH_TOGETHER:
-        k = job([func, thread_id]() {func->setHashTogether(thread_id); });
+    case SH_FIND_ALL_TRIANGLE_PAIRS:
+        k = job([func, thread_id]() {func->findAllTrianglePairs(thread_id); });
         break;
-    case PREPARE_FOR_ACTUAL_HASH_VALUE_COUNT_THREAD: {
-        k = job([func, thread_id]() {func->prepareForActualHashValueCountThread(thread_id); });
-        break;
-    }
-    case ADD_COUNT_FOR_PRIFIX_SUM: {
-        k = job([func, thread_id]() {func->prifixSum1(thread_id); });
-        break;
-    }
-    case PREFIX_SUM_THREAD_1:
-        k = job([func, thread_id]() {func->prifixSum2(thread_id); });
-        break;
-    case PREFIX_SUM_THREAD_2:
-        k = job([func, thread_id]() {func->prifixSum3(thread_id); });
-        break;
-    case MEMSET_PREFIX:
-        k = job([func, thread_id]() {func->memsetThread(thread_id); });
-        break;
+    //case SET_HASH_TOGETHER:
+    //    k = job([func, thread_id]() {func->setHashTogether(thread_id); });
+    //    break;
+    //case PREPARE_FOR_ACTUAL_HASH_VALUE_COUNT_THREAD: {
+    //    k = job([func, thread_id]() {func->prepareForActualHashValueCountThread(thread_id); });
+    //    break;
+    //}
+    //case ADD_COUNT_FOR_PRIFIX_SUM: {
+    //    k = job([func, thread_id]() {func->prifixSum1(thread_id); });
+    //    break;
+    //}
+    //case PREFIX_SUM_THREAD_1:
+    //    k = job([func, thread_id]() {func->prifixSum2(thread_id); });
+    //    break;
+    //case PREFIX_SUM_THREAD_2:
+    //    k = job([func, thread_id]() {func->prifixSum3(thread_id); });
+    //    break;
+    //case MEMSET_PREFIX:
+    //    k = job([func, thread_id]() {func->memsetThread(thread_id); });
+    //    break;
     }
     return k;
 }
@@ -337,12 +341,12 @@ job Thread::create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncS
     job k;
     switch (function_type)
     {
-    case PREFIX_SUM_UP:
-        k = job([func, thread_id, key_id]() {func->prefixSumParallelUp(thread_id, key_id); });
-        break;
-    case PREFIX_SUM_DOWN:
-        k = job([func, thread_id, key_id]() {func->prefixSumParallelDown(thread_id, key_id); });
-        break;
+    //case PREFIX_SUM_UP:
+    //    k = job([func, thread_id, key_id]() {func->prefixSumParallelUp(thread_id, key_id); });
+    //    break;
+    //case PREFIX_SUM_DOWN:
+    //    k = job([func, thread_id, key_id]() {func->prefixSumParallelDown(thread_id, key_id); });
+    //    break;
     }
     return k;
 }
@@ -494,26 +498,26 @@ job Thread::create_task(IterationMethod* func, IterationMethodFunc function_type
 }
 
 
-job Thread::create_task(MeshPatch* func, int thread_id, MeshPatchFunc function_type)
-{
-    job k;
-    switch (function_type)
-    {  
-    case PATCH_AABB:
-        k = job([func, thread_id]() {func->obtainAABB(thread_id); });
-        break;
-    case DECIDE_TRIANGLE_INDEX_SIZE:
-        k = job([func, thread_id]() {func->decideTriangleIndexSize(thread_id); });
-        break;
-    case FIND_TRIANGLE_INDEX:
-        k = job([func, thread_id]() {func->findNotedTrueTriangleIndex(thread_id); });
-        break;
-    case FIND_VERTEX:
-        k = job([func, thread_id]() {func->findVertex(thread_id); });
-        break;   
-    }
-    return k;
-}
+//job Thread::create_task(MeshPatch* func, int thread_id, MeshPatchFunc function_type)
+//{
+//    job k;
+//    switch (function_type)
+//    {  
+//    case PATCH_AABB:
+//        k = job([func, thread_id]() {func->obtainAABB(thread_id); });
+//        break;
+//    case DECIDE_TRIANGLE_INDEX_SIZE:
+//        k = job([func, thread_id]() {func->decideTriangleIndexSize(thread_id); });
+//        break;
+//    case FIND_TRIANGLE_INDEX:
+//        k = job([func, thread_id]() {func->findNotedTrueTriangleIndex(thread_id); });
+//        break;
+//    case FIND_VERTEX:
+//        k = job([func, thread_id]() {func->findVertex(thread_id); });
+//        break;   
+//    }
+//    return k;
+//}
 
 void Thread::thread_func(ThreadData* pData)
 {

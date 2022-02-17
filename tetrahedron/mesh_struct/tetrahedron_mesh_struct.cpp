@@ -46,19 +46,19 @@ void TetrahedronMeshStruct::findSurface()
 }
 
 
-void TetrahedronMeshStruct::setVertexIndexOnSurfaceEdgeTriangle()
-{
-	edge_vertex_index_on_surface.resize(edges.size());
-	for (int i = 0; i < edge_vertex_index_on_surface.size(); ++i) {
-		edge_vertex_index_on_surface[i][0] = vertex_surface_index[edges[i].vertex[0]];
-		edge_vertex_index_on_surface[i][1] = vertex_surface_index[edges[i].vertex[1]];
-	}
-	for (int i = 0; i < surface_triangle_index_in_order.size(); ++i) {
-		surface_triangle_index_in_order[i][0] = vertex_surface_index[surface_triangle_index_in_order[i][0]];
-		surface_triangle_index_in_order[i][1] = vertex_surface_index[surface_triangle_index_in_order[i][1]];
-		surface_triangle_index_in_order[i][2] = vertex_surface_index[surface_triangle_index_in_order[i][2]];
-	}
-}
+//void TetrahedronMeshStruct::setVertexIndexOnSurfaceEdgeTriangle()
+//{
+	//edge_vertex_index_on_surface.resize(edges.size());
+	//for (int i = 0; i < edge_vertex_index_on_surface.size(); ++i) {
+	//	edge_vertex_index_on_surface[i][0] = vertex_surface_index[edges[i].vertex[0]];
+	//	edge_vertex_index_on_surface[i][1] = vertex_surface_index[edges[i].vertex[1]];
+	//}
+	//for (int i = 0; i < surface_triangle_index_in_order.size(); ++i) {
+	//	surface_triangle_index_in_order[i][0] = vertex_surface_index[surface_triangle_index_in_order[i][0]];
+	//	surface_triangle_index_in_order[i][1] = vertex_surface_index[surface_triangle_index_in_order[i][1]];
+	//	surface_triangle_index_in_order[i][2] = vertex_surface_index[surface_triangle_index_in_order[i][2]];
+	//}
+//}
 
 
 void TetrahedronMeshStruct::recordTetIndexForSurfaceIndex()

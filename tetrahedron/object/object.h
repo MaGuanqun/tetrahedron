@@ -23,8 +23,8 @@ protected:
 	void getAABB(double* target, double* aabb0, double* aabb1, double radius);
 	void getAABB(double* target, double* aabb0, double* aabb1);
 	Thread* thread;
-	void setOrder(bool* in_this_triangle, int count, int* index);
-	void setOrderEdge(bool* in_this_triangle, int count, int* index);	
+	void setOrder(bool* in_this_triangle, unsigned int count, int* index);
+	void setOrderEdge(bool* in_this_triangle, unsigned int count, int* index);	
 	void setRepresentativeEdge(std::vector<MeshStruct::Face>& face, std::vector<MeshStruct::Edge>& edge);
 	void setRepresentativeVertex(std::vector<std::array<int, 3>>& face, std::vector<MeshStruct::Vertex>& vertex);
 
@@ -47,8 +47,8 @@ public:
 	std::vector<std::vector<int>>hash_index_for_edge;
 	std::vector<std::vector<int>>hash_index_for_vertex;
 
-	std::vector<int> representative_vertex_num; //for  tetrahedron, this is the vertex num of surface vertex
-	std::vector<int> representative_edge_num;
+	std::vector<unsigned int> representative_vertex_num; //for  tetrahedron, this is the vertex num of surface vertex
+	std::vector<unsigned int> representative_edge_num;
 	std::vector<int> edge_from_rep_triangle_index;
 	std::vector<std::vector<std::vector<unsigned int>>>triangle_neighbor_obj_triangle;
 

@@ -55,7 +55,7 @@ void Tetrahedron::setRepresentativePrimitve()
 	representative_vertex_num.resize(mesh_struct.faces.size(), 0);
 	representative_edge_num.resize(mesh_struct.faces.size(), 0);
 	setRepresentativeVertex(mesh_struct.surface_triangle_index_in_order, mesh_struct.vertices);
-	mesh_struct.setVertexIndexOnSurfaceEdgeTriangle();
+	//mesh_struct.setVertexIndexOnSurfaceEdgeTriangle();
 	setRepresentativeEdge(mesh_struct.faces, mesh_struct.edges);
 	surface_vertex_from_rep_triangle_index.resize(mesh_struct.vertex_index_on_sureface.size(), -1);
 	edge_from_rep_triangle_index.resize(mesh_struct.edges.size(), -1);
@@ -95,32 +95,36 @@ void Tetrahedron::getVertexAABBPerThread(int thread_No, bool has_tolerance)
 	std::vector<std::array<double, 3>>* vertex = &mesh_struct.vertex_position;
 	unsigned int index_end = mesh_struct.vertex_index_on_surface_begin_per_thread[thread_No + 1];
 	int* vertex_index_on_surface = mesh_struct.vertex_index_on_sureface.data();
+
+	unsigned int vertex_index;
 	if (has_tolerance) {
 		for (unsigned int i = mesh_struct.vertex_index_on_surface_begin_per_thread[thread_No]; i < index_end; ++i) {
-			AABB::obtainAABB(vertex_AABB[i].data(),(*vertex_render)[vertex_index_on_surface[i]].data(), (*vertex)[vertex_index_on_surface[i]].data(), tolerance);	// 
+			vertex_index = vertex_index_on_surface[i];
+			AABB::obtainAABB(vertex_AABB[vertex_index].data(),(*vertex_render)[vertex_index].data(), (*vertex)[vertex_index].data(), tolerance);	// 
 			for (unsigned int j = 0; j < 3; ++j) {
-				if (aabb[j] > vertex_AABB[i][j]) {
-					aabb[j] = vertex_AABB[i][j];
+				if (aabb[j] > vertex_AABB[vertex_index][j]) {
+					aabb[j] = vertex_AABB[vertex_index][j];
 				}
 			}
 			for (unsigned int j = 3; j < 6; ++j) {
-				if (aabb[j] < vertex_AABB[i][j]) {
-					aabb[j] = vertex_AABB[i][j];
+				if (aabb[j] < vertex_AABB[vertex_index][j]) {
+					aabb[j] = vertex_AABB[vertex_index][j];
 				}
 			}
 		}
 	}
 	else{
 		for (unsigned int i = mesh_struct.vertex_index_on_surface_begin_per_thread[thread_No]; i < index_end; ++i) {
-			AABB::obtainAABB(vertex_AABB[i].data(), (*vertex_render)[vertex_index_on_surface[i]].data(), (*vertex)[vertex_index_on_surface[i]].data());	// 
+			vertex_index = vertex_index_on_surface[i];
+			AABB::obtainAABB(vertex_AABB[vertex_index].data(), (*vertex_render)[vertex_index].data(), (*vertex)[vertex_index].data());	// 
 			for (unsigned int j = 0; j < 3; ++j) {
-				if (aabb[j] > vertex_AABB[i][j]) {
-					aabb[j] = vertex_AABB[i][j];
+				if (aabb[j] > vertex_AABB[vertex_index][j]) {
+					aabb[j] = vertex_AABB[vertex_index][j];
 				}
 			}
 			for (unsigned int j = 3; j < 6; ++j) {
-				if (aabb[j] < vertex_AABB[i][j]) {
-					aabb[j] = vertex_AABB[i][j];
+				if (aabb[j] < vertex_AABB[vertex_index][j]) {
+					aabb[j] = vertex_AABB[vertex_index][j];
 				}
 			}
 		}
@@ -130,14 +134,15 @@ void Tetrahedron::getVertexAABBPerThread(int thread_No, bool has_tolerance)
 //EDGE_TRIANGLE_AABB
 void Tetrahedron::getEdgeTriangleAABBPerThread(int thread_No)
 {
-	std::array<int,2>* edge = mesh_struct.edge_vertex_index_on_surface.data();
+	//std::array<int,2>* edge = mesh_struct.edge_vertex_index_on_surface.data();
+	MeshStruct::Edge* edge = mesh_struct.edges.data();
 	int* vertex_index;
 	unsigned int index_end = mesh_struct.edge_index_begin_per_thread[thread_No + 1];
 	for (unsigned int i = mesh_struct.edge_index_begin_per_thread[thread_No]; i < index_end; ++i) {
-		vertex_index = edge[i].data();
+		vertex_index = edge[i].vertex;
 		getAABB(edge_AABB[i].data(), vertex_AABB[vertex_index[0]].data(), vertex_AABB[vertex_index[1]].data());
 	}
-	std::array<int, 3>* face = mesh_struct.surface_triangle_index_in_order.data();
+	std::array<int, 3>* face = mesh_struct.triangle_indices.data();
 	index_end = mesh_struct.face_index_begin_per_thread[thread_No + 1];
 	for (unsigned int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < index_end; ++i) {
 		vertex_index = face[i].data();
@@ -160,7 +165,7 @@ void Tetrahedron::initialHashAABB()
 	}
 	triangle_AABB.resize(mesh_struct.faces.size());
 	edge_AABB.resize(mesh_struct.edges.size());
-	vertex_AABB.resize(mesh_struct.vertex_index_on_sureface.size());
+	vertex_AABB.resize(mesh_struct.vertex_position.size());
 }
 
 void Tetrahedron::setBuffer()

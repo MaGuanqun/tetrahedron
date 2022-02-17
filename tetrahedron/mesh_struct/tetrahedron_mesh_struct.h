@@ -34,10 +34,10 @@ public:
 	void getVertexNormalPerThread(int thread_id);
 	void getRenderVertexNormalPerThread(int thread_id);
 
-	std::vector<std::array<int, 2>> edge_vertex_index_on_surface;
+	//std::vector<std::array<int, 2>> edge_vertex_index_on_surface;
 	
 
-	void setVertexIndexOnSurfaceEdgeTriangle();
+	//void setVertexIndexOnSurfaceEdgeTriangle();
 
 private:
 	struct TetrahedronFace {

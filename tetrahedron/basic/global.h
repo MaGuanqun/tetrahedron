@@ -31,8 +31,6 @@ const int SCR_HEIGHT = 1080;
 #define M_PI 3.141592653589793
 
 const double sphere_radius = 0.25;
-#undef M_PI
-#define M_PI 3.141592653589793
 
 #undef myMax
 #define myMax(a,b) (a>b?a:b)
@@ -234,4 +232,28 @@ inline void inverse3X3(double* matrix, double* inverse)
 	inverse[6] = (matrix[7] * matrix[3] - matrix[4] * matrix[6]) / det;
 	inverse[7] = (matrix[1] * matrix[6] - matrix[7] * matrix[0]) / det;
 	inverse[8] = (matrix[4] * matrix[0] - matrix[1] * matrix[3]) / det;
+}
+
+inline bool edgeEdgeconnected(int* edge1, int* edge2)
+{
+	if (edge1[0] == edge2[0])
+		return true;
+	if (edge1[1] == edge2[1])
+		return true;
+	if (edge1[0] == edge2[1])
+		return true;
+	if (edge1[1] == edge2[0])
+		return true;
+	return false;
+}
+
+inline bool vertexInTriangle(int* face_index, int vertex_index)
+{
+	if (face_index[0] == vertex_index)
+		return true;
+	if (face_index[1] == vertex_index)
+		return true;
+	if (face_index[2] == vertex_index)
+		return true;
+	return false;
 }
