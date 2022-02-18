@@ -8,24 +8,27 @@ void SetModel::load_getAABB(std::string& path, int& index)
 	std::string extension_name;
 	extension_name = path.substr(path.length() - 3, 3);
 	if (extension_name == "obj") {
-		//ReadObj read_obj;
-		//read_obj.load(path.c_str(), ori_mesh);
+	
 
 		ori_mesh.type = TRIANGLE;
 		CreateMesh create_mesh(ori_mesh);
 		std::string name;
 		splitPath(path, name);
 		std::cout << name << std::endl;
-		if (name == "Avatar_low.obj") {
-			//create_mesh.setSphere(ori_mesh);
-			create_mesh.setFloor(ori_mesh);
-		}
+		//if (name == "Avatar_low.obj") {
+		//	//create_mesh.setSphere(ori_mesh);
+		//	create_mesh.setFloor(ori_mesh);
+		//}
 		//else if (path == "./model/floor.obj") {
 		//	//create_mesh.setCapsule(ori_mesh); 
 		//	create_mesh.setFloor(ori_mesh);
 		//}
-		else if (name == "Tshirts_simpleModel_high.obj") {
+		if (name == "cloth.obj") {
 			create_mesh.setMaterial1(ori_mesh);
+		}
+		else {
+			ReadObj read_obj;
+			read_obj.load(path.c_str(), ori_mesh);
 		}
 	//else if (path == "./model/Outer_simpleModel_high.obj") {
 	//	create_mesh.setMaterial2(ori_mesh);

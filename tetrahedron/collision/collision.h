@@ -22,7 +22,7 @@ public:
 	void initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread,
 		double* tolerance_ratio);
 	void initialDHatTolerance(double ave_edge_length);
-	//void findAllTrianglePairs(int thread_No);
+	void findAllTrianglePairs(int thread_No);
 	void globalCollision();
 	void findPrimitivesAround(int thread_No);
 	void collisionDetection(int thread_No);
@@ -92,8 +92,8 @@ private:
 	unsigned int total_obj_with_collider;// include collider
 
 	unsigned int thread_num;
-	//std::vector<BVH> obj_BVH; //cloth + tetrahedron
-	//std::vector<BVH> collider_BVH;
+	std::vector<BVH> obj_BVH; //cloth + tetrahedron
+	std::vector<BVH> collider_BVH;
 
 	std::vector<Cloth>* cloth;
 	std::vector<Collider>* collider;
@@ -114,8 +114,8 @@ private:
 	double d_hat;
 	double tolerance_2;// distance to report a collision
 
-	//void buildBVH();
-	//void initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread);
+	void buildBVH();
+	void initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread);
 	void searchTriangle(double* aabb, unsigned int compare_index, unsigned int obj_No, std::vector<std::vector<unsigned int>>* obj_neighbor_index,
 		std::vector<std::vector<unsigned int>>* collider_neighbor_index, bool is_collider);
 	void findObjTriangleAroundVertex(int thread_No);
@@ -219,4 +219,9 @@ private:
 
 	void reorganzieDataOfObjects();
 	bool has_collider;
+
+	void testIfSPRight();
+	void findInBVH(unsigned int obj_0, unsigned int tri_index_0, unsigned int obj_1, unsigned int tri_index1, bool with_collider);
+	void findInSP(std::vector<std::vector<std::vector<unsigned int>>>* tri_obj, unsigned int obj_index);
+	void findInSPCollider(std::vector<std::vector<std::vector<unsigned int>>>* tri_obj, unsigned int obj_index);
 };

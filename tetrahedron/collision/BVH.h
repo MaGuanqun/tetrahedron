@@ -15,13 +15,12 @@ public:
 
 	void init(int triangle_num, std::vector<unsigned int>& triangle_index_begin_per_thread, Thread* thread);
 	//single thread
-	void buildBVH(std::array<double,6>* triangle_AABB, bool* is_patch_intersect, double* obj_aabb);
+	void buildBVH(std::array<double, 6>* triangle_AABB);
 	void calCenterPerThread(int thread_No);
 	void calMortonCode(int thread_No);
 	void search(double* aabb, unsigned int compare_index, bool search_same_object, std::vector<unsigned int>* neighbor_list, unsigned int n, unsigned int b, unsigned int e);
-	bool searchIfPatchIntersect(double* aabb, unsigned int compare_index, bool search_same_object, unsigned int n, unsigned int b, unsigned int e);
 	//multi thread
-	void updateBVH(std::array<double, 6>* aabb, bool* is_patch_intersect, double* obj_aabb);
+	void updateBVH(std::array<double, 6>* aabb);
 	void updateNodeValue(int thread_No);
 	void updateNodeValueLastLayer(int thread_No);
 
@@ -30,10 +29,8 @@ public:
 
 	std::vector<unsigned int> triangle_node_index; //triangle -> node index
 	void test(std::array<double, 6>* aabb);
-
-
 private:
-	double* obj_aabb;
+
 	std::vector<std::array<double, 3>> aabb_center;
 	//std::vector<SortStruct> list;
 
@@ -41,18 +38,18 @@ private:
 	std::vector<unsigned int>new2old;
 
 	std::vector<unsigned int>triangle_index_begin_per_thread;
+	std::vector<std::array<double, 6>> aabb_per_thread;
 	void setMortonCode();
-	
+
 	int total_thread_num;
 	std::array<double, 6>* triangle_AABB;
-	bool* is_patch_intersect;
 	//double center[3];
-	
+	double obj_aabb[6];
 	const int multi = 10000;
-	Thread* thread;	
+	Thread* thread;
 	std::vector<unsigned int> old2new;
 	int maxNodeIndex(int node_index, int b, int e);
-	
+
 	void initBVHRecursive(std::array<double, 6>* triangle_AABB, int node_index, int b, int e);
 	RadixSort radix_sort;
 
@@ -72,7 +69,7 @@ private:
 
 	void recursiveUpdate(unsigned int start_index, unsigned int end_index);
 
-	
+
 	bool* is_node_leaf;
 
 	void recordNodeInfo(int node_index, int b, int e);

@@ -81,15 +81,14 @@ void simu_main(GLFWwindow* window, Input* input) {
 	//a = a.transpose();
 	//std::cout << a << std::endl;
 
-	//Matrix3d a;
-	//for (int i = 0; i < 9; ++i) {
-	//	a.data()[i] = rand();
-	//}
-	//Matrix3d inverse;
-	//inverse3X3(a.data(), inverse.data());
-	//std::cout << a.determinant() << std::endl;
-	//std::cout << a.inverse() << std::endl;
-	//std::cout << inverse << std::endl;
+	std::vector<unsigned int> a(2, 1);
+	for (unsigned int i = 0; i < 2; ++i) {
+		a.emplace_back(a.back());
+		a.back()++;
+	}
+	for (unsigned int i = 0; i < a.size(); ++i) {
+		std::cout << a[i] << " ";
+	}
 
 	while (!glfwWindowShouldClose(window))
 	{

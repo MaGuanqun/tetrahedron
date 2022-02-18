@@ -853,7 +853,7 @@ void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 		//}
 		//std::cout << "+++++" << std::endl;
 	}
-	collision.globalCollisionTime();
+	//collision.globalCollisionTime();
 	thread->assignTask(this, COLLISION_FREE_POSITION);
 	//std::cout << "final collision free position " << std::endl;
 	//for (int i = 0; i < cloth_sys_size[0]; ++i) {

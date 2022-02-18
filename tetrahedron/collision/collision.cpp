@@ -3,6 +3,7 @@
 void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider, 
 	std::vector<Tetrahedron>* tetrahedron, Thread* thread, double* tolerance_ratio)
 {
+	collision_time = 1.0;
 	has_collider = !collider->empty();
 	tetrahedron_begin_obj_index = cloth->size();
 	total_obj_num = cloth->size() + tetrahedron->size();
@@ -12,7 +13,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	this->tetrahedron = tetrahedron;
 	this->thread = thread;
 	//findPatchOfObjects();
-	//initialBVH(cloth, collider, tetrahedron, thread);
+	initialBVH(cloth, collider, tetrahedron, thread);
 	initialTargetPos(cloth, tetrahedron, thread);
 	initialSpatialHashing(cloth, collider, tetrahedron, thread, tolerance_ratio);
 	//use_BVH = true;
@@ -20,7 +21,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	collision_time_thread.resize(thread->thread_num);
 
 	initialCollidePairInfo();
-
+	reorganzieDataOfObjects();
 	//collision_constraint.testPT();
 	//approx_CCD.test();
 	//CCD::test();
@@ -116,17 +117,12 @@ void Collision::findPatchOfObjects()
 
 void Collision::initialNeighborPrimitive()
 {
-	//for (int i = 0; i < cloth->size(); ++i) {
-	//	(*cloth)[i].initialNeighborPrimitiveRecording(cloth->size(), tetrahedron->size(), collider->size(),use_BVH);
-	//}
-	//for (int i = 0; i < tetrahedron->size(); ++i) {
-	//	(*tetrahedron)[i].initialNeighborPrimitiveRecording(cloth->size(), tetrahedron->size(), collider->size(), use_BVH);
-	//}
-	//if (!use_BVH) {
-	//	for (int i = 0; i < collider->size(); ++i) {
-	//		(*collider)[i].initialNeighborPrimitiveRecording(cloth->size(), tetrahedron->size());
-	//	}		
-	//}
+	for (int i = 0; i < cloth->size(); ++i) {
+		(*cloth)[i].initialNeighborPrimitiveRecording(cloth->size(), tetrahedron->size(), collider->size(),true);
+	}
+	for (int i = 0; i < tetrahedron->size(); ++i) {
+		(*tetrahedron)[i].initialNeighborPrimitiveRecording(cloth->size(), tetrahedron->size(), collider->size(), true);
+	}
 }
 
 
@@ -195,32 +191,27 @@ void Collision::initialTargetPos(std::vector<Cloth>* cloth,	std::vector<Tetrahed
 	obj_target_pos.initial();
 }
 
-//void Collision::initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread)
-//{
-	//obj_BVH.resize(total_obj_num);
-	////collider_BVH.resize(collider->size());
-	//for (int i = 0; i < total_obj_num; ++i) {
-	//	obj_BVH[i].init(mesh_patch.patch_AABB[i].size(), mesh_patch.patch_index_start_per_thread[i], thread);
-	//	
-	//}
-	//for (int i = 0; i < total_obj_num; ++i) {
-	//	if (i < tetrahedron_begin_obj_index) {
-	//		obj_BVH[i].init((*cloth)[i].mesh_struct.faces.size(), (*cloth)[i].mesh_struct.face_index_begin_per_thread, thread);
-	//	}
-	//	else {
-	//		obj_BVH[i].init((*tetrahedron)[i- tetrahedron_begin_obj_index].mesh_struct.triangle_indices.size(), (*tetrahedron)[i- tetrahedron_begin_obj_index].mesh_struct.face_index_begin_per_thread, thread);
-	//	}
-	//}
-	//for (int i = 0; i < collider->size(); ++i) {
-	//	collider_BVH[i].init((*collider)[i].mesh_struct.faces.size(), (*collider)[i].mesh_struct.face_index_begin_per_thread, thread);
-	//}
-
-//}
+void Collision::initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread)
+{
+	obj_BVH.resize(total_obj_num);
+	collider_BVH.resize(collider->size());
+	for (int i = 0; i < total_obj_num; ++i) {
+		if (i < tetrahedron_begin_obj_index) {
+			obj_BVH[i].init((*cloth)[i].mesh_struct.faces.size(), (*cloth)[i].mesh_struct.face_index_begin_per_thread, thread);
+		}
+		else {
+			obj_BVH[i].init((*tetrahedron)[i- tetrahedron_begin_obj_index].mesh_struct.triangle_indices.size(), (*tetrahedron)[i- tetrahedron_begin_obj_index].mesh_struct.face_index_begin_per_thread, thread);
+		}
+	}
+	for (int i = 0; i < collider->size(); ++i) {
+		collider_BVH[i].init((*collider)[i].mesh_struct.faces.size(), (*collider)[i].mesh_struct.face_index_begin_per_thread, thread);
+	}
+}
 
 void Collision::initialSpatialHashing(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread,
 	double* tolerance_ratio)
 {
-	spatial_hashing.setInObject(cloth, collider, tetrahedron, thread, tolerance_ratio,18,false);
+	spatial_hashing.setInObject(cloth, collider, tetrahedron, thread, tolerance_ratio,16,false);
 }
 
 
@@ -251,23 +242,24 @@ void Collision::getAABBWithoutTolerance()
 	}
 }
 
-//void Collision::buildBVH()
-//{
-//	double* aabb;
-//	for (int i = 0; i < total_obj_num; ++i) {
-//		if (i < tetrahedron_begin_obj_index) {
-//			aabb = cloth->data()[i].obj_aabb;
-//		}
-//		else {
-//			aabb = tetrahedron->data()[i-tetrahedron_begin_obj_index].obj_aabb;
-//		}
-//		//obj_BVH[i].updateBVH(mesh_patch.patch_AABB[i].data(),mesh_patch.patch_is_intersect[i], aabb);		
-//	}
-//	//testBVHUpdate();
-//	//for (int i = 0; i < collider->size(); ++i) {
-//	//	collider_BVH[i].buildBVH(&(*collider)[i].triangle_AABB);
-//	//}
-//}
+void Collision::buildBVH()
+{
+	bool a[2];
+	double* aabb;
+	for (int i = 0; i < total_obj_num; ++i) {
+		if (i < tetrahedron_begin_obj_index) {
+			aabb = cloth->data()[i].obj_aabb;
+		}
+		else {
+			aabb = tetrahedron->data()[i-tetrahedron_begin_obj_index].obj_aabb;
+		}
+		obj_BVH[i].buildBVH(obj_tri_aabb[i]);
+	}
+	//testBVHUpdate();
+	for (int i = 0; i < collider->size(); ++i) {
+		collider_BVH[i].buildBVH(obj_tri_aabb_collider[i]);
+	}
+}
 
 
 void Collision::globalCollision()
@@ -291,12 +283,187 @@ void Collision::globalCollision()
 	//t1 = clock();
 	//for (int i = 0; i < 100; ++i) {
 	thread->assignTask(this, FIND_PRIMITIVE_AROUND);
-
+	
 	//}
 	//std::cout << "find around primitive " << clock() - t1 << std::endl;
 	////std::cout << "search " << clock() - t1 << std::endl;
 	thread->assignTask(this, GLOBAL_COLLISION_DETECTION);
 	sumTargetPosition();
+}
+
+
+
+void Collision::testIfSPRight()
+{
+	std::vector<unsigned int>* tri_tri_pair = spatial_hashing.triangle_pair.data();
+	std::vector<unsigned int>* tri_tri_pair_collider = spatial_hashing.triangle_pair_with_collider.data();
+	for (unsigned int i = 0; i < thread_num; ++i) {
+		for (unsigned int j = 0; j < tri_tri_pair[i].size(); j+=4) {
+			findInBVH(tri_tri_pair[i][j + 1], tri_tri_pair[i][j], tri_tri_pair[i][j + 3], tri_tri_pair[i][j + 2],false);
+		}
+		for (unsigned int j = 0; j < tri_tri_pair_collider[i].size(); j += 4) {
+			findInBVH(tri_tri_pair_collider[i][j + 1], tri_tri_pair_collider[i][j], tri_tri_pair_collider[i][j + 3], tri_tri_pair_collider[i][j + 2], true);
+		}
+	}
+
+	std::vector<std::vector<std::vector<unsigned int>>>* tri_obj_tri;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		if (i < cloth->size()) {
+			tri_obj_tri = &cloth->data()[i].triangle_neighbor_obj_triangle;
+		}
+		else {
+			tri_obj_tri = &tetrahedron->data()[i-cloth->size()].triangle_neighbor_obj_triangle;
+		}
+		findInSP(tri_obj_tri, i);
+		if (i < cloth->size()) {
+			tri_obj_tri = &cloth->data()[i].triangle_neighbor_collider_triangle;
+		}
+		else {
+			tri_obj_tri = &tetrahedron->data()[i - cloth->size()].triangle_neighbor_collider_triangle;
+		}		
+		findInSPCollider(tri_obj_tri, i);
+	}
+	//for (unsigned int i = 0; i < thread_num; ++i) {
+	//	for (unsigned int j = 0; j < spatial_hashing.triangle_pair[i].size(); j+=4) {
+	//		if (spatial_hashing.triangle_pair[i][j] == 1 || spatial_hashing.triangle_pair[i][j+2]==1) {
+	//			std::cout <<i<<" "<< spatial_hashing.triangle_pair[i][j + 1] << " " << spatial_hashing.triangle_pair[i][j] << " "
+	//				<< spatial_hashing.triangle_pair[i][j + 3] << " " << spatial_hashing.triangle_pair[i][j + 2] << std::endl;
+	//		}
+	//	}
+	//}
+
+	//std::cout << cloth->data()[0].triangle_neighbor_obj_triangle[0][0].size() << std::endl;
+
+	//for (unsigned int i = 0; i < cloth->data()[0].triangle_neighbor_obj_triangle[0][0].size(); ++i) {
+	//	std::cout << cloth->data()[0].triangle_neighbor_obj_triangle[0][0][i]<<" " << std::endl;
+	//}
+
+
+	//std::cout <<(int) AABB::AABB_intersection(obj_tri_aabb[0][0].data(), obj_tri_aabb[0][6].data()) << std::endl;
+
+	std::cout << "test is right" << std::endl;
+
+	
+}
+
+void Collision::findInSPCollider(std::vector<std::vector<std::vector<unsigned int>>>* tri_obj, unsigned int obj_index)
+{
+	std::vector<unsigned int>* triangle_pair = spatial_hashing.triangle_pair_with_collider.data();
+	bool need_break;
+	bool found_one;
+	for (int i = 0; i < tri_obj->size(); ++i) {
+		//
+		for (int j = 0; j < tri_obj->data()[i].size(); ++j) {
+			found_one = true;
+			for (int k = 0; k < tri_obj->data()[i][j].size(); ++k) {
+				//obj_index, i, j, tri_obj->data()[i][j][k]
+				need_break = false;
+				for (unsigned int l = 0; l < thread_num; ++l) {
+					for (unsigned int m = 0; m < triangle_pair[l].size(); m += 4) {
+						if (obj_index == triangle_pair[l][m + 1] && i == triangle_pair[l][m] &&
+							j == triangle_pair[l][m + 3] && tri_obj->data()[i][j][k] == triangle_pair[l][m + 2]) {
+							need_break = true;
+							break;
+						}
+					}
+					if (need_break) {
+						break;
+					}
+				}
+				if (!need_break) {
+					std::cout << "does not find the collider pair: " << obj_index << " " << i << " " << j << " " << tri_obj->data()[i][j][k] << std::endl;
+				}
+			}
+		}
+	}
+}
+
+void Collision::findInSP(std::vector<std::vector<std::vector<unsigned int>>>* tri_obj, unsigned int obj_index)
+{
+	std::vector<unsigned int>* triangle_pair = spatial_hashing.triangle_pair.data();
+	bool need_break;
+	bool found_one;
+	for (int i = 0; i < tri_obj->size(); ++i) {
+		//
+		for (int j = 0; j < tri_obj->data()[i].size(); ++j) {
+			found_one = true;
+			for (int k = 0; k < tri_obj->data()[i][j].size(); ++k) {
+				//obj_index, i, j, tri_obj->data()[i][j][k]
+				need_break = false;
+				for (unsigned int l = 0; l < thread_num; ++l) {
+					for (int m = 0; m < triangle_pair[l].size(); m += 4) {
+						if (obj_index == triangle_pair[l][m + 1] && i == triangle_pair[l][m] &&
+							j == triangle_pair[l][m + 3] && tri_obj->data()[i][j][k] == triangle_pair[l][m + 2]) {
+							need_break = true;
+							break;
+						}
+						if (obj_index == triangle_pair[l][m + 3] && i == triangle_pair[l][m + 2] &&
+							j == triangle_pair[l][m + 1] && tri_obj->data()[i][j][k] == triangle_pair[l][m]) {
+							need_break = true;
+							break;
+						}
+					}
+					if (need_break) {
+						break;
+					}
+				}
+				if (!need_break) {
+					std::cout << "does not find the pair: " << obj_index << " " << i << " " << j << " " << tri_obj->data()[i][j][k] << std::endl;
+				}
+			}
+		}
+	}
+}
+
+
+void Collision::findInBVH(unsigned int obj_0, unsigned int tri_index_0, unsigned int obj_1, unsigned int tri_index1, bool with_collider)
+{
+	std::vector<unsigned int>* neighbor;
+	bool find = false;
+	if (!with_collider) {
+		if (obj_0 < cloth->size()) {
+			neighbor = &cloth->data()[obj_0].triangle_neighbor_obj_triangle[tri_index_0][obj_1];
+		}
+		else {
+			neighbor = &tetrahedron->data()[obj_0 - cloth->size()].triangle_neighbor_obj_triangle[tri_index_0][obj_1];
+		}
+		for (unsigned int i = 0; i < neighbor->size(); ++i) {
+			if (neighbor->data()[i] == tri_index1) {
+				find = true;
+			}
+		}
+		if (obj_1 < cloth->size()) {
+			neighbor = &cloth->data()[obj_1].triangle_neighbor_obj_triangle[tri_index1][obj_0];
+		}
+		else {
+			neighbor = &tetrahedron->data()[obj_1 - cloth->size()].triangle_neighbor_obj_triangle[tri_index1][obj_0];
+		}
+		for (unsigned int i = 0; i < neighbor->size(); ++i) {
+			if (neighbor->data()[i] == tri_index_0) {
+				find = true;
+			}
+		}
+		if (!find) {
+			std::cout << "does not find the pair: " << obj_0 << " " << tri_index_0 << " " << obj_1 << " " << tri_index1 << std::endl;
+		}
+	}
+	else {
+		if (obj_0 < cloth->size()) {
+			neighbor = &cloth->data()[obj_0].triangle_neighbor_collider_triangle[tri_index_0][obj_1];
+		}
+		else {
+			neighbor = &tetrahedron->data()[obj_0 - cloth->size()].triangle_neighbor_collider_triangle[tri_index_0][obj_1];
+		}
+		for (unsigned int i = 0; i < neighbor->size(); ++i) {
+			if (neighbor->data()[i] == tri_index1) {
+				find = true;
+			}
+		}
+		if (!find) {
+			std::cout << "does not find the collider pair: " << obj_0 << " " << tri_index_0 << " " << obj_1 << " " << tri_index1 << std::endl;
+		}
+	}
+	
 }
 
 void Collision::testCulling()
@@ -314,13 +481,15 @@ void Collision::collisionCulling()
 {
 	getAABB();
 	getSceneAABB();
-	//buildBVH();
+	buildBVH();
 	//thread->assignTask(this, FIND_PATCH_PAIRS);
 	//mesh_patch.test();
 	spatial_hashing.buildSpatialHashing();	
 
-	//thread->assignTask(this, FIND_TRIANGLE_PAIRS);
+	thread->assignTask(this, FIND_TRIANGLE_PAIRS);
 	thread->assignTask(this, FIND_PRIMITIVE_AROUND);
+
+	//testIfSPRight();
 	//testCulling();
 }
 
@@ -1645,32 +1814,20 @@ void Collision::searchPatch(double* aabb, unsigned int compare_index, unsigned i
 void Collision::searchTriangle(double* aabb, unsigned int compare_index, unsigned int obj_No, std::vector<std::vector<unsigned int>>* obj_neighbor_index,
 	std::vector<std::vector<unsigned int>>* collider_neighbor_index, bool is_collider)
 {
-	//if (!is_collider) {
-	//	for (unsigned int i = 0; i < total_obj_num; ++i) {
-	//		(*obj_neighbor_index)[i].clear();
-	//		if (i < tetrahedron_begin_obj_index) {
-	//			obj_BVH[i].search(aabb, compare_index, i == obj_No, &((*obj_neighbor_index)[i]), 1, 0, (*cloth)[i].triangle_AABB.size());
-	//		}
-	//		else {
-	//			obj_BVH[i].search(aabb, compare_index, i == obj_No, &((*obj_neighbor_index)[i]), 1, 0, (*tetrahedron)[i - tetrahedron_begin_obj_index].triangle_AABB.size());
-	//		}
-	//	}
-	//}
-	//else {
-	//	for (unsigned int i = 0; i < total_obj_num; ++i) {
-	//		(*obj_neighbor_index)[i].clear();
-	//		if (i < tetrahedron_begin_obj_index) {
-	//			obj_BVH[i].search(aabb, compare_index, false, &((*obj_neighbor_index)[i]), 1, 0, (*cloth)[i].triangle_AABB.size());
-	//		}
-	//		else {
-	//			obj_BVH[i].search(aabb, compare_index, false, &((*obj_neighbor_index)[i]), 1, 0, (*tetrahedron)[i - tetrahedron_begin_obj_index].triangle_AABB.size());
-	//		}
-	//	}
-	//}
-	//for (unsigned int i = 0; i < collider->size(); ++i) {
-	//	(*collider_neighbor_index)[i].clear();
-	//	collider_BVH[i].search(aabb, compare_index, false, &((*collider_neighbor_index)[i]), 1, 0, (*collider)[i].triangle_AABB.size());
-	//}
+
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		(*obj_neighbor_index)[i].clear();
+		if (i < tetrahedron_begin_obj_index) {
+			obj_BVH[i].search(aabb, compare_index, i == obj_No, &((*obj_neighbor_index)[i]), 1, 0, (*cloth)[i].triangle_AABB.size());
+		}
+		else {
+			obj_BVH[i].search(aabb, compare_index, i == obj_No, &((*obj_neighbor_index)[i]), 1, 0, (*tetrahedron)[i - tetrahedron_begin_obj_index].triangle_AABB.size());
+		}
+	}	
+	for (unsigned int i = 0; i < collider->size(); ++i) {
+		(*collider_neighbor_index)[i].clear();
+		collider_BVH[i].search(aabb, compare_index, false, &((*collider_neighbor_index)[i]), 1, 0, (*collider)[i].triangle_AABB.size());
+	}
 }
 
 ////FIND_PATCH_PAIRS
@@ -1692,63 +1849,62 @@ void Collision::searchTriangle(double* aabb, unsigned int compare_index, unsigne
 
 
 
-////FIND_TRIANGLE_PAIRS
-//void Collision::findAllTrianglePairs(int thread_No)
-//{
-//	unsigned int* thread_begin;
-//	unsigned int end;
-//	unsigned int obj_No;
-//	if (use_BVH) {
-//		for (unsigned int i = 0; i < cloth->size(); ++i) {
-//			thread_begin = (*cloth)[i].mesh_struct.face_index_begin_per_thread.data();
-//			end = thread_begin[thread_No + 1];
-//			for (unsigned int j = thread_begin[thread_No]; j < end; ++j) {
-//				searchTriangle((*cloth)[i].triangle_AABB[j].data(), j, i, &(*cloth)[i].triangle_neighbor_obj_triangle[j],
-//					&(*cloth)[i].triangle_neighbor_collider_triangle[j],false);
-//			}
-//		}
-//
-//	}
-//	else {
-//		std::vector<std::vector<int>> test_neighbor_triangle;
-//		test_neighbor_triangle.resize(cloth->size() + tetrahedron->size());
-//		for (unsigned int i = 0; i < cloth->size(); ++i) {
-//			thread_begin = (*cloth)[i].mesh_struct.face_index_begin_per_thread.data();
-//			end = thread_begin[thread_No + 1];
-//			for (unsigned int j = thread_begin[thread_No]; j < end; ++j) {
-//				spatial_hashing.searchTriangle((*cloth)[i].triangle_AABB[j].data(),i, j,(*cloth)[i].triangle_neighbor_obj_triangle[j].data(),
-//					false,thread_No);
-//				//searchTriangle((*cloth)[i].triangle_AABB[j], j, i, &test_neighbor_triangle,
-//				//	&test_neighbor_triangle, false);
-//				//testTwoVectorsAreSame((*cloth)[i].triangle_neighbor_obj_triangle[j], test_neighbor_triangle,i,j);
-//				
-//			}
-//		}
-//		for (unsigned int i = 0; i < collider->size(); ++i) {
-//			thread_begin = (*collider)[i].mesh_struct.face_index_begin_per_thread.data();
-//			end = thread_begin[thread_No + 1];
-//			for (int j = thread_begin[thread_No]; j < end; ++j) {
-//				spatial_hashing.searchTriangle((*collider)[i].triangle_AABB[j].data(), i, j, (*collider)[i].triangle_neighbor_obj_triangle[j].data(),
-//					true, thread_No);			
-//				//searchTriangle((*collider)[i].triangle_AABB[j], j, i, &test_neighbor_triangle,
-//				//	&test_neighbor_triangle, true);
-//				//if (thread_No == 0) {
-//					//std::cout <<"after func"<< (*collider)[i].triangle_neighbor_obj_triangle[j][0].size() << std::endl;
-//					//testTwoVectorsAreSame((*collider)[i].triangle_neighbor_obj_triangle[j], test_neighbor_triangle, i, j);
-//				//}
-//			}
-//		}
-//		for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
-//			thread_begin = (*collider)[i].mesh_struct.face_index_begin_per_thread.data();
-//			end = thread_begin[thread_No + 1];
-//			obj_No = tetrahedron_begin_obj_index + i;
-//			for (unsigned int j = thread_begin[thread_No]; j < end; ++j) {
-//				spatial_hashing.searchTriangle((*tetrahedron)[i].triangle_AABB[j].data(), obj_No, j, (*tetrahedron)[i].triangle_neighbor_obj_triangle[j].data(),
-//					true, thread_No);
-//			}
-//		}
-//	}
-//}
+//FIND_TRIANGLE_PAIRS
+void Collision::findAllTrianglePairs(int thread_No)
+{
+	unsigned int* thread_begin;
+	unsigned int end;
+	unsigned int obj_No;
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		thread_begin = (*cloth)[i].mesh_struct.face_index_begin_per_thread.data();
+		end = thread_begin[thread_No + 1];
+		for (unsigned int j = thread_begin[thread_No]; j < end; ++j) {
+			searchTriangle((*cloth)[i].triangle_AABB[j].data(), j, i, &(*cloth)[i].triangle_neighbor_obj_triangle[j],
+				&(*cloth)[i].triangle_neighbor_collider_triangle[j],false);
+		}
+	}
+
+	
+	//else {
+	//	std::vector<std::vector<int>> test_neighbor_triangle;
+	//	test_neighbor_triangle.resize(cloth->size() + tetrahedron->size());
+	//	for (unsigned int i = 0; i < cloth->size(); ++i) {
+	//		thread_begin = (*cloth)[i].mesh_struct.face_index_begin_per_thread.data();
+	//		end = thread_begin[thread_No + 1];
+	//		for (unsigned int j = thread_begin[thread_No]; j < end; ++j) {
+	//			spatial_hashing.searchTriangle((*cloth)[i].triangle_AABB[j].data(),i, j,(*cloth)[i].triangle_neighbor_obj_triangle[j].data(),
+	//				false,thread_No);
+	//			//searchTriangle((*cloth)[i].triangle_AABB[j], j, i, &test_neighbor_triangle,
+	//			//	&test_neighbor_triangle, false);
+	//			//testTwoVectorsAreSame((*cloth)[i].triangle_neighbor_obj_triangle[j], test_neighbor_triangle,i,j);
+	//			
+	//		}
+	//	}
+	//	for (unsigned int i = 0; i < collider->size(); ++i) {
+	//		thread_begin = (*collider)[i].mesh_struct.face_index_begin_per_thread.data();
+	//		end = thread_begin[thread_No + 1];
+	//		for (int j = thread_begin[thread_No]; j < end; ++j) {
+	//			spatial_hashing.searchTriangle((*collider)[i].triangle_AABB[j].data(), i, j, (*collider)[i].triangle_neighbor_obj_triangle[j].data(),
+	//				true, thread_No);			
+	//			//searchTriangle((*collider)[i].triangle_AABB[j], j, i, &test_neighbor_triangle,
+	//			//	&test_neighbor_triangle, true);
+	//			//if (thread_No == 0) {
+	//				//std::cout <<"after func"<< (*collider)[i].triangle_neighbor_obj_triangle[j][0].size() << std::endl;
+	//				//testTwoVectorsAreSame((*collider)[i].triangle_neighbor_obj_triangle[j], test_neighbor_triangle, i, j);
+	//			//}
+	//		}
+	//	}
+	//	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+	//		thread_begin = (*collider)[i].mesh_struct.face_index_begin_per_thread.data();
+	//		end = thread_begin[thread_No + 1];
+	//		obj_No = tetrahedron_begin_obj_index + i;
+	//		for (unsigned int j = thread_begin[thread_No]; j < end; ++j) {
+	//			spatial_hashing.searchTriangle((*tetrahedron)[i].triangle_AABB[j].data(), obj_No, j, (*tetrahedron)[i].triangle_neighbor_obj_triangle[j].data(),
+	//				true, thread_No);
+	//		}
+	//	}
+	//}
+}
 
 
 void Collision::testTwoVectorsAreSame(std::vector<std::vector<int>>& vec1, std::vector<std::vector<int>>& vec2, unsigned int obj_index,
@@ -2181,7 +2337,6 @@ void Collision::findPointTriangleEdgeEdgePair(int thread_No)
 		obj1_index = triangle_pair_collider_[i + 3];
 		for (unsigned int j = 0; j < representative_vertex_num[obj0_index][triangle0_index]; ++j)
 		{
-
 			if (AABB::AABB_intersection(vertex_aabb[obj0_index][triangle_index_in_order[obj0_index][triangle0_index][j]].data(),
 				obj_tri_aabb_collider[obj1_index][triangle1_index].data())) {
 				point_triangle_pair_->emplace_back(triangle_index_in_order[obj0_index][triangle0_index][j]);

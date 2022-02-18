@@ -37,6 +37,9 @@ public:
 	std::vector<std::vector<unsigned int>> triangle_pair; //except collider, inner vector store tri_1 index, obj_1_index, tri_2_index, obj_2_index
 	std::vector<std::vector<unsigned int>> triangle_pair_with_collider; //inner vector store tri_1 index, obj_1_index, tri_2_index, obj_2_index
 
+	void test();
+
+
 private:
 	void deleteArray();
 	Thread* thread;
@@ -110,8 +113,8 @@ private:
 	void initialTriangleHash();
 	void setHashTogether();
 	//std::vector<int>hash_value_begin;
-	std::vector<std::vector<unsigned int>> prifix_sum;
-	std::vector<std::vector<unsigned int>> prifix_sum_collider; //record start & end respectively
+	std::vector<std::vector<unsigned int>> prefix_sum;
+	std::vector<std::vector<unsigned int>> prefix_sum_collider; //record start & end respectively
 	void setPrifixSum();
 	bool*** obj_is_used0;
 	bool*** obj_is_used1;
@@ -159,7 +162,7 @@ private:
 	std::vector<std::array<double, 6>*> collider_tri_aabb;
 
 
-	
+	void testIfRadixSortIsRight(unsigned int* has_value, unsigned int count);
 
 };
 

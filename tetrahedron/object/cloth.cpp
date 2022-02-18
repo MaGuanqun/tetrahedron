@@ -365,7 +365,7 @@ void Cloth::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num
 		}
 	}
 
-	if (use_BVH) {
+	//if (use_BVH) {
 		triangle_neighbor_collider_triangle.resize(mesh_struct.triangle_indices.size());
 		for (int i = 0; i < mesh_struct.triangle_indices.size(); ++i) {
 			triangle_neighbor_collider_triangle[i].resize(collider_num);
@@ -373,6 +373,7 @@ void Cloth::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num
 				triangle_neighbor_collider_triangle[i][j].reserve(10);
 			}
 		}
+	//	std::cout<< triangle_neighbor_collider_triangle[0]
 		vertex_neighbor_collider_triangle.resize(mesh_struct.vertex_position.size());
 		collide_vertex_collider_triangle.resize(mesh_struct.vertex_position.size());
 		for (int i = 0; i < vertex_neighbor_collider_triangle.size(); ++i) {
@@ -383,7 +384,7 @@ void Cloth::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num
 				collide_vertex_collider_triangle[i][j].reserve(10);
 			}
 		}
-	}	
+	//}	
 }
 
 void Cloth::setRepresentativePrimitve()
