@@ -313,8 +313,8 @@ void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_par
 			//std::cout << cursor_screen[0] << " " << cursor_screen[1] << " " << force_coe << std::endl;
 			setCursorForce(camera, cursor_screen, force_coe);
 		}
-		//project_dynamic.PDsolve();
-		project_dynamic.PD_IPC_solve(record_matrix);
+		project_dynamic.PDsolve();
+		//project_dynamic.PD_IPC_solve(record_matrix);
 		project_dynamic.update_ave_iteration_record(ave_iteration);
 		time_stamp++;
 	}

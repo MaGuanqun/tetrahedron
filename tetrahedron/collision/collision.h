@@ -224,4 +224,43 @@ private:
 	void findInBVH(unsigned int obj_0, unsigned int tri_index_0, unsigned int obj_1, unsigned int tri_index1, bool with_collider);
 	void findInSP(std::vector<std::vector<std::vector<unsigned int>>>* tri_obj, unsigned int obj_index);
 	void findInSPCollider(std::vector<std::vector<std::vector<unsigned int>>>* tri_obj, unsigned int obj_index);
+
+	void testRepeatability();
+
+	struct TriangleElementPair
+	{
+		unsigned int index[4];
+
+		bool operator<(const TriangleElementPair& t1) const
+		{
+			if (index[1] < t1.index[1])
+				return true;
+			else if (index[1] == t1.index[1]) {
+				if (index[0] < t1.index[0])
+					return true;
+				else if (index[0] == t1.index[0]) {
+					if (index[3] < t1.index[3]) {
+						return true;
+					}
+					else if(index[3] == t1.index[3]){
+						if (index[2] < t1.index[2]) {
+							return true;
+						}
+					}
+						return true;
+				}
+			}
+			return false;
+		}
+
+		bool operator==(const TriangleElementPair& rhs)
+		{
+			for (unsigned int i = 0; i < 4; ++i) {
+				if (index[i] != rhs.index[i]) {
+					return false;
+				}
+			}
+			return true;
+		}
+	};
 };

@@ -64,6 +64,7 @@ private:
 			}
 			return false;
 		}
+
 	};
 	void buildMap(std::map<TetrahedronFace, int>& face_in_tet, int v0, int v1, int v2, std::vector<int>& face_tet_index, int tet_index);
 	double getTetrahedronVolume(double* v1, double* v2, double* v3, double* v4);

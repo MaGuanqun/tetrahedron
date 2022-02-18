@@ -159,9 +159,6 @@ void BVH::search(double* aabb, unsigned int compare_index, bool search_same_obje
 	if (e == b + 1) {
 		if (search_same_object) {
 			if (compare_index != new2old[b]) {
-				if (compare_index == 0) {
-					std::cout << new2old[b] << std::endl;
-				}
 				neighbor_list->push_back(new2old[b]);
 			}
 		}
