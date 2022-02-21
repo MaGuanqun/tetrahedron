@@ -26,7 +26,9 @@ public:
 
 	void prepareForDeformationGradient();
 	std::vector<Matrix3d>PPT_inv;//to record the restshape (PP^T)^-1 for deformation gradient
+	//std::vector<double>PPT_determinant;//to record the restshape (PP^T)^-1 for deformation gradient
 	std::vector<Matrix<double, 4, 3>> PT;//to record the restshape P^T for deformation gradient
+
 	//void getFaceNormalPerThread(int thread_id);
 	void getNormal();
 	void recordTetIndexForSurfaceIndex();
@@ -64,6 +66,7 @@ private:
 			}
 			return false;
 		}
+
 	};
 	void buildMap(std::map<TetrahedronFace, int>& face_in_tet, int v0, int v1, int v2, std::vector<int>& face_tet_index, int tet_index);
 	double getTetrahedronVolume(double* v1, double* v2, double* v3, double* v4);

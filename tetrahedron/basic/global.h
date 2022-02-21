@@ -222,6 +222,11 @@ inline void inverse3X3(double* matrix, double* inverse)
 	double det = matrix[0] * (matrix[8] * matrix[4] - matrix[7] * matrix[5])
 		- matrix[1] * (matrix[8] * matrix[3] - matrix[5] * matrix[6])
 		+ matrix[2] * (matrix[7] * matrix[3] - matrix[4] * matrix[6]);
+
+	//if (det < 1e-15) {
+	//	std::cout << det << std::endl;
+	//}
+
 	//std::cout << "my determi " << det << std::endl;
 	inverse[0] = (matrix[8] * matrix[4] - matrix[7] * matrix[5]) / det;
 	inverse[1] = (matrix[2] * matrix[7] - matrix[8] * matrix[1]) / det;

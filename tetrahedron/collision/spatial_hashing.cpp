@@ -406,19 +406,33 @@ void SpatialHashing::setSpatialHashing()
 
 	cell_num0_cell_num1 = cell_number[0] * cell_number[1];
 	hash_table_size = cell_number[0] * cell_number[1] * cell_number[2];
-	std::cout << "spatial hashing size "<< hash_table_size <<" " << cell_number[0] << " " << cell_number[1] << " " << cell_number[2] << std::endl;
+	//std::cout << "spatial hashing size "<< hash_table_size <<" " << cell_number[0] << " " << cell_number[1] << " " << cell_number[2] << std::endl;
 
 }
 
 void SpatialHashing::buildSpatialHashing()
 {
 	setSpatialHashing();
-	thread->assignTask(this, TRIANGLE_HASHING);
+
+	//time_t t = clock();
+	//for (unsigned int i = 0; i < 1000; ++i) {
+		thread->assignTask(this, TRIANGLE_HASHING);
+	//}
+	//std::cout <<"spatial hashing time "<< clock() - t << std::endl;
+
 	//if (!for_construct_patch) {
 		//memcpy(obj_triangle_hash, spatial_hashing_value, total_hash_size * 4);	
-	
-	setPrifixSum();
-	thread->assignTask(this, SH_FIND_ALL_TRIANGLE_PAIRS);
+
+	//t = clock();
+	//for (unsigned int i = 0; i < 1000; ++i) {
+		setPrifixSum();
+	//}
+	//std::cout << "prifix sum " << clock() - t << std::endl;
+	//t = clock();
+	//for (unsigned int i = 0; i < 1000; ++i) {
+		thread->assignTask(this, SH_FIND_ALL_TRIANGLE_PAIRS);
+	//}
+	//std::cout << "find all triangle pairs time " << clock() - t << std::endl;
 	//}
 }
 
@@ -846,6 +860,11 @@ void SpatialHashing::setPrifixSum()
 	//		std::cout << "cloth index error " << spatial_hashing_cloth_index[i] << std::endl;
 	//	}
 	//
+	for (unsigned int i = 0; i < thread_num; ++i) {
+		prefix_sum[i].clear();
+		prefix_sum_collider[i].clear();
+	}
+
 	
 	//initial prefix sum in TRIANGLE_HASHING, clear() & push_back(0)
 	std::vector<unsigned int*> index_per_thread(thread_num);
@@ -1262,7 +1281,7 @@ void SpatialHashing::triangleHashing(int thread_No)
 
 		
 
-		testIfRadixSortIsRight(spatial_hashing_value_, total_hash_size_per_thread[thread_No]);
+		//testIfRadixSortIsRight(spatial_hashing_value_, total_hash_size_per_thread[thread_No]);
 		actual_hash_value_count_per_thread[thread_No] = total_hash_size_per_thread[thread_No];
 		actual_hash_value_end_index_ref[thread_No] = spatial_hashing_value[thread_No] + total_hash_size_per_thread[thread_No];
 		for (unsigned int i = total_hash_size_per_thread[thread_No] - largest_count_in_hash_value_list;
@@ -1295,7 +1314,7 @@ void SpatialHashing::triangleHashing(int thread_No)
 		}
 		radix_sort_collider[thread_No].radixSort(hash_table_size, spatial_hashing_value_collider_, spatial_hashing_triangle_index_collider_, spatial_hashing_obj_index_collider_,
 			largest_count_in_hash_value_list);
-		testIfRadixSortIsRight(spatial_hashing_value_collider_, total_hash_size_per_thread_collider[thread_No]);
+		//testIfRadixSortIsRight(spatial_hashing_value_collider_, total_hash_size_per_thread_collider[thread_No]);
 
 		actual_hash_value_count_per_thread_collider[thread_No] = total_hash_size_per_thread_collider[thread_No];
 		actual_hash_value_end_index_ref_collider[thread_No] = spatial_hashing_value_collider[thread_No] + total_hash_size_per_thread_collider[thread_No];
