@@ -792,77 +792,78 @@ void ProjectDynamic::firstPDForIPC(bool& record_matrix)
 
 void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 {
-	firstPDForIPC(record_matrix);
-	outer_iteration_num = 1;
-	reset_ave_iteration_record();
-	while (!IPC_PDConvergeCondition()) {
-		////std::cout << "==" << std::endl;
-		//collision.globalCollisionTime();
-		thread->assignTask(this, COLLISION_FREE_POSITION);//in document, we use q_n+1, however, here, we use vertices_for_render & cloth_u to store this collision free position.
-		u_previous_itr = u;
-		//collision.solveCollisionConstraint();
-		PDupdateSystemMatrix();
-		//std::cout << "==iteration number " << outer_iteration_num << std::endl;
-		//std::cout << "collision free position " << std::endl;
-		//for (int i = 0; i < cloth_sys_size[0]; ++i) {
-		//	std::cout<<"    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "<< cloth_u[0][2][i] << std::endl;
-		//}
-		local_global_iteration_num = 0;
-
-//		if (record_matrix && outer_iteration_num==1) {
-//			std::string matrix_name = "./save_matrix/global_" + std::to_string(*time_stamp) + ".dat";
-//			//saveSparseMatrix(cloth_global_mat[0], matrix_name);
-//			//std::string off_diagonal_name = "off_diagonal_" + std::to_string(*time_stamp) + ".dat";
-//			//saveSparseMatrix(iteration_method.off_diagonal[0], off_diagonal_name);
-//			std::string u_name = "./save_matrix/u_" + std::to_string(*time_stamp) + "_";
-///*			for (int i = 0; i < 3; ++i) {
-//				saveMatrix(i, cloth_u[0][i], u_name);
-//			}	*/		
+	collision.collisionCulling();
+//	firstPDForIPC(record_matrix);
+//	outer_iteration_num = 1;
+//	reset_ave_iteration_record();
+//	while (!IPC_PDConvergeCondition()) {
+//		////std::cout << "==" << std::endl;
+//		//collision.globalCollisionTime();
+//		thread->assignTask(this, COLLISION_FREE_POSITION);//in document, we use q_n+1, however, here, we use vertices_for_render & cloth_u to store this collision free position.
+//		u_previous_itr = u;
+//		//collision.solveCollisionConstraint();
+//		PDupdateSystemMatrix();
+//		//std::cout << "==iteration number " << outer_iteration_num << std::endl;
+//		//std::cout << "collision free position " << std::endl;
+//		//for (int i = 0; i < cloth_sys_size[0]; ++i) {
+//		//	std::cout<<"    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "<< cloth_u[0][2][i] << std::endl;
+//		//}
+//		local_global_iteration_num = 0;
+//
+////		if (record_matrix && outer_iteration_num==1) {
+////			std::string matrix_name = "./save_matrix/global_" + std::to_string(*time_stamp) + ".dat";
+////			//saveSparseMatrix(cloth_global_mat[0], matrix_name);
+////			//std::string off_diagonal_name = "off_diagonal_" + std::to_string(*time_stamp) + ".dat";
+////			//saveSparseMatrix(iteration_method.off_diagonal[0], off_diagonal_name);
+////			std::string u_name = "./save_matrix/u_" + std::to_string(*time_stamp) + "_";
+/////*			for (int i = 0; i < 3; ++i) {
+////				saveMatrix(i, cloth_u[0][i], u_name);
+////			}	*/		
+////		}
+//
+//		while (!innerIterationConvergeCondition()) {
+//			thread->assignTask(this, LOCAL_PROJECTION_WITHOUT_ENERGY);
+//			current_constraint_energy = temEnergy[0];
+//			for (unsigned int i = 1; i < total_thread_num; ++i) {
+//				current_constraint_energy += temEnergy[i];
+//			}
+//			thread->assignTask(this, CONSTRUCT_B);
+//			thread->assignTask(this, SOLVE_WITH_COLLISION);
+//			solveClothSystem2(false);
+//			local_global_iteration_num++;
+//			computeInnerEnergyIPCPD();
+//
+//			//if (record_matrix && outer_iteration_num == 1 && local_global_iteration_num==1) {
+//			//	std::string b_name = "./save_matrix/b_" + std::to_string(*time_stamp) + "_";
+//			//	for (int i = 0; i < 3; ++i) {
+//			//		//saveMatrix(i, cloth_b[0][i], b_name);
+//			//	}
+//			//	//record_matrix = false;
+//			//}
 //		}
-
-		while (!innerIterationConvergeCondition()) {
-			thread->assignTask(this, LOCAL_PROJECTION_WITHOUT_ENERGY);
-			current_constraint_energy = temEnergy[0];
-			for (unsigned int i = 1; i < total_thread_num; ++i) {
-				current_constraint_energy += temEnergy[i];
-			}
-			thread->assignTask(this, CONSTRUCT_B);
-			thread->assignTask(this, SOLVE_WITH_COLLISION);
-			solveClothSystem2(false);
-			local_global_iteration_num++;
-			computeInnerEnergyIPCPD();
-
-			//if (record_matrix && outer_iteration_num == 1 && local_global_iteration_num==1) {
-			//	std::string b_name = "./save_matrix/b_" + std::to_string(*time_stamp) + "_";
-			//	for (int i = 0; i < 3; ++i) {
-			//		//saveMatrix(i, cloth_b[0][i], b_name);
-			//	}
-			//	//record_matrix = false;
-			//}
-		}
-		//std::cout << outer_iteration_num << std::endl;
-		updateModelPosition();
-		outer_iteration_num++;
-		//computeEnergyIPCPD();
-		displacement_ratio_dif = previous_displacement_norm - displacement_norm;
-		previous_displacement_norm = displacement_norm;
-		//system("pause");
-		//std::cout << "pd position " << std::endl;
-		//for (int i = 0; i < cloth_sys_size[0]; ++i) {
-		//	std::cout << "    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "	<< cloth_u[0][2][i] << std::endl;
-		//}
-		//std::cout << "+++++" << std::endl;
-	}
-	//collision.globalCollisionTime();
-	thread->assignTask(this, COLLISION_FREE_POSITION);
-	//std::cout << "final collision free position " << std::endl;
-	//for (int i = 0; i < cloth_sys_size[0]; ++i) {
-	//	std::cout << "    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "	<< cloth_u[0][2][i] << std::endl;
-	//}
-	thread->assignTask(this, UPDATE_UV);
-	updateRenderPositionIPC();
-	//std::cout << cloth_v[0][1] << std::endl;
-	//std::cout << "========" << std::endl;
+//		//std::cout << outer_iteration_num << std::endl;
+//		updateModelPosition();
+//		outer_iteration_num++;
+//		//computeEnergyIPCPD();
+//		displacement_ratio_dif = previous_displacement_norm - displacement_norm;
+//		previous_displacement_norm = displacement_norm;
+//		//system("pause");
+//		//std::cout << "pd position " << std::endl;
+//		//for (int i = 0; i < cloth_sys_size[0]; ++i) {
+//		//	std::cout << "    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "	<< cloth_u[0][2][i] << std::endl;
+//		//}
+//		//std::cout << "+++++" << std::endl;
+//	}
+//	//collision.globalCollisionTime();
+//	thread->assignTask(this, COLLISION_FREE_POSITION);
+//	//std::cout << "final collision free position " << std::endl;
+//	//for (int i = 0; i < cloth_sys_size[0]; ++i) {
+//	//	std::cout << "    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "	<< cloth_u[0][2][i] << std::endl;
+//	//}
+//	thread->assignTask(this, UPDATE_UV);
+//	updateRenderPositionIPC();
+//	//std::cout << cloth_v[0][1] << std::endl;
+//	//std::cout << "========" << std::endl;
 }
 
 
