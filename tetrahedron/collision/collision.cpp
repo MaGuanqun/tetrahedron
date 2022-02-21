@@ -292,6 +292,112 @@ void Collision::globalCollision()
 }
 
 
+void Collision::testRepeatability()
+{
+	unsigned int pair_num = 0;
+	unsigned int pair_num_collider = 0;
+	for (unsigned int i = 0; i < thread_num; ++i) {
+		pair_num += spatial_hashing.triangle_pair[i].size() / 4;
+		pair_num_collider += spatial_hashing.triangle_pair_with_collider[i].size() / 4;
+	}
+	std::vector<TriangleElementPair> triangle_pair(pair_num);
+	std::vector<TriangleElementPair> triangle_pair_collider(pair_num_collider);
+
+	unsigned int index = 0;
+	unsigned int index_collider = 0;
+	for (unsigned int i = 0; i < thread_num; ++i) {
+		for (unsigned int j = 0; j < spatial_hashing.triangle_pair[i].size(); j += 4) {
+			if (spatial_hashing.triangle_pair[i][j + 1] < spatial_hashing.triangle_pair[i][j + 3] ||
+				(spatial_hashing.triangle_pair[i][j + 1] == spatial_hashing.triangle_pair[i][j + 3] &&
+					spatial_hashing.triangle_pair[i][j] < spatial_hashing.triangle_pair[i][j + 2])) {
+				memcpy(triangle_pair[index].index, &spatial_hashing.triangle_pair[i][j], 16);
+			}
+			else {
+				triangle_pair[index].index[0] = spatial_hashing.triangle_pair[i][j + 2];
+				triangle_pair[index].index[1] = spatial_hashing.triangle_pair[i][j + 3];
+				triangle_pair[index].index[2] = spatial_hashing.triangle_pair[i][j];
+				triangle_pair[index].index[3] = spatial_hashing.triangle_pair[i][j + 1];
+
+			}
+			index++;
+		}
+		for (unsigned int j = 0; j < spatial_hashing.triangle_pair_with_collider[i].size(); j += 4) {
+			if (spatial_hashing.triangle_pair_with_collider[i][j + 1] < spatial_hashing.triangle_pair_with_collider[i][j + 3] ||
+				(spatial_hashing.triangle_pair_with_collider[i][j + 1] == spatial_hashing.triangle_pair_with_collider[i][j + 3] &&
+					spatial_hashing.triangle_pair_with_collider[i][j] < spatial_hashing.triangle_pair_with_collider[i][j + 2])) {
+				memcpy(triangle_pair_collider[index_collider].index, &spatial_hashing.triangle_pair_with_collider[i][j], 16);
+			}
+			else {
+				triangle_pair_collider[index_collider].index[0] = spatial_hashing.triangle_pair_with_collider[i][j + 2];
+				triangle_pair_collider[index_collider].index[1] = spatial_hashing.triangle_pair_with_collider[i][j + 3];
+				triangle_pair_collider[index_collider].index[2] = spatial_hashing.triangle_pair_with_collider[i][j];
+				triangle_pair_collider[index_collider].index[3] = spatial_hashing.triangle_pair_with_collider[i][j + 1];
+
+			}
+			index_collider++;
+		}
+	}
+	std::sort(triangle_pair.begin(), triangle_pair.end());
+	std::sort(triangle_pair_collider.begin(), triangle_pair_collider.end());
+	//for (unsigned int i = 0; i < triangle_pair.size(); ++i) {
+	//	std::cout << triangle_pair[i].index[1] << " " << triangle_pair[i].index[0] << " " << triangle_pair[i].index[3] << " " << triangle_pair[i].index[2] << std::endl;
+	//}
+
+
+	TriangleElementPair a;
+	std::vector<unsigned int> count;
+	std::vector<unsigned int> count_collider;
+	a = triangle_pair[0];
+	count.push_back(1);
+	for (unsigned int i = 1; i < triangle_pair.size(); ++i) {
+		if (triangle_pair[i] == a) {
+			count.back()++;
+		}
+		else {
+			a = triangle_pair[i];
+			count.push_back(1);
+		}
+	}
+	if (!triangle_pair_collider.empty()) {
+		a = triangle_pair_collider[0];
+		count_collider.push_back(1);
+		for (unsigned int i = 1; i < triangle_pair_collider.size(); ++i) {
+			if (triangle_pair_collider[i] == a) {
+				count_collider.back()++;
+			}
+			else {
+				a = triangle_pair_collider[i];
+				count_collider.push_back(1);
+			}
+		}
+	}
+	int count_2 = 0;
+	int count_2_collider = 0;
+	int count_2_larger = 0;
+	int count_2_larger_collider = 0;
+	for (unsigned int i = 0; i < count.size(); ++i) {
+		if (count[i] == 2) {
+			count_2++;
+		}
+		else if (count[i] > 2) {
+			count_2_larger++;
+		}
+	}
+	if (!triangle_pair_collider.empty()) {
+		for (unsigned int i = 0; i < count_collider.size(); ++i) {
+			if (count_collider[i] == 2) {
+				count_2_collider++;
+			}
+			else if (count_collider[i] > 2) {
+				count_2_larger_collider++;
+			}
+		}
+	}
+	std::cout << "Repeatability 2: " << (double)count_2 / (double)count.size() << " larger than 2 " << (double)count_2_larger / (double)count.size() << std::endl;
+	std::cout << "Collider Repeatability 2: " << (double)count_2_collider / (double)count_collider.size() << " " << (double)count_2_larger_collider / (double)count_collider.size() << std::endl;
+
+}
+
 
 void Collision::testIfSPRight()
 {
@@ -491,6 +597,7 @@ void Collision::collisionCulling()
 
 	//testIfSPRight();
 	//testCulling();
+	//testRepeatability();
 }
 
 
