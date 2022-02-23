@@ -6,8 +6,8 @@ ProjectDynamic::ProjectDynamic()
 	gravity_ = 9.8;
 	total_thread_num = std::thread::hardware_concurrency();
 	temEnergy.resize(total_thread_num);
-	outer_itr_conv_rate = 5e-3;// 7.5e-2; 
-	local_global_conv_rate = 1e-2;
+	outer_itr_conv_rate = 2e-3;// 7.5e-2; 
+	local_global_conv_rate = 5e-3;
 	sub_step_num = 1;
 
 	use_dierct_solve_for_coarest_mesh = true;
@@ -917,12 +917,12 @@ void ProjectDynamic::PDsolve()
 		thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL);
 	}
 	std::cout << "===" << std::endl;
-	//while (!PDConvergeCondition()) {
+	while (!PDConvergeCondition()) {
 		//collision.globalCollision();
 		//PDupdateSystemMatrix();
 		initialEnergyOuterInteration();
 		local_global_itr_in_single_outer = 0;
-	//	while (!PDLocalGlobalConvergeCondition()) {
+		while (!PDLocalGlobalConvergeCondition()) {
 			initialEnergyLocalGlobal();
 			if (local_global_itr_in_single_outer > 0) {
 				//collision.updateCollisionPosition();				
@@ -933,7 +933,7 @@ void ProjectDynamic::PDsolve()
 				current_constraint_energy += temEnergy[i];
 			}
 			thread->assignTask(this, CONSTRUCT_B_WITHOUT_COLLISION);
-			thread->assignTask(this, SOLVE_WITH_COLLISION);
+			thread->assignTask(this, SOLVE_WITHOUT_COLLISION);
 			solveClothSystem2(true);
 			current_constraint_energy += current_collision_energy;
 			for (unsigned int i = 0; i < total_thread_num; ++i) {
@@ -949,10 +949,10 @@ void ProjectDynamic::PDsolve()
 			}
 			local_global_itr_in_single_outer++;
 			local_global_iteration_num++;
-		//}
+		}
 		outer_iteration_num++;
 
-	//}
+	}
 	thread->assignTask(this, UPDATE_UV);
 	updateRenderPosition();
 }
@@ -1298,7 +1298,7 @@ bool ProjectDynamic::PDConvergeCondition()
 	bool energy_satisfied = system_energy && collision_energy;
 	bool need_to_stop = local_global_iteration_num > max_it - 3 || fabs(current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy < 5e-6;
 
-	bool standard = (energy_satisfied || need_to_stop) && outer_iteration_num > 1;
+	bool standard = (energy_satisfied || need_to_stop) && outer_iteration_num > 12;
 	if (standard) {//
 		return true;
 	}
@@ -1469,12 +1469,27 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 
 				center =0.25* q.rowwise().sum();
 				q = (q.colwise() - center).eval();
-
-				
 				transform = (q * PT[i] * PPT_inv[i]);
 
-				JacobiSVD<Matrix3d> svd(transform, ComputeFullU | ComputeFullV);
-				rotation_2 = svd.matrixV();
+				//Matrix3d temp = PT[i].transpose() * q.transpose();
+				//FullPivLU<Matrix3d>llt(PPT_inv[i]);
+				//if (thread_id == 5) {
+				//	std::cout << PPT_inv[i] << std::endl;
+				//}
+				//llt.compute(PPT_inv[i]);
+				//if (thread_id == 5) {
+				//	std::cout << PPT_inv[i] << std::endl;
+				//	std::cout << "===" << std::endl;
+				//}
+				//for (unsigned int kk = 0; kk < 3; ++kk) {
+				//	transform.col(kk) = llt.solve(temp.col(kk));
+				//}
+				//transform.transposeInPlace();
+
+
+				JacobiSVD<Matrix3d> svd;
+				svd.compute(transform, ComputeFullU | ComputeFullV);
+				rotation_2 = svd.matrixU();
 				determinant = transform.determinant();
 				if (determinant < 0) {
 					rotation_2.data()[6] *= -1.0;
@@ -1495,17 +1510,17 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 				else {
 					for (unsigned int k = 0; k < 3; ++k) {
 						for (unsigned int kk = 0; kk < 3; ++kk) {
-							transform_for_volume_perserve.data()[3 * k + kk] = sigma.data()[k] * rotation_2.data()[3 * k + kk];
+							transform_for_volume_perserve.data()[3 * k + kk] = sigma.data()[k] * svd.matrixV().data()[3 * k + kk];
 						}
 					}
-					transform_for_volume_perserve = (svd.matrixU() * transform_for_volume_perserve.transpose()).eval();
+					transform_for_volume_perserve = (rotation_2 * transform_for_volume_perserve.transpose()).eval();
 				}
 				//if (i == 0) {
 				//	std::cout << (transform - svd.matrixU() * svd.singularValues().asDiagonal() * svd.matrixV().transpose()).squaredNorm() << std::endl;
 				//}
 
 
-				transform = svd.matrixU() * rotation_2.transpose();		
+				transform = rotation_2 * svd.matrixV().transpose();
 
 				//if ((transform - Matrix3d::Identity()).squaredNorm() > 1e-6) {
 				//	std::cout << transform << std::endl;
@@ -1556,14 +1571,24 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 				}
 				center = 0.25 * q.rowwise().sum();
 				q = (q.colwise() - center).eval();
-				transform = (q * PT[i] * PPT_inv[i]);
+
+				transform = (q * PT[i] * PPT_inv[i]);				//
+
+	/*			Matrix3d temp = PT[i].transpose() * q.transpose();
+				FullPivLU<Matrix3d>llt;
+				llt.compute(PPT_inv[i]);
+				for (unsigned int kk = 0; kk < 3; ++kk) {
+					transform.col(i) = llt.solve(temp.col(i));
+				}
+				transform.transposeInPlace();*/
+
 				JacobiSVD<Matrix3d> svd(transform, ComputeFullU | ComputeFullV);
-				rotation_2 = svd.matrixV();
+				rotation_2 = svd.matrixU();
 				determinant = transform.determinant();
 				if (determinant < 0) {
-					rotation_2.data()[0] *= -1.0;
-					rotation_2.data()[1] *= -1.0;
-					rotation_2.data()[2] *= -1.0;
+					rotation_2.data()[6] *= -1.0;
+					rotation_2.data()[7] *= -1.0;
+					rotation_2.data()[8] *= -1.0;
 				}
 				singular_value = svd.singularValues();
 				keep_transform = false;
@@ -1579,13 +1604,13 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 				else {
 					for (unsigned int k = 0; k < 3; ++k) {
 						for (unsigned int kk = 0; kk < 3; ++kk) {
-							transform_for_volume_perserve.data()[3 * k + kk] = sigma.data()[k] * rotation_2.data()[3 * k + kk];
+							transform_for_volume_perserve.data()[3 * k + kk] = sigma.data()[k] * svd.matrixV().data()[3 * k + kk];
 						}
 					}
-					transform_for_volume_perserve = (svd.matrixU() * transform_for_volume_perserve.transpose()).eval();
+					transform_for_volume_perserve = (rotation_2 * transform_for_volume_perserve.transpose()).eval();
 				}
 
-				transform = svd.matrixU() * rotation_2.transpose();
+				transform = rotation_2 * svd.matrixV().transpose();
 
 				p = transform * (PT[i].transpose());
 				p_volume_preserve = transform_for_volume_perserve * (PT[i].transpose());
@@ -1619,7 +1644,7 @@ bool ProjectDynamic::getDigonalForVolumePreserve(Vector3d& svd_eigen, double max
 	Vector3d pre;
 	pre.setOnes();
 	int itr_num = 0;
-	while ((sigma_multi <min || sigma_multi > max) && itr_num < 20) {
+	while ((sigma_multi <min || sigma_multi > max) && itr_num < 50) {
 		pre = D;
 		delta_CD.data()[0] = sigma.data()[1] * sigma.data()[2];
 		delta_CD.data()[1] = sigma.data()[0] * sigma.data()[2];

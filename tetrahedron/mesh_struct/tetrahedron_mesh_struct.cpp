@@ -175,8 +175,9 @@ void TetrahedronMeshStruct::prepareForDeformationGradient()
 	{
 		p=constructMatrixP(i);
 		ppt = p * p.transpose();
-		inverse3X3(ppt.data(), PPT_inv[i].data());
 		//PPT_inv[i] = ppt;
+		//PPT_inv[i] = ppt.inverse();
+		inverse3X3(ppt.data(), PPT_inv[i].data());
 		PT[i] = p.transpose();
 	}
 }
