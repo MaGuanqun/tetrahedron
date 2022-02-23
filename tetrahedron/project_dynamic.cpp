@@ -916,7 +916,7 @@ void ProjectDynamic::PDsolve()
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL);
 	}
-	std::cout << "===" << std::endl;
+	//std::cout << "===" << std::endl;
 	while (!PDConvergeCondition()) {
 		//collision.globalCollision();
 		//PDupdateSystemMatrix();

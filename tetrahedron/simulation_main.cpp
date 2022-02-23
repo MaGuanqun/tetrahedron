@@ -81,14 +81,14 @@ void simu_main(GLFWwindow* window, Input* input) {
 	//a = a.transpose();
 	//std::cout << a << std::endl;
 
-	std::vector<unsigned int> a(2, 1);
-	for (unsigned int i = 0; i < 2; ++i) {
-		a.emplace_back(a.back());
-		a.back()++;
-	}
-	for (unsigned int i = 0; i < a.size(); ++i) {
-		std::cout << a[i] << " ";
-	}
+	//std::vector<unsigned int> a(2, 1);
+	//for (unsigned int i = 0; i < 2; ++i) {
+	//	a.emplace_back(a.back());
+	//	a.back()++;
+	//}
+	//for (unsigned int i = 0; i < a.size(); ++i) {
+	//	std::cout << a[i] << " ";
+	//}
 
 	while (!glfwWindowShouldClose(window))
 	{
