@@ -6,13 +6,13 @@ ProjectDynamic::ProjectDynamic()
 	gravity_ = 9.8;
 	total_thread_num = std::thread::hardware_concurrency();
 	temEnergy.resize(total_thread_num);
-	outer_itr_conv_rate = 2e-3;// 7.5e-2; 
-	local_global_conv_rate = 5e-3;
+	outer_itr_conv_rate = 1e-2;// 7.5e-2; 
+	local_global_conv_rate = 1e-2;
 	sub_step_num = 1;
 
 	use_dierct_solve_for_coarest_mesh = true;
 	super_jacobi_step_size = 3;
-	max_it = 10;
+	max_it = 50;
 	max_jacobi_itr_num = 50;
 	displacement_norm_thread.resize(total_thread_num);
 
@@ -922,12 +922,12 @@ void ProjectDynamic::PDsolve()
 		//PDupdateSystemMatrix();
 		initialEnergyOuterInteration();
 		local_global_itr_in_single_outer = 0;
-		while (!PDLocalGlobalConvergeCondition()) {
+		//while (!PDLocalGlobalConvergeCondition()) {
 			initialEnergyLocalGlobal();
-			if (local_global_itr_in_single_outer > 0) {
+			//if (local_global_itr_in_single_outer > 0) {
 				//collision.updateCollisionPosition();				
-			}
-			time_t t = clock();
+			//}
+			//time_t t = clock();
 			localProjection();
 			for (unsigned int i = 0; i < total_thread_num; ++i) {
 				current_constraint_energy += temEnergy[i];
@@ -949,7 +949,7 @@ void ProjectDynamic::PDsolve()
 			}
 			local_global_itr_in_single_outer++;
 			local_global_iteration_num++;
-		}
+	//	}
 		outer_iteration_num++;
 
 	}
@@ -1300,6 +1300,7 @@ bool ProjectDynamic::PDConvergeCondition()
 
 	bool standard = (energy_satisfied || need_to_stop) && outer_iteration_num > 12;
 	if (standard) {//
+		//std::cout << (current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy << std::endl;
 		return true;
 	}
 	else {
@@ -1422,7 +1423,7 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 	Vector3d center;
 	int temp_vertex_index;
 	Matrix3d transform;
-	Matrix3d* PPT_inv;
+	Matrix<double,4,3>* PT_times_PPT_inv;
 	//double* det;
 
 	Matrix<double, 4, 3>* PT;
@@ -1448,7 +1449,7 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 			mesh_struct = &(*tetrahedron)[j].mesh_struct;
 			index_end = mesh_struct->tetrahedron_index_begin_per_thread[thread_id + 1];
 			index_begin = mesh_struct->tetrahedron_index_begin_per_thread[thread_id];
-			PPT_inv = mesh_struct->PPT_inv.data();
+			PT_times_PPT_inv = mesh_struct->PT_times_PPT_inv.data();
 			//det = mesh_struct->PPT_determinant.data();
 			PT = mesh_struct->PT.data();
 			Ap_ARAP_volume_preserve = p_ARAP_volume_preserve[j].data();
@@ -1468,8 +1469,13 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 				}
 
 				center =0.25* q.rowwise().sum();
+				//for (unsigned int kk = 0; kk < 4; ++kk) {
+				//	q.col(kk) -= center;
+				//}
 				q = (q.colwise() - center).eval();
-				transform = (q * PT[i] * PPT_inv[i]);
+				transform = (q * PT_times_PPT_inv[i]);
+
+				//transform = Matrix3d::Identity();
 
 				//Matrix3d temp = PT[i].transpose() * q.transpose();
 				//FullPivLU<Matrix3d>llt(PPT_inv[i]);
@@ -1492,9 +1498,9 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 				rotation_2 = svd.matrixU();
 				determinant = transform.determinant();
 				if (determinant < 0) {
-					rotation_2.data()[6] *= -1.0;
-					rotation_2.data()[7] *= -1.0;
-					rotation_2.data()[8] *= -1.0;				
+					rotation_2.data()[3] *= -1.0;
+					rotation_2.data()[4] *= -1.0;
+					rotation_2.data()[5] *= -1.0;				
 				}
 				singular_value = svd.singularValues();
 				keep_transform = false;
@@ -1551,7 +1557,7 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 			mesh_struct = &(*tetrahedron)[j].mesh_struct;
 			index_end = mesh_struct->tetrahedron_index_begin_per_thread[thread_id + 1];
 			index_begin = mesh_struct->tetrahedron_index_begin_per_thread[thread_id];
-			PPT_inv = mesh_struct->PPT_inv.data();
+			PT_times_PPT_inv = mesh_struct->PT_times_PPT_inv.data();
 			//det = mesh_struct->PPT_determinant.data();
 			PT = mesh_struct->PT.data();
 			Ap_ARAP_volume_preserve = p_ARAP_volume_preserve[j].data();
@@ -1572,7 +1578,7 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 				center = 0.25 * q.rowwise().sum();
 				q = (q.colwise() - center).eval();
 
-				transform = (q * PT[i] * PPT_inv[i]);				//
+				transform = (q * PT_times_PPT_inv[i]);				//
 
 	/*			Matrix3d temp = PT[i].transpose() * q.transpose();
 				FullPivLU<Matrix3d>llt;
