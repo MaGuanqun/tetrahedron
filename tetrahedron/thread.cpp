@@ -9,6 +9,8 @@
 #include"collision/collision.h"
 #include"collision/parallel_radix_sort.h"
 #include"iteration_method.h"
+#include"collision/drawCulling.h"
+#include"scene.h"
 //#include"collision/mesh_patch.h"
 
 Thread::Thread()
@@ -31,15 +33,15 @@ Thread::~Thread()
 
 void Thread::initial()
 {
-   // std::cout << thread_num;
+    // std::cout << thread_num;
     threads = new ThreadData[thread_num];
-   // threads.push_back(a);
-	//threads.resize(thread_num);
+    // threads.push_back(a);
+     //threads.resize(thread_num);
     int tdi = 0;
-    for(int i=0;i< thread_num;i++)
+    for (int i = 0; i < thread_num; i++)
     {
         threads[i].id = tdi++;
-        threads[i].t = std::thread(&Thread::thread_func,this, &threads[i]);
+        threads[i].t = std::thread(&Thread::thread_func, this, &threads[i]);
     }
 }
 
@@ -49,16 +51,16 @@ job Thread::create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread 
     switch (function_type)
     {
     case LOCAL_PROJECTION:
-        k = job([func, thread_id]() {func->localProjectionPerThread(thread_id,true); });
+        k = job([func, thread_id]() {func->localProjectionPerThread(thread_id, true); });
         break;
     case LOCAL_PROJECTION_WITHOUT_ENERGY:
         k = job([func, thread_id]() {func->localProjectionPerThread(thread_id, false); });
         break;
     case COLLISION_FREE_POSITION:
         k = job([func, thread_id]() {func->computeCollisionFreePosition(thread_id); });
-        break;  
+        break;
     case CONSTRUCT_B:
-        k = job([func, thread_id]() {func->constructbPerThead(thread_id,true); });
+        k = job([func, thread_id]() {func->constructbPerThead(thread_id, true); });
         break;
     case CONSTRUCT_B_WITHOUT_COLLISION:
         k = job([func, thread_id]() {func->constructbPerThead(thread_id, false); });
@@ -75,9 +77,9 @@ job Thread::create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread 
     case COMPUTE_ENERGY:
         k = job([func, thread_id]() {func->computeEnergyPerThread(thread_id); });
         break;
-    //case UPDATE_COLLISION_STIFFNESS:
-    //    k = job([func, thread_id]() {func->updateCollisionStiffnessClothPerThread(thread_id); });
-    //    break;
+        //case UPDATE_COLLISION_STIFFNESS:
+        //    k = job([func, thread_id]() {func->updateCollisionStiffnessClothPerThread(thread_id); });
+        //    break;
     case UPDATE_UV:
         k = job([func, thread_id]() {func->updateUVPerThread(thread_id); });
         break;
@@ -89,33 +91,33 @@ job Thread::create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread 
         k = job([func, thread_id]() {func->updateDiagonalPerThread(thread_id); });
         break;
     }
-    //case LOCAL_EDGE_LENGTH_PROJECTION:
-    //    k = job([func, thread_id]() {func->localEdgeLengthProjectionPerThread(thread_id); });
-    //    break;
+                        //case LOCAL_EDGE_LENGTH_PROJECTION:
+                        //    k = job([func, thread_id]() {func->localEdgeLengthProjectionPerThread(thread_id); });
+                        //    break;
     case TEST_LOCAL_PROJECTION: {
         k = job([func, thread_id]() {func->testLocalProjectionPerThread(thread_id); });
         break;
     }
 
-    //case VIRTUAL_LOCAL_PROJECTION: {
-    //    k = job([func, thread_id]() {func->virtualLocalProjectionPerThread(thread_id); });
-    //}
-    //    break;
-    //case PREPARE_WOODBURY: {
-    //    k = job([func, thread_id]() {func->prepareWoodbury(thread_id); });
-    //    break;
-    //}
-    //case SET_K_COLUMN: {
-    //    k = job([func, thread_id]() {func->setKColumnPerThread(thread_id); });
-    //    break;
-    //}
-    //case FACTORIZE_WOODBURY_K: {
-    //    k = job([func, thread_id]() {func->factorizeWoodburyK(thread_id); });
-    //    break;
-    //}
-    //case GET_FRICTION:
-    //    k= job([func, thread_id]() {func->getFrictionPerThread(thread_id); });
-    //    break;
+                              //case VIRTUAL_LOCAL_PROJECTION: {
+                              //    k = job([func, thread_id]() {func->virtualLocalProjectionPerThread(thread_id); });
+                              //}
+                              //    break;
+                              //case PREPARE_WOODBURY: {
+                              //    k = job([func, thread_id]() {func->prepareWoodbury(thread_id); });
+                              //    break;
+                              //}
+                              //case SET_K_COLUMN: {
+                              //    k = job([func, thread_id]() {func->setKColumnPerThread(thread_id); });
+                              //    break;
+                              //}
+                              //case FACTORIZE_WOODBURY_K: {
+                              //    k = job([func, thread_id]() {func->factorizeWoodburyK(thread_id); });
+                              //    break;
+                              //}
+                              //case GET_FRICTION:
+                              //    k= job([func, thread_id]() {func->getFrictionPerThread(thread_id); });
+                              //    break;
     }
     return k;
 }
@@ -136,7 +138,20 @@ job Thread::create_task(TriangleMeshStruct* func, int thread_id, MeshStructFuncS
         break;
     case VERTEX_NORMAL:
         k = job([func, thread_id]() {func->getVertexNormalPerThread(thread_id); });
-        break;     
+        break;
+    }
+    return k;
+}
+
+
+job Thread::create_task(Scene* func, int thread_id, SceneFuc function_type)// int jobNumber
+{
+    job k;
+    switch (function_type)
+    {
+    case TEST_ARRAY:
+        k = job([func, thread_id]() {func->testForWritetToArray(thread_id); });
+        break;
     }
     return k;
 }
@@ -171,16 +186,16 @@ job Thread::create_task(Cloth* func, int thread_id, ObjectFunc function_type)// 
     switch (function_type)
     {
     case EDGE_TRIANGLE_AABB:
-        k = job([func, thread_id]() {func->getEdgeTriangleAABBPerThread(thread_id); });        
-            break;
-    //case TRIANGLE_AABB:
-    //    
-    //    break;
-    //case EDGE_AABB:
-    //    k = job([func, thread_id]() {func->getEdgeAABBPerThread(thread_id); });
-    //    break;
+        k = job([func, thread_id]() {func->getEdgeTriangleAABBPerThread(thread_id); });
+        break;
+        //case TRIANGLE_AABB:
+        //    
+        //    break;
+        //case EDGE_AABB:
+        //    k = job([func, thread_id]() {func->getEdgeAABBPerThread(thread_id); });
+        //    break;
     case VERTEX_AABB:
-        k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id,true); });
+        k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id, true); });
         break;
     case VERTEX_AABB_WITHOUT_TOLERANCE:
         k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id, false); });
@@ -205,10 +220,13 @@ job Thread::create_task(Tetrahedron* func, int thread_id, ObjectFunc function_ty
         //    k = job([func, thread_id]() {func->getEdgeAABBPerThread(thread_id); });
         //    break;
     case VERTEX_AABB:
-        k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id,true); });
+        k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id, true); });
         break;
     case VERTEX_AABB_WITHOUT_TOLERANCE:
         k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id, false); });
+        break;
+    case TETRAHEDRON_AABB:
+        k = job([func, thread_id]() {func->getTetAABBPerThread(thread_id); });
         break;
     }
     return k;
@@ -221,13 +239,13 @@ job Thread::create_task(Collider* func, int thread_id, ObjectFunc function_type)
     switch (function_type)
     {
     case EDGE_TRIANGLE_AABB:
-        k = job([func, thread_id]() {func->getTriangleAABBPerThread(thread_id); });
+        k = job([func, thread_id]() {func->getEdgeTriangleAABBPerThread(thread_id); });
         break;
-    //case TRIANGLE_AABB:
-    //    k = job([func, thread_id]() {func->getTriangleAABBPerThread(thread_id); });
-    //    break;
+        //case TRIANGLE_AABB:
+        //    k = job([func, thread_id]() {func->getTriangleAABBPerThread(thread_id); });
+        //    break;
     case VERTEX_AABB:
-        k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id,true); });
+        k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id, true); });
         break;
     case VERTEX_AABB_WITHOUT_TOLERANCE:
         k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id, false); });
@@ -263,12 +281,12 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     job k;
     switch (function_type)
     {
-    //case FIND_PATCH_PAIRS:
-    //    k = job([func, thread_id]() {func->findAllPatchPairs(thread_id); });
-    //    break;  
+        //case FIND_PATCH_PAIRS:
+        //    k = job([func, thread_id]() {func->findAllPatchPairs(thread_id); });
+        //    break;  
     case  FIND_PRIMITIVE_AROUND:
         k = job([func, thread_id]() {func->findPointTriangleEdgeEdgePair(thread_id); });
-      //  k = job([func, thread_id]() {func->findPrimitivesAround(thread_id); });
+        //  k = job([func, thread_id]() {func->findPrimitivesAround(thread_id); });
         break;
     case GLOBAL_COLLISION_TIME:
         k = job([func, thread_id]() {func->collisionTime(thread_id); });
@@ -281,7 +299,7 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
         break;
     case RESUM_TARGET_POSITION:
         k = job([func, thread_id]() {func->resumTargetPositionPerThread(thread_id); });
-        break; 
+        break;
     case GLOBAL_COLLISION_DETECTION:
         k = job([func, thread_id]() {func->collisionDetection(thread_id); });
         break;
@@ -311,26 +329,56 @@ job Thread::create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncS
     case SH_FIND_ALL_TRIANGLE_PAIRS:
         k = job([func, thread_id]() {func->findAllTrianglePairs(thread_id); });
         break;
-    //case SET_HASH_TOGETHER:
-    //    k = job([func, thread_id]() {func->setHashTogether(thread_id); });
-    //    break;
-    //case PREPARE_FOR_ACTUAL_HASH_VALUE_COUNT_THREAD: {
-    //    k = job([func, thread_id]() {func->prepareForActualHashValueCountThread(thread_id); });
-    //    break;
-    //}
-    //case ADD_COUNT_FOR_PRIFIX_SUM: {
-    //    k = job([func, thread_id]() {func->prifixSum1(thread_id); });
-    //    break;
-    //}
-    //case PREFIX_SUM_THREAD_1:
-    //    k = job([func, thread_id]() {func->prifixSum2(thread_id); });
-    //    break;
-    //case PREFIX_SUM_THREAD_2:
-    //    k = job([func, thread_id]() {func->prifixSum3(thread_id); });
-    //    break;
-    //case MEMSET_PREFIX:
-    //    k = job([func, thread_id]() {func->memsetThread(thread_id); });
-    //    break;
+    case TRIANGLE_HASHING_SMALLER_HASH_TABLE:
+        k = job([func, thread_id]() {func->triangleHashingSmallerHashTable(thread_id); });
+        break;
+    case TRIANGLE_HASHING_RECORD_REAL_HASH_VALUE:
+        k = job([func, thread_id]() {func->recordRealTriangleHashValue(thread_id); });
+        break;
+    case PREFIX_SUM_MULTI_2:
+        k = job([func, thread_id]() {func->prefixSumMulti2(thread_id); });
+        break;
+    case RECORD_NONEMPTY_CELL:
+        k = job([func, thread_id]() {func->recordNonEmptyCell(thread_id); });
+        break;
+    case FIND_VERTEX_TET_PAIRS_HASH_TABLE:
+        k = job([func, thread_id]() {func->findVertexTetPairHashTable(thread_id); });
+        break;
+    case TET_HASHING_SMALLER_HASH_TABLE:
+        k = job([func, thread_id]() {func->tetHashingSmallerHashTable(thread_id); });
+        break;
+    case OBTAIN_PAIR_COUNT:
+        k = job([func, thread_id]() {func->obtainPairCount(thread_id); });
+        break;
+    case SET_HASH_CELL_PAIR_NUM_PREFIX_SUM_TOGETHER:
+        k = job([func, thread_id]() {func->setHashCellPairNumPrefixSumTogether(thread_id); });
+        break;
+    case FIND_ALL_TRIANGLE_PAIRS_HASH_TABLE:
+        k = job([func, thread_id]() {func->findAllTrianglePairsHashTable(thread_id); });
+        break;
+    case FIND_ALL_TRIANGLE_PAIRS_HASH_TABLE_COMPARE:
+        k = job([func, thread_id]() {func->findAllTrianglePairsHashTableCompare(thread_id); });
+        break;
+        //case SET_HASH_TOGETHER:
+        //    k = job([func, thread_id]() {func->setHashTogether(thread_id); });
+        //    break;
+        //case PREPARE_FOR_ACTUAL_HASH_VALUE_COUNT_THREAD: {
+        //    k = job([func, thread_id]() {func->prepareForActualHashValueCountThread(thread_id); });
+        //    break;
+        //}
+        //case ADD_COUNT_FOR_PRIFIX_SUM: {
+        //    k = job([func, thread_id]() {func->prifixSum1(thread_id); });
+        //    break;
+        //}
+        //case PREFIX_SUM_THREAD_1:
+        //    k = job([func, thread_id]() {func->prifixSum2(thread_id); });
+        //    break;
+        //case PREFIX_SUM_THREAD_2:
+        //    k = job([func, thread_id]() {func->prifixSum3(thread_id); });
+        //    break;
+        //case MEMSET_PREFIX:
+        //    k = job([func, thread_id]() {func->memsetThread(thread_id); });
+        //    break;
     }
     return k;
 }
@@ -341,12 +389,12 @@ job Thread::create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncS
     job k;
     switch (function_type)
     {
-    //case PREFIX_SUM_UP:
-    //    k = job([func, thread_id, key_id]() {func->prefixSumParallelUp(thread_id, key_id); });
-    //    break;
-    //case PREFIX_SUM_DOWN:
-    //    k = job([func, thread_id, key_id]() {func->prefixSumParallelDown(thread_id, key_id); });
-    //    break;
+        //case PREFIX_SUM_UP:
+        //    k = job([func, thread_id, key_id]() {func->prefixSumParallelUp(thread_id, key_id); });
+        //    break;
+        //case PREFIX_SUM_DOWN:
+        //    k = job([func, thread_id, key_id]() {func->prefixSumParallelDown(thread_id, key_id); });
+        //    break;
     }
     return k;
 }
@@ -357,7 +405,7 @@ job Thread::create_task(RadixSort* func, int thread_id, RadixSortFunc function_t
     switch (function_type)
     {
     case SET_COUNT_BUCKET:
-        k = job([func, thread_id, key_id]() {func->setCountBucket(thread_id,key_id); });
+        k = job([func, thread_id, key_id]() {func->setCountBucket(thread_id, key_id); });
         break;
     case REORDER:
         k = job([func, thread_id, key_id]() {func->reorder(thread_id, key_id); });
@@ -406,7 +454,7 @@ job Thread::create_task(IterationMethod* func, int thread_id, IterationMethodFun
     switch (function_type)
     {
     case JACOBI_ITR:
-        k = job([func, thread_id,u,b,residual_norm]() {func->JacobiIterationPerThread(thread_id,u,b,residual_norm); });
+        k = job([func, thread_id, u, b, residual_norm]() {func->JacobiIterationPerThread(thread_id, u, b, residual_norm); });
         break;
     case A_JACOBI_2_ITR:
         k = job([func, thread_id, u, b, residual_norm]() {func->SuperJacobi2IterationPerThread(thread_id, u, b, residual_norm); });
@@ -415,35 +463,35 @@ job Thread::create_task(IterationMethod* func, int thread_id, IterationMethodFun
         k = job([func, thread_id, u, b, residual_norm]() {func->SuperJacobi3IterationPerThread(thread_id, u, b, residual_norm); });
         break;
     case CHEBYSHEV_JACOBI_ITR:
-        k = job([func, thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous]() 
-            {func->ChebyshevSemiIterativeJacobiIterationPerThread(thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous); });
+        k = job([func, thread_id, u, b, residual_norm, omega_chebyshev, u_last, u_previous]()
+            {func->ChebyshevSemiIterativeJacobiIterationPerThread(thread_id, u, b, residual_norm, omega_chebyshev, u_last, u_previous); });
         break;
     case CHEBYSHEV_A_JACOBI_2_ITR:
-        k = job([func, thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous]()
-            {func->ChebyshevSemiIterativeAJacobi2IterationPerThread(thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous); });
+        k = job([func, thread_id, u, b, residual_norm, omega_chebyshev, u_last, u_previous]()
+            {func->ChebyshevSemiIterativeAJacobi2IterationPerThread(thread_id, u, b, residual_norm, omega_chebyshev, u_last, u_previous); });
         break;
     case CHEBYSHEV_A_JACOBI_3_ITR:
-        k = job([func, thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous]()
-            {func->ChebyshevSemiIterativeAJacobi3IterationPerThread(thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous); });
+        k = job([func, thread_id, u, b, residual_norm, omega_chebyshev, u_last, u_previous]()
+            {func->ChebyshevSemiIterativeAJacobi3IterationPerThread(thread_id, u, b, residual_norm, omega_chebyshev, u_last, u_previous); });
         break;
     case PCG_ITR1:
-        k = job([func, thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous]()
-            {func->PCGIterationPerThread1(thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous); });
+        k = job([func, thread_id, u, b, residual_norm, omega_chebyshev, u_last, u_previous]()
+            {func->PCGIterationPerThread1(thread_id, u, b, residual_norm, omega_chebyshev, u_last, u_previous); });
         break;
     case PCG_ITR2:
-        k = job([func, thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous]()
-            {func->PCGIterationPerThread2(thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous); });
+        k = job([func, thread_id, u, b, residual_norm, omega_chebyshev, u_last, u_previous]()
+            {func->PCGIterationPerThread2(thread_id, u, b, residual_norm, omega_chebyshev, u_last, u_previous); });
         break;
     case GAUSS_SEIDEL_ITR:
-        k = job([func, thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous]()
-            {func->GaussSeidelIterationPerThread(thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous); });
+        k = job([func, thread_id, u, b, residual_norm, omega_chebyshev, u_last, u_previous]()
+            {func->GaussSeidelIterationPerThread(thread_id, u, b, residual_norm, omega_chebyshev, u_last, u_previous); });
         break;
     case CHEBYSHEV_GAUSS_SEIDEL_ITR:
-        k = job([func, thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous]()
-            {func->ChebyshevSemiIterativeGaussSeidelIterationPerThread(thread_id, u, b, residual_norm,  omega_chebyshev, u_last, u_previous); });
+        k = job([func, thread_id, u, b, residual_norm, omega_chebyshev, u_last, u_previous]()
+            {func->ChebyshevSemiIterativeGaussSeidelIterationPerThread(thread_id, u, b, residual_norm, omega_chebyshev, u_last, u_previous); });
         break;
     }
-    
+
     return k;
 }
 
@@ -452,9 +500,9 @@ job Thread::create_task(IterationMethod* func, int thread_id, std::vector<int>* 
     double* x, double* b, double* result, int* vertex_index_thread_begin, int sys_size)
 {
     job k;
-    k = job([func, thread_id, vertex_index,coefficient,x,b,result,vertex_index_thread_begin,sys_size]()
-        {func->RMultiXPlusb(vertex_index,coefficient,x,b,result, vertex_index_thread_begin[thread_id],
-            vertex_index_thread_begin[thread_id+1],sys_size); });
+    k = job([func, thread_id, vertex_index, coefficient, x, b, result, vertex_index_thread_begin, sys_size]()
+        {func->RMultiXPlusb(vertex_index, coefficient, x, b, result, vertex_index_thread_begin[thread_id],
+            vertex_index_thread_begin[thread_id + 1], sys_size); });
     return k;
 }
 
@@ -497,6 +545,24 @@ job Thread::create_task(IterationMethod* func, IterationMethodFunc function_type
     return k;
 }
 
+
+job Thread::create_task(DrawCulling* func, int thread_id, DrawCullingFunc function_type, unsigned int key_id)
+{
+    job k;
+    switch (function_type)
+    {
+    case MOVE_OBJECT:
+        k = job([func, thread_id, key_id]() {func->move(thread_id, key_id); });
+        break;
+    case SET_POSITION_COLOR:
+        k = job([func, thread_id, key_id]() {func->setAllTriangle(thread_id); });
+        break;
+    case SET_DATA_TOGETHER:
+        k = job([func, thread_id, key_id]() {func->setThreadDataTogether(thread_id); });
+        break;
+    }
+    return k;
+}
 
 //job Thread::create_task(MeshPatch* func, int thread_id, MeshPatchFunc function_type)
 //{
@@ -546,7 +612,7 @@ void Thread::assignTask(IterationMethod* func, std::vector<int>* vertex_index, s
     for (int i = 0; i < thread_num; ++i)
     {
         // std::cout << threads[i].id << std::endl;
-        job j = create_task(func, threads[i].id, vertex_index,coefficient,x,b,result,vertex_index_thread_begin,sys_size);
+        job j = create_task(func, threads[i].id, vertex_index, coefficient, x, b, result, vertex_index_thread_begin, sys_size);
         futures.push_back(j.get_future());
         std::unique_lock<std::mutex> l(threads[i].m);
         threads[i].jobs.push(std::move(j));
@@ -557,7 +623,7 @@ void Thread::assignTask(IterationMethod* func, std::vector<int>* vertex_index, s
     futures.clear();
 }
 
-void Thread::assignTask(IterationMethod* func, IterationMethodFunc function_type, Eigen::VectorXd* u, Eigen::VectorXd* b, 
+void Thread::assignTask(IterationMethod* func, IterationMethodFunc function_type, Eigen::VectorXd* u, Eigen::VectorXd* b,
     double* residual_norm, double omega_chebyshev, Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous)
 {
     for (int i = 0; i < thread_num; ++i)
@@ -581,7 +647,7 @@ void Thread::assignTask(IterationMethod* func, IterationMethodFunc function_type
     for (int i = 0; i < thread_num; ++i)
     {
         // std::cout << threads[i].id << std::endl;
-        job j = create_task(func, function_type, threads[i].id, vertex_index, coefficient, vertex_index_start,  x, b, result, 
+        job j = create_task(func, function_type, threads[i].id, vertex_index, coefficient, vertex_index_start, x, b, result,
             residual_norm, vertex_index_thread_begin, u_last, u_previous);
         futures.push_back(j.get_future());
         std::unique_lock<std::mutex> l(threads[i].m);

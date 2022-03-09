@@ -10,7 +10,7 @@ class MeshStruct
 public:
 	struct Face {
 		//int vertex[3];
-		std::vector<int> edge;
+		//std::vector<int> edge;
 		double area;
 		std::vector<int>vertex_around;
 		double initial_area;
@@ -23,29 +23,35 @@ public:
 		//std::vector<int>around_vertex;
 		bool on_border = false;
 		std::vector<int>tetrahedron; //only for surface vertex
-	
+
 	};
 	struct Edge {
-		int vertex[2];
+		//int vertex[2];
 		std::vector<int> face;
 		std::vector<int> opposite_vertex;
 		double length;
 		bool is_border = false;
-		bool isSame(int v0, int v1)
-		{
-			bool b0 = (vertex[0] == v0) && (vertex[1] == v1);
-			bool b1 = (vertex[0] == v1) && (vertex[1] == v0);
-			return b0 || b1;
-		}
+		//bool isSame(int v0, int v1)
+		//{
+		//	if ((vertex[0] == v0) && (vertex[1] == v1))	{
+		//		return true;
+		//	}
+		//	if ((vertex[0] == v1) && (vertex[1] == v0)) {
+		//		return true;
+		//	}
+		//	return false;
+		//}
 	};
 
 	std::vector<Vertex> vertices;
 	std::vector<Face> faces;
 	std::vector<Edge> edges;
 
+	std::vector<int>face_edges;// edge indices of every triangle
+	std::vector<int>edge_vertices;//vertex indices of every edge
 
 	std::vector<std::array<double, 3>> vertex_position;
-	std::vector<std::array<int,3>> triangle_indices;//if for tetrahedron, store the surface triangle	
+	std::vector<std::array<int, 3>> triangle_indices;//if for tetrahedron, store the surface triangle	
 	std::vector<std::array<double, 3>> vertex_for_render;
 	std::vector<std::array<double, 3>> vertex_normal_for_render;
 	std::vector<std::array<double, 3>> face_normal_for_render;
@@ -64,7 +70,7 @@ public:
 
 	std::vector<unsigned int> face_index_begin_per_thread;
 	std::vector<unsigned int> anchor_index_begin_per_thread;
-	
+
 	std::vector<unsigned int> edge_index_begin_per_thread;
 
 	std::vector<std::array<floating, 3>> f_face_normal_for_render;
@@ -87,7 +93,7 @@ public:
 protected:
 	int type;
 	bool isEdgeExist(int v0, int v1, int& edge_index);
-	void addEdge(int v0, int v1, int face, int opposite_vertex);
+	void addEdge(int v0, int v1, int face, int opposite_vertex, int edge_index_indicator);
 	void addNeighborVertex();
 
 private:

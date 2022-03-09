@@ -21,7 +21,7 @@ void RadixSort::initial(Thread* thread, bool is_single_thread)
 
 void RadixSort::findHighestBit(unsigned int size, unsigned  int& key_num)
 {
-	unsigned int highest_bit = 32 - leading_zeros(size);
+    unsigned int highest_bit = 32 - leading_zeros(size);
     key_num = highest_bit / BIT_PER_KEY;
     if (highest_bit % BIT_PER_KEY > 0) {
         key_num += 1;
@@ -42,8 +42,7 @@ void RadixSort::findHighestBit(uint64_t size, unsigned int& key_num)
 void RadixSort::initialArray(unsigned int max_length)
 {
     stack_value = new unsigned int[max_length];
-    stack_triangle_index= new unsigned int[max_length];
-    stack_hash_cloth_No = new unsigned int[max_length];
+    stack_triangle_index = new unsigned int[2 * max_length];
     this->array_size = max_length;
 }
 
@@ -51,13 +50,13 @@ void RadixSort::deleteArray()
 {
     delete[] stack_value;
     delete[] stack_triangle_index;
-    delete[] stack_hash_cloth_No;
+    // delete[] stack_hash_cloth_No;
     if (is_single_thread) {
         delete[] histogram_single_thread;
     }
     else {
         delete[] histogram;
-    }  
+    }
 }
 
 void RadixSort::initialMortonArray(unsigned int max_length)
@@ -88,32 +87,32 @@ void RadixSort::radixSort(uint64_t max_morton_code, std::vector<uint64_t>* morto
     lsdSort(morton_value, triangle_index);
 }
 
-void RadixSort::radixSort(unsigned int spatial_hashing_index_size, unsigned int* value, unsigned int* triangle_index, 
-    unsigned int* hash_cloth_No, unsigned int& largest_count)
+void RadixSort::radixSort(unsigned int spatial_hashing_index_size, unsigned int* value, unsigned int* triangle_index,
+    unsigned int& largest_count)
+    //the size of triangle_index is twice of value size
     //largest count is the count of elements which has is 11111111 in the largest part
 {
     findHighestBit(spatial_hashing_index_size, key_num);
-   
+
     this->value = value;
     this->triangle_index = triangle_index;
-    this->hash_cloth_No = hash_cloth_No;
 
     if (is_single_thread) {
-        lsdSortSingleThread(value, triangle_index, hash_cloth_No, array_size, largest_count);        
+        lsdSortSingleThread(value, triangle_index, array_size, largest_count);
     }
     else {
         arrangeIndex(thread->thread_num, array_size, array_index_begin.data());
-        lsdSort(value, triangle_index, hash_cloth_No, array_size, largest_count);
+        lsdSort(value, triangle_index, array_size, largest_count);
     }
 }
 
 
-void RadixSort::lsdSortSingleThread(unsigned int* value, unsigned int* triangle_index, unsigned int* hash_cloth_No, unsigned int list_size,
+void RadixSort::lsdSortSingleThread(unsigned int* value, unsigned int* triangle_index, unsigned int list_size,
     unsigned int& largest_count)
 {
     int s, t;
     for (unsigned int j = 0; j < key_num; ++j) {
-        setCountBucket(j);        
+        setCountBucket(j);
         if (j == key_num - 1) {
             largest_count = histogram_single_thread[255];
         }
@@ -127,23 +126,22 @@ void RadixSort::lsdSortSingleThread(unsigned int* value, unsigned int* triangle_
     }
     if (key_num % 2 == 1) {
         memcpy(value, stack_value, 4 * list_size);
-        memcpy(triangle_index, stack_triangle_index, 4 * list_size);
-        memcpy(hash_cloth_No, stack_hash_cloth_No, 4 * list_size);
+        memcpy(triangle_index, stack_triangle_index, 8 * list_size);
     }
 }
 
 
-void RadixSort::lsdSort(unsigned int* value, unsigned int* triangle_index, unsigned int* hash_cloth_No, unsigned int list_size,
+void RadixSort::lsdSort(unsigned int* value, unsigned int* triangle_index, unsigned int list_size,
     unsigned int& largest_count)
 {
     int s, t;
     for (unsigned int j = 0; j < key_num; ++j) {
-        thread->assignTask(this, SET_COUNT_BUCKET,j);
+        thread->assignTask(this, SET_COUNT_BUCKET, j);
         s = 0;
         if (j == key_num - 1) {
             largest_count = histogram[0][255];
             for (int i = 1; i < thread_num; ++i) {
-                largest_count+= histogram[i][255];
+                largest_count += histogram[i][255];
             }
         }
         for (int i = 0; i < 0x100; ++i) {
@@ -168,8 +166,8 @@ void RadixSort::lsdSort(unsigned int* value, unsigned int* triangle_index, unsig
 void RadixSort::copyArray(int thread_No)
 {
     memcpy(value + array_index_begin[thread_No], stack_value + array_index_begin[thread_No], 4 * (array_index_begin[thread_No + 1] - array_index_begin[thread_No]));
-    memcpy(triangle_index + array_index_begin[thread_No], stack_triangle_index + array_index_begin[thread_No], 4 * (array_index_begin[thread_No + 1] - array_index_begin[thread_No]));
-    memcpy(hash_cloth_No + array_index_begin[thread_No], stack_hash_cloth_No + array_index_begin[thread_No], 4 * (array_index_begin[thread_No + 1] - array_index_begin[thread_No]));
+    memcpy(triangle_index + (array_index_begin[thread_No] << 1), stack_triangle_index + (array_index_begin[thread_No] << 1), 8 * (array_index_begin[thread_No + 1] - array_index_begin[thread_No]));
+    //memcpy(hash_cloth_No + array_index_begin[thread_No], stack_hash_cloth_No + array_index_begin[thread_No], 4 * (array_index_begin[thread_No + 1] - array_index_begin[thread_No]));
 }
 
 
@@ -267,10 +265,10 @@ void RadixSort::setCountBucketMorton(int thread_No, unsigned int key_id)
 void RadixSort::reorder(unsigned int key_id)
 {
     if (key_id % 2 == 0) {
-        reorder(value, stack_value, triangle_index, stack_triangle_index, hash_cloth_No, stack_hash_cloth_No, 8 * key_id, histogram_single_thread, 0, array_size);
+        reorder_(value, stack_value, triangle_index, stack_triangle_index, 8 * key_id, histogram_single_thread, 0, array_size);
     }
     else {
-        reorder(stack_value, value, stack_triangle_index, triangle_index, stack_hash_cloth_No, hash_cloth_No, 8 * key_id, histogram_single_thread, 0, array_size);
+        reorder_(stack_value, value, stack_triangle_index, triangle_index, 8 * key_id, histogram_single_thread, 0, array_size);
     }
 }
 
@@ -279,10 +277,10 @@ void RadixSort::reorder(unsigned int key_id)
 void RadixSort::reorder(int thread_No, unsigned int key_id)
 {
     if (key_id % 2 == 0) {
-        reorder(value, stack_value, triangle_index, stack_triangle_index, hash_cloth_No, stack_hash_cloth_No,  8 * key_id, histogram[thread_No], array_index_begin[thread_No], array_index_begin[thread_No+1]);
+        reorder_(value, stack_value, triangle_index, stack_triangle_index, 8 * key_id, histogram[thread_No], array_index_begin[thread_No], array_index_begin[thread_No + 1]);
     }
     else {
-        reorder(stack_value, value, stack_triangle_index, triangle_index, stack_hash_cloth_No, hash_cloth_No, 8 * key_id, histogram[thread_No], array_index_begin[thread_No], array_index_begin[thread_No + 1]);
+        reorder_(stack_value, value, stack_triangle_index, triangle_index, 8 * key_id, histogram[thread_No], array_index_begin[thread_No], array_index_begin[thread_No + 1]);
     }
 }
 
@@ -320,15 +318,16 @@ void RadixSort::reorder(uint64_t* value, uint64_t* stack_value, unsigned int* tr
     }
 }
 
-void RadixSort::reorder(unsigned int* value, unsigned int* stack_value, unsigned int* triangle_index, unsigned int* stack_triangle_index,unsigned int* hash_cloth_No, unsigned int* stack_hash_cloth_No, unsigned int move_byte, unsigned int* index_bucket, unsigned int array_index_start, unsigned int array_index_end)
+void RadixSort::reorder_(unsigned int* value, unsigned int* stack_value, unsigned int* triangle_index, unsigned int* stack_triangle_index, unsigned int move_byte, unsigned int* index_bucket, unsigned int array_index_start, unsigned int array_index_end)
 {
     unsigned int* index;
     if (move_byte == 0) {
         for (unsigned int i = array_index_start; i < array_index_end; ++i) {
             index = &index_bucket[value[i] & 0xff];
             stack_value[*index] = value[i];
-            stack_triangle_index[*index] = triangle_index[i];
-            stack_hash_cloth_No[*index] = hash_cloth_No[i];
+            //memcpy(stack_triangle_index + ((*index)<<1), triangle_index+(i<<1),8);
+            stack_triangle_index[(*index) * 2] = triangle_index[2 * i];
+            stack_triangle_index[(*index) * 2 + 1] = triangle_index[2 * i + 1];
             (*index)++;
         }
     }
@@ -336,9 +335,11 @@ void RadixSort::reorder(unsigned int* value, unsigned int* stack_value, unsigned
         for (unsigned int i = array_index_start; i < array_index_end; ++i) {
             index = &index_bucket[(value[i] >> move_byte) & 0xff];
             stack_value[*index] = value[i];
-            stack_triangle_index[*index] = triangle_index[i];
-            stack_hash_cloth_No[*index] = hash_cloth_No[i];
-            (*index)++;            
+            //memcpy(stack_triangle_index + ((*index) << 1), triangle_index + (i << 1), 8);
+            stack_triangle_index[(*index) * 2] = triangle_index[2 * i];
+            stack_triangle_index[(*index) * 2 + 1] = triangle_index[2 * i + 1];
+            //   stack_hash_cloth_No[*index] = hash_cloth_No[i];
+            (*index)++;
         }
     }
 }
@@ -352,7 +353,7 @@ void RadixSort::reorder(std::array<int, 3>* array, std::array<int, 3>* stack, in
     }
     else {
         for (int i = 0; i < size; ++i) {
-            stack[index_bucket[(array[i][2]>>move_byte) & 0xff]++] = array[i];
+            stack[index_bucket[(array[i][2] >> move_byte) & 0xff]++] = array[i];
         }
     }
 }
@@ -394,7 +395,7 @@ void RadixSort::addCount(int size, unsigned int* count_bucket, unsigned int move
     }
     else {
         for (int i = 0; i < size; ++i) {
-            count_bucket[(array[i][2]>>move_byte) & 0xff]++;
+            count_bucket[(array[i][2] >> move_byte) & 0xff]++;
         }
     }
 }

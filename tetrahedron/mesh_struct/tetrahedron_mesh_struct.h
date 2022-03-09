@@ -4,7 +4,7 @@
 #include<map>
 using namespace Eigen;
 
-class TetrahedronMeshStruct:public MeshStruct
+class TetrahedronMeshStruct :public MeshStruct
 {
 public:
 	void findSurface();
@@ -22,7 +22,7 @@ public:
 	std::vector<int>vertex_index_on_sureface; //size is the surface vertex size, surface index -> vertex index
 	std::vector<int> vertex_surface_index;//size is the global vertex size, verted index -> surface index
 	std::vector<unsigned int> vertex_index_on_surface_begin_per_thread;
-	
+
 
 	void prepareForDeformationGradient();
 	std::vector<Matrix<double, 4, 3>>PT_times_PPT_inv;//to record the restshape (PP^T)^-1 for deformation gradient
@@ -37,13 +37,13 @@ public:
 	void getRenderVertexNormalPerThread(int thread_id);
 
 	//std::vector<std::array<int, 2>> edge_vertex_index_on_surface;
-	
+
 
 	//void setVertexIndexOnSurfaceEdgeTriangle();
 
 private:
 	struct TetrahedronFace {
-		std::array<int,3> index;
+		std::array<int, 3> index;
 		int sorted_index[3];
 		TetrahedronFace(int v0, int v1, int v2) {
 			index.data()[0] = v0;

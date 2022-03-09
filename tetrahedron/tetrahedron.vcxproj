@@ -152,6 +152,7 @@
     <ClCompile Include="basic\Coordinate.cpp" />
     <ClCompile Include="basic\cursor.cpp" />
     <ClCompile Include="basic\draw_vertex.cpp" />
+    <ClCompile Include="basic\object_chosen_indicator.cpp" />
     <ClCompile Include="basic\opengl_input.cpp" />
     <ClCompile Include="basic\pick_triangle.cpp" />
     <ClCompile Include="basic\set_tetrahedron_anchor.cpp" />
@@ -159,6 +160,7 @@
     <ClCompile Include="collision\BVH.cpp" />
     <ClCompile Include="collision\collision.cpp" />
     <ClCompile Include="collision\collision_constraint.cpp" />
+    <ClCompile Include="collision\drawCulling.cpp" />
     <ClCompile Include="collision\expansion.cpp" />
     <ClCompile Include="collision\TightCCD.cpp" />
     <ClCompile Include="collision\interval.cpp" />
@@ -204,6 +206,7 @@
     <ClInclude Include="basic\enum_setting.h" />
     <ClInclude Include="basic\global.h" />
     <ClInclude Include="basic\intersection.h" />
+    <ClInclude Include="basic\object_chosen_indicator.h" />
     <ClInclude Include="basic\opengl_input.h" />
     <ClInclude Include="basic\pick_triangle.h" />
     <ClInclude Include="basic\set_tetrahedron_anchor.h" />
@@ -213,6 +216,7 @@
     <ClInclude Include="collision\CCD.h" />
     <ClInclude Include="collision\collision.h" />
     <ClInclude Include="collision\collision_constraint.h" />
+    <ClInclude Include="collision\drawCulling.h" />
     <ClInclude Include="collision\floating.h" />
     <ClInclude Include="collision\primitive_distance.h" />
     <ClInclude Include="collision\TightCCD.h" />

@@ -23,6 +23,8 @@ class Collision;
 class SpatialHashing;
 class RadixSort;
 class IterationMethod;
+class DrawCulling;
+class Scene;
 //class MeshPatch;
 
 using job = std::packaged_task<void()>;
@@ -92,7 +94,7 @@ private:
     ThreadData* threads;
     std::vector<std::future<void>> futures;
 
-    void thread_func(ThreadData* pData);  
+    void thread_func(ThreadData* pData);
     job create_task(TriangleMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);// int jobNumber
     job create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncSendToThread function_type);
     job create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncSendToThread function_type, unsigned int key_id);
@@ -113,8 +115,9 @@ private:
         double omega_chebyshev, Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous);
     job create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread function_type);
     job create_task(Tetrahedron* func, int thread_id, ObjectFunc function_type);// int jobNumber
+    job create_task(Scene* func, int thread_id, SceneFuc function_type);// int jobNumber
     //job create_task(MeshPatch* func, int thread_id, MeshPatchFunc function_type);
-
+    job create_task(DrawCulling* func, int thread_id, DrawCullingFunc function_type, unsigned int key_id);
 };
 
 

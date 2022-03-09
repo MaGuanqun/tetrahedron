@@ -167,7 +167,7 @@ void TriangleMeshStruct::getRenderNormal()
 
 void TriangleMeshStruct::getNormal()
 {
-	thread->assignTask(this, FACE_NORMAL);	
+	thread->assignTask(this, FACE_NORMAL);
 	thread->assignTask(this, VERTEX_NORMAL);
 }
 
@@ -175,12 +175,12 @@ void TriangleMeshStruct::getNormal()
 
 void TriangleMeshStruct::initialInfo()
 {
-	vertex_normal= vertex_normal_for_render;
-	face_normal= face_normal_for_render;
+	vertex_normal = vertex_normal_for_render;
+	face_normal = face_normal_for_render;
 }
 
 
-void TriangleMeshStruct::setThreadIndex(int total_thread_num_) 
+void TriangleMeshStruct::setThreadIndex(int total_thread_num_)
 {
 	int total_thread_num = total_thread_num_ + 1;
 
@@ -195,6 +195,6 @@ void TriangleMeshStruct::setThreadIndex(int total_thread_num_)
 	if (!edges.empty()) {
 		edge_index_begin_per_thread.resize(total_thread_num, 0);
 		arrangeIndex(total_thread_num_, edges.size(), edge_index_begin_per_thread.data());
-	}	
+	}
 }
 

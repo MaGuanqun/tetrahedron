@@ -12,7 +12,7 @@ void TriangleObject::drawWireframe(Camera* camera, Shader* wireframe_shader)
 		wireframe_shader->setVec3("color", wireframe_color);
 		glBindVertexArray(VAO);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		glDrawElements(GL_TRIANGLES, 3* mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, 3 * mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 	}
 }
@@ -34,9 +34,86 @@ void TriangleObject::setBuffer()
 		glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
 		glBindVertexArray(0);
 	}
-	
+
 }
 
+void TriangleObject::setRepresentativePrimitve()
+{
+	representative_vertex_num.resize(mesh_struct.faces.size(), 0);
+	representative_edge_num.resize(mesh_struct.faces.size(), 0);
+	setRepresentativeVertex(mesh_struct.surface_triangle_index_in_order, mesh_struct.vertices);
+	setRepresentativeEdge(mesh_struct.face_edges.data(), mesh_struct.face_edges.size() / 3, mesh_struct.edges.size());
+	vertex_from_rep_triangle_index.resize(mesh_struct.vertex_position.size(), -1);
+	edge_from_rep_triangle_index.resize(mesh_struct.edges.size(), -1);
+	for (int i = 0; i < mesh_struct.faces.size(); ++i) {
+		for (int j = 0; j < representative_vertex_num[i]; ++j) {
+			vertex_from_rep_triangle_index[mesh_struct.surface_triangle_index_in_order[i][j]] = i;
+		}
+		for (int j = 0; j < representative_edge_num[i]; ++j) {
+			edge_from_rep_triangle_index[mesh_struct.face_edges[3 * i + j]] = i;
+		}
+	}
+}
+
+//VERTEX_AABB
+//VERTEX_AABB_WITHOUT_TOLERANCE
+void TriangleObject::getVertexAABBPerThread(int thread_No, bool has_tolerance)
+{
+	double* aabb = obj_aabb_per_thread[thread_No].data();
+	memset(aabb + 3, 0xFE, 24); //set double to -5.31401e+303
+	memset(aabb, 0x7F, 24); //set double to 1.38242e+306
+
+	std::vector<std::array<double, 3>>* vertex_render = &mesh_struct.vertex_for_render;
+	std::vector<std::array<double, 3>>* vertex = &mesh_struct.vertex_position;
+	unsigned int end = mesh_struct.vertex_index_begin_per_thread[thread_No + 1];
+	if (has_tolerance) {
+		for (unsigned int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < end; ++i) {
+			AABB::obtainAABB(vertex_AABB[i].data(), (*vertex_render)[i].data(), (*vertex)[i].data(), tolerance);// 
+			for (unsigned int j = 0; j < 3; ++j) {
+				if (aabb[j] > vertex_AABB[i][j]) {
+					aabb[j] = vertex_AABB[i][j];
+				}
+			}
+			for (unsigned int j = 3; j < 6; ++j) {
+				if (aabb[j] < vertex_AABB[i][j]) {
+					aabb[j] = vertex_AABB[i][j];
+				}
+			}
+		}
+	}
+	else {
+		for (unsigned int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < end; ++i) {
+			AABB::obtainAABB(vertex_AABB[i].data(), (*vertex_render)[i].data(), (*vertex)[i].data());// 
+			for (unsigned int j = 0; j < 3; ++j) {
+				if (aabb[j] > vertex_AABB[i][j]) {
+					aabb[j] = vertex_AABB[i][j];
+				}
+			}
+			for (unsigned int j = 3; j < 6; ++j) {
+				if (aabb[j] < vertex_AABB[i][j]) {
+					aabb[j] = vertex_AABB[i][j];
+				}
+			}
+		}
+	}
+}
+//EDGE_TRIANGLE_AABB
+void TriangleObject::getEdgeTriangleAABBPerThread(int thread_No)
+{
+	int* edge = mesh_struct.edge_vertices.data();
+	int* vertex_index;
+	unsigned int index_end = mesh_struct.edge_index_begin_per_thread[thread_No + 1];
+	for (unsigned int i = mesh_struct.edge_index_begin_per_thread[thread_No]; i < index_end; ++i) {
+		vertex_index = edge + (i << 1);
+		getAABB(edge_AABB[i].data(), vertex_AABB[vertex_index[0]].data(), vertex_AABB[vertex_index[1]].data());
+	}
+	std::array<int, 3>* face = mesh_struct.triangle_indices.data();
+	index_end = mesh_struct.face_index_begin_per_thread[thread_No + 1];
+	for (unsigned int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < index_end; ++i) {
+		vertex_index = face[i].data();
+		getAABB(triangle_AABB[i].data(), vertex_AABB[vertex_index[0]].data(), vertex_AABB[vertex_index[1]].data(), vertex_AABB[vertex_index[2]].data());
+	}
+}
 
 void TriangleObject::drawShadow(Camera* camera, Shader* shader)
 {
@@ -46,7 +123,7 @@ void TriangleObject::drawShadow(Camera* camera, Shader* shader)
 		shader->setMat4("model", glm::mat4(1.0));
 		glBindVertexArray(VAO);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		glDrawElements(GL_TRIANGLES, 3*mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, 3 * mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 	}
 }

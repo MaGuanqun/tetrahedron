@@ -33,7 +33,7 @@ void PickTriangle::initalFBO()
 //}
 
 void PickTriangle::pickTriangle(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron,
-	Camera* camera, std::vector<std::vector<bool>>& hide, int* triangle_index, bool& is_cloth, int* pos)
+	Camera* camera, std::vector<std::vector<bool>>& hide, int* triangle_index, int* pos)
 {
 	glDisable(GL_BLEND);
 	glDisable(GL_MULTISAMPLE);
@@ -45,6 +45,9 @@ void PickTriangle::pickTriangle(std::vector<Cloth>* cloth, std::vector<Collider>
 	for (int i = 0; i < tetrahedron->size(); ++i) {
 		total_face_num += (*tetrahedron)[i].mesh_struct.triangle_indices.size();
 	}
+	for (int i = 0; i < collider->size(); ++i) {
+		total_face_num += (*collider)[i].mesh_struct.triangle_indices.size();
+	}
 	//std::cout << total_face_num << " " << (*tetrahedron)[0].mesh_struct.triangle_indices.size() << std::endl;
 	int face_index;
 	writingFBO(cloth, collider, tetrahedron, camera, hide, shader);
@@ -52,7 +55,7 @@ void PickTriangle::pickTriangle(std::vector<Cloth>* cloth, std::vector<Collider>
 	glEnable(GL_MULTISAMPLE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	decideFinalIndi(cloth, tetrahedron, face_index, is_cloth, triangle_index);
+	decideFinalIndi(cloth, tetrahedron, collider, face_index, triangle_index);
 	//std::cout <<"select face "<< triangle_index[0] <<" " <<(*cloth)[0].mesh_struct.triangle_indices[triangle_index[0]][0]<<" "<< (*cloth)[0].mesh_struct.triangle_indices[triangle_index[0]][1]<<" "<< (*cloth)[0].mesh_struct.triangle_indices[triangle_index[0]][2]<< std::endl;
 }
 
@@ -60,7 +63,7 @@ void PickTriangle::writingFBO(std::vector<Cloth>* cloth, std::vector<Collider>* 
 	Camera* camera, std::vector<std::vector<bool>>& hide, Shader* shader)
 {
 	glClearColor(1.0, 1.0, 1.0, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glBindFramebuffer(GL_FRAMEBUFFER, picking_FBO);
 	picking_base_ID = 1;
 	for (int i = 0; i < cloth->size(); ++i) {
@@ -71,13 +74,6 @@ void PickTriangle::writingFBO(std::vector<Cloth>* cloth, std::vector<Collider>* 
 		}
 		picking_base_ID += (*cloth)[i].mesh_struct.faces.size();
 	}
-	for (int i = 0; i < collider->size(); ++i) {
-		if (!hide[COLLIDER_][i]) {
-			collider_shader->use();
-			collider_shader->setVec3("color", glm::vec3(1.0f, 1.0f, 1.0f));
-			(*collider)[i].simpDraw(camera, collider_shader);
-		}
-	}
 	for (int i = 0; i < tetrahedron->size(); ++i) {
 		if (!hide[TETRAHEDRON_][i]) {
 			shader->use();
@@ -85,6 +81,14 @@ void PickTriangle::writingFBO(std::vector<Cloth>* cloth, std::vector<Collider>* 
 			(*tetrahedron)[i].simpDraw(camera, shader);
 		}
 		picking_base_ID += (*tetrahedron)[i].mesh_struct.triangle_indices.size();
+	}
+	for (int i = 0; i < collider->size(); ++i) {
+		if (!hide[COLLIDER_][i]) {
+			shader->use();
+			shader->setInt("picking_base_ID", picking_base_ID);
+			(*collider)[i].simpDraw(camera, shader);
+		}
+		picking_base_ID += (*collider)[i].mesh_struct.triangle_indices.size();
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -101,7 +105,7 @@ void PickTriangle::decideTriangle(int& triangle_index, int total_cloth_triangle_
 	num_component[2] = ((int)(pixel_value[2])) * 256 * 256;
 	triangle = num_component[0] + num_component[1] + num_component[2];
 	if (triangle > 0 && triangle < total_cloth_triangle_num) {
-		triangle_index=triangle;
+		triangle_index = triangle;
 	}
 	else {
 		triangle_index = -1;
@@ -116,35 +120,48 @@ void PickTriangle::readPixel(std::vector<unsigned char>* pixel_value, unsigned i
 	glDeleteFramebuffers(1, FBO);
 }
 
-void PickTriangle::decideFinalIndi(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, int sum_triangle_index, 
-	bool& is_cloth, int* triangle_index)
+void PickTriangle::decideFinalIndi(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron,
+	std::vector<Collider>* collider,
+	int sum_triangle_index,
+	int* triangle_index)
 {
+	unsigned int total_obj_num = cloth->size() + tetrahedron->size() + collider->size();
+
 	triangle_index[1] = -1;
 	triangle_index[0] = -1;
-	std::vector<int>start_indi(cloth->size()+ tetrahedron->size() + 1);
+	std::vector<int>start_indi(total_obj_num + 1);
 	int id = 1;
-	for (int i = 0; i < cloth->size(); ++i) {
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		start_indi[i] = id;
 		id += (*cloth)[i].mesh_struct.faces.size();
 	}
-	for (int i = 0; i < tetrahedron->size(); ++i) {
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		start_indi[i] = id;
 		id += (*tetrahedron)[i].mesh_struct.triangle_indices.size();
 	}
-	start_indi[cloth->size() + tetrahedron->size()] = id;
-	for (int j = 0; j < cloth->size(); ++j) {
+	for (unsigned int i = 0; i < collider->size(); ++i) {
+		start_indi[i] = id;
+		id += (*collider)[i].mesh_struct.triangle_indices.size();
+	}
+	start_indi[total_obj_num] = id;
+	for (unsigned int j = 0; j < cloth->size(); ++j) {
 		if (sum_triangle_index >= start_indi[j] && sum_triangle_index < start_indi[j + 1]) {
 			triangle_index[1] = j;
 			triangle_index[0] = sum_triangle_index - start_indi[j];
-			is_cloth = true;
 			return;
 		}
-	}	
-	for (int j = cloth->size(); j < tetrahedron->size()+ cloth->size(); ++j) {
+	}
+	for (unsigned int j = cloth->size(); j < tetrahedron->size() + cloth->size(); ++j) {
 		if (sum_triangle_index >= start_indi[j] && sum_triangle_index < start_indi[j + 1]) {
-			triangle_index[1] = j- cloth->size();
+			triangle_index[1] = j;
 			triangle_index[0] = sum_triangle_index - start_indi[j];
-			is_cloth = false;
+			return;
+		}
+	}
+	for (unsigned int j = tetrahedron->size() + cloth->size(); j < total_obj_num; ++j) {
+		if (sum_triangle_index >= start_indi[j] && sum_triangle_index < start_indi[j + 1]) {
+			triangle_index[1] = j;
+			triangle_index[0] = sum_triangle_index - start_indi[j];
 			return;
 		}
 	}

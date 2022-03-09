@@ -19,7 +19,7 @@ void Cloth::draw(Camera* camera, Shader* object_shader_front)
 		glBindVertexArray(VAO);
 		glPolygonMode(GL_FRONT, GL_FILL);
 		glCullFace(GL_BACK);
-		glDrawElements(GL_TRIANGLES, 3*mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, 3 * mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
 		//glBindVertexArray(0);
 		//object_shader_back->use();
 		//object_shader_back->setVec3("viewPos", camera->position);
@@ -35,7 +35,7 @@ void Cloth::draw(Camera* camera, Shader* object_shader_front)
 		glBindVertexArray(VAO);
 		glPolygonMode(GL_BACK, GL_FILL);
 		glCullFace(GL_FRONT);
-		glDrawElements(GL_TRIANGLES, 3*mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, 3 * mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 	}
 }
@@ -79,11 +79,11 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mesh_struct.getNormal();
 	genBuffer();
 	setBuffer();
-	setArea();	
+	setArea();
 	setMass(density);
 	mesh_struct.setAnchorPosition();
-	
-	update_stiffness_iteration_number.resize(mesh_struct.vertices.size());	
+
+	update_stiffness_iteration_number.resize(mesh_struct.vertices.size());
 	initialHashAABB();
 	setRepresentativePrimitve();
 }
@@ -112,7 +112,7 @@ void Cloth::setMass(double density)
 		for (int i = 0; i < mesh_struct.faces.size(); ++i) {
 			mass += mesh_struct.faces[i].area * density;
 		}
-		std::cout << mesh_struct.faces[0].area + mesh_struct.faces[1].area << std::endl;
+		//std::cout << mesh_struct.faces[0].area + mesh_struct.faces[1].area << std::endl;
 	}
 	else {
 		mass = 1.25;
@@ -122,10 +122,10 @@ void Cloth::setMass(double density)
 void Cloth::setMeshStruct(double density, OriMesh& ori_mesh)
 {
 	setMaterial(ori_mesh);
-	mesh_struct.vertex_position = ori_mesh.vertices;	
+	mesh_struct.vertex_position = ori_mesh.vertices;
 	if (!ori_mesh.indices.empty()) {
 		mesh_struct.triangle_indices.resize(ori_mesh.indices.size() / 3);
-		memcpy(mesh_struct.triangle_indices[0].data(), ori_mesh.indices.data(),12* mesh_struct.triangle_indices.size());
+		memcpy(mesh_struct.triangle_indices[0].data(), ori_mesh.indices.data(), 12 * mesh_struct.triangle_indices.size());
 	}
 	this->density = density;
 	setAnchor();
@@ -155,12 +155,12 @@ void Cloth::recordInitialMesh(SingleClothInfo& single_cloth_info_ref)
 	memcpy(collision_stiffness_initial, single_cloth_info_ref.collision_stiffness, 32);
 	bend_stiffness = single_cloth_info_ref.bending_stiffness;
 	position_stiffness = single_cloth_info_ref.position_stiffness;
-	std::fill(length_stiffness.begin(), length_stiffness.end(), single_cloth_info_ref.length_stiffness);	
+	std::fill(length_stiffness.begin(), length_stiffness.end(), single_cloth_info_ref.length_stiffness);
 	std::array<double, 4> collision_stiff_indicator;
 	for (int i = 0; i < 4; ++i) {
 		collision_stiff_indicator[i] = collision_stiffness_update_indicator * single_cloth_info_ref.collision_stiffness[i];
 	}
-	
+
 }
 
 void Cloth::initial()
@@ -173,7 +173,7 @@ void Cloth::initial()
 		mesh_struct.anchor_position[i] = mesh_struct.vertex_position[mesh_struct.anchor_vertex[i]];
 	}
 	std::fill(length_stiffness.begin(), length_stiffness.end(), single_cloth_info_ref.length_stiffness);
-	bend_stiffness = single_cloth_info_ref.bending_stiffness;	
+	bend_stiffness = single_cloth_info_ref.bending_stiffness;
 	std::array<double, 4> collision_stiff_indicator;
 	for (int i = 0; i < 4; ++i) {
 		collision_stiff_indicator[i] = collision_stiffness_update_indicator * single_cloth_info_ref.collision_stiffness[i];
@@ -200,66 +200,50 @@ void Cloth::setAnchor()
 	//mesh_struct.anchor_vertex.push_back(101 * 100);//131 * 100
 }
 
-//VERTEX_AABB
-//VERTEX_AABB_WITHOUT_TOLERANCE
-void Cloth::getVertexAABBPerThread(int thread_No, bool has_tolerance)
-{
-	double* aabb = obj_aabb_per_thread[thread_No].data();
-	memset(aabb + 3, 0xFE, 24); //set double to -5.31401e+303
-	memset(aabb, 0x7F, 24); //set double to 1.38242e+306
+////VERTEX_AABB
+////VERTEX_AABB_WITHOUT_TOLERANCE
+//void Cloth::getVertexAABBPerThread(int thread_No, bool has_tolerance)
+//{
+//	double* aabb = obj_aabb_per_thread[thread_No].data();
+//	memset(aabb + 3, 0xFE, 24); //set double to -5.31401e+303
+//	memset(aabb, 0x7F, 24); //set double to 1.38242e+306
+//
+//	std::vector<std::array<double, 3>>* vertex_render=&mesh_struct.vertex_for_render;
+//	std::vector<std::array<double, 3>>* vertex=&mesh_struct.vertex_position;
+//	unsigned int index_end= mesh_struct.vertex_index_begin_per_thread[thread_No + 1];
+//	if (has_tolerance) {
+//		for (unsigned int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < index_end; ++i) {
+//			AABB::obtainAABB(vertex_AABB[i].data(), (*vertex_render)[i].data(), (*vertex)[i].data(), tolerance);	//
+//			for (unsigned int j = 0; j < 3; ++j) {
+//				if (aabb[j] > vertex_AABB[i][j]) {
+//					aabb[j] = vertex_AABB[i][j];
+//				}
+//			}
+//			for (unsigned int j = 3; j < 6; ++j) {
+//				if (aabb[j] < vertex_AABB[i][j]) {
+//					aabb[j] = vertex_AABB[i][j];
+//				}
+//			}
+//		}
+//	}
+//	else {
+//		for (unsigned int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < index_end; ++i) {
+//			AABB::obtainAABB(vertex_AABB[i].data(), (*vertex_render)[i].data(), (*vertex)[i].data());	// 
+//			for (unsigned int j = 0; j < 3; ++j) {
+//				if (aabb[j] > vertex_AABB[i][j]) {
+//					aabb[j] = vertex_AABB[i][j];
+//				}
+//			}
+//			for (unsigned int j = 3; j < 6; ++j) {
+//				if (aabb[j] < vertex_AABB[i][j]) {
+//					aabb[j] = vertex_AABB[i][j];
+//				}
+//			}
+//		}
+//	}
+//}
 
-	std::vector<std::array<double, 3>>* vertex_render=&mesh_struct.vertex_for_render;
-	std::vector<std::array<double, 3>>* vertex=&mesh_struct.vertex_position;
-	unsigned int index_end= mesh_struct.vertex_index_begin_per_thread[thread_No + 1];
-	if (has_tolerance) {
-		for (unsigned int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < index_end; ++i) {
-			AABB::obtainAABB(vertex_AABB[i].data(), (*vertex_render)[i].data(), (*vertex)[i].data(), tolerance);	//
-			for (unsigned int j = 0; j < 3; ++j) {
-				if (aabb[j] > vertex_AABB[i][j]) {
-					aabb[j] = vertex_AABB[i][j];
-				}
-			}
-			for (unsigned int j = 3; j < 6; ++j) {
-				if (aabb[j] < vertex_AABB[i][j]) {
-					aabb[j] = vertex_AABB[i][j];
-				}
-			}
-		}
-	}
-	else {
-		for (unsigned int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < index_end; ++i) {
-			AABB::obtainAABB(vertex_AABB[i].data(), (*vertex_render)[i].data(), (*vertex)[i].data());	// 
-			for (unsigned int j = 0; j < 3; ++j) {
-				if (aabb[j] > vertex_AABB[i][j]) {
-					aabb[j] = vertex_AABB[i][j];
-				}
-			}
-			for (unsigned int j = 3; j < 6; ++j) {
-				if (aabb[j] < vertex_AABB[i][j]) {
-					aabb[j] = vertex_AABB[i][j];
-				}
-			}
-		}
-	}
-}
 
-//EDGE_TRIANGLE_AABB
-void Cloth::getEdgeTriangleAABBPerThread(int thread_No)
-{
-	MeshStruct::Edge* edge = mesh_struct.edges.data();
-	int* vertex_index;
-	unsigned int index_end = mesh_struct.edge_index_begin_per_thread[thread_No + 1];
-	for (unsigned int i = mesh_struct.edge_index_begin_per_thread[thread_No]; i < index_end; ++i) {
-		vertex_index = edge[i].vertex;
-		getAABB(edge_AABB[i].data(), vertex_AABB[vertex_index[0]].data(), vertex_AABB[vertex_index[1]].data());
-	}
-	std::array<int, 3>* face = mesh_struct.triangle_indices.data();
-	index_end = mesh_struct.face_index_begin_per_thread[thread_No + 1];
-	for (unsigned int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < index_end; ++i) {
-		vertex_index = face[i].data();
-		getAABB(triangle_AABB[i].data(), vertex_AABB[vertex_index[0]].data(), vertex_AABB[vertex_index[1]].data(), vertex_AABB[vertex_index[2]].data());
-	}
-}
 
 //TRIANGLE_AABB
 //void Cloth::getTriangleAABBPerThread(int thread_No)
@@ -318,7 +302,7 @@ void Cloth::findAllNeighborVertex(int face_index, double cursor_pos[3], double a
 	//std::cout <<"add "<< neighbor_vertex.size() << std::endl;
 }
 
-void Cloth::findNeighborVertex(int vertex_index, int recursion_deepth, std::vector<bool>&is_vertex_used)
+void Cloth::findNeighborVertex(int vertex_index, int recursion_deepth, std::vector<bool>& is_vertex_used)
 {
 	if (recursion_deepth > 2)
 		return;
@@ -366,44 +350,28 @@ void Cloth::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num
 	}
 
 	//if (use_BVH) {
-		triangle_neighbor_collider_triangle.resize(mesh_struct.triangle_indices.size());
-		for (int i = 0; i < mesh_struct.triangle_indices.size(); ++i) {
-			triangle_neighbor_collider_triangle[i].resize(collider_num);
-			for (int j = 0; j < collider_num; ++j) {
-				triangle_neighbor_collider_triangle[i][j].reserve(10);
-			}
+	triangle_neighbor_collider_triangle.resize(mesh_struct.triangle_indices.size());
+	for (int i = 0; i < mesh_struct.triangle_indices.size(); ++i) {
+		triangle_neighbor_collider_triangle[i].resize(collider_num);
+		for (int j = 0; j < collider_num; ++j) {
+			triangle_neighbor_collider_triangle[i][j].reserve(10);
 		}
+	}
 	//	std::cout<< triangle_neighbor_collider_triangle[0]
-		vertex_neighbor_collider_triangle.resize(mesh_struct.vertex_position.size());
-		collide_vertex_collider_triangle.resize(mesh_struct.vertex_position.size());
-		for (int i = 0; i < vertex_neighbor_collider_triangle.size(); ++i) {
-			vertex_neighbor_collider_triangle[i].resize(collider_num);
-			collide_vertex_collider_triangle[i].resize(collider_num);
-			for (int j = 0; j < collider_num; ++j) {
-				vertex_neighbor_collider_triangle[i][j].reserve(10);
-				collide_vertex_collider_triangle[i][j].reserve(10);
-			}
+	vertex_neighbor_collider_triangle.resize(mesh_struct.vertex_position.size());
+	collide_vertex_collider_triangle.resize(mesh_struct.vertex_position.size());
+	for (int i = 0; i < vertex_neighbor_collider_triangle.size(); ++i) {
+		vertex_neighbor_collider_triangle[i].resize(collider_num);
+		collide_vertex_collider_triangle[i].resize(collider_num);
+		for (int j = 0; j < collider_num; ++j) {
+			vertex_neighbor_collider_triangle[i][j].reserve(10);
+			collide_vertex_collider_triangle[i][j].reserve(10);
 		}
+	}
 	//}	
 }
 
-void Cloth::setRepresentativePrimitve()
-{
-	representative_vertex_num.resize(mesh_struct.faces.size(), 0);
-	representative_edge_num.resize(mesh_struct.faces.size(), 0);
-	setRepresentativeVertex(mesh_struct.surface_triangle_index_in_order, mesh_struct.vertices);
-	setRepresentativeEdge(mesh_struct.faces, mesh_struct.edges);
-	vertex_from_rep_triangle_index.resize(mesh_struct.vertex_position.size(), -1);
-	edge_from_rep_triangle_index.resize(mesh_struct.edges.size(), -1);
-	for (int i = 0; i < mesh_struct.faces.size(); ++i) {
-		for (int j = 0; j < representative_vertex_num[i]; ++j) {
-			vertex_from_rep_triangle_index[mesh_struct.surface_triangle_index_in_order[i][j]] = i;
-		}
-		for (int j = 0; j < representative_edge_num[i]; ++j) {
-			edge_from_rep_triangle_index[mesh_struct.faces[i].edge[j]] = i;
-		}
-	}
-}
+
 
 
 //void Cloth::test() //ttest representative triangle

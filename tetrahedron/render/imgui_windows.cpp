@@ -15,6 +15,7 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 		if (ImGui::Button("1 Frame", ImVec2(160, 25)))
 		{
 			control_parameter[ONE_FRAME] = true;
+			control_parameter[MOVE_OBJ] = false;
 		}
 		if (control_parameter[START_SIMULATION]) {
 			if (ImGui::Button("Pause Simulation", ImVec2(160, 25)))
@@ -26,6 +27,7 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 			if (ImGui::Button("Continue Simulation", ImVec2(160, 25)))
 			{
 				control_parameter[START_SIMULATION] = true;
+				control_parameter[MOVE_OBJ] = false;
 			}
 		}
 		if (ImGui::Button("Reset Simulation", ImVec2(160, 25))) {
@@ -108,19 +110,26 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 		ImGui::TreePop();
 	}
 
-	if (control_parameter[DRAW_MESH_PATCH]) {
-		if (ImGui::Button("Hide mesh patch", ImVec2(160, 25)))
+	if (ImGui::Button("Move obj test", ImVec2(160, 25)))
+	{
+		control_parameter[MOVE_OBJ_SCRIPT] = true;
+	}
+
+	if (control_parameter[MOVE_OBJ]) {
+		if (ImGui::Button("Stop move object", ImVec2(160, 25)))
 		{
-			control_parameter[DRAW_MESH_PATCH] = false;
+			control_parameter[MOVE_OBJ] = false;
 		}
 	}
 	else {
-		if (ImGui::Button("Show mesh patch", ImVec2(160, 25)))
+		if (ImGui::Button("Start move object", ImVec2(160, 25)))
 		{
-			control_parameter[DRAW_MESH_PATCH] = true;
+			control_parameter[MOVE_OBJ] = true;
 			control_parameter[START_SIMULATION] = false;
 		}
 	}
+
+
 	ImGui::End();
 
 	if (control_parameter[SET_CURSOR_FORCE]) {
@@ -296,7 +305,7 @@ bool ImGuiWindows::loadModel(std::vector<std::string>& collider_path, std::vecto
 			}
 		}
 		if (ImGui::Button("Load object", ImVec2(160, 25))) {
-			m_file_dialog_info.SetTypeFilters({".obj",".ele" });
+			m_file_dialog_info.SetTypeFilters({ ".obj",".ele" });
 			m_file_dialog_info.SetTitle("Load object");
 			m_file_dialog_info.Open();
 			load_collider_is_open = false;
@@ -304,13 +313,13 @@ bool ImGuiWindows::loadModel(std::vector<std::string>& collider_path, std::vecto
 		if (!load_collider_is_open) {
 			m_file_dialog_info.Display();
 			if (m_file_dialog_info.HasSelected()) {
-				if (!object_path.empty() && object_path[object_path.size() - 1] == m_file_dialog_info.GetSelected().string()) {
-					ImGui::TextWrapped("Error, Need to add different path");
-				}
-				else {
-					object_path.push_back(m_file_dialog_info.GetSelected().string());
-					m_file_dialog_info.ClearSelected();
-				}		
+				//if (!object_path.empty() && object_path[object_path.size() - 1] == m_file_dialog_info.GetSelected().string()) {
+				//	ImGui::TextWrapped("Error, Need to add different path");
+				//}
+				//else {
+				object_path.push_back(m_file_dialog_info.GetSelected().string());
+				m_file_dialog_info.ClearSelected();
+				//}		
 			}
 		}
 		if (!object_path.empty()) {
@@ -332,7 +341,7 @@ bool ImGuiWindows::loadModel(std::vector<std::string>& collider_path, std::vecto
 	if (finished_loading) {
 		return true;
 	}
-	return false;	 
+	return false;
 }
 
 void ImGuiWindows::infoWindow(std::vector<std::array<int, 3>>& cloth_info, std::vector<double>& cloth_mass,
@@ -345,7 +354,7 @@ void ImGuiWindows::infoWindow(std::vector<std::array<int, 3>>& cloth_info, std::
 	ImGui::Text("stamp: %i", time_stamp);
 	ImGui::Text("Time(ms): %f", time);
 	ImGui::SetNextItemOpen(true);
-	if (ImGui::TreeNode("Iteration")){
+	if (ImGui::TreeNode("Iteration")) {
 		ImGui::Text("Local-global iteration: %i", iteration_num[LOCAL_GLOBAL]);
 		ImGui::Text("Outter iteration: %i", iteration_num[OUTER]);
 		if (!start_edit) {
@@ -414,7 +423,7 @@ void ImGuiWindows::helpMarker(const char* desc)
 
 
 void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_stiffness, double* simulation_parameters, std::vector<std::array<double, 4>>& collision_stiffness,
-	bool* set_stiffness, double* temp_stiffness, UpdateClothStiffness& update_cloth_stiffness, bool* set_anchor_point,bool tetrahedron_exist)
+	bool* set_stiffness, double* temp_stiffness, UpdateClothStiffness& update_cloth_stiffness, bool* set_anchor_point, bool tetrahedron_exist)
 {
 	ImGui::SetNextWindowPos(ImVec2(0, 330));
 	ImGui::SetNextWindowSize(ImVec2(240, 140));
@@ -443,7 +452,7 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 	bool test = true;
 	if (set_stiffness[START_SETTING]) {
 		ImGui::SetNextWindowSize(ImVec2(500, 330));
-		ImGui::Begin("Set Stiffness", set_stiffness+START_SETTING);
+		ImGui::Begin("Set Stiffness", set_stiffness + START_SETTING);
 		ImGui::Text("Press to set constraint stiffness.");
 		if (ImGui::Button("set stiffness", ImVec2(160, 25))) {
 			set_stiffness[EDIT] = true;
@@ -452,7 +461,7 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 		std::string tempString;
 		for (int i = 0; i < collision_stiffness.size(); ++i) {
 			ImGui::SetNextItemOpen(true);
-			tempString = "Cloth " + std::to_string(i) +"##collision stiffness";
+			tempString = "Cloth " + std::to_string(i) + "##collision stiffness";
 			if (ImGui::TreeNode(tempString.c_str())) {
 				ImGui::Text("Stretch: %.2e", cloth_stiffness[i][0]);
 				ImGui::SameLine();
@@ -515,7 +524,7 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 			set_stiffness[EDIT_COLLISION] = true;
 		}
 
-		
+
 		if (ImGui::Button("Confirm Stiffness", ImVec2(160, 25))) {
 			set_stiffness[STIFFNESS_CONFIRMED] = true;
 			set_stiffness[EDIT] = false;
@@ -584,14 +593,14 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 
 
 
-void ImGuiWindows::iterationSolverInfoWindow(double&solver_iteration_num, int& itr_sovler_method,
+void ImGuiWindows::iterationSolverInfoWindow(double& solver_iteration_num, int& itr_sovler_method,
 	char** itr_solver_items, char*& itr_solver_item, int item_num, double* conv_rate, bool& record_matrix)
 {
 	ImGui::SetNextWindowPos(ImVec2(SCR_WIDTH - 540, 0));
 	ImGui::SetNextWindowSize(ImVec2(270, 540));
 	ImGui::Begin("Iteration Solver Info");
 	ImGui::Text("Convergence_rate:");
-	ImGui::InputDouble("##Conv_rate", conv_rate,0.0,0.0, "%.2e");
+	ImGui::InputDouble("##Conv_rate", conv_rate, 0.0, 0.0, "%.2e");
 	std::string tempString;
 	ImGui::TextWrapped("Ave itr num:");
 	ImGui::SameLine();

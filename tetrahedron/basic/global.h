@@ -175,16 +175,16 @@ inline void normalize(double* x) {
 #undef DET2X2
 #define DET2X2(a,b,c,d) (a*d-b*c)
 
-inline void arrangeIndex(int total_thread_num, int total_num, unsigned int* begin) {
-	int interval1 = total_num / total_thread_num;
-	int resi1 = total_num % total_thread_num;
+inline void arrangeIndex(unsigned int total_thread_num, unsigned int total_num, unsigned int* begin) {
+	unsigned int interval1 = total_num / total_thread_num;
+	unsigned int resi1 = total_num % total_thread_num;
 	if (resi1 == 0) {
-		for (int i = 0; i < total_thread_num; ++i) {
+		for (unsigned int i = 0; i < total_thread_num; ++i) {
 			begin[i] = interval1 * i;
 		}
 	}
 	else {
-		for (int i = 0; i < total_thread_num; ++i) {
+		for (unsigned int i = 0; i < total_thread_num; ++i) {
 			if (i < resi1) {
 				begin[i] = (interval1 + 1) * i;
 			}
@@ -195,6 +195,7 @@ inline void arrangeIndex(int total_thread_num, int total_num, unsigned int* begi
 	}
 	begin[total_thread_num] = total_num;
 }
+
 
 inline void arrangeIndex(int total_thread_num, int total_num, std::vector<int>& begin) {
 	int interval1 = total_num / total_thread_num;

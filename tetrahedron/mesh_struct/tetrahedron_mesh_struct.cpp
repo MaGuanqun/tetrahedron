@@ -11,7 +11,7 @@ void TetrahedronMeshStruct::findSurface()
 	int* index;
 	for (int i = 0; i < indices.size(); ++i) {
 		index = indices[i].data();
-		buildMap(face_in_tet, index[0], index[2], index[1], face_tet_index,i);
+		buildMap(face_in_tet, index[0], index[2], index[1], face_tet_index, i);
 		buildMap(face_in_tet, index[0], index[3], index[2], face_tet_index, i);
 		buildMap(face_in_tet, index[0], index[1], index[3], face_tet_index, i);
 		buildMap(face_in_tet, index[1], index[2], index[3], face_tet_index, i);
@@ -28,14 +28,14 @@ void TetrahedronMeshStruct::findSurface()
 	triangle_indices.shrink_to_fit();
 	tet_index_of_surface_face.shrink_to_fit();
 
-	vertex_on_surface.resize(vertex_position.size(),false);
+	vertex_on_surface.resize(vertex_position.size(), false);
 	for (int i = 0; i < triangle_indices.size(); ++i) {
 		for (int j = 0; j < 3; ++j) {
 			vertex_on_surface[triangle_indices[i][j]] = true;
-		}		
+		}
 	}
 	vertex_index_on_sureface.reserve(vertex_position.size());
-	vertex_surface_index.resize(vertex_position.size(),-1);
+	vertex_surface_index.resize(vertex_position.size(), -1);
 	for (int i = 0; i < vertex_on_surface.size(); ++i) {
 		if (vertex_on_surface[i]) {
 			vertex_index_on_sureface.push_back(i);
@@ -71,7 +71,7 @@ void TetrahedronMeshStruct::recordTetIndexForSurfaceIndex()
 				}
 				vertices[indices[i][j]].tetrahedron.push_back(i);
 			}
-		}	
+		}
 	}
 }
 
@@ -143,7 +143,7 @@ void TetrahedronMeshStruct::setThreadIndex(int total_thread_num_)
 
 	edge_index_begin_per_thread.resize(total_thread_num, 0);
 	arrangeIndex(total_thread_num_, edges.size(), edge_index_begin_per_thread.data());
-	
+
 }
 
 void TetrahedronMeshStruct::getRenderNormal()
@@ -173,12 +173,12 @@ void TetrahedronMeshStruct::prepareForDeformationGradient()
 	Matrix3d ppt;
 	for (int i = 0; i < indices.size(); ++i)
 	{
-		p=constructMatrixP(i);
+		p = constructMatrixP(i);
 		PT[i] = p.transpose();
 		ppt = p * p.transpose();
 		PT_times_PPT_inv[i] = PT[i] * ppt.inverse();
 		//inverse3X3(ppt.data(), PPT_inv[i].data());
-	
+
 	}
 }
 
@@ -187,7 +187,7 @@ Matrix<double, 3, 4> TetrahedronMeshStruct::constructMatrixP(int tetra_index)
 	Matrix<double, 3, 4> p;
 	for (int i = 0; i < 4; ++i)
 	{
-		memcpy(p.data()+3*i, vertex_position[indices[tetra_index][i]].data(), 24);
+		memcpy(p.data() + 3 * i, vertex_position[indices[tetra_index][i]].data(), 24);
 	}
 	Vector3d center = 0.25 * p.rowwise().sum();
 	return p.colwise() - center;
@@ -208,7 +208,7 @@ void TetrahedronMeshStruct::getVertexNormalPerThread(int thread_id)
 				face_normal[(*face_vertex)[k]]);
 
 		}
-		normalize(current_vertex_normal);		
+		normalize(current_vertex_normal);
 	}
 }
 

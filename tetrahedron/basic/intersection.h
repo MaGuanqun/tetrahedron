@@ -4,28 +4,27 @@
 class Intersection
 {
 public:
-	Intersection() {
+    Intersection() {
         happened = false;
+        happened_include_collider = false;
         face_index = -1;
-       obj_No = -1;
-	}
-
+        obj_No = -1;
+    }
+    bool happened_include_collider;
     bool happened;
     int face_index;
     int obj_No;
-    bool is_cloth;
     void initialIntersection() {
         happened = false;
+        happened_include_collider = false;
         face_index = -1;
         obj_No = -1;
-        is_cloth = true;
     }
 
-    void setIntersection(int* triangle_index, bool is_cloth) {
-        happened = true;
+    void setIntersection(int* triangle_index) {
+        happened_include_collider = true;
         face_index = triangle_index[0];
         obj_No = triangle_index[1];
-        this->is_cloth = is_cloth;
     }
 
 };

@@ -18,7 +18,7 @@ public:
 
 	PickTriangle();
 	void pickTriangle(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron,
-		Camera* camera, std::vector<std::vector<bool>>& hide, int* triangle_index, bool& is_cloth, int* pos);
+		Camera* camera, std::vector<std::vector<bool>>& hide, int* triangle_index, int* pos);
 
 private:
 	unsigned int picking_FBO;
@@ -31,7 +31,9 @@ private:
 	void writingFBO(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron,
 		Camera* camera, std::vector<std::vector<bool>>& hide, Shader* shader);
 	void decideTriangle(int& triangle_index, int total_cloth_triangle_num, unsigned int* FBO, int* pos);
-	void decideFinalIndi(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, int sum_triangle_index, bool& is_cloth, int* triangle_index);
+	void decideFinalIndi(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron,
+		std::vector<Collider>* collider,
+		int sum_triangle_index, int* triangle_index);
 };
 
 

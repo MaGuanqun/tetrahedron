@@ -3,15 +3,14 @@
 #include"triangle_object.h"
 
 
-class Cloth:public TriangleObject
+class Cloth :public TriangleObject
 {
 public:
 	void setSceneShader(Light& light, Camera* camera, float& far_plane, Shader* object_shader_front);
 	void loadMesh(OriMesh& ori_mesh, double density, Thread* thread);
 	void draw(Camera* camera, Shader* object_shader_front);
 	void setArea();
-	double tolerance;
-	
+
 	std::vector<int>update_stiffness_iteration_number;
 	void recordInitialMesh(SingleClothInfo& single_cloth_info_ref);
 	SingleClothInfo single_cloth_info_ref;
@@ -29,10 +28,10 @@ public:
 	void initialMouseChosenVertex();
 
 	//void getTriangleAABBPerThread(int thread_No);
-	void getEdgeTriangleAABBPerThread(int thread_No);
-	void getVertexAABBPerThread(int thread_No, bool has_tolerance);
+	//void getEdgeTriangleAABBPerThread(int thread_No);
+	//void getVertexAABBPerThread(int thread_No, bool has_tolerance);
 	void obtainAABB(bool has_tolerace);
-	
+
 
 
 
@@ -50,16 +49,15 @@ public:
 	std::vector<std::vector<std::vector<int>>>collide_vertex_obj_triangle;//except collider
 	std::vector<std::vector<std::vector<int>>>collide_vertex_collider_triangle;
 	std::vector<std::vector<std::vector<int>>>collide_edge_obj_edge;//except collider
-	std::vector<int> vertex_from_rep_triangle_index;
-	
+
+
 
 private:
 	void setMeshStruct(double density, OriMesh& ori_mesh);
 
 	void setMass(double density);
 	void setAnchor();
-	
-	void setRepresentativePrimitve();
+
 	void findNeighborVertex(int vertex_index, int recursion_deepth, std::vector<bool>& is_vertex_used);
 	void initialHashAABB();
 

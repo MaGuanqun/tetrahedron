@@ -13,7 +13,7 @@ void ReadEle::load(const char* name, OriMesh& mesh)
 	saveTetrahedronIndex(read_string, mesh);
 	read_string.clear();
 	loadFile(node_path.c_str(), tem_string);
-	splitting(tem_string, read_string);	
+	splitting(tem_string, read_string);
 	tem_string.clear();
 	saveTetrahedronVertex(read_string, mesh);
 
@@ -28,7 +28,7 @@ void ReadEle::loadFile(const char* name, std::vector<std::string>& temString)
 	if (!fin.is_open()) {
 		std::cout << "error opening " << *name << std::endl;
 	}
-	else{
+	else {
 		temString.reserve(2000);
 		while (std::getline(fin, line)) {
 			temString.push_back(line);
@@ -61,7 +61,7 @@ void ReadEle::split(std::string& str, const std::string& delim1, const std::stri
 		while (start != std::string::npos)
 		{
 			index = str.find_first_of(delim1, start);
-			index2 = str.find_first_of(delim2,start);
+			index2 = str.find_first_of(delim2, start);
 			if (index > index2) {
 				index = index2;
 			}
@@ -110,10 +110,10 @@ void ReadEle::split(std::string& str, const std::string& delim1, const std::stri
 
 void ReadEle::saveTetrahedronIndex(std::vector<std::vector<std::string>>& result, OriMesh& mesh)
 {
-	bool start_from_zero=false;
+	bool start_from_zero = false;
 	int tetrahedron_num = stoi(result[0][0]);
-	mesh.indices.reserve(4* tetrahedron_num);
-	for (int i = 1; i < result.size()-1; i++) {
+	mesh.indices.reserve(4 * tetrahedron_num);
+	for (int i = 1; i < result.size() - 1; i++) {
 		for (int j = 1; j < 5; j++) {
 			if (result[i][j] == "0") {
 				start_from_zero = true;
@@ -129,7 +129,7 @@ void ReadEle::saveTetrahedronIndex(std::vector<std::vector<std::string>>& result
 				}
 				mesh.indices.push_back(stoi(result[result.size() - 1][j]));
 			}
-		}		
+		}
 	}
 	if (!start_from_zero) {
 		for (int i = 0; i < mesh.indices.size(); ++i) {
@@ -142,7 +142,7 @@ void ReadEle::saveTetrahedronVertex(std::vector<std::vector<std::string>>& resul
 {
 	int tetrahedron_vertex_num = stoi(result[0][0]);
 	mesh.vertices.reserve(3 * tetrahedron_vertex_num);
-	for (int i = 1; i < result.size()-1; ++i) {
+	for (int i = 1; i < result.size() - 1; ++i) {
 		mesh.vertices.push_back({ stod(result[i][1]),stod(result[i][2]),stod(result[i][3]) });
 	}
 	if (result[result.size() - 1][0] != "#") {
@@ -157,5 +157,5 @@ void ReadEle::setNodePath(std::string& node_path, std::string& ele_path)
 {
 	std::string::size_type index;
 	index = ele_path.find_last_of(".");
-	node_path = ele_path.substr(0, index)+".node";
+	node_path = ele_path.substr(0, index) + ".node";
 }

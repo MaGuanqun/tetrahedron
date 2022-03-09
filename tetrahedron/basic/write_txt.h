@@ -1,5 +1,6 @@
 #pragma once
-
+#ifndef WRITE_TXT_H
+#define WRITE_TXT_H
 #include<iostream>
 #include<fstream>
 #include<sstream>
@@ -8,7 +9,23 @@
 #include <direct.h>
 #include <io.h>
 
+
 namespace WriteTxt {
+
+	void writeTxt(std::vector<unsigned int>& result, std::string name)
+	{
+		std::ofstream input_file;
+		std::string obj_name = name + ".txt";
+		//std::string material_name = name + ".mtl";
+		input_file.open(obj_name.c_str(), std::ios::trunc);
+		//input_file << first_line << "\t";
+		for (int i = 0; i < result.size(); ++i) {
+			input_file << result[i] << "\n";
+		}
+		input_file.close();
+		std::cout << "write " << obj_name << result.size() << std::endl;
+	}
+
 	void writeTxt(std::vector<double>& result, std::vector<int>& time, int precision, std::string name, std::string first_line)
 	{
 		std::ofstream input_file;
@@ -18,7 +35,7 @@ namespace WriteTxt {
 		input_file.open(obj_name.c_str(), std::ios::trunc);
 		//input_file << first_line << "\t";
 		for (int i = 0; i < result.size(); ++i) {
-			input_file << result[i]<<"\t";
+			input_file << result[i] << "\t";
 		}
 		input_file << "\n";
 		//input_file << "time ";
@@ -27,7 +44,7 @@ namespace WriteTxt {
 		}
 		input_file << "\n";
 		input_file.close();
-		std::cout << "write "<<obj_name<< result.size() << std::endl;
+		std::cout << "write " << obj_name << result.size() << std::endl;
 	}
 
 
@@ -51,4 +68,5 @@ namespace WriteTxt {
 	}
 }
 
+#endif 
 

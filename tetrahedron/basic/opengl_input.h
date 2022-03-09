@@ -27,6 +27,7 @@ struct MouseInput {
 	bool leftButtonIsPressed() { return left_press; }
 	bool leftButtonWasPressedThisFrame() { return left_press && !prev_left_press; }
 	bool leftButtonWasReleasedThisFrame() { return !left_press && prev_left_press; }
+	bool leftButtonWasPressedPreviousAndThisFrame() { return left_press && prev_left_press; }
 
 	bool rightButtonIsPressed() { return right_press; }
 	bool rightButtonWasPressedThisFrame() { return right_press && !prev_right_press; }

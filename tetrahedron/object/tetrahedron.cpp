@@ -3,7 +3,7 @@
 
 void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 {
-	total_thread_num= std::thread::hardware_concurrency();
+	total_thread_num = std::thread::hardware_concurrency();
 	obj_aabb_per_thread.resize(total_thread_num);
 	this->thread = thread;
 	mesh_struct.thread = thread;
@@ -21,7 +21,7 @@ void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mass = mesh_struct.setVolumeMass(density);
 	mesh_struct.recordTetIndexForSurfaceIndex();
 	genBuffer();
-	setBuffer();	
+	setBuffer();
 	setRepresentativePrimitve();
 	initialHashAABB();
 }
@@ -44,7 +44,7 @@ void Tetrahedron::drawWireframe(Camera* camera, Shader* wireframe_shader)
 		wireframe_shader->setVec3("color", wireframe_color);
 		glBindVertexArray(VAO);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		glDrawElements(GL_TRIANGLES, 3*mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, 3 * mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 	}
 }
@@ -56,16 +56,16 @@ void Tetrahedron::setRepresentativePrimitve()
 	representative_edge_num.resize(mesh_struct.faces.size(), 0);
 	setRepresentativeVertex(mesh_struct.surface_triangle_index_in_order, mesh_struct.vertices);
 	//mesh_struct.setVertexIndexOnSurfaceEdgeTriangle();
-	setRepresentativeEdge(mesh_struct.faces, mesh_struct.edges);
+	setRepresentativeEdge(mesh_struct.face_edges.data(), mesh_struct.face_edges.size() / 3, mesh_struct.edges.size());
 	surface_vertex_from_rep_triangle_index.resize(mesh_struct.vertex_index_on_sureface.size(), -1);
 	edge_from_rep_triangle_index.resize(mesh_struct.edges.size(), -1);
-	
+
 	for (int i = 0; i < mesh_struct.faces.size(); ++i) {
 		for (int j = 0; j < representative_vertex_num[i]; ++j) {
 			surface_vertex_from_rep_triangle_index[mesh_struct.surface_triangle_index_in_order[i][j]] = i;
 		}
 		for (int j = 0; j < representative_edge_num[i]; ++j) {
-			edge_from_rep_triangle_index[mesh_struct.faces[i].edge[j]] = i;
+			edge_from_rep_triangle_index[mesh_struct.face_edges[3 * i + j]] = i;
 		}
 	}
 }
@@ -81,6 +81,8 @@ void Tetrahedron::obtainAABB(bool has_tolerace)
 	//thread->assignTask(this, EDGE_AABB);
 	thread->assignTask(this, EDGE_TRIANGLE_AABB);
 	combineObjAABB();
+
+	thread->assignTask(this, TETRAHEDRON_AABB);
 }
 
 
@@ -100,7 +102,7 @@ void Tetrahedron::getVertexAABBPerThread(int thread_No, bool has_tolerance)
 	if (has_tolerance) {
 		for (unsigned int i = mesh_struct.vertex_index_on_surface_begin_per_thread[thread_No]; i < index_end; ++i) {
 			vertex_index = vertex_index_on_surface[i];
-			AABB::obtainAABB(vertex_AABB[vertex_index].data(),(*vertex_render)[vertex_index].data(), (*vertex)[vertex_index].data(), tolerance);	// 
+			AABB::obtainAABB(vertex_AABB[vertex_index].data(), (*vertex_render)[vertex_index].data(), (*vertex)[vertex_index].data(), tolerance);	// 
 			for (unsigned int j = 0; j < 3; ++j) {
 				if (aabb[j] > vertex_AABB[vertex_index][j]) {
 					aabb[j] = vertex_AABB[vertex_index][j];
@@ -113,7 +115,7 @@ void Tetrahedron::getVertexAABBPerThread(int thread_No, bool has_tolerance)
 			}
 		}
 	}
-	else{
+	else {
 		for (unsigned int i = mesh_struct.vertex_index_on_surface_begin_per_thread[thread_No]; i < index_end; ++i) {
 			vertex_index = vertex_index_on_surface[i];
 			AABB::obtainAABB(vertex_AABB[vertex_index].data(), (*vertex_render)[vertex_index].data(), (*vertex)[vertex_index].data());	// 
@@ -135,11 +137,11 @@ void Tetrahedron::getVertexAABBPerThread(int thread_No, bool has_tolerance)
 void Tetrahedron::getEdgeTriangleAABBPerThread(int thread_No)
 {
 	//std::array<int,2>* edge = mesh_struct.edge_vertex_index_on_surface.data();
-	MeshStruct::Edge* edge = mesh_struct.edges.data();
+	int* edge = mesh_struct.edge_vertices.data();
 	int* vertex_index;
 	unsigned int index_end = mesh_struct.edge_index_begin_per_thread[thread_No + 1];
 	for (unsigned int i = mesh_struct.edge_index_begin_per_thread[thread_No]; i < index_end; ++i) {
-		vertex_index = edge[i].vertex;
+		vertex_index = edge + (i << 1);
 		getAABB(edge_AABB[i].data(), vertex_AABB[vertex_index[0]].data(), vertex_AABB[vertex_index[1]].data());
 	}
 	std::array<int, 3>* face = mesh_struct.triangle_indices.data();
@@ -147,6 +149,17 @@ void Tetrahedron::getEdgeTriangleAABBPerThread(int thread_No)
 	for (unsigned int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < index_end; ++i) {
 		vertex_index = face[i].data();
 		getAABB(triangle_AABB[i].data(), vertex_AABB[vertex_index[0]].data(), vertex_AABB[vertex_index[1]].data(), vertex_AABB[vertex_index[2]].data());
+	}
+}
+
+//TETRAHEDRON_AABB
+void Tetrahedron::getTetAABBPerThread(int thread_No)
+{
+	unsigned int index_end = mesh_struct.tetrahedron_index_begin_per_thread[thread_No + 1];
+	int* vertex_index;
+	for (unsigned int i = mesh_struct.tetrahedron_index_begin_per_thread[thread_No]; i < index_end; ++i) {
+		vertex_index = mesh_struct.indices[i].data();
+		getAABB(tet_AABB[i].data(), vertex_AABB[vertex_index[0]].data(), vertex_AABB[vertex_index[1]].data(), vertex_AABB[vertex_index[2]].data(), vertex_AABB[vertex_index[3]].data());
 	}
 }
 
@@ -166,6 +179,7 @@ void Tetrahedron::initialHashAABB()
 	triangle_AABB.resize(mesh_struct.faces.size());
 	edge_AABB.resize(mesh_struct.edges.size());
 	vertex_AABB.resize(mesh_struct.vertex_position.size());
+	tet_AABB.resize(mesh_struct.indices.size());
 }
 
 void Tetrahedron::setBuffer()
@@ -209,7 +223,7 @@ void Tetrahedron::drawShadow(Camera* camera, Shader* shader)
 		shader->setMat4("model", glm::mat4(1.0));
 		glBindVertexArray(VAO);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		glDrawElements(GL_TRIANGLES, 3*mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, 3 * mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 	}
 }
@@ -223,7 +237,7 @@ void Tetrahedron::simpDraw(Camera* camera, Shader* shader)
 		shader->setMat4("view", camera->GetViewMatrix());
 		glBindVertexArray(VAO);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		glDrawElements(GL_TRIANGLES, 3*mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, 3 * mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 	}
 }
@@ -355,7 +369,7 @@ void Tetrahedron::findInnerVertex(std::vector<bool>& is_vertex_used)
 				neighbor_vertex.push_back(vertex_index_->data()[j]);
 				is_vertex_used[vertex_index_->data()[j]] = true;
 			}
-		}	
+		}
 	}
 }
 

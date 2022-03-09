@@ -24,15 +24,17 @@ protected:
 	void getAABB(double* target, double* aabb0, double* aabb1);
 	Thread* thread;
 	void setOrder(bool* in_this_triangle, unsigned int count, int* index);
-	void setOrderEdge(bool* in_this_triangle, unsigned int count, int* index);	
-	void setRepresentativeEdge(std::vector<MeshStruct::Face>& face, std::vector<MeshStruct::Edge>& edge);
+	void setOrderEdge(bool* in_this_triangle, unsigned int count, int* index);
+	void setRepresentativeEdge(int* face_edges, int face_size, int edge_size);
 	void setRepresentativeVertex(std::vector<std::array<int, 3>>& face, std::vector<MeshStruct::Vertex>& vertex);
 
 	std::vector<std::array<double, 6>> obj_aabb_per_thread;
 
 	void combineObjAABB();
+	void getAABB(double* target, double* aabb0, double* aabb1, double* aabb2, double* aabb3);
 private:
 public:
+	double tolerance;
 	double mass;
 	std::vector<double>coe_neighbor_vertex_force;
 	std::vector<int>neighbor_vertex;
@@ -41,6 +43,7 @@ public:
 	std::vector<std::array<double, 6>>triangle_AABB;
 	std::vector<std::array<double, 6>>edge_AABB;
 	std::vector<std::array<double, 6>>vertex_AABB;
+
 	std::vector<std::array<double, 3>> ori_vertices;
 
 	std::vector<double> PC_radius;
@@ -53,5 +56,6 @@ public:
 	std::vector<std::vector<std::vector<unsigned int>>>triangle_neighbor_obj_triangle;
 
 	double obj_aabb[6];
+
 
 };

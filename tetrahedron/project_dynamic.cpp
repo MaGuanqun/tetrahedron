@@ -401,9 +401,8 @@ void ProjectDynamic::computeGlobalStepMatrixSingleCloth(TriangleMeshStruct& mesh
 	//edge length
 	int id0, id1;
 	for (int i = 0; i < mesh_struct.edges.size(); ++i) {
-		id0 = mesh_struct.edges[i].vertex[0] + vertex_index_start;
-		id1 = mesh_struct.edges[i].vertex[1] + vertex_index_start;
-
+		id0 = mesh_struct.edge_vertices[i << 1] + vertex_index_start;
+		id1 = mesh_struct.edge_vertices[(i << 1) + 1] + vertex_index_start;
 		global_mat_nnz.push_back(Triplet<double>(id0, id0, length_stiffness[i]));
 		global_mat_nnz.push_back(Triplet<double>(id1, id1, length_stiffness[i]));
 		global_mat_nnz.push_back(Triplet<double>(id0, id1, -length_stiffness[i]));
@@ -453,11 +452,11 @@ void ProjectDynamic::setAroundVertexPrimitive(TriangleMeshStruct& mesh_struct, s
 		for (int j = 0; j < around_edge_index->size(); ++j) {
 			if (mesh_struct.edges[(*around_edge_index)[j]].opposite_vertex.size() == 2) {
 				edge_around_vertex_for_bending[i].push_back((*around_edge_index)[j]);
-				if (i == mesh_struct.edges[(*around_edge_index)[j]].vertex[0]) {
-					vertex_around_vertex_for_bending[i].push_back(mesh_struct.edges[(*around_edge_index)[j]].vertex[1]);
+				if (i == mesh_struct.edge_vertices[(*around_edge_index)[j] << 1]) {
+					vertex_around_vertex_for_bending[i].push_back(mesh_struct.edge_vertices[((*around_edge_index)[j] << 1) + 1]);
 				}
 				else {
-					vertex_around_vertex_for_bending[i].push_back(mesh_struct.edges[(*around_edge_index)[j]].vertex[0]);
+					vertex_around_vertex_for_bending[i].push_back(mesh_struct.edge_vertices[(*around_edge_index)[j] << 1]);
 				}
 			}
 		}
@@ -575,15 +574,15 @@ void ProjectDynamic::computeEdgeCotWeightSingleCloth(std::vector<double>& edge_c
 		if (mesh_struct.edges[i].opposite_vertex.size() > 1) {
 			cotan0 = 0;
 			cotan1 = 0;
-			SUB(x10, mesh_struct.vertex_position[mesh_struct.edges[i].vertex[0]], mesh_struct.vertex_position[mesh_struct.edges[i].opposite_vertex[0]]);
-			SUB(x20, mesh_struct.vertex_position[mesh_struct.edges[i].vertex[1]], mesh_struct.vertex_position[mesh_struct.edges[i].opposite_vertex[0]]);
+			SUB(x10, mesh_struct.vertex_position[mesh_struct.edge_vertices[i << 1]], mesh_struct.vertex_position[mesh_struct.edges[i].opposite_vertex[0]]);
+			SUB(x20, mesh_struct.vertex_position[mesh_struct.edge_vertices[(i << 1) + 1]], mesh_struct.vertex_position[mesh_struct.edges[i].opposite_vertex[0]]);
 			len10 = sqrt(DOT(x10, x10));
 			len20 = sqrt(DOT(x20, x20));
 			theta0 = acos(DOT(x10, x20) / (len10 * len20));
 			cotan0 = 1.0 / tan(theta0);
 
-			SUB(x13, mesh_struct.vertex_position[mesh_struct.edges[i].vertex[0]], mesh_struct.vertex_position[mesh_struct.edges[i].opposite_vertex[1]]);
-			SUB(x23, mesh_struct.vertex_position[mesh_struct.edges[i].vertex[1]], mesh_struct.vertex_position[mesh_struct.edges[i].opposite_vertex[1]]);
+			SUB(x13, mesh_struct.vertex_position[mesh_struct.edge_vertices[i << 1]], mesh_struct.vertex_position[mesh_struct.edges[i].opposite_vertex[1]]);
+			SUB(x23, mesh_struct.vertex_position[mesh_struct.edge_vertices[(i << 1) + 1]], mesh_struct.vertex_position[mesh_struct.edges[i].opposite_vertex[1]]);
 			len13 = sqrt(DOT(x13, x13));
 			len23 = sqrt(DOT(x23, x23));
 			theta1 = acos(DOT(x13, x23) / (len13 * len23));
@@ -1671,10 +1670,11 @@ bool ProjectDynamic::getDigonalForVolumePreserve(Vector3d& svd_eigen, double max
 void ProjectDynamic::localEdgeLengthProjectionPerThread(int thread_id, bool with_energy)
 {
 	unsigned int vertex_index_start;
-	if (with_energy) {		
+	if (with_energy) {
 		Vector3d q0, q1, q01;
 		double curLen;
 		MeshStruct::Edge* edges;
+		int* edge_vertices;
 		unsigned int* edge_index_begin_per_thread;
 		double* length_stiffness;
 		for (unsigned int j = 0; j < total_cloth_num; ++j) {
@@ -1682,13 +1682,14 @@ void ProjectDynamic::localEdgeLengthProjectionPerThread(int thread_id, bool with
 			edges = (*cloth)[j].mesh_struct.edges.data();
 			edge_index_begin_per_thread = (*cloth)[j].mesh_struct.edge_index_begin_per_thread.data();
 			length_stiffness = (*cloth)[j].length_stiffness.data();
+			edge_vertices = (*cloth)[j].mesh_struct.edge_vertices.data();
 			for (unsigned int i = edge_index_begin_per_thread[thread_id]; i < edge_index_begin_per_thread[thread_id + 1]; ++i) {
-				q0.data()[0] = u[0].data()[edges[i].vertex[0] + vertex_index_start];
-				q1.data()[0] = u[0].data()[edges[i].vertex[1] + vertex_index_start];
-				q0.data()[1] = u[1].data()[edges[i].vertex[0] + vertex_index_start];
-				q1.data()[1] = u[1].data()[edges[i].vertex[1] + vertex_index_start];
-				q0.data()[2] = u[2].data()[edges[i].vertex[0] + vertex_index_start];
-				q1.data()[2] = u[2].data()[edges[i].vertex[1] + vertex_index_start];
+				q0.data()[0] = u[0].data()[edge_vertices[i << 1] + vertex_index_start];
+				q1.data()[0] = u[0].data()[edge_vertices[(i << 1) + 1] + vertex_index_start];
+				q0.data()[1] = u[1].data()[edge_vertices[i << 1] + vertex_index_start];
+				q1.data()[1] = u[1].data()[edge_vertices[(i << 1) + 1] + vertex_index_start];
+				q0.data()[2] = u[2].data()[edge_vertices[i << 1] + vertex_index_start];
+				q1.data()[2] = u[2].data()[edge_vertices[(i << 1) + 1] + vertex_index_start];
 				q01 = q0 - q1;
 				curLen = sqrt(dotProduct(q01.data(), q01.data()));
 				temEnergy[thread_id] += 0.5 * length_stiffness[i] * (curLen - edges[i].length) * (curLen - edges[i].length);
@@ -1702,18 +1703,20 @@ void ProjectDynamic::localEdgeLengthProjectionPerThread(int thread_id, bool with
 		MeshStruct::Edge* edges;
 		unsigned int* edge_index_begin_per_thread;
 		double* length_stiffness;
+		int* edge_vertices;
 		for (unsigned int j = 0; j < total_cloth_num; ++j) {
 			vertex_index_start = vertex_begin_per_cloth[j];
 			edges = (*cloth)[j].mesh_struct.edges.data();
 			edge_index_begin_per_thread = (*cloth)[j].mesh_struct.edge_index_begin_per_thread.data();
 			length_stiffness = (*cloth)[j].length_stiffness.data();
+			edge_vertices = (*cloth)[j].mesh_struct.edge_vertices.data();
 			for (unsigned int i = edge_index_begin_per_thread[thread_id]; i < edge_index_begin_per_thread[thread_id + 1]; ++i) {
-				q0.data()[0] = u[0].data()[edges[i].vertex[0] + vertex_index_start];
-				q1.data()[0] = u[0].data()[edges[i].vertex[1] + vertex_index_start];
-				q0.data()[1] = u[1].data()[edges[i].vertex[0] + vertex_index_start];
-				q1.data()[1] = u[1].data()[edges[i].vertex[1] + vertex_index_start];
-				q0.data()[2] = u[2].data()[edges[i].vertex[0] + vertex_index_start];
-				q1.data()[2] = u[2].data()[edges[i].vertex[1] + vertex_index_start];
+				q0.data()[0] = u[0].data()[edge_vertices[i << 1] + vertex_index_start];
+				q1.data()[0] = u[0].data()[edge_vertices[(i << 1) + 1] + vertex_index_start];
+				q0.data()[1] = u[1].data()[edge_vertices[i << 1] + vertex_index_start];
+				q1.data()[1] = u[1].data()[edge_vertices[(i << 1) + 1] + vertex_index_start];
+				q0.data()[2] = u[2].data()[edge_vertices[i << 1] + vertex_index_start];
+				q1.data()[2] = u[2].data()[edge_vertices[(i << 1) + 1] + vertex_index_start];
 				q01 = q0 - q1;
 				curLen = sqrt(dotProduct(q01.data(), q01.data()));
 				p_edge_length[j][i] = q01 * (length_stiffness[i] / curLen * edges[i].length);
@@ -1931,8 +1934,8 @@ void ProjectDynamic::constructbPerThead(double* b, TriangleMeshStruct& mesh_stru
 	}
 	//edge length
 	for (int i = 0; i < mesh_struct.edges.size(); ++i) {
-		b[mesh_struct.edges[i].vertex[0] + vertex_index_start] += p_edge_length[i].data()[dimension];
-		b[mesh_struct.edges[i].vertex[1] + vertex_index_start] -= p_edge_length[i].data()[dimension];
+		b[mesh_struct.edge_vertices[i << 1] + vertex_index_start] += p_edge_length[i].data()[dimension];
+		b[mesh_struct.edge_vertices[(i << 1) + 1] + vertex_index_start] -= p_edge_length[i].data()[dimension];
 	}
 	//for (int i = 0; i < cloth_sys_size[cloth_No]; ++i) {
 	//	b.data()[i] += p_edge_length[i].data()[dimension];

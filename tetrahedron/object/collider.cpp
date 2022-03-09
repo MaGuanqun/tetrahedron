@@ -17,7 +17,7 @@ void Collider::draw(Camera* camera, Shader* object_shader_front)
 	glBindVertexArray(VAO);
 	glPolygonMode(GL_FRONT, GL_FILL);
 	glCullFace(GL_BACK);
-	glDrawElements(GL_TRIANGLES, 3* mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, 3 * mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 
 }
@@ -44,6 +44,7 @@ void Collider::loadMesh(OriMesh& ori_mesh, Thread* thread)
 	mesh_struct.thread = thread;
 	mesh_struct.initialNormalSize();
 	mesh_struct.setVertex();
+	mesh_struct.setEdge();
 	mesh_struct.setFace();
 	mesh_struct.setThreadIndex(total_thread_num);
 	mesh_struct.vertex_for_render = mesh_struct.vertex_position;
@@ -55,7 +56,7 @@ void Collider::loadMesh(OriMesh& ori_mesh, Thread* thread)
 	ori_vertices = mesh_struct.vertex_position;
 	triangle_AABB.resize(mesh_struct.faces.size());
 	vertex_AABB.resize(mesh_struct.vertex_position.size());
-	
+	setRepresentativePrimitve();
 }
 
 void Collider::setMeshStruct(OriMesh& ori_mesh)
@@ -64,7 +65,7 @@ void Collider::setMeshStruct(OriMesh& ori_mesh)
 	mesh_struct.vertex_position = ori_mesh.vertices;
 	if (!ori_mesh.indices.empty()) {
 		mesh_struct.triangle_indices.resize(ori_mesh.indices.size() / 3);
-		memcpy(mesh_struct.triangle_indices[0].data(), ori_mesh.indices.data(),12* mesh_struct.triangle_indices.size());
+		memcpy(mesh_struct.triangle_indices[0].data(), ori_mesh.indices.data(), 12 * mesh_struct.triangle_indices.size());
 	}
 	this->density = density;
 }
@@ -83,61 +84,20 @@ void Collider::obtainAABB(bool has_tolerace)
 }
 
 
-//VERTEX_AABB
-//VERTEX_AABB_WITHOUT_TOLERANCE
-void Collider::getVertexAABBPerThread(int thread_No, bool has_tolerance)
-{
-	double* aabb = obj_aabb_per_thread[thread_No].data();
-	memset(aabb + 3, 0xFE, 24); //set double to -5.31401e+303
-	memset(aabb, 0x7F, 24); //set double to 1.38242e+306
 
-	std::vector<std::array<double, 3>>* vertex_render = &mesh_struct.vertex_for_render;
-	std::vector<std::array<double, 3>>* vertex = &mesh_struct.vertex_position;
-	unsigned int end = mesh_struct.vertex_index_begin_per_thread[thread_No + 1];
-	if (has_tolerance) {
-		for (unsigned int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < end; ++i) {
-			AABB::obtainAABB(vertex_AABB[i].data(),(*vertex_render)[i].data(), (*vertex)[i].data(), tolerance);// 
-			for (unsigned int j = 0; j < 3; ++j){
-				if (aabb[j] > vertex_AABB[i][j]) {
-					aabb[j] = vertex_AABB[i][j];
-				}
-			}
-			for (unsigned int j = 3; j < 6; ++j){
-				if (aabb[j] < vertex_AABB[i][j]) {
-					aabb[j] = vertex_AABB[i][j];
-				}
-			}
-		}
-	}
-	else {
-		for (unsigned int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < end; ++i) {
-			AABB::obtainAABB(vertex_AABB[i].data(),(*vertex_render)[i].data(), (*vertex)[i].data());// 
-			for (unsigned int j = 0; j < 3; ++j){
-				if (aabb[j] > vertex_AABB[i][j]) {
-					aabb[j] = vertex_AABB[i][j];
-				}
-			}
-			for (unsigned int j = 3; j < 6; ++j){
-				if (aabb[j] < vertex_AABB[i][j]) {
-					aabb[j] = vertex_AABB[i][j];
-				}
-			}
-		}
-	}
-}
 
-//EDGE_TRIANGLE_AABB
-void Collider::getTriangleAABBPerThread(int thread_No)
-{
-	std::array<int,3>* face = mesh_struct.triangle_indices.data();
-	int* vertex_index;
-	unsigned int end = mesh_struct.face_index_begin_per_thread[thread_No + 1];
-	for (unsigned int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < end; ++i) {
-		vertex_index = face[i].data();
-		getAABB(triangle_AABB[i].data(), vertex_AABB[vertex_index[0]].data(), 
-			vertex_AABB[vertex_index[1]].data(), vertex_AABB[vertex_index[2]].data());
-	}
-}
+////EDGE_TRIANGLE_AABB
+//void Collider::getTriangleAABBPerThread(int thread_No)
+//{
+//	std::array<int,3>* face = mesh_struct.triangle_indices.data();
+//	int* vertex_index;
+//	unsigned int end = mesh_struct.face_index_begin_per_thread[thread_No + 1];
+//	for (unsigned int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < end; ++i) {
+//		vertex_index = face[i].data();
+//		getAABB(triangle_AABB[i].data(), vertex_AABB[vertex_index[0]].data(), 
+//			vertex_AABB[vertex_index[1]].data(), vertex_AABB[vertex_index[2]].data());
+//	}
+//}
 
 void Collider::setTolerance(double* tolerance_ratio, double ave_edge_length)
 {

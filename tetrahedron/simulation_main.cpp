@@ -20,10 +20,10 @@ void simu_main(GLFWwindow* window, Input* input) {
 	Camera camera(cameraPos, normalize(glm::vec3(0.0f, 1.0f, 0.0f)));
 	float zoom_value = 1.0;
 	CoordinateSystem coordinateSystem;
-	bool control_parameter[12];
-	memset(control_parameter, 0, 12);
+	bool control_parameter[13];
+	memset(control_parameter, 0, 13);
 	ImGuiWindows imgui_windows;
-	float force_coe=1.0;
+	float force_coe = 1.0;
 	std::vector<std::vector<bool>> wireframe(3);
 	std::vector<std::vector<bool>> hide(3);
 	std::vector<std::string> collider_path;
@@ -39,7 +39,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool reset_camera = false;
 	std::vector<std::array<double, 3>> cloth_stiffness;//stretch, bending, position
 	std::vector<std::array<double, 4>> cloth_collision_stiffness;//stretch, bending, position, collision, fricition
-	double simulation_parameter[2] = {0.0,0.0};//timestep, gravity
+	double simulation_parameter[2] = { 0.0,0.0 };//timestep, gravity
 	SaveImage save_image;
 	int iteration_number[2] = { 0,0 };
 	double convergence_rate[2] = { 0.1,0.1 };
@@ -52,11 +52,11 @@ void simu_main(GLFWwindow* window, Input* input) {
 	memset(set_stiffness, 0, 10);
 	double temp_stiffness[6] = { 0.0,0.0,0.0,0.0,0.0,0.0 };
 	UpdateClothStiffness update_cloth_stiffness;
-	double tolerance_ratio[4] = {1e-1,1e-1,1e-1,1e-1 };
+	double tolerance_ratio[4] = { 1e-2,1e-2,1e-2,1e-2 };
 
 	bool set_anchor[2] = { false,false };
 
-	const char* itr_solver_items_[] = { "Direct", "Jacobi","Chebyshev jacobi","Super Jacobi","Chebyshev super Jacobi", "Gauss Seidel", "PCG", "Chebyshev Gauss Seidel"};
+	const char* itr_solver_items_[] = { "Direct", "Jacobi","Chebyshev jacobi","Super Jacobi","Chebyshev super Jacobi", "Gauss Seidel", "PCG", "Chebyshev Gauss Seidel" };
 	char* itr_solver_item = (char*)"Direct";
 	char* itr_solver_items[IM_ARRAYSIZE(itr_solver_items_)];
 	for (int i = 0; i < IM_ARRAYSIZE(itr_solver_items_); ++i) {
@@ -82,13 +82,27 @@ void simu_main(GLFWwindow* window, Input* input) {
 	//std::cout << a << std::endl;
 
 	//std::vector<unsigned int> a(2, 1);
-	//for (unsigned int i = 0; i < 2; ++i) {
-	//	a.emplace_back(a.back());
-	//	a.back()++;
-	//}
+	////for (unsigned int i = 0; i < 2; ++i) {
+	//	//a.emplace_back(3);
+	////	a.back()++;
+	////}
 	//for (unsigned int i = 0; i < a.size(); ++i) {
 	//	std::cout << a[i] << " ";
 	//}
+
+	//unsigned int a = 1;
+	//a <<= 1;
+	//std::cout << "test " << a << std::endl;
+
+	//std::vector<double> a(8);
+	//double* a_ = a.data();
+	//for (unsigned int i = 0; i < 8; ++i) {
+	//	*(a_++) = i;
+	//}
+	//for (unsigned int i = 0; i < 8; ++i) {
+	//	std::cout << a[i] << " " << std::endl;
+	//}
+
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -97,16 +111,16 @@ void simu_main(GLFWwindow* window, Input* input) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 		basic_imgui.imguiNewFrame();
-	
+
 		input->guiCaptureMouse = io.WantCaptureMouse;
 		input->guiCaptureKeyboard = io.WantCaptureKeyboard;
-		
+
 		if (input->mouse.scroll_callback) {
 			if (!scene.intersection.happened && !set_anchor[0]) {
 				if (zoom_value > 0.025) {
 					zoom_value -= 0.025 * input->mouse.scroll;
 					zoom_value = myMax(zoom_value, 0.026);
-					zoom_value = myMin(zoom_value, 1.3);
+					zoom_value = myMin(zoom_value, 3.0);
 				}
 				camera.zoomInOut((float)zoom_value * camera_from_origin);
 			}
@@ -155,7 +169,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 			if (input->mouse.leftButtonWasReleasedThisFrame() && !control_parameter[START_TEST]) {// 
 
-				scene.initialIntersection();
+				scene.resetIntersectionState();
 			}
 			if (input->mouse.leftButtonWasPressedThisFrame() && !input->mouse.rightButtonIsPressed()
 				&& !control_parameter[START_TEST]) {
@@ -163,7 +177,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 			}
 		}
 
-		imgui_windows.operationWindow(cloth_stiffness, simulation_parameter, cloth_collision_stiffness, set_stiffness, temp_stiffness, 
+		imgui_windows.operationWindow(cloth_stiffness, simulation_parameter, cloth_collision_stiffness, set_stiffness, temp_stiffness,
 			update_cloth_stiffness, set_anchor, !scene.tetrahedron.empty());
 		if (!already_load_model) {
 			if (imgui_windows.loadModel(collider_path, object_path)) {
@@ -173,14 +187,14 @@ void simu_main(GLFWwindow* window, Input* input) {
 				camera.updateCamera(camera_pos, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(scene.camera_center[0], scene.camera_center[1], scene.camera_center[2]));
 				scene.getClothInfo(cloth_info, cloth_mass, cloth_stiffness, simulation_parameter, cloth_collision_stiffness);
 				scene.getTetrahedronInfo(tetrahedron_info, tetrahedron_mass, tetrahedron_stiffness, simulation_parameter, tetrahedron_collision_stiffness);
-				camera_from_origin = scene.shadow.camera_from_origin;				
+				camera_from_origin = scene.shadow.camera_from_origin;
 				setHideWireframe(hide, wireframe, scene.collider.size(), scene.cloth.size(), scene.tetrahedron.size());
-				
-			
+
+
 				//scene.testBVH();
 			}
 		}
-		else {		
+		else {
 			//std::cout << camera.position.x<<" "<< camera.position.y<<" "<< camera.position.z << std::endl;
 			if (input->keyboard.keyWasPressedThisFrame(GLFW_KEY_W))
 			{
@@ -198,9 +212,10 @@ void simu_main(GLFWwindow* window, Input* input) {
 			//	control_parameter[SAVE_OBJ] = false;
 			//}
 
-			scene.setTolerance(tolerance_ratio);			
-			scene.updateCloth(&camera, input->mouse.screen_pos, control_parameter, force_coe,record_matrix, iteration_solver_iteration_num);
-			scene.drawScene(&camera, wireframe, hide, control_parameter[SAVE_OBJ], control_parameter[DRAW_MESH_PATCH]);
+			scene.setTolerance(tolerance_ratio);
+			scene.updateCloth(&camera, input->mouse.screen_pos, control_parameter, force_coe, record_matrix,
+				iteration_solver_iteration_num, input->mouse.leftButtonWasPressedPreviousAndThisFrame());
+			scene.drawScene(&camera, wireframe, hide, control_parameter);
 			scene.selectAnchor(control_parameter, set_anchor, input->mouse.screen_pos, input->mouse.left_press, input->mouse.prev_left_press, &camera, hide[TETRAHEDRON_]);
 			scene.obtainConvergenceInfo(convergence_rate, iteration_number);
 
@@ -248,5 +263,5 @@ void setHideWireframe(std::vector<std::vector<bool>>& hide, std::vector<std::vec
 		hide[CLOTH_].resize(cloth_num, false);
 		wireframe[CLOTH_].resize(cloth_num, false);
 	}
-	
+
 }

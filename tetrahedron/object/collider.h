@@ -1,15 +1,14 @@
 #pragma once
 #include"triangle_object.h"
 
-class Collider:public TriangleObject
+class Collider :public TriangleObject
 {
 public:
-	double tolerance;
 	void draw(Camera* camera, Shader* object_shader_front);
 	void setSceneShader(Light& light, Camera* camera, float& far_plane, Shader* object_shader_front);
 	void loadMesh(OriMesh& ori_mesh, Thread* thread);
-	void getTriangleAABBPerThread(int thread_No);
-	void getVertexAABBPerThread(int thread_No, bool has_tolerance);
+	//void getTriangleAABBPerThread(int thread_No);
+	//void getVertexAABBPerThread(int thread_No, bool has_tolerance);
 	void obtainAABB(bool has_tolerace);
 	void setTolerance(double* tolerance_ratio, double ave_edge_length);
 
