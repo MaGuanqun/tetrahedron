@@ -861,24 +861,25 @@ void Collision::collisionCulling()
 {
 	time_t t = clock();
 	time_t t1 = clock();
-	//for (unsigned int i = 0; i < 1000; ++i) {
+	t = clock();
+	for (unsigned int i = 0; i < 100; ++i) {
 	getAABB();
 	//std::cout << "end here " << std::endl;
 	getSceneAABB();
 	//std::cout << "end here 2 " << std::endl;
-	//}
-	//t1 = clock();
-	//std::cout << "AABB " << t1 - t << std::endl;
-	//record_time.push_back(t1 - t);
-	buildBVH();
-	//thread->assignTask(this, FIND_PATCH_PAIRS);
-	//mesh_patch.test();
+	}
+	t1 = clock();
+	std::cout << "AABB " << t1 - t << std::endl;
+
+
+	//buildBVH();
+
 	spatial_hashing.buildSpatialHashing(scene_aabb);
 
-	thread->assignTask(this, FIND_TRIANGLE_PAIRS);
+	//thread->assignTask(this, FIND_TRIANGLE_PAIRS);
 	//t = clock();
 	//for (unsigned int i = 0; i < 10; ++i) {
-		thread->assignTask(this, FIND_PRIMITIVE_AROUND);
+	//thread->assignTask(this, FIND_PRIMITIVE_AROUND);
 	//}
 	//t1 = clock();
 	//std::cout << "find primitive around multi thread" << t1 - t << std::endl;

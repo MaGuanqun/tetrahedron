@@ -112,6 +112,9 @@ public:
 
 	//void findAllTrianglePairsHashTableCompare(int thread_No);
 
+	void setPairAveInThread(int thread_No);
+
+
 private:
 
 	void deleteArray();
@@ -321,7 +324,8 @@ private:
 	unsigned int* hash_cell_pair_num_prefix_edge;
 	//std::vector<unsigned int> hash_cell_triangle_num;
 
-	void setPairAveInThread();
+	void setPairAveInThreadVertexTriangle();
+	void setPairAveInThreadEdgeEdge();
 
 	unsigned int* non_empty_cell_index_ave_begin_per_thread_vertex_triangle;
 	unsigned int* non_empty_cell_index_ave_begin_per_thread_edge;

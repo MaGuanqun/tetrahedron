@@ -777,62 +777,56 @@ void SpatialHashing::buildSpatialHashing(double* scene_aabb)
 	//t1 = clock();
 	//std::cout << "clear triangle hashing " << t1 - t << std::endl;
 
-	for (unsigned int i = 0; i < thread_num; ++i) {
-		triangleHashingSmallerHashTable(i);
+	//for (unsigned int i = 0; i < thread_num; ++i) {
+	//	triangleHashingSmallerHashTable(i);
+	//}
+
+
+	t = clock();
+	for (unsigned int i = 0; i < 100; ++i) {
+		thread->assignTask(this, TRIANGLE_HASHING_SMALLER_HASH_TABLE);
 	}
+	t1 = clock();
+	std::cout << "triangle hashing " << t1 - t << std::endl;
+	t = clock();
+	for (unsigned int i = 0; i < 100; ++i) {
+		for (unsigned int j = 0; j < thread_num; ++j) {
+			triangleHashingSmallerHashTable(j);
+		}
+	}		
+	t1 = clock();
+	std::cout << "triangle hashing single thread " << t1 - t << std::endl;
 
-
-	//t = clock();
-	//for (unsigned int i = 0; i < 100; ++i) {
-	//	thread->assignTask(this, TRIANGLE_HASHING_SMALLER_HASH_TABLE);
-	//}
-	//t1 = clock();
-	//std::cout << "triangle hashing " << t1 - t << std::endl;
-
-
-	//t = clock();
-	//for (unsigned int i = 0; i < 10; ++i) {
-	//	for (unsigned int j = 0; j < thread_num; ++j) {
-	//		triangleHashingSmallerHashTable(j);
-	//	}
-	//}		
-	//t1 = clock();
-	//std::cout << "triangle hashing single thread " << t1 - t << std::endl;
-
-	//t = clock();
-	//for (unsigned int i = 0; i < 100; ++i) {
-	//	thread->assignTask(this, TRIANGLE_HASHING_SMALLER_HASH_TABLE);
+	t = clock();
+	for (unsigned int i = 0; i < 100; ++i) {
+		thread->assignTask(this, TRIANGLE_HASHING_SMALLER_HASH_TABLE);
 		recordNonEmptyCell();
-	//}
-	//t1 = clock();
-	//std::cout << "record nonemoty cell " << t1 - t << std::endl;
+	}
+	t1 = clock();
+	std::cout << "record nonemoty cell " << t1 - t << std::endl;
 
-	//t = clock();
-	//for (unsigned int i = 0; i < 10; ++i) {
-	//	for (unsigned int j = 0; j < thread_num; ++j) {
-	//		findAllTrianglePairsHashTable(j);
-	//	}
-	//}
-	//t1 = clock();
-	//std::cout << "find all triangle pairs single thread " << " : " << t1 - t << std::endl;
+	t = clock();
+	for (unsigned int i = 0; i < 10; ++i) {
+		for (unsigned int j = 0; j < thread_num; ++j) {
+			findAllPairsHashTable(j);
+		}
+	}
+	t1 = clock();
+	std::cout << "find all triangle pairs single thread " << " : " << t1 - t << std::endl;
+
+
 	//for (unsigned int i = 0; i < thread_num; ++i) {
 	//	std::cout << pair_count_per_thread[i] << std::endl;
 	//}
 	//for (unsigned int i = 0; i < thread_num; ++i) {
 	//	std::cout << triangle_count_per_thread[i] << std::endl;
 	//}
-	//for (unsigned int i = 0; i < thread_num; ++i) {
-	//	for (unsigned int j = 0; j < triangle_pair[i].size(); j+=4) {
-	//		if (triangle_pair[i][j] == 0 && triangle_pair[i][j + 1] == 0 && triangle_pair[i][j + 2] == 0 && triangle_pair[i][j + 3] == 0) {
-	//			std::cout << "error 0 0 0 0 " << std::endl;
-	//		}
-	//	}
-	//}
-//	t = clock();
+
+	//	t = clock();
 	//for (unsigned int i = 0; i < 100; ++i) {
 	//	recordNonEmptyCell();
-//	}
-//	std::cout << "record none empty cell multi thread " << clock() - t << std::endl;
+	//	}
+	//	std::cout << "record none empty cell multi thread " << clock() - t << std::endl;
 
 	//t = clock();
 	//for (unsigned int i = 0; i < 100; ++i) {
@@ -2631,6 +2625,8 @@ void SpatialHashing::triangleHashingSmallerHashTable(int thread_No)
 	unsigned int** spatial_hashing_cell_ = spatial_hashing_cell_triangle[thread_No];
 	unsigned int* spatial_hashing_cell_size_ = spatial_hashing_cell_triangle_size[thread_No];
 	memset(spatial_hashing_cell_size_, 0, hash_cell_count_ << 2);
+	memset(spatial_hashing_cell_edge_size[thread_No], 0, hash_cell_count_ << 2);
+	memset(spatial_hashing_cell_vertex_size[thread_No], 0, hash_cell_count_ << 2);
 
 	unsigned int** spatial_hashing_cell_collider_;
 	unsigned int* spatial_hashing_cell_collider_size_;
@@ -2670,7 +2666,11 @@ void SpatialHashing::triangleHashingSmallerHashTable(int thread_No)
 	//edge 
 	spatial_hashing_cell_ = spatial_hashing_cell_edge[thread_No];
 	spatial_hashing_cell_size_ = spatial_hashing_cell_edge_size[thread_No];
-	memset(spatial_hashing_cell_size_, 0, hash_cell_count_ << 2);
+	//memset(spatial_hashing_cell_size_, 0, hash_cell_count_ << 2);
+
+
+	
+
 
 	for (unsigned int i = 0; i < collider_begin_obj_index_; ++i) {
 		aabb = obj_edge_aabb[i];
@@ -2702,7 +2702,7 @@ void SpatialHashing::triangleHashingSmallerHashTable(int thread_No)
 	//vertex
 	spatial_hashing_cell_ = spatial_hashing_cell_vertex[thread_No];
 	spatial_hashing_cell_size_ = spatial_hashing_cell_vertex_size[thread_No];
-	memset(spatial_hashing_cell_size_, 0, hash_cell_count_ << 2);
+	//memset(spatial_hashing_cell_size_, 0, hash_cell_count_ << 2);
 
 	unsigned int* vertex_index_on_surface;
 
@@ -3278,19 +3278,16 @@ void SpatialHashing::recordNonEmptyCell()
 	}
 
 	//std::cout << "non empty cell " << non_empty_cell_index[0][0] << std::endl;
-	//std::vector<unsigned int> non_empty_cell_index_start(thread_num + 1);
+	
 	arrangeIndex(thread_num, non_empty_cell_index_vertex_triangle[0][0], non_empty_cell_index_begin_per_thread_vertex_triangle);
 	arrangeIndex(thread_num, non_empty_cell_index_edge[0][0], non_empty_cell_index_begin_per_thread_edge);
 
-	//for (unsigned int i = 0; i < thread_num; ++i) {
-	//	non_empty_cell_index_begin_per_thread[i << 1] = non_empty_cell_index[0][non_empty_cell_index_start[i] + 1];
-	//	non_empty_cell_index_begin_per_thread[i << 1 + 1] = non_empty_cell_index[0][non_empty_cell_index_start[i + 1]] + 1;
-	//}
+
 	hash_cell_pair_num_prefix_vertex_triangle[0] = non_empty_cell_index_vertex_triangle[0][0];
 	hash_cell_pair_num_prefix_edge[0] = non_empty_cell_index_edge[0][0];
 	hash_cell_pair_num_prefix_vertex_triangle[1] = 0;
 	hash_cell_pair_num_prefix_edge[1] = 0;
-	//hash_cell_triangle_num.resize(non_empty_cell_index[0][0]);
+
 	thread->assignTask(this, OBTAIN_PAIR_COUNT);
 
 	//unsigned int pair_count_ = 0;
@@ -3310,7 +3307,7 @@ void SpatialHashing::recordNonEmptyCell()
 
 	//std::cout << "prefix sum pair " << hash_cell_pair_num_prefix[non_empty_cell_index[0][0]+1]<<std::endl;
 
-	setPairAveInThread();
+	thread->assignTask(this, SET_PAIR_AVE);
 	//std::cout << "--------" << std::endl;
 	//setGlobalCellStartPerThreadPerLoop();
 
@@ -3608,12 +3605,65 @@ void SpatialHashing::setHashCellPairNumPrefixSumTogether(int thread_No)
 }
 
 
+//SET_PAIR_AVE
+void SpatialHashing::setPairAveInThread(int thread_No)
+{
+	if (thread_No == 0) {
+		setPairAveInThreadEdgeEdge();
+	}
+	else if (thread_No == 1) {
+		setPairAveInThreadVertexTriangle();
+	}
+}
 
-void SpatialHashing::setPairAveInThread()
+
+void SpatialHashing::setPairAveInThreadEdgeEdge()
+{
+	memset(non_empty_cell_index_ave_begin_per_thread_edge, 0, 4 * (thread_num + 1));
+	std::vector<unsigned int>prefix_sum_pair_per_thread(thread_num + 1, 0);
+	for (unsigned int i = 0; i < thread_num; ++i) {
+		prefix_sum_pair_per_thread[i + 1] = hash_cell_pair_num_prefix_edge[1 + non_empty_cell_index_begin_per_thread_edge[i + 1]];//  prefix_sum_pair_per_thread[i] + pair_count_per_thread[i] + pair_count_with_collider_per_thread[i];
+	}
+	std::vector<unsigned int> ave_pair_num_start_per_thread(thread_num + 1);
+	arrangeIndex(thread_num, prefix_sum_pair_per_thread[thread_num], ave_pair_num_start_per_thread.data());
+	unsigned int record_prefix_sum_thread = 0;
+	unsigned int start_index = 0;
+	unsigned int pair_count = 0;
+	unsigned int total_cell_num = non_empty_cell_index_edge[0][0];
+	//unsigned int pre_pair_count = 0;
+	unsigned int*  hash_cell_pair_num_prefix_start = hash_cell_pair_num_prefix_edge + 2;
+
+	for (unsigned int t = 1; t <= thread_num; ++t) {
+		for (unsigned int i = record_prefix_sum_thread; i < thread_num; ++i) {
+			if (prefix_sum_pair_per_thread[i + 1] > ave_pair_num_start_per_thread[t]) {
+				record_prefix_sum_thread = i;
+				break;
+			}
+		}
+		if (start_index < non_empty_cell_index_begin_per_thread_edge[record_prefix_sum_thread]) {
+			start_index = non_empty_cell_index_begin_per_thread_edge[record_prefix_sum_thread];
+			pair_count = prefix_sum_pair_per_thread[record_prefix_sum_thread];
+		}
+		for (unsigned int i = start_index; i < total_cell_num; ++i) {
+			if (hash_cell_pair_num_prefix_start[i] >= ave_pair_num_start_per_thread[t]) {
+				pair_count = hash_cell_pair_num_prefix_start[i];
+				non_empty_cell_index_ave_begin_per_thread_edge[t] = i + 1;
+				start_index = i + 1;
+				break;
+			}
+		}
+	}
+
+	for (unsigned int i = 0; i < thread_num; ++i) {
+		global_cell_start_edge[i << 1] = non_empty_cell_index_edge[0][non_empty_cell_index_ave_begin_per_thread_edge[i] + 1];
+		global_cell_start_edge[(i << 1) + 1] = non_empty_cell_index_edge[0][non_empty_cell_index_ave_begin_per_thread_edge[i + 1]] + 1;
+	}
+}
+
+
+void SpatialHashing::setPairAveInThreadVertexTriangle()
 {
 	memset(non_empty_cell_index_ave_begin_per_thread_vertex_triangle, 0, 4 * (thread_num + 1));
-	memset(non_empty_cell_index_ave_begin_per_thread_edge, 0, 4 * (thread_num + 1));
-
 	std::vector<unsigned int>prefix_sum_pair_per_thread(thread_num + 1, 0);
 	for (unsigned int i = 0; i < thread_num; ++i) {
 		prefix_sum_pair_per_thread[i + 1] = hash_cell_pair_num_prefix_vertex_triangle[1 + non_empty_cell_index_begin_per_thread_vertex_triangle[i + 1]];//  prefix_sum_pair_per_thread[i] + pair_count_per_thread[i] + pair_count_with_collider_per_thread[i];
@@ -3654,43 +3704,6 @@ void SpatialHashing::setPairAveInThread()
 		global_cell_start_vertex_triangle[(i << 1) + 1] = non_empty_cell_index_vertex_triangle[0][non_empty_cell_index_ave_begin_per_thread_vertex_triangle[i + 1]] + 1;
 	}
 
-	//edge
-
-	for (unsigned int i = 0; i < thread_num; ++i) {
-		prefix_sum_pair_per_thread[i + 1] = hash_cell_pair_num_prefix_edge[1 + non_empty_cell_index_begin_per_thread_edge[i + 1]];//  prefix_sum_pair_per_thread[i] + pair_count_per_thread[i] + pair_count_with_collider_per_thread[i];
-	}
-	arrangeIndex(thread_num, prefix_sum_pair_per_thread[thread_num], ave_pair_num_start_per_thread.data());
-	record_prefix_sum_thread = 0;
-	start_index = 0;
-	pair_count = 0;
-	total_cell_num = non_empty_cell_index_edge[0][0];
-	//unsigned int pre_pair_count = 0;
-	hash_cell_pair_num_prefix_start = hash_cell_pair_num_prefix_edge + 2;
-
-	for (unsigned int t = 1; t <= thread_num; ++t) {
-		for (unsigned int i = record_prefix_sum_thread; i < thread_num; ++i) {
-			if (prefix_sum_pair_per_thread[i + 1] > ave_pair_num_start_per_thread[t]) {
-				record_prefix_sum_thread = i;
-				break;
-			}
-		}
-		if (start_index < non_empty_cell_index_begin_per_thread_edge[record_prefix_sum_thread]) {
-			start_index = non_empty_cell_index_begin_per_thread_edge[record_prefix_sum_thread];
-			pair_count = prefix_sum_pair_per_thread[record_prefix_sum_thread];
-		}
-		for (unsigned int i = start_index; i < total_cell_num; ++i) {
-			if (hash_cell_pair_num_prefix_start[i] >= ave_pair_num_start_per_thread[t]) {
-				pair_count = hash_cell_pair_num_prefix_start[i];
-				non_empty_cell_index_ave_begin_per_thread_edge[t] = i + 1;
-				start_index = i + 1;
-				break;
-			}
-		}
-	}
-
-	for (unsigned int i = 0; i < thread_num; ++i) {
-		global_cell_start_edge[i << 1] = non_empty_cell_index_edge[0][non_empty_cell_index_ave_begin_per_thread_edge[i] + 1];
-		global_cell_start_edge[(i << 1) + 1] = non_empty_cell_index_edge[0][non_empty_cell_index_ave_begin_per_thread_edge[i + 1]] + 1;
-	}
+	
 
 }
