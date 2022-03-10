@@ -30,7 +30,7 @@ void SpatialHashing::initialHashCellLength(std::vector<Cloth>* cloth, std::vecto
 	}
 
 	ave_length /= (double)edge_num;
-	cell_length = max_length + 2.0 * tolerance_ratio[SELF_POINT_TRIANGLE] * ave_length;
+	cell_length =1.0* max_length + 2.0 * tolerance_ratio[SELF_POINT_TRIANGLE] * ave_length;
 	//cell_length = 1.0 * max_length +2.0 * tolerance_ratio[SELF_POINT_TRIANGLE] * ave_length;
 	std::cout << "tolerance__ " << tolerance_ratio[SELF_POINT_TRIANGLE] << std::endl;
 	std::cout << "ave_length " << ave_length << " max length " << max_length << " ratio " << (double)max_length / (double)ave_length << std::endl;
@@ -2966,7 +2966,7 @@ void SpatialHashing::triangleHashValueWithoutRecord(double* aabb,
 		spatial_index[j] = (std::uint64_t)floor((aabb[j] - scene_aabb[j]) / cell_length);
 	}
 	for (unsigned int j = 3; j < 6; ++j) {
-		spatial_index[j] = (std::uint64_t)floor((aabb[j] - scene_aabb[j - 3]) / cell_length) + 1;
+		spatial_index[j] = (std::uint64_t)floor((aabb[j] - scene_aabb[j - 3]) / cell_length)+ 1;
 	}
 
 	for (std::uint64_t index_y = spatial_index[1]; index_y < spatial_index[4]; ++index_y) {
