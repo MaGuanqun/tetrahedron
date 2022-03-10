@@ -285,7 +285,7 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
         //    k = job([func, thread_id]() {func->findAllPatchPairs(thread_id); });
         //    break;  
     case  FIND_PRIMITIVE_AROUND:
-        k = job([func, thread_id]() {func->findPointTriangleEdgeEdgePair(thread_id); });
+        k = job([func, thread_id]() {func->findPrimitivesAround(thread_id); });
         //  k = job([func, thread_id]() {func->findPrimitivesAround(thread_id); });
         break;
     case GLOBAL_COLLISION_TIME:
@@ -353,11 +353,8 @@ job Thread::create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncS
     case SET_HASH_CELL_PAIR_NUM_PREFIX_SUM_TOGETHER:
         k = job([func, thread_id]() {func->setHashCellPairNumPrefixSumTogether(thread_id); });
         break;
-    case FIND_ALL_TRIANGLE_PAIRS_HASH_TABLE:
-        k = job([func, thread_id]() {func->findAllTrianglePairsHashTable(thread_id); });
-        break;
-    case FIND_ALL_TRIANGLE_PAIRS_HASH_TABLE_COMPARE:
-        k = job([func, thread_id]() {func->findAllTrianglePairsHashTableCompare(thread_id); });
+    case FIND_ALL_PAIRS_HASH_TABLE:
+        k = job([func, thread_id]() {func->findAllPairsHashTable(thread_id); });
         break;
         //case SET_HASH_TOGETHER:
         //    k = job([func, thread_id]() {func->setHashTogether(thread_id); });

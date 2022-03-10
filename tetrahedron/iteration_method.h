@@ -99,7 +99,7 @@ public:
 	void initialRecordDiagonal_Operator();
 	void setOperatorCollisionFree();
 	void updateClothDiagonalPerThread(int index_start, int index_end, int obj_index_start, double* stiffness, bool* need_update);
-	void updateTetDiagonalPerThread(int index_start, int index_end, int obj_index_start, double* stiffness, bool* need_update, int* vertex_index_on_sureface);
+	void updateTetDiagonalPerThread(int index_start, int index_end, int obj_index_start, double* stiffness, bool* need_update, unsigned int* vertex_index_on_sureface);
 private:
 
 	std::vector<int> vertex_index_begin_thread;

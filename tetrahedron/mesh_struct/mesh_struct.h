@@ -17,7 +17,7 @@ public:
 	};
 	struct Vertex {
 		std::vector<int>face;
-		std::vector<int>edge;
+		std::vector<unsigned int>edge;
 		std::vector<int>neighbor_vertex;
 		std::vector<int>around_face;
 		//std::vector<int>around_vertex;
@@ -48,7 +48,7 @@ public:
 	std::vector<Edge> edges;
 
 	std::vector<int>face_edges;// edge indices of every triangle
-	std::vector<int>edge_vertices;//vertex indices of every edge
+	std::vector<unsigned int>edge_vertices;//vertex indices of every edge
 
 	std::vector<std::array<double, 3>> vertex_position;
 	std::vector<std::array<int, 3>> triangle_indices;//if for tetrahedron, store the surface triangle	
@@ -92,7 +92,7 @@ public:
 
 protected:
 	int type;
-	bool isEdgeExist(int v0, int v1, int& edge_index);
+	bool isEdgeExist(unsigned int v0, unsigned int v1, unsigned int& edge_index);
 	void addEdge(int v0, int v1, int face, int opposite_vertex, int edge_index_indicator);
 	void addNeighborVertex();
 

@@ -310,7 +310,7 @@ void IterationMethod::updateClothDiagonalPerThread(int index_start, int index_en
 	}
 }
 
-void IterationMethod::updateTetDiagonalPerThread(int index_start, int index_end, int obj_index_start, double* stiffness, bool* need_update, int* vertex_index_on_sureface)
+void IterationMethod::updateTetDiagonalPerThread(int index_start, int index_end, int obj_index_start, double* stiffness, bool* need_update, unsigned int* vertex_index_on_sureface)
 {
 	double* ori_diagonal = original_diagonal.data();
 	double* current_diagonal_inv = diagonal_inv.data();

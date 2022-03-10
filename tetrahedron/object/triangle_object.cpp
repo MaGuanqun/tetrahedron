@@ -100,8 +100,8 @@ void TriangleObject::getVertexAABBPerThread(int thread_No, bool has_tolerance)
 //EDGE_TRIANGLE_AABB
 void TriangleObject::getEdgeTriangleAABBPerThread(int thread_No)
 {
-	int* edge = mesh_struct.edge_vertices.data();
-	int* vertex_index;
+	unsigned int* edge = mesh_struct.edge_vertices.data();
+	unsigned int* vertex_index;
 	unsigned int index_end = mesh_struct.edge_index_begin_per_thread[thread_No + 1];
 	for (unsigned int i = mesh_struct.edge_index_begin_per_thread[thread_No]; i < index_end; ++i) {
 		vertex_index = edge + (i << 1);
@@ -109,9 +109,10 @@ void TriangleObject::getEdgeTriangleAABBPerThread(int thread_No)
 	}
 	std::array<int, 3>* face = mesh_struct.triangle_indices.data();
 	index_end = mesh_struct.face_index_begin_per_thread[thread_No + 1];
+	int* vertex_index_;
 	for (unsigned int i = mesh_struct.face_index_begin_per_thread[thread_No]; i < index_end; ++i) {
-		vertex_index = face[i].data();
-		getAABB(triangle_AABB[i].data(), vertex_AABB[vertex_index[0]].data(), vertex_AABB[vertex_index[1]].data(), vertex_AABB[vertex_index[2]].data());
+		vertex_index_ = face[i].data();
+		getAABB(triangle_AABB[i].data(), vertex_AABB[vertex_index_[0]].data(), vertex_AABB[vertex_index_[1]].data(), vertex_AABB[vertex_index_[2]].data());
 	}
 }
 

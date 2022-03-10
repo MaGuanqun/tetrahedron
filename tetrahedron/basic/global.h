@@ -240,7 +240,7 @@ inline void inverse3X3(double* matrix, double* inverse)
 	inverse[8] = (matrix[4] * matrix[0] - matrix[1] * matrix[3]) / det;
 }
 
-inline bool edgeEdgeconnected(int* edge1, int* edge2)
+inline bool edgeEdgeconnected(unsigned int* edge1, unsigned int* edge2)
 {
 	if (edge1[0] == edge2[0])
 		return true;

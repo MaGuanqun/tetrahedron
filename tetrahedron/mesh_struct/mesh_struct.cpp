@@ -51,12 +51,12 @@ void MeshStruct::setFace()
 
 void MeshStruct::setEdge()
 {
-	int face_num = triangle_indices.size();
+	unsigned int face_num = triangle_indices.size();
 	edges.reserve(face_num * 3 / 2);
 	face_edges.resize(face_num * 3);
 	edge_vertices.reserve(face_num * 3);
-	int edgeNo;
-	for (int i = 0; i < face_num; ++i) {
+	unsigned int edgeNo;
+	for (unsigned int i = 0; i < face_num; ++i) {
 		if (isEdgeExist(triangle_indices[i][0], triangle_indices[i][1], edgeNo)) {
 			edges[edgeNo].face.push_back(i);
 			edges[edgeNo].opposite_vertex.push_back(triangle_indices[i][2]);
@@ -154,9 +154,9 @@ void MeshStruct::addNeighborVertex()
 	}
 }
 
-bool MeshStruct::isEdgeExist(int v0, int v1, int& edge_index)
+bool MeshStruct::isEdgeExist(unsigned int v0, unsigned int v1, unsigned int& edge_index)
 {
-	int* edge_index_address;
+	unsigned int* edge_index_address;
 	for (int i = 0; i < vertices[v0].edge.size(); ++i) {
 		edge_index_address = edge_vertices.data() + (vertices[v0].edge[i] << 1);
 		if ((edge_index_address[0] == v0) && (edge_index_address[1] == v1)) {
@@ -174,7 +174,7 @@ bool MeshStruct::isEdgeExist(int v0, int v1, int& edge_index)
 void MeshStruct::addEdge(int v0, int v1, int face, int opposite_vertex, int edge_index_indicator)
 {
 	edges.emplace_back(Edge());
-	int edge_index = edges.size() - 1;
+	unsigned int edge_index = edges.size() - 1;
 	edge_vertices.emplace_back(v0);
 	edge_vertices.emplace_back(v1);
 	//edges[edge_index].vertex[0] = v0;

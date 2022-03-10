@@ -34,36 +34,46 @@ public:
 	//void findPatch(std::vector<std::vector<std::vector<unsigned int>>>* triangle_patch_);	
 
 	//void buildSpatialHashingPatchTriangle(double* scene_aabb);
-	std::vector<unsigned int> actual_exist_cell_begin_per_thread;
+	//std::vector<unsigned int> actual_exist_cell_begin_per_thread;
 	std::vector<unsigned int> cell_begin_per_thread;
 
 	void findAllTrianglePairs(int thread_No);
-	void findAllTrianglePairsHashTable(int thread_No);
+	void findAllPairsHashTable(int thread_No);
 
-	unsigned int** triangle_pair; //except collider, inner vector store tri_1 index, obj_1_index, tri_2_index, obj_2_index
-	unsigned int** triangle_pair_with_collider; //inner vector store tri_1 index, obj_1_index, tri_2_index, obj_2_index
+	unsigned int** vertex_triangle_pair; //except collider, inner vector store vertex_1 index, obj_1_index, tri_2_index, obj_2_index
+	unsigned int** vertex_obj_triangle_collider_pair; //inner vector store vertex_1 index, obj_1_index, tri_2_index, obj_2_index
+	unsigned int** vertex_collider_triangle_obj_pair; //inner vector store vertex_1 index, obj_1_index, tri_2_index, obj_2_index
 
-
+	unsigned int** edge_edge_pair;
+	unsigned int** edge_edge_pair_collider; //first obj, second collider
 
 
 	void test();
 
 
-	//std::vector<std::vector<unsigned int>> spatial_hashing_value_per_thread;
-	unsigned int** spatial_hashing_value;
-	//std::vector<std::vector<unsigned int>>spatial_hashing_obj_index_per_thread;
-	//unsigned int** spatial_hashing_obj_index;
-	//std::vector<dstd::vector<unsigned int>>spatial_hashing_triangle_index_per_thread;
-	unsigned int** spatial_hashing_triangle_index; //in every vector, we store triangle index, obj_index respectively
+	////std::vector<std::vector<unsigned int>> spatial_hashing_value_per_thread;
+	//unsigned int** spatial_hashing_triangle_value;
+	//unsigned int** spatial_hashing_vertex_value;
+	//unsigned int** spatial_hashing_edge_value;
+	////std::vector<std::vector<unsigned int>>spatial_hashing_obj_index_per_thread;
+	////unsigned int** spatial_hashing_obj_index;
+	////std::vector<dstd::vector<unsigned int>>spatial_hashing_triangle_index_per_thread;
+	//unsigned int** spatial_hashing_triangle_index; //in every vector, we store triangle index, obj_index respectively
+	//unsigned int** spatial_hashing_vertex_index; //in every vector, we store triangle index, obj_index respectively
+	//unsigned int** spatial_hashing_edge_index; //in every vector, we store triangle index, obj_index respectively
 
-	unsigned int** spatial_hashing_value_collider;
-	//std::vector<std::vector<unsigned int>>spatial_hashing_obj_index_per_thread;
-	//unsigned int** spatial_hashing_obj_index_collider;
-	//std::vector<dstd::vector<unsigned int>>spatial_hashing_triangle_index_per_thread;
-	unsigned int** spatial_hashing_triangle_index_collider;//in every vector, we store triangle index, obj_index respectively
+	//unsigned int** spatial_hashing_triangle_collider;
+	//unsigned int** spatial_hashing_vertex_collider;
+	//unsigned int** spatial_hashing_edge_collider;
+	////std::vector<std::vector<unsigned int>>spatial_hashing_obj_index_per_thread;
+	////unsigned int** spatial_hashing_obj_index_collider;
+	////std::vector<dstd::vector<unsigned int>>spatial_hashing_triangle_index_per_thread;
+	//unsigned int** spatial_hashing_triangle_index_collider;//in every vector, we store triangle index, obj_index respectively
+	//unsigned int** spatial_hashing_vertex_index_collider;//in every vector, we store triangle index, obj_index respectively
+	//unsigned int** spatial_hashing_edge_index_collider;//in every vector, we store triangle index, obj_index respectively
 
-	std::vector<std::vector<unsigned int>> prefix_sum;
-	std::vector<std::vector<unsigned int>> prefix_sum_collider; //record start & end respectively
+	//std::vector<std::vector<unsigned int>> prefix_sum;
+	//std::vector<std::vector<unsigned int>> prefix_sum_collider; //record start & end respectively
 
 	std::vector<unsigned int>hash_value_for_test;
 	double scene_aabb[6];
@@ -72,10 +82,21 @@ public:
 	double cell_length;//this is the size of spatial hashing cell, = average edge length
 
 
-	unsigned int*** spatial_hashing_cell;//in every vector, we store triangle index,obj_index respectively
-	unsigned int*** spatial_hashing_actual_hash_value_for_test;//in every vector, we store triangle index,obj_index respectively
-	unsigned int*** spatial_hashing_cell_collider;//in every vector, we store triangle index, obj_index respectively
+
+
+	unsigned int*** spatial_hashing_cell_triangle;//in every vector, we store triangle index,obj_index respectively
+	unsigned int*** spatial_hashing_cell_edge;//in every vector, we store triangle index,obj_index respectively
+	unsigned int*** spatial_hashing_cell_vertex;//in every vector, we store triangle index,obj_index respectively
+	//unsigned int*** spatial_hashing_actual_hash_value_for_test;//in every vector, we store triangle index,obj_index respectively
+	unsigned int*** spatial_hashing_cell_collider_triangle;//in every vector, we store triangle index, obj_index respectively
+	unsigned int*** spatial_hashing_cell_collider_edge;//in every vector, we store triangle index, obj_index respectively
+	unsigned int*** spatial_hashing_cell_collider_vertex;//in every vector, we store triangle index, obj_index respectively
 	unsigned int hash_cell_count;
+
+
+	//unsigned int*** spatial_hashing_cell;
+	//unsigned int*** spatial_hashing_cell_collider;
+
 
 	void recordRealTriangleHashValue(int thread_No);
 	void prefixSumMulti2(int thread_No);
@@ -89,7 +110,7 @@ public:
 	void obtainPairCount(int thread_No);
 	void setHashCellPairNumPrefixSumTogether(int thread_No);
 
-	void findAllTrianglePairsHashTableCompare(int thread_No);
+	//void findAllTrianglePairsHashTableCompare(int thread_No);
 
 private:
 
@@ -142,8 +163,8 @@ private:
 		unsigned int* spatial_hashing_value, unsigned int triangle_index, unsigned int obj_index);
 
 	void obtainTriangleHashingValue(double* aabb, std::vector<unsigned int>* hash_value);
-	RadixSort* radix_sort;
-	RadixSort* radix_sort_collider;
+	//RadixSort* radix_sort;
+	//RadixSort* radix_sort_collider;
 	void testRadixSort();
 
 	//unsigned int total_hash_size;
@@ -155,17 +176,17 @@ private:
 	//std::vector<int>hash_value_begin;
 
 	void setPrifixSum();
-	bool*** obj_is_used;
-	//bool*** obj_is_used1;
-	bool*** collider_is_used;
+	//bool*** obj_is_used;
+	////bool*** obj_is_used1;
+	//bool*** collider_is_used;
 
-	std::vector<unsigned int*> actual_hash_value_end_index_ref;//total_hash_size-largest_count_in_hash_value_list-1
-	std::vector<unsigned int*> actual_hash_value_end_index_ref_collider;//total_hash_size-largest_count_in_hash_value_list-1
-	std::vector<unsigned int> actual_hash_value_count_per_thread;//total_hash_size-largest_count_in_hash_value_list-1
-	std::vector<unsigned int> actual_hash_value_count_per_thread_collider;//total_hash_size-largest_count_in_hash_value_list-1
+	//std::vector<unsigned int*> actual_hash_value_end_index_ref;//total_hash_size-largest_count_in_hash_value_list-1
+	//std::vector<unsigned int*> actual_hash_value_end_index_ref_collider;//total_hash_size-largest_count_in_hash_value_list-1
+	//std::vector<unsigned int> actual_hash_value_count_per_thread;//total_hash_size-largest_count_in_hash_value_list-1
+	//std::vector<unsigned int> actual_hash_value_count_per_thread_collider;//total_hash_size-largest_count_in_hash_value_list-1
 
-	std::vector<std::vector<unsigned int>> hash_index_count_per_thread;
-	std::vector<std::vector<unsigned int>> hash_index_count_per_thread_collider;
+	//std::vector<std::vector<unsigned int>> hash_index_count_per_thread;
+	//std::vector<std::vector<unsigned int>> hash_index_count_per_thread_collider;
 
 	//unsigned int* actual_hash_count_start_per_thread;
 	//unsigned int* total_hash_count_start_per_thread;
@@ -200,7 +221,25 @@ private:
 	std::vector<std::array<double, 6>*> obj_tri_aabb;
 	std::vector<std::array<double, 6>*> collider_tri_aabb;
 
+	std::vector<std::array<double, 6>*> obj_vertex_aabb;
+	std::vector<std::array<double, 6>*> collider_vertex_aabb;
+
+	std::vector<std::array<double, 6>*> obj_edge_aabb;
+	std::vector<std::array<double, 6>*> collider_edge_aabb;
+
 	std::vector<unsigned int*> obj_triangle_index_begin_per_thread;
+	std::vector<unsigned int*> obj_vertex_index_begin_per_thread;
+	std::vector<unsigned int*> obj_edge_index_begin_per_thread;
+
+	std::vector<unsigned int*> tetrahedron_vertex_index_on_surface;
+
+
+	std::vector<std::array<int, 3>*> triangle_vertex_index;
+	std::vector<std::array<int, 3>*> triangle_vertex_index_collider;
+
+	std::vector<unsigned int*> edge_vertex_index;
+	std::vector<unsigned int*> edge_vertex_index_collider;
+
 
 
 
@@ -253,8 +292,8 @@ private:
 	//size_t** time_stamp_cell;
 	//size_t** time_stamp_cell_collider;
 	void recordNonEmptyCell();
-	unsigned int** non_empty_cell_index; //the first element store the actual element number 
-
+	unsigned int** non_empty_cell_index_vertex_triangle; //the first element store the actual element number 
+	unsigned int** non_empty_cell_index_edge;
 
 	void vertexTetIntersect(int thread_No, double* pos, unsigned int vertex_index, unsigned int obj_index);
 
@@ -262,9 +301,10 @@ private:
 	bool vertexFromTet(int vertex_index, int* tet_indices);
 	bool testIntersect(double* pos, double* p0, double* p1, double* p2, double* p3);
 
-	unsigned int* non_empty_cell_index_begin_per_thread;//size is 2* thread_num
+	unsigned int* non_empty_cell_index_begin_per_thread_vertex_triangle;//
+	unsigned int* non_empty_cell_index_begin_per_thread_edge;//
 
-	std::vector<std::vector<std::vector<unsigned int>>> obj_triangle_hash;
+	//std::vector<std::vector<std::vector<unsigned int>>> obj_triangle_hash;
 	void searchTriangle(double* aabb, unsigned int* hash_index, unsigned int hash_cell_size, unsigned int input_obj_No, unsigned int triangle_index,
 		std::vector<unsigned int>* triangle_pair_, std::vector<unsigned int>* triangle_pair_with_collider_, unsigned int thread_No);
 
@@ -277,13 +317,16 @@ private:
 	//std::vector<unsigned int>* indicator;
 
 	//unsigned int* prefix_sum_pair_count
-	unsigned int* hash_cell_pair_num_prefix;
+	unsigned int* hash_cell_pair_num_prefix_vertex_triangle;
+	unsigned int* hash_cell_pair_num_prefix_edge;
 	//std::vector<unsigned int> hash_cell_triangle_num;
 
 	void setPairAveInThread();
 
-	unsigned int* non_empty_cell_index_ave_begin_per_thread;
-	unsigned int* global_cell_start;//the size of size of outter is thread_num
+	unsigned int* non_empty_cell_index_ave_begin_per_thread_vertex_triangle;
+	unsigned int* non_empty_cell_index_ave_begin_per_thread_edge;
+	unsigned int* global_cell_start_vertex_triangle;//the size of size of outter is 2*thread_num
+	unsigned int* global_cell_start_edge;//the size of size of outter is 2*thread_num
 
 	//unsigned int max_num_to_loop_to_find_pair;//the size of inner array in global_cell_start
 
@@ -299,10 +342,8 @@ private:
 
 
 
-	unsigned int* prefix_sum_record_per_thread_start;
-
-	void divideIntoSmallerHash(unsigned int start, unsigned int end,
-		unsigned int* triangle_pair_, unsigned int* triangle_pair_with_collider_, int thread_No);
+	unsigned int* prefix_sum_record_per_thread_start_vertex_triangle;
+	unsigned int* prefix_sum_record_per_thread_start_edge;
 
 	bool testA(unsigned int& a);
 
@@ -315,9 +356,16 @@ private:
 	void testSpatialHashingCellSet0();
 
 	unsigned int** spatial_hashing_cell_triangle_size;
+	unsigned int** spatial_hashing_cell_edge_size;
+	unsigned int** spatial_hashing_cell_vertex_size;
 	unsigned int** spatial_hashing_cell_collider_triangle_size;
+	unsigned int** spatial_hashing_cell_collider_edge_size;
+	unsigned int** spatial_hashing_cell_collider_vertex_size;
 
 	void clearHashCell();
 
+
+	void findAllVertexTrianglePairs(int thread_No);
+	void findAllEdgeEdgePairs(int thread_No);
 };
 

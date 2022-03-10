@@ -443,7 +443,7 @@ void ProjectDynamic::setAroundVertexPrimitive(TriangleMeshStruct& mesh_struct, s
 	std::vector<std::vector<int>>& vertex_around_vertex_for_bending)
 {
 	std::vector<TriangleMeshStruct::Vertex>* vertex;
-	std::vector<int>* around_edge_index;
+	std::vector<unsigned int>* around_edge_index;
 	for (int i = 0; i < mesh_struct.vertices.size(); ++i) {
 		around_edge_index = &mesh_struct.vertices[i].edge;
 		edge_around_vertex_for_bending[i].reserve(around_edge_index->size());
@@ -1211,7 +1211,7 @@ void ProjectDynamic::updateMatrixPerThread(int thread_No)
 		}
 	}
 	//update tetrahedron
-	int* vertex_index_on_surface;
+	unsigned int* vertex_index_on_surface;
 	for (unsigned int j = 0; j < total_tetrahedron_num; ++j) {
 		vertex_index_start = vertex_begin_per_tetrahedron[j];
 		need_update = collision.obj_target_pos.need_update[j+tetrahedron_begin_obj_index];
@@ -1674,7 +1674,7 @@ void ProjectDynamic::localEdgeLengthProjectionPerThread(int thread_id, bool with
 		Vector3d q0, q1, q01;
 		double curLen;
 		MeshStruct::Edge* edges;
-		int* edge_vertices;
+		unsigned int* edge_vertices;
 		unsigned int* edge_index_begin_per_thread;
 		double* length_stiffness;
 		for (unsigned int j = 0; j < total_cloth_num; ++j) {
@@ -1703,7 +1703,7 @@ void ProjectDynamic::localEdgeLengthProjectionPerThread(int thread_id, bool with
 		MeshStruct::Edge* edges;
 		unsigned int* edge_index_begin_per_thread;
 		double* length_stiffness;
-		int* edge_vertices;
+		unsigned int* edge_vertices;
 		for (unsigned int j = 0; j < total_cloth_num; ++j) {
 			vertex_index_start = vertex_begin_per_cloth[j];
 			edges = (*cloth)[j].mesh_struct.edges.data();
@@ -1891,7 +1891,7 @@ void ProjectDynamic::constructbTetPerThead(double* b, TetrahedronMeshStruct& mes
 	std::vector<Matrix<double, 4, 3>>& p_ARAP_volume_preserve, int tet_No, int dimension,
 	std::vector<std::array<double, 3>>& collision_b_sum, bool* collision_b_need_update, bool with_collision,
 	double position_stiffness, int vertex_index_start, std::array<int, 4>* indices, std::vector<int>& anchor_vertex,
-	std::array<double, 3>* anchor_pos, int surface_index_num, int* surface_vertex_index)
+	std::array<double, 3>* anchor_pos, int surface_index_num, unsigned int* surface_vertex_index)
 {
 	memset(b + vertex_index_start, 0, 8 * tetrahedron_sys_size[tet_No]);
 	//collision

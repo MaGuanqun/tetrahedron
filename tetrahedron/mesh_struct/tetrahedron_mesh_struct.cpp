@@ -36,7 +36,10 @@ void TetrahedronMeshStruct::findSurface()
 	}
 	vertex_index_on_sureface.reserve(vertex_position.size());
 	vertex_surface_index.resize(vertex_position.size(), -1);
-	for (int i = 0; i < vertex_on_surface.size(); ++i) {
+
+	std::cout << "vertex_surface_index " << vertex_surface_index.size() << std::endl;
+
+	for (unsigned int i = 0; i < vertex_on_surface.size(); ++i) {
 		if (vertex_on_surface[i]) {
 			vertex_index_on_sureface.push_back(i);
 			vertex_surface_index[i] = vertex_index_on_sureface.size() - 1;

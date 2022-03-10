@@ -87,6 +87,7 @@ public:
 	void findPointTriangleEdgeEdgePair(int thread_No);
 	DrawCulling draw_culling;
 	void getAABB();
+
 private:
 
 	unsigned int max_index_number_in_one_cell;
@@ -205,11 +206,11 @@ private:
 
 	void initialCollidePairInfo();
 
-	unsigned int** point_triangle_pair; //except collider, inner vector store vertex_1 index, obj_1_index, tri_2_index, obj_2_index
-	unsigned int** point_collider_triangle_obj_pair;  //, inner vector store vertex_1 index, obj_1_index, tri_2_index, obj_2_index
-	unsigned int** point_obj_triangle_collider_pair;
-	unsigned int** edge_edge_pair;  //except collider, inner vector store edge_1 index, obj_1_index, edge_2_index, obj_2_index
-	unsigned int** edge_edge_collider_pair;
+	//unsigned int** point_triangle_pair; //except collider, inner vector store vertex_1 index, obj_1_index, tri_2_index, obj_2_index
+	//unsigned int** point_collider_triangle_obj_pair;  //, inner vector store vertex_1 index, obj_1_index, tri_2_index, obj_2_index
+	//unsigned int** point_obj_triangle_collider_pair;
+	//unsigned int** edge_edge_pair;  //except collider, inner vector store edge_1 index, obj_1_index, edge_2_index, obj_2_index
+	//unsigned int** edge_edge_collider_pair;
 
 	//reorganize the data of different objects
 	std::vector<std::array<double, 6>*> obj_tri_aabb;
@@ -235,8 +236,8 @@ private:
 	std::vector<int*> face_edges;
 	std::vector<int*> collider_face_edges;
 
-	std::vector<int*> edge_vertices;
-	std::vector<int*> collider_edge_vertices;
+	std::vector<unsigned int*> edge_vertices;
+	std::vector<unsigned int*> collider_edge_vertices;
 
 	void reorganzieDataOfObjects();
 	bool has_collider;
@@ -291,4 +292,7 @@ private:
 	std::vector<unsigned int> vertex_triangle_count;
 
 	void totalCount();
+
+	void findVertexTriangleInBVH(unsigned int obj_0, unsigned int vertex_index_0, unsigned int obj_1, unsigned int tri_index1);
+	void findEdgeEdgeInBVH(unsigned int obj_0, unsigned int edge_index_0, unsigned int obj_1, unsigned int edge_index_1);
 };
