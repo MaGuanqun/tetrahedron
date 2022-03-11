@@ -359,6 +359,9 @@ job Thread::create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncS
     case SET_PAIR_AVE:
         k = job([func, thread_id]() {func->setPairAveInThread(thread_id); });
         break;
+    case FIND_ALL_TRIANGLE_PAIRS_HASH_TABLE_ELEMENTWISE:
+        k = job([func, thread_id]() {func->findAllPairsHashTableElementwise(thread_id); });
+        break;
         //case SET_HASH_TOGETHER:
         //    k = job([func, thread_id]() {func->setHashTogether(thread_id); });
         //    break;

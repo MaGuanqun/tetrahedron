@@ -199,7 +199,7 @@ Matrix<double, 3, 4> TetrahedronMeshStruct::constructMatrixP(int tetra_index)
 //VERTEX_NORMAL
 void TetrahedronMeshStruct::getVertexNormalPerThread(int thread_id)
 {
-	std::vector<int>* face_vertex;
+	std::vector<unsigned int>* face_vertex;
 	double* current_vertex_normal;
 	double dot;
 	for (int i = vertex_index_on_surface_begin_per_thread[thread_id]; i < vertex_index_on_surface_begin_per_thread[thread_id + 1]; ++i) {
@@ -218,7 +218,7 @@ void TetrahedronMeshStruct::getVertexNormalPerThread(int thread_id)
 //VERTEX_NORMAL_RENDER
 void TetrahedronMeshStruct::getRenderVertexNormalPerThread(int thread_id)
 {
-	std::vector<int>* face_vertex;
+	std::vector<unsigned int>* face_vertex;
 	double* current_vertex_normal;
 	double dot;
 	for (int i = vertex_index_on_surface_begin_per_thread[thread_id]; i < vertex_index_on_surface_begin_per_thread[thread_id + 1]; ++i) {

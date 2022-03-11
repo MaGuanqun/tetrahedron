@@ -1731,7 +1731,7 @@ void ProjectDynamic::localBendingProjectionPerThread(int thread_id, bool with_en
 	unsigned int size; std::vector<VectorXd>q(3);
 	Vector3d aq; double aqnorm; //double a_rest[3];
 	VectorXd* lbo;
-	std::vector<int>* vertex_around_vertex_for_bending_;
+	std::vector<unsigned int>* vertex_around_vertex_for_bending_;
 	double bend_stiffness;
 	unsigned int* vertex_index_begin_per_thread;
 	Vector3d p;

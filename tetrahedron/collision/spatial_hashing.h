@@ -114,6 +114,7 @@ public:
 
 	void setPairAveInThread(int thread_No);
 
+	void findAllPairsHashTableElementwise(int thread_No);
 
 private:
 
@@ -179,9 +180,9 @@ private:
 	//std::vector<int>hash_value_begin;
 
 	void setPrifixSum();
-	//bool*** obj_is_used;
+	bool*** obj_is_used;
 	////bool*** obj_is_used1;
-	//bool*** collider_is_used;
+	bool*** collider_is_used;
 
 	//std::vector<unsigned int*> actual_hash_value_end_index_ref;//total_hash_size-largest_count_in_hash_value_list-1
 	//std::vector<unsigned int*> actual_hash_value_end_index_ref_collider;//total_hash_size-largest_count_in_hash_value_list-1
@@ -263,7 +264,9 @@ private:
 	unsigned int max_index_number_in_one_cell_collider;
 
 	void triangleHashValueWithRecord(double* aabb,
-		std::vector<unsigned int>* spatial_hashing_cell, unsigned int triangle_index, unsigned int obj_index);
+		unsigned int** spatial_hashing_cell, unsigned int* triangle_index, double* scene_aabb, double cell_length,
+		unsigned int hash_cell_count, uint64_t P1, uint64_t P2, uint64_t P3, unsigned int* spatial_hashing_cell_triangle_size,
+		unsigned int* obj_triangle_hash);
 
 	void triangleHashValueWithoutRecord(double* aabb,
 		unsigned int** spatial_hashing_cell, unsigned int* triangle_index, double* scene_aabb, double cell_length, unsigned int hash_cell_count,
@@ -307,9 +310,16 @@ private:
 	unsigned int* non_empty_cell_index_begin_per_thread_vertex_triangle;//
 	unsigned int* non_empty_cell_index_begin_per_thread_edge;//
 
-	//std::vector<std::vector<std::vector<unsigned int>>> obj_triangle_hash;
-	void searchTriangle(double* aabb, unsigned int* hash_index, unsigned int hash_cell_size, unsigned int input_obj_No, unsigned int triangle_index,
-		std::vector<unsigned int>* triangle_pair_, std::vector<unsigned int>* triangle_pair_with_collider_, unsigned int thread_No);
+	unsigned int** obj_edge_hash;
+	unsigned int** obj_vertex_hash;
+	unsigned int** obj_triangle_hash;
+
+
+	void searchPrimitive(double* aabb, unsigned int* hash_index, unsigned int hash_cell_size, unsigned int input_obj_No, unsigned int triangle_index,
+		unsigned int*& triangle_pair_, unsigned int*& triangle_pair_with_collider_, unsigned int thread_No,
+		unsigned int** spatial_hashing_cell_, unsigned int* spatial_hash_size,
+		unsigned int** spatial_hashing_cell_collider_, unsigned int* spatial_hash_size_collider, bool is_edge,
+		std::vector<unsigned int>* neighbor_primitive_0, std::vector<unsigned int>* neighbor_primitive_1);
 
 	void reorganzieDataOfObjects();
 
@@ -353,7 +363,7 @@ private:
 
 	//void setGlobalCellStartPerThreadPerLoop();
 
-	//void findAllTrianglePairsHashTable();
+	//void findAllPairsHashTable(int thread_No);
 
 	//void findAllTrianglePairsHashTableSingleThread();
 
@@ -371,5 +381,14 @@ private:
 
 	void findAllVertexTrianglePairs(int thread_No);
 	void findAllEdgeEdgePairs(int thread_No);
+
+	unsigned int** primitive_index_record;
+	unsigned int max_triangle_cell_size;
+	unsigned int max_vertex_cell_size;
+
+
+	std::vector<MeshStruct::Vertex*> vertices;
+	std::vector<MeshStruct::Edge*> edges;
+	
 };
 

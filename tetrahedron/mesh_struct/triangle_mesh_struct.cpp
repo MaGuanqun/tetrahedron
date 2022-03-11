@@ -10,7 +10,7 @@ TriangleMeshStruct::TriangleMeshStruct()
 //VERTEX_NORMAL
 void TriangleMeshStruct::getVertexNormalPerThread(int thread_id)
 {
-	std::vector<int>* face_vertex;
+	std::vector<unsigned int>* face_vertex;
 	double* current_vertex_normal;
 	double dot;
 	for (int i = vertex_index_begin_per_thread[thread_id]; i < vertex_index_begin_per_thread[thread_id + 1]; ++i) {
@@ -31,7 +31,7 @@ void TriangleMeshStruct::getVertexNormalPerThread(int thread_id)
 //VERTEX_NORMAL_RENDER
 void TriangleMeshStruct::getRenderVertexNormalPerThread(int thread_id)
 {
-	std::vector<int>* face_vertex;
+	std::vector<unsigned int>* face_vertex;
 	double* current_vertex_normal;
 	double dot;
 	for (int i = vertex_index_begin_per_thread[thread_id]; i < vertex_index_begin_per_thread[thread_id + 1]; ++i) {

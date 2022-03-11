@@ -374,7 +374,7 @@ void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_par
 	double& ave_iteration, bool mouse_is_pressed_previous_current_frame)
 {
 	if (control_parameter[MOVE_OBJ_SCRIPT]) {
-		project_dynamic.collision.draw_culling.moveScript(1);
+		project_dynamic.collision.draw_culling.moveScript(2);
 		control_parameter[MOVE_OBJ_SCRIPT] = false;
 	}
 

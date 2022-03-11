@@ -16,10 +16,10 @@ public:
 		double initial_area;
 	};
 	struct Vertex {
-		std::vector<int>face;
+		std::vector<unsigned int>face;
 		std::vector<unsigned int>edge;
-		std::vector<int>neighbor_vertex;
-		std::vector<int>around_face;
+		std::vector<unsigned int>neighbor_vertex;
+		std::vector<unsigned int>around_face;
 		//std::vector<int>around_vertex;
 		bool on_border = false;
 		std::vector<int>tetrahedron; //only for surface vertex
