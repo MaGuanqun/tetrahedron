@@ -84,13 +84,13 @@ public:
 
 
 
-	unsigned int*** spatial_hashing_cell_triangle;//in every vector, we store triangle index,obj_index respectively
-	unsigned int*** spatial_hashing_cell_edge;//in every vector, we store triangle index,obj_index respectively
-	unsigned int*** spatial_hashing_cell_vertex;//in every vector, we store triangle index,obj_index respectively
+	unsigned int** spatial_hashing_cell_triangle;//in every vector, we store triangle index,obj_index respectively
+	unsigned int** spatial_hashing_cell_edge;//in every vector, we store triangle index,obj_index respectively
+	unsigned int** spatial_hashing_cell_vertex;//in every vector, we store triangle index,obj_index respectively
 	//unsigned int*** spatial_hashing_actual_hash_value_for_test;//in every vector, we store triangle index,obj_index respectively
-	unsigned int*** spatial_hashing_cell_collider_triangle;//in every vector, we store triangle index, obj_index respectively
-	unsigned int*** spatial_hashing_cell_collider_edge;//in every vector, we store triangle index, obj_index respectively
-	unsigned int*** spatial_hashing_cell_collider_vertex;//in every vector, we store triangle index, obj_index respectively
+	unsigned int** spatial_hashing_cell_collider_triangle;//in every vector, we store triangle index, obj_index respectively
+	unsigned int** spatial_hashing_cell_collider_edge;//in every vector, we store triangle index, obj_index respectively
+	unsigned int** spatial_hashing_cell_collider_vertex;//in every vector, we store triangle index, obj_index respectively
 	unsigned int hash_cell_count;
 
 
@@ -264,16 +264,18 @@ private:
 
 
 	unsigned int max_index_number_in_one_cell;
+	unsigned int max_index_number_in_one_cell_vertex;
 	unsigned int max_index_number_in_one_cell_collider;
+	unsigned int max_index_number_in_one_cell_collider_vertex;
 
 	void triangleHashValueWithRecord(double* aabb,
-		unsigned int** spatial_hashing_cell, unsigned int* triangle_index, double* scene_aabb, double cell_length,
+		unsigned int* spatial_hashing_cell, unsigned int* triangle_index, double* scene_aabb, double cell_length,
 		unsigned int hash_cell_count, uint64_t P1, uint64_t P2, uint64_t P3, unsigned int* spatial_hashing_cell_triangle_size,
-		unsigned int* obj_triangle_hash);
+		unsigned int* obj_triangle_hash, unsigned int max_index_number_in_one_cell);
 
 	void triangleHashValueWithoutRecord(double* aabb,
-		unsigned int** spatial_hashing_cell, unsigned int* triangle_index, double* scene_aabb, double cell_length, unsigned int hash_cell_count,
-		uint64_t P1, uint64_t P2, uint64_t P3, unsigned int* spatial_hashing_cell_triangle_size);
+		unsigned int* spatial_hashing_cell, unsigned int* triangle_index, double* scene_aabb, double cell_length, unsigned int hash_cell_count,
+		uint64_t P1, uint64_t P2, uint64_t P3, unsigned int* spatial_hashing_cell_triangle_size, unsigned int max_index_number_in_one_cell);
 
 	std::uint64_t P1, P2, P3;
 	void testHashCollision();
@@ -321,14 +323,15 @@ private:
 
 	void searchPrimitive(double* aabb, unsigned int* hash_index, unsigned int hash_cell_size, unsigned int input_obj_No, unsigned int triangle_index,
 		unsigned int*& triangle_pair_, unsigned int*& triangle_pair_with_collider_, unsigned int thread_No,
-		unsigned int** spatial_hashing_cell_, unsigned int* spatial_hash_size,
-		unsigned int** spatial_hashing_cell_collider_, unsigned int* spatial_hash_size_collider, bool is_edge,
-		std::vector<unsigned int>* neighbor_primitive_0, std::vector<unsigned int>* neighbor_primitive_1);
+		unsigned int* spatial_hashing_cell_, unsigned int* spatial_hash_size,
+		unsigned int* spatial_hashing_cell_collider_, unsigned int* spatial_hash_size_collider, bool is_edge,
+		std::vector<unsigned int>* neighbor_primitive_0, std::vector<unsigned int>* neighbor_primitive_1,
+		unsigned int max_index_number_in_one_cell, unsigned int max_index_number_in_one_cell_collider);
 
 	void searchPrimitiveOnCollider(double* aabb, unsigned int* hash_index, unsigned int hash_cell_size,
 		unsigned int input_obj_No, unsigned int vertex_index,
 		unsigned int*& triangle_pair_with_collider_, unsigned int thread_No,
-		unsigned int** spatial_hashing_cell_, unsigned int* spatial_hash_size_);
+		unsigned int* spatial_hashing_cell_, unsigned int* spatial_hash_size_, unsigned int max_index_number_in_one_cell_collider);
 
 	void reorganzieDataOfObjects();
 
