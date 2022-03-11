@@ -38,6 +38,8 @@ public:
 	std::vector<unsigned int> cell_begin_per_thread;
 
 	void findAllTrianglePairs(int thread_No);
+
+
 	void findAllPairsHashTable(int thread_No);
 
 	unsigned int** vertex_triangle_pair; //except collider, inner vector store vertex_1 index, obj_1_index, tri_2_index, obj_2_index

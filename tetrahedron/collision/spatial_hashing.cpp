@@ -836,8 +836,10 @@ void SpatialHashing::buildSpatialHashing(double* scene_aabb)
 	t = clock();
 	for (unsigned int i = 0; i < 10; ++i) {
 		for (unsigned int j = 0; j < thread_num; ++j) {
-			//findAllPairsHashTable(j);
-			findAllPairsHashTableElementwise(j);
+			//use this for loop by cell
+			findAllPairsHashTable(j);
+			//use this for loop by element
+			//findAllPairsHashTableElementwise(j);
 		}
 	}
 	t1 = clock();
@@ -867,8 +869,10 @@ void SpatialHashing::buildSpatialHashing(double* scene_aabb)
 
 	t = clock();
 	for (unsigned int i = 0; i < 10; ++i) {
+		//use this for loop by cell
 		thread->assignTask(this, FIND_ALL_PAIRS_HASH_TABLE);
-		thread->assignTask(this, FIND_ALL_TRIANGLE_PAIRS_HASH_TABLE_ELEMENTWISE);
+		//use this for loop by element
+		//thread->assignTask(this, FIND_ALL_TRIANGLE_PAIRS_HASH_TABLE_ELEMENTWISE);
 	}
 	t1 = clock();
 	std::cout << "find all triangle pairs multi thread " << t1 - t << std::endl;
@@ -1510,7 +1514,7 @@ bool SpatialHashing::vertexFromTet(int vertex_index, int* tet_indices)
 	return false;
 }
 
-// FIND_ALL_TRIANGLE_PAIRS_HASH_TABLE_ELEMENTWISE
+// FIND_ALL_TRIANGLE_PAIRS_HASH_TABLE_ELEMENTWISE, use this for loop by element
 void SpatialHashing::findAllPairsHashTableElementwise(int thread_No)
 {
 	unsigned int* primitive_pair_ = edge_edge_pair[thread_No] + 1;
@@ -1888,7 +1892,7 @@ void SpatialHashing::findAllVertexTrianglePairs(int thread_No)
 }
 
 
-//FIND_ALL_PAIRS_HASH_TABLE
+//FIND_ALL_PAIRS_HASH_TABLE,  use this for loop by cell
 void SpatialHashing::findAllPairsHashTable(int thread_No)
 {
 	findAllVertexTrianglePairs(thread_No);
@@ -2844,10 +2848,7 @@ void SpatialHashing::triangleHashingSmallerHashTable(int thread_No)
 		for (unsigned int j = primitive_begin; j < primitive_end; ++j) {
 			primitive_index[0] = j;
 			triangleHashValueWithoutRecord(aabb[j].data(), spatial_hashing_cell_, primitive_index, scene_aabb_, hash_cell_length,
-				hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_, max_index_number_in_one_cell_);
-
-			//triangleHashValueWithoutRecord(aabb[j].data(), spatial_hashing_cell_, primitive_index, scene_aabb_, hash_cell_length,
-			//	hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_,max_index_number_in_one_cell_);
+				hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_,max_index_number_in_one_cell_);
 		}
 	}
 	if (has_collider_) {
@@ -2878,10 +2879,13 @@ void SpatialHashing::triangleHashingSmallerHashTable(int thread_No)
 		primitive_index[1] = i;
 		for (unsigned int j = primitive_begin; j < primitive_end; ++j) {
 			primitive_index[0] = j;
-			triangleHashValueWithRecord(aabb[j].data(), spatial_hashing_cell_, primitive_index, scene_aabb_, hash_cell_length,
-				hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_, obj_edge_hash[i] + j * max_triangle_cell_size, max_index_number_in_one_cell_);
-			//triangleHashValueWithoutRecord(aabb[j].data(), spatial_hashing_cell_, primitive_index, scene_aabb_, hash_cell_length,
-			//	hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_,max_index_number_in_one_cell_);
+
+			//use this for loop by every element
+		/*	triangleHashValueWithRecord(aabb[j].data(), spatial_hashing_cell_, primitive_index, scene_aabb_, hash_cell_length,
+				hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_, obj_edge_hash[i] + j * max_triangle_cell_size, max_index_number_in_one_cell_);*/
+			//use this for loop by every cell
+			triangleHashValueWithoutRecord(aabb[j].data(), spatial_hashing_cell_, primitive_index, scene_aabb_, hash_cell_length,
+				hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_,max_index_number_in_one_cell_);
 		}
 	}
 	if (has_collider_) {
@@ -2920,21 +2924,25 @@ void SpatialHashing::triangleHashingSmallerHashTable(int thread_No)
 		if (i < cloth_size) {
 			for (unsigned int j = primitive_begin; j < primitive_end; ++j) {
 				primitive_index[0] = j;
-				triangleHashValueWithRecord(aabb[j].data(), spatial_hashing_cell_, primitive_index, scene_aabb_, hash_cell_length,
-					hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_, obj_vertex_hash[i] + j * max_vertex_cell_size, max_index_number_in_one_cell_);
 
-				//triangleHashValueWithoutRecord(aabb[j].data(), spatial_hashing_cell_, primitive_index, scene_aabb_, hash_cell_length,
-				//	hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_,max_index_number_in_one_cell_);
+				//use this for loop by every element
+				//triangleHashValueWithRecord(aabb[j].data(), spatial_hashing_cell_, primitive_index, scene_aabb_, hash_cell_length,
+				//	hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_, obj_vertex_hash[i] + j * max_vertex_cell_size, max_index_number_in_one_cell_);
+				//use this for loop by every cell
+				triangleHashValueWithoutRecord(aabb[j].data(), spatial_hashing_cell_, primitive_index, scene_aabb_, hash_cell_length,
+					hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_,max_index_number_in_one_cell_);
 			}
 		}
 		else {
 			vertex_index_on_surface = tetrahedron_vertex_index_on_surface[i - cloth_size];
 			for (unsigned int j = primitive_begin; j < primitive_end; ++j) {
 				primitive_index[0] = vertex_index_on_surface[j];
-				triangleHashValueWithRecord(aabb[vertex_index_on_surface[j]].data(), spatial_hashing_cell_, primitive_index, scene_aabb_, hash_cell_length,
-					hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_, obj_vertex_hash[i] + vertex_index_on_surface[j] * max_vertex_cell_size, max_index_number_in_one_cell_);
-				//triangleHashValueWithoutRecord(aabb[vertex_index_on_surface[j]].data(), spatial_hashing_cell_, primitive_index, scene_aabb_, hash_cell_length,
-				//	hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_,max_index_number_in_one_cell_);
+				//use this for loop by every element
+				/*triangleHashValueWithRecord(aabb[vertex_index_on_surface[j]].data(), spatial_hashing_cell_, primitive_index, scene_aabb_, hash_cell_length,
+					hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_, obj_vertex_hash[i] + vertex_index_on_surface[j] * max_vertex_cell_size, max_index_number_in_one_cell_);*/
+				//use this for loop by every cell
+				triangleHashValueWithoutRecord(aabb[vertex_index_on_surface[j]].data(), spatial_hashing_cell_, primitive_index, scene_aabb_, hash_cell_length,
+					hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_,max_index_number_in_one_cell_);
 			}
 		}
 	}
