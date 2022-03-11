@@ -13,8 +13,9 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	this->tetrahedron = tetrahedron;
 	this->thread = thread;
 
-	max_index_number_in_one_cell = 800;
-	max_index_number_in_one_cell_collider = 400;
+	max_index_number_in_one_cell = 600;
+	max_index_number_in_one_cell_collider = 300;
+	estimate_coeff_for_pair_num = 20;
 
 	draw_culling.initial(cloth, collider, tetrahedron, thread);
 	//findPatchOfObjects();
@@ -278,7 +279,8 @@ void Collision::initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* col
 void Collision::initialSpatialHashing(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread,
 	double* tolerance_ratio)
 {
-	spatial_hashing.setInObject(cloth, collider, tetrahedron, thread, tolerance_ratio, 8, false, max_index_number_in_one_cell, max_index_number_in_one_cell_collider);
+	spatial_hashing.setInObject(cloth, collider, tetrahedron, thread, tolerance_ratio, 8, false, 
+		max_index_number_in_one_cell, max_index_number_in_one_cell_collider, estimate_coeff_for_pair_num);
 }
 
 
@@ -486,47 +488,50 @@ void Collision::testRepeatability()
 
 	std::cout << "vertex triangle Repeatability 2: " << (double)count_2 / (double)count.size() << " larger than 2 " << (double)count_2_larger / (double)count.size() << std::endl;
 	std::cout << count_2 << " " << count_2_larger << " " << count.size() << std::endl;
+	std::cout << "total VT pair " << triangle_pair.size() << std::endl;
 	std::cout << "edge edge Repeatability 2: " << (double)count_2_collider / (double)count_edge.size() << " larger than 2 " << (double)count_2_larger_collider / (double)count_edge.size() << std::endl;
 	std::cout << count_2_collider << " " << count_2_larger_collider << " " << count_edge.size() << std::endl;
-	std::vector<std::vector<unsigned int>> prfix_sum_vertex(total_obj_num);
-	std::vector<std::vector<unsigned int>> prfix_sum_edge(total_obj_num);	
-	for (unsigned int i = 0; i < total_obj_num; ++i) {
-		if (i < cloth->size()) {
-			prfix_sum_vertex[i].resize(cloth->data()[i].mesh_struct.vertex_position.size() + 1, 0);
-			prfix_sum_edge[i].resize(cloth->data()[i].mesh_struct.edges.size() + 1, 0);
-		}
-		else {
-			prfix_sum_vertex[i].resize(tetrahedron->data()[i- cloth->size()].mesh_struct.vertex_position.size() + 1, 0);
-			prfix_sum_edge[i].resize(tetrahedron->data()[i- cloth->size()].mesh_struct.edges.size() + 1, 0);
-		}
-	}
 
-	for (unsigned int i = 0; i < triangle_pair.size(); ++i) {
-		prfix_sum_vertex[triangle_pair[i].index[1]][triangle_pair[i].index[0] + 1]++;
-	}
-
-	for (unsigned int i = 0; i < edge_pair.size(); ++i) {
-		prfix_sum_edge[edge_pair[i].index[1]][edge_pair[i].index[0] + 1]++;
-	}
+	std::cout << "total edge pair " << edge_pair.size() << std::endl;
+	//std::vector<std::vector<unsigned int>> prfix_sum_vertex(total_obj_num);
+	//std::vector<std::vector<unsigned int>> prfix_sum_edge(total_obj_num);	
 	//for (unsigned int i = 0; i < total_obj_num; ++i) {
-		for (unsigned int j = 1; j < prfix_sum_vertex[0].size() + 1; ++j) {
-			prfix_sum_vertex[0][j] += prfix_sum_vertex[0][j - 1];
-		}
-		for (unsigned int j = 1; j < prfix_sum_edge[0].size() + 1; ++j) {
-			prfix_sum_edge[0][j] += prfix_sum_edge[0][j - 1];
-		}
+	//	if (i < cloth->size()) {
+	//		prfix_sum_vertex[i].resize(cloth->data()[i].mesh_struct.vertex_position.size() + 1, 0);
+	//		prfix_sum_edge[i].resize(cloth->data()[i].mesh_struct.edges.size() + 1, 0);
+	//	}
+	//	else {
+	//		prfix_sum_vertex[i].resize(tetrahedron->data()[i- cloth->size()].mesh_struct.vertex_position.size() + 1, 0);
+	//		prfix_sum_edge[i].resize(tetrahedron->data()[i- cloth->size()].mesh_struct.edges.size() + 1, 0);
+	//	}
 	//}
-		for (unsigned int i = 1; i < total_obj_num; ++i) {
-			prfix_sum_vertex[i][0] = prfix_sum_vertex[i - 1].back();
-			prfix_sum_edge[i][0] = prfix_sum_edge[i - 1].back();
 
-			for (unsigned int j = 1; j < prfix_sum_vertex[i].size() + 1; ++j) {
-				prfix_sum_vertex[i][j] += prfix_sum_vertex[i][j - 1];
-			}
-			for (unsigned int j = 1; j < prfix_sum_edge[i].size() + 1; ++j) {
-				prfix_sum_edge[i][j] += prfix_sum_edge[i][j - 1];
-			}
-		}
+	//for (unsigned int i = 0; i < triangle_pair.size(); ++i) {
+	//	prfix_sum_vertex[triangle_pair[i].index[1]][triangle_pair[i].index[0] + 1]++;
+	//}
+
+	//for (unsigned int i = 0; i < edge_pair.size(); ++i) {
+	//	prfix_sum_edge[edge_pair[i].index[1]][edge_pair[i].index[0] + 1]++;
+	//}
+	////for (unsigned int i = 0; i < total_obj_num; ++i) {
+	//	for (unsigned int j = 1; j < prfix_sum_vertex[0].size() + 1; ++j) {
+	//		prfix_sum_vertex[0][j] += prfix_sum_vertex[0][j - 1];
+	//	}
+	//	for (unsigned int j = 1; j < prfix_sum_edge[0].size() + 1; ++j) {
+	//		prfix_sum_edge[0][j] += prfix_sum_edge[0][j - 1];
+	//	}
+	////}
+	//	for (unsigned int i = 1; i < total_obj_num; ++i) {
+	//		prfix_sum_vertex[i][0] = prfix_sum_vertex[i - 1].back();
+	//		prfix_sum_edge[i][0] = prfix_sum_edge[i - 1].back();
+
+	//		for (unsigned int j = 1; j < prfix_sum_vertex[i].size() + 1; ++j) {
+	//			prfix_sum_vertex[i][j] += prfix_sum_vertex[i][j - 1];
+	//		}
+	//		for (unsigned int j = 1; j < prfix_sum_edge[i].size() + 1; ++j) {
+	//			prfix_sum_edge[i][j] += prfix_sum_edge[i][j - 1];
+	//		}
+	//	}
 
 
 
@@ -929,14 +934,13 @@ void Collision::collisionCulling()
 
 	spatial_hashing.buildSpatialHashing(scene_aabb);
 
-	thread->assignTask(this, FIND_TRIANGLE_PAIRS);
+	//thread->assignTask(this, FIND_TRIANGLE_PAIRS);
 	//t = clock();
 	//for (unsigned int i = 0; i < 10; ++i) {
-	thread->assignTask(this, FIND_PRIMITIVE_AROUND);
+	//thread->assignTask(this, FIND_PRIMITIVE_AROUND);
 	//}
 	//t1 = clock();
 	//std::cout << "find primitive around multi thread" << t1 - t << std::endl;
-
 	//t = clock();
 	//for (unsigned int i = 0; i < 10; ++i) {
 	//	for (unsigned int j = 0; j < thread_num; ++j) {
@@ -967,7 +971,7 @@ void Collision::collisionCulling()
 	//	spatial_hashing.scene_aabb);
 	//draw_culling.setSingleCellData(spatial_hashing.cell_length, spatial_hashing.cell_number, spatial_hashing.scene_aabb);
 	//draw_culling.setTetrahedronVertex();
-	totalCount();
+	//totalCount();
 }
 
 

@@ -51,7 +51,7 @@ void DrawVertex::setVertexAccumulate(std::vector<std::array<double, 3>>& v_list,
 {
 
 	std::array<double, 3>v;
-	int index_size_already = indices.size();
+	int index_size_already = draw_vertex.size();
 	for (int i = 0; i < index.size(); i++) {
 		for (int j = 0; j < sphere_vertex_num; j++) {
 			SUM(v.data(), v_list[index[i]].data(), sphere[j].data());

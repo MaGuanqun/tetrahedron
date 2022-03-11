@@ -30,7 +30,7 @@ void SpatialHashing::initialHashCellLength(std::vector<Cloth>* cloth, std::vecto
 	}
 
 	ave_length /= (double)edge_num;
-	cell_length =1.0* max_length + 2.0 * tolerance_ratio[SELF_POINT_TRIANGLE] * ave_length;
+	cell_length = max_length + 2.0 * tolerance_ratio[SELF_POINT_TRIANGLE] * ave_length;
 	//cell_length = 1.0 * max_length +2.0 * tolerance_ratio[SELF_POINT_TRIANGLE] * ave_length;
 	std::cout << "tolerance__ " << tolerance_ratio[SELF_POINT_TRIANGLE] << std::endl;
 	std::cout << "ave_length " << ave_length << " max length " << max_length << " ratio " << (double)max_length / (double)ave_length << std::endl;
@@ -40,7 +40,7 @@ void SpatialHashing::initialHashCellLength(std::vector<Cloth>* cloth, std::vecto
 
 
 void SpatialHashing::initialHashCell(unsigned int total_triangle_num, unsigned int max_index_number_in_one_cell,
-	unsigned int max_index_number_in_one_cell_collider)
+	unsigned int max_index_number_in_one_cell_collider, unsigned int estimate_coeff_for_pair_num)
 {
 	//indicator = new std::vector<unsigned int>[thread_num];
 	//for (unsigned int i = 0; i < thread_num; ++i) {
@@ -63,12 +63,14 @@ void SpatialHashing::initialHashCell(unsigned int total_triangle_num, unsigned i
 	spatial_hashing_cell_collider_edge = new unsigned int** [thread_num];
 	spatial_hashing_cell_collider_vertex = new unsigned int** [thread_num];
 
-	for (unsigned int i = 0; i < thread_num; ++i) {
-		edge_edge_pair[i] = new unsigned int[max_index_number_in_one_cell * total_triangle_num];// 
-		memset(edge_edge_pair[i], 0, 4 * max_index_number_in_one_cell * total_triangle_num);
+	
 
-		vertex_triangle_pair[i] = new unsigned int[max_index_number_in_one_cell * total_triangle_num / 2];// 
-		memset(vertex_triangle_pair[i], 0, 4 * (max_index_number_in_one_cell * total_triangle_num / 2));
+	for (unsigned int i = 0; i < thread_num; ++i) {
+		edge_edge_pair[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num];// 
+		memset(edge_edge_pair[i], 0, 4 * estimate_coeff_for_pair_num * total_triangle_num);
+
+		vertex_triangle_pair[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 2];// 
+		memset(vertex_triangle_pair[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 2));
 
 		spatial_hashing_cell_triangle[i] = new unsigned int* [hash_cell_count];
 		spatial_hashing_cell_edge[i] = new unsigned int* [hash_cell_count];
@@ -86,14 +88,14 @@ void SpatialHashing::initialHashCell(unsigned int total_triangle_num, unsigned i
 		}
 
 		if (has_collider) {
-			edge_edge_pair_collider[i] = new unsigned int[max_index_number_in_one_cell * total_triangle_num];
-			memset(edge_edge_pair_collider[i], 0, 4 * max_index_number_in_one_cell * total_triangle_num);
+			edge_edge_pair_collider[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num];
+			memset(edge_edge_pair_collider[i], 0, 4 * estimate_coeff_for_pair_num * total_triangle_num);
 
-			vertex_obj_triangle_collider_pair[i] = new unsigned int[max_index_number_in_one_cell * total_triangle_num / 2];
-			memset(vertex_obj_triangle_collider_pair[i], 0, 4 * (max_index_number_in_one_cell * total_triangle_num / 2));
+			vertex_obj_triangle_collider_pair[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 2];
+			memset(vertex_obj_triangle_collider_pair[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 2));
 
-			vertex_collider_triangle_obj_pair[i] = new unsigned int[max_index_number_in_one_cell * total_triangle_num / 2];
-			memset(vertex_collider_triangle_obj_pair[i], 0, 4 * (max_index_number_in_one_cell * total_triangle_num / 2));
+			vertex_collider_triangle_obj_pair[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 2];
+			memset(vertex_collider_triangle_obj_pair[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 2));
 
 
 			spatial_hashing_cell_collider_triangle[i] = new unsigned int* [hash_cell_count];
@@ -252,7 +254,7 @@ void SpatialHashing::setInObject(std::vector<Cloth>* cloth, std::vector<Collider
 	std::vector<Tetrahedron>* tetrahedron, Thread* thread, double* tolerance_ratio,
 	unsigned int max_cell_count, bool for_construct_patch,
 	unsigned int max_index_number_in_one_cell,
-	unsigned int max_index_number_in_one_cell_collider)
+	unsigned int max_index_number_in_one_cell_collider, unsigned int estimate_coeff_for_pair_num)
 {
 	has_collider = !collider->empty();
 
@@ -468,7 +470,7 @@ void SpatialHashing::setInObject(std::vector<Cloth>* cloth, std::vector<Collider
 
 	//hash_value_for_test.reserve(total_triangle_num);
 
-	initialHashCell(total_triangle_num, max_index_number_in_one_cell, max_index_number_in_one_cell_collider);
+	initialHashCell(total_triangle_num, max_index_number_in_one_cell, max_index_number_in_one_cell_collider, estimate_coeff_for_pair_num);
 
 	//vertex_tet_pair.resize(thread_num);
 	//for (unsigned int i = 0; i < thread_num; ++i) {
@@ -782,37 +784,37 @@ void SpatialHashing::buildSpatialHashing(double* scene_aabb)
 	//}
 
 
-	t = clock();
-	for (unsigned int i = 0; i < 100; ++i) {
-		thread->assignTask(this, TRIANGLE_HASHING_SMALLER_HASH_TABLE);
-	}
-	t1 = clock();
-	std::cout << "triangle hashing " << t1 - t << std::endl;
-	t = clock();
-	for (unsigned int i = 0; i < 100; ++i) {
-		for (unsigned int j = 0; j < thread_num; ++j) {
-			triangleHashingSmallerHashTable(j);
-		}
-	}		
-	t1 = clock();
-	std::cout << "triangle hashing single thread " << t1 - t << std::endl;
+	//t = clock();
+	//for (unsigned int i = 0; i < 100; ++i) {
+	//	thread->assignTask(this, TRIANGLE_HASHING_SMALLER_HASH_TABLE);
+	//}
+	//t1 = clock();
+	//std::cout << "triangle hashing " << t1 - t << std::endl;
+	//t = clock();
+	//for (unsigned int i = 0; i < 100; ++i) {
+	//	for (unsigned int j = 0; j < thread_num; ++j) {
+	//		triangleHashingSmallerHashTable(j);
+	//	}
+	//}		
+	//t1 = clock();
+	//std::cout << "triangle hashing single thread " << t1 - t << std::endl;
 
 	t = clock();
-	for (unsigned int i = 0; i < 100; ++i) {
+	//for (unsigned int i = 0; i < 100; ++i) {
 		thread->assignTask(this, TRIANGLE_HASHING_SMALLER_HASH_TABLE);
 		recordNonEmptyCell();
-	}
+	//}
 	t1 = clock();
 	std::cout << "record nonemoty cell " << t1 - t << std::endl;
 
-	t = clock();
-	for (unsigned int i = 0; i < 10; ++i) {
-		for (unsigned int j = 0; j < thread_num; ++j) {
-			findAllPairsHashTable(j);
-		}
-	}
-	t1 = clock();
-	std::cout << "find all triangle pairs single thread " << " : " << t1 - t << std::endl;
+	//t = clock();
+	//for (unsigned int i = 0; i < 10; ++i) {
+		//for (unsigned int j = 0; j < thread_num; ++j) {
+		//	findAllPairsHashTable(j);
+		//}
+	//}
+	//t1 = clock();
+	//std::cout << "find all triangle pairs single thread " << " : " << t1 - t << std::endl;
 
 
 	//for (unsigned int i = 0; i < thread_num; ++i) {
@@ -837,9 +839,9 @@ void SpatialHashing::buildSpatialHashing(double* scene_aabb)
 
 
 	t = clock();
-	for (unsigned int i = 0; i < 10; ++i) {
+	//for (unsigned int i = 0; i < 10; ++i) {
 		thread->assignTask(this, FIND_ALL_PAIRS_HASH_TABLE);
-	}
+	//}
 	t1 = clock();
 	std::cout << "find all triangle pairs multi thread " << t1 - t << std::endl;
 
@@ -2667,11 +2669,6 @@ void SpatialHashing::triangleHashingSmallerHashTable(int thread_No)
 	spatial_hashing_cell_ = spatial_hashing_cell_edge[thread_No];
 	spatial_hashing_cell_size_ = spatial_hashing_cell_edge_size[thread_No];
 	//memset(spatial_hashing_cell_size_, 0, hash_cell_count_ << 2);
-
-
-	
-
-
 	for (unsigned int i = 0; i < collider_begin_obj_index_; ++i) {
 		aabb = obj_edge_aabb[i];
 		primitive_begin = obj_edge_index_begin_per_thread[i][thread_No];
@@ -2699,19 +2696,16 @@ void SpatialHashing::triangleHashingSmallerHashTable(int thread_No)
 			}
 		}
 	}
-	//vertex
+	////vertex
 	spatial_hashing_cell_ = spatial_hashing_cell_vertex[thread_No];
 	spatial_hashing_cell_size_ = spatial_hashing_cell_vertex_size[thread_No];
 	//memset(spatial_hashing_cell_size_, 0, hash_cell_count_ << 2);
-
 	unsigned int* vertex_index_on_surface;
-
 	for (unsigned int i = 0; i < collider_begin_obj_index_; ++i) {
 		aabb = obj_vertex_aabb[i];
 		primitive_begin = obj_vertex_index_begin_per_thread[i][thread_No];
 		primitive_end = obj_vertex_index_begin_per_thread[i][thread_No + 1];
 		primitive_index[1] = i;
-
 		if (i < cloth_size) {
 			for (unsigned int j = primitive_begin; j < primitive_end; ++j) {
 				primitive_index[0] = j;

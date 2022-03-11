@@ -24,11 +24,11 @@ void SetModel::load_getAABB(std::string& path, int& index)
 		//	create_mesh.setFloor(ori_mesh);
 		//}
 		//if (name == "cloth.obj") {
-		//	create_mesh.setMaterial1(ori_mesh);
+			create_mesh.setMaterial1(ori_mesh);
 		//}
 		//else {
-			ReadObj read_obj;
-			read_obj.load(path.c_str(), ori_mesh);
+		//	ReadObj read_obj;
+		//	read_obj.load(path.c_str(), ori_mesh);
 		//}
 	//else if (path == "./model/Outer_simpleModel_high.obj") {
 	//	create_mesh.setMaterial2(ori_mesh);

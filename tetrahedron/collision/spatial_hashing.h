@@ -13,7 +13,7 @@ public:
 	void setInObject(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron,
 		Thread* thread, double* tolerance_ratio, unsigned int max_cell_count, bool for_construct_patch,
 		unsigned int max_index_number_in_one_cell,
-		unsigned int max_index_number_in_one_cell_collider);
+		unsigned int max_index_number_in_one_cell_collider, unsigned int estimate_coeff_for_pair_num);
 	void getSceneAABB(int thread_No);
 	void triangleHashing(int thread_No);
 	void buildSpatialHashing(double* scene_aabb);
@@ -256,7 +256,7 @@ private:
 
 	void findListOfSpatialHashingCell();
 	void initialHashCell(unsigned int total_triangle_num, unsigned int max_index_number_in_one_cell,
-		unsigned int max_index_number_in_one_cell_collider);
+		unsigned int max_index_number_in_one_cell_collider, unsigned int estimate_coeff_for_pair_num);
 
 
 	unsigned int max_index_number_in_one_cell;

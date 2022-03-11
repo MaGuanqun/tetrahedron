@@ -117,6 +117,7 @@ void PickTriangle::readPixel(std::vector<unsigned char>* pixel_value, unsigned i
 	glBindFramebuffer(GL_FRAMEBUFFER, *FBO);
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 	glReadPixels(pos[0], pos[1], 1, 1, GL_RGB, GL_UNSIGNED_BYTE, &(*pixel_value)[0]);
+	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDeleteFramebuffers(1, FBO);
 }
 

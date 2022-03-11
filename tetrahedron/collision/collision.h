@@ -94,6 +94,8 @@ private:
 	unsigned int max_index_number_in_one_cell_collider;
 
 
+	unsigned int estimate_coeff_for_pair_num;
+
 	unsigned int tetrahedron_begin_obj_index;
 	unsigned int total_obj_num;//except collider
 	unsigned int total_obj_with_collider;// include collider
