@@ -235,6 +235,9 @@ private:
 	std::vector<unsigned int*> obj_vertex_index_begin_per_thread;
 	std::vector<unsigned int*> obj_edge_index_begin_per_thread;
 
+
+	std::vector<unsigned int*> collider_vertex_index_begin_per_thread;
+
 	std::vector<unsigned int*> tetrahedron_vertex_index_on_surface;
 
 
@@ -312,7 +315,8 @@ private:
 
 	unsigned int** obj_edge_hash;
 	unsigned int** obj_vertex_hash;
-	unsigned int** obj_triangle_hash;
+	unsigned int** collider_vertex_hash;
+
 
 
 	void searchPrimitive(double* aabb, unsigned int* hash_index, unsigned int hash_cell_size, unsigned int input_obj_No, unsigned int triangle_index,
@@ -320,6 +324,11 @@ private:
 		unsigned int** spatial_hashing_cell_, unsigned int* spatial_hash_size,
 		unsigned int** spatial_hashing_cell_collider_, unsigned int* spatial_hash_size_collider, bool is_edge,
 		std::vector<unsigned int>* neighbor_primitive_0, std::vector<unsigned int>* neighbor_primitive_1);
+
+	void searchPrimitiveOnCollider(double* aabb, unsigned int* hash_index, unsigned int hash_cell_size,
+		unsigned int input_obj_No, unsigned int vertex_index,
+		unsigned int*& triangle_pair_with_collider_, unsigned int thread_No,
+		unsigned int** spatial_hashing_cell_, unsigned int* spatial_hash_size_);
 
 	void reorganzieDataOfObjects();
 

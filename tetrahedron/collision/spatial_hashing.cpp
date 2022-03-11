@@ -512,6 +512,7 @@ void SpatialHashing::reorganzieDataOfObjects()
 
 	vertices.resize(collider_begin_obj_index);
 	edges.resize(collider_begin_obj_index);
+	
 
 	tetrahedron_vertex_index_on_surface.resize(tetrahedron->size());
 
@@ -568,12 +569,14 @@ void SpatialHashing::reorganzieDataOfObjects()
 		collider_edge_aabb.resize(collider->size());
 		triangle_vertex_index_collider.resize(collider->size());
 		edge_vertex_index_collider.resize(collider->size());
+		collider_vertex_index_begin_per_thread.resize(collider->size());
 		for (unsigned int i = 0; i < collider->size(); ++i) {
 			collider_tri_aabb[i] = collider->data()[i].triangle_AABB.data();
 			collider_vertex_aabb[i] = collider->data()[i].triangle_AABB.data();
 			collider_edge_aabb[i] = collider->data()[i].triangle_AABB.data();
 			triangle_vertex_index_collider[i] = collider->data()[i].mesh_struct.triangle_indices.data();
 			edge_vertex_index_collider[i] = collider->data()[i].mesh_struct.edge_vertices.data();
+			collider_vertex_index_begin_per_thread[i] = collider->data()[i].mesh_struct.vertex_index_begin_per_thread.data();
 		}
 	}
 }
@@ -603,29 +606,26 @@ void SpatialHashing::initialTriangleHash()
 	obj_edge_hash = new unsigned int* [cloth->size() + tetrahedron->size()];
 	for (int i = 0; i < cloth->size(); ++i) {
 		obj_edge_hash[i] = new unsigned int[max_triangle_cell_size * (*cloth)[i].mesh_struct.edges.size()];
+		memset(obj_edge_hash[i], 0, 4 * max_triangle_cell_size * (*cloth)[i].mesh_struct.edges.size());
 	}
 	int obj_no;
 	for (int i = 0; i < tetrahedron->size(); ++i) {
 		obj_no = i + tetrahedron_begin_obj_index;
 		obj_edge_hash[obj_no] = new unsigned int[max_triangle_cell_size * (*tetrahedron)[i].mesh_struct.edges.size()];
+		memset(obj_edge_hash[obj_no], 0, 4 * max_triangle_cell_size * (*tetrahedron)[i].mesh_struct.edges.size());
 	}
 
-	obj_triangle_hash = new unsigned int* [cloth->size() + tetrahedron->size()];
-	for (int i = 0; i < cloth->size(); ++i) {
-		obj_triangle_hash[i] = new unsigned int[max_triangle_cell_size * (*cloth)[i].mesh_struct.triangle_indices.size()];
-	}
-	for (int i = 0; i < tetrahedron->size(); ++i) {
-		obj_no = i + tetrahedron_begin_obj_index;
-		obj_triangle_hash[obj_no] = new unsigned int[max_triangle_cell_size * (*tetrahedron)[i].mesh_struct.triangle_indices.size()];
-	}
+	
 
 	obj_vertex_hash = new unsigned int* [cloth->size() + tetrahedron->size()];
 	for (int i = 0; i < cloth->size(); ++i) {
 		obj_vertex_hash[i] = new unsigned int[max_vertex_cell_size * (*cloth)[i].mesh_struct.vertex_position.size()];
+		memset(obj_vertex_hash[i], 0, 4 * max_vertex_cell_size * (*cloth)[i].mesh_struct.vertex_position.size());
 	}
 	for (int i = 0; i < tetrahedron->size(); ++i) {
 		obj_no = i + tetrahedron_begin_obj_index;
 		obj_vertex_hash[obj_no] = new unsigned int[max_vertex_cell_size * (*tetrahedron)[i].mesh_struct.vertex_position.size()];
+		memset(obj_vertex_hash[obj_no], 0, 4 * max_vertex_cell_size * (*tetrahedron)[i].mesh_struct.vertex_position.size());
 	}
 
 	obj_is_used = new bool** [thread_num];
@@ -646,6 +646,14 @@ void SpatialHashing::initialTriangleHash()
 				collider_is_used[i][j] = new bool[std::max((*collider)[j].mesh_struct.triangle_indices.size(), (*collider)[j].mesh_struct.edges.size())];
 				memset(collider_is_used[i][j], 0, std::max((*collider)[j].mesh_struct.triangle_indices.size(), (*collider)[j].mesh_struct.edges.size()));
 			}
+		}
+	}
+
+	if (has_collider) {
+		collider_vertex_hash = new unsigned int* [collider->size()];
+		for (int i = 0; i < collider->size(); ++i) {
+			collider_vertex_hash[i] = new unsigned int[max_vertex_cell_size * (*collider)[i].mesh_struct.vertex_position.size()];
+			memset(collider_vertex_hash[i], 0, 4*max_vertex_cell_size * (*collider)[i].mesh_struct.vertex_position.size());
 		}
 	}
 }
@@ -813,38 +821,38 @@ void SpatialHashing::buildSpatialHashing(double* scene_aabb)
 	//}
 
 
-	//t = clock();
-	//for (unsigned int i = 0; i < 100; ++i) {
-	//	thread->assignTask(this, TRIANGLE_HASHING_SMALLER_HASH_TABLE);
-	//}
-	//t1 = clock();
-	//std::cout << "triangle hashing " << t1 - t << std::endl;
-	//t = clock();
-	//for (unsigned int i = 0; i < 100; ++i) {
-	//	for (unsigned int j = 0; j < thread_num; ++j) {
-	//		triangleHashingSmallerHashTable(j);
-	//	}
-	//}		
-	//t1 = clock();
-	//std::cout << "triangle hashing single thread " << t1 - t << std::endl;
+	t = clock();
+	for (unsigned int i = 0; i < 100; ++i) {
+		thread->assignTask(this, TRIANGLE_HASHING_SMALLER_HASH_TABLE);
+	}
+	t1 = clock();
+	std::cout << "triangle hashing " << t1 - t << std::endl;
+	t = clock();
+	for (unsigned int i = 0; i < 100; ++i) {
+		for (unsigned int j = 0; j < thread_num; ++j) {
+			triangleHashingSmallerHashTable(j);
+		}
+	}		
+	t1 = clock();
+	std::cout << "triangle hashing single thread " << t1 - t << std::endl;
 
 	t = clock();
-	//for (unsigned int i = 0; i < 100; ++i) {
+	for (unsigned int i = 0; i < 100; ++i) {
 		thread->assignTask(this, TRIANGLE_HASHING_SMALLER_HASH_TABLE);
 		recordNonEmptyCell();
-	//}
+	}
 	t1 = clock();
 	std::cout << "record nonemoty cell " << t1 - t << std::endl;
 
 	t = clock();
-	//for (unsigned int i = 0; i < 10; ++i) {
+	for (unsigned int i = 0; i < 10; ++i) {
 		for (unsigned int j = 0; j < thread_num; ++j) {
 			//findAllPairsHashTable(j);
 			findAllPairsHashTableElementwise(j);
 		}
-	//}
-	//t1 = clock();
-	//std::cout << "find all triangle pairs single thread " << " : " << t1 - t << std::endl;
+	}
+	t1 = clock();
+	std::cout << "find all triangle pairs single thread " << " : " << t1 - t << std::endl;
 
 
 	//for (unsigned int i = 0; i < thread_num; ++i) {
@@ -868,12 +876,12 @@ void SpatialHashing::buildSpatialHashing(double* scene_aabb)
 	//std::cout << "compare find all triangle pairs multi thread " << t1 - t << std::endl;
 
 
-	//t = clock();
-	//for (unsigned int i = 0; i < 10; ++i) {
-		//thread->assignTask(this, FIND_ALL_PAIRS_HASH_TABLE);
-		//thread->assignTask(this, FIND_ALL_TRIANGLE_PAIRS_HASH_TABLE_ELEMENTWISE);
-	//}
-	//t1 = clock();
+	t = clock();
+	for (unsigned int i = 0; i < 10; ++i) {
+		thread->assignTask(this, FIND_ALL_PAIRS_HASH_TABLE);
+		thread->assignTask(this, FIND_ALL_TRIANGLE_PAIRS_HASH_TABLE_ELEMENTWISE);
+	}
+	t1 = clock();
 	std::cout << "find all triangle pairs multi thread " << t1 - t << std::endl;
 
 
@@ -1568,6 +1576,19 @@ void SpatialHashing::findAllPairsHashTableElementwise(int thread_No)
 	vertex_triangle_pair[thread_No][0]= primitive_pair_ - vertex_triangle_pair[thread_No] - 1;
 	vertex_obj_triangle_collider_pair[thread_No][0]= primitive_pair_collider_ - vertex_obj_triangle_collider_pair[thread_No] - 1;
 
+	if (has_collider) {
+
+		primitive_pair_collider_ = vertex_collider_triangle_obj_pair[thread_No] + 1;
+		spatial_hashing_cell_ = spatial_hashing_cell_triangle[0];
+		spatial_hashing_cell_size_ = spatial_hashing_cell_triangle_size[0];
+
+		for (unsigned int i = 0; i < collider->size(); ++i) {
+			for (unsigned int j = collider_vertex_index_begin_per_thread[i][thread_No]; j < collider_vertex_index_begin_per_thread[i][thread_No + 1]; ++j) {
+				searchPrimitiveOnCollider(collider_vertex_aabb[i][j].data(), collider_vertex_hash[i] + j * max_vertex_cell_size + 1, collider_vertex_hash[i][j * max_vertex_cell_size],
+					i, j, primitive_pair_collider_, thread_No, spatial_hashing_cell_, spatial_hashing_cell_size_);
+			}
+		}
+	}
 }
 
 void SpatialHashing::findTheNumberOfTriangleInCellSP()
@@ -2043,7 +2064,41 @@ void SpatialHashing::findAllPairsHashTable(int thread_No)
 //}
 
 
+void SpatialHashing::searchPrimitiveOnCollider(double* aabb, unsigned int* hash_index, unsigned int hash_cell_size, 
+	unsigned int input_obj_No, unsigned int vertex_index,
+	unsigned int*& triangle_pair_with_collider_, unsigned int thread_No,
+	unsigned int** spatial_hashing_cell_, unsigned int* spatial_hash_size_)
+{
+	unsigned int* primitive_index_record_ = primitive_index_record[thread_No] + 1;
 
+	bool** obj_is_used_ = obj_is_used[thread_No];
+	unsigned int hash_cell_index_end;
+	unsigned int obj_No; unsigned int current_triangle_index;
+	unsigned int obj_num = cloth->size() + tetrahedron->size();
+
+	for (unsigned int i = 0; i < hash_cell_size; ++i) {
+		for (unsigned int j = 0; j < spatial_hash_size_[hash_index[i]]; j += 2) {
+			obj_No = spatial_hashing_cell_[hash_index[i]][j + 1];
+			current_triangle_index = spatial_hashing_cell_[hash_index[i]][j];
+			if (!obj_is_used_[obj_No][current_triangle_index]) {
+				obj_is_used_[obj_No][current_triangle_index] = true;
+				memcpy(primitive_index_record_, spatial_hashing_cell_[hash_index[i]] + j, 8);
+				primitive_index_record_ += 2;
+				if (AABB::AABB_intersection(aabb, obj_tri_aabb[obj_No][current_triangle_index].data())) {
+					*(triangle_pair_with_collider_++) = vertex_index;
+					*(triangle_pair_with_collider_++) = input_obj_No;
+					*(triangle_pair_with_collider_++) = current_triangle_index;
+					*(triangle_pair_with_collider_++) = obj_No;
+				}
+			}
+		}
+	}
+	primitive_index_record[thread_No][0] = primitive_index_record_ - primitive_index_record[thread_No] - 1;
+	primitive_index_record_ = primitive_index_record[thread_No];
+	for (unsigned int i = 0; i < primitive_index_record_[0]; i += 2) {
+		obj_is_used_[primitive_index_record_[i + 2]][primitive_index_record_[i + 1]] = false;
+	}
+}
 
 void SpatialHashing::searchPrimitive(double* aabb, unsigned int* hash_index, unsigned int hash_cell_size, unsigned int input_obj_No, unsigned int triangle_index,
 	unsigned int*& triangle_pair_, unsigned int*& triangle_pair_with_collider_, unsigned int thread_No, 
@@ -2779,8 +2834,8 @@ void SpatialHashing::triangleHashingSmallerHashTable(int thread_No)
 		primitive_index[1] = i;
 		for (unsigned int j = primitive_begin; j < primitive_end; ++j) {
 			primitive_index[0] = j;
-			triangleHashValueWithRecord(aabb[j].data(), spatial_hashing_cell_, primitive_index, scene_aabb_, hash_cell_length,
-				hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_, obj_triangle_hash[i] + j * max_triangle_cell_size);
+			triangleHashValueWithoutRecord(aabb[j].data(), spatial_hashing_cell_, primitive_index, scene_aabb_, hash_cell_length,
+				hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_);
 
 			//triangleHashValueWithoutRecord(aabb[j].data(), spatial_hashing_cell_, primitive_index, scene_aabb_, hash_cell_length,
 			//	hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_);
@@ -2878,8 +2933,8 @@ void SpatialHashing::triangleHashingSmallerHashTable(int thread_No)
 			primitive_index[1] = i;
 			for (unsigned int j = primitive_begin; j < primitive_end; ++j) {
 				primitive_index[0] = j;
-				triangleHashValueWithoutRecord(aabb[j].data(), spatial_hashing_cell_collider_, primitive_index, scene_aabb_,
-					hash_cell_length, hash_cell_count_, p1, p2, p3, spatial_hashing_cell_collider_size_);
+				triangleHashValueWithRecord(aabb[j].data(), spatial_hashing_cell_collider_, primitive_index, scene_aabb_,
+					hash_cell_length, hash_cell_count_, p1, p2, p3, spatial_hashing_cell_collider_size_, collider_vertex_hash[i]+j*max_vertex_cell_size);
 			}
 		}
 	}
