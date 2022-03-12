@@ -320,32 +320,14 @@ job Thread::create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncS
     job k;
     switch (function_type)
     {
-    case TRIANGLE_HASHING:
-        k = job([func, thread_id]() {func->triangleHashing(thread_id); });
-        break;
     case SCENE_AABB:
         k = job([func, thread_id]() {func->getSceneAABB(thread_id); });
-        break;
-    case SH_FIND_ALL_TRIANGLE_PAIRS:
-        k = job([func, thread_id]() {func->findAllTrianglePairs(thread_id); });
         break;
     case TRIANGLE_HASHING_SMALLER_HASH_TABLE:
         k = job([func, thread_id]() {func->triangleHashingSmallerHashTable(thread_id); });
         break;
-    case TRIANGLE_HASHING_RECORD_REAL_HASH_VALUE:
-        k = job([func, thread_id]() {func->recordRealTriangleHashValue(thread_id); });
-        break;
-    case PREFIX_SUM_MULTI_2:
-        k = job([func, thread_id]() {func->prefixSumMulti2(thread_id); });
-        break;
     case RECORD_NONEMPTY_CELL:
         k = job([func, thread_id]() {func->recordNonEmptyCell(thread_id); });
-        break;
-    case FIND_VERTEX_TET_PAIRS_HASH_TABLE:
-        k = job([func, thread_id]() {func->findVertexTetPairHashTable(thread_id); });
-        break;
-    case TET_HASHING_SMALLER_HASH_TABLE:
-        k = job([func, thread_id]() {func->tetHashingSmallerHashTable(thread_id); });
         break;
     case OBTAIN_PAIR_COUNT:
         k = job([func, thread_id]() {func->obtainPairCount(thread_id); });

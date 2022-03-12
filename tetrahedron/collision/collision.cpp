@@ -178,10 +178,7 @@ void Collision::findPatchOfObjects()
 
 }
 
-//void Collision::drawMeshPatch(Camera* camera)
-//{
-//	mesh_patch.draw(camera);
-//}
+
 
 void Collision::initialNeighborPrimitive()
 {
@@ -193,43 +190,6 @@ void Collision::initialNeighborPrimitive()
 	}
 }
 
-
-//void Collision::testBVHUpdate()
-//{
-	//BVH test_bvh;
-	//test_bvh.init((*tetrahedron)[0].mesh_struct.triangle_indices.size(), (*tetrahedron)[0].mesh_struct.face_index_begin_per_thread, thread);	
-	//test_bvh.updateBVH(&(*tetrahedron)[0].triangle_AABB);
-	//int j = 0;
-	////for (int i = 0; i < test_bvh.triangle_node_index.size(); ++i) {
-	////	std::cout << test_bvh.triangle_node_index[i] << std::endl;
-	////}
-	////for (int i = 0; i < (*tetrahedron)[0].mesh_struct.triangle_indices.size(); ++i) {
-	////	if (!(test_bvh.aabb_list[test_bvh.triangle_node_index[i]] == obj_BVH[0].aabb_list[test_bvh.triangle_node_index[i]])) {
-	////	std::cout << test_bvh.aabb_list[i].max[0] << " " << test_bvh.aabb_list[i].max[1] << " " << test_bvh.aabb_list[i].max[2] << " "
-	////		<< test_bvh.aabb_list[i].min[0] << " " << test_bvh.aabb_list[i].min[1] << " " << test_bvh.aabb_list[i].min[2] << std::endl;
-	////	std::cout << obj_BVH[0].aabb_list[i].max[0] << " " << obj_BVH[0].aabb_list[i].max[1] << " " << obj_BVH[0].aabb_list[i].max[2] << " "
-	////		<< obj_BVH[0].aabb_list[i].min[0] << " " << obj_BVH[0].aabb_list[i].min[1] << " " << obj_BVH[0].aabb_list[i].min[2] << std::endl;
-	////		j++;
-	////	}
-	////}
-	//for (int i = 1; i < test_bvh.aabb_list.size(); ++i) {
-	//	if (!(test_bvh.aabb_list[i] == obj_BVH[0].aabb_list[i])) {
-	//		std::cout << i << std::endl;
-	//		std::cout << test_bvh.aabb_list[i].max[0] << " " << test_bvh.aabb_list[i].max[1] << " " << test_bvh.aabb_list[i].max[2] << " "
-	//			<< test_bvh.aabb_list[i].min[0] << " " << test_bvh.aabb_list[i].min[1] << " " << test_bvh.aabb_list[i].min[2] << std::endl;
-	//		std::cout << obj_BVH[0].aabb_list[i].max[0] << " " << obj_BVH[0].aabb_list[i].max[1] << " " << obj_BVH[0].aabb_list[i].max[2] << " "
-	//			<< obj_BVH[0].aabb_list[i].min[0] << " " << obj_BVH[0].aabb_list[i].min[1] << " " << obj_BVH[0].aabb_list[i].min[2] << std::endl;
-	//		j++;
-	//	}
-	//}
-	//std::cout <<j<<" "<< test_bvh.aabb_list.size() << " run test bvh update" << std::endl;
-	//for (unsigned int i = 0; i < cloth->size(); ++i) {
-	//	obj_BVH[i].test(cloth->data()[0].triangle_AABB.data());
-	//}
-	//for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
-	//	obj_BVH[i - tetrahedron_begin_obj_index].test(tetrahedron->data()[0].triangle_AABB.data());
-	//}
-//}
 
 void Collision::initialTargetPos(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, Thread* thread)
 {
@@ -279,7 +239,7 @@ void Collision::initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* col
 void Collision::initialSpatialHashing(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread,
 	double* tolerance_ratio)
 {
-	spatial_hashing.setInObject(cloth, collider, tetrahedron, thread, tolerance_ratio, 8, false, 
+	spatial_hashing.setInObject(cloth, collider, tetrahedron, thread, tolerance_ratio, 8, 
 		max_index_number_in_one_cell, max_index_number_in_one_cell_collider, estimate_coeff_for_pair_num);
 }
 
