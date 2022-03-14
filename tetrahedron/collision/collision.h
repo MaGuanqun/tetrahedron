@@ -114,6 +114,15 @@ private:
 	SpatialHashing spatial_hashing;
 	//bool use_BVH;
 
+	std::vector<unsigned int> vertex_triangle_pair_index_start_per_thread;//thread_No, index, respectively
+	std::vector<unsigned int> vertex_obj_triangle_collider_pair_index_start_per_thread;//thread_No, index, respectively
+	std::vector<unsigned int> vertex_collider_triangle_obj_pair_index_start_per_thread;//thread_No, index, respectively
+	std::vector<unsigned int> edge_edge_pair_index_start_per_thread;//thread_No, index, respectively
+	std::vector<unsigned int> edge_edge_pair_collider_index_start_per_thread;//thread_No, index, respectively
+
+
+	void setPairIndexEveryThread(unsigned int** pair, std::vector<unsigned int>& pair_index_start_per_thread);
+	void setPairIndexEveryThread();
 
 	std::vector<double>collision_time_thread;
 

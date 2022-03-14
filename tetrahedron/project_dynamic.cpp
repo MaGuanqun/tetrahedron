@@ -797,7 +797,7 @@ void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 //	reset_ave_iteration_record();
 //	while (!IPC_PDConvergeCondition()) {
 //		////std::cout << "==" << std::endl;
-//		//collision.globalCollisionTime();
+		collision.globalCollisionTime();
 //		thread->assignTask(this, COLLISION_FREE_POSITION);//in document, we use q_n+1, however, here, we use vertices_for_render & cloth_u to store this collision free position.
 //		u_previous_itr = u;
 //		//collision.solveCollisionConstraint();

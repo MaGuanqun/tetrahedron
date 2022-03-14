@@ -1,4 +1,7 @@
-#pragma once
+#ifndef GLOBAL_H
+#define GLOBAL_H
+
+
 #include <iostream>
 #include <cmath>
 #include <random>
@@ -263,3 +266,5 @@ inline bool vertexInTriangle(int* face_index, int vertex_index)
 		return true;
 	return false;
 }
+
+#endif // !GLOBAL_H

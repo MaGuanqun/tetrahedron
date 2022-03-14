@@ -46,6 +46,12 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	edge_edge_count.resize(thread_num, 0);
 	vertex_triangle_count.resize(thread_num, 0);
 
+	vertex_triangle_pair_index_start_per_thread.resize(2 * (thread_num + 1),0);
+	vertex_obj_triangle_collider_pair_index_start_per_thread.resize(2 * (thread_num + 1),0);
+	vertex_collider_triangle_obj_pair_index_start_per_thread.resize(2 * (thread_num + 1),0);
+	edge_edge_pair_index_start_per_thread.resize(2 * (thread_num + 1),0);
+	edge_edge_pair_collider_index_start_per_thread.resize(2 * (thread_num + 1),0);
+
 }
 
 
@@ -970,6 +976,66 @@ void Collision::getSceneAABB()
 	}
 }
 
+
+void Collision::setPairIndexEveryThread()
+{
+	setPairIndexEveryThread(spatial_hashing.vertex_triangle_pair, vertex_triangle_pair_index_start_per_thread);
+	setPairIndexEveryThread(spatial_hashing.edge_edge_pair, edge_edge_pair_index_start_per_thread);
+	if (has_collider) {
+		setPairIndexEveryThread(spatial_hashing.vertex_obj_triangle_collider_pair, vertex_obj_triangle_collider_pair_index_start_per_thread);
+		setPairIndexEveryThread(spatial_hashing.vertex_collider_triangle_obj_pair, vertex_collider_triangle_obj_pair_index_start_per_thread);
+		setPairIndexEveryThread(spatial_hashing.edge_edge_pair_collider, edge_edge_pair_collider_index_start_per_thread);
+	}
+}
+
+//make pair num in every thread even
+void Collision::setPairIndexEveryThread(unsigned int** pair, std::vector<unsigned int>&pair_index_start_per_thread)
+{
+	std::vector<unsigned int>pair_start(thread_num + 1);
+	unsigned int pair_num = pair[0][0]>>2;
+	for (unsigned int i = 1; i < thread_num; ++i) {
+		pair_num += pair[i][0]>>2;
+	}
+	arrangeIndex(thread_num, pair_num, pair_start.data());
+	unsigned int num;
+	for (unsigned int i = 0; i < thread_num; ++i) {
+		num = pair_start[i + 1] - pair_start[i];
+
+		if (num <= (pair[pair_index_start_per_thread[i << 1]][0]- pair_index_start_per_thread[(i << 1) + 1]) >> 2)
+		{
+			pair_index_start_per_thread[(i + 1) << 1] = i;
+			pair_index_start_per_thread[(i << 1) + 3] = pair_index_start_per_thread[(i << 1) + 1] + (num<<2);
+		}
+		else {
+			num -= (pair[pair_index_start_per_thread[i << 1]][0] - pair_index_start_per_thread[(i << 1) + 1]) >> 2;
+			for (unsigned int j = pair_index_start_per_thread[i << 1] + 1; j < thread_num; ++j) {
+				if (num <= (pair[j][0] >> 2)) {
+					pair_index_start_per_thread[(i + 1) << 1] = j;
+					pair_index_start_per_thread[(i << 1) + 3] = num<<2;
+					break;
+				}
+				else {
+					num -= pair[j][0] >> 2;
+				}
+			}
+		}
+	}
+	//std::cout << "pair num " << std::endl;
+	//for (unsigned int i = 0; i < thread_num; ++i) {
+	//	std::cout << pair_start[i + 1]- pair_start[i] << " ";
+	//}
+	//std::cout << std::endl;
+	//for (unsigned int i = 0; i < thread_num; ++i) {
+	//	std::cout << pair[i][0] / 4<<" ";
+	//}
+	//std::cout << std::endl;
+	//for (unsigned int i = 0; i < thread_num; ++i) {
+	//	std::cout << pair_index_start_per_thread[i * 2 + 2] << " " << pair_index_start_per_thread[i * 2 + 3]/4 << " ";
+	//}
+	//std::cout << std::endl;
+
+}
+
 void Collision::globalCollisionTime()
 {
 	for (int i = 0; i < cloth->size(); ++i) {
@@ -979,19 +1045,21 @@ void Collision::globalCollisionTime()
 		thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL);
 	}
 
-	thread->assignTask(this, GLOBAL_COLLISION_TIME);
-	//std::cout << "finish" << std::endl;
-	collision_time = collision_time_thread[0];
-	for (int i = 1; i < thread_num; ++i) {
-		if (collision_time > collision_time_thread[i]) {
-			collision_time = collision_time_thread[i];
-		}
-	}
-	collision_time *= 0.9;
+	setPairIndexEveryThread();
 
-	if (collision_time > 1.0) {
-		collision_time = 1.0;
-	}
+	thread->assignTask(this, GLOBAL_COLLISION_TIME);
+
+	//collision_time = collision_time_thread[0];
+	//for (int i = 1; i < thread_num; ++i) {
+	//	if (collision_time > collision_time_thread[i]) {
+	//		collision_time = collision_time_thread[i];
+	//	}
+	//}
+	//collision_time *= 0.9;
+
+	//if (collision_time > 1.0) {
+	//	collision_time = 1.0;
+	//}
 
 	//std::cout <<"collision time "<< collision_time << std::endl;
 }
