@@ -40,23 +40,24 @@ namespace CCD {
             return 1.0;
         T dist2_cur = internal::pointTriangleDistanceUnclassified(p, t0, t1, t2);
         T dist_cur = std::sqrt(dist2_cur);
-        T gap = eta * (dist_cur - thickness);
+        //T gap = eta * (dist_cur - thickness);
+        T gap = eta * (dist2_cur - thickness * thickness) / (dist_cur + thickness);
 
         T toc = 0.0;
         int itr = 0;
 
 
         while (true) {
-            T toc_lower_bound = (1 - eta) * (dist_cur - thickness) / max_disp_mag;
-            for (int i = 0; i < 3; ++i) {
-                p[i] += toc_lower_bound * dp[i];
-                t0[i] += toc_lower_bound * dt0[i];
-                t1[i] += toc_lower_bound * dt1[i];
-                t2[i] += toc_lower_bound * dt2[i];
-            }
+           // T toc_lower_bound = (1 - eta) * (dist_cur - thickness) / max_disp_mag;
+            T toc_lower_bound = (1 - eta) * (dist2_cur - thickness * thickness) / ((dist_cur + thickness) * max_disp_mag);
+            ACCUMULATE_SUM_WITH_COE(p, toc_lower_bound, dp);
+            ACCUMULATE_SUM_WITH_COE(t0, toc_lower_bound, dt0);
+            ACCUMULATE_SUM_WITH_COE(t1, toc_lower_bound, dt1);
+            ACCUMULATE_SUM_WITH_COE(t2, toc_lower_bound, dt2);
+
             dist2_cur = internal::pointTriangleDistanceUnclassified(p, t0, t1, t2);
             dist_cur = std::sqrt(dist2_cur);
-            if ((toc && ((dist_cur - thickness) < gap)) || itr > 200) {
+            if ((toc && ((dist2_cur - thickness * thickness) / (dist_cur + thickness) < gap)) || itr > 200) {
                // std::cout << toc<<" "<< toc_lower_bound<<" "<< dist_cur - thickness<<" "<<gap << std::endl;
 
                 break;
@@ -76,7 +77,7 @@ namespace CCD {
         T eta, T thickness)
     {
         T ea0[3], ea1[3], eb0[3], eb1[3], dea0[3], dea1[3], deb0[3], deb1[3];
-        int size = 3 * sizeof(T);
+        unsigned int size = 3 * sizeof(T);
         memcpy(ea0, _ea0, size);
         memcpy(ea1, _ea1, size);
         memcpy(eb0, _eb0, size);
@@ -97,53 +98,46 @@ namespace CCD {
         if (max_disp_mag == 0)
             return 1.0;
         T dist2_cur = internal::edgeEdgeDistanceUnclassified(ea0, ea1, eb0, eb1);
-        T dFunc = std::sqrt(dist2_cur) - thickness;
+        T dFunc = dist2_cur - thickness * thickness;// std::sqrt(dist2_cur) - thickness;
         // since we ensured other place that all dist smaller than dHat are positive,
        // this must be some far away nearly parallel edges
-        T d_a0b0[3], d_a1b0[3], d_a0b1[3], d_a1b1[3];
         std::vector<T> dists(4);
         if (dFunc <= 0) {
-            SUB(d_a0b0, ea0, eb0);
-            SUB(d_a0b1, ea0, eb1);
-            SUB(d_a1b0, ea1, eb0);
-            SUB(d_a1b1, ea1, eb1);
-            dists[0] = DOT(d_a0b0, d_a0b0);
-            dists[1] = DOT(d_a0b1, d_a0b1);
-            dists[2] = DOT(d_a1b0, d_a1b0);
-            dists[3] = DOT(d_a1b1, d_a1b1);
+            dists[0] = SQUARED_LENGTH(ea0, eb0);
+            dists[1] = SQUARED_LENGTH(ea0, eb1);
+            dists[2] = SQUARED_LENGTH(ea1, eb0);
+            dists[3] = SQUARED_LENGTH(ea1, eb1);
             dist2_cur = *std::min_element(dists.begin(), dists.end());
-            dFunc = sqrt(dist2_cur) - thickness;
+            dFunc = dist2_cur - thickness* thickness;
+           // dFunc = sqrt(dist2_cur) - thickness;
         }
-
-        T gap = eta * dFunc;
+        T dist_cur = std::sqrt(dist2_cur);
+        T gap = eta * dFunc/(dist_cur + thickness);
         T toc = 0.0;
         int itr = 0;
         while (true)
         {
-            T toc_lower_bound = (1 - eta) * dFunc / max_disp_mag;
-            for (int i = 0; i < 3; ++i) {
-                ea0[i] += toc_lower_bound * dea0[i];
-                ea1[i] += toc_lower_bound * dea1[i];
-                eb0[i] += toc_lower_bound * deb0[i];
-                eb1[i] += toc_lower_bound * deb1[i];
-            }
+            T toc_lower_bound = (1 - eta) * dFunc / ((dist_cur + thickness) * max_disp_mag);
+            ACCUMULATE_SUM_WITH_COE(ea0, toc_lower_bound, dea0);
+            ACCUMULATE_SUM_WITH_COE(ea1, toc_lower_bound, dea1);
+            ACCUMULATE_SUM_WITH_COE(eb0, toc_lower_bound, deb0);
+            ACCUMULATE_SUM_WITH_COE(eb1, toc_lower_bound, deb1);
+
             dist2_cur = internal::edgeEdgeDistanceUnclassified(ea0, ea1, eb0, eb1);
-            dFunc = sqrt(dist2_cur) - thickness;
+            dFunc = dist2_cur - thickness * thickness;// sqrt(dist2_cur) - thickness;
             if (dFunc <= 0) {
                 // since we ensured other place that all dist smaller than dHat are positive,
                 // this must be some far away nearly parallel edges
-                SUB(d_a0b0, ea0, eb0);
-                SUB(d_a0b1, ea0, eb1);
-                SUB(d_a1b0, ea1, eb0);
-                SUB(d_a1b1, ea1, eb1);
-                dists[0] = DOT(d_a0b0, d_a0b0);
-                dists[1] = DOT(d_a0b1, d_a0b1);
-                dists[2] = DOT(d_a1b0, d_a1b0);
-                dists[3] = DOT(d_a1b1, d_a1b1);
+                dists[0] = SQUARED_LENGTH(ea0, eb0);
+                dists[1] = SQUARED_LENGTH(ea0, eb1);
+                dists[2] = SQUARED_LENGTH(ea1, eb0);
+                dists[3] = SQUARED_LENGTH(ea1, eb1);
                 dist2_cur = *std::min_element(dists.begin(), dists.end());
-                dFunc = sqrt(dist2_cur) - thickness;
+                dFunc = dist2_cur - thickness * thickness;// sqrt(dist2_cur) - thickness;
             }
-            if ((toc && (dFunc < gap)) || itr > 100) {
+            dist_cur = std::sqrt(dist2_cur);
+
+            if ((toc && (dFunc / (dist_cur + thickness) < gap)) || itr > 200) {
                 break;
             }
             toc += toc_lower_bound;

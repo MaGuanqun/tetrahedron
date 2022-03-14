@@ -156,6 +156,16 @@ dest[2]=0.5*(v0[2]+v0[5]);
 #undef SAME_SIGN
 #define SAME_SIGN(v0,v1) ((v0>0&&v1>0)||(v0<0||v1<0))
 
+#undef ACCUMULATE_SUM_WITH_COE
+#define ACCUMULATE_SUM_WITH_COE(dest,coe,v0)\
+dest[0] += coe* v0[0];\
+dest[1] += coe* v0[1];\
+dest[2] += coe* v0[2];
+
+#undef SQUARED_LENGTH
+#define SQUARED_LENGTH(v0,v1) ((v0[0]-v1[0])*(v0[0]-v1[0])+ (v0[1]-v1[1])*(v0[1]-v1[1]) + (v0[2]-v1[2])*(v0[2]-v1[2]))
+
+
 inline double gaussian(double x, double sigma) {
     return std::exp(-x * x / (2.0 * sigma * sigma));
 
@@ -177,6 +187,19 @@ inline void normalize(double* x) {
 
 #undef DET2X2
 #define DET2X2(a,b,c,d) (a*d-b*c)
+
+inline void countInEveryThread(unsigned int total_thread_num, unsigned int total_num, unsigned int* begin)
+{
+	unsigned int interval1 = total_num / total_thread_num;
+	unsigned int resi1 = total_num % total_thread_num;
+
+	for (unsigned int i = 0; i < resi1; ++i) {
+		begin[i] = interval1 + 1;
+	}
+	for (unsigned int i = resi1; i < total_thread_num; ++i) {
+		begin[i] = interval1;
+	}
+}
 
 inline void arrangeIndex(unsigned int total_thread_num, unsigned int total_num, unsigned int* begin) {
 	unsigned int interval1 = total_num / total_thread_num;

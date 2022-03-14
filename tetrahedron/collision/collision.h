@@ -233,6 +233,21 @@ private:
 	std::vector<std::array<double, 6>*> edge_aabb_collider;
 
 
+	std::vector<std::array<double, 3>*> vertex_for_render;
+	std::vector<std::array<double, 3>*> vertex_position;
+	std::vector<std::array<double, 3>*> triangle_normal_render;
+	std::vector<std::array<double, 3>*> triangle_normal;
+
+	std::vector<std::array<int, 3>*> triangle_indices;
+	std::vector<std::array<int, 3>*> triangle_indices_collider;
+
+
+	std::vector<std::array<double, 3>*> vertex_for_render_collider;
+	std::vector<std::array<double, 3>*> vertex_position_collider;
+	std::vector<std::array<double, 3>*> triangle_normal_render_collider;
+	std::vector<std::array<double, 3>*> triangle_normal_collider;
+
+
 	std::vector<unsigned int*> representative_vertex_num;
 	std::vector<unsigned int*> representative_edge_num;
 
@@ -306,4 +321,15 @@ private:
 
 	void findVertexTriangleInBVH(unsigned int obj_0, unsigned int vertex_index_0, unsigned int obj_1, unsigned int tri_index1);
 	void findEdgeEdgeInBVH(unsigned int obj_0, unsigned int edge_index_0, unsigned int obj_1, unsigned int edge_index_1);
+
+	void vertexTriangleCollisionTime(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index, unsigned int end_pair_index,
+		double& collision_time);
+	void edgeEdgeCollisionTime(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
+		unsigned int end_pair_index, double& collision_time);
+	void vertexColliderTriangleCollisionTime(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
+		unsigned int end_pair_index, double& collision_time);
+	void vertexTriangleColliderCollisionTime(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
+		unsigned int end_pair_index, double& collision_time);
+	void edgeEdgeColliderCollisionTime(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
+		unsigned int end_pair_index, double& collision_time);
 };

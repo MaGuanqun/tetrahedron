@@ -176,7 +176,7 @@ namespace CCD {
             return defaultCase;
         }
 
-        template <class T>
+        template <class T> //squared distance
         inline T pointPointDistance(const T* a, const T* b)
         {
             T vec[3];
@@ -184,7 +184,7 @@ namespace CCD {
             return DOT(vec, vec);
         }
 
-        template <class T>
+        template <class T> //squared distance
         inline T pointEdgeDistance(const T* p, const T* e0, const T* e1)
         {
             T temp0[3], temp1[3], temp2[3];
@@ -195,7 +195,7 @@ namespace CCD {
             return DOT(temp2, temp2) / DOT(temp0, temp0);
         }
 
-        template <class T>
+        template <class T> //squared distance
         inline T pointTriangleDistance(const T* p, const T* t0, const T* t1, const T* t2)
         {
             T temp0[3], temp1[3], temp2[3];
