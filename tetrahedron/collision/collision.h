@@ -238,6 +238,10 @@ private:
 	std::vector<std::array<double, 3>*> triangle_normal_render;
 	std::vector<std::array<double, 3>*> triangle_normal;
 
+	std::vector<std::array<double, 3>*> triangle_normal_not_normalized;
+	std::vector<std::array<double, 3>*> triangle_normal_render_not_normalized;
+	std::vector<std::array<double, 3>*> cross_for_approx_CCD;
+
 	std::vector<std::array<int, 3>*> triangle_indices;
 	std::vector<std::array<int, 3>*> triangle_indices_collider;
 
@@ -246,6 +250,10 @@ private:
 	std::vector<std::array<double, 3>*> vertex_position_collider;
 	std::vector<std::array<double, 3>*> triangle_normal_render_collider;
 	std::vector<std::array<double, 3>*> triangle_normal_collider;
+
+	std::vector<std::array<double, 3>*> triangle_normal_not_normalized_collider;
+	std::vector<std::array<double, 3>*> triangle_normal_render_not_normalized_collider;
+	std::vector<std::array<double, 3>*> cross_for_approx_CCD_collider;
 
 
 	std::vector<unsigned int*> representative_vertex_num;

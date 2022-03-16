@@ -51,6 +51,8 @@ Scene::Scene()
 	//t1 = clock();
 	//std::cout << "multi thread " << (t1 - t) / 1 << std::endl;
 	//compareArray();
+
+	std::cout << cbrt(-27.0) << " " << cbrt(27.0) << std::endl;
 }
 
 

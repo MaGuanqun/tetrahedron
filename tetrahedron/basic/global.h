@@ -31,7 +31,7 @@ const int SCR_WIDTH = 1920;
 const int SCR_HEIGHT = 1080;
 
 #undef M_PI
-#define M_PI 3.141592653589793
+#define M_PI 3.14159265358979323846
 
 const double sphere_radius = 0.25;
 

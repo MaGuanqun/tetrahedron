@@ -124,11 +124,11 @@ void DrawCulling::move(unsigned int obj_No, double* displacement)
 	this->displacement = displacement;
 	thread->assignTask(this, MOVE_OBJECT,obj_No);
 
-	//SUM_(total_displacement[obj_No], displacement);
-	//std::cout << "======" << std::endl;
-	//for (unsigned int i = 0; i < total_obj_num; ++i) {
-	//	std::cout << total_displacement[i][0] << ", " << total_displacement[i][1] << ", " << total_displacement[i][2] << std::endl;
-	//}
+	SUM_(total_displacement[obj_No], displacement);
+	std::cout << "======" << std::endl;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		std::cout << total_displacement[i][0] << ", " << total_displacement[i][1] << ", " << total_displacement[i][2] << std::endl;
+	}
 }
 
 void DrawCulling::moveScript(unsigned int type)
