@@ -1,6 +1,6 @@
 #pragma once
-#include<vector>
 #define NOMINMAX
+#include"root_finder.h"
 #include"rootparitycollisiontest.h"
 #include"TightCCD.h"
 
@@ -13,8 +13,33 @@ public:
 	bool edgeEdgeCollisionTime(double& t, double* current_edge_vertex_0, double* current_edge_vertex_1, double* initial_edge_vertex_0, double* initial_edge_vertex_1,
 		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0,
 		double* initial_compare_edge_vertex_1, double tolerance_2);
+	bool VertexTriangleCollisionTime(double& t, double* initial_position, double* current_position,
+		double* initial_triangle_1, double* current_triangle_1, double* initial_triangle_2, double* current_triangle_2, double* initial_triangle_3, double* current_triangle_3,
+		double eta);
+
 	void test();
 private:
+
+	struct TimeInterval
+	{
+		double l, u;
+		TimeInterval(double tl, double tu) : l(tl), u(tu)
+		{
+			if (l > u) std::swap(l, u);
+			l = myMax(1, 0.0);
+			u = myMin(u, 1.0);
+		}
+		TimeInterval() : l(0), u(0) {}
+
+		// Returns whether or not the intersection of the intervals is nonempty
+		static bool overlap(const TimeInterval& t1, const TimeInterval& t2);
+		static bool overlap(const std::vector<TimeInterval>& intervals);
+
+		// Returns the intersection of the intervals **asuming the intersection is nonempty**
+		static TimeInterval intersect(const std::vector<TimeInterval>& intervals);
+	};
+
+
 	bool solveEquation(double& t0, double& t1, double& t2, double a3, double a2, double a1, double d);
 	bool solveQuadraticEquation(double& t0, double& t1, double a2, double a1, double a0);
 	bool pointEdgeCollisionTime(double& t, double* u, double* u0, double* u1, double* e_1_0,
@@ -39,6 +64,12 @@ private:
 		double* u_0, double* initial_triangle_1, double* u_1, double* initial_triangle_2, double* u_2);
 	void testEdgeInsideOutside(double t, double* initial_pos_0_0, double* u_0_0, double* initial_pos_0_1,
 		double* u_0_1, double* initial_triangle_1_0, double* u_1_0, double* initial_triangle_1_1, double* u_1_1);
+
+	void planePoly3D(double* x10, double* x20, double* x30, double* v10, double* v20, double* v30,
+		std::vector<TimeInterval>& result);
+	void checkInterval(double t1, double t2, double* op, int degree, std::vector<TimeInterval>& intervals, bool pos);
+	void findIntervals(double* op, unsigned int n, std::vector<TimeInterval>& intervals, bool pos);
+	int getQuadRoots(double a, double b, double c, double& t0, double& t1);
 };
 
 

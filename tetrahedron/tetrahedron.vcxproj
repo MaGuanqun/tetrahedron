@@ -162,6 +162,7 @@
     <ClCompile Include="collision\collision_constraint.cpp" />
     <ClCompile Include="collision\drawCulling.cpp" />
     <ClCompile Include="collision\expansion.cpp" />
+    <ClCompile Include="collision\root_finder.cpp" />
     <ClCompile Include="collision\TightCCD.cpp" />
     <ClCompile Include="collision\interval.cpp" />
     <ClCompile Include="collision\parallel_radix_sort.cpp" />
@@ -219,6 +220,7 @@
     <ClInclude Include="collision\drawCulling.h" />
     <ClInclude Include="collision\floating.h" />
     <ClInclude Include="collision\primitive_distance.h" />
+    <ClInclude Include="collision\root_finder.h" />
     <ClInclude Include="collision\TightCCD.h" />
     <ClInclude Include="collision\parallel_radix_sort.h" />
     <ClInclude Include="collision\predictive_contact.h" />
