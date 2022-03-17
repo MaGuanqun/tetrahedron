@@ -34,6 +34,11 @@ private:
 	bool solveCubicEquation(double a, double b, double c, double d, double& t0, double& t1, double& t2);
 	void sortABC(double& a, double& b, double& c);
 	void cubicsolve(const double& a, const double& b, const double& c, const double& d, double& x1, double& x2, double& x3);
+
+	void testInsideOutside(double t, double* initial_pos, double* u, double* initial_triangle_0,
+		double* u_0, double* initial_triangle_1, double* u_1, double* initial_triangle_2, double* u_2);
+	void testEdgeInsideOutside(double t, double* initial_pos_0_0, double* u_0_0, double* initial_pos_0_1,
+		double* u_0_1, double* initial_triangle_1_0, double* u_1_0, double* initial_triangle_1_1, double* u_1_1);
 };
 
 

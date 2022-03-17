@@ -936,18 +936,18 @@ void Collision::collisionCulling()
 {
 	time_t t = clock();
 	time_t t1 = clock();
-	t = clock();
-	for (unsigned int i = 0; i < 100; ++i) {
+//	t = clock();
+//	for (unsigned int i = 0; i < 100; ++i) {
 	getAABB();
 	//std::cout << "end here " << std::endl;
 	getSceneAABB();
 	//std::cout << "end here 2 " << std::endl;
-	}
-	t1 = clock();
-	std::cout << "AABB " << t1 - t << std::endl;
+//	}
+	//t1 = clock();
+	//std::cout << "AABB " << t1 - t << std::endl;
 
 
-	buildBVH();
+	//buildBVH();
 
 	spatial_hashing.buildSpatialHashing(scene_aabb);
 
@@ -979,7 +979,7 @@ void Collision::collisionCulling()
 	//}
 	//testIfSPRight();
 
-	testRepeatability();
+	//testRepeatability();
 
 
 	//testCulling();

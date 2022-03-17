@@ -40,45 +40,47 @@ bool ApproxCCD::pointTriangleCollisionTime(double& t, double* initial_position, 
 
 	std::vector<double>time;
 	time.reserve(7);
-
-	std::cout << "equation coeff " << a3 << " " << a2 << " " << a1 << " " << d << std::endl;
-
 	double t0 = 2.0; double t1 = 2.0; double t2 = 2.0;
+	bool is_collide = false;
 
-	if (d<NEAR_ZERO2 && d>-NEAR_ZERO2
-		&& a3>-NEAR_ZERO2 && a3<NEAR_ZERO2 
-		&& a2 > -NEAR_ZERO2 && a2<NEAR_ZERO2
-		&& a1 > -NEAR_ZERO2 && a1 < NEAR_ZERO2) {
-		double e_[3];
-		SUB(e_, initial_triangle_1, initial_triangle_0);
-		if (pointEdgeCollisionTime(t, u, u_0, u_1, e_, e_0, e_1, tolerance_2)) {
-			time.push_back(t);
+	if(a3 > -NEAR_ZERO && a3<NEAR_ZERO
+		&& a2 > -NEAR_ZERO && a2<NEAR_ZERO
+		&& a1 > -NEAR_ZERO && a1 < NEAR_ZERO){
+		if (d<NEAR_ZERO && d>-NEAR_ZERO) {
+			double e_[3];
+			SUB(e_, initial_triangle_1, initial_triangle_0);
+			if (pointEdgeCollisionTime(t, u, u_0, u_1, e_, e_0, e_1, tolerance_2)) {
+				time.push_back(t);
+			}
+			SUB(e_, initial_triangle_2, initial_triangle_1);
+			if (pointEdgeCollisionTime(t, u, u_1, u_2, e_, e_1, e_2, tolerance_2)) {
+				time.push_back(t);
+			}
+			SUB(e_, initial_triangle_2, initial_triangle_0);
+			if (pointEdgeCollisionTime(t, u, u_0, u_2, e_, e_0, e_2, tolerance_2)) {
+				time.push_back(t);
+			}
+			if (pointPointCollisionTime(t, e_0, u_0, u, tolerance_2)) {
+				time.push_back(t);
+			}
+			if (pointPointCollisionTime(t, e_1, u_1, u, tolerance_2)) {
+				time.push_back(t);
+			}
+			if (pointPointCollisionTime(t, e_2, u_2, u, tolerance_2)) {
+				time.push_back(t);
+			}
+			//double e_0_1[3], e_1_2[3], e_2_0[3];
+			//CROSS(e_0_1, e_0, e_1);
+			//CROSS(e_1_2, e_1, e_2);
+			//CROSS(e_2_0, e_2, e_0);
+			//if (DOT(e_0_1, e_1_2) > 0 && DOT(e_1_2, e_2_0) > 0 && DOT(e_0_1, e_2_0) > 0) {
+			//	t = 0;
+			//	return true;
+			//}		
 		}
-		SUB(e_, initial_triangle_2, initial_triangle_1);
-		if (pointEdgeCollisionTime(t, u, u_1, u_2, e_, e_1, e_2, tolerance_2)) {
-			time.push_back(t);
+		else {
+			is_collide = false;
 		}
-		SUB(e_, initial_triangle_2, initial_triangle_0);
-		if (pointEdgeCollisionTime(t, u, u_0, u_2, e_, e_0, e_2, tolerance_2)) {
-			time.push_back(t);
-		}
-		if (pointPointCollisionTime(t, e_0, u_0, u, tolerance_2)) {
-			time.push_back(t);
-		}
-		if (pointPointCollisionTime(t, e_1, u_1, u, tolerance_2)) {
-			time.push_back(t);
-		}
-		if (pointPointCollisionTime(t, e_2, u_2, u, tolerance_2)) {
-			time.push_back(t);
-		}
-		//double e_0_1[3], e_1_2[3], e_2_0[3];
-		//CROSS(e_0_1, e_0, e_1);
-		//CROSS(e_1_2, e_1, e_2);
-		//CROSS(e_2_0, e_2, e_0);
-		//if (DOT(e_0_1, e_1_2) > 0 && DOT(e_1_2, e_2_0) > 0 && DOT(e_0_1, e_2_0) > 0) {
-		//	t = 0;
-		//	return true;
-		//}		
 	}
 	else {
 		if (solveEquation(t0, t1, t2, a3, a2, a1, d)) {
@@ -108,41 +110,47 @@ bool ApproxCCD::pointTriangleCollisionTime(double& t, double* initial_position, 
 		}
 	}
 
-	if (time.empty()) {
-		return false;
-	}
-	t = time[0];
-	for (int i = 1; i < time.size(); ++i) {
-		if (t > time[i]) {
-			t = time[i];
+
+
+	if (!time.empty()) {
+		t = time[0];
+		for (int i = 1; i < time.size(); ++i) {
+			if (t > time[i]) {
+				t = time[i];
+			}
 		}
+		t *= 0.8;
+
+		is_collide = true;
 	}
-	return true;
-	//double test0[3];
-	//SUB(test0, current_position, current_triangle_0);
-	//double te= DOT(test0, current_normal_not_normalized);
-	//if (te * d > 0) {
-	//	std::cout << "test wrong " << std::endl;
-	//}
-	//if (t < 1e-4) {
-	//	std::cout <<"coef "<< a3 << " " << a2 << " " << a1 << " " << d << std::endl;
-	//}
+	
+
 	//We add an extral collision test for CCD 
-	//Vec3d initial_pos_a = Vec3d(initial_position[0], initial_position[1], initial_position[2]);
-	//Vec3d current_pos_a = Vec3d(current_position[0], current_position[1], current_position[2]);
-	//Vec3d initial_triangle_0_a = Vec3d(initial_triangle_0[0], initial_triangle_0[1], initial_triangle_0[2]);
-	//Vec3d initial_triangle_1_a = Vec3d(initial_triangle_1[0], initial_triangle_1[1], initial_triangle_1[2]);
-	//Vec3d initial_triangle_2_a = Vec3d(initial_triangle_2[0], initial_triangle_2[1], initial_triangle_2[2]);
-	//Vec3d current_triangle_0_a = Vec3d(current_triangle_0[0], current_triangle_0[1], current_triangle_0[2]);
-	//Vec3d current_triangle_1_a = Vec3d(current_triangle_1[0], current_triangle_1[1], current_triangle_1[2]);
-	//Vec3d current_triangle_2_a = Vec3d(current_triangle_2[0], current_triangle_2[1], current_triangle_2[2]);
-	//rootparity::RootParityCollisionTest root_parity(initial_pos_a, initial_triangle_0_a, initial_triangle_1_a, initial_triangle_2_a,
-	//			current_pos_a, current_triangle_0_a, current_triangle_1_a, current_triangle_2_a,false);
-	//if (root_parity.point_triangle_collision())
-	//{
-	//	return true;
-	//}
-	//return false;	
+	Vec3d initial_pos_a = Vec3d(initial_position[0], initial_position[1], initial_position[2]);
+	Vec3d current_pos_a = Vec3d(current_position[0], current_position[1], current_position[2]);
+	Vec3d initial_triangle_0_a = Vec3d(initial_triangle_0[0], initial_triangle_0[1], initial_triangle_0[2]);
+	Vec3d initial_triangle_1_a = Vec3d(initial_triangle_1[0], initial_triangle_1[1], initial_triangle_1[2]);
+	Vec3d initial_triangle_2_a = Vec3d(initial_triangle_2[0], initial_triangle_2[1], initial_triangle_2[2]);
+	Vec3d current_triangle_0_a = Vec3d(current_triangle_0[0], current_triangle_0[1], current_triangle_0[2]);
+	Vec3d current_triangle_1_a = Vec3d(current_triangle_1[0], current_triangle_1[1], current_triangle_1[2]);
+	Vec3d current_triangle_2_a = Vec3d(current_triangle_2[0], current_triangle_2[1], current_triangle_2[2]);
+	rootparity::RootParityCollisionTest root_parity(initial_pos_a, initial_triangle_0_a, initial_triangle_1_a, initial_triangle_2_a,
+				current_pos_a, current_triangle_0_a, current_triangle_1_a, current_triangle_2_a,false);
+	if (root_parity.point_triangle_collision())
+	{
+		if (!is_collide) {
+			std::cout << "PT actually collide but does not test out " << std::endl;
+			std::cout << "vt not equation coeff " << a3 << " " << a2 << " " << a1 << " " << d << std::endl;
+		}
+	}	
+	testInsideOutside(t, initial_position, u, initial_triangle_0, u_0, initial_triangle_1, u_1, initial_triangle_2, u_2);
+
+
+	if (is_collide) {
+		std::cout << "vt equation coeff " << a3 << " " << a2 << " " << a1 << " " << d << std::endl;
+	}
+
+	return is_collide;
 }
 
 
@@ -207,86 +215,92 @@ bool ApproxCCD::edgeEdgeCollisionTime(double& t, double* current_edge_vertex_0, 
 	SUB(u_1_0, current_compare_edge_vertex_0, initial_compare_edge_vertex_0);
 	SUB(u_1_1, current_compare_edge_vertex_1, initial_compare_edge_vertex_1);
 
+	bool is_collide = false;
 
-	if (d<NEAR_ZERO && d>-NEAR_ZERO
-		&& a3 > -NEAR_ZERO && a3<NEAR_ZERO
+
+	if (a3 > -NEAR_ZERO && a3<NEAR_ZERO
 		&& a2 > -NEAR_ZERO && a2<NEAR_ZERO
-		&& a1 > -NEAR_ZERO && a1 < NEAR_ZERO) { //the twos edge always coplanar
+		&& a1 > -NEAR_ZERO && a1 < NEAR_ZERO) {
+		if (d<NEAR_ZERO && d>-NEAR_ZERO) { //the twos edge always coplanar
+			double v_0[3], v_1[3];
+			//initial_edge_vertex_0
+			SUB(v_0, initial_edge_vertex_0, initial_compare_edge_vertex_0);
+			SUB(v_1, initial_edge_vertex_0, initial_compare_edge_vertex_1);
+			if (pointEdgeCollisionTime(t, u_0_0, u_1_0, u_1_1, d_c, v_0, v_1, tolerance_2)) {
+				time.push_back(t);
+			}
+			if (pointPointCollisionTime(t, v_0, u_1_0, u_0_0, tolerance_2)) {
+				time.push_back(t);
+			}
+			if (pointPointCollisionTime(t, v_1, u_1_1, u_0_0, tolerance_2)) {
+				time.push_back(t);
+			}
 
-		double v_0[3], v_1[3];
-		//initial_edge_vertex_0
-		SUB(v_0, initial_edge_vertex_0, initial_compare_edge_vertex_0);
-		SUB(v_1, initial_edge_vertex_0, initial_compare_edge_vertex_1);
-		if (pointEdgeCollisionTime(t, u_0_0, u_1_0, u_1_1, d_c, v_0, v_1, tolerance_2)) {
-			time.push_back(t);
+			//initial_edge_vertex_1
+			SUB(v_0, initial_edge_vertex_1, initial_compare_edge_vertex_0);
+			SUB(v_1, initial_edge_vertex_1, initial_compare_edge_vertex_1);
+			if (pointEdgeCollisionTime(t, u_0_1, u_1_0, u_1_1, d_c, v_0, v_1, tolerance_2)) {
+				time.push_back(t);
+			}
+			if (pointPointCollisionTime(t, v_0, u_1_0, u_0_1, tolerance_2)) {
+				time.push_back(t);
+			}
+			if (pointPointCollisionTime(t, v_1, u_1_1, u_0_1, tolerance_2)) {
+				time.push_back(t);
+			}
+
+			//initial_compare_edge_vertex_0
+			SUB(v_0, initial_compare_edge_vertex_0, initial_edge_vertex_0);
+			SUB(v_1, initial_compare_edge_vertex_0, initial_edge_vertex_1);
+			if (pointEdgeCollisionTime(t, u_1_0, u_0_0, u_0_1, e1, v_0, v_1, tolerance_2)) {
+				time.push_back(t);
+			}
+			//initial_compare_edge_vertex_1
+			SUB(v_0, initial_compare_edge_vertex_1, initial_edge_vertex_0);
+			SUB(v_1, initial_compare_edge_vertex_1, initial_edge_vertex_1);
+			if (pointEdgeCollisionTime(t, u_1_1, u_0_0, u_0_1, e1, v_0, v_1, tolerance_2)) {
+				time.push_back(t);
+			}
+			////check when t=0,the two edges are coplanar if the two edges are collide
+			//double e_temp0[3], compare_direction0[3], compare_direction1[3];
+			//SUB(e_temp0, initial_compare_edge_vertex_0, initial_edge_vertex_1);//c-b		
+			//CROSS(compare_direction0, d_c, e_temp0);
+			//CROSS(compare_direction1, d_c, e2);
+			//double d2 = DOT(compare_direction0, compare_direction1);
+			////SUB(e_temp0, initial_compare_edge_vertex_1, initial_edge_vertex_0);//d-a
+			//CROSS(compare_direction0, e1, e0);
+			//CROSS(compare_direction1, e1, e2);
+			//double d1 = DOT(compare_direction0, compare_direction1);		
+			//if ( d1 < 0 && d2<0) { //this means the vertices of one edge is on different sides of the other edge
+			//	t = 0;
+			//	return true;
+			//}
+			//// initial_compare_edge_vertex_0  initial_edge
+			//if (pointEdgeIsClose(e2, e1, tolerance_2)) {
+			//	t = 0;
+			//	return true;
+			//}
+			//// initial_compare_edge_vertex_1  initial_edge
+			//if (pointEdgeIsClose(e0, e1, tolerance_2)) {
+			//	t = 0;
+			//	return true;
+			//}
+			////initial_edge_vertex_0 initial_compare_edge
+			//SUB(e_temp0, initial_edge_vertex_0, initial_compare_edge_vertex_0);//a-c
+			//if (pointEdgeIsClose(e_temp0, d_c, tolerance_2)) {
+			//	t = 0;
+			//	return true;
+			//}
+			//SUB(e_temp0, initial_edge_vertex_1, initial_compare_edge_vertex_0);//b-c
+			//if (pointEdgeIsClose(e_temp0, d_c, tolerance_2)) {
+			//	t = 0;
+			//	return true;
+			//}
 		}
-		if (pointPointCollisionTime(t, v_0, u_1_0, u_0_0, tolerance_2)) {
-			time.push_back(t);
-		}
-		if (pointPointCollisionTime(t, v_1, u_1_1, u_0_0, tolerance_2)) {
-			time.push_back(t);
+		else {
+			is_collide = false;
 		}
 
-		//initial_edge_vertex_1
-		SUB(v_0, initial_edge_vertex_1, initial_compare_edge_vertex_0);
-		SUB(v_1, initial_edge_vertex_1, initial_compare_edge_vertex_1);
-		if (pointEdgeCollisionTime(t, u_0_1, u_1_0, u_1_1, d_c, v_0, v_1, tolerance_2)) {
-			time.push_back(t);
-		}
-		if (pointPointCollisionTime(t, v_0, u_1_0, u_0_1, tolerance_2)) {
-			time.push_back(t);
-		}
-		if (pointPointCollisionTime(t, v_1, u_1_1, u_0_1, tolerance_2)) {
-			time.push_back(t);
-		}
-
-		//initial_compare_edge_vertex_0
-		SUB(v_0, initial_compare_edge_vertex_0, initial_edge_vertex_0);
-		SUB(v_1, initial_compare_edge_vertex_0, initial_edge_vertex_1);
-		if (pointEdgeCollisionTime(t, u_1_0, u_0_0, u_0_1, e1, v_0, v_1, tolerance_2)) {
-			time.push_back(t);
-		}
-		//initial_compare_edge_vertex_1
-		SUB(v_0, initial_compare_edge_vertex_1, initial_edge_vertex_0);
-		SUB(v_1, initial_compare_edge_vertex_1, initial_edge_vertex_1);
-		if (pointEdgeCollisionTime(t, u_1_1, u_0_0, u_0_1, e1, v_0, v_1, tolerance_2)) {
-			time.push_back(t);
-		}
-		////check when t=0,the two edges are coplanar if the two edges are collide
-		//double e_temp0[3], compare_direction0[3], compare_direction1[3];
-		//SUB(e_temp0, initial_compare_edge_vertex_0, initial_edge_vertex_1);//c-b		
-		//CROSS(compare_direction0, d_c, e_temp0);
-		//CROSS(compare_direction1, d_c, e2);
-		//double d2 = DOT(compare_direction0, compare_direction1);
-		////SUB(e_temp0, initial_compare_edge_vertex_1, initial_edge_vertex_0);//d-a
-		//CROSS(compare_direction0, e1, e0);
-		//CROSS(compare_direction1, e1, e2);
-		//double d1 = DOT(compare_direction0, compare_direction1);		
-		//if ( d1 < 0 && d2<0) { //this means the vertices of one edge is on different sides of the other edge
-		//	t = 0;
-		//	return true;
-		//}
-		//// initial_compare_edge_vertex_0  initial_edge
-		//if (pointEdgeIsClose(e2, e1, tolerance_2)) {
-		//	t = 0;
-		//	return true;
-		//}
-		//// initial_compare_edge_vertex_1  initial_edge
-		//if (pointEdgeIsClose(e0, e1, tolerance_2)) {
-		//	t = 0;
-		//	return true;
-		//}
-		////initial_edge_vertex_0 initial_compare_edge
-		//SUB(e_temp0, initial_edge_vertex_0, initial_compare_edge_vertex_0);//a-c
-		//if (pointEdgeIsClose(e_temp0, d_c, tolerance_2)) {
-		//	t = 0;
-		//	return true;
-		//}
-		//SUB(e_temp0, initial_edge_vertex_1, initial_compare_edge_vertex_0);//b-c
-		//if (pointEdgeIsClose(e_temp0, d_c, tolerance_2)) {
-		//	t = 0;
-		//	return true;
-		//}
 	}
 	else {
 		double t0 = 2.0; double t1 = 2.0; double t2 = 2.0;
@@ -336,33 +350,45 @@ bool ApproxCCD::edgeEdgeCollisionTime(double& t, double* current_edge_vertex_0, 
 			//}
 		}
 	}
-	if (time.empty()) {
-		return false;
+
+	
+
+	if (!time.empty()) {
+		t = time[0];
+		for (int i = 1; i < time.size(); ++i) {
+			if (t > time[i]) {
+				t = time[i];
+			}
+		}
+		t *= 0.8;
+		is_collide = true;
 	}
-	t = time[0];
-	for (int i = 1; i < time.size(); ++i) {
-		if (t > time[i]) {
-			t = time[i];
+
+	Vec3d initial_edge_0 = Vec3d(initial_edge_vertex_0[0], initial_edge_vertex_0[1], initial_edge_vertex_0[2]);
+	Vec3d current_edge_0 = Vec3d(current_edge_vertex_0[0], current_edge_vertex_0[1], current_edge_vertex_0[2]);
+	Vec3d initial_edge_1 = Vec3d(initial_edge_vertex_1[0], initial_edge_vertex_1[1], initial_edge_vertex_1[2]);
+	Vec3d current_edge_1 = Vec3d(current_edge_vertex_1[0], current_edge_vertex_1[1], current_edge_vertex_1[2]);
+	Vec3d initial_comapre_edge_0 = Vec3d(initial_compare_edge_vertex_0[0], initial_compare_edge_vertex_0[1], initial_compare_edge_vertex_0[2]);
+	Vec3d current_comapre_edge_0 = Vec3d(current_compare_edge_vertex_0[0], current_compare_edge_vertex_0[1], current_compare_edge_vertex_0[2]);
+	Vec3d initial_comapre_edge_1 = Vec3d(initial_compare_edge_vertex_1[0], initial_compare_edge_vertex_1[1], initial_compare_edge_vertex_1[2]);
+	Vec3d current_comapre_edge_1 = Vec3d(current_compare_edge_vertex_1[0], current_compare_edge_vertex_1[1], current_compare_edge_vertex_1[2]);
+	rootparity::RootParityCollisionTest root_parity(initial_edge_0, initial_edge_1, initial_comapre_edge_0, initial_comapre_edge_1,
+		current_edge_0, current_edge_1, current_comapre_edge_0, current_comapre_edge_1, true);
+	if (root_parity.edge_edge_collision())
+	{
+		if (!is_collide) {
+			std::cout << "EE actually collide but does not test out " << std::endl;
+			std::cout << "ee not equation coeff " << a3 << " " << a2 << " " << a1 << " " << d << std::endl;
 		}
 	}
-	return true;
 
-	//Vec3d initial_edge_0 = Vec3d(initial_edge_vertex_0[0], initial_edge_vertex_0[1], initial_edge_vertex_0[2]);
-	//Vec3d current_edge_0 = Vec3d(current_edge_vertex_0[0], current_edge_vertex_0[1], current_edge_vertex_0[2]);
-	//Vec3d initial_edge_1 = Vec3d(initial_edge_vertex_1[0], initial_edge_vertex_1[1], initial_edge_vertex_1[2]);
-	//Vec3d current_edge_1 = Vec3d(current_edge_vertex_1[0], current_edge_vertex_1[1], current_edge_vertex_1[2]);
-	//Vec3d initial_comapre_edge_0 = Vec3d(initial_compare_edge_vertex_0[0], initial_compare_edge_vertex_0[1], initial_compare_edge_vertex_0[2]);
-	//Vec3d current_comapre_edge_0 = Vec3d(current_compare_edge_vertex_0[0], current_compare_edge_vertex_0[1], current_compare_edge_vertex_0[2]);
-	//Vec3d initial_comapre_edge_1 = Vec3d(initial_compare_edge_vertex_1[0], initial_compare_edge_vertex_1[1], initial_compare_edge_vertex_1[2]);
-	//Vec3d current_comapre_edge_1 = Vec3d(current_compare_edge_vertex_1[0], current_compare_edge_vertex_1[1], current_compare_edge_vertex_1[2]);
-	//rootparity::RootParityCollisionTest root_parity(initial_edge_0, initial_edge_1, initial_comapre_edge_0, initial_comapre_edge_1,
-	//	current_edge_0, current_edge_1, current_comapre_edge_0, current_comapre_edge_1, true);
-	//if (root_parity.edge_edge_collision())
-	//{
-	//	return true;
+	testEdgeInsideOutside(t, initial_edge_vertex_0, u_0_0, initial_edge_vertex_1, u_0_1, initial_compare_edge_vertex_0, u_1_0, initial_compare_edge_vertex_1, u_1_1);
 
-	//}
-	//return false;
+	if (is_collide) {
+		std::cout << "ee equation coeff " << a3 << " " << a2 << " " << a1 << " " << d << std::endl;
+	}
+
+	return is_collide;
 }
 
 
@@ -893,6 +919,69 @@ bool ApproxCCD::solveQuadraticEquation(double& t0, double& t1, double a2, double
 //log:
 //Here, we first test vertex-edge and vertex-vertex. 
 //
+
+
+
+void ApproxCCD::testInsideOutside(double t, double* initial_pos, double* u, double* initial_triangle_0,
+	double* u_0, double* initial_triangle_1, double* u_1, double* initial_triangle_2, double* u_2)
+{
+	double result_v[3];
+	double result_p0[3];
+	double result_p1[3];
+	double result_p2[3];
+	POINT_ON_EDGE(result_v, 1.0, t, initial_pos, u);
+	POINT_ON_EDGE(result_p0, 1.0, t, initial_triangle_0, u_0);
+	POINT_ON_EDGE(result_p1, 1.0, t, initial_triangle_1, u_1);
+	POINT_ON_EDGE(result_p2, 1.0, t, initial_triangle_2, u_2);
+	double e_result1[3], e_result2[3];
+	SUB(e_result1, result_v, result_p0);
+	SUB(e_result2, result_p1, result_p2);
+	double norm_result[3];
+	CROSS(norm_result, e_result1, e_result2);
+	SUB(e_result1, initial_pos, initial_triangle_0);
+	SUB(e_result2, initial_triangle_1, initial_triangle_2);
+	double norm_initial[3];
+	CROSS(norm_initial, e_result1, e_result2);
+	double e_result[3];
+	SUB(e_result, result_v, result_p1);
+	double e_initial[3];
+	SUB(e_initial, initial_pos, initial_triangle_1);	
+	if (DOT(e_initial, norm_initial) * DOT(e_result, norm_result) < 0) {
+		std::cout << "vt side indicate " << DOT(e_initial, norm_initial) << " " << DOT(e_result, norm_result) << " " << DOT(norm_result, norm_result) << std::endl;
+		std::cout << "vt side has changed " << std::endl;
+	}
+}
+
+void ApproxCCD::testEdgeInsideOutside(double t, double* initial_pos_0_0, double* u_0_0, double* initial_pos_0_1,
+	double* u_0_1, double* initial_triangle_1_0, double* u_1_0, double* initial_triangle_1_1, double* u_1_1)
+{
+	double result_v[3];
+	double result_p0[3];
+	double result_p1[3];
+	double result_p2[3];
+	POINT_ON_EDGE(result_v, 1.0, t, initial_pos_0_0, u_0_0);
+	POINT_ON_EDGE(result_p0, 1.0, t, initial_pos_0_1, u_0_1);
+	POINT_ON_EDGE(result_p1, 1.0, t, initial_triangle_1_0, u_1_0);
+	POINT_ON_EDGE(result_p2, 1.0, t, initial_triangle_1_1, u_1_1);
+	double e_result1[3], e_result2[3];
+	SUB(e_result1, result_v, result_p0);
+	SUB(e_result2, result_p1, result_p2);
+	double norm_result[3];
+	CROSS(norm_result, e_result1, e_result2);
+	SUB(e_result1, initial_pos_0_0, initial_pos_0_1);
+	SUB(e_result2, initial_triangle_1_0, initial_triangle_1_1);
+	double norm_initial[3];
+	CROSS(norm_initial, e_result1, e_result2);
+	double e_result[3];
+	SUB(e_result, result_v, result_p1);
+	double e_initial[3];
+	SUB(e_initial, initial_pos_0_0, initial_triangle_1_0);	
+	if (DOT(e_initial, norm_initial) * DOT(e_result, norm_result) < 0) {
+		std::cout << "ee side indicate " << DOT(e_initial, norm_initial) << " " << DOT(e_result, norm_result) << " " << DOT(norm_result, norm_result) << std::endl;
+		std::cout << "ee side has changed " << std::endl;
+	}
+}
+
 
 //edge-edge
 void ApproxCCD::test()

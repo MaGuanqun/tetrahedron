@@ -432,26 +432,26 @@ void SpatialHashing::buildSpatialHashing(double* scene_aabb)
 	time_t t = clock();
 	time_t t1 = clock();
 
-	t = clock();
+	//t = clock();
 
 	thread->assignTask(this, TRIANGLE_HASHING_SMALLER_HASH_TABLE);
 	recordNonEmptyCell();
 	
-	t1 = clock();
-	std::cout << "record nonemoty cell " << t1 - t << std::endl;
+	//t1 = clock();
+	//std::cout << "record nonemoty cell " << t1 - t << std::endl;
 
 
 
 
-	t = clock();
+	//t = clock();
 	//for (unsigned int i = 0; i < 10; ++i) {
 		//use this for loop by cell
 		thread->assignTask(this, FIND_ALL_PAIRS_HASH_TABLE);
 		//use this for loop by element
 		//thread->assignTask(this, FIND_ALL_TRIANGLE_PAIRS_HASH_TABLE_ELEMENTWISE);
 	//}
-	t1 = clock();
-	std::cout << "find all triangle pairs multi thread " << t1 - t << std::endl;
+	//t1 = clock();
+	//std::cout << "find all triangle pairs multi thread " << t1 - t << std::endl;
 
 }
 

@@ -10,6 +10,9 @@ public:
 	void draw(Camera* camera, float& far_plane);
 	void move(unsigned int obj_No, double* displacement);
 	void move(int thread_No, unsigned int obj_No);
+
+	void moveDiffInitialCurrent(int thread_No, unsigned int obj_No);
+
 	void setThreadDataTogether(int thread_No);
 	void setAllTriangle(int thread_No);
 	void drawAABBIntersectBetweenObjects();
@@ -115,6 +118,7 @@ private:
 
 
 	std::vector<std::array<double, 3>> displacement_test;
+	std::vector<std::array<double, 3>> displacement_test_render;
 
 	std::vector<unsigned int>* hash;
 

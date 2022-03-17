@@ -863,6 +863,13 @@ void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 //	updateRenderPositionIPC();
 //	//std::cout << cloth_v[0][1] << std::endl;
 //	//std::cout << "========" << std::endl;
+
+		std::cout << tetrahedron->data()[0].mesh_struct.vertex_for_render[0][0] << " " <<
+			tetrahedron->data()[0].mesh_struct.vertex_for_render[0][1] << " " <<
+			tetrahedron->data()[0].mesh_struct.vertex_for_render[0][2] << std::endl;
+		std::cout << tetrahedron->data()[0].mesh_struct.vertex_position[0][0] << " " <<
+			tetrahedron->data()[0].mesh_struct.vertex_position[0][1] << " " <<
+			tetrahedron->data()[0].mesh_struct.vertex_position[0][2] << std::endl;
 }
 
 

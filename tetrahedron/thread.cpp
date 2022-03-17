@@ -545,6 +545,9 @@ job Thread::create_task(DrawCulling* func, int thread_id, DrawCullingFunc functi
     case SET_DATA_TOGETHER:
         k = job([func, thread_id, key_id]() {func->setThreadDataTogether(thread_id); });
         break;
+    case MOVE_OBJECT2:
+        k = job([func, thread_id, key_id]() {func->moveDiffInitialCurrent(thread_id, key_id); });
+        break;
     }
     return k;
 }
