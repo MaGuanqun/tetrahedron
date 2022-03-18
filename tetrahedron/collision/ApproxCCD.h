@@ -70,6 +70,7 @@ private:
 	void checkInterval(double t1, double t2, double* op, int degree, std::vector<TimeInterval>& intervals, bool pos);
 	void findIntervals(double* op, unsigned int n, std::vector<TimeInterval>& intervals, bool pos);
 	int getQuadRoots(double a, double b, double c, double& t0, double& t1);
+	RootFinder root_finder;
 };
 
 
