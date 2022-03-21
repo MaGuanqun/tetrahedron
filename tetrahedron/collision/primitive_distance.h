@@ -223,7 +223,7 @@ namespace CCD {
             const T* p,
             const T* t0,
             const T* t1,
-            const T* t2)
+            const T* t2) //return squared distance
         {
             switch (pointTriangleDistanceType(p, t0, t1, t2)) {
             case 0:

@@ -1,22 +1,31 @@
 #pragma once
 #define NOMINMAX
 #include"root_finder.h"
+#include"rpoly.h"
 #include"rootparitycollisiontest.h"
 #include"TightCCD.h"
+#include"primitive_distance.h"
 
 class ApproxCCD
 {
 public:	
-	bool pointTriangleCollisionTime(double& t, double* initial_position, double* current_position,
-		double* initial_triangle_0, double* current_triangle_0, double* initial_triangle_1, double* current_triangle_1, double* initial_triangle_2, double* current_triangle_2,
-		double* initial_normal_not_normalized, double* current_normal_not_normalized, double* cross_for_CCD, double tolerance_2);//floating* f_initial_normal, floating* f_current_normal, floating* f_cross_for_CCD, 
+	//bool pointTriangleCollisionTime(double& t, double* initial_position, double* current_position,
+	//	double* initial_triangle_0, double* current_triangle_0, double* initial_triangle_1, double* current_triangle_1, double* initial_triangle_2, double* current_triangle_2,
+	//	double* initial_normal_not_normalized, double* current_normal_not_normalized, double* cross_for_CCD, double tolerance_2);//floating* f_initial_normal, floating* f_current_normal, floating* f_cross_for_CCD, 
+
+	bool edgeEdgeCCD(double& t, double* current_edge_vertex_0, double* current_edge_vertex_1, double* initial_edge_vertex_0, double* initial_edge_vertex_1,
+		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0,
+		double* initial_compare_edge_vertex_1, double conservative_rescaling);
+	bool vertexTriangleCCD(double& t, double* initial_position, double* current_position,
+		double* initial_triangle_1, double* current_triangle_1, double* initial_triangle_2, double* current_triangle_2, double* initial_triangle_3, double* current_triangle_3,
+		double conservative_rescaling);
+
 	bool edgeEdgeCollisionTime(double& t, double* current_edge_vertex_0, double* current_edge_vertex_1, double* initial_edge_vertex_0, double* initial_edge_vertex_1,
 		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0,
 		double* initial_compare_edge_vertex_1, double tolerance_2);
-	bool VertexTriangleCollisionTime(double& t, double* initial_position, double* current_position,
+	bool vertexTriangleCollisionTime(double& t, double* initial_position, double* current_position,
 		double* initial_triangle_1, double* current_triangle_1, double* initial_triangle_2, double* current_triangle_2, double* initial_triangle_3, double* current_triangle_3,
-		double eta);
-
+		double tolerance_2);
 	void test();
 private:
 
@@ -26,7 +35,7 @@ private:
 		TimeInterval(double tl, double tu) : l(tl), u(tu)
 		{
 			if (l > u) std::swap(l, u);
-			l = myMax(1, 0.0);
+			l = myMax(l, 0.0);
 			u = myMin(u, 1.0);
 		}
 		TimeInterval() : l(0), u(0) {}
@@ -69,8 +78,13 @@ private:
 		std::vector<TimeInterval>& result);
 	void checkInterval(double t1, double t2, double* op, int degree, std::vector<TimeInterval>& intervals, bool pos);
 	void findIntervals(double* op, unsigned int n, std::vector<TimeInterval>& intervals, bool pos);
-	int getQuadRoots(double a, double b, double c, double& t0, double& t1);
+	unsigned int getQuadRoots(double a, double b, double c, double& t0, double& t1);
 	RootFinder root_finder;
+	bool couldHaveRoots(double* op, int degree, bool pos);
+	void distancePoly3D(double* x10, double* x20, double* x30, double* v10, double* v20, double* v30, double minDSquared,
+		std::vector<TimeInterval>& result);
+	void barycentricPoly3D(double* x10, double* x20, double* x30, double* v10, double* v20, double* v30,
+		std::vector<TimeInterval>& result);
 };
 
 

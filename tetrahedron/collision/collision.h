@@ -340,4 +340,5 @@ private:
 		unsigned int end_pair_index, double& collision_time);
 	void edgeEdgeColliderCollisionTime(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
 		unsigned int end_pair_index, double& collision_time);
+	double conservative_rescaling;
 };
