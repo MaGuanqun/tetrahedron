@@ -88,6 +88,8 @@ public:
 	DrawCulling draw_culling;
 	void getAABB();
 
+	void findAllVertexVertexEdgePairs(int thread_No);
+
 private:
 
 	unsigned int** vertex_edge_pair;
@@ -129,8 +131,16 @@ private:
 	std::vector<unsigned int> edge_edge_pair_collider_index_start_per_thread;//thread_No, index, respectively
 
 
+	std::vector<unsigned int> vertex_edge_pair_index_start_per_thread;//thread_No, index, respectively
+	std::vector<unsigned int> vertex_obj_edge_collider_pair_index_start_per_thread;//thread_No, index, respectively
+	std::vector<unsigned int> vertex_collider_edge_obj_pair_index_start_per_thread;//thread_No, index, respectively
+	std::vector<unsigned int> vertex_vertex_pair_index_start_per_thread;//thread_No, index, respectively
+	std::vector<unsigned int> vertex_vertex_pair_collider_index_start_per_thread;//thread_No, index, respectively
+
+
 	void setPairIndexEveryThread(unsigned int** pair, std::vector<unsigned int>& pair_index_start_per_thread);
 	void setPairIndexEveryThread();
+	void setVertexVertexEdgePairIndexEveryThread();
 
 	std::vector<double>collision_time_thread;
 
@@ -352,11 +362,17 @@ private:
 
 	void initialPair();
 	void findAllVertexEdgePairs(int thread_No);
+	void findAllVertexVertexPairs(int thread_No);
 
 	void findVertexEdgePair(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
 		unsigned int end_pair_index, CollisionIndicateType type);
 
 	void findVertexVertexPair(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
 		unsigned int end_pair_index, CollisionIndicateType type);
+
+	void vertexVertexCollisionTime(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
+		unsigned int end_pair_index, double& collision_time, CollisionIndicateType type);
+	void vertexEdgeCollisionTime(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
+		unsigned int end_pair_index, double& collision_time, CollisionIndicateType type);
 
 };

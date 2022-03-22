@@ -291,6 +291,9 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     case GLOBAL_COLLISION_TIME:
         k = job([func, thread_id]() {func->collisionTime(thread_id); });
         break;
+    case FIND_VERTEX_VERTEX_VERTEX_EDGE_PAIRS:
+        k = job([func, thread_id]() {func->findAllVertexVertexEdgePairs(thread_id); });
+        break;
     case COLLISION_CONSTRAINT:
         k = job([func, thread_id]() {func->collisionConstraint(thread_id); });
         break;
