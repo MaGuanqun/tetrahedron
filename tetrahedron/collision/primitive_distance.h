@@ -20,25 +20,6 @@ namespace CCD {
             result[1] = (MMT[0] * mVec[1] - MMT[2] * mVec[0]) / dev;
         }
         template <class T>
-        int pointEdgeDistanceType(const T* p,
-            const T* e0,
-            const T* e1)
-        {
-            T e[3], temp[3];
-            SUB(e, e1, e0);
-            SUB(temp, p, e0);
-            T ratio = DOT(e, temp) / DOT(e, e);
-            if (ratio < 0) {
-                return 0; // PP (p-e0)
-            }
-            else if (ratio > 1) {
-                return 1; // PP (p-e1)
-            }
-            else {
-                return 2; // PE
-            }
-        }
-        template <class T>
         int pointTriangleDistanceType(
             const T* p,
             const T* t0,
@@ -194,7 +175,25 @@ namespace CCD {
             SUB(temp0, e1, e0);
             return DOT(temp2, temp2) / DOT(temp0, temp0);
         }
-
+        template <class T>
+        int pointEdgeDistanceType(const T* p,
+            const T* e0,
+            const T* e1)
+        {
+            T e[3], temp[3];
+            SUB(e, e1, e0);
+            SUB(temp, p, e0);
+            T ratio = DOT(e, temp) / DOT(e, e);
+            if (ratio < 0) {
+                return 0; // PP (p-e0)
+            }
+            else if (ratio > 1) {
+                return 1; // PP (p-e1)
+            }
+            else {
+                return 2; // PE
+            }
+        }
         template <class T> //squared distance
         inline T pointTriangleDistance(const T* p, const T* t0, const T* t1, const T* t2)
         {
@@ -217,6 +216,36 @@ namespace CCD {
             T aTb = DOT(temp0, temp2);
             return aTb * aTb / DOT(temp2, temp2);
         }
+
+        template <class T>
+        T pointEdgeDistanceUnclassified(
+            const T* p,
+            const T* e0,
+            const T* e1)
+        {
+            T e[3], temp[3];
+            SUB(e, e1, e0);
+            SUB(temp, p, e0);
+            T ratio = DOT(e, temp);
+            if (ratio <= 0.0) {
+                return pointPointDistance(p,e0); // PP (p-e0)
+            }
+            else
+            {
+                double c2 = DOT(e, e);
+                if (ratio >= c2) {
+                    return pointPointDistance(p, e1); // PP (p-e1)
+                }
+                else {
+                    ratio /= c2;
+                    e[0] = e0[0] + ratio * e[0];
+                    e[1] = e0[1] + ratio * e[1];
+                    e[2] = e0[2] + ratio * e[2];
+                    return pointPointDistance(p, e); // PE
+                }
+            }
+        }
+
 
         template <class T>
         T pointTriangleDistanceUnclassified(

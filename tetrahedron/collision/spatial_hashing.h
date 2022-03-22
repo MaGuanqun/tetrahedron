@@ -35,6 +35,8 @@ public:
 	unsigned int** edge_edge_pair;
 	unsigned int** edge_edge_pair_collider; //first obj, second collider
 
+
+
 	std::vector<unsigned int>hash_value_for_test;
 	double scene_aabb[6];
 

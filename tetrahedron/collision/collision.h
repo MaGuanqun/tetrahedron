@@ -90,6 +90,14 @@ public:
 
 private:
 
+	unsigned int** vertex_edge_pair;
+	unsigned int** vertex_obj_edge_collider_pair;
+	unsigned int** vertex_collider_edge_obj_pair;
+
+	unsigned int** vertex_vertex_pair;
+	unsigned int** vertex_vertex_pair_collider;
+
+
 	unsigned int max_index_number_in_one_cell;
 	unsigned int max_index_number_in_one_cell_collider;
 
@@ -341,4 +349,14 @@ private:
 	void edgeEdgeColliderCollisionTime(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
 		unsigned int end_pair_index, double& collision_time);
 	double conservative_rescaling;
+
+	void initialPair();
+	void findAllVertexEdgePairs(int thread_No);
+
+	void findVertexEdgePair(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
+		unsigned int end_pair_index, CollisionIndicateType type);
+
+	void findVertexVertexPair(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
+		unsigned int end_pair_index, CollisionIndicateType type);
+
 };

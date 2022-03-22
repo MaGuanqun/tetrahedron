@@ -145,10 +145,12 @@ void DrawCulling::moveScript(unsigned int type)
 	}
 	else if (type == 2) {
 		displacement_test_render[0] = { 0, 0, 0 };
-		displacement_test_render[1] = { -0.190714, 0.17638, -0.324351 };
+		//displacement_test_render[1] = { -0.190714, 0.17638, -0.324351 };
+		displacement_test_render[1] = { 0, 0.0, 0.0 };
 
 		displacement_test[0] = { 0, 0, 0 };
-		displacement_test[1] = { -0.191217, 0.176467, -0.316329 };
+		displacement_test[1] = { 0, -0.1, 0 };
+		//displacement_test[1] = { -0.191217, 0.176467, -0.316329 };
 	}
 	else if (type == 3) {
 		double a[3] = { -0.510271, 0.631315, 0.0321853 };

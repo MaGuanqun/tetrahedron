@@ -5,6 +5,7 @@
 #include"rootparitycollisiontest.h"
 #include"TightCCD.h"
 #include"primitive_distance.h"
+#include"CTCD.h"
 
 class ApproxCCD
 {
@@ -19,6 +20,12 @@ public:
 	bool vertexTriangleCCD(double& t, double* initial_position, double* current_position,
 		double* initial_triangle_1, double* current_triangle_1, double* initial_triangle_2, double* current_triangle_2, double* initial_triangle_3, double* current_triangle_3,
 		double conservative_rescaling);
+
+	bool vertexEdgeCCD(double& t, double* q0_initial, double* q1_initial, double* q2_initial,
+		double* q0_current, double* q1_current, double* q2_current, double conservative_rescaling);
+	bool vertexVertexCCD(double& t, double* initial_position, double* current_position,
+		double* initial_position_1, double* current_position_1, double conservative_rescaling);
+
 
 	bool edgeEdgeCollisionTime(double& t, double* current_edge_vertex_0, double* current_edge_vertex_1, double* initial_edge_vertex_0, double* initial_edge_vertex_1,
 		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0,
@@ -69,7 +76,7 @@ private:
 	void sortABC(double& a, double& b, double& c);
 	void cubicsolve(const double& a, const double& b, const double& c, const double& d, double& x1, double& x2, double& x3);
 
-	void testInsideOutside(double t, double* initial_pos, double* u, double* initial_triangle_0,
+	bool testInsideOutside(double t, double* initial_pos, double* u, double* initial_triangle_0,
 		double* u_0, double* initial_triangle_1, double* u_1, double* initial_triangle_2, double* u_2);
 	void testEdgeInsideOutside(double t, double* initial_pos_0_0, double* u_0_0, double* initial_pos_0_1,
 		double* u_0_1, double* initial_triangle_1_0, double* u_1_0, double* initial_triangle_1_1, double* u_1_1);
@@ -84,7 +91,12 @@ private:
 	void distancePoly3D(double* x10, double* x20, double* x30, double* v10, double* v20, double* v30, double minDSquared,
 		std::vector<TimeInterval>& result);
 	void barycentricPoly3D(double* x10, double* x20, double* x30, double* v10, double* v20, double* v30,
-		std::vector<TimeInterval>& result);
+		std::vector<TimeInterval>& result); 
+
+	bool vertexEdgeCollisionTime(double& t, double* q0_initial, double* q1_initial, double* q2_initial,
+		double* q0_current, double* q1_current, double* q2_current, double tolerance_2);
+	bool vertexVertexCollisionTime(double& t, double* initial_position, double* current_position,
+		double* initial_position_1, double* current_position_1, double tolerance_2);
 };
 
 
