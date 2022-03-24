@@ -98,11 +98,26 @@ dest[2]/=value;
 #undef DOT
 #define DOT(v1,v2) (v1[0]*v2[0]+v1[1]*v2[1]+v1[2]*v2[2])
 
+#undef EDGE_LENGTH
+#define EDGE_LENGTH(v1,v2) ((v1[0]-v2[0])*(v1[0]-v2[0])+(v1[1]-v2[1])*(v1[1]-v2[1])+(v1[2]-v2[2])*(v1[2]-v2[2]))
+
+
+
 #undef CROSS
 #define CROSS(dest,v1,v2) \
 dest[0] = v1[1] * v2[2] - v1[2] * v2[1]; \
 dest[1] = v1[2] * v2[0] - v1[0] * v2[2]; \
 dest[2] = v1[0] * v2[1] - v1[1] * v2[0];
+
+
+#undef CROSS_FOUR_POINTS
+#define CROSS_FOUR_POINTS(dest, p00,p01,p10,p11) \
+dest[0] = (p01[1]-p00[1])*(p11[2]-p10[2])- (p01[2]-p00[2])*(p11[1]-p10[1]);\
+dest[1] = (p01[2]-p00[2])*(p11[0]-p10[0])- (p01[0]-p00[0])*(p11[2]-p10[2]);\
+dest[2] = (p01[0]-p00[0])*(p11[1]-p10[1])- (p01[1]-p00[1])*(p11[0]-p10[0]);
+
+
+
 
 #undef SIGN
 #define SIGN(a) (a) > 1e-7 ? 1 : ((a) < -1e-7 ? -1 : 0);
@@ -173,7 +188,7 @@ inline double gaussian(double x, double sigma) {
 
 inline void normalize(double* x) {
     double norm = sqrt(DOT(x, x));
-    if (norm > 1e-10) {
+    if (norm > 1e-15) {
         x[0] /= norm;
         x[1] /= norm;
         x[2] /= norm;

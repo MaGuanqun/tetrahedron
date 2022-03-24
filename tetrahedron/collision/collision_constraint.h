@@ -1,6 +1,8 @@
 #pragma once
 
 #include"../basic/global.h"
+#include"primitive_distance.h"
+
 #include<array>
 
 class CollisionConstraint
@@ -11,6 +13,19 @@ public:
 		double* initial_triangle_normal, double* vertex_target_pos,
 		std::array<double, 3>* triangle_target_pos, double d_hat, double& stiffness,
 		double vertex_mass, double* triangle_mass);
+	bool pointTriangleResponse(double* initial_position, double* current_position,
+		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
+		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+		double* initial_triangle_normal, double* vertex_target_pos,
+		double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
+		double d_hat_2, double& stiffness, double epsilon);
+
+	bool edgeEdgeResponse(double* edge_target_pos_0, double* edge_target_pos_1,
+		double* compare_target_pos_0, double* compare_target_pos_1, double* current_edge_vertex_0, double* current_edge_vertex_1, double* initial_edge_vertex_0, double* initial_edge_vertex_1,
+		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0,
+		double* initial_compare_edge_vertex_1, double d_hat_2, double& stiffness, double epsilon);
+
+
 	bool pointColliderTriangle(double* initial_position, double* current_position,
 		std::vector<double*>& current_triangle_position, double* triangle_normal, double* vertex_target_pos,
 		double d_hat, double& stiffness);
@@ -18,6 +33,23 @@ public:
 		std::vector<std::array<double, 3>>& compare_target_pos, double* current_edge_vertex_0, double* current_edge_vertex_1, double* initial_edge_vertex_0, double* initial_edge_vertex_1,
 		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0,
 		double* initial_compare_edge_vertex_1, double* mass, double d_hat, double& stiffness);
+
+	bool pointTriangleColliderResponse(double* initial_position, double* current_position,
+		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
+		double* initial_triangle_normal, double* vertex_target_pos,
+		double d_hat_2, double& stiffness, double epsilon);
+
+	bool pointColliderTriangleResponse(double* initial_position,
+		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
+		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+		double* initial_triangle_normal,
+		double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
+		double d_hat_2, double& stiffness, double epsilon);
+
+	bool edgeEdgeColliderResponse(double* edge_target_pos_0, double* edge_target_pos_1,
+		double* current_edge_vertex_0, double* current_edge_vertex_1, double* initial_edge_vertex_0, double* initial_edge_vertex_1,
+		double* initial_compare_edge_vertex_0, double* initial_compare_edge_vertex_1, 
+		double d_hat_2, double& stiffness, double epsilon);
 
 	void testPT();
 	void testEE();

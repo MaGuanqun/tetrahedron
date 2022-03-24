@@ -1,7 +1,7 @@
 #pragma once
 #include"../basic/global.h"
 namespace CCD {
-	namespace internal {
+    namespace internal {
         //For a matrix M(2X3)=(basic0,basis1)^T, here to solve MM^Tx=Mvec    
         template <class T>
         void solveSyStem(const T* basis0, const T* basis1, const T* vec, T* result)
@@ -19,6 +19,15 @@ namespace CCD {
             result[0] = (MMT[1] * mVec[0] - MMT[2] * mVec[1]) / dev;
             result[1] = (MMT[0] * mVec[1] - MMT[2] * mVec[0]) / dev;
         }
+
+
+        template <class T>
+        void vertexLineSegmentDistance(int edge_vertex_0, int edge_vertex_1, double* vertex, std::vector<double*>& triangle_position,
+            double* barycentric)
+        {
+
+        }
+
         template <class T>
         int pointTriangleDistanceType(
             const T* p,
@@ -117,7 +126,7 @@ namespace CCD {
                     // if (tN > 0.0 && tN < tD && (u.cross(v).dot(w) == 0.0 || u.cross(v).squaredNorm() == 0.0)) {
                     // std::cout << u.cross(v).squaredNorm() / (a * c) << ": " << sN << " " << D << ", " << tN << " " << tD << std::endl;
                     // avoid coplanar or nearly parallel EE
-                    if (sN < D / 2) {
+                    if (sN < 0.5* D) {
                         tN = e;
                         tD = c;
                         defaultCase = 2;
@@ -202,7 +211,7 @@ namespace CCD {
             SUB(temp1, t2, t0);
             CROSS(temp2, temp0, temp1);
             SUB(temp0, p, t0);
-            T aTb = DOT(temp0, temp2);       
+            T aTb = DOT(temp0, temp2);
             return aTb * aTb / DOT(temp2, temp2);
         }
         template <class T>
@@ -228,7 +237,7 @@ namespace CCD {
             SUB(temp, p, e0);
             T ratio = DOT(e, temp);
             if (ratio <= 0.0) {
-                return pointPointDistance(p,e0); // PP (p-e0)
+                return pointPointDistance(p, e0); // PP (p-e0)
             }
             else
             {
@@ -305,6 +314,93 @@ namespace CCD {
                 return (std::numeric_limits<T>::max)();
             }
         }
-	}
 
+        template <class T>
+        T pointTriangleNearestDistance(
+            const T* p,
+            const T* t0,
+            const T* t1,
+            const T* t2)
+        {
+            T d_2;
+            T barycentric[3];
+            T S[3];
+            SUB(S, p, t0);
+            T E1[3], E2[3], S1[3], S2[3];
+            SUB(E1, t1, t0);
+            SUB(E2, t2, t0);
+            T triangle_normal[3];
+            CROSS(triangle_normal, E1, E2);
+            normalize(triangle_normal);
+
+            CROSS(S1, triangle_normal, E2);
+            CROSS(S2, S, E1);
+            T temp = 1.0 / DOT(S1, E1);
+            d_2 = temp * DOT(S2, E2);
+            d_2 *= d_2;
+            barycentric[1] = temp * DOT(S1, S);
+            barycentric[2] = temp * DOT(S2, triangle_normal);
+            barycentric[0] = 1.0 - barycentric[1] - barycentric[2];
+
+            if (barycentric[0] >= 0.0 && barycentric[1] >= 0.0 && barycentric[2] >= 0.0) {
+                return d_2;
+            }
+            else {
+                d_2 = pointEdgeDistanceUnclassified(p, t0, t1);
+                T d_;
+                d_ = pointEdgeDistanceUnclassified(p, t0, t2);
+                if (d_ < d_2) {
+                    d_2 = d_;
+                }
+                d_ = pointEdgeDistanceUnclassified(p, t1, t2);
+                if (d_ < d_2) {
+                    d_2 = d_;
+                }
+            }
+            return d_2;
+        }
+
+
+        template <class T>
+        T pointTriangleNearestDistance(
+            const T* p,
+            const T* t0,
+            const T* t1,
+            const T* t2,
+            const T* triangle_normal)
+        {
+            T d_2;
+            T barycentric[3];
+            T S[3];
+            SUB(S, p, t0);
+            T E1[3], E2[3], S1[3], S2[3];
+            SUB(E1, t1, t0);
+            SUB(E2, t2, t0);
+            CROSS(S1, triangle_normal, E2);
+            CROSS(S2, S, E1);
+            T temp = 1.0 / DOT(S1, E1);
+            d_2 = temp * DOT(S2, E2);
+            d_2 *= d_2;
+            barycentric[1] = temp * DOT(S1, S);
+            barycentric[2] = temp * DOT(S2, triangle_normal);
+            barycentric[0] = 1.0 - barycentric[1] - barycentric[2];
+
+            if (barycentric[0] > EPSILON && barycentric[1] > EPSILON && barycentric[2] > EPSILON) {
+                return d_2;
+            }
+            else {
+                d_2 = pointEdgeDistanceUnclassified(p, t0, t1);
+                T d_;
+                d_ = pointEdgeDistanceUnclassified(p, t0, t2);
+                if (d_ < d_2) {
+                    d_2 = d_;
+                }
+                d_ = pointEdgeDistanceUnclassified(p, t1, t2);
+                if (d_ < d_2) {
+                    d_2 = d_;
+                }
+            }
+            return d_2;
+        }
+    }
 }

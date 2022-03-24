@@ -11,6 +11,7 @@
 #include"collision_constraint.h"
 #include"CCD.h"
 #include"drawCulling.h"
+#include"primitive_distance.h"
 //#include"mesh_patch.h"
 
 using namespace Eigen;
@@ -43,7 +44,7 @@ public:
 		std::vector<std::vector<std::array<double, 3>>>b_sum; // add on the b vector in projectDynamic.cpp
 		std::vector<std::vector<double>>stiffness;//add on the system matrix
 		std::vector<double>collision_energy;
-		bool** need_update;//to indicate if that item is nonzeor(used)
+		bool** need_update;//to indicate if that item is nonzero(used)
 		void initialSet(int cloth_num)
 		{
 			b_sum.resize(cloth_num);
@@ -149,8 +150,11 @@ private:
 	ApproxCCD approx_CCD;
 	CollisionConstraint collision_constraint;
 
-	double d_hat;
+	double d_hat_2;
 	double tolerance_2;// distance to report a collision
+
+	double epsilon;
+
 
 	void buildBVH();
 	void initialBVH(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread);
@@ -393,5 +397,20 @@ private:
 		unsigned int end_pair_index, double& collision_time, CollisionIndicateType type);
 
 	void updateEigenPosition();
+	void pointTriangleResponse(int thread_No, TargetPosition* target_pos);
+	void pointTriangleColliderResponse(int thread_No, TargetPosition* target_pos);
+	void pointColliderTriangleResponse(int thread_No, TargetPosition* target_pos);
+	void edgeEdgeResponse(int thread_No, TargetPosition* target_pos);
+	void edgeEdgeColliderResponse(int thread_No, TargetPosition* target_pos);
 
+	void pointTriangleResponse(unsigned int pair_thread_No, unsigned int start_pair_index,
+		unsigned int end_pair_index, TargetPosition* target_pos);
+	void pointTriangleColliderResponse(unsigned int pair_thread_No, unsigned int start_pair_index,
+		unsigned int end_pair_index, TargetPosition* target_pos);
+	void pointColliderTriangleResponse(unsigned int pair_thread_No, unsigned int start_pair_index,
+		unsigned int end_pair_index, TargetPosition* target_pos);
+	void edgeEdgeResponse(unsigned int pair_thread_No, unsigned int start_pair_index,
+		unsigned int end_pair_index, TargetPosition* target_pos);
+	void edgeEdgeColliderResponse(unsigned int pair_thread_No, unsigned int start_pair_index,
+		unsigned int end_pair_index, TargetPosition* target_pos);
 };
