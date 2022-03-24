@@ -34,6 +34,20 @@ public:
 		double* initial_triangle_1, double* current_triangle_1, double* initial_triangle_2, double* current_triangle_2, double* initial_triangle_3, double* current_triangle_3,
 		double tolerance_2);
 	void test();
+
+	bool edgeEdgeCCD(double& t, Eigen::Vector3d& current_edge_vertex_0, Eigen::Vector3d& current_edge_vertex_1, Eigen::Vector3d& initial_edge_vertex_0, Eigen::Vector3d& initial_edge_vertex_1,
+		Eigen::Vector3d& current_compare_edge_vertex_0, Eigen::Vector3d& current_compare_edge_vertex_1, Eigen::Vector3d& initial_compare_edge_vertex_0,
+		Eigen::Vector3d& initial_compare_edge_vertex_1, double conservative_rescaling);
+	bool vertexTriangleCCD(double& t, Eigen::Vector3d& initial_position, Eigen::Vector3d& current_position,
+		Eigen::Vector3d& initial_triangle_1, Eigen::Vector3d& current_triangle_1, Eigen::Vector3d& initial_triangle_2, Eigen::Vector3d& current_triangle_2, Eigen::Vector3d& initial_triangle_3, Eigen::Vector3d& current_triangle_3,
+		double conservative_rescaling);
+
+	bool vertexEdgeCCD(double& t, Eigen::Vector3d& q0_initial, Eigen::Vector3d& q1_initial, Eigen::Vector3d& q2_initial,
+		Eigen::Vector3d& q0_current, Eigen::Vector3d& q1_current, Eigen::Vector3d& q2_current, double conservative_rescaling);
+
+	bool vertexVertexCCD(double& t, Eigen::Vector3d& initial_position, Eigen::Vector3d& current_position,
+		Eigen::Vector3d& initial_position_1, Eigen::Vector3d& current_position_1, double conservative_rescaling);
+
 private:
 
 	struct TimeInterval
@@ -97,6 +111,8 @@ private:
 		double* q0_current, double* q1_current, double* q2_current, double tolerance_2);
 	bool vertexVertexCollisionTime(double& t, double* initial_position, double* current_position,
 		double* initial_position_1, double* current_position_1, double tolerance_2);
+
+	CTCD ctcd;
 };
 
 

@@ -90,6 +90,8 @@ public:
 
 	void findAllVertexVertexEdgePairs(int thread_No);
 
+	void collisionTimeCompare(int thread_No);
+
 private:
 
 	unsigned int** vertex_edge_pair;
@@ -374,5 +376,22 @@ private:
 		unsigned int end_pair_index, double& collision_time, CollisionIndicateType type);
 	void vertexEdgeCollisionTime(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
 		unsigned int end_pair_index, double& collision_time, CollisionIndicateType type);
+
+	void vertexTriangleCollisionTimeCompare(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
+		unsigned int end_pair_index, double& collision_time);
+
+	std::vector<std::vector<Eigen::Vector3d>> vertex_for_render_eigen;
+	std::vector<std::vector<Eigen::Vector3d>> vertex_position_eigen;
+
+	void edgeEdgeCollisionTimeCompare(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
+		unsigned int end_pair_index, double& collision_time);
+
+	void vertexVertexCollisionTimeCompare(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
+		unsigned int end_pair_index, double& collision_time, CollisionIndicateType type);
+
+	void vertexEdgeCollisionTimeCompare(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
+		unsigned int end_pair_index, double& collision_time, CollisionIndicateType type);
+
+	void updateEigenPosition();
 
 };

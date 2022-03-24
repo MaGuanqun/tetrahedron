@@ -62,7 +62,7 @@ void Tetrahedron::setRepresentativePrimitve()
 
 	for (int i = 0; i < mesh_struct.faces.size(); ++i) {
 		for (int j = 0; j < representative_vertex_num[i]; ++j) {
-			surface_vertex_from_rep_triangle_index[mesh_struct.surface_triangle_index_in_order[i][j]] = i;
+			surface_vertex_from_rep_triangle_index[mesh_struct.vertex_surface_index[mesh_struct.surface_triangle_index_in_order[i][j]]] = i;
 		}
 		for (int j = 0; j < representative_edge_num[i]; ++j) {
 			edge_from_rep_triangle_index[mesh_struct.face_edges[3 * i + j]] = i;
@@ -96,11 +96,12 @@ void Tetrahedron::getVertexAABBPerThread(int thread_No, bool has_tolerance)
 	std::vector<std::array<double, 3>>* vertex_render = &mesh_struct.vertex_for_render;
 	std::vector<std::array<double, 3>>* vertex = &mesh_struct.vertex_position;
 	unsigned int index_end = mesh_struct.vertex_index_on_surface_begin_per_thread[thread_No + 1];
+	unsigned int index_start= mesh_struct.vertex_index_on_surface_begin_per_thread[thread_No];
 	unsigned int* vertex_index_on_surface = mesh_struct.vertex_index_on_sureface.data();
 
 	unsigned int vertex_index;
 	if (has_tolerance) {
-		for (unsigned int i = mesh_struct.vertex_index_on_surface_begin_per_thread[thread_No]; i < index_end; ++i) {
+		for (unsigned int i = index_start; i < index_end; ++i) {
 			vertex_index = vertex_index_on_surface[i];
 			AABB::obtainAABB(vertex_AABB[vertex_index].data(), (*vertex_render)[vertex_index].data(), (*vertex)[vertex_index].data(), tolerance);	// 
 			for (unsigned int j = 0; j < 3; ++j) {
@@ -116,7 +117,7 @@ void Tetrahedron::getVertexAABBPerThread(int thread_No, bool has_tolerance)
 		}
 	}
 	else {
-		for (unsigned int i = mesh_struct.vertex_index_on_surface_begin_per_thread[thread_No]; i < index_end; ++i) {
+		for (unsigned int i = index_start; i < index_end; ++i) {
 			vertex_index = vertex_index_on_surface[i];
 			AABB::obtainAABB(vertex_AABB[vertex_index].data(), (*vertex_render)[vertex_index].data(), (*vertex)[vertex_index].data());	// 
 			for (unsigned int j = 0; j < 3; ++j) {

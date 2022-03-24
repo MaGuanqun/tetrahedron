@@ -147,7 +147,7 @@ void CTCD::findIntervals(double *op, int n, vector<TimeInterval> & intervals, bo
     else if (reducedDegree == 1)
     {
         time[0] = -op[1] / op[0];
-        std::cout << time[0] << std::endl;
+        //std::cout << time[0] << std::endl;
         roots = 1;
     }
     else
@@ -167,7 +167,7 @@ void CTCD::findIntervals(double *op, int n, vector<TimeInterval> & intervals, bo
 
         if (pos) {
             if (roots == 1) {
-                std::cout << time[0] << std::endl;
+                //std::cout << time[0] << std::endl;
             }
         }
 
@@ -175,7 +175,7 @@ void CTCD::findIntervals(double *op, int n, vector<TimeInterval> & intervals, bo
             checkInterval(0, time[0], op, reducedDegree, intervals, pos);
             if (pos) {
                 if (!intervals.empty()) {
-                    std::cout <<"interval "<< time[0] << " " << intervals[0].l << std::endl;
+                    //std::cout <<"interval "<< time[0] << " " << intervals[0].l << std::endl;
                 }
             }
         }
@@ -243,7 +243,7 @@ void CTCD::planePoly3D(const Vector3d &x10,
     op[3] = x10.dot(x20.cross(x30));
 
   
-        std::cout << "reduced degree " << op[0]<<" "<< op[1]<<" "<< op[2]<<" "<< op[3] << std::endl;
+        //std::cout << "reduced degree " << op[0]<<" "<< op[1]<<" "<< op[2]<<" "<< op[3] << std::endl;
    
 
     findIntervals(op, 3, result, true);
@@ -265,7 +265,7 @@ void CTCD::distancePoly3D(const Vector3d &x10,
     Vector3d E = x20.cross(x30);
     Vector3d F = x20.cross(v30) + v20.cross(x30);
     Vector3d G = v20.cross(v30);
-    std::cout << "CTCD coeff1 " << A << " " << B << " " << C << " " << D << std::endl;
+    //std::cout << "CTCD coeff1 " << A << " " << B << " " << C << " " << D << std::endl;
     double op[7];
     op[0] = A * A;
     op[1] = 2 * A * B;
@@ -275,18 +275,18 @@ void CTCD::distancePoly3D(const Vector3d &x10,
     op[5] = 2 * C * D - 2 * F.dot(E) * minDSquared;
     op[6] = D * D - E.dot(E) * minDSquared;
 
-    std::cout << "ctcd coeff2 ";
+    //std::cout << "ctcd coeff2 ";
     for (unsigned int i = 0; i < 7; ++i) {
-        std::cout << op[i] << " ";
+        //std::cout << op[i] << " ";
     }
 
     findIntervals(op, 6, result, false);
 
-    std::cout << "ctcd coeff ";
+    //std::cout << "ctcd coeff ";
     for (unsigned int i = 0; i < 7; ++i) {
-        std::cout << op[i] << " ";
+        //std::cout << op[i] << " ";
     }
-    std::cout << std::endl;
+    //std::cout << std::endl;
 }
 
 bool CTCD::edgeEdgeCTCD(const Eigen::Vector3d &q0start,  //initial_edge_vertex_1
@@ -302,11 +302,11 @@ bool CTCD::edgeEdgeCTCD(const Eigen::Vector3d &q0start,  //initial_edge_vertex_1
 {
     double minD = eta;
 
-    std::cout << "crcd minD" << eta << std::endl;
-    std::cout << p0start << std::endl;
-    std::cout << q0start << std::endl;
-    std::cout << p1start << std::endl;
-    std::cout << q1start << std::endl;
+    //std::cout << "crcd minD" << eta << std::endl;
+    //std::cout << p0start << std::endl;
+    //std::cout << q0start << std::endl;
+    //std::cout << p1start << std::endl;
+    //std::cout << q1start << std::endl;
 
     // time intervals during which v is colinear with the edge, on the side of e1 towards e2, and on the side of e2 towards e1
     std::vector<TimeInterval> rawcoplane, a0, a1, b0, b1;
@@ -534,9 +534,9 @@ bool CTCD::vertexFaceCTCD(const Vector3d &q0start,
                     intervals.push_back(e3[l]);
                     if(TimeInterval::overlap(intervals))
                     {
-                        std::cout << mint << " "<< TimeInterval::intersect(intervals).l;
+                        //std::cout << mint << " "<< TimeInterval::intersect(intervals).l;
                         mint = (std::min)(TimeInterval::intersect(intervals).l, mint);
-                        //std::cout << mint << std::endl;
+                        ////std::cout << mint << std::endl;
                         col = true;
                     }
                 }
@@ -544,28 +544,28 @@ bool CTCD::vertexFaceCTCD(const Vector3d &q0start,
         }
     }
 
-    //std::cout << "co--------" << std::endl;
+    ////std::cout << "co--------" << std::endl;
     for (unsigned int i = 0; i < coplane.size(); i++) {
-	    std::cout << coplane[i].l << " " << coplane[i].u << std::endl;
+	    //std::cout << coplane[i].l << " " << coplane[i].u << std::endl;
     }
-    std::cout << "e1--------" << std::endl;
+    //std::cout << "e1--------" << std::endl;
     for (unsigned int i = 0; i < e1.size(); i++) {
-	    std::cout << e1[i].l << " " << e1[i].u << std::endl;
+	    //std::cout << e1[i].l << " " << e1[i].u << std::endl;
     }
-    std::cout << "e2--------" << std::endl;
+    //std::cout << "e2--------" << std::endl;
     for (unsigned int i = 0; i < e2.size(); i++) {
-	    std::cout << e2[i].l << " " << e2[i].u << std::endl;
+	    //std::cout << e2[i].l << " " << e2[i].u << std::endl;
     }
-    std::cout << "e3-------" << std::endl;
+    //std::cout << "e3-------" << std::endl;
     for (unsigned int i = 0; i < e3.size(); i++) {
-	    std::cout << e3[i].l << " " << e3[i].u << std::endl;
+	    //std::cout << e3[i].l << " " << e3[i].u << std::endl;
     }
 
 
     if(col)
     {
         t = mint;
-        std::cout << mint << std::endl;
+        //std::cout << mint << std::endl;
         return true;
     }
     return false;
@@ -582,7 +582,7 @@ bool CTCD::vertexEdgeCTCD(const Vector3d &q0start,
                           double &t)
 {
     double op[5];
-    double minD = eta*eta;
+    double minD = eta;
     Vector3d v0 = q0end-q0start;
     Vector3d v1 = q1end-q1start;
     Vector3d v2 = q2end-q2start;
@@ -672,7 +672,7 @@ bool CTCD::vertexVertexCTCD(const Vector3d &q1start,
                             double eta, double &t)
 {
     int roots = 0;
-    double min_d = eta*eta;
+    double min_d = eta;
     double t1 = 0, t2 = 0;
     Vector3d v1 = q1end-q1start;
     Vector3d v2 = q2end-q2start;
