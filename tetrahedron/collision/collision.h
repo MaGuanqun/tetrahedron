@@ -39,6 +39,13 @@ public:
 	void collisionCulling();
 	void globalCollisionTime();
 	//void findAllPatchPairs(int thread_No);
+
+	std::vector<std::vector<double>> target_position; //thus, the actual number is 3*target_position_index[0]
+	std::vector<std::vector<unsigned int>>target_position_index; //the first element store the number of primitives. thus, the actual number from [1] is 2*[0]
+
+	unsigned int ave_pair_num[5];//vertex_triangle_pair,edge_edge_pair,vertex_obj_triangle_collider_pair,vertex_collider_triangle_obj_pair,edge_edge_pair_collider.
+
+
 	struct TargetPosition
 	{
 		std::vector<std::vector<std::array<double, 3>>>b_sum; // add on the b vector in projectDynamic.cpp
@@ -141,7 +148,8 @@ private:
 	std::vector<unsigned int> vertex_vertex_pair_collider_index_start_per_thread;//thread_No, index, respectively
 
 
-	void setPairIndexEveryThread(unsigned int** pair, std::vector<unsigned int>& pair_index_start_per_thread);
+	void setPairIndexEveryThread(unsigned int** pair, std::vector<unsigned int>& pair_index_start_per_thread,
+		unsigned int& ave_pair_num);
 	void setPairIndexEveryThread();
 	void setVertexVertexEdgePairIndexEveryThread();
 
@@ -403,14 +411,16 @@ private:
 	void edgeEdgeResponse(int thread_No, TargetPosition* target_pos);
 	void edgeEdgeColliderResponse(int thread_No, TargetPosition* target_pos);
 
-	void pointTriangleResponse(unsigned int pair_thread_No, unsigned int start_pair_index,
+	void pointTriangleResponse(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
 		unsigned int end_pair_index, TargetPosition* target_pos);
-	void pointTriangleColliderResponse(unsigned int pair_thread_No, unsigned int start_pair_index,
+	void pointTriangleColliderResponse(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
 		unsigned int end_pair_index, TargetPosition* target_pos);
-	void pointColliderTriangleResponse(unsigned int pair_thread_No, unsigned int start_pair_index,
+	void pointColliderTriangleResponse(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
 		unsigned int end_pair_index, TargetPosition* target_pos);
-	void edgeEdgeResponse(unsigned int pair_thread_No, unsigned int start_pair_index,
+	void edgeEdgeResponse(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
 		unsigned int end_pair_index, TargetPosition* target_pos);
-	void edgeEdgeColliderResponse(unsigned int pair_thread_No, unsigned int start_pair_index,
+	void edgeEdgeColliderResponse(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
 		unsigned int end_pair_index, TargetPosition* target_pos);
+
+	void checkTargetPosSize(int thread_No);
 };
