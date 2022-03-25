@@ -821,6 +821,7 @@ void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 ////		}
 //
 //		while (!innerIterationConvergeCondition()) {
+		collision.collisionEnergy();
 //			thread->assignTask(this, LOCAL_PROJECTION_WITHOUT_ENERGY);
 //			current_constraint_energy = temEnergy[0];
 //			for (unsigned int i = 1; i < total_thread_num; ++i) {
@@ -878,7 +879,7 @@ void ProjectDynamic::computeInnerEnergyIPCPD()
 	previous_itr_PD_energy = current_PD_energy;
 	current_collision_energy = 1e-15;
 	for (unsigned int k = 0; k < total_cloth_num; ++k) {
-		current_collision_energy += collision.obj_target_pos.collision_energy[k];
+		current_collision_energy += collision.obj_target_pos.collision_energy;
 	}
 	current_PD_energy = temEnergy[0];
 	for (unsigned int i = 1; i < total_thread_num; ++i) {
@@ -895,7 +896,7 @@ void ProjectDynamic::computeEnergyIPCPD()
 	previous_PD_energy = current_PD_energy;
 	current_collision_energy = 1e-15;
 	for (unsigned int k = 0; k < total_cloth_num; ++k) {
-		current_collision_energy += collision.obj_target_pos.collision_energy[k];
+		current_collision_energy += collision.obj_target_pos.collision_energy;
 	}
 	current_PD_energy = temEnergy[0];
 	for (unsigned int i = 1; i < total_thread_num; ++i) {

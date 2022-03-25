@@ -28,6 +28,8 @@ bool CollisionConstraint::pointTriangleResponse(double* initial_position, double
 
 	stiffness *= barrier((d_hat_2 - d_2) / d_hat_2, d_2 / d_hat_2);
 
+
+
 	epsilon += 1.0;
 
 	double coe;

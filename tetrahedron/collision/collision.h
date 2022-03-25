@@ -40,7 +40,7 @@ public:
 	void globalCollisionTime();
 	//void findAllPatchPairs(int thread_No);
 
-	std::vector<std::vector<double>> target_position; //thus, the actual number is 3*target_position_index[0]
+	std::vector<std::vector<double>> target_position_and_stiffness; //thus, the actual number is 4*target_position_index[0]
 	std::vector<std::vector<unsigned int>>target_position_index; //the first element store the number of primitives. thus, the actual number from [1] is 2*[0]
 
 	unsigned int ave_pair_num[5];//vertex_triangle_pair,edge_edge_pair,vertex_obj_triangle_collider_pair,vertex_collider_triangle_obj_pair,edge_edge_pair_collider.
@@ -50,13 +50,13 @@ public:
 	{
 		std::vector<std::vector<std::array<double, 3>>>b_sum; // add on the b vector in projectDynamic.cpp
 		std::vector<std::vector<double>>stiffness;//add on the system matrix
-		std::vector<double>collision_energy;
+		double collision_energy;
 		bool** need_update;//to indicate if that item is nonzero(used)
 		void initialSet(int cloth_num)
 		{
 			b_sum.resize(cloth_num);
 			stiffness.resize(cloth_num);
-			collision_energy.resize(cloth_num, 0.0);
+			collision_energy = 0.0;
 			need_update = new bool* [cloth_num];
 		}
 
@@ -74,7 +74,7 @@ public:
 				memset(&stiffness[i][0], 0, 8 * stiffness[i].size());
 				memset(need_update[i], 0, b_sum[i].size());
 			}
-			memset(&collision_energy[0], 0, 8 * collision_energy.size());
+			collision_energy = 0.0;
 		}
 
 		void partialInitial()
@@ -82,7 +82,7 @@ public:
 			for (int i = 0; i < b_sum.size(); ++i) {
 				memset(b_sum[i][0].data(), 0, 24 * b_sum[i].size());
 			}
-			memset(&collision_energy[0], 0, 8 * collision_energy.size());
+			collision_energy = 0.0;
 		}
 	};
 	TargetPosition obj_target_pos;
@@ -99,6 +99,9 @@ public:
 	void findAllVertexVertexEdgePairs(int thread_No);
 
 	void collisionTimeCompare(int thread_No);
+
+	void collisionEnergy(int thread_No);
+	void collisionEnergy();
 
 private:
 
@@ -146,6 +149,9 @@ private:
 	std::vector<unsigned int> vertex_collider_edge_obj_pair_index_start_per_thread;//thread_No, index, respectively
 	std::vector<unsigned int> vertex_vertex_pair_index_start_per_thread;//thread_No, index, respectively
 	std::vector<unsigned int> vertex_vertex_pair_collider_index_start_per_thread;//thread_No, index, respectively
+
+	std::vector<unsigned int> target_position_element_start_per_thread;
+	//std::vector<unsigned int> target_position_start_per_thread;
 
 
 	void setPairIndexEveryThread(unsigned int** pair, std::vector<unsigned int>& pair_index_start_per_thread,
@@ -423,4 +429,18 @@ private:
 		unsigned int end_pair_index, TargetPosition* target_pos);
 
 	void checkTargetPosSize(int thread_No);
+
+
+	std::vector<unsigned int> test_point_triangle_record_true_number;
+	std::vector<unsigned int> test_edge_edge_record_true_number;
+
+	
+
+	void setTargetPositionEven();
+
+	void setPairIndexEveryThread(std::vector<unsigned int>* pair, std::vector<unsigned int>& pair_index_start_per_thread);
+
+	void computeEnergy(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end, double& energy);
+
+	double collision_stiffness[4];//we assume the initial stiffness of every objects are same
 };
