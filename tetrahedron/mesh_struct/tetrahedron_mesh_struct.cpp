@@ -169,25 +169,51 @@ void TetrahedronMeshStruct::getNormal()
 
 void TetrahedronMeshStruct::prepareForDeformationGradient()
 {
-	PT_times_PPT_inv.resize(indices.size());
+	PT_position.resize(indices.size());
 	//PPT_determinant.resize(indices.size());
 	PT.resize(indices.size());
-	Matrix<double, 3, 4> p;
+	Matrix<double, 3, 3> p;
+	Matrix<double, 3, 4> p_;
 	Matrix3d ppt;
 	for (int i = 0; i < indices.size(); ++i)
 	{
 		p = constructMatrixP(i);
+		p_ = constructMatrixP_pos(i);
 		PT[i] = p.transpose();
-		ppt = p * p.transpose();
-		PT_times_PPT_inv[i] = PT[i] * ppt.inverse();
+		PT_position[i] = p_.transpose();
+		//ppt = p * p.transpose();
+		//PT_times_PPT_inv[i] = PT[i] * ppt.inverse();
 		//inverse3X3(ppt.data(), PPT_inv[i].data());
 
 	}
 }
 
-Matrix<double, 3, 4> TetrahedronMeshStruct::constructMatrixP(int tetra_index)
+Matrix<double, 3, 3> TetrahedronMeshStruct::constructMatrixP(int tetra_index)
+{
+	Matrix<double, 3, 3> p;
+	for (int i = 0; i < 3; ++i)
+	{
+		SUB((p.data() + 3 * i), vertex_position[indices[tetra_index][i]].data(), vertex_position[indices[tetra_index][3]].data());
+	}
+	return p;
+	//for (int i = 0; i < 4; ++i)
+	//{
+	//	memcpy(p.data() + 3 * i, vertex_position[indices[tetra_index][i]].data(), 24);
+	//}
+	
+
+	//Vector3d center = 0.25 * p.rowwise().sum();
+	//return p.colwise() - center;
+}
+
+Matrix<double, 3, 4> TetrahedronMeshStruct::constructMatrixP_pos(int tetra_index)
 {
 	Matrix<double, 3, 4> p;
+	for (int i = 0; i < 3; ++i)
+	{
+		SUB((p.data() + 3 * i), vertex_position[indices[tetra_index][i]].data(), vertex_position[indices[tetra_index][3]].data());
+	}
+	return p;
 	for (int i = 0; i < 4; ++i)
 	{
 		memcpy(p.data() + 3 * i, vertex_position[indices[tetra_index][i]].data(), 24);
