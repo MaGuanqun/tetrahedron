@@ -1483,14 +1483,14 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 				for (unsigned int kk = 0; kk < 4; ++kk) {
 					q.col(kk) -= center;
 				}
-				//q = (q.colwise() - center).eval();
+//				q = (q.colwise() - center).eval();
 				for (unsigned int j = 0; j < 3; ++j) 
 				{
 					q_e.col(j) = q.col(j) - q.col(3);				
 				}
 					
 				//transform = (q * PT_times_PPT_inv[i]);
-				transform = PT->transpose()* q_e.transpose();
+				transform = PT[i].transpose()* q_e.transpose();
 				//transform = Matrix3d::Identity();
 
 				//Matrix3d temp = PT[i].transpose() * q.transpose();
@@ -1511,13 +1511,13 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 
 				JacobiSVD<Matrix3d> svd;
 				svd.compute(transform, ComputeFullU | ComputeFullV);
-				rotation_2 = svd.matrixU();
+				rotation_2 = svd.matrixV();
 				determinant = transform.determinant();
-				if (determinant < 0) {
+			/*	if (determinant < 0) {
 					rotation_2.data()[3] *= -1.0;
 					rotation_2.data()[4] *= -1.0;
 					rotation_2.data()[5] *= -1.0;				
-				}
+				}*/
 				singular_value = svd.singularValues();
 				keep_transform = false;
 
@@ -1532,7 +1532,7 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 				else {
 					for (unsigned int k = 0; k < 3; ++k) {
 						for (unsigned int kk = 0; kk < 3; ++kk) {
-							transform_for_volume_perserve.data()[3 * k + kk] = sigma.data()[k] * svd.matrixV().data()[3 * k + kk];
+							transform_for_volume_perserve.data()[3 * k + kk] = sigma.data()[k] * svd.matrixU().data()[3 * k + kk];
 						}
 					}
 					transform_for_volume_perserve = (rotation_2 * transform_for_volume_perserve.transpose()).eval();
@@ -1542,7 +1542,7 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 				//}
 
 
-				transform = svd.matrixV()* rotation_2.transpose();
+				transform = rotation_2* svd.matrixU().transpose();
 
 				//if ((transform - Matrix3d::Identity()).squaredNorm() > 1e-6) {
 				//	std::cout << transform << std::endl;
@@ -1559,9 +1559,9 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 				//}
 				p = transform * (PT_pos[i].transpose());
 				p_volume_preserve = transform_for_volume_perserve * (PT_pos[i].transpose());
-				Ap_ARAP_volume_preserve[i] = (ARAP_stiffness * p + volume_preserve_stiffness * p_volume_preserve).transpose();//
+				Ap_ARAP_volume_preserve[i] = (ARAP_stiffness * p).transpose();//+ volume_preserve_stiffness * p_volume_preserve
 																			   //tet_local_A*tet_local_A=tet_local_A, we omit it here   tet_local_A is symmetric, need not to use transpose
-				temEnergy[thread_id] += 0.5 * (ARAP_stiffness * (p-q).squaredNorm() + volume_preserve_stiffness * (p_volume_preserve - q).squaredNorm());//
+				temEnergy[thread_id] += 0.5 * (ARAP_stiffness * (p-q).squaredNorm());//+ volume_preserve_stiffness * (p_volume_preserve - q).squaredNorm()
 			}
 		}
 	}
@@ -1576,6 +1576,7 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 			//PT_times_PPT_inv = mesh_struct->PT_times_PPT_inv.data();
 			//det = mesh_struct->PPT_determinant.data();
 			PT = mesh_struct->PT.data();
+			PT_pos = mesh_struct->PT_position.data();
 			Ap_ARAP_volume_preserve = p_ARAP_volume_preserve[j].data();
 			ARAP_stiffness = (*tetrahedron)[j].ARAP_stiffness;
 			volume_preserve_stiffness = (*tetrahedron)[j].volume_preserve_stiffness;
@@ -1598,8 +1599,7 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 					q_e.col(j) = q.col(j) - q.col(3);
 				}
 
-
-				transform = q_e * (*PT);
+				transform = PT[i].transpose() * q_e.transpose();
 				//transform = (q * PT_times_PPT_inv[i]);				//
 
 	/*			Matrix3d temp = PT[i].transpose() * q.transpose();
@@ -1611,13 +1611,13 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 				transform.transposeInPlace();*/
 
 				JacobiSVD<Matrix3d> svd(transform, ComputeFullU | ComputeFullV);
-				rotation_2 = svd.matrixU();
+				rotation_2 = svd.matrixV();
 				determinant = transform.determinant();
-				if (determinant < 0) {
-					rotation_2.data()[6] *= -1.0;
-					rotation_2.data()[7] *= -1.0;
-					rotation_2.data()[8] *= -1.0;
-				}
+				//if (determinant < 0) {
+				//	rotation_2.data()[6] *= -1.0;
+				//	rotation_2.data()[7] *= -1.0;
+				//	rotation_2.data()[8] *= -1.0;
+				//}
 				singular_value = svd.singularValues();
 				keep_transform = false;
 
@@ -1632,17 +1632,17 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 				else {
 					for (unsigned int k = 0; k < 3; ++k) {
 						for (unsigned int kk = 0; kk < 3; ++kk) {
-							transform_for_volume_perserve.data()[3 * k + kk] = sigma.data()[k] * svd.matrixV().data()[3 * k + kk];
+							transform_for_volume_perserve.data()[3 * k + kk] = sigma.data()[k] * svd.matrixU().data()[3 * k + kk];
 						}
 					}
 					transform_for_volume_perserve = (rotation_2 * transform_for_volume_perserve.transpose()).eval();
 				}
 
-				transform = svd.matrixV() * rotation_2.transpose();
+				transform = rotation_2* svd.matrixU().transpose();
 
 				p = transform * (PT_pos[i].transpose());
 				p_volume_preserve = transform_for_volume_perserve * (PT_pos[i].transpose());
-				Ap_ARAP_volume_preserve[i] = (ARAP_stiffness * p+ volume_preserve_stiffness * p_volume_preserve).transpose(); // 
+				Ap_ARAP_volume_preserve[i] = (ARAP_stiffness * p).transpose(); // + volume_preserve_stiffness * p_volume_preserve
 				//tet_local_A*tet_local_A=tet_local_A, we omit it here   tet_local_A is symmetric, need not to use transpose
 			}
 		}

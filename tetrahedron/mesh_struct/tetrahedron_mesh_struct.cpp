@@ -209,11 +209,6 @@ Matrix<double, 3, 3> TetrahedronMeshStruct::constructMatrixP(int tetra_index)
 Matrix<double, 3, 4> TetrahedronMeshStruct::constructMatrixP_pos(int tetra_index)
 {
 	Matrix<double, 3, 4> p;
-	for (int i = 0; i < 3; ++i)
-	{
-		SUB((p.data() + 3 * i), vertex_position[indices[tetra_index][i]].data(), vertex_position[indices[tetra_index][3]].data());
-	}
-	return p;
 	for (int i = 0; i < 4; ++i)
 	{
 		memcpy(p.data() + 3 * i, vertex_position[indices[tetra_index][i]].data(), 24);
