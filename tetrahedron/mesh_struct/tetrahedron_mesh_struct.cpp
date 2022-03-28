@@ -172,6 +172,7 @@ void TetrahedronMeshStruct::prepareForDeformationGradient()
 	PT_position.resize(indices.size());
 	//PPT_determinant.resize(indices.size());
 	PT.resize(indices.size());
+	PT_PPT_inv.resize(indices.size());
 	Matrix<double, 3, 3> p;
 	Matrix<double, 3, 4> p_;
 	Matrix3d ppt;
@@ -181,7 +182,12 @@ void TetrahedronMeshStruct::prepareForDeformationGradient()
 		p_ = constructMatrixP_pos(i);
 		PT[i] = p.transpose();
 		PT_position[i] = p_.transpose();
-		//ppt = p * p.transpose();
+		ppt = p_ * p_.transpose();
+		PT_PPT_inv[i] = p_.transpose() * ppt.inverse();
+
+		//std::cout << (ppt.inverse() * ppt) << std::endl;
+
+		//
 		//PT_times_PPT_inv[i] = PT[i] * ppt.inverse();
 		//inverse3X3(ppt.data(), PPT_inv[i].data());
 
@@ -191,9 +197,9 @@ void TetrahedronMeshStruct::prepareForDeformationGradient()
 Matrix<double, 3, 3> TetrahedronMeshStruct::constructMatrixP(int tetra_index)
 {
 	Matrix<double, 3, 3> p;
-	for (int i = 0; i < 3; ++i)
+	for (int i = 1; i < 4; ++i)
 	{
-		SUB((p.data() + 3 * i), vertex_position[indices[tetra_index][i]].data(), vertex_position[indices[tetra_index][3]].data());
+		SUB((p.data() + 3 * (i-1)), vertex_position[indices[tetra_index][i]].data(), vertex_position[indices[tetra_index][0]].data());
 	}
 	return p;
 	//for (int i = 0; i < 4; ++i)

@@ -26,7 +26,8 @@ public:
 
 	void prepareForDeformationGradient();
 	std::vector<Matrix<double, 3, 3>>PT;//to record the restshape (PP^T)^-1 for deformation gradient
-	std::vector<Matrix<double, 4, 3>>PT_position;//to record the restshape (PP^T)^-1 for deformation gradient
+	std::vector<Matrix<double, 4, 3>>PT_position;//to record the restshape (PP^T)^-1 for deformation gradien
+	std::vector<Matrix<double, 4, 3>>PT_PPT_inv;//to record the restshape (PP^T)^-1 for deformation gradien
 	//std::vector<double>PPT_determinant;//to record the restshape (PP^T)^-1 for deformation gradient
 	//std::vector<Matrix<double, 4, 3>> PT;//to record the restshape P^T for deformation gradient
 

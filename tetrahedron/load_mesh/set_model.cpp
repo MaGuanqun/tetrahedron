@@ -91,7 +91,8 @@ void SetModel::getAABB()
 		}
 	}
 
-
+	//std::cout << aabb[3]-aabb[0] << " " << aabb[4] - aabb[1] << " " << aabb[5] - aabb[2] << std::endl;
+	//std::cout << 0.5*(aabb[3]+aabb[0]) << " " << 0.5*(aabb[4] + aabb[1]) << " " << 0.5*(aabb[5] + aabb[2]) << std::endl;
 }
 
 void SetModel::regularization(RegularizationInfo& regularization_info)
@@ -105,6 +106,7 @@ void SetModel::regularization(RegularizationInfo& regularization_info)
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
 		SUM(ori_mesh.vertices[i], ori_mesh.vertices[i], regularization_info.move_info);
 	}
+	//std::cout <<"scaler "<< regularization_info.scaler << std::endl;
 }
 
 void SetModel::setTetFrontMaterial(OriMesh& ori_mesh, int& index)
