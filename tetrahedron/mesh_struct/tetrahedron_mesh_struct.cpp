@@ -169,21 +169,23 @@ void TetrahedronMeshStruct::getNormal()
 
 void TetrahedronMeshStruct::prepareForDeformationGradient()
 {
-	PT_position.resize(indices.size());
-	//PPT_determinant.resize(indices.size());
-	PT.resize(indices.size());
-	PT_PPT_inv.resize(indices.size());
+	//PT_position.resize(indices.size());
+	////PPT_determinant.resize(indices.size());
+	//PT.resize(indices.size());
+	//PT_PPT_inv.resize(indices.size());
+
+	P_inv.resize(indices.size());
+	AT.resize(indices.size());
 	Matrix<double, 3, 3> p;
-	Matrix<double, 3, 4> p_;
-	Matrix3d ppt;
+	//Matrix<double, 3, 4> A;
+	//Matrix3d ppt;
 	for (int i = 0; i < indices.size(); ++i)
 	{
 		p = constructMatrixP(i);
-		p_ = constructMatrixP_pos(i);
-		PT[i] = p.transpose();
-		PT_position[i] = p_.transpose();
-		ppt = p_ * p_.transpose();
-		PT_PPT_inv[i] = p_.transpose() * ppt.inverse();
+		P_inv[i] = p.inverse();
+
+		//A = constructDeformGradientA(P_inv[i]);
+		AT[i] = constructDeformGradientA(P_inv[i]).transpose();
 
 		//std::cout << (ppt.inverse() * ppt) << std::endl;
 
@@ -193,6 +195,26 @@ void TetrahedronMeshStruct::prepareForDeformationGradient()
 
 	}
 }
+
+
+
+Matrix<double, 3, 4> TetrahedronMeshStruct::constructDeformGradientA(Matrix3d& p)
+{
+	Matrix<double, 3, 4> A;
+	for (unsigned int i = 0; i < 3; ++i) {
+		A.data()[i] = -p.col(i).sum();
+		A.data()[3 + i] = p.data()[3 * i];
+		A.data()[6 + i] = p.data()[3 * i + 1];
+		A.data()[9 + i] = p.data()[3 * i + 2];
+	}
+	//for (unsigned int i= 0; i < 3; ++i) {
+	//	std::cout << A.row(i).sum();
+	//}
+
+	return A;
+}
+
+
 
 Matrix<double, 3, 3> TetrahedronMeshStruct::constructMatrixP(int tetra_index)
 {

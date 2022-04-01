@@ -23,11 +23,13 @@ public:
 	std::vector<int> vertex_surface_index;//size is the global vertex size, verted index -> surface index
 	std::vector<unsigned int> vertex_index_on_surface_begin_per_thread;
 
+	std::vector<Matrix3d> P_inv;
+	std::vector<Matrix<double,4,3>> AT;
 
 	void prepareForDeformationGradient();
-	std::vector<Matrix<double, 3, 3>>PT;//to record the restshape (PP^T)^-1 for deformation gradient
-	std::vector<Matrix<double, 4, 3>>PT_position;//to record the restshape (PP^T)^-1 for deformation gradien
-	std::vector<Matrix<double, 4, 3>>PT_PPT_inv;//to record the restshape (PP^T)^-1 for deformation gradien
+	//std::vector<Matrix<double, 3, 3>>PT;//to record the restshape (PP^T)^-1 for deformation gradient
+	//std::vector<Matrix<double, 4, 3>>PT_position;//to record the restshape (PP^T)^-1 for deformation gradien
+	//std::vector<Matrix<double, 4, 3>>PT_PPT_inv;//to record the restshape (PP^T)^-1 for deformation gradien
 	//std::vector<double>PPT_determinant;//to record the restshape (PP^T)^-1 for deformation gradient
 	//std::vector<Matrix<double, 4, 3>> PT;//to record the restshape P^T for deformation gradient
 
@@ -74,5 +76,6 @@ private:
 	double getTetrahedronVolume(double* v1, double* v2, double* v3, double* v4);
 	Matrix<double, 3, 3> constructMatrixP(int tetra_index);
 	Matrix<double, 3, 4> constructMatrixP_pos(int tetra_index);
+	Matrix<double, 3, 4> constructDeformGradientA(Matrix3d& p);
 };
 

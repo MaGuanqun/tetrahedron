@@ -201,14 +201,14 @@ private:
 	void setSystemIndexInfo();
 
 	void copmuteGlobalStepMatrixSingleTetrahedron(TetrahedronMeshStruct& mesh_struct, std::vector<Triplet<double>>& global_mat_nnz, int sys_size, double& ARAP_stiffness,
-		double& volume_preserve_stiffness, double position_stiffness, int vertex_index_start, Matrix4d& m_for_ARAP);
+		double& volume_preserve_stiffness, double position_stiffness, int vertex_index_start);
 	Matrix4d getARAPmatrix();
 	void updateTetrahedronAnchorVertices(int tetrahedron_index, TetrahedronMeshStruct& mesh_struct, int vertex_index_start, double position_stiffness);
 	void localARAPProjectionPerThread(int thread_id, bool with_energy);
 
-	std::vector<std::vector<Matrix<double, 4, 3>>> p_ARAP_volume_preserve;
+	std::vector<std::vector<Matrix<double,4,3>>> p_ARAP_volume_preserve;
 	void constructbTetPerThead(double* b, TetrahedronMeshStruct& mesh_struct,
-		std::vector<Matrix<double, 4, 3>>& p_ARAP_volume_preserve, int tet_No, int dimension,
+		std::vector<Matrix<double,4,3>>& p_ARAP_volume_preserve, int tet_No, int dimension,
 		std::vector<std::array<double, 3>>& collision_b_sum, bool* collision_b_need_update, bool with_collision,
 		double position_stiffness, int vertex_index_start, std::array<int, 4>* indices, std::vector<int>& anchor_vertex,
 		std::array<double, 3>* anchor_pos, int surface_index_num, unsigned int* surface_vertex_index);
