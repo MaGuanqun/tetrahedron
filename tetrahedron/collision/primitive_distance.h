@@ -21,12 +21,6 @@ namespace CCD {
         }
 
 
-        template <class T>
-        void vertexLineSegmentDistance(int edge_vertex_0, int edge_vertex_1, double* vertex, std::vector<double*>& triangle_position,
-            double* barycentric)
-        {
-
-        }
 
         template <class T>
         int pointTriangleDistanceType(
@@ -85,6 +79,7 @@ namespace CCD {
                 }
             }
         }
+
         template <class T>
         int edgeEdgeDistanceType(
             const T* ea0,
@@ -126,7 +121,7 @@ namespace CCD {
                     // if (tN > 0.0 && tN < tD && (u.cross(v).dot(w) == 0.0 || u.cross(v).squaredNorm() == 0.0)) {
                     // std::cout << u.cross(v).squaredNorm() / (a * c) << ": " << sN << " " << D << ", " << tN << " " << tD << std::endl;
                     // avoid coplanar or nearly parallel EE
-                    if (sN < 0.5* D) {
+                    if (sN < 0.5 * D) {
                         tN = e;
                         tD = c;
                         defaultCase = 2;
@@ -166,6 +161,137 @@ namespace CCD {
             return defaultCase;
         }
 
+        template <class T>
+        int edgeEdgeDistanceType(
+            const T* ea0,
+            const T* ea1,
+            const T* eb0,
+            const T* eb1,
+            T* barycentric)
+        {
+            T u[3], v[3], w[3];
+            SUB(u, ea1, ea0);
+            SUB(v, eb1, eb0);
+            SUB(w, ea0, eb0);
+            T a = DOT(u, u); // always >= 0
+            T b = DOT(u, v);
+            T c = DOT(v, v); // always >= 0
+            T d = DOT(u, w);
+            T e = DOT(v, w);
+            T D = a * c - b * b; // always >= 0
+            T tD = D; // tc = tN / tD, default tD = D >= 0
+            T sN, tN;
+
+            int defaultCase = 8;
+            // compute the line parameters of the two closest points
+            sN = (b * e - c * d);
+            if (sN <= 0.0) { // sc < 0 => the s=0 edge is visible
+                tN = e;
+                tD = c;
+                barycentric[0] = 1.0;
+                barycentric[1] = 0.0;
+                barycentric[2] = 1.0-tN/tD;
+                barycentric[3] = tN / tD;
+                defaultCase = 2;
+            }
+            else if (sN >= D) { // sc > 1  => the s=1 edge is visible
+                tN = e + b;
+                tD = c;
+
+                barycentric[0] = 0.0;
+                barycentric[1] = 1.0;
+                barycentric[2] = 1.0 - tN / tD;
+                barycentric[3] = tN / tD;
+                defaultCase = 5;
+            }
+            else {
+                tN = (a * e - b * d);
+                T n[3];
+                CROSS(n, u, v);
+                if (tN > 0.0 && tN < tD && (DOT(n, w) == 0.0 || DOT(n, n) < NEAR_ZERO2 * a * c)) {
+                    // if (tN > 0.0 && tN < tD && (u.cross(v).dot(w) == 0.0 || u.cross(v).squaredNorm() == 0.0)) {
+                    // std::cout << u.cross(v).squaredNorm() / (a * c) << ": " << sN << " " << D << ", " << tN << " " << tD << std::endl;
+                    // avoid coplanar or nearly parallel EE
+                    if (sN < 0.5* D) {
+                        tN = e;
+                        tD = c;
+                        defaultCase = 2;
+                        barycentric[0] = 1.0;
+                        barycentric[1] = 0.0;
+                        barycentric[2] = 1.0 - tN / tD;
+                        barycentric[3] = tN / tD;
+                    }
+                    else {
+                        tN = e + b;
+                        tD = c;
+                        defaultCase = 5;
+                        barycentric[0] = 0.0;
+                        barycentric[1] = 1.0;
+                        barycentric[2] = 1.0 - tN / tD;
+                        barycentric[3] = tN / tD;
+
+                    }
+                }
+                // else defaultCase stays as 8
+                else {
+                    barycentric[0] = 1.0 - sN / D;
+                    barycentric[1] = sN / D;
+                    barycentric[2] = 1.0 - tN / D;
+                    barycentric[3] = tN / D;
+                }
+
+            }
+
+            if (tN <= 0.0) { // tc < 0 => the t=0 edge is visible
+    // recompute sc for this edge
+                if (-d <= 0.0) {
+                    barycentric[0] = 1.0;
+                    barycentric[1] = 0.0;
+                    barycentric[2] = 1.0;
+                    barycentric[3] = 0.0;
+                    return 0;
+                }
+                else if (-d >= a) {
+                    barycentric[0] = 0.0;
+                    barycentric[1] = 1.0;
+                    barycentric[2] = 1.0;
+                    barycentric[3] = 0.0;
+                    return 3;
+                }
+                else {
+                    barycentric[0] = 1.0+d/a;
+                    barycentric[1] =-d/a;
+                    barycentric[2] = 1.0;
+                    barycentric[3] = 0.0;
+                    return 6;
+                }
+            }
+            else if (tN >= tD) {
+                if ((-d + b) <= 0.0) {
+                    barycentric[0] = 1.0;
+                    barycentric[1] = 0.0;
+                    barycentric[2] = 0.0;
+                    barycentric[3] = 1.0;
+                    return 1;
+                }
+                else if ((-d + b) >= a) {
+                    barycentric[0] = 0.0;
+                    barycentric[1] = 1.0;
+                    barycentric[2] = 0.0;
+                    barycentric[3] = 1.0;
+                    return 4;
+                }
+                else {
+                    barycentric[0] = 1.0-(b-d)/a;
+                    barycentric[1] = (b - d) / a;
+                    barycentric[2] = 0.0;
+                    barycentric[3] = 1.0;
+                    return 7;
+                }
+            }
+            return defaultCase;
+        }
+
         template <class T> //squared distance
         inline T pointPointDistance(const T* a, const T* b)
         {
@@ -184,6 +310,18 @@ namespace CCD {
             SUB(temp0, e1, e0);
             return DOT(temp2, temp2) / DOT(temp0, temp0);
         }
+
+        template <class T> //squared distance
+        inline T pointEdgeDistance(const T* p, const T* e0, const T* e1, T* barycentric)
+        {
+            T temp0[3], temp1[3], temp2[3];
+            SUB(temp0, e0, p);
+            SUB(temp1, e1, p);
+            CROSS(temp2, temp0, temp1);
+            SUB(temp0, e1, e0);
+            return DOT(temp2, temp2) / DOT(temp0, temp0);
+        }
+
         template <class T>
         int pointEdgeDistanceType(const T* p,
             const T* e0,
@@ -227,6 +365,16 @@ namespace CCD {
         }
 
         template <class T>
+        inline T edgeEdgeDistance(const T* ea0, const T* ea1, const T* eb0, const T* eb1, const T* barycentric)
+        {
+            T temp0[3];
+            temp0[0] = barycentric[0] * ea0[0] + barycentric[1] * ea1[0] + barycentric[2] * eb0[0] + barycentric[3] * eb1[0];
+            temp0[1] = barycentric[0] * ea0[1] + barycentric[1] * ea1[1] + barycentric[2] * eb0[1] + barycentric[3] * eb1[1];
+            temp0[2] = barycentric[0] * ea0[2] + barycentric[1] * ea1[2] + barycentric[2] * eb0[2] + barycentric[3] * eb1[2];
+            return DOT(temp0, temp0);
+        }
+
+        template <class T>
         T pointEdgeDistanceUnclassified(
             const T* p,
             const T* e0,
@@ -241,7 +389,7 @@ namespace CCD {
             }
             else
             {
-                double c2 = DOT(e, e);
+                T c2 = DOT(e, e);
                 if (ratio >= c2) {
                     return pointPointDistance(p, e1); // PP (p-e1)
                 }
@@ -254,7 +402,41 @@ namespace CCD {
                 }
             }
         }
-
+        template <class T>
+        T pointEdgeDistanceUnclassified(
+            const T* p,
+            const T* e0,
+            const T* e1,
+            T* barycentric)
+        {
+            T e[3], temp[3];
+            SUB(e, e1, e0);
+            SUB(temp, p, e0);
+            T ratio = DOT(e, temp);
+            if (ratio <= 0.0) {
+                barycentric[0] = 1.0;
+                barycentric[1] = 0.0;
+                return pointPointDistance(p, e0); // PP (p-e0)
+            }
+            else
+            {
+                T c2 = DOT(e, e);
+                if (ratio >= c2) {
+                    barycentric[0] = 0.0;
+                    barycentric[1] = 1.0;
+                    return pointPointDistance(p, e1); // PP (p-e1)
+                }
+                else {
+                    ratio /= c2;
+                    e[0] = e0[0] + ratio * e[0];
+                    e[1] = e0[1] + ratio * e[1];
+                    e[2] = e0[2] + ratio * e[2];
+                    barycentric[0] = 1.0 - ratio;
+                    barycentric[1] = ratio;
+                    return pointPointDistance(p, e); // PE
+                }
+            }
+        }
 
         template <class T>
         T pointTriangleDistanceUnclassified(
@@ -316,6 +498,38 @@ namespace CCD {
         }
 
         template <class T>
+        T edgeEdgeNearestPoint(
+            const T* ea0,
+            const T* ea1,
+            const T* eb0,
+            const T* eb1,
+            T* barycentrc)
+        {
+            switch (edgeEdgeDistanceType(ea0, ea1, eb0, eb1,barycentrc)) {
+            case 0:
+                return pointPointDistance(ea0, eb0);
+            case 1:
+                return pointPointDistance(ea0, eb1);
+            case 2:
+                return pointEdgeDistance(ea0, eb0, eb1);
+            case 3:
+                return pointPointDistance(ea1, eb0);
+            case 4:
+                return pointPointDistance(ea1, eb1);
+            case 5:
+                return pointEdgeDistance(ea1, eb0, eb1);
+            case 6:
+                return pointEdgeDistance(eb0, ea0, ea1);
+            case 7:
+                return pointEdgeDistance(eb1, ea0, ea1);
+            case 8:
+                return edgeEdgeDistance(ea0, ea1, eb0, eb1,barycentrc);
+            default:
+                return (std::numeric_limits<T>::max)();
+            }
+        }
+
+        template <class T>
         T pointTriangleNearestDistance(
             const T* p,
             const T* t0,
@@ -367,10 +581,11 @@ namespace CCD {
             const T* t0,
             const T* t1,
             const T* t2,
-            const T* triangle_normal)
+            const T* triangle_normal,
+            T* barycentric, T d_hat_2)
         {
             T d_2;
-            T barycentric[3];
+           // T barycentric[3];
             T S[3];
             SUB(S, p, t0);
             T E1[3], E2[3], S1[3], S2[3];
@@ -381,23 +596,39 @@ namespace CCD {
             T temp = 1.0 / DOT(S1, E1);
             d_2 = temp * DOT(S2, E2);
             d_2 *= d_2;
+
+            if (d_2 >= d_hat_2) {
+                return d_2;
+            }
+
             barycentric[1] = temp * DOT(S1, S);
             barycentric[2] = temp * DOT(S2, triangle_normal);
             barycentric[0] = 1.0 - barycentric[1] - barycentric[2];
 
-            if (barycentric[0] > EPSILON && barycentric[1] > EPSILON && barycentric[2] > EPSILON) {
+            if (barycentric[0] > 0.0 && barycentric[1] > 0.0 && barycentric[2] > 0.0) {
                 return d_2;
             }
             else {
-                d_2 = pointEdgeDistanceUnclassified(p, t0, t1);
+                T bary_centric2[2];
+
+                d_2 = pointEdgeDistanceUnclassified(p, t0, t1, bary_centric2);
+                barycentric[0] = bary_centric2[0];
+                barycentric[1] = bary_centric2[1];
+                barycentric[2] = 0.0;
                 T d_;
-                d_ = pointEdgeDistanceUnclassified(p, t0, t2);
+                d_ = pointEdgeDistanceUnclassified(p, t0, t2, bary_centric2);
                 if (d_ < d_2) {
                     d_2 = d_;
+                    barycentric[0] = bary_centric2[0];
+                    barycentric[2] = bary_centric2[1];
+                    barycentric[1] = 0.0;
                 }
-                d_ = pointEdgeDistanceUnclassified(p, t1, t2);
+                d_ = pointEdgeDistanceUnclassified(p, t1, t2, bary_centric2);
                 if (d_ < d_2) {
                     d_2 = d_;
+                    barycentric[1] = bary_centric2[0];
+                    barycentric[2] = bary_centric2[1];
+                    barycentric[0] = 0.0;
                 }
             }
             return d_2;

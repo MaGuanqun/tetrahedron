@@ -178,7 +178,7 @@ void Collision::reorganzieDataOfObjects()
 	triangle_normal_not_normalized.resize(total_obj_num);
 	triangle_normal_render_not_normalized.resize(total_obj_num);
 	cross_for_approx_CCD.resize(total_obj_num);
-
+	mass.resize(total_obj_num);
 
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		obj_tri_aabb[i] = cloth->data()[i].triangle_AABB.data();
@@ -199,6 +199,7 @@ void Collision::reorganzieDataOfObjects()
 		triangle_normal_not_normalized[i] = cloth->data()[i].mesh_struct.ori_face_normal.data();
 		triangle_normal_render_not_normalized[i] = cloth->data()[i].mesh_struct.ori_face_normal_for_render.data();
 		cross_for_approx_CCD[i] = cloth->data()[i].mesh_struct.cross_for_approx_CCD.data();
+		mass[i] = cloth->data()[i].mesh_struct.mass.data();
 	}
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		obj_tri_aabb[i + cloth->size()] = tetrahedron->data()[i].triangle_AABB.data();
@@ -221,6 +222,7 @@ void Collision::reorganzieDataOfObjects()
 		triangle_normal_not_normalized[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.ori_face_normal.data();
 		triangle_normal_render_not_normalized[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.ori_face_normal_for_render.data();
 		cross_for_approx_CCD[i+ cloth->size()] = tetrahedron->data()[i].mesh_struct.cross_for_approx_CCD.data();
+		mass[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.mass.data();
 	}
 
 	if (has_collider) {
@@ -1553,7 +1555,9 @@ void Collision::pointTriangleResponse(unsigned int thread_No, unsigned int pair_
 			vertex_for_render[*(pair + 3)][indices[2]].data(),
 			vertex_position[*(pair + 3)][indices[0]].data(), vertex_position[*(pair + 3)][indices[1]].data(),
 			vertex_position[*(pair + 3)][indices[2]].data(), triangle_normal_render[*(pair + 3)][*(pair + 2)].data(),
-			target_pos_v, target_pos_tri[0], target_pos_tri[1], target_pos_tri[2], d_hat_2_, stiffness, epsilon_)) 
+			target_pos_v, target_pos_tri[0], target_pos_tri[1], target_pos_tri[2], d_hat_2_, stiffness, epsilon_,
+			mass[*(pair + 1)][*pair],
+			mass[*(pair + 3)][indices[0]], mass[*(pair + 3)][indices[1]], mass[*(pair + 3)][indices[2]]))
 		{
 			test_point_triangle_record_true_number[thread_No] += 4;
 			addTargetPosToSystemTotal(vertex_b_sum[*(pair + 1)][*pair].data(), target_pos->collision_energy, vertex_position[*(pair + 1)][*pair].data(),
@@ -1659,7 +1663,9 @@ void Collision::pointColliderTriangleResponse(unsigned int thread_No, unsigned i
 			vertex_for_render[*(pair + 3)][indices[2]].data(),
 			vertex_position[*(pair + 3)][indices[0]].data(), vertex_position[*(pair + 3)][indices[1]].data(),
 			vertex_position[*(pair + 3)][indices[2]].data(), triangle_normal_render[*(pair + 3)][*(pair + 2)].data(),
-			target_pos_tri[0], target_pos_tri[1], target_pos_tri[2], d_hat_2_, stiffness, epsilon_))
+			target_pos_tri[0], target_pos_tri[1], target_pos_tri[2], d_hat_2_, stiffness, epsilon_,
+			mass[*(pair + 3)][indices[0]],mass[*(pair + 3)][indices[1]], mass[*(pair + 3)][indices[2]]
+			))
 		{
 			for (int j = 0; j < 3; ++j) {
 				addTargetPosToSystemTotal(vertex_b_sum[*(pair + 3)][indices[j]].data(), target_pos->collision_energy, vertex_position[*(pair + 3)][indices[j]].data(),
@@ -1710,7 +1716,9 @@ void Collision::edgeEdgeResponse(unsigned int thread_No, unsigned int pair_threa
 			vertex_for_render[*(pair + 1)][*indices].data(), vertex_for_render[*(pair + 1)][*(indices+1)].data(),
 			vertex_position[*(pair + 3)][*compare_indices].data(), vertex_position[*(pair + 3)][*(compare_indices+1)].data(),
 			vertex_for_render[*(pair + 3)][*compare_indices].data(), vertex_for_render[*(pair + 3)][*(compare_indices+1)].data(),
-			d_hat_2_, stiffness, epsilon_))
+			d_hat_2_, stiffness, epsilon_,
+			mass[*(pair + 1)][*indices], mass[*(pair + 1)][*(indices+1)],
+			mass[*(pair + 3)][*compare_indices], mass[*(pair + 3)][*(compare_indices +1)]))
 		{
 			addTargetPosToSystemTotal(vertex_b_sum[*(pair + 1)][*indices].data(), target_pos->collision_energy, vertex_position[*(pair + 1)][*indices].data(),
 				target_pos_edge_0, stiffness, record_stiffness[*(pair + 1)][*indices], vetex_need_update[*(pair + 1)][*indices]);
@@ -1783,7 +1791,8 @@ void Collision::edgeEdgeColliderResponse(unsigned int thread_No, unsigned int pa
 			vertex_position[*(pair + 1)][*indices].data(), vertex_position[*(pair + 1)][*(indices + 1)].data(),
 			vertex_for_render[*(pair + 1)][*indices].data(), vertex_for_render[*(pair + 1)][*(indices + 1)].data(),
 			vertex_for_render[*(pair + 3)][*compare_indices].data(), vertex_for_render[*(pair + 3)][*(compare_indices + 1)].data(),
-			d_hat_2_, stiffness, epsilon_))
+			d_hat_2_, stiffness, epsilon_,
+			mass[*(pair + 1)][*indices],mass[*(pair + 1)][*(indices + 1)]))
 		{
 			addTargetPosToSystemTotal(vertex_b_sum[*(pair + 1)][*indices].data(), target_pos->collision_energy, vertex_position[*(pair + 1)][*indices].data(),
 				target_pos_edge_0, stiffness, record_stiffness[*(pair + 1)][*indices], vetex_need_update[*(pair + 1)][*indices]);

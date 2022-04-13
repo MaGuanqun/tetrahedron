@@ -311,6 +311,8 @@ private:
 	std::vector<unsigned int*> edge_vertices;
 	std::vector<unsigned int*> collider_edge_vertices;
 
+	std::vector<double*>mass;
+
 	void reorganzieDataOfObjects();
 	bool has_collider;
 
