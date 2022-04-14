@@ -164,7 +164,7 @@ private:
 	ApproxCCD approx_CCD;
 	CollisionConstraint collision_constraint;
 
-	double d_hat_2;
+	double d_hat;
 	double tolerance_2;// distance to report a collision
 
 	double epsilon;
