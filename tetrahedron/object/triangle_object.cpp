@@ -1,6 +1,8 @@
 #include"triangle_object.h"
 
 
+
+
 void TriangleObject::drawWireframe(Camera* camera, Shader* wireframe_shader)
 {
 	//setBuffer(cloth_index);
@@ -97,6 +99,25 @@ void TriangleObject::getVertexAABBPerThread(int thread_No, bool has_tolerance)
 		}
 	}
 }
+
+
+void TriangleObject::initialHashAABB()
+{
+	PC_radius.resize(4);
+	hash_index_for_vertex.resize(mesh_struct.vertex_position.size());
+	for (int i = 0; i < hash_index_for_vertex.size(); ++i) {
+		hash_index_for_vertex[i].reserve(32);
+	}
+	hash_index_for_edge.resize(mesh_struct.edges.size());
+	for (int i = 0; i < hash_index_for_edge.size(); ++i) {
+		hash_index_for_edge[i].reserve(32);
+	}
+	triangle_AABB.resize(mesh_struct.faces.size());
+	edge_AABB.resize(mesh_struct.edges.size());
+	vertex_AABB.resize(mesh_struct.vertex_position.size());
+}
+
+
 //EDGE_TRIANGLE_AABB
 void TriangleObject::getEdgeTriangleAABBPerThread(int thread_No)
 {

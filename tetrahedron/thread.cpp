@@ -315,6 +315,9 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     case FIND_TRIANGLE_PAIRS:
         k = job([func, thread_id]() {func->findAllTrianglePairs(thread_id); });
         break;
+    case RE_COLLISION_CONSTRAINT:
+        k = job([func, thread_id]() {func->re_collisionConstraint(thread_id); });
+        break;
     }
     return k;
 }

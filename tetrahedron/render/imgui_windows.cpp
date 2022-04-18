@@ -138,7 +138,7 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 		ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.9f);
 		ImGui::SetNextItemOpen(true);
 		if (ImGui::TreeNode("Set force coefficient")) {
-			ImGui::SliderFloat("##set force coefficient", force_coe, 0.5, 5.0, "force coefficient = %.2f");
+			ImGui::SliderFloat("##set force coefficient", force_coe, 0.01, 1.0, "force coefficient = %.2f");
 			ImGui::TreePop();
 		}
 		ImGui::TextWrapped("Force depends on force coefficient and cursor moving speed.");

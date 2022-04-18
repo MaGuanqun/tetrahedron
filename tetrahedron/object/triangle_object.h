@@ -12,6 +12,7 @@ protected:
 	};
 	void setMaterial(OriMesh& ori_mesh);
 	void setRepresentativePrimitve();
+	void initialHashAABB();
 public:
 	TriangleMeshStruct mesh_struct;
 	void drawShadow(Camera* camera, Shader* shader);
@@ -23,8 +24,8 @@ public:
 	std::vector<int> vertex_from_rep_triangle_index;
 	void getEdgeTriangleAABBPerThread(int thread_No);
 	void getVertexAABBPerThread(int thread_No, bool has_tolerance);
-
+	
 private:
-
+	
 };
 

@@ -211,8 +211,11 @@ private:
 		std::vector<Matrix<double,4,3>>& p_ARAP_volume_preserve, int tet_No, int dimension,
 		std::vector<std::array<double, 3>>& collision_b_sum, bool* collision_b_need_update, bool with_collision,
 		double position_stiffness, int vertex_index_start, std::array<int, 4>* indices, std::vector<int>& anchor_vertex,
-		std::array<double, 3>* anchor_pos, int surface_index_num, unsigned int* surface_vertex_index);
+		std::array<double, 3>* anchor_pos);
 	Matrix4d tet_local_A;
 	void computeTetMass(double* mass_, VectorXd& mass_inv, VectorXd& mass, int vertex_index_start, int vertex_num);
 	bool getDigonalForVolumePreserve(Vector3d& svd_eigen, double max, double min, Vector3d& sigma);
+
+	void computeInnerCollisionFreeEnergy();
+
 };

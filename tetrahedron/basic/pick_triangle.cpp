@@ -137,11 +137,11 @@ void PickTriangle::decideFinalIndi(std::vector<Cloth>* cloth, std::vector<Tetrah
 		id += (*cloth)[i].mesh_struct.faces.size();
 	}
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
-		start_indi[i] = id;
+		start_indi[i+ cloth->size()] = id;
 		id += (*tetrahedron)[i].mesh_struct.triangle_indices.size();
 	}
 	for (unsigned int i = 0; i < collider->size(); ++i) {
-		start_indi[i] = id;
+		start_indi[i+ cloth->size()+ tetrahedron->size()] = id;
 		id += (*collider)[i].mesh_struct.triangle_indices.size();
 	}
 	start_indi[total_obj_num] = id;

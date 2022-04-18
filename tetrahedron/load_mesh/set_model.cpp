@@ -17,14 +17,15 @@ void SetModel::load_getAABB(std::string& path, int& index)
 		std::cout << name << std::endl;
 		//if (name == "Avatar_low.obj") {
 		//	//create_mesh.setSphere(ori_mesh);
-		//	create_mesh.setFloor(ori_mesh);
+			create_mesh.setFloor(ori_mesh);
+		//	create_mesh.setMaterial1(ori_mesh);
 		//}
 		//else if (path == "./model/floor.obj") {
-		//	//create_mesh.setCapsule(ori_mesh); 
+		//	create_mesh.setCapsule(ori_mesh); 
 		//	create_mesh.setFloor(ori_mesh);
 		//}
 		//if (name == "cloth.obj") {
-			create_mesh.setMaterial1(ori_mesh);
+		//	create_mesh.setMaterial1(ori_mesh);
 		//}
 		//else {
 		//	ReadObj read_obj;

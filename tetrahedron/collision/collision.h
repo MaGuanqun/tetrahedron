@@ -12,6 +12,7 @@
 #include"CCD.h"
 #include"drawCulling.h"
 #include"primitive_distance.h"
+#include"DCD.h"
 //#include"mesh_patch.h"
 
 using namespace Eigen;
@@ -34,6 +35,7 @@ public:
 	void updateCollisionPosition();
 	void collisionTime(int thread_No);
 	void collisionConstraint(int thread_No);
+	void re_collisionConstraint(int thread_No);
 	void solveCollisionConstraint();
 	void test();
 	void collisionCulling();
@@ -41,7 +43,10 @@ public:
 	//void findAllPatchPairs(int thread_No);
 
 	std::vector<std::vector<double>> target_position_and_stiffness; //thus, the actual number is 4*target_position_index[0]
-	std::vector<std::vector<unsigned int>>target_position_index; //the first element store the number of primitives. thus, the actual number from [1] is 2*[0]
+	//std::vector<std::vector<unsigned int>>target_position_index; //the first element store the number of primitives. thus, the actual number from [1] is 2*[0]
+	std::vector<std::vector<unsigned int>>point_triangle_target_pos_index; 
+	std::vector<std::vector<unsigned int>>point_triangle_collider_target_pos_index;
+	std::vector<std::vector<unsigned int>>edge_edge_target_pos_index;
 
 	unsigned int ave_pair_num[5];//vertex_triangle_pair,edge_edge_pair,vertex_obj_triangle_collider_pair,vertex_collider_triangle_obj_pair,edge_edge_pair_collider.
 
@@ -103,6 +108,9 @@ public:
 	void collisionEnergy(int thread_No);
 	void collisionEnergy();
 
+	void solveCollisionConstraintDCD();
+	void reSolveCollisionConstraintDCD();
+
 private:
 
 	unsigned int** vertex_edge_pair;
@@ -150,7 +158,10 @@ private:
 	std::vector<unsigned int> vertex_vertex_pair_index_start_per_thread;//thread_No, index, respectively
 	std::vector<unsigned int> vertex_vertex_pair_collider_index_start_per_thread;//thread_No, index, respectively
 
-	std::vector<unsigned int> target_position_element_start_per_thread;
+	//std::vector<unsigned int> target_position_element_start_per_thread;
+	std::vector<unsigned int> point_triangle_target_position_element_start_per_thread;
+	std::vector<unsigned int> edge_edge_target_position_element_start_per_thread;
+	std::vector<unsigned int> point_triangle_collider_target_position_element_start_per_thread;
 	//std::vector<unsigned int> target_position_start_per_thread;
 
 
@@ -237,6 +248,8 @@ private:
 	void testCulling();
 	void testIfBuildCollisionConstraint();
 	double tolerance;
+	double* tolerance_ratio;
+	double tolerance_radius[4];
 	double eta;//for setting gap in ccd
 	void testTwoVectorsAreSame(std::vector<std::vector<int>>& vec1, std::vector<std::vector<int>>& vec2, unsigned int obj_index,
 		unsigned int triangle_index);
@@ -310,6 +323,11 @@ private:
 
 	std::vector<unsigned int*> edge_vertices;
 	std::vector<unsigned int*> collider_edge_vertices;
+
+
+	std::vector<double*>triangle_normal_magnitude_reciprocal;
+	std::vector<double*>collider_triangle_normal_magnitude_reciprocal;
+
 
 	std::vector<double*>mass;
 
@@ -445,4 +463,18 @@ private:
 	void computeEnergy(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end, double& energy);
 
 	double collision_stiffness[4];//we assume the initial stiffness of every objects are same
+
+	DCD dcd;
+
+	void re_pointTriangleResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end, TargetPosition* target_pos);
+	void setIndexEveryThread(std::vector<unsigned int>* pair, std::vector<unsigned int>& pair_index_start_per_thread);
+	void re_pointTriangleColliderResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end, TargetPosition* target_pos);
+
+	void construct_b_sum(double* b_sum, double* target_pos, double stiffness);
+
+	void re_pointTriangleResponse(int thread_No, TargetPosition* target_pos);
+	void re_pointTriangleColliderResponse(int thread_No, TargetPosition* target_pos);
+
+	void testPairEven();
+
 };

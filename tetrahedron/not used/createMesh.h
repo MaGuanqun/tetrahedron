@@ -329,6 +329,8 @@ public:
 			}
 		}
 
+
+
 		//for (int j = 0; j < col_num; j++) {
 		//	for (int i = 0; i < col_num; i++) {
 		//		mesh.vertices.push_back(std::array<double, 3>{ 0.7, 0.7 * (double)i / (double)(col_num - 1) + 0.1,// 0.5 * (double)i / (double)(col_num - 1) + 0.6,
@@ -370,13 +372,24 @@ public:
 
 	void setFloor(OriMesh& mesh) 
 	{
-		int col_num = 2;
-		for (int j = 0; j <col_num; j++) {
+		//int col_num = 30;
+		//for (int j = 0; j <col_num; j++) {
+		//	for (int i = 0; i < col_num; i++) {
+		//		mesh.vertices.push_back(std::array<double, 3>{2.8*(double)i / (double)(col_num - 1) - 1.4,
+		//			-0.7, 2.8*(double)j / (double)(col_num - 1) - 1.4});;
+		//	}
+		//}
+
+
+		int col_num = 80;
+		int row_num = 40;
+		for (int j = 0; j < row_num; j++) {
 			for (int i = 0; i < col_num; i++) {
-				mesh.vertices.push_back(std::array<double, 3>{2.8*(double)i / (double)(col_num - 1) - 1.4,
-					-0.7, 2.8*(double)j / (double)(col_num - 1) - 1.4});;
+				mesh.vertices.push_back(std::array<double, 3>{1.6 * (double)i / (double)(col_num - 1) - 0.8,  //+0.9
+					-0.4, 0.8 * (double)j / (double)(row_num - 1) - 0.4});//
 			}
 		}
+
 		//int col_num = 2;
 		//for (int j = 0; j <col_num; j++) {
 		//	for (int i = 0; i < col_num; i++) {
@@ -419,12 +432,12 @@ public:
 	{
 		int col_num = 40;
 		int row_num = 40;
-		double r = 0.12;
+		double r = 0.06;
 		int globe_row = 11;
 		int globe_num_2 = 20;
 
-		double half_capsule_length = 0.4;
-		double capsule_length = 0.8;
+		double half_capsule_length = 0.2;
+		double capsule_length = 2.0* half_capsule_length;
 
 		mesh.vertices.push_back(std::array<double, 3>{half_capsule_length + r,0.0, 0.0});
 		for (int j = 1; j < globe_row; j++) {

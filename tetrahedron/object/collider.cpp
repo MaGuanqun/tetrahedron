@@ -44,8 +44,8 @@ void Collider::loadMesh(OriMesh& ori_mesh, Thread* thread)
 	mesh_struct.thread = thread;
 	mesh_struct.initialNormalSize();
 	mesh_struct.setVertex();
-	mesh_struct.setEdge();
 	mesh_struct.setFace();
+	mesh_struct.setEdge();
 	mesh_struct.setThreadIndex(total_thread_num);
 	mesh_struct.vertex_for_render = mesh_struct.vertex_position;
 	mesh_struct.getRenderNormal();
@@ -54,8 +54,7 @@ void Collider::loadMesh(OriMesh& ori_mesh, Thread* thread)
 	genBuffer();
 	setBuffer();
 	ori_vertices = mesh_struct.vertex_position;
-	triangle_AABB.resize(mesh_struct.faces.size());
-	vertex_AABB.resize(mesh_struct.vertex_position.size());
+	initialHashAABB();
 	setRepresentativePrimitve();
 }
 

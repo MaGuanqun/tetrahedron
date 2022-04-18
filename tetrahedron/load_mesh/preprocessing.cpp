@@ -18,11 +18,11 @@ void Preprocessing::load_all_model(std::vector<std::string>& body_path, std::vec
 	for (int i = 0; i < object_path.size(); ++i) {
 		simulation_model[i].regularization(regularization_info);
 	}
-	if (!body_path.empty()) {
-		for (int i = 0; i < body_path.size(); ++i) {
-			collider_model[i].regularization(regularization_info);
-		}
-	}
+	//if (!body_path.empty()) {
+	//	for (int i = 0; i < body_path.size(); ++i) {
+	//		collider_model[i].regularization(regularization_info);
+	//	}
+	//}
 	scene_info.max_dis_from_center = regularization_info.max_dis_from_center;
 	memcpy(scene_info.camera_center, regularization_info.move_info, 24);
 	getFinalMesh();
@@ -55,16 +55,16 @@ void Preprocessing::getRegularizationInfo()
 			aabb_pos[j] = myMax(aabb_pos[j], simulation_model[i].aabb[j]);
 		}
 	}
-	if (!collider_model.empty()) {
-		for (int i = 0; i < collider_model.size(); ++i) {
-			for (int j = 0; j < 3; ++j) {
-				aabb_pos[j] = myMin(aabb_pos[j], collider_model[i].aabb[j]);
-			}
-			for (int j = 3; j < 6; ++j) {
-				aabb_pos[j] = myMax(aabb_pos[j], collider_model[i].aabb[j]);
-			}
-		}
-	}
+	//if (!collider_model.empty()) {
+	//	for (int i = 0; i < collider_model.size(); ++i) {
+	//		for (int j = 0; j < 3; ++j) {
+	//			aabb_pos[j] = myMin(aabb_pos[j], collider_model[i].aabb[j]);
+	//		}
+	//		for (int j = 3; j < 6; ++j) {
+	//			aabb_pos[j] = myMax(aabb_pos[j], collider_model[i].aabb[j]);
+	//		}
+	//	}
+	//}
 
 	for (int i = 0; i < 3; ++i) {
 		regularization_info.body_center[i] = 0.5 * (aabb_pos[i] + aabb_pos[i+3]);

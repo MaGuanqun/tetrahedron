@@ -89,21 +89,7 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 }
 
 
-void Cloth::initialHashAABB()
-{
-	PC_radius.resize(4);
-	hash_index_for_vertex.resize(mesh_struct.vertices.size());
-	for (int i = 0; i < hash_index_for_vertex.size(); ++i) {
-		hash_index_for_vertex[i].reserve(32);
-	}
-	hash_index_for_edge.resize(mesh_struct.edges.size());
-	for (int i = 0; i < hash_index_for_edge.size(); ++i) {
-		hash_index_for_edge[i].reserve(32);
-	}
-	triangle_AABB.resize(mesh_struct.faces.size());
-	edge_AABB.resize(mesh_struct.edges.size());
-	vertex_AABB.resize(mesh_struct.vertices.size());
-}
+
 
 void Cloth::setMass(double density)
 {

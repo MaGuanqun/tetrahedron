@@ -277,6 +277,10 @@ void IterationMethod::updateDiagonalWithAnchorVertices(int anchor_vertex_size, i
 		original_diagonal_inv[i + vertex_index_start] = 1.0 / original_diagonal[i + vertex_index_start];
 		global_matrix_operator.coefficient[global_matrix_operator.index_of_diagonal[i + vertex_index_start]] = original_diagonal[i + vertex_index_start];
 	}
+}
+
+void IterationMethod::updateDiagonalWithAnchorVerticesTotal()
+{
 	diagonal_inv = original_diagonal_inv;
 	thread->assignTask(this, UPDATE_JACOBI_OPERATOR);
 	thread->assignTask(this, UPDATE_2_A_JACOBI_ITR_MATRIX);
@@ -285,8 +289,6 @@ void IterationMethod::updateDiagonalWithAnchorVertices(int anchor_vertex_size, i
 	ori_A_jacobi_operator_3_coefficient = A_jacobi_operator_3.coefficient;
 	ori_A_jacobi_operator_coefficient = A_jacobi_operator.coefficient;
 }
-
-
 
 void IterationMethod::updateClothDiagonalPerThread(int index_start, int index_end, int obj_index_start, double* stiffness, bool* need_update)
 {
@@ -310,7 +312,7 @@ void IterationMethod::updateClothDiagonalPerThread(int index_start, int index_en
 	}
 }
 
-void IterationMethod::updateTetDiagonalPerThread(int index_start, int index_end, int obj_index_start, double* stiffness, bool* need_update, unsigned int* vertex_index_on_sureface)
+void IterationMethod::updateTetDiagonalPerThread(int index_start, int index_end, int obj_index_start, double* stiffness, bool* need_update, unsigned int* vertex_index_on_surface)
 {
 	double* ori_diagonal = original_diagonal.data();
 	double* current_diagonal_inv = diagonal_inv.data();
@@ -320,10 +322,10 @@ void IterationMethod::updateTetDiagonalPerThread(int index_start, int index_end,
 
 	int vertex_index;
 	for (int i = index_start; i < index_end; ++i) {
-		vertex_index = vertex_index_on_sureface[i] + obj_index_start;
-		if (need_update[i]) {
-			global_mat_coeff[global_mat_digonal_index[vertex_index]] = ori_diagonal[vertex_index] + stiffness[i];
-			current_diagonal_inv[vertex_index] = 1.0 / (ori_diagonal[vertex_index] + stiffness[i]);
+		vertex_index = vertex_index_on_surface[i] + obj_index_start;
+		if (need_update[vertex_index]) {
+			global_mat_coeff[global_mat_digonal_index[vertex_index]] = ori_diagonal[vertex_index] + stiffness[vertex_index];
+			current_diagonal_inv[vertex_index] = 1.0 / (ori_diagonal[vertex_index] + stiffness[vertex_index]);
 
 		}
 		else {

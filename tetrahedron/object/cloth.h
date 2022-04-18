@@ -59,7 +59,6 @@ private:
 	void setAnchor();
 
 	void findNeighborVertex(int vertex_index, int recursion_deepth, std::vector<bool>& is_vertex_used);
-	void initialHashAABB();
 
 };
 

@@ -23,7 +23,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool control_parameter[13];
 	memset(control_parameter, 0, 13);
 	ImGuiWindows imgui_windows;
-	float force_coe = 1.0;
+	float force_coe = 0.1;
 	std::vector<std::vector<bool>> wireframe(3);
 	std::vector<std::vector<bool>> hide(3);
 	std::vector<std::string> collider_path;
@@ -52,7 +52,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	memset(set_stiffness, 0, 10);
 	double temp_stiffness[6] = { 0.0,0.0,0.0,0.0,0.0,0.0 };
 	UpdateClothStiffness update_cloth_stiffness;
-	double tolerance_ratio[4] = { 1e-2,1e-2,1e-2,1e-2 };
+	double tolerance_ratio[4] = { 5e-2,5e-2,5e-2,5e-2 };
 
 	bool set_anchor[2] = { false,false };
 
