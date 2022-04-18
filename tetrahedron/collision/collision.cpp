@@ -16,9 +16,9 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	this->tetrahedron = tetrahedron;
 	this->thread = thread;
 
-	max_index_number_in_one_cell = 1000;
-	max_index_number_in_one_cell_collider = 300;
-	estimate_coeff_for_pair_num = 20;
+	max_index_number_in_one_cell = 1400;
+	max_index_number_in_one_cell_collider = 400;
+	estimate_coeff_for_pair_num = 40;
 
 	draw_culling.initial(cloth, collider, tetrahedron, thread);
 	//findPatchOfObjects();

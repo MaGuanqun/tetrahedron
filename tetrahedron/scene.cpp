@@ -130,9 +130,9 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 		cloth[i].recordInitialMesh(single_cloth_info[i]);
 	}
 
-	std::array<double, 4>tetrahedron_collision_stiffness_per = { 2e5,2e5,2e5, 2e5 };
+	std::array<double, 4>tetrahedron_collision_stiffness_per = { 4e4,4e4,4e4, 4e4 };
 	double sigma_limit[2] = { 0.999,1.001 };
-	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density, 2e5, 1e3, 0.0, tetrahedron_collision_stiffness_per.data(), sigma_limit);
+	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density, 2e5, 3e2, 0.0, tetrahedron_collision_stiffness_per.data(), sigma_limit);
 	for (int i = 0; i < tetrahedron_num; ++i) {
 		tetrahedron[i].recordInitialMesh(single_tetrahedron_info);
 	}
@@ -400,7 +400,7 @@ void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_par
 		
 
 		//project_dynamic.update_ave_iteration_record(ave_iteration);
-		//time_stamp++;
+		time_stamp++;
 	}
 
 	updateBuffer();

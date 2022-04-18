@@ -432,11 +432,11 @@ public:
 	{
 		int col_num = 40;
 		int row_num = 40;
-		double r = 0.06;
+		double r = 0.12;
 		int globe_row = 11;
 		int globe_num_2 = 20;
 
-		double half_capsule_length = 0.2;
+		double half_capsule_length = 0.4;
 		double capsule_length = 2.0* half_capsule_length;
 
 		mesh.vertices.push_back(std::array<double, 3>{half_capsule_length + r,0.0, 0.0});

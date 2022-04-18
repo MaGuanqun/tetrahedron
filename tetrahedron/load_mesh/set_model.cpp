@@ -17,11 +17,13 @@ void SetModel::load_getAABB(std::string& path, int& index)
 		std::cout << name << std::endl;
 		//if (name == "Avatar_low.obj") {
 		//	//create_mesh.setSphere(ori_mesh);
-			create_mesh.setFloor(ori_mesh);
+
+			//create_mesh.setFloor(ori_mesh);
+
 		//	create_mesh.setMaterial1(ori_mesh);
 		//}
 		//else if (path == "./model/floor.obj") {
-		//	create_mesh.setCapsule(ori_mesh); 
+			create_mesh.setCapsule(ori_mesh); 
 		//	create_mesh.setFloor(ori_mesh);
 		//}
 		//if (name == "cloth.obj") {
@@ -37,7 +39,7 @@ void SetModel::load_getAABB(std::string& path, int& index)
 	//else if (path == "./model/Pants_simpleModel_high.obj") {
 	//	create_mesh.setMaterial3(ori_mesh);
 	//}
-	
+			moveBodyCapsule(ori_mesh);
 	}
 	else {
 		ori_mesh.type = TETRAHEDRON;
@@ -52,7 +54,7 @@ void SetModel::load_getAABB(std::string& path, int& index)
 		//moveBodyCapsule();
 	}
 	if (path == "./model/Avatar_low.obj") {
-		//moveBodyCapsule();
+		//
 		//moveSphere();
 		//moveSphere();
 	}
@@ -151,4 +153,25 @@ void SetModel::splitPath(std::string& path, std::string& name)
 {
 	int index = path.find_last_of("\\");
 	name = path.substr(index+1, path.length()-index);
+}
+
+void SetModel::moveBodyCapsule(OriMesh& ori_mesh)
+{
+	//band capsule
+	double move[3] = { 0.0,-0.5,-0.05 };
+	// move capsule
+	//double move[3] = { 0.0,-0.3,-0.35 };
+	//sphere
+	//double move[3] = { 0.0,-0.15,0.0 };
+	//skirt
+	//double move[3] = { 0.0,-0.3,0.0 };
+	//capsule collide two clothes
+	//rotate(0.5*M_PI, mesh_struct.mesh.vertices);
+	//double move[3] = { 0.15,0.0,0.0 };
+	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
+		SUM(ori_mesh.vertices[i], ori_mesh.vertices[i], move);
+	}
+
+
+
 }

@@ -23,7 +23,7 @@ public:
 private:
 
 	void setBackMaterial(OriMesh& ori_mesh);
-	void moveBodyCapsule();
+	void moveBodyCapsule(OriMesh& ori_mesh);
 	void getAABB();
 	void setTetFrontMaterial(OriMesh& ori_mesh, int& index);
 	void splitPath(std::string& path, std::string& name);
