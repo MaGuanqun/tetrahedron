@@ -17,7 +17,7 @@ public:
 	std::array<double,6> aabb;
 	OriMesh ori_mesh;
 	RegularizationInfo regularization_info;
-	void load_getAABB(std::string& path, int& index);
+	void load_getAABB(std::string& path, int& index, int obj_index);
 	void regularization(RegularizationInfo& regularization_info);
 
 private:

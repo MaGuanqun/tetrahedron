@@ -58,6 +58,9 @@ public:
 	void updateTetrahedronAnchorVertices();
 	size_t* time_stamp;
 	Collision collision;
+
+	void updateSystemPos();
+
 private:
 	unsigned int tetrahedron_begin_obj_index;
 	int local_global_itr_in_single_outer;

@@ -5,12 +5,12 @@ void Preprocessing::load_all_model(std::vector<std::string>& body_path, std::vec
 	int tet_index = 0;
 	simulation_model.resize(object_path.size());
 	for (int i = 0; i < object_path.size(); ++i) {
-		simulation_model[i].load_getAABB(object_path[i], tet_index);
+		simulation_model[i].load_getAABB(object_path[i], tet_index,i);
 	}
 	if (!body_path.empty()) {
 		collider_model.resize(body_path.size());
 		for (int i = 0; i < body_path.size(); ++i) {
-			collider_model[i].load_getAABB(body_path[i], tet_index);
+			collider_model[i].load_getAABB(body_path[i], tet_index,i);
 		}
 	}
 	getRegularizationInfo();

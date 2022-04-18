@@ -382,11 +382,11 @@ public:
 
 
 		int col_num = 80;
-		int row_num = 40;
+		int row_num =40;
 		for (int j = 0; j < row_num; j++) {
 			for (int i = 0; i < col_num; i++) {
 				mesh.vertices.push_back(std::array<double, 3>{1.6 * (double)i / (double)(col_num - 1) - 0.8,  //+0.9
-					-0.4, 0.8 * (double)j / (double)(row_num - 1) - 0.4});//
+					-0.525, 0.8 * (double)j / (double)(row_num - 1) - 0.4});//
 			}
 		}
 

@@ -46,7 +46,7 @@ void SpatialHashing::initialHashCell(unsigned int total_triangle_num, unsigned i
 	//for (unsigned int i = 0; i < thread_num; ++i) {
 	//	indicator[i].resize(1);
 	//}
-	hash_cell_count = findNeareastPrimeNumber(0.5 * total_triangle_num);// 90191;// 24877;// 500009; //;// // ;// 32999;//  // 11987;//84947
+	hash_cell_count = findNeareastPrimeNumber(total_triangle_num);// 90191;// 24877;// 500009; //;// // ;// 32999;//  // 11987;//84947
 	//hash_cell_count = 90191;
 	std::cout << "total triangle " << total_triangle_num << " hash cell count " << hash_cell_count << std::endl;
 	this->max_index_number_in_one_cell = max_index_number_in_one_cell;// = 801;
@@ -436,9 +436,16 @@ void SpatialHashing::buildSpatialHashing(double* scene_aabb)
 	time_t t = clock();
 	time_t t1 = clock();
 
+	//std::cout<<"spatial hashing aabb "<< scene_aabb[0] << " " << scene_aabb[1] << " " << scene_aabb[2] << " " << scene_aabb[3] << " " << scene_aabb[4] << " " << scene_aabb[5] << std::endl;
+
 	//t = clock();
 
-	thread->assignTask(this, TRIANGLE_HASHING_SMALLER_HASH_TABLE);
+	//thread->assignTask(this, TRIANGLE_HASHING_SMALLER_HASH_TABLE);
+
+	for (unsigned int i = 0; i < thread_num; ++i) {
+		triangleHashingSmallerHashTable(i);
+	}
+
 	recordNonEmptyCell();
 	
 	//t1 = clock();
@@ -971,7 +978,7 @@ void SpatialHashing::triangleHashingSmallerHashTable(int thread_No)
 		for (unsigned int j = primitive_begin; j < primitive_end; ++j) {
 			primitive_index[0] = j;
 			triangleHashValueWithoutRecord(aabb[j].data(), spatial_hashing_cell_, primitive_index, scene_aabb_, hash_cell_length,
-				hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_,max_index_number_in_one_cell_);
+				hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_,max_index_number_in_one_cell_,0);
 		}
 	}
 	if (has_collider_) {
@@ -986,7 +993,7 @@ void SpatialHashing::triangleHashingSmallerHashTable(int thread_No)
 			for (unsigned int j = primitive_begin; j < primitive_end; ++j) {
 				primitive_index[0] = j;
 				triangleHashValueWithoutRecord(aabb[j].data(), spatial_hashing_cell_collider_, primitive_index, scene_aabb_,
-					hash_cell_length, hash_cell_count_, p1, p2, p3, spatial_hashing_cell_collider_size_, max_index_number_in_one_cell_collider_);
+					hash_cell_length, hash_cell_count_, p1, p2, p3, spatial_hashing_cell_collider_size_, max_index_number_in_one_cell_collider_,0);
 			}
 		}
 	}
@@ -1008,7 +1015,7 @@ void SpatialHashing::triangleHashingSmallerHashTable(int thread_No)
 				hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_, obj_edge_hash[i] + j * max_triangle_cell_size, max_index_number_in_one_cell_);*/
 			//use this for loop by every cell
 			triangleHashValueWithoutRecord(aabb[j].data(), spatial_hashing_cell_, primitive_index, scene_aabb_, hash_cell_length,
-				hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_,max_index_number_in_one_cell_);
+				hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_,max_index_number_in_one_cell_,1);
 		}
 	}
 	if (has_collider_) {
@@ -1023,7 +1030,7 @@ void SpatialHashing::triangleHashingSmallerHashTable(int thread_No)
 			for (unsigned int j = primitive_begin; j < primitive_end; ++j) {
 				primitive_index[0] = j;
 				triangleHashValueWithoutRecord(aabb[j].data(), spatial_hashing_cell_collider_, primitive_index, scene_aabb_,
-					hash_cell_length, hash_cell_count_, p1, p2, p3, spatial_hashing_cell_collider_size_, max_index_number_in_one_cell_collider_);
+					hash_cell_length, hash_cell_count_, p1, p2, p3, spatial_hashing_cell_collider_size_, max_index_number_in_one_cell_collider_,1);
 			}
 		}
 	}
@@ -1053,7 +1060,7 @@ void SpatialHashing::triangleHashingSmallerHashTable(int thread_No)
 				//	hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_, obj_vertex_hash[i] + j * max_vertex_cell_size, max_index_number_in_one_cell_);
 				//use this for loop by every cell
 				triangleHashValueWithoutRecord(aabb[j].data(), spatial_hashing_cell_, primitive_index, scene_aabb_, hash_cell_length,
-					hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_,max_index_number_in_one_cell_);
+					hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_,max_index_number_in_one_cell_,2);
 			}
 		}
 		else {
@@ -1065,7 +1072,7 @@ void SpatialHashing::triangleHashingSmallerHashTable(int thread_No)
 					hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_, obj_vertex_hash[i] + vertex_index_on_surface[j] * max_vertex_cell_size, max_index_number_in_one_cell_);*/
 				//use this for loop by every cell
 				triangleHashValueWithoutRecord(aabb[vertex_index_on_surface[j]].data(), spatial_hashing_cell_, primitive_index, scene_aabb_, hash_cell_length,
-					hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_,max_index_number_in_one_cell_);
+					hash_cell_count_, p1, p2, p3, spatial_hashing_cell_size_,max_index_number_in_one_cell_,2);
 			}
 		}
 	}
@@ -1159,7 +1166,7 @@ void SpatialHashing::triangleHashValueWithRecord(double* aabb,
 void SpatialHashing::triangleHashValueWithoutRecord(double* aabb,
 	unsigned int* spatial_hashing_cell, unsigned int* triangle_index, double* scene_aabb, double cell_length,
 	unsigned int hash_cell_count, uint64_t P1, uint64_t P2, uint64_t P3, unsigned int* spatial_hashing_cell_triangle_size,
-	unsigned int max_index_number_in_one_cell)
+	unsigned int max_index_number_in_one_cell, int test_type)
 {
 	std::uint64_t spatial_index[6];
 	//std::uint64_t index_z_multi;
@@ -1175,6 +1182,9 @@ void SpatialHashing::triangleHashValueWithoutRecord(double* aabb,
 		spatial_index[j] = (std::uint64_t)floor((aabb[j] - scene_aabb[j - 3]) / cell_length)+ 1;
 	}
 
+	if (test_type == 0) {
+	//	std::cout << (spatial_index[4] - spatial_index[1]) * (spatial_index[5] - spatial_index[2]) * (spatial_index[3] - spatial_index[0]) << std::endl;
+	}
 	for (std::uint64_t index_y = spatial_index[1]; index_y < spatial_index[4]; ++index_y) {
 		//index_y_multi = P2 * index_y;
 		for (std::uint64_t index_z = spatial_index[2]; index_z < spatial_index[5]; ++index_z) {

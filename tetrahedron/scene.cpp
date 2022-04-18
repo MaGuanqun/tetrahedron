@@ -130,7 +130,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 		cloth[i].recordInitialMesh(single_cloth_info[i]);
 	}
 
-	std::array<double, 4>tetrahedron_collision_stiffness_per = { 4e4,4e4,4e4, 4e4 };
+	std::array<double, 4>tetrahedron_collision_stiffness_per = { 4e4,8e4,4e4, 4e4 };
 	double sigma_limit[2] = { 0.999,1.001 };
 	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density, 2e5, 3e2, 0.0, tetrahedron_collision_stiffness_per.data(), sigma_limit);
 	for (int i = 0; i < tetrahedron_num; ++i) {
@@ -384,6 +384,7 @@ void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_par
 		if (intersection.happened_include_collider) {
 			setObjMoveInfo(camera, cursor_screen);
 			project_dynamic.collision.getAABB();
+			project_dynamic.updateSystemPos();
 		}
 		setChosenIndicator();
 	}
@@ -581,6 +582,30 @@ void Scene::setObjMoveInfo(Camera* camera, double* cursor_screen)
 	SUB(displacement, cursor_pos_in_space, cursor_pos);
 	project_dynamic.collision.draw_culling.move(intersection.obj_No, displacement);
 
+	/*std::cout << "original after move " << std::endl;
+	std::cout << tetrahedron[1].mesh_struct.vertex_for_render[0][0] << " " << tetrahedron[1].mesh_struct.vertex_for_render[0][1] << " " << tetrahedron[1].mesh_struct.vertex_for_render[0][2] << std::endl;
+	std::cout << tetrahedron[1].mesh_struct.vertex_position[0][0] << " " << tetrahedron[1].mesh_struct.vertex_position[0][1] << " " << tetrahedron[1].mesh_struct.vertex_position[0][2] << std::endl;
+	*/
+
+	for (unsigned int j = 0; j < cloth.size(); ++j) {
+		cloth[j].ori_vertices= cloth[j].mesh_struct.vertex_position;
+	}
+	for (unsigned int j = 0; j < tetrahedron.size(); ++j) {
+		tetrahedron[j].ori_vertices= tetrahedron[j].mesh_struct.vertex_position;
+	}
+	for (unsigned int j = 0; j < collider.size(); ++j) {
+		collider[j].ori_vertices = collider[j].mesh_struct.vertex_position;
+	}
+	for (int i = 0; i < cloth.size(); ++i) {
+		cloth[i].initial();
+	}
+	for (int i = 0; i < tetrahedron.size(); ++i) {
+		tetrahedron[i].initial();
+	}
+	//intersection.initialIntersection();
+	for (int i = 0; i < collider.size(); ++i) {
+		collider[i].reset();
+	}
 }
 
 void Scene::setCursorForce(Camera* camera, double* cursor_screen, float force_coe)

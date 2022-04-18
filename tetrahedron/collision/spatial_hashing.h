@@ -151,7 +151,8 @@ private:
 
 	void triangleHashValueWithoutRecord(double* aabb,
 		unsigned int* spatial_hashing_cell, unsigned int* triangle_index, double* scene_aabb, double cell_length, unsigned int hash_cell_count,
-		uint64_t P1, uint64_t P2, uint64_t P3, unsigned int* spatial_hashing_cell_triangle_size, unsigned int max_index_number_in_one_cell);
+		uint64_t P1, uint64_t P2, uint64_t P3, unsigned int* spatial_hashing_cell_triangle_size, unsigned int max_index_number_in_one_cell,
+		int test_type);
 
 	std::uint64_t P1, P2, P3;
 

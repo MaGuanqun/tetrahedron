@@ -1027,15 +1027,33 @@ void Collision::collisionCulling()
 	//t1 = clock();
 	//std::cout << "AABB " << t1 - t << std::endl;
 	//buildBVH();
+	//std::cout <<"aabb "<< scene_aabb[0] << " " << scene_aabb[1] << " " << scene_aabb[2] << " " << scene_aabb[3] << " " << scene_aabb[4] << " " << scene_aabb[5] << std::endl;
 
 	spatial_hashing.buildSpatialHashing(scene_aabb);
 
+
+	//std::cout << "culling vertex_position " << std::endl;
+	//std::cout << tetrahedron->data()[1].mesh_struct.vertex_for_render[0][0] << " " << tetrahedron->data()[1].mesh_struct.vertex_for_render[0][1] << " " << tetrahedron->data()[1].mesh_struct.vertex_for_render[0][2] << std::endl;
+	//std::cout << tetrahedron->data()[1].mesh_struct.vertex_position[0][0] << " " << tetrahedron->data()[1].mesh_struct.vertex_position[0][1] << " " << tetrahedron->data()[1].mesh_struct.vertex_position[0][2] << std::endl;
+
+
 	//unsigned int num = 0;
+	//std::cout << "pair num " << std::endl;
 	//for (unsigned int j = 0; j < thread_num; ++j) {
-	//	std::cout << spatial_hashing.vertex_triangle_pair[j][0] / 4  << std::endl;
+	//	//std::cout << spatial_hashing.vertex_triangle_pair[j][0] / 4  << std::endl;
 	//	num += spatial_hashing.vertex_triangle_pair[j][0] / 4;
 	//}
 	//std::cout << "total v-t pair " << num << std::endl;
+	//for (unsigned int j = 0; j < thread_num; ++j) {
+	//	for (unsigned int i = 1; i < spatial_hashing.vertex_triangle_pair[j][0] + 1; i += 4) {
+	//		//if (spatial_hashing.vertex_triangle_pair[j][i + 1] != spatial_hashing.vertex_triangle_pair[j][i + 3]) {
+	//			std::cout << spatial_hashing.vertex_triangle_pair[j][i] << " " << spatial_hashing.vertex_triangle_pair[j][i + 1] << " "
+	//				<< spatial_hashing.vertex_triangle_pair[j][i + 2] << " " << spatial_hashing.vertex_triangle_pair[j][i + 3] << std::endl;
+	//		//}
+	//	}		
+	//}
+
+
 	//num = 0;
 	//for (unsigned int j = 0; j < thread_num; ++j) {
 	//	std::cout << spatial_hashing.edge_edge_pair[j][0] / 4 << std::endl;
@@ -1459,11 +1477,11 @@ void Collision::solveCollisionConstraintDCD()
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL);
 	}
-	thread->assignTask(this, COLLISION_CONSTRAINT);
+//	thread->assignTask(this, COLLISION_CONSTRAINT);
 
-	//for (unsigned int i = 0; i < thread_num; ++i) {
-	//	collisionConstraint(i);
-	//}
+	for (unsigned int i = 0; i < thread_num; ++i) {
+		collisionConstraint(i);
+	}
 
 
 	sumTargetPosition();
@@ -1478,7 +1496,12 @@ void Collision::reSolveCollisionConstraintDCD()
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL);
 	}
-	thread->assignTask(this, RE_COLLISION_CONSTRAINT);
+	//thread->assignTask(this, RE_COLLISION_CONSTRAINT);
+
+	for (unsigned int i = 0; i < thread_num; ++i) {
+		re_collisionConstraint(i);
+	}
+
 	resumTargetPosition();
 }
 
@@ -1867,6 +1890,14 @@ void Collision::pointTriangleResponse(unsigned int thread_No, unsigned int pair_
 			1.0,1.0,1.0,1.0,
 			triangle_normal_magnitude_reciprocal[*(pair + 3)][*(pair + 2)]))
 		{
+			//std::cout << "===========" << std::endl;
+			//std::cout << *(pair + 1) << " "<<*pair<<" "<< *(pair + 3)<<" "<< *(pair + 2)<<std::endl;
+			//std::cout << vertex_for_render[*(pair + 1)][*pair][0] << " " << vertex_for_render[*(pair + 1)][*pair][1] << " "
+			//	<< vertex_for_render[*(pair + 1)][*pair][2] << std::endl;
+			//std::cout << vertex_position[*(pair + 1)][*pair][0] << " " << vertex_position[*(pair + 1)][*pair][1] << " "
+			//	<< vertex_position[*(pair + 1)][*pair][2] << std::endl;
+
+
 			//std::cout << "collide " << std::endl;
 			test_point_triangle_record_true_number[thread_No] += 4;
 			addTargetPosToSystemTotal(vertex_b_sum[*(pair + 1)][*pair].data(), target_pos->collision_energy, vertex_position[*(pair + 1)][*pair].data(),

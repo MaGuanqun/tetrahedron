@@ -1,6 +1,7 @@
 #pragma once
 
 #include"../basic/global.h"
+#include"primitive_distance.h"
 
 #undef MAGNITUDE_CROSS
 #define MAGNITUDE_CROSS(dest,v1,v2, t) \
@@ -14,6 +15,11 @@ dest[0]=t*dest[0]+v0[0];\
 dest[1]=t*dest[1]+v0[1];\
 dest[2]=t*dest[2]+v0[2];\
 
+#undef MULTI_SUM2
+#define MULTI_SUM2(dest,t,u0,v0)\
+dest[0]=t*u0[0]+v0[0];\
+dest[1]=t*u0[1]+v0[1];\
+dest[2]=t*u0[2]+v0[2];\
 
 class DCD
 {
@@ -33,13 +39,28 @@ public:
 		double* initial_triangle_normal, double* current_triangle_normal, double* vertex_target_pos,
 		double tolerance);
 
+
+	bool edgeEdge(double* edge_target_pos_0, double* edge_target_pos_1,
+		double* compare_target_pos_0, double* compare_target_pos_1, double* current_edge_vertex_0, double* current_edge_vertex_1, double* initial_edge_vertex_0, double* initial_edge_vertex_1,
+		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0,
+		double* initial_compare_edge_vertex_1, double tolerance, double mass_e_0_0, double mass_e_0_1, double mass_e_1_0, double mass_e_1_1);
+
 private:
 	bool pointProjectOnTriangle(
 		const double* p,
 		const double* t0,
 		const double* t1,
 		const double* t2,
-		const double* triangle_normal);
+		const double* triangle_normal, double* barycentric);
+
+	bool checkEdgeEdgeCollision(double* current_edge_vertex_0, double* current_edge_vertex_1, double* initial_edge_vertex_0, double* initial_edge_vertex_1,
+		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0, double* initial_compare_edge_vertex_1,
+		double* alpha, double* norm, double& distance2, double tolerance);
+	void calDistanceEdgeEdge(double* edge_target_pos_0, double* edge_target_pos_1,
+		double* compare_target_pos_0, double* compare_target_pos_1,
+		double* norm, double distance, double* alpha, double* current_edge_vertex_0, double* current_edge_vertex_1,
+		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1,
+		double mass_e_0_0, double mass_e_0_1, double mass_e_1_0, double mass_e_1_1);
 
 };
 

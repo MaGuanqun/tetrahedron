@@ -11,6 +11,7 @@ bool DCD::pointSelfTriangle(double* initial_position, double* current_position,
     double tolerance, double mass_point, double mass_t0, double mass_t1, double mass_t2,
     double current_triangle_area)
 {
+    double barycentric[2];
 	double c_p[3];
 	SUB(c_p, current_position, current_triangle_position_0);
 	double current_side = DOT(c_p, current_triangle_normal);
@@ -22,10 +23,13 @@ bool DCD::pointSelfTriangle(double* initial_position, double* current_position,
 	}
 	else {
         if (!pointProjectOnTriangle(initial_position, initial_triangle_position_0, initial_triangle_position_1,
-            initial_triangle_position_2, initial_triangle_normal)) {
+            initial_triangle_position_2, initial_triangle_normal, barycentric)) {
             return false;
         }
 	}
+
+    //std::cout << EDGE_LENGTH(current_triangle_normal, initial_triangle_normal) << " " << EDGE_LENGTH(current_position, initial_position) << " " << EDGE_LENGTH(current_triangle_position_0, initial_triangle_position_0) << std::endl;
+    //std::cout <<"bary "<< initial_side * current_side << " " << barycentric[0] << " " << barycentric[1] << std::endl;
 
     //compute moving distance
     
@@ -75,12 +79,116 @@ bool DCD::pointSelfTriangle(double* initial_position, double* current_position,
 
 }
 
+bool DCD::edgeEdge(double* edge_target_pos_0, double* edge_target_pos_1,
+    double* compare_target_pos_0, double* compare_target_pos_1, double* current_edge_vertex_0, double* current_edge_vertex_1, 
+    double* initial_edge_vertex_0, double* initial_edge_vertex_1,
+    double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0,
+    double* initial_compare_edge_vertex_1, double tolerance, double mass_e_0_0, double mass_e_0_1, double mass_e_1_0, double mass_e_1_1)
+{
+    double barycentric[4];
+    if (CCD::internal::edgeEdgeDistanceType(initial_edge_vertex_0, initial_edge_vertex_1,
+        initial_compare_edge_vertex_0, initial_compare_edge_vertex_1, barycentric) != 8) {
+        return false;
+    }
+    double norm[3];
+    double distance2;
+    if (checkEdgeEdgeCollision(current_edge_vertex_0, current_edge_vertex_1, initial_edge_vertex_0, initial_edge_vertex_1, current_compare_edge_vertex_0, current_compare_edge_vertex_1,
+        initial_compare_edge_vertex_0, initial_compare_edge_vertex_1, barycentric, norm, distance2, tolerance)) {
+        calDistanceEdgeEdge(edge_target_pos_0, edge_target_pos_1, compare_target_pos_0, compare_target_pos_1,
+            norm, distance2, barycentric, current_edge_vertex_0, current_edge_vertex_1, current_compare_edge_vertex_0,
+            current_compare_edge_vertex_1, mass_e_0_0, mass_e_0_1, mass_e_1_0, mass_e_1_1);
+        return true;
+    }
+    return false;
+
+}
+
+
+void DCD::calDistanceEdgeEdge(double* edge_target_pos_0, double* edge_target_pos_1,
+    double* compare_target_pos_0, double* compare_target_pos_1,
+    double* norm, double distance, double* alpha, double* current_edge_vertex_0, double* current_edge_vertex_1,
+    double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, 
+    double mass_e_0_0, double mass_e_0_1, double mass_e_1_0, double mass_e_1_1)
+{  
+    double coe = alpha[0] * alpha[0] / mass_e_0_0 + alpha[1] * alpha[1] / mass_e_0_1 + alpha[2] * alpha[2] / mass_e_1_0+ alpha[3] * alpha[3] / mass_e_1_1;
+    double temp;
+    distance /= coe;
+
+    temp = distance * alpha[0] / mass_e_0_0;
+    MULTI_SUM2(edge_target_pos_0, temp, norm, current_edge_vertex_0);
+
+    temp = distance * alpha[1] / mass_e_0_1;
+    MULTI_SUM2(edge_target_pos_1, temp, norm, current_edge_vertex_1);
+
+    temp = -distance * alpha[2] / mass_e_1_0;
+    MULTI_SUM2(compare_target_pos_0, temp, norm, current_compare_edge_vertex_0);
+
+    temp = -distance * alpha[3] / mass_e_1_1;
+    MULTI_SUM2(compare_target_pos_1, temp, norm, current_compare_edge_vertex_1);
+}
+
+bool DCD::checkEdgeEdgeCollision(double* current_edge_vertex_0, double* current_edge_vertex_1, double* initial_edge_vertex_0, double* initial_edge_vertex_1,
+    double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0, double* initial_compare_edge_vertex_1,
+    double* alpha, double* norm, double& distance2, double tolerance)
+{
+    double e0[3];
+    double e1[3];
+    POINT_ON_EDGE(e0, alpha[0], alpha[1], initial_edge_vertex_0, initial_edge_vertex_1);
+    POINT_ON_EDGE(e1, alpha[2], alpha[3], initial_compare_edge_vertex_0, initial_compare_edge_vertex_1);
+    SUB(norm, e1, e0);
+    double distance = sqrt(DOT(norm, norm));
+
+    if (distance > NORM_NEAR_ZERO) {
+        normalize(norm);
+    }
+    else {
+        double edge0[3], edge1[3];
+        SUB(edge0, initial_edge_vertex_0, initial_edge_vertex_1);
+        SUB(edge1, initial_compare_edge_vertex_0, initial_compare_edge_vertex_1);
+        CROSS(norm, edge0, edge1);
+        if (DOT(norm, norm) > NEAR_ZERO2) {
+            //std::cout << "One edge is getting too close to the other edge" << std::endl;
+            normalize(norm);
+            SUB(edge0, initial_compare_edge_vertex_1, initial_edge_vertex_0);
+            if (DOT(norm, edge0) < 0) {
+                MULTI(norm, norm, -1.0);
+            }
+        }
+        else {
+            //std::cout << "One edge is getting too close to the other edge and they are parallel" << std::endl;
+            return false;
+        }
+    }
+
+    POINT_ON_EDGE(e0, alpha[0], alpha[1], current_edge_vertex_0, current_edge_vertex_1);
+    POINT_ON_EDGE(e1, alpha[2], alpha[3], current_compare_edge_vertex_0, current_compare_edge_vertex_1);
+    SUB(e0, e1, e0);
+    distance2 = DOT(norm, e0)-tolerance;
+
+    double displacement0[3], displacement1[3];
+    SUB(displacement0, current_edge_vertex_0, initial_edge_vertex_0);
+    SUB(displacement1, current_edge_vertex_1, initial_edge_vertex_1);
+    POINT_ON_EDGE(e0, alpha[0], alpha[1], displacement0, displacement1);
+    SUB(displacement0, current_compare_edge_vertex_0, initial_compare_edge_vertex_0);
+    SUB(displacement1, current_compare_edge_vertex_1, initial_compare_edge_vertex_1);
+    POINT_ON_EDGE(e1, alpha[2], alpha[3], displacement0, displacement1);
+    SUB_(e0, e1);
+    double dp_dc_project = DOT(norm, e0);
+    if (dp_dc_project > distance - tolerance) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
 bool DCD::pointTriangleCollider(double* initial_position, double* current_position,
     double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
     double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
     double* initial_triangle_normal, double* current_triangle_normal, double* vertex_target_pos,
     double tolerance)
 {
+    double barycentric[2];
     double c_p[3];
     SUB(c_p, initial_position, initial_triangle_position_0);
     double initial_side = DOT(c_p, initial_triangle_normal);
@@ -93,7 +201,7 @@ bool DCD::pointTriangleCollider(double* initial_position, double* current_positi
     }
     else {
         if (!pointProjectOnTriangle(initial_position, initial_triangle_position_0, initial_triangle_position_1,
-            initial_triangle_position_2, initial_triangle_normal)) {
+            initial_triangle_position_2, initial_triangle_normal, barycentric)) {
             return false;
         }
     }
@@ -127,9 +235,9 @@ bool DCD::pointProjectOnTriangle(
     const double* t0,
     const double* t1,
     const double* t2,
-    const double* triangle_normal)
+    const double* triangle_normal, double* barycentric)
 {
-    double barycentric[2];
+    /*double barycentric[2];*/
     double S[3];
     SUB(S, p, t0);
     double E1[3], E2[3], S1[3], S2[3];

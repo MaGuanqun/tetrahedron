@@ -3,7 +3,7 @@
 #include"readObj.h"
 #include"read_ele.h"
 
-void SetModel::load_getAABB(std::string& path, int& index)
+void SetModel::load_getAABB(std::string& path, int& index, int obj_index)
 {
 	std::string extension_name;
 	extension_name = path.substr(path.length() - 3, 3);
@@ -23,8 +23,8 @@ void SetModel::load_getAABB(std::string& path, int& index)
 		//	create_mesh.setMaterial1(ori_mesh);
 		//}
 		//else if (path == "./model/floor.obj") {
-			create_mesh.setCapsule(ori_mesh); 
-		//	create_mesh.setFloor(ori_mesh);
+		//	create_mesh.setCapsule(ori_mesh); 
+			create_mesh.setFloor(ori_mesh);
 		//}
 		//if (name == "cloth.obj") {
 		//	create_mesh.setMaterial1(ori_mesh);
@@ -39,13 +39,18 @@ void SetModel::load_getAABB(std::string& path, int& index)
 	//else if (path == "./model/Pants_simpleModel_high.obj") {
 	//	create_mesh.setMaterial3(ori_mesh);
 	//}
-			moveBodyCapsule(ori_mesh);
+	//		moveBodyCapsule(ori_mesh);
 	}
 	else {
 		ori_mesh.type = TETRAHEDRON;
 		ReadEle read_ele;
 		read_ele.load(path.c_str(), ori_mesh);
 		setTetFrontMaterial(ori_mesh, index);
+
+		if (obj_index == 1) {
+			moveBodyCapsule(ori_mesh);
+		}
+
 	}
 	
 	getAABB();
@@ -158,7 +163,7 @@ void SetModel::splitPath(std::string& path, std::string& name)
 void SetModel::moveBodyCapsule(OriMesh& ori_mesh)
 {
 	//band capsule
-	double move[3] = { 0.0,-0.5,-0.05 };
+	double move[3] = { 0.0,-130,-40 };
 	// move capsule
 	//double move[3] = { 0.0,-0.3,-0.35 };
 	//sphere
