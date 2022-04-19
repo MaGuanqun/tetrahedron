@@ -1061,7 +1061,7 @@ void Collision::collisionCulling()
 	//}
 	//std::cout << "total e-e pair " << num << std::endl;
 	for (unsigned int j = 0; j < thread_num; ++j) {
-		spatial_hashing.vertex_triangle_pair[j][0] = 0;
+		spatial_hashing.edge_edge_pair[j][0] = 0;
 	}
 
 	setPairIndexEveryThread();
@@ -1966,14 +1966,19 @@ void Collision::pointTriangleResponse(unsigned int thread_No, unsigned int pair_
 			1.0,1.0,1.0,1.0,
 			triangle_normal_magnitude_reciprocal[*(pair + 3)][*(pair + 2)]))
 		{
-			std::cout << "should not occur point triangle collision" << std::endl;
-			//std::cout << "===========" << std::endl;
-			//std::cout << *(pair + 1) << " "<<*pair<<" "<< *(pair + 3)<<" "<< *(pair + 2)<<std::endl;
-			//std::cout << vertex_for_render[*(pair + 1)][*pair][0] << " " << vertex_for_render[*(pair + 1)][*pair][1] << " "
-			//	<< vertex_for_render[*(pair + 1)][*pair][2] << std::endl;
-			//std::cout << vertex_position[*(pair + 1)][*pair][0] << " " << vertex_position[*(pair + 1)][*pair][1] << " "
-			//	<< vertex_position[*(pair + 1)][*pair][2] << std::endl;
-
+			//std::cout << "should not occur point triangle collision" << std::endl;
+			std::cout << "===========" << std::endl;
+			std::cout << *(pair + 1) << " "<<*(pair + 3)<<" "<< *(pair)<<" "<< indices[0]<<" "<< indices[1]<<" "<< indices[2] << std::endl;
+			std::cout << vertex_for_render[*(pair + 1)][*pair][0] << " " << vertex_for_render[*(pair + 1)][*pair][1] << " "
+				<< vertex_for_render[*(pair + 1)][*pair][2] << std::endl;
+			std::cout << vertex_position[*(pair + 1)][*pair][0] << " " << vertex_position[*(pair + 1)][*pair][1] << " "
+				<< vertex_position[*(pair + 1)][*pair][2] << std::endl;
+			for (unsigned int j = 0; j < 3; ++j) {
+				std::cout << vertex_for_render[*(pair + 3)][indices[j]][0] << " " << vertex_for_render[*(pair + 3)][indices[j]][1] << " "
+					<< vertex_for_render[*(pair + 3)][indices[j]][2] << std::endl;
+				std::cout << vertex_position[*(pair + 3)][indices[j]][0] << " " << vertex_position[*(pair + 3)][indices[j]][1] << " "
+					<< vertex_position[*(pair + 3)][indices[j]][2] << std::endl;
+			}
 
 			//std::cout << "collide " << std::endl;
 			test_point_triangle_record_true_number[thread_No] += 4;

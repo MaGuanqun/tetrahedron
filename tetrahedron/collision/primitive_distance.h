@@ -574,6 +574,54 @@ namespace CCD {
             return d_2;
         }
 
+        template <class T>
+        void pointTriangleNearestPoint(
+            const T* p,
+            const T* t0,
+            const T* t1,
+            const T* t2,
+            const T* triangle_normal,
+            T* barycentric)
+        {
+            T S[3];
+            SUB(S, p, t0);
+            T E1[3], E2[3], S1[3], S2[3];
+            SUB(E1, t1, t0);
+            SUB(E2, t2, t0);
+            CROSS(S1, triangle_normal, E2);
+            CROSS(S2, S, E1);
+            T temp = 1.0 / DOT(S1, E1);
+            barycentric[1] = temp * DOT(S1, S);
+            barycentric[2] = temp * DOT(S2, triangle_normal);
+            barycentric[0] = 1.0 - barycentric[1] - barycentric[2];
+
+            if (barycentric[0] > 0.0 && barycentric[1] > 0.0 && barycentric[2] > 0.0) {
+                return;
+            }
+            else {
+                T d_2;
+                T bary_centric2[2];
+                d_2 = pointEdgeDistanceUnclassified(p, t0, t1, bary_centric2);
+                barycentric[0] = bary_centric2[0];
+                barycentric[1] = bary_centric2[1];
+                barycentric[2] = 0.0;
+                T d_;
+                d_ = pointEdgeDistanceUnclassified(p, t0, t2, bary_centric2);
+                if (d_ < d_2) {
+                    d_2 = d_;
+                    barycentric[0] = bary_centric2[0];
+                    barycentric[2] = bary_centric2[1];
+                    barycentric[1] = 0.0;
+                }
+                d_ = pointEdgeDistanceUnclassified(p, t1, t2, bary_centric2);
+                if (d_ < d_2) {
+                    d_2 = d_;
+                    barycentric[1] = bary_centric2[0];
+                    barycentric[2] = bary_centric2[1];
+                    barycentric[0] = 0.0;
+                }
+            }
+        }
 
         template <class T>
         T pointTriangleNearestDistance(

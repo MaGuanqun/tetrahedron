@@ -1040,7 +1040,7 @@ void ProjectDynamic::PDsolve()
 		local_global_itr_in_single_outer = 0;
 		//std::cout << "outer===" << std::endl;
 		while (!PDLocalGlobalConvergeCondition()) {
-			//std::cout << "inner===" << std::endl;
+			std::cout << "inner===" << std::endl;
 			initialEnergyLocalGlobal();
 			if (local_global_itr_in_single_outer == 0) {				
 				collision.collisionCulling();

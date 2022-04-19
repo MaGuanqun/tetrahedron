@@ -11,44 +11,68 @@ bool DCD::pointSelfTriangle(double* initial_position, double* current_position,
     double tolerance, double mass_point, double mass_t0, double mass_t1, double mass_t2,
     double current_triangle_area)
 {
-    double barycentric[2];
-	double c_p[3];
-	SUB(c_p, current_position, current_triangle_position_0);
-	double current_side = DOT(c_p, current_triangle_normal);
-	SUB(c_p, initial_position, initial_triangle_position_0);
-	double initial_side = DOT(c_p, initial_triangle_normal);
+    double barycentric[3];
+	double p_c[3];
+    double current_side;
+    bool should_be_front;
+	//SUB(c_p, current_position, current_triangle_position_0);
+	//current_side = DOT(c_p, current_triangle_normal);
+	//SUB(c_p, initial_position, initial_triangle_position_0);
+	//double initial_side = DOT(c_p, initial_triangle_normal);
+	//if (initial_side * current_side > 0) {//abs(current_side) > tolerance && 
+	//	return false;
+	//}
+	//else {
+ //       if (!pointProjectOnTriangle(initial_position, initial_triangle_position_0, initial_triangle_position_1,
+ //           initial_triangle_position_2, initial_triangle_normal, barycentric)) {
+ //           return false;
+ //       }
+	//}
+    //if (initial_side > 0) {
+    //    should_be_front = true;
+    //}
+    //else {
+    //    should_be_front = false;
+    //}
 
-	if (initial_side * current_side > 0) {//abs(current_side) > tolerance && 
-		return false;
-	}
-	else {
-        if (!pointProjectOnTriangle(initial_position, initial_triangle_position_0, initial_triangle_position_1,
-            initial_triangle_position_2, initial_triangle_normal, barycentric)) {
-            return false;
-        }
-	}
 
-    //std::cout << EDGE_LENGTH(current_triangle_normal, initial_triangle_normal) << " " << EDGE_LENGTH(current_position, initial_position) << " " << EDGE_LENGTH(current_triangle_position_0, initial_triangle_position_0) << std::endl;
-    //std::cout <<"bary "<< initial_side * current_side << " " << barycentric[0] << " " << barycentric[1] << std::endl;
+    CCD::internal::pointTriangleNearestPoint(initial_position, initial_triangle_position_0, initial_triangle_position_1,
+        initial_triangle_position_2, initial_triangle_normal, barycentric);
 
-    //compute moving distance
-    
+    if (checkIfCollidePointTriangle(p_c, initial_position, current_position,
+        initial_triangle_position_0, initial_triangle_position_1, initial_triangle_position_2,
+        current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
+        initial_triangle_normal, current_triangle_normal, barycentric,
+        tolerance, current_side, should_be_front)){
+
+        calDistancePointTriangle(vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2,
+            current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
+            current_triangle_normal, current_side, tolerance, should_be_front, current_triangle_area,
+            mass_point, mass_t0, mass_t1, mass_t2);
+        return true;
+    }
+    return false;
+}
+
+void DCD::calDistancePointTriangle(double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
+    double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+    double* current_triangle_normal, double constraint, double tolerance, bool is_front, double current_triangle_area,
+    double mass_point, double mass_t0, double mass_t1, double mass_t2)
+{
     double in_triangle[3], scale_norm[3];
     SUB(in_triangle, current_position, current_triangle_position_0);
-    MULTI(scale_norm, current_triangle_normal, current_side);
+    MULTI(scale_norm, current_triangle_normal, constraint);
     SUB_(in_triangle, scale_norm);
-    if (initial_side > 0) {
-        current_side -= tolerance;
+    if (is_front) {
+        constraint -= tolerance;
     }
     else {
-        current_side += tolerance;
+        constraint += tolerance;
     }
-
     memcpy(vertex_target_pos, current_triangle_normal, 24);
-
     current_triangle_area = 1.0 / current_triangle_area;
 
-    double temp_vec[3];   
+    double temp_vec[3];
     SUB(temp_vec, current_triangle_position_1, current_triangle_position_2);
     MAGNITUDE_CROSS(triangle_target_pos_0, temp_vec, in_triangle, current_triangle_area);
 
@@ -60,7 +84,7 @@ bool DCD::pointSelfTriangle(double* initial_position, double* current_position,
 
     SUB_(triangle_target_pos_0, vertex_target_pos);
 
-    double s =-current_side /( DOT(vertex_target_pos, vertex_target_pos) / mass_point + DOT(triangle_target_pos_0, triangle_target_pos_0) / mass_t0
+    double s = -constraint / (DOT(vertex_target_pos, vertex_target_pos) / mass_point + DOT(triangle_target_pos_0, triangle_target_pos_0) / mass_t0
         + DOT(triangle_target_pos_1, triangle_target_pos_1) / mass_t1 + DOT(triangle_target_pos_2, triangle_target_pos_2) / mass_t2);
 
     double tem_value;
@@ -73,10 +97,6 @@ bool DCD::pointSelfTriangle(double* initial_position, double* current_position,
     MULTI_SUM(triangle_target_pos_1, tem_value, current_triangle_position_1);
     tem_value = s / mass_t2;
     MULTI_SUM(triangle_target_pos_2, tem_value, current_triangle_position_2);
-
-    return true;
-
-
 }
 
 bool DCD::edgeEdge(double* edge_target_pos_0, double* edge_target_pos_1,
@@ -125,6 +145,67 @@ void DCD::calDistanceEdgeEdge(double* edge_target_pos_0, double* edge_target_pos
 
     temp = -distance * alpha[3] / mass_e_1_1;
     MULTI_SUM2(compare_target_pos_1, temp, norm, current_compare_edge_vertex_1);
+}
+
+
+
+
+bool DCD::checkIfCollidePointTriangle(double* p_c, double* initial_point_position, double* current_point_position, 
+    double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
+    double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+    double* initial_triangle_normal, double* current_triangle_normal, double* barycentric,
+    double tolerance, double& triangle_side2, bool& should_be_front) 
+{
+    double distance_p_c;
+    double c_p[3];
+    SUB(c_p, initial_point_position, initial_triangle_position_0);
+    if (DOT(c_p, initial_triangle_normal)>0) {
+        should_be_front = true;
+    }
+    else {
+        should_be_front = false;
+    }
+    SUB(c_p, current_point_position, current_triangle_position_0);
+    triangle_side2 = DOT(c_p, current_triangle_normal);
+
+    double tc[3];
+    double tc_new[3];
+
+    BARYCENTRIC(tc_new, barycentric, current_triangle_position_0,current_triangle_position_1, current_triangle_position_2);
+    BARYCENTRIC(tc, barycentric, initial_triangle_position_0, initial_triangle_position_1, initial_triangle_position_2);
+    SUB(p_c, initial_point_position, tc);
+    distance_p_c = sqrt(DOT(p_c, p_c));
+    if (distance_p_c > NORM_NEAR_ZERO) {
+        normalize(p_c);
+    }
+    else {
+        //std::cout << "the distance between point and its closest point on the triangle is too close: "<<distance_p_c<< std::endl;
+        if (should_be_front) {
+            memcpy(p_c, initial_triangle_normal, 24);
+        }
+        else {
+            MULTI(p_c, initial_triangle_normal, -1.0);
+        }
+    }
+  
+    double displacement_c_p[3];
+    displacement_c_p[0] = tc_new[0] - tc[0] - current_point_position[0] + initial_point_position[0];
+    displacement_c_p[1] = tc_new[1] - tc[1] - current_point_position[1] + initial_point_position[1];
+    displacement_c_p[2] = tc_new[2] - tc[2] - current_point_position[2] + initial_point_position[2];
+    double distance;
+    distance = distance_p_c - tolerance;
+    double dp_dc_project = DOT(displacement_c_p, p_c);
+
+    if (dp_dc_project > distance) {
+
+        //std::cout << barycentric[0] << " " << barycentric[1] << " " << barycentric[2]<<" "<<DOT(initial_triangle_normal, initial_triangle_normal)<<" "<< triangle_side2 << std::endl;
+        //SUB(c_p, initial_point_position, initial_triangle_position_0);
+        //std::cout << DOT(c_p, initial_triangle_normal) << std::endl;
+        //std::cout << distance_p_c << " " << distance << std::endl;
+
+        return true;
+    }
+    return false;
 }
 
 bool DCD::checkEdgeEdgeCollision(double* current_edge_vertex_0, double* current_edge_vertex_1, double* initial_edge_vertex_0, double* initial_edge_vertex_1,

@@ -61,6 +61,15 @@ private:
 		double* norm, double distance, double* alpha, double* current_edge_vertex_0, double* current_edge_vertex_1,
 		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1,
 		double mass_e_0_0, double mass_e_0_1, double mass_e_1_0, double mass_e_1_1);
+	bool checkIfCollidePointTriangle(double* p_c, double* initial_point_position, double* current_point_position,
+		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
+		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+		double* initial_triangle_normal, double* current_triangle_normal, double* barycentric,
+		double tolerance, double& triangle_side2, bool& should_be_front);
+	void calDistancePointTriangle(double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
+		double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+		double* current_triangle_normal, double constraint, double tolerance, bool is_front, double current_triangle_area,
+		double mass_point, double mass_t0, double mass_t1, double mass_t2);
 
 };
 
