@@ -3,7 +3,7 @@
 void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider,
 	std::vector<Tetrahedron>* tetrahedron, Thread* thread, double* tolerance_ratio)
 {
-	
+	testNearestPoint();
 	conservative_rescaling = 0.9;
 
 	collision_time = 1.0;
@@ -1842,7 +1842,7 @@ void Collision::re_pointTriangleResponse(unsigned int pair_thread_No, unsigned i
 		//	mass[*(pair + 1)][*pair],
 		//	mass[*(pair + 3)][indices[0]], mass[*(pair + 3)][indices[1]], mass[*(pair + 3)][indices[2]]))
 		if (dcd.pointSelfTriangle(vertex_for_render[*(pair + 1)][*pair].data(), vertex_position[*(pair + 1)][*pair].data(),
-			vertex_for_render[*(pair + 3)][indices[0]].data(), vertex_for_render[pair[i + 3]][indices[1]].data(),
+			vertex_for_render[*(pair + 3)][indices[0]].data(), vertex_for_render[*(pair + 3)][indices[1]].data(),
 			vertex_for_render[*(pair + 3)][indices[2]].data(),
 			vertex_position[*(pair + 3)][indices[0]].data(), vertex_position[*(pair + 3)][indices[1]].data(),
 			vertex_position[*(pair + 3)][indices[2]].data(), triangle_normal_render[*(pair + 3)][*(pair + 2)].data(),
@@ -1956,7 +1956,7 @@ void Collision::pointTriangleResponse(unsigned int thread_No, unsigned int pair_
 		//	mass[*(pair + 3)][indices[0]], mass[*(pair + 3)][indices[1]], mass[*(pair + 3)][indices[2]]))
 
 		if (dcd.pointSelfTriangle(vertex_for_render[*(pair + 1)][*pair].data(), vertex_position[*(pair + 1)][*pair].data(),
-			vertex_for_render[*(pair + 3)][indices[0]].data(), vertex_for_render[pair[i + 3]][indices[1]].data(),
+			vertex_for_render[*(pair + 3)][indices[0]].data(), vertex_for_render[*(pair + 3)][indices[1]].data(),
 			vertex_for_render[*(pair + 3)][indices[2]].data(),
 			vertex_position[*(pair + 3)][indices[0]].data(), vertex_position[*(pair + 3)][indices[1]].data(),
 			vertex_position[*(pair + 3)][indices[2]].data(), triangle_normal_render[*(pair + 3)][*(pair + 2)].data(),
@@ -1967,7 +1967,7 @@ void Collision::pointTriangleResponse(unsigned int thread_No, unsigned int pair_
 			triangle_normal_magnitude_reciprocal[*(pair + 3)][*(pair + 2)]))
 		{
 			//std::cout << "should not occur point triangle collision" << std::endl;
-			std::cout << "===========" << std::endl;
+			/*std::cout << "===========" << std::endl;
 			std::cout << *(pair + 1) << " "<<*(pair + 3)<<" "<< *(pair)<<" "<< indices[0]<<" "<< indices[1]<<" "<< indices[2] << std::endl;
 			std::cout << vertex_for_render[*(pair + 1)][*pair][0] << " " << vertex_for_render[*(pair + 1)][*pair][1] << " "
 				<< vertex_for_render[*(pair + 1)][*pair][2] << std::endl;
@@ -1978,7 +1978,7 @@ void Collision::pointTriangleResponse(unsigned int thread_No, unsigned int pair_
 					<< vertex_for_render[*(pair + 3)][indices[j]][2] << std::endl;
 				std::cout << vertex_position[*(pair + 3)][indices[j]][0] << " " << vertex_position[*(pair + 3)][indices[j]][1] << " "
 					<< vertex_position[*(pair + 3)][indices[j]][2] << std::endl;
-			}
+			}*/
 
 			//std::cout << "collide " << std::endl;
 			test_point_triangle_record_true_number[thread_No] += 4;
@@ -2041,7 +2041,7 @@ void Collision::re_pointTriangleColliderResponse(unsigned int pair_thread_No, un
 		//	mass[*(pair + 1)][*pair],
 		//	mass[*(pair + 3)][indices[0]], mass[*(pair + 3)][indices[1]], mass[*(pair + 3)][indices[2]]))
 		if (dcd.pointTriangleCollider(vertex_for_render[*(pair + 1)][*pair].data(), vertex_position[*(pair + 1)][*pair].data(),
-			vertex_for_render_collider[*(pair + 3)][indices[0]].data(), vertex_for_render_collider[pair[i + 3]][indices[1]].data(),
+			vertex_for_render_collider[*(pair + 3)][indices[0]].data(), vertex_for_render_collider[*(pair+ 3)][indices[1]].data(),
 			vertex_for_render_collider[*(pair + 3)][indices[2]].data(),
 			vertex_position_collider[*(pair + 3)][indices[0]].data(), vertex_position_collider[*(pair + 3)][indices[1]].data(),
 			vertex_position_collider[*(pair + 3)][indices[2]].data(),
@@ -2090,7 +2090,7 @@ void Collision::pointTriangleColliderResponse(unsigned int thread_No, unsigned i
 		//	triangle_normal_render_collider[*(pair + 3)][*(pair + 2)].data(),
 		//	target_pos_v, d_hat_, stiffness, epsilon_))
 		if (dcd.pointTriangleCollider(vertex_for_render[*(pair + 1)][*pair].data(), vertex_position[*(pair + 1)][*pair].data(),
-			vertex_for_render_collider[*(pair + 3)][indices[0]].data(), vertex_for_render_collider[pair[i + 3]][indices[1]].data(),
+			vertex_for_render_collider[*(pair + 3)][indices[0]].data(), vertex_for_render_collider[*(pair+ 3)][indices[1]].data(),
 			vertex_for_render_collider[*(pair + 3)][indices[2]].data(),
 			vertex_position_collider[*(pair + 3)][indices[0]].data(), vertex_position_collider[*(pair + 3)][indices[1]].data(),
 			vertex_position_collider[*(pair + 3)][indices[2]].data(),
@@ -2141,7 +2141,7 @@ void Collision::pointColliderTriangleResponse(unsigned int thread_No, unsigned i
 		stiffness = stiffness_initial;
 		indices = triangle_indices[*(pair + 3)][*(pair + 2)].data();
 		if (collision_constraint.pointColliderTriangleResponse(vertex_for_render_collider[*(pair + 1)][*pair].data(),
-			vertex_for_render[*(pair + 3)][indices[0]].data(), vertex_for_render[pair[i + 3]][indices[1]].data(),
+			vertex_for_render[*(pair + 3)][indices[0]].data(), vertex_for_render[*(pair + 3)][indices[1]].data(),
 			vertex_for_render[*(pair + 3)][indices[2]].data(),
 			vertex_position[*(pair + 3)][indices[0]].data(), vertex_position[*(pair + 3)][indices[1]].data(),
 			vertex_position[*(pair + 3)][indices[2]].data(), triangle_normal_render[*(pair + 3)][*(pair + 2)].data(),
@@ -4881,6 +4881,18 @@ void Collision::initialPair()
 		edge_edge_target_pos_index[i].resize(pair_num * 4 + 1);
 	}
 	
+}
+
+
+
+void Collision::testNearestPoint()
+{
+	double point[3] = {0.0,1.0,0.0 };
+	double triangle_point[3][3] = { {1.0,1.0,0.0},{1.0,1.0,1.0},{0.0,1.0,1.0} };
+	double normal[3] = { 0.0,1.0,0.0 };
+	double bary[3];
+	CCD::internal::pointTriangleNearestPoint(point, triangle_point[0], triangle_point[1], triangle_point[2], normal, bary);
+	std::cout <<"barycentric "<< bary[0] << " " << bary[1] << " " << bary[2] << std::endl;
 }
 
 

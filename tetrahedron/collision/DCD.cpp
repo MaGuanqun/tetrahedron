@@ -12,9 +12,13 @@ bool DCD::pointSelfTriangle(double* initial_position, double* current_position,
     double current_triangle_area)
 {
     double barycentric[3];
-	double p_c[3];
+	double c_p[3];
     double current_side;
     bool should_be_front;
+
+
+
+
 	//SUB(c_p, current_position, current_triangle_position_0);
 	//current_side = DOT(c_p, current_triangle_normal);
 	//SUB(c_p, initial_position, initial_triangle_position_0);
@@ -28,23 +32,30 @@ bool DCD::pointSelfTriangle(double* initial_position, double* current_position,
  //           return false;
  //       }
 	//}
-    //if (initial_side > 0) {
-    //    should_be_front = true;
+ //   if (initial_side > 0) {
+ //       should_be_front = true;
+ //   }
+ //   else {
+ //       should_be_front = false;
+ //   }
+ //   calDistancePointTriangle(vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2,
+ //       current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
+ //       current_triangle_normal, current_side, tolerance, should_be_front, current_triangle_area,
+ //       mass_point, mass_t0, mass_t1, mass_t2);
+
+    //return true;
+
+    //if (!pointProjectOnTriangle(initial_position, initial_triangle_position_0, initial_triangle_position_1,
+    //    initial_triangle_position_2, initial_triangle_normal, barycentric)) {
+    //    return false;
     //}
-    //else {
-    //    should_be_front = false;
-    //}
-
-
-    CCD::internal::pointTriangleNearestPoint(initial_position, initial_triangle_position_0, initial_triangle_position_1,
-        initial_triangle_position_2, initial_triangle_normal, barycentric);
-
-    if (checkIfCollidePointTriangle(p_c, initial_position, current_position,
+    //CCD::internal::pointTriangleNearestPoint(initial_position, initial_triangle_position_0, initial_triangle_position_1,
+    //    initial_triangle_position_2, initial_triangle_normal, barycentric);
+    if (checkIfCollidePointTriangle(initial_position, current_position,
         initial_triangle_position_0, initial_triangle_position_1, initial_triangle_position_2,
         current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
         initial_triangle_normal, current_triangle_normal, barycentric,
         tolerance, current_side, should_be_front)){
-
         calDistancePointTriangle(vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2,
             current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
             current_triangle_normal, current_side, tolerance, should_be_front, current_triangle_area,
@@ -150,13 +161,13 @@ void DCD::calDistanceEdgeEdge(double* edge_target_pos_0, double* edge_target_pos
 
 
 
-bool DCD::checkIfCollidePointTriangle(double* p_c, double* initial_point_position, double* current_point_position, 
+bool DCD::checkIfCollidePointTriangle(double* initial_point_position, double* current_point_position, 
     double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
     double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
     double* initial_triangle_normal, double* current_triangle_normal, double* barycentric,
     double tolerance, double& triangle_side2, bool& should_be_front) 
 {
-    double distance_p_c;
+
     double c_p[3];
     SUB(c_p, initial_point_position, initial_triangle_position_0);
     if (DOT(c_p, initial_triangle_normal)>0) {
@@ -171,10 +182,12 @@ bool DCD::checkIfCollidePointTriangle(double* p_c, double* initial_point_positio
     double tc[3];
     double tc_new[3];
 
+    double p_c[3];
+
     BARYCENTRIC(tc_new, barycentric, current_triangle_position_0,current_triangle_position_1, current_triangle_position_2);
     BARYCENTRIC(tc, barycentric, initial_triangle_position_0, initial_triangle_position_1, initial_triangle_position_2);
     SUB(p_c, initial_point_position, tc);
-    distance_p_c = sqrt(DOT(p_c, p_c));
+    double distance_p_c = sqrt(DOT(p_c, p_c));
     if (distance_p_c > NORM_NEAR_ZERO) {
         normalize(p_c);
     }
@@ -197,12 +210,29 @@ bool DCD::checkIfCollidePointTriangle(double* p_c, double* initial_point_positio
     double dp_dc_project = DOT(displacement_c_p, p_c);
 
     if (dp_dc_project > distance) {
-
+        //std::cout << "===========" << std::endl;
         //std::cout << barycentric[0] << " " << barycentric[1] << " " << barycentric[2]<<" "<<DOT(initial_triangle_normal, initial_triangle_normal)<<" "<< triangle_side2 << std::endl;
-        //SUB(c_p, initial_point_position, initial_triangle_position_0);
+        //std::cout << initial_triangle_normal[0] << " " << initial_triangle_normal[1] << " " << initial_triangle_normal[2] << std::endl;
+        //SUB(c_p, initial_triangle_position_1, initial_triangle_position_0);
         //std::cout << DOT(c_p, initial_triangle_normal) << std::endl;
         //std::cout << distance_p_c << " " << distance << std::endl;
-
+        //std::cout << "==" << std::endl;
+        //std::cout << initial_point_position[0] << " " << initial_point_position[1] << " "
+        //    << initial_point_position[2] << std::endl;
+        //std::cout << current_point_position[0] << " " << current_point_position[1] << " "
+        //    << current_point_position[2] << std::endl;
+        //std::cout << initial_triangle_position_0[0] << " " << initial_triangle_position_0[1] << " "
+        //    << initial_triangle_position_0[2] << std::endl;
+        //std::cout << current_triangle_position_0[0] << " " << current_triangle_position_0[1] << " "
+        //    << current_triangle_position_0[2] << std::endl;
+        //std::cout << initial_triangle_position_1[0] << " " << initial_triangle_position_1[1] << " "
+        //    << initial_triangle_position_1[2] << std::endl;
+        //std::cout << current_triangle_position_1[0] << " " << current_triangle_position_1[1] << " "
+        //    << current_triangle_position_1[2] << std::endl;
+        //std::cout << initial_triangle_position_2[0] << " " << initial_triangle_position_2[1] << " "
+        //    << initial_triangle_position_2[2] << std::endl;
+        //std::cout << current_triangle_position_2[0] << " " << current_triangle_position_2[1] << " "
+        //    << current_triangle_position_2[2] << std::endl;
         return true;
     }
     return false;
@@ -330,7 +360,7 @@ bool DCD::pointProjectOnTriangle(
     barycentric[0] = temp * DOT(S1, S);
     barycentric[1] = temp * DOT(S2, triangle_normal);
 
-    if (barycentric[0] > 0.0 && barycentric[1] > 0.0 && 1.0 - barycentric[0] - barycentric[1] > 0.0) {
+    if (barycentric[0] >= 0.0 && barycentric[1] >= 0.0 && 1.0 - barycentric[0] - barycentric[1] >= 0.0) {
         return true;
     }
     else {

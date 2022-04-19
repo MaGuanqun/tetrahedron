@@ -480,4 +480,7 @@ private:
 	void re_edgeEdgeResponse(unsigned int pair_thread_No, unsigned int start_pair_index,
 		unsigned int end_pair_index, TargetPosition* target_pos);
 	void re_edgeEdgeResponse(int thread_No, TargetPosition* target_pos);
+
+
+	void testNearestPoint();
 };

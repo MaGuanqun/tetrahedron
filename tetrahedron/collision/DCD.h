@@ -61,7 +61,7 @@ private:
 		double* norm, double distance, double* alpha, double* current_edge_vertex_0, double* current_edge_vertex_1,
 		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1,
 		double mass_e_0_0, double mass_e_0_1, double mass_e_1_0, double mass_e_1_1);
-	bool checkIfCollidePointTriangle(double* p_c, double* initial_point_position, double* current_point_position,
+	bool checkIfCollidePointTriangle(double* initial_point_position, double* current_point_position,
 		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
 		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
 		double* initial_triangle_normal, double* current_triangle_normal, double* barycentric,
