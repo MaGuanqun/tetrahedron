@@ -42,15 +42,11 @@ bool DCD::pointSelfTriangle(double* initial_position, double* current_position,
  //       current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
  //       current_triangle_normal, current_side, tolerance, should_be_front, current_triangle_area,
  //       mass_point, mass_t0, mass_t1, mass_t2);
+ //   return true;
 
-    //return true;
 
-    //if (!pointProjectOnTriangle(initial_position, initial_triangle_position_0, initial_triangle_position_1,
-    //    initial_triangle_position_2, initial_triangle_normal, barycentric)) {
-    //    return false;
-    //}
-    //CCD::internal::pointTriangleNearestPoint(initial_position, initial_triangle_position_0, initial_triangle_position_1,
-    //    initial_triangle_position_2, initial_triangle_normal, barycentric);
+    CCD::internal::pointTriangleNearestPoint(initial_position, initial_triangle_position_0, initial_triangle_position_1,
+        initial_triangle_position_2, initial_triangle_normal, barycentric);
     if (checkIfCollidePointTriangle(initial_position, current_position,
         initial_triangle_position_0, initial_triangle_position_1, initial_triangle_position_2,
         current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,

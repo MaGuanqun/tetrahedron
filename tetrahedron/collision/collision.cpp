@@ -1060,9 +1060,9 @@ void Collision::collisionCulling()
 	//	num += spatial_hashing.edge_edge_pair[j][0] / 4;
 	//}
 	//std::cout << "total e-e pair " << num << std::endl;
-	for (unsigned int j = 0; j < thread_num; ++j) {
-		spatial_hashing.edge_edge_pair[j][0] = 0;
-	}
+	//for (unsigned int j = 0; j < thread_num; ++j) {
+	//	spatial_hashing.vertex_triangle_pair[j][0] = 0;
+	//}
 
 	setPairIndexEveryThread();
 
@@ -1480,11 +1480,11 @@ void Collision::solveCollisionConstraintDCD()
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL);
 	}
-//	thread->assignTask(this, COLLISION_CONSTRAINT);
+	thread->assignTask(this, COLLISION_CONSTRAINT);
 
-	for (unsigned int i = 0; i < thread_num; ++i) {
-		collisionConstraint(i);
-	}
+	//for (unsigned int i = 0; i < thread_num; ++i) {
+	//	collisionConstraint(i);
+	//}
 
 
 	sumTargetPosition();
@@ -1499,11 +1499,11 @@ void Collision::reSolveCollisionConstraintDCD()
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL);
 	}
-	//thread->assignTask(this, RE_COLLISION_CONSTRAINT);
+	thread->assignTask(this, RE_COLLISION_CONSTRAINT);
 
-	for (unsigned int i = 0; i < thread_num; ++i) {
-		re_collisionConstraint(i);
-	}
+	//for (unsigned int i = 0; i < thread_num; ++i) {
+	//	re_collisionConstraint(i);
+	//}
 
 	resumTargetPosition();
 }
@@ -1895,8 +1895,10 @@ void Collision::re_edgeEdgeResponse(unsigned int pair_thread_No, unsigned int st
 			vertex_for_render[*(pair + 1)][*indices].data(), vertex_for_render[*(pair + 1)][*(indices + 1)].data(),
 			vertex_position[*(pair + 3)][*compare_indices].data(), vertex_position[*(pair + 3)][*(compare_indices + 1)].data(),
 			vertex_for_render[*(pair + 3)][*compare_indices].data(), vertex_for_render[*(pair + 3)][*(compare_indices + 1)].data(),
-			tolerance, mass[*(pair + 1)][*indices], mass[*(pair + 1)][*(indices + 1)],
-			mass[*(pair + 3)][*compare_indices], mass[*(pair + 3)][*(compare_indices + 1)]))
+			tolerance, 
+			1.0, 1.0, 1.0, 1.0
+			//mass[*(pair + 1)][*indices], mass[*(pair + 1)][*(indices + 1)],	mass[*(pair + 3)][*compare_indices], mass[*(pair + 3)][*(compare_indices + 1)]
+		))
 		{
 			addTargetPosToSystem(vertex_b_sum[*(pair + 1)][*indices].data(), target_pos->collision_energy, vertex_position[*(pair + 1)][*indices].data(),
 				target_pos_edge_0, stiffness);
@@ -2206,8 +2208,10 @@ void Collision::edgeEdgeResponse(unsigned int thread_No, unsigned int pair_threa
 			vertex_for_render[*(pair + 1)][*indices].data(), vertex_for_render[*(pair + 1)][*(indices + 1)].data(),
 			vertex_position[*(pair + 3)][*compare_indices].data(), vertex_position[*(pair + 3)][*(compare_indices + 1)].data(),
 			vertex_for_render[*(pair + 3)][*compare_indices].data(), vertex_for_render[*(pair + 3)][*(compare_indices + 1)].data(),
-			tolerance, mass[*(pair + 1)][*indices], mass[*(pair + 1)][*(indices + 1)],
-			mass[*(pair + 3)][*compare_indices], mass[*(pair + 3)][*(compare_indices + 1)]))
+			tolerance, 
+			1.0, 1.0, 1.0, 1.0
+			//mass[*(pair + 1)][*indices], mass[*(pair + 1)][*(indices + 1)],	mass[*(pair + 3)][*compare_indices], mass[*(pair + 3)][*(compare_indices + 1)]
+		))
 		{
 			addTargetPosToSystemTotal(vertex_b_sum[*(pair + 1)][*indices].data(), target_pos->collision_energy, vertex_position[*(pair + 1)][*indices].data(),
 				target_pos_edge_0, stiffness, record_stiffness[*(pair + 1)][*indices], vetex_need_update[*(pair + 1)][*indices]);

@@ -6,7 +6,7 @@ ProjectDynamic::ProjectDynamic()
 	gravity_ = 9.8;
 	total_thread_num = std::thread::hardware_concurrency();
 	temEnergy.resize(total_thread_num);
-	outer_itr_conv_rate = 5e-3;// 7.5e-2; 
+	outer_itr_conv_rate = 8e-3;// 7.5e-2; 
 	local_global_conv_rate = 1e-2;
 	sub_step_num = 1;
 
@@ -556,8 +556,9 @@ void ProjectDynamic::computeGravity()
 		total_gravity[i].resize(sys_size);
 		total_gravity[i].setZero();
 	}
-	//double gravity_accerlation[3] = { gravity_, 0,0.2*gravity_};
-	double gravity_accerlation[3] = { 0.0, -gravity_, 0.0};
+	//double gravity_accerlation[3] = { 0,0.0,gravity_};
+	double gravity_accerlation[3] = { gravity_, 0,0.0};
+	//double gravity_accerlation[3] = {0.0, -gravity_, 0.0};
 	std::vector<double>* mass_;
 	unsigned int vertex_index_start;
 

@@ -52,7 +52,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	memset(set_stiffness, 0, 10);
 	double temp_stiffness[6] = { 0.0,0.0,0.0,0.0,0.0,0.0 };
 	UpdateClothStiffness update_cloth_stiffness;
-	double tolerance_ratio[4] = { 1e-1,1e-1,1e-1,1e-1 };
+	double tolerance_ratio[4] = { 5e-2,5e-2,5e-2,5e-2 };
 
 	bool set_anchor[2] = { false,false };
 
