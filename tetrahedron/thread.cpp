@@ -513,6 +513,11 @@ job Thread::create_task(IterationMethod* func, IterationMethodFunc function_type
             {func->RMultiXPlusb(vertex_index, coefficient, vertex_index_start, x, b, result, vertex_index_thread_begin[thread_id],
                 vertex_index_thread_begin[thread_id + 1]); });
         break;
+    case W_R_MULTIPLY_X_PLUS_B_1_W_X:
+        k = job([func, thread_id, vertex_index, coefficient, vertex_index_start, x, b, result, vertex_index_thread_begin]()
+            {func->A_jacobi_RMultiXPlusb(vertex_index, coefficient, vertex_index_start, x, b, result, vertex_index_thread_begin[thread_id],
+                vertex_index_thread_begin[thread_id + 1]); });
+        break;
     case COMPUTE_RESIDUAL:
         k = job([func, thread_id, vertex_index, coefficient, vertex_index_start, x, b, result, residual_norm, vertex_index_thread_begin]()
             {func->computeResidual(vertex_index, coefficient, vertex_index_start, x, b, result, &residual_norm[thread_id], vertex_index_thread_begin[thread_id],

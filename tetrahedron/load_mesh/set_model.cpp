@@ -47,9 +47,9 @@ void SetModel::load_getAABB(std::string& path, int& index, int obj_index)
 		read_ele.load(path.c_str(), ori_mesh);
 		setTetFrontMaterial(ori_mesh, index);
 
-		//if (obj_index == 1) {
-		//	moveBodyCapsule(ori_mesh);
-		//}
+		if (obj_index == 1) {
+			moveBodyCapsule(ori_mesh);
+		}
 
 	}
 	
@@ -164,7 +164,7 @@ void SetModel::moveBodyCapsule(OriMesh& ori_mesh)
 {
 	//band capsule
 	double move[3] = { 0.0,-0.9,-0.3 };//this is for two prisms
-	//double move[3] = { 0.0,-130,-40 };//this is for two dragons
+	//double move[3] = { -60, -130,-30 };//this is for two dragons
 	// move capsule
 	//double move[3] = { 0.0,-0.3,-0.35 };
 	//sphere

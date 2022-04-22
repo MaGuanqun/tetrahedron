@@ -221,4 +221,7 @@ private:
 
 	void computeInnerCollisionFreeEnergy();
 
+	void testJacobiMatrix();
+	void testJacobi();
+	void setOverRelaxationCoefficient();
 };

@@ -140,9 +140,11 @@ private:
 
 
 	unsigned int max_index_number_in_one_cell;
+	unsigned int max_index_number_in_one_cell_edge;
 	unsigned int max_index_number_in_one_cell_vertex;
 	unsigned int max_index_number_in_one_cell_collider;
 	unsigned int max_index_number_in_one_cell_collider_vertex;
+	unsigned int max_index_number_in_one_cell_collider_edge;
 
 	void triangleHashValueWithRecord(double* aabb,
 		unsigned int* spatial_hashing_cell, unsigned int* triangle_index, double* scene_aabb, double cell_length,

@@ -17,7 +17,7 @@ ProjectDynamic::ProjectDynamic()
 	displacement_norm_thread.resize(total_thread_num);
 
 
-	iteration_method.setConvergenceRate(1e-7, 50);
+	iteration_method.setConvergenceRate(1e-8, 100);
 	max_inner_iteration_num = 7;
 
 }
@@ -37,6 +37,7 @@ void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron
 	setSystemIndexInfo();
 	initialPDvariable();
 	iteration_method.setBasicInfo(sys_size, thread, &global_mat);
+	setOverRelaxationCoefficient();
 	setForClothPD(cloth);
 	setForTetrahedronPD();	
 	computeGlobalStepMatrix();
@@ -47,6 +48,24 @@ void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron
 	//iteration_method.test();
 	//iteration_method.testRelativeError();
 	
+}
+
+
+
+void ProjectDynamic::setOverRelaxationCoefficient()
+{
+	double jacobi_or = 0.5;
+	double A_jacobi_or = jacobi_or;
+	double A_jaocbi_3_or = jacobi_or;
+	double gauss_seidel_or = 0.8;
+	double jacobi_chebyshev_or = jacobi_or;
+	double A_jacobi_chebyshev_or = jacobi_or;
+	double A_jaocbi_3_chebyshev_or = jacobi_or;
+	double weight_for_chebyshev_jacobi = 0.8;
+	double weight_for_chebyshev_A_jacobi = 0.8;
+	iteration_method.setOverRelaxationCoefficient(jacobi_or, A_jacobi_or, A_jaocbi_3_or, gauss_seidel_or, jacobi_chebyshev_or,
+		A_jacobi_chebyshev_or, A_jaocbi_3_chebyshev_or, weight_for_chebyshev_jacobi, weight_for_chebyshev_A_jacobi);
+
 }
 
 
@@ -1059,9 +1078,13 @@ void ProjectDynamic::PDsolve()
 			//thread->assignTask(this, CONSTRUCT_B_WITHOUT_COLLISION);
 			//thread->assignTask(this, SOLVE_WITHOUT_COLLISION);
 			thread->assignTask(this, CONSTRUCT_B);
-			thread->assignTask(this, SOLVE_WITH_COLLISION);
-			solveClothSystem2(true);
-
+			//time_t t = clock();
+			//for (unsigned int i = 0; i < 10; ++i) {
+				thread->assignTask(this, SOLVE_WITH_COLLISION);
+				solveClothSystem2(true);
+			//}
+			//time_t t1 = clock();
+			
 			current_collision_energy = 1e-15;
 			for (unsigned int k = 0; k < total_cloth_num; ++k) {
 				current_collision_energy += collision.obj_target_pos.collision_energy;
@@ -1151,17 +1174,80 @@ void ProjectDynamic::initialEnergyLocalGlobal()
 	current_constraint_energy = 1e-15;
 }
 
+
+void ProjectDynamic::testJacobiMatrix()
+{
+	std::cout << "reference " << std::endl;
+	//std::cout << global_mat << std::endl;
+
+	VectorXd a(sys_size);
+	for (unsigned int i = 0; i < sys_size; ++i) {
+		a[i] = *(global_mat_diagonal_ref_address[i]);
+	}
+	//std::cout << a << std::endl;
+	for (unsigned int i = 0; i < sys_size; ++i) {
+		a[i] = 1.0 / a[i];
+	}
+	SparseMatrix<double, RowMajor> test = global_mat;
+	for (unsigned int i = 0; i < sys_size; ++i) {
+		test.coeffRef(i, i) = 0;
+	}
+	std::cout << -1.0*a.asDiagonal() * test << std::endl;
+	std::cout << a.asDiagonal()*b[0] << std::endl;
+	std::cout << u[0] << std::endl;
+	std::cout << "=============" << std::endl;
+	
+
+
+}
+
+
+void ProjectDynamic::testJacobi()
+{
+	std::cout << "test for " << std::endl;
+	std::cout << global_mat << std::endl;
+	VectorXd a(sys_size);
+	for (unsigned int i = 0; i < sys_size; ++i) {
+		a[i] = *(global_mat_diagonal_ref_address[i]);
+	}
+	std::cout << a << std::endl;
+	for (unsigned int i = 0; i < sys_size; ++i) {
+		a[i] = 1.0 / a[i];
+	}
+	SparseMatrix<double, RowMajor> test = global_mat;
+	for (unsigned int i = 0; i < sys_size; ++i) {
+		test.coeffRef(i, i) = 0;
+	}
+
+	SparseMatrix<double, RowMajor> test_R_jacobi = -1.0 * a.asDiagonal() * test;
+	Matrix4d test1 = Matrix4d(test_R_jacobi);
+	std::cout << test1 << std::endl;
+	JacobiSVD<Matrix4d> svd;
+	svd.compute(test1);
+	//	rotation_2 = svd.matrixU();
+
+	Vector4d eigen_value = svd.singularValues();
+	std::cout << eigen_value << std::endl;
+}
+
+
+
 void ProjectDynamic::PDupdateSystemMatrix()
 {	
 	switch (itr_solver_method)
 	{
-	case DIRECT_SOLVE:
+	case DIRECT_SOLVE: {
+		//time_t t = clock();
 		thread->assignTask(this, UPDATE_MATRIX);
 		global_llt.factorize(global_mat);
+		//time_t t1 = clock();
+		//std::cout << "update matrix &factorize " << t1 - t << std::endl;
+	}
 		break;
 	case JACOBI:
 		thread->assignTask(this, UPDATE_MATRIX);
 		iteration_method.updateJacobi();
+		//testJacobiMatrix();
 		break;
 	case A_JACOBI:
 		thread->assignTask(this, UPDATE_DIAGONAL);
@@ -1439,7 +1525,7 @@ bool ProjectDynamic::PDConvergeCondition()
 	bool energy_satisfied = system_energy && collision_energy;
 	bool need_to_stop = local_global_iteration_num > max_it - 3 || fabs(current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy < 5e-6;
 	//std::cout << outer_iteration_num << std::endl;
-	bool standard = (energy_satisfied || need_to_stop) && outer_iteration_num > 5;
+	bool standard = (energy_satisfied || need_to_stop) && outer_iteration_num > 4;
 	//if (outer_iteration_num > 0) {//
 	if (standard) {//
 		//std::cout << (current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy << std::endl;
@@ -2197,6 +2283,10 @@ void ProjectDynamic::solveClothSystem2(bool compute_energy)
 	switch (itr_solver_method)
 	{
 	case JACOBI: {
+		//std::cout << "refer" << std::endl;
+		//testJacobiMatrix();
+		//testJacobi();
+		//std::cout << b[0] << std::endl;
 			iteration_method.solveByJacobi(u.data(), b.data(), itr_num);
 		//std::cout << "Jacobi "<< itr_num << std::endl;
 	}
@@ -2217,7 +2307,7 @@ void ProjectDynamic::solveClothSystem2(bool compute_energy)
 	}
 					 break;
 	case GAUSS_SEIDEL_CHEBYSHEV: {
-			iteration_method.solveByChebyshevGaussSeidel(u.data(), b.data(), itr_num, 0.1);
+			iteration_method.solveByChebyshevGaussSeidel(u.data(), b.data(), itr_num, 0.8);
 		//std::cout << "gauss_seidel_chebysev "<< itr_num << std::endl;
 	}
 							   break;

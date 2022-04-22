@@ -16,9 +16,9 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	this->tetrahedron = tetrahedron;
 	this->thread = thread;
 
-	max_index_number_in_one_cell = 1400;
+	max_index_number_in_one_cell = 1500;
 	max_index_number_in_one_cell_collider = 400;
-	estimate_coeff_for_pair_num = 40;
+	estimate_coeff_for_pair_num = 80;
 
 	draw_culling.initial(cloth, collider, tetrahedron, thread);
 	//findPatchOfObjects();
@@ -1480,15 +1480,21 @@ void Collision::solveCollisionConstraintDCD()
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL);
 	}
-	thread->assignTask(this, COLLISION_CONSTRAINT);
 
+	time_t t = clock();
+	for (unsigned int i = 0; i < 10; ++i) {
+		thread->assignTask(this, COLLISION_CONSTRAINT);
+		sumTargetPosition();
+		setTargetPositionEven();
+	}
+	time_t t1 = clock();
+	//std::cout << "DCD " << t1 - t << std::endl;
 	//for (unsigned int i = 0; i < thread_num; ++i) {
 	//	collisionConstraint(i);
 	//}
 
 
-	sumTargetPosition();
-	setTargetPositionEven();
+	
 }
 
 void Collision::reSolveCollisionConstraintDCD()

@@ -130,9 +130,9 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 		cloth[i].recordInitialMesh(single_cloth_info[i]);
 	}
 
-	std::array<double, 4>tetrahedron_collision_stiffness_per = { 1e2,2e1,2e1,4e3 };
+	std::array<double, 4>tetrahedron_collision_stiffness_per = {5e1,2e1, 2e1,2e1 };
 	double sigma_limit[2] = { 0.99,1.01 };
-	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density, 2e5, 5e2, 0.0, tetrahedron_collision_stiffness_per.data(), sigma_limit);
+	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density, 2e3, 5e2, 0.0, tetrahedron_collision_stiffness_per.data(), sigma_limit);
 	for (int i = 0; i < tetrahedron_num; ++i) {
 		tetrahedron[i].recordInitialMesh(single_tetrahedron_info);
 	}

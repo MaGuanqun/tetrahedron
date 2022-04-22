@@ -409,13 +409,14 @@ public:
 		//	}
 		//}
 
-		int col_num = 50;
+
+		int col_num = 100;
 		int row_num = 100;
 		for (int j = 0; j < row_num; j++) {
 			for (int i = 0; i < col_num; i++) {
 				mesh.vertices.push_back(std::array<double, 3>{0.525,				
-					1.0 * (double)i / (double)(col_num - 1) - 0.5,
-					2.0 * (double)j / (double)(row_num - 1) - 1.0
+					2.0 * (double)i / (double)(col_num - 1) - 0.75,
+					2.0 * (double)j / (double)(row_num - 1) - 1.3
 					});//-0.525,
 			}
 		}

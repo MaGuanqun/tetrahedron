@@ -73,6 +73,9 @@ public:
 	void test();
 	void RMultiXPlusb(int* vertex_index, double* coefficient, int* vertex_index_start, VectorXd* x, VectorXd* b, VectorXd* result,
 		int vertex_index_begin, int vertex_index_end);
+	void A_jacobi_RMultiXPlusb(int* vertex_index, double* coefficient, int* vertex_index_start, VectorXd* x, VectorXd* b, VectorXd* result,
+		int vertex_index_begin, int vertex_index_end);
+
 	void computeResidual(int* global_matrix_vertex_index, double* global_matrix_coefficient, int* global_matrix_vertex_index_start,
 		VectorXd* x, VectorXd* b, VectorXd* b_, double* residual_norm, int vertex_index_begin, int vertex_index_end);
 	void RMultiXPlusb(std::vector<int>* vertex_index, std::vector<double>* coefficient, double* x, double* b, double* result,
@@ -101,7 +104,18 @@ public:
 	void updateClothDiagonalPerThread(int index_start, int index_end, int obj_index_start, double* stiffness, bool* need_update);
 	void updateTetDiagonalPerThread(int index_start, int index_end, int obj_index_start, double* stiffness, bool* need_update, unsigned int* vertex_index_on_surface);
 	void updateDiagonalWithAnchorVerticesTotal();
+
+	void setOverRelaxationCoefficient(double jacobi_or, double A_jacobi_or, double A_jaocbi_3_or, double gauss_seidel_or, double jacobi_chebyshev_or,
+		double A_jacobi_chebyshev_or, double A_jaocbi_3_chebyshev_or, double weight_for_chebyshev_jacobi, double weight_for_chebyshev_A_jacobi);
+
 private:
+
+	std::vector<double*> R_jacobi_diagonal_index;
+	double jacobi_or, A_jacobi_or, A_jaocbi_3_or, gauss_seidel_or, jacobi_chebyshev_or,
+		A_jacobi_chebyshev_or, A_jaocbi_3_chebyshev_or;
+	double weight_for_chebyshev_gauss_seidel;
+	double weight_for_chebyshev_jacobi;
+	double weight_for_chebyshev_A_jacobi;
 
 	std::vector<int> vertex_index_begin_thread;
 	std::vector<int> A_jacobi_2_index_per_thread;
@@ -278,7 +292,7 @@ private:
 	std::vector<VectorXd> b_global_inv;
 	std::vector<VectorXd> R_b_global_inv;
 
-	double weight_for_chebyshev_gauss_seidel;
+	
 
 	template <class T>
 	void superJacobiSingleIteration(Matrix<T, -1, 1>& u, Matrix<T, -1, 1>& b, Matrix<T, -1, 1>& global_diagonal_inv, SparseMatrix<T, ColMajor>& R_Jacobi,

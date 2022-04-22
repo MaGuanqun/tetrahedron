@@ -191,6 +191,7 @@
     <ClCompile Include="object\tetrahedron.cpp" />
     <ClCompile Include="object\triangle_object.cpp" />
     <ClCompile Include="object\cloth.cpp" />
+    <ClCompile Include="PBD.cpp" />
     <ClCompile Include="project_dynamic.cpp" />
     <ClCompile Include="render\imgui_windows.cpp" />
     <ClCompile Include="render\shadow.cpp" />
@@ -248,6 +249,7 @@
     <ClInclude Include="object\tetrahedron.h" />
     <ClInclude Include="object\triangle_object.h" />
     <ClInclude Include="object\cloth.h" />
+    <ClInclude Include="PBD.h" />
     <ClInclude Include="project_dynamic.h" />
     <ClInclude Include="render\imgui_windows.h" />
     <ClInclude Include="render\shadow.h" />
