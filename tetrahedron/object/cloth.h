@@ -55,7 +55,7 @@ public:
 private:
 	void setMeshStruct(double density, OriMesh& ori_mesh);
 
-	void setMass(double density);
+	
 	void setAnchor();
 
 	void findNeighborVertex(int vertex_index, int recursion_deepth, std::vector<bool>& is_vertex_used);

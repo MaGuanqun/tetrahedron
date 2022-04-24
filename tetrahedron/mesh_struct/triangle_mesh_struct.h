@@ -18,6 +18,7 @@ public:
 	void getVertexNormalPerThread(int thread_id);
 	void getRenderVertexNormalPerThread(int thread_id);
 	//void getVertexNormal();
+	double setMass(double density);
 private:
 
 

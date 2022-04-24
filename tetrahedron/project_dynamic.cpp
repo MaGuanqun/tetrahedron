@@ -623,22 +623,22 @@ void ProjectDynamic::computeLBOWeightSingleCloth(std::vector<double>& edge_cot_w
 		lbo_weight[mesh_struct.triangle_indices[i][2]] += m;
 	}
 	double mass_;
-	if (!mesh_struct.faces.empty()) {
-		for (int i = 0; i < mesh_struct.vertices.size(); ++i) {
-			mass_ = density * lbo_weight[i];
-			mass_inv.data()[i + vertex_index_start] = 1.0 / mass_;
-			mass.data()[i + vertex_index_start] = mass_;
-			mesh_struct.mass[i] = mass_;
-		}
-	}
-	else {
-		for (int i = 0; i < mesh_struct.vertices.size(); ++i) {
-			mass_ = 1.25;
-			mass_inv.data()[i + vertex_index_start] = 1.0 / mass_;
-			mass.data()[i + vertex_index_start] = mass_;
-			mesh_struct.mass[i] = mass_;
-		}
-	}
+	memcpy(mass.data() + vertex_index_start, mesh_struct.mass.data(), 8 * mesh_struct.vertices.size());
+	memcpy(mass_inv.data() + vertex_index_start, mesh_struct.mass_inv.data(), 8 * mesh_struct.vertices.size());
+	//if (!mesh_struct.faces.empty()) 
+	//	for (int i = 0; i < mesh_struct.vertices.size(); ++i) {
+	//		mass_ = density * lbo_weight[i];
+	//		mass_inv.data()[i + vertex_index_start] = 1.0 / mass_;
+	//		mass.data()[i + vertex_index_start] = mass_;
+	//	}
+	//}
+	//else {
+	//	for (int i = 0; i < mesh_struct.vertices.size(); ++i) {
+	//		mass_ = 1.25;
+	//		mass_inv.data()[i + vertex_index_start] = 1.0 / mass_;
+	//		mass.data()[i + vertex_index_start] = mass_;
+	//	}
+	//}
 }
 
 void ProjectDynamic::computeLBOWeight(std::vector<std::vector<double>>& edge_cot_weight)

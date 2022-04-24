@@ -28,6 +28,7 @@ void MeshStruct::setVertex()
 {
 	vertices.resize(vertex_position.size());
 	mass.resize(vertex_position.size(), 0.0);
+	mass_inv.resize(vertex_position.size(), 0.0);
 	int face_num = triangle_indices.size();
 	for (unsigned int i = 0; i < face_num; ++i) {
 		vertices[triangle_indices[i][0]].face.push_back(i);

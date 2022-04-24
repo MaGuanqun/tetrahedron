@@ -17,7 +17,7 @@ public:
 
 	std::vector<unsigned int> tetrahedron_index_begin_per_thread;
 	void setVolume(int thread_No);
-	double setVolumeMass(double density);
+	double setMass(double density);
 	std::vector<bool>vertex_on_surface;
 	std::vector<unsigned int>vertex_index_on_sureface; //size is the surface vertex size, surface index -> vertex index
 	std::vector<int> vertex_surface_index;//size is the global vertex size, verted index -> surface index

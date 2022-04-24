@@ -108,7 +108,7 @@ double TetrahedronMeshStruct::getTetrahedronVolume(double* v1, double* v2, doubl
 	return fabs(DOT(c, a)) / 6.0;
 }
 
-double TetrahedronMeshStruct::setVolumeMass(double density)
+double TetrahedronMeshStruct::setMass(double density)
 {
 	volume.resize(indices.size());
 	thread->assignTask(this, SET_VOLUME);
@@ -123,6 +123,7 @@ double TetrahedronMeshStruct::setVolumeMass(double density)
 	}
 	for (int i = 0; i < vertex_position.size(); ++i) {
 		total_mass += mass[i];
+		mass_inv[i] = 1.0 / mass[i];
 	}
 	return total_mass;
 }

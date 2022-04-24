@@ -151,7 +151,7 @@
     <ClCompile Include="collision\DCD.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PBD.cpp">
+    <ClCompile Include="XPBD.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -321,7 +321,7 @@
     <ClInclude Include="collision\DCD.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PBD.h">
+    <ClInclude Include="XPBD.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -80,7 +80,7 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	genBuffer();
 	setBuffer();
 	setArea();
-	setMass(density);
+	mass=mesh_struct.setMass(density);
 	mesh_struct.setAnchorPosition();
 
 	update_stiffness_iteration_number.resize(mesh_struct.vertices.size());
@@ -91,19 +91,6 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 
 
 
-void Cloth::setMass(double density)
-{
-	mass = 0.0;
-	if (!mesh_struct.faces.empty()) {
-		for (int i = 0; i < mesh_struct.faces.size(); ++i) {
-			mass += mesh_struct.faces[i].area * density;
-		}
-		//std::cout << mesh_struct.faces[0].area + mesh_struct.faces[1].area << std::endl;
-	}
-	else {
-		mass = 1.25;
-	}
-}
 
 void Cloth::setMeshStruct(double density, OriMesh& ori_mesh)
 {

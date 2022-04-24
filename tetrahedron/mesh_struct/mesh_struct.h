@@ -66,6 +66,7 @@ public:
 
 	Thread* thread;
 	std::vector<double>mass;
+	std::vector<double>mass_inv;
 	std::vector<double>triangle_normal_magnitude_reciprocal;
 
 	std::vector<unsigned int> face_index_begin_per_thread;
@@ -89,6 +90,8 @@ public:
 	void getFaceNormalPerThread(int thread_id);
 
 	std::vector<std::array<int, 3>> surface_triangle_index_in_order;//this is for representative triangle
+
+	
 
 protected:
 	int type;
