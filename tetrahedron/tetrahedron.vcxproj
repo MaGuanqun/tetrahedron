@@ -191,13 +191,14 @@
     <ClCompile Include="object\tetrahedron.cpp" />
     <ClCompile Include="object\triangle_object.cpp" />
     <ClCompile Include="object\cloth.cpp" />
-    <ClCompile Include="XPBD.cpp" />
     <ClCompile Include="project_dynamic.cpp" />
     <ClCompile Include="render\imgui_windows.cpp" />
     <ClCompile Include="render\shadow.cpp" />
     <ClCompile Include="scene.cpp" />
     <ClCompile Include="simulation_main.cpp" />
     <ClCompile Include="thread.cpp" />
+    <ClCompile Include="XPBD\XPBD.cpp" />
+    <ClCompile Include="XPBD\XPBD_constraint.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="basic\aabb.h" />
@@ -249,13 +250,14 @@
     <ClInclude Include="object\tetrahedron.h" />
     <ClInclude Include="object\triangle_object.h" />
     <ClInclude Include="object\cloth.h" />
-    <ClInclude Include="XPBD.h" />
     <ClInclude Include="project_dynamic.h" />
     <ClInclude Include="render\imgui_windows.h" />
     <ClInclude Include="render\shadow.h" />
     <ClInclude Include="scene.h" />
     <ClInclude Include="simulation_main.h" />
     <ClInclude Include="thread.h" />
+    <ClInclude Include="XPBD\XPBD.h" />
+    <ClInclude Include="XPBD\XPBD_constraint.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

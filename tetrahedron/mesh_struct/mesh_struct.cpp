@@ -54,6 +54,7 @@ void MeshStruct::setEdge()
 {
 	unsigned int face_num = triangle_indices.size();
 	edges.reserve(face_num * 3 / 2);
+	edge_length.reserve(face_num * 3 / 2);
 	face_edges.resize(face_num * 3);
 	edge_vertices.reserve(face_num * 3);
 	unsigned int edgeNo;
@@ -90,6 +91,7 @@ void MeshStruct::setEdge()
 	addNeighborVertex();
 	edge_vertices.shrink_to_fit();
 	edges.shrink_to_fit();
+	edge_length.shrink_to_fit();
 
 	for (int i = 0; i < edges.size(); i++) {
 		if (edges[i].face.size() == 1) {
@@ -184,7 +186,7 @@ void MeshStruct::addEdge(int v0, int v1, int face, int opposite_vertex, int edge
 	edges[edge_index].opposite_vertex.emplace_back(opposite_vertex);
 	double tem[3];
 	SUB(tem, vertex_position[v0], vertex_position[v1]);
-	edges[edge_index].length = sqrt(DOT(tem, tem));
+	edge_length.emplace_back(sqrt(DOT(tem, tem)));
 	face_edges[3 * face + edge_index_indicator] = edge_index;
 	//faces[face].edge.push_back(edge_index);
 	vertices[v0].edge.emplace_back(edge_index);

@@ -1,0 +1,24 @@
+#pragma once
+#include"../basic/global.h"
+#include"../mesh_struct/triangle_mesh_struct.h"
+#include"../external/Eigen/Dense"
+#include"../basic/eigenDenseOperation.h"
+using namespace Eigen;
+using namespace denseOperation;
+
+class XPBDconstraint
+{
+public:
+	void solveEdgeLengthConstraint(double* p0, double* p1, const double rest_length, const double stiffness, double dt,
+		double inv_mass0, double inv_mass1, double& lambda);
+	void initial_LBO_EdgeCotWeight(TriangleMeshStruct& mesh_struct, std::vector<double>& lbo_weight, std::vector<VectorXd>& vertex_lbo,
+		std::vector<double>& rest_mean_curvature_norm);
+	void solveBendingConstraint(double* center_vertex, double vertex_inv_mass, std::array<double, 3>* vertex_position, std::vector<unsigned int>& neighbor_vertex,
+		double rest_curvature_norm, double lbo_weight, VectorXd& vertex_lbo, double stiffness, double dt, double* inv_mass, double lambda);
+private:
+	void initialEdgeCotWeight(TriangleMeshStruct& mesh_struct, std::vector<double>& edge_cot_weight);
+	void computeLBOWeight(std::vector<double>& lbo_weight, TriangleMeshStruct& mesh_struct);
+	void computeVertexLBO(TriangleMeshStruct& mesh_struct, std::vector<VectorXd>& vertex_lbo, std::vector<double>& edge_cot_weight);
+	void restBendingMeanCurvature(TriangleMeshStruct& mesh_struct, std::vector<double>& rest_mean_curvature_norm,
+		std::vector<VectorXd>& vertex_lbo, std::vector<double>& lbo_weight);
+};

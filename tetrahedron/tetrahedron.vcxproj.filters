@@ -151,7 +151,10 @@
     <ClCompile Include="collision\DCD.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="XPBD.cpp">
+    <ClCompile Include="XPBD\XPBD.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="XPBD\XPBD_constraint.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -321,7 +324,10 @@
     <ClInclude Include="collision\DCD.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="XPBD.h">
+    <ClInclude Include="XPBD\XPBD.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="XPBD\XPBD_constraint.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

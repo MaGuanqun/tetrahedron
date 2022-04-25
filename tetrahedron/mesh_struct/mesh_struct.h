@@ -29,7 +29,6 @@ public:
 		//int vertex[2];
 		std::vector<int> face;
 		std::vector<int> opposite_vertex;
-		double length;
 		bool is_border = false;
 		//bool isSame(int v0, int v1)
 		//{
@@ -48,7 +47,9 @@ public:
 	std::vector<Edge> edges;
 
 	std::vector<int>face_edges;// edge indices of every triangle
+	std::vector<double>edge_length;// edge indices of every triangle
 	std::vector<unsigned int>edge_vertices;//vertex indices of every edge
+
 
 	std::vector<std::array<double, 3>> vertex_position;
 	std::vector<std::array<int, 3>> triangle_indices;//if for tetrahedron, store the surface triangle	

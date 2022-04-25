@@ -11,6 +11,7 @@
 #include"iteration_method.h"
 #include"collision/drawCulling.h"
 #include"scene.h"
+#include"./XPBD/XPBD.h"
 //#include"collision/mesh_patch.h"
 
 Thread::Thread()
@@ -565,6 +566,20 @@ job Thread::create_task(DrawCulling* func, int thread_id, DrawCullingFunc functi
     }
     return k;
 }
+
+job Thread::create_task(XPBD* func, int thread_id, XPBDFunc function_type)
+{
+    job k;
+    switch (function_type)
+    {
+    case SET_POS_PREDICT:
+        k = job([func, thread_id]() {func->setPosPredict(thread_id); });
+        break;
+    }
+    return k;
+}
+
+
 
 //job Thread::create_task(MeshPatch* func, int thread_id, MeshPatchFunc function_type)
 //{

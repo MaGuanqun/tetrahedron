@@ -191,7 +191,7 @@ void ProjectDynamic::restBendingMeanCurvatureSingleCloth(TriangleMeshStruct& mes
 	VectorXd q;
 	unsigned int size;
 	double vertex_curvature[3];
-	for (unsigned int i = 0; i < mesh_struct.vertices.size(); ++i) {
+	for (unsigned int i = 0; i < rest_mean_curvature_norm.size(); ++i) {
 		size = vertex_lbo[i].size();
 		q.resize(size);
 		for (unsigned int j = 0; j < 3; ++j) {
@@ -676,19 +676,27 @@ void ProjectDynamic::computeEdgeCotWeightSingleCloth(std::vector<double>& edge_c
 	double x10[3], x20[3];
 	double x13[3], x23[3];
 	double theta0, theta1;
+	unsigned int edge_vertex_0;
+	unsigned int edge_vertex_1;
+	unsigned int opposite_0;
+	unsigned int opposite_1;
 	for (int i = 0; i < edge_num; ++i) {
 		if (mesh_struct.edges[i].opposite_vertex.size() > 1) {
+			edge_vertex_0 = mesh_struct.edge_vertices[i << 1];
+			edge_vertex_1 = mesh_struct.edge_vertices[(i << 1) + 1];
+			opposite_0 = mesh_struct.edges[i].opposite_vertex[0];
+			opposite_1 = mesh_struct.edges[i].opposite_vertex[1];
 			cotan0 = 0;
 			cotan1 = 0;
-			SUB(x10, mesh_struct.vertex_position[mesh_struct.edge_vertices[i << 1]], mesh_struct.vertex_position[mesh_struct.edges[i].opposite_vertex[0]]);
-			SUB(x20, mesh_struct.vertex_position[mesh_struct.edge_vertices[(i << 1) + 1]], mesh_struct.vertex_position[mesh_struct.edges[i].opposite_vertex[0]]);
+			SUB(x10, mesh_struct.vertex_position[edge_vertex_0], mesh_struct.vertex_position[opposite_0]);
+			SUB(x20, mesh_struct.vertex_position[edge_vertex_1], mesh_struct.vertex_position[opposite_0]);
 			len10 = sqrt(DOT(x10, x10));
 			len20 = sqrt(DOT(x20, x20));
 			theta0 = acos(DOT(x10, x20) / (len10 * len20));
 			cotan0 = 1.0 / tan(theta0);
 
-			SUB(x13, mesh_struct.vertex_position[mesh_struct.edge_vertices[i << 1]], mesh_struct.vertex_position[mesh_struct.edges[i].opposite_vertex[1]]);
-			SUB(x23, mesh_struct.vertex_position[mesh_struct.edge_vertices[(i << 1) + 1]], mesh_struct.vertex_position[mesh_struct.edges[i].opposite_vertex[1]]);
+			SUB(x13, mesh_struct.vertex_position[edge_vertex_0], mesh_struct.vertex_position[opposite_1]);
+			SUB(x23, mesh_struct.vertex_position[edge_vertex_1], mesh_struct.vertex_position[opposite_1]);
 			len13 = sqrt(DOT(x13, x13));
 			len23 = sqrt(DOT(x23, x23));
 			theta1 = acos(DOT(x13, x23) / (len13 * len23));
@@ -1961,13 +1969,13 @@ void ProjectDynamic::localEdgeLengthProjectionPerThread(int thread_id, bool with
 	if (with_energy) {
 		Vector3d q0, q1, q01;
 		double curLen;
-		MeshStruct::Edge* edges;
+		double* edges_length;
 		unsigned int* edge_vertices;
 		unsigned int* edge_index_begin_per_thread;
 		double* length_stiffness;
 		for (unsigned int j = 0; j < total_cloth_num; ++j) {
 			vertex_index_start = vertex_begin_per_cloth[j];
-			edges = (*cloth)[j].mesh_struct.edges.data();
+			edges_length = (*cloth)[j].mesh_struct.edge_length.data();
 			edge_index_begin_per_thread = (*cloth)[j].mesh_struct.edge_index_begin_per_thread.data();
 			length_stiffness = (*cloth)[j].length_stiffness.data();
 			edge_vertices = (*cloth)[j].mesh_struct.edge_vertices.data();
@@ -1980,21 +1988,21 @@ void ProjectDynamic::localEdgeLengthProjectionPerThread(int thread_id, bool with
 				q1.data()[2] = u[2].data()[edge_vertices[(i << 1) + 1] + vertex_index_start];
 				q01 = q0 - q1;
 				curLen = sqrt(dotProduct(q01.data(), q01.data()));
-				temEnergy[thread_id] += 0.5 * length_stiffness[i] * (curLen - edges[i].length) * (curLen - edges[i].length);
-				p_edge_length[j][i] = q01 * (length_stiffness[i] / curLen * edges[i].length);
+				temEnergy[thread_id] += 0.5 * length_stiffness[i] * (curLen - edges_length[i]) * (curLen - edges_length[i]);
+				p_edge_length[j][i] = q01 * (length_stiffness[i] / curLen * edges_length[i]);
 			}
 		}
 	}
 	else {
 		Vector3d q0, q1, q01;
 		double curLen;
-		MeshStruct::Edge* edges;
+		double* edges_length;
 		unsigned int* edge_index_begin_per_thread;
 		double* length_stiffness;
 		unsigned int* edge_vertices;
 		for (unsigned int j = 0; j < total_cloth_num; ++j) {
 			vertex_index_start = vertex_begin_per_cloth[j];
-			edges = (*cloth)[j].mesh_struct.edges.data();
+			edges_length = (*cloth)[j].mesh_struct.edge_length.data();
 			edge_index_begin_per_thread = (*cloth)[j].mesh_struct.edge_index_begin_per_thread.data();
 			length_stiffness = (*cloth)[j].length_stiffness.data();
 			edge_vertices = (*cloth)[j].mesh_struct.edge_vertices.data();
@@ -2007,7 +2015,7 @@ void ProjectDynamic::localEdgeLengthProjectionPerThread(int thread_id, bool with
 				q1.data()[2] = u[2].data()[edge_vertices[(i << 1) + 1] + vertex_index_start];
 				q01 = q0 - q1;
 				curLen = sqrt(dotProduct(q01.data(), q01.data()));
-				p_edge_length[j][i] = q01 * (length_stiffness[i] / curLen * edges[i].length);
+				p_edge_length[j][i] = q01 * (length_stiffness[i] / curLen * edges_length[i]);
 			}
 		}
 	}
