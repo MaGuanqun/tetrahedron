@@ -98,7 +98,7 @@ public:
 	void getSceneAABB();
 
 	void findPointTriangleEdgeEdgePair(int thread_No);
-	DrawCulling draw_culling;
+
 	void getAABB();
 
 	void findAllVertexVertexEdgePairs(int thread_No);
@@ -110,6 +110,8 @@ public:
 
 	void solveCollisionConstraintDCD();
 	void reSolveCollisionConstraintDCD();
+
+	DrawCulling* draw_culling;
 
 private:
 

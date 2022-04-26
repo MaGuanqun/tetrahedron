@@ -16,11 +16,11 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	this->tetrahedron = tetrahedron;
 	this->thread = thread;
 
-	max_index_number_in_one_cell = 1500;
+	max_index_number_in_one_cell = 1200;
 	max_index_number_in_one_cell_collider = 400;
 	estimate_coeff_for_pair_num = 80;
 
-	draw_culling.initial(cloth, collider, tetrahedron, thread);
+	
 	//findPatchOfObjects();
 	initialBVH(cloth, collider, tetrahedron, thread);
 	initialTargetPos(cloth, tetrahedron, thread);
@@ -49,7 +49,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	//the above last input variable should be actual_exist_cell_begin_per_thread(sorting) /cell_begin_per_thread(unsorting)
 	//draw_culling.setInSpatialHashingValue(spatial_hashing.spatial_hashing_cell, spatial_hashing.spatial_hashing_cell_collider,
 	//	spatial_hashing.hash_cell_count);
-	draw_culling.vertex_tet_pair = spatial_hashing.vertex_tet_pair.data();
+	draw_culling->vertex_tet_pair = spatial_hashing.vertex_tet_pair.data();
 
 
 	edge_edge_count.resize(thread_num, 0);

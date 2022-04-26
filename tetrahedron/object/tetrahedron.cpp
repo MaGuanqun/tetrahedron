@@ -304,17 +304,19 @@ void Tetrahedron::initial()
 	position_stiffness = single_tetrahedron_info_ref.position_stiffness;
 	std::array<double, 4> collision_stiff_indicator;
 	memcpy(collision_stiffness, single_tetrahedron_info_ref.collision_stiffness, 16);
-
+	mesh_struct.mass_inv = mesh_struct.initial_mass_inv;
 }
 
-void Tetrahedron::reset()
+void Tetrahedron::reset(bool use_PD)
 {
 	mesh_struct.vertex_position = ori_vertices;
 	mesh_struct.vertex_for_render = ori_vertices;
 	mesh_struct.getRenderNormal();
 	mesh_struct.getNormal();
-	for (int i = 0; i < mesh_struct.anchor_vertex.size(); ++i) {
-		mesh_struct.anchor_position[i] = mesh_struct.vertex_position[mesh_struct.anchor_vertex[i]];
+	if (use_PD) {
+		for (int i = 0; i < mesh_struct.anchor_vertex.size(); ++i) {
+			mesh_struct.anchor_position[i] = mesh_struct.vertex_position[mesh_struct.anchor_vertex[i]];
+		}
 	}
 }
 

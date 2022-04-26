@@ -81,6 +81,7 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	setBuffer();
 	setArea();
 	mass=mesh_struct.setMass(density);
+	setAnchor();
 	mesh_struct.setAnchorPosition();
 
 	update_stiffness_iteration_number.resize(mesh_struct.vertices.size());
@@ -101,7 +102,7 @@ void Cloth::setMeshStruct(double density, OriMesh& ori_mesh)
 		memcpy(mesh_struct.triangle_indices[0].data(), ori_mesh.indices.data(), 12 * mesh_struct.triangle_indices.size());
 	}
 	this->density = density;
-	setAnchor();
+	
 }
 
 
@@ -136,6 +137,17 @@ void Cloth::recordInitialMesh(SingleClothInfo& single_cloth_info_ref)
 
 }
 
+void TriangleObject::reset()
+{
+	mesh_struct.vertex_position = ori_vertices;
+	mesh_struct.vertex_for_render = ori_vertices;
+	mesh_struct.getRenderNormal();
+	mesh_struct.getNormal();
+	for (int i = 0; i < mesh_struct.anchor_vertex.size(); ++i) {
+		mesh_struct.anchor_position[i] = mesh_struct.vertex_position[mesh_struct.anchor_vertex[i]];
+	}
+}
+
 void Cloth::initial()
 {
 	mesh_struct.vertex_position = ori_vertices;
@@ -162,6 +174,11 @@ void Cloth::initialMouseChosenVertex()
 
 void Cloth::setAnchor()
 {
+	mesh_struct.mass_inv[31*31-1] = 0.0;
+	mesh_struct.mass_inv[31*30] = 0.0;
+	mesh_struct.anchor_vertex.push_back(31*31-1);
+	mesh_struct.anchor_vertex.push_back(31*30);
+
 	//mesh_struct.anchor_vertex.push_back(100);
 	//mesh_struct.anchor_vertex.push_back(0);
 	//mesh_struct.anchor_vertex.push_back(15 * 30 - 1);

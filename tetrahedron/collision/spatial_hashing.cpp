@@ -54,7 +54,7 @@ void SpatialHashing::initialHashCell(unsigned int total_triangle_num, unsigned i
 	if (temp_hash_count <50) {
 		temp_hash_count = 50;
 	}
-	hash_cell_count = findNeareastPrimeNumber(total_triangle_num);// 90191;// 24877;// 500009; //;// // ;// 32999;//  // 11987;//84947
+	hash_cell_count = findNeareastPrimeNumber(temp_hash_count);// 90191;// 24877;// 500009; //;// // ;// 32999;//  // 11987;//84947
 	//hash_cell_count = 90191;
 	std::cout << "total triangle " << total_triangle_num << " hash cell count " << hash_cell_count << std::endl;
 	this->max_index_number_in_one_cell = max_index_number_in_one_cell;// = 801;

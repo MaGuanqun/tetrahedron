@@ -8,17 +8,38 @@ XPBD::XPBD()
 	total_thread_num = std::thread::hardware_concurrency();
 	sub_step_num = 1;
 	iteration_number = 50;
+	time_step = 1.0 / 100.0;
 }
 
 
+void XPBD::initial()
+{
+	resetExternalForce();
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		memset(velocity[i][0].data(), 0, 24 * velocity[i].size());
+	}
+}
+
+void XPBD::reset()
+{
+	resetExternalForce();
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		memset(velocity[i][0].data(), 0, 24 * velocity[i].size());
+	}
+}
+
+
+
 void XPBD::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider,
-	Thread* thread, double* tolerance_ratio)
+	Thread* thread, double* tolerance_ratio, DrawCulling* draw_culling_)
 {
 	this->cloth = cloth;
 	this->tetrahedron = tetrahedron;
 	sub_time_step = time_step / (double)sub_step_num;
 	this->thread = thread;
-	collision.initial(cloth, collider, tetrahedron, thread, tolerance_ratio);
+
+	//collision.initial(cloth, collider, tetrahedron, thread, tolerance_ratio);
+
 	total_obj_num = cloth->size() + tetrahedron->size();
 	reorganzieDataOfObjects();
 	initialVariable();
@@ -72,26 +93,34 @@ void XPBD::initialVariable()
 {
 	f_ext.resize(total_obj_num);
 	velocity.resize(total_obj_num);
-	total_gravity.resize(total_obj_num);
+	gravity[0] = 0;
+	gravity[1] = -gravity_;
+	gravity[2] = 0;
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		f_ext[i].resize(mesh_struct[i]->vertex_position.size());
 		velocity[i].resize(mesh_struct[i]->vertex_position.size());
-		total_gravity[i].resize(mesh_struct[i]->vertex_position.size());
+	}
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		memset(velocity[i][0].data(), 0, 24 * velocity[i].size());
+		memset(f_ext[i][0].data(), 0, 24 * f_ext[i].size());
 	}
 }
 
 void XPBD::reorganzieDataOfObjects()
 {
 	vertex_position.resize(total_obj_num);
+	initial_vertex_position.resize(total_obj_num);
 	mesh_struct.resize(total_obj_num);
 	vertex_index_begin_per_thread.resize(total_obj_num);
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		vertex_position[i]= cloth->data()[i].mesh_struct.vertex_position.data();
+		initial_vertex_position[i]= cloth->data()[i].mesh_struct.vertex_for_render.data();
 		mesh_struct[i]= &cloth->data()[i].mesh_struct;
 		vertex_index_begin_per_thread[i]= cloth->data()[i].mesh_struct.vertex_index_begin_per_thread.data();
 	}
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		vertex_position[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_position.data();
+		initial_vertex_position[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_for_render.data();
 		mesh_struct[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct;
 		vertex_index_begin_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_index_begin_per_thread.data();
 	}
@@ -99,11 +128,26 @@ void XPBD::reorganzieDataOfObjects()
 
 void XPBD::PBDsolve()
 {
+	memset(lambda.data(), 0, 8*lambda.size());
+	memset(lambda_collision.data(), 0, 8*lambda_collision.size());
 	thread->assignTask(this, SET_POS_PREDICT);
 	for (unsigned int i = 0; i < iteration_number; ++i) {
-
+		solveConstraint();
 	}
-	
+	thread->assignTask(this, XPBD_VELOCITY);	
+	updatePosition();
+
+}
+
+
+
+void XPBD::updatePosition()
+{
+	unsigned int vertex_num;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		vertex_num = mesh_struct[i]->vertex_position.size();
+		memcpy(initial_vertex_position[i][0].data(), vertex_position[i][0].data(), 24 * vertex_num);
+	}
 }
 
 void XPBD::solveConstraint()
@@ -122,20 +166,32 @@ void XPBD::solveEdgeLengthConstraint()
 	double stiffness;
 	unsigned int* edge_vertex_index;
 	double* mass_inv;
+	double delta_t = sub_time_step;
 	double* lambda_ = lambda.data()+ constraint_index_start[1];
+
+	//for (unsigned int i = 0; i < mesh_struct[0]->vertex_position.size(); ++i) {
+	//	std::cout << vertex_position[0][i].data()[0]<<" "<< vertex_position[0][i][0] << std::endl;
+	//}
+
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
-		size = mesh_struct_->edges.size();
 		mesh_struct_ = mesh_struct[i];
+		size = mesh_struct_->edge_length.size();
 		vertex_pos = vertex_position[i];
+
+		//std::cout << vertex_position[i] << " " << vertex_pos << std::endl;
+
 		stiffness = cloth->data()[i].length_stiffness[0];
 		edge_vertex_index = mesh_struct_->edge_vertices.data();
 		mass_inv = mesh_struct_->mass_inv.data();
-		for (unsigned int j = 0; j < size; ++j) {
-
+		for (unsigned int j = 0; j < size; ++j) {			
+			//std::cout << *lambda_ << " " << vertex_position[i][edge_vertex_index[j << 1]].data()[0] << " " << vertex_position[i][edge_vertex_index[(j << 1) + 1]].data()[0] << std::endl;
 			XPBD_constraint.solveEdgeLengthConstraint(vertex_pos[edge_vertex_index[j << 1]].data(),
-				vertex_pos[edge_vertex_index[(j << 1) + 1]].data(), mesh_struct_->edge_length[j], stiffness, sub_time_step, mass_inv[edge_vertex_index[j << 1]],
+				vertex_pos[edge_vertex_index[(j << 1) + 1]].data(), mesh_struct_->edge_length[j], stiffness, delta_t, mass_inv[edge_vertex_index[j << 1]],
 				mass_inv[edge_vertex_index[(j << 1) + 1]], *lambda_);
+			//std::cout << *lambda_ << " " << vertex_position[i][edge_vertex_index[j << 1]].data()[0] << " " << vertex_position[i][edge_vertex_index[(j << 1) + 1]].data()[0] << std::endl;
+			//std::cout << vertex_pos[edge_vertex_index[j << 1]].data()[0]<<" "<< vertex_pos[edge_vertex_index[(j << 1) + 1]].data()[0]<<" "<< edge_vertex_index[j << 1] << " " << edge_vertex_index[(j << 1) + 1] << std::endl;		
 			lambda_++;
+			
 		}
 	}
 }
@@ -152,6 +208,7 @@ void XPBD::solveBendingConstraint()
 	std::array<double, 3>*vertex_pos;
 	double stiffness;
 	double* lambda_ = lambda.data();
+	double delta_t = sub_time_step;
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		stiffness = cloth->data()[i].bend_stiffness;
 		mesh_struct_ = mesh_struct[i];
@@ -163,11 +220,33 @@ void XPBD::solveBendingConstraint()
 		vertex_pos = vertex_position[i];
 		for (unsigned int j = 0; j < size; ++j) {
 			XPBD_constraint.solveBendingConstraint(vertex_pos[j].data(), mass_inv[j], vertex_pos, mesh_struct_->vertices[j].neighbor_vertex,
-				rest_mean_curvature_norm_[j], lbo_weight_[j], vertex_lbo_[j], stiffness, sub_time_step, mass_inv, *lambda_);
+				rest_mean_curvature_norm_[j], lbo_weight_[j], vertex_lbo_[j], stiffness, delta_t, mass_inv, *lambda_);
 			lambda_++;
 		}		
 	}
 }
+
+//XPBD_VELOCITY
+void XPBD::computeVelocity(int thread_No)
+{
+	std::array<double, 3>* vertex_pos;
+	std::array<double, 3>* initial_vertex_pos;
+	unsigned int vertex_end = 0;
+	std::array<double, 3>* velocity_;
+	double delta_t = sub_time_step;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		vertex_pos = vertex_position[i];
+		initial_vertex_pos = initial_vertex_position[i];
+		vertex_end = vertex_index_begin_per_thread[i][thread_No + 1];
+		velocity_ = velocity[i].data();
+		for (unsigned int j = vertex_index_begin_per_thread[i][thread_No]; j < vertex_end; ++j) {
+			for (unsigned int k = 0; k < 3; ++k) {
+				velocity_[j][k] = (vertex_pos[j][k] - initial_vertex_pos[j][k]) / delta_t;
+			}
+		}
+	}
+}
+
 
 //SET_POS_PREDICT
 void XPBD::setPosPredict(int thread_No)
@@ -178,16 +257,64 @@ void XPBD::setPosPredict(int thread_No)
 	double* mass_inv;
 	std::array<double, 3>* f_ext_;
 	std::array<double, 3>* velocity_;
-
+	double gravity__[3];
+	memcpy(gravity__, gravity, 24);
+	double delta_t = sub_time_step;
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		vertex_pos = vertex_position[i];
 		vertex_end = vertex_index_begin_per_thread[i][thread_No + 1];
-		mass_inv = mesh_struct[i]->mass.data();
+		mass_inv = mesh_struct[i]->mass_inv.data();
 		f_ext_ = f_ext[i].data();
 		velocity_ = velocity[i].data();
 		for (unsigned int j = vertex_index_begin_per_thread[i][thread_No]; j < vertex_end; ++j) {
-			for (unsigned int k = 0; k < 3; ++k) {
-				vertex_pos[j][k] += sub_time_step * velocity_[j][k] + delta_t_2 * mass_inv[j] * f_ext_[j][k];
+			if (mass_inv[j] == 0) {
+				for (unsigned int k = 0; k < 3; ++k) {
+					vertex_pos[j][k] += delta_t * velocity_[j][k] + delta_t_2 * (mass_inv[j] * f_ext_[j][k]);
+				}
+			}
+			else {
+				for (unsigned int k = 0; k < 3; ++k) {
+					vertex_pos[j][k] += delta_t * velocity_[j][k] + delta_t_2 * (mass_inv[j] * f_ext_[j][k] + gravity__[k]);
+				}
+			}		
+		}
+	}
+}
+
+
+void XPBD::resetExternalForce()
+{
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		memset(f_ext[i][0].data(), 0, 24 * f_ext[i].size());
+	}
+}
+
+void XPBD::initialDHatTolerance(double ave_edge_length)
+{
+	collision.initialDHatTolerance(ave_edge_length);
+}
+
+void XPBD::updateTetrahedronAnchorVertices()
+{
+	double* mass_inv;
+	int* anchor_vertex;
+	unsigned int anchor_vertex_size;
+	for (unsigned int i = cloth->size(); i < cloth->size()+tetrahedron->size(); ++i) {
+		mass_inv = mesh_struct[i]->mass_inv.data();
+		anchor_vertex_size = mesh_struct[i]->anchor_vertex.size();
+		anchor_vertex = mesh_struct[i]->anchor_vertex.data();
+		for (unsigned int j = 0; j < anchor_vertex_size; ++j) {
+			mass_inv[anchor_vertex[j]] = 0.0;
+		}
+	}
+}
+
+void XPBD::addExternalForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int obj_No)
+{
+	if (!coe.empty()) {
+		for (unsigned int i = 0; i < coe.size(); ++i) {
+			for (unsigned int j = 0; j < 3; ++j) {
+				f_ext[obj_No][neighbor_vertex[i]][j] += coe[i] * neighbor_vertex_force_direction[j];
 			}
 		}
 	}

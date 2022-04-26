@@ -9,6 +9,8 @@
 #include"basic/pick_triangle.h"
 #include"basic/set_tetrahedron_anchor.h"
 #include"basic/object_chosen_indicator.h"
+#include"XPBD/XPBD.h"
+
 class Scene
 {
 public:
@@ -45,6 +47,7 @@ public:
 	void testForWritetToArraySingle(int total_thread_num);
 
 private:
+	bool use_PD;
 	Light light;
 	int cloth_num, collider_num, tetrahedron_num;
 
@@ -59,7 +62,7 @@ private:
 	void saveObj();
 	void updateBuffer();
 	ProjectDynamic project_dynamic;
-
+	XPBD xpbd;
 
 	double ave_edge_length;
 
@@ -96,4 +99,5 @@ private:
 	//unsigned int thread_test[80001];
 
 	void setObjMoveInfo(Camera* camera, double* cursor_screen);
+	DrawCulling draw_culling;
 };

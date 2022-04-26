@@ -125,6 +125,7 @@ double TetrahedronMeshStruct::setMass(double density)
 		total_mass += mass[i];
 		mass_inv[i] = 1.0 / mass[i];
 	}
+	initial_mass_inv = mass_inv;
 	return total_mass;
 }
 

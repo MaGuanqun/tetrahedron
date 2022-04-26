@@ -95,5 +95,5 @@ enum CollisionIndicateType {
 };
 
 enum XPBDFunc {
-    SET_POS_PREDICT
+    SET_POS_PREDICT, XPBD_VELOCITY
 };

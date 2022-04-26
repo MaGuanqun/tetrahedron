@@ -7,18 +7,26 @@ Scene::Scene()
 	light.diffuse = glm::vec3(0.8, 0.8, 0.8);
 	light.specular = glm::vec3(0.95, 0.95, 0.95);
 
+	use_PD = false;
 
 	time_step = 1.0 / 100.0;
-	project_dynamic.time_step = time_step;
+
 
 	max_force_magnitude = 2.0;
 
 	last_output_obj_stamp = -1;
 	time_stamp = 0;
 	genShader();
-	project_dynamic.collision.time_stamp = &time_stamp;
-	project_dynamic.time_stamp = &time_stamp;
 
+	if (use_PD) {
+		project_dynamic.time_step = time_step;
+		project_dynamic.collision.time_stamp = &time_stamp;
+		project_dynamic.time_stamp = &time_stamp;
+	}
+	else {
+		xpbd.time_step = time_step;
+		xpbd.time_stamp= &time_stamp;
+	}
 	//test_array_size = 10000000;
 	//iteration_num_for_test_array = 1000;
 	//test_pair = new unsigned int* [thread.thread_num];
@@ -70,16 +78,29 @@ void Scene::compareArray()
 
 void Scene::obtainConvergenceInfo(double* convergence_rate, int* iteration_num)
 {
-	convergence_rate[LOCAL_GLOBAL] = project_dynamic.local_global_conv_rate;
-	convergence_rate[OUTER] = project_dynamic.outer_itr_conv_rate;
-	iteration_num[LOCAL_GLOBAL] = project_dynamic.local_global_iteration_num;
-	iteration_num[OUTER] = project_dynamic.outer_iteration_num;
+	if (use_PD) {
+		convergence_rate[LOCAL_GLOBAL] = project_dynamic.local_global_conv_rate;
+		convergence_rate[OUTER] = project_dynamic.outer_itr_conv_rate;
+		iteration_num[LOCAL_GLOBAL] = project_dynamic.local_global_iteration_num;
+		iteration_num[OUTER] = project_dynamic.outer_iteration_num;
+	}
+	else {
+		convergence_rate[LOCAL_GLOBAL] = xpbd.iteration_number;
+		convergence_rate[OUTER] = xpbd.iteration_number;
+		iteration_num[LOCAL_GLOBAL] = xpbd.iteration_number;
+		iteration_num[OUTER] = xpbd.iteration_number;
+	}
 }
 
 void Scene::updateConvRate(double* convergence_rate)
 {
-	project_dynamic.outer_itr_conv_rate = convergence_rate[OUTER];
-	project_dynamic.local_global_conv_rate = convergence_rate[LOCAL_GLOBAL];
+	if (use_PD) {
+		project_dynamic.outer_itr_conv_rate = convergence_rate[OUTER];
+		project_dynamic.local_global_conv_rate = convergence_rate[LOCAL_GLOBAL];
+	}
+	else {
+		//xpbd.iteration_number = convergence_rate[OUTER];
+	}
 }
 
 void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio)
@@ -124,21 +145,27 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	std::array<double, 4>collision_stiffness_per = { 2e5,2e5,2e5, 2e5 };// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point,
 	std::vector<std::array<double, 4>>collision_stiffness(cloth_num, collision_stiffness_per);
 	for (int i = 0; i < cloth_num; ++i) {
-		single_cloth_info.push_back(SingleClothInfo(cloth_density, 1e3, 1e6, 3e-4, collision_stiffness[i].data(), 0.5, 0.4, collision_stiffness_per[1]));
+		single_cloth_info.push_back(SingleClothInfo(cloth_density, 1e3, 1e6, 3e-3, collision_stiffness[i].data(), 0.5, 0.4, collision_stiffness_per[1]));
 	}
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].recordInitialMesh(single_cloth_info[i]);
 	}
 
-	std::array<double, 4>tetrahedron_collision_stiffness_per = {7,8, 8,2e1 };
+	std::array<double, 4>tetrahedron_collision_stiffness_per = {7,4, 4,2e1 };
 	double sigma_limit[2] = { 0.99,1.01 };
 	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density, 2e3, 1e2, 0.0, tetrahedron_collision_stiffness_per.data(), sigma_limit);
 	for (int i = 0; i < tetrahedron_num; ++i) {
 		tetrahedron[i].recordInitialMesh(single_tetrahedron_info);
 	}
 
+	draw_culling.initial(&cloth, &collider, &tetrahedron, &thread);
 
-	project_dynamic.setForPD(&cloth, &tetrahedron, &collider, &thread, tolerance_ratio);
+	if (use_PD) {
+		project_dynamic.setForPD(&cloth, &tetrahedron, &collider, &thread, tolerance_ratio,&draw_culling);
+	}
+	else {
+		xpbd.setForXPBD(&cloth, &tetrahedron, &collider, &thread, tolerance_ratio, &draw_culling);
+	}
 	setAveEdgeLength();
 	cursor.createVertices(0.03, camera_center);
 }
@@ -201,7 +228,12 @@ void Scene::getClothInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector
 	}
 
 	simulation_parameter[0] = time_step;
-	simulation_parameter[1] = project_dynamic.gravity_;
+	if (use_PD) {
+		simulation_parameter[1] = project_dynamic.gravity_;
+	}
+	else {
+		simulation_parameter[1] = xpbd.gravity_;
+	}
 	collision_stiffness.resize(cloth_num);
 	for (int i = 0; i < cloth_num; ++i) {
 		memcpy(collision_stiffness[i].data(), cloth[i].single_cloth_info_ref.collision_stiffness, 32);
@@ -211,8 +243,10 @@ void Scene::getClothInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector
 
 void Scene::updateIterateSolverParameter(double rate, int itr_solver_method)
 {
-	project_dynamic.updateIterateSolverParameter(rate);
-	project_dynamic.itr_solver_method = itr_solver_method;
+	if (use_PD) {
+		project_dynamic.updateIterateSolverParameter(rate);
+		project_dynamic.itr_solver_method = itr_solver_method;
+	}
 }
 
 void Scene::getTetrahedronInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 2>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 4>>& collision_stiffness)
@@ -232,7 +266,12 @@ void Scene::getTetrahedronInfo(std::vector<std::array<int, 3>>& mesh_info, std::
 		mesh_stiffness[i][1] = tetrahedron[i].single_tetrahedron_info_ref.position_stiffness;
 	}
 	simulation_parameter[0] = time_step;
-	simulation_parameter[1] = project_dynamic.gravity_;
+	if (use_PD) {
+		simulation_parameter[1] = project_dynamic.gravity_;
+	}
+	else {
+		simulation_parameter[1] = xpbd.gravity_;
+	}
 	collision_stiffness.resize(tetrahedron_num);
 	for (int i = 0; i < tetrahedron_num; ++i) {
 		memcpy(collision_stiffness[i].data(), tetrahedron[i].single_tetrahedron_info_ref.collision_stiffness, 32);
@@ -325,7 +364,12 @@ void Scene::saveObj()
 
 void Scene::initial()
 {
-	project_dynamic.initial();
+	if (use_PD) {
+		project_dynamic.initial();
+	}
+	else {
+		xpbd.initial();
+	}
 	for (int i = 0; i < cloth.size(); ++i) {
 		cloth[i].initial();
 	}
@@ -342,12 +386,17 @@ void Scene::initial()
 
 void Scene::reset()
 {
-	project_dynamic.reset();
+	if (use_PD) {
+		project_dynamic.reset();
+	}
+	else {
+		xpbd.reset();
+	}
 	for (int i = 0; i < cloth.size(); ++i) {
 		cloth[i].reset();
 	}
 	for (int i = 0; i < tetrahedron.size(); ++i) {
-		tetrahedron[i].reset();
+		tetrahedron[i].reset(use_PD);
 	}
 	intersection.initialIntersection();
 	//spatial_hashing.time_stamp++;
@@ -376,27 +425,45 @@ void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_par
 	double& ave_iteration, bool mouse_is_pressed_previous_current_frame)
 {
 	if (control_parameter[MOVE_OBJ_SCRIPT]) {
-		project_dynamic.collision.draw_culling.moveScript(2);
+		if (use_PD) {
+			draw_culling.moveScript(2);
+		}
 		control_parameter[MOVE_OBJ_SCRIPT] = false;
 	}
 
 	if (control_parameter[MOVE_OBJ]) {
 		if (intersection.happened_include_collider) {
 			setObjMoveInfo(camera, cursor_screen);
-			project_dynamic.collision.getAABB();
-			project_dynamic.updateSystemPos();
+			if (use_PD) {
+				project_dynamic.collision.getAABB();
+				project_dynamic.updateSystemPos();
+			}
+			else {
+
+			}
 		}
 		setChosenIndicator();
 	}
 
 	if (control_parameter[START_SIMULATION] || control_parameter[ONE_FRAME]) {
-		project_dynamic.resetExternalForce();
+		if (use_PD) {
+			project_dynamic.resetExternalForce();
+		}
+		else {
+			xpbd.resetExternalForce();
+		}
 		//std::cout << intersection.happened << " " << control_parameter[START_TEST] << std::endl;
 		if (intersection.happened && !control_parameter[START_TEST]) {
 			//std::cout << cursor_screen[0] << " " << cursor_screen[1] << " " << force_coe << std::end
 			setCursorForce(camera, cursor_screen, force_coe);
 		}
-		project_dynamic.PDsolve();
+
+		if (use_PD) {
+			project_dynamic.PDsolve();
+		}
+		else {
+			xpbd.PBDsolve();
+		}
 		//project_dynamic.PD_IPC_solve(record_matrix);
 		
 
@@ -457,7 +524,12 @@ void Scene::setAveEdgeLength()
 	}
 
 	ave_edge_length = edge_length_temp / (double)edge_size;
-	project_dynamic.initialDHatTolerance(ave_edge_length);
+	if (use_PD) {
+		project_dynamic.initialDHatTolerance(ave_edge_length);
+	}
+	else {
+		//xpbd.initialDHatTolerance(ave_edge_length);
+	}
 }
 
 void Scene::setTolerance(double* tolerance_ratio)
@@ -485,12 +557,19 @@ void Scene::selectAnchor(bool* control_parameter, bool* select_anchor, double* s
 		}
 	}
 	if (select_anchor[1]) {
-		for (int i = 0; i < tetrahedron.size(); ++i) {
-			tetrahedron[i].mesh_struct.setAnchorPosition();
+		if (use_PD) {
+			for (int i = 0; i < tetrahedron.size(); ++i) {
+				tetrahedron[i].mesh_struct.setAnchorPosition();
 
+			}
 		}
 		select_anchor[1] = false;
-		project_dynamic.updateTetrahedronAnchorVertices();
+		if (use_PD) {
+			project_dynamic.updateTetrahedronAnchorVertices();
+		}
+		else {
+			xpbd.updateTetrahedronAnchorVertices();
+		}
 	}
 
 
@@ -580,7 +659,7 @@ void Scene::setObjMoveInfo(Camera* camera, double* cursor_screen)
 	camera->getCursorPosInSpace(cursor_pos_in_space, cursor_screen, cursor_pos);
 	double displacement[3];
 	SUB(displacement, cursor_pos_in_space, cursor_pos);
-	project_dynamic.collision.draw_culling.move(intersection.obj_No, displacement);
+	draw_culling.move(intersection.obj_No, displacement);
 
 	/*std::cout << "original after move " << std::endl;
 	std::cout << tetrahedron[1].mesh_struct.vertex_for_render[0][0] << " " << tetrahedron[1].mesh_struct.vertex_for_render[0][1] << " " << tetrahedron[1].mesh_struct.vertex_for_render[0][2] << std::endl;
@@ -627,11 +706,21 @@ void Scene::setCursorForce(Camera* camera, double* cursor_screen, float force_co
 	cursorMovement(camera, cursor_screen, force_direction, force_coe, cursor_pos, cursor_pos_in_space);
 	cursor.translate(cursor_pos, cursor_pos_in_space);
 	if (intersection.obj_No < cloth.size()) {
-		project_dynamic.addExternalClothForce(force_direction, cloth[intersection.obj_No].coe_neighbor_vertex_force, cloth[intersection.obj_No].neighbor_vertex, intersection.obj_No);
+		if (use_PD) {
+			project_dynamic.addExternalClothForce(force_direction, cloth[intersection.obj_No].coe_neighbor_vertex_force, cloth[intersection.obj_No].neighbor_vertex, intersection.obj_No);
+		}
+		else {
+			xpbd.addExternalForce(force_direction, cloth[intersection.obj_No].coe_neighbor_vertex_force, cloth[intersection.obj_No].neighbor_vertex, intersection.obj_No);
+		}
 	}
 	else {
 		//std::cout << force_direction[0] << " " << force_direction[1] << " " << force_direction[2] << std::endl;
-		project_dynamic.addExternalTetForce(force_direction, tetrahedron[intersection.obj_No].coe_neighbor_vertex_force, tetrahedron[intersection.obj_No].neighbor_vertex, intersection.obj_No);
+		if (use_PD) {
+			project_dynamic.addExternalTetForce(force_direction, tetrahedron[intersection.obj_No- cloth.size()].coe_neighbor_vertex_force, tetrahedron[intersection.obj_No - cloth.size()].neighbor_vertex, intersection.obj_No - cloth.size());
+		}
+		else {
+			xpbd.addExternalForce(force_direction, tetrahedron[intersection.obj_No - cloth.size()].coe_neighbor_vertex_force, tetrahedron[intersection.obj_No - cloth.size()].neighbor_vertex, intersection.obj_No);
+		}
 	}
 
 }

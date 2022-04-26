@@ -575,6 +575,9 @@ job Thread::create_task(XPBD* func, int thread_id, XPBDFunc function_type)
     case SET_POS_PREDICT:
         k = job([func, thread_id]() {func->setPosPredict(thread_id); });
         break;
+    case XPBD_VELOCITY:
+        k = job([func, thread_id]() {func->computeVelocity(thread_id); });
+        break;
     }
     return k;
 }

@@ -6,8 +6,8 @@ ProjectDynamic::ProjectDynamic()
 	gravity_ = 9.8;
 	total_thread_num = std::thread::hardware_concurrency();
 	temEnergy.resize(total_thread_num);
-	outer_itr_conv_rate = 8e-4;// 7.5e-2; 
-	local_global_conv_rate = 1e-3;
+	outer_itr_conv_rate = 1.5e-3;// 7.5e-2; 
+	local_global_conv_rate = 2e-3;
 	sub_step_num = 1;
 
 	use_dierct_solve_for_coarest_mesh = true;
@@ -23,7 +23,7 @@ ProjectDynamic::ProjectDynamic()
 }
 
 void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, 
-	Thread* thread,double* tolerance_ratio)
+	Thread* thread,double* tolerance_ratio, DrawCulling* draw_culling_)
 {
 	this->cloth = cloth;
 	this->tetrahedron = tetrahedron;
@@ -33,7 +33,7 @@ void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron
 	collision.initial(cloth, collider, tetrahedron, thread, tolerance_ratio);
 	total_collider_num = collider->size();
 	this->collider = collider;
-
+	collision.draw_culling = draw_culling_;
 	setSystemIndexInfo();
 	initialPDvariable();
 	iteration_method.setBasicInfo(sys_size, thread, &global_mat);
@@ -1533,7 +1533,7 @@ bool ProjectDynamic::PDConvergeCondition()
 	bool energy_satisfied = system_energy && collision_energy;
 	bool need_to_stop = local_global_iteration_num > max_it - 3 || fabs(current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy < 5e-6;
 	//std::cout << outer_iteration_num << std::endl;
-	bool standard = (energy_satisfied || need_to_stop) && outer_iteration_num > 4;
+	bool standard = (energy_satisfied || need_to_stop) && outer_iteration_num > 5;
 	//if (outer_iteration_num > 0) {//
 	if (standard) {//
 		//std::cout << (current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy << std::endl;
@@ -1553,7 +1553,7 @@ bool ProjectDynamic::PDLocalGlobalConvergeCondition()
 	bool collision_energy = fabs(previous_collision_energy - current_collision_energy) / previous_collision_energy < local_global_conv_rate || current_collision_energy < 1e-14;
 	bool need_to_stop = fabs(current_PD_energy - previous_PD_energy) / previous_PD_energy < 5e-6 || local_global_iteration_num > max_it - 3;
 	bool energy_satisfied = system_energy && constraint_energy && collision_energy;
-	bool standard = (energy_satisfied || need_to_stop) && local_global_itr_in_single_outer > 0;
+	bool standard = (energy_satisfied || need_to_stop) && local_global_itr_in_single_outer > 5;
 
 	//if (local_global_itr_in_single_outer > 300) {
 	//	//std::cout<<"energy " << current_collision_energy<<" "<< abs(previous_collision_energy - current_collision_energy) / previous_collision_energy << std::endl;

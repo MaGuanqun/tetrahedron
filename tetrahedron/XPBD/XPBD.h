@@ -12,6 +12,7 @@
 #include"../collision/collision.h"
 #include"XPBD_constraint.h"
 
+
 using namespace Eigen;
 using namespace denseOperation;
 
@@ -23,11 +24,19 @@ public:
 	double gravity_;
 	void PBDsolve();
 	void setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider,
-		Thread* thread, double* tolerance_ratio);
-	Collision collision;
+		Thread* thread, double* tolerance_ratio, DrawCulling* draw_culling_);
 	size_t* time_stamp;
 	void setPosPredict(int thread_No);
+	void computeVelocity(int thread_No);
+	unsigned int iteration_number;
+	void initial();
+	void reset();
+	void resetExternalForce();
+	void initialDHatTolerance(double ave_edge_length);
+	void updateTetrahedronAnchorVertices();
+	void addExternalForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int obj_No);
 private:
+	double gravity[3];
 	unsigned int sub_step_num;
 	unsigned int total_thread_num;
 	
@@ -38,9 +47,10 @@ private:
 	double sub_time_step;
 	std::vector<std::vector<std::array<double, 3>>> f_ext;
 	std::vector<std::vector<std::array<double, 3>>> velocity;
-	std::vector<std::vector<std::array<double, 3>>> total_gravity;
+	//std::vector<std::vector<std::array<double, 3>>> total_gravity;
 
 	std::vector<std::array<double, 3>*> vertex_position;
+	std::vector<std::array<double, 3>*> initial_vertex_position;
 	std::vector<MeshStruct*> mesh_struct;
 	std::vector<unsigned int*> vertex_index_begin_per_thread;
 	void reorganzieDataOfObjects();
@@ -59,6 +69,8 @@ private:
 	void solveEdgeLengthConstraint();
 	void solveConstraint();
 	void setConstraintIndex();
-	unsigned int iteration_number;
+	Collision collision;
+	void updatePosition();
+
 };
 

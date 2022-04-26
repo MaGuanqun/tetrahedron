@@ -68,6 +68,7 @@ public:
 	Thread* thread;
 	std::vector<double>mass;
 	std::vector<double>mass_inv;
+	std::vector<double> initial_mass_inv;
 	std::vector<double>triangle_normal_magnitude_reciprocal;
 
 	std::vector<unsigned int> face_index_begin_per_thread;

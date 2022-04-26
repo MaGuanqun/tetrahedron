@@ -174,16 +174,7 @@ void TriangleObject::setMaterial(OriMesh& ori_mesh)
 
 
 
-void TriangleObject::reset()
-{
-	mesh_struct.vertex_position = ori_vertices;
-	mesh_struct.vertex_for_render = ori_vertices;
-	mesh_struct.getRenderNormal();
-	mesh_struct.getNormal();
-	for (int i = 0; i < mesh_struct.anchor_vertex.size(); ++i) {
-		mesh_struct.anchor_position[i] = mesh_struct.vertex_position[mesh_struct.anchor_vertex[i]];
-	}
-}
+
 
 
 //void TriangleObject::genShader()

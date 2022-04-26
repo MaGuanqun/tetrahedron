@@ -5,19 +5,24 @@ void XPBDconstraint::solveEdgeLengthConstraint(double* p0, double* p1, const dou
 {
 	dt = dt *dt;
 	double C = sqrt(EDGE_LENGTH(p0, p1)) - rest_length;
+	//std::cout << p0[0]<<" "<<p1[0] << std::endl;
 	double delta_lambda = -(C + lambda / (stiffness * dt)) / (inv_mass0 + inv_mass1 + 1.0 / (stiffness * dt));
 	lambda += delta_lambda;
 	double n[3];
 	SUB(n, p0, p1);
-	double n_coeff = delta_lambda / sqrt(EDGE_LENGTH(n, n));
+	double n_coeff = delta_lambda / sqrt(DOT(n, n));
+	//std::cout << "nn coef " << sqrt(DOT(n, n))<<" "<<n[0] << std::endl;
+
 	MULTI_(n, n_coeff);
+	//std::cout << "n " << n[0] << std::endl;
 	ACCUMULATE_SUM_WITH_COE(p0, inv_mass0, n);
 	inv_mass1 *= -1.0;
 	ACCUMULATE_SUM_WITH_COE(p1, inv_mass1, n);
+	//std::cout << p0[0] << " " << p1[0] << std::endl;
 }
 
 void XPBDconstraint::solveBendingConstraint(double* center_vertex, double vertex_inv_mass,  std::array<double,3>* vertex_position, std::vector<unsigned int>& neighbor_vertex,
-	double rest_curvature_norm, double lbo_weight, VectorXd& vertex_lbo,  double stiffness, double dt, double* inv_mass, double lambda)
+	double rest_curvature_norm, double lbo_weight, VectorXd& vertex_lbo,  double stiffness, double dt, double* inv_mass, double &lambda)
 {
 	std::vector<VectorXd>q(3);
 	double aq[3];
@@ -48,7 +53,19 @@ void XPBDconstraint::solveBendingConstraint(double* center_vertex, double vertex
 		q[j] = vertex_lbo * aq[j];
 	}
 	double alpha_ = lbo_weight / (stiffness * dt * dt);
-	double delta_lambda = -(C + alpha_ * lambda) / (q[0].dot(q[0].cwiseProduct(inv_m)) + alpha_);
+	double delta_lambda = -(C + alpha_ * lambda) / (q[0].dot(q[0].cwiseProduct(inv_m)) + q[1].dot(q[1].cwiseProduct(inv_m))
+		+ q[2].dot(q[2].cwiseProduct(inv_m)) + alpha_);
+	
+	//if (delta_lambda<5 && delta_lambda>-5) {
+
+	//}
+	//else {
+	//	//std::cout << delta_lambda << " " << q[0].dot(q[0].cwiseProduct(inv_m)) + q[1].dot(q[1].cwiseProduct(inv_m))
+	//	//	+ q[2].dot(q[2].cwiseProduct(inv_m)) << std::endl;
+	//	std::cout << vertex_lbo << std::endl;
+	//	std::cout << "=====" << std::endl;
+	//}
+	
 	lambda += delta_lambda;
 
 	inv_m *= delta_lambda;
@@ -89,19 +106,22 @@ void XPBDconstraint::initialEdgeCotWeight(TriangleMeshStruct& mesh_struct, std::
 	unsigned int opposite_0;
 	unsigned int opposite_1;
 	for (int i = 0; i < edge_num; ++i) {
+		
+		edge_vertex_0 = mesh_struct.edge_vertices[i << 1];
+		edge_vertex_1 = mesh_struct.edge_vertices[(i << 1) + 1];
+		opposite_0 = mesh_struct.edges[i].opposite_vertex[0];
+	
+		cotan0 = 0;
+		cotan1 = 0;
+		SUB(x10, mesh_struct.vertex_position[edge_vertex_0], mesh_struct.vertex_position[opposite_0]);
+		SUB(x20, mesh_struct.vertex_position[edge_vertex_1], mesh_struct.vertex_position[opposite_0]);
+		len10 = sqrt(DOT(x10, x10));
+		len20 = sqrt(DOT(x20, x20));
+		theta0 = acos(DOT(x10, x20) / (len10 * len20));
+		cotan0 = 1.0 / tan(theta0);
+
 		if (mesh_struct.edges[i].opposite_vertex.size() > 1) {
-			edge_vertex_0 = mesh_struct.edge_vertices[i << 1];
-			edge_vertex_1 = mesh_struct.edge_vertices[(i << 1) + 1];
-			opposite_0 = mesh_struct.edges[i].opposite_vertex[0];
 			opposite_1 = mesh_struct.edges[i].opposite_vertex[1];
-			cotan0 = 0;
-			cotan1 = 0;
-			SUB(x10, mesh_struct.vertex_position[edge_vertex_0], mesh_struct.vertex_position[opposite_0]);
-			SUB(x20, mesh_struct.vertex_position[edge_vertex_1], mesh_struct.vertex_position[opposite_0]);
-			len10 = sqrt(DOT(x10, x10));
-			len20 = sqrt(DOT(x20, x20));
-			theta0 = acos(DOT(x10, x20) / (len10 * len20));
-			cotan0 = 1.0 / tan(theta0);
 
 			SUB(x13, mesh_struct.vertex_position[edge_vertex_0], mesh_struct.vertex_position[opposite_1]);
 			SUB(x23, mesh_struct.vertex_position[edge_vertex_1], mesh_struct.vertex_position[opposite_1]);
@@ -113,7 +133,7 @@ void XPBDconstraint::initialEdgeCotWeight(TriangleMeshStruct& mesh_struct, std::
 		}
 		else
 		{
-			edge_cot_weight[i] = 0.0;
+			edge_cot_weight[i] = -0.5 * cotan0;
 		}
 	}
 }
