@@ -130,9 +130,9 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 		cloth[i].recordInitialMesh(single_cloth_info[i]);
 	}
 
-	std::array<double, 4>tetrahedron_collision_stiffness_per = {5e1,2e1, 2e1,2e1 };
+	std::array<double, 4>tetrahedron_collision_stiffness_per = {7,8, 8,2e1 };
 	double sigma_limit[2] = { 0.99,1.01 };
-	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density, 2e3, 5e2, 0.0, tetrahedron_collision_stiffness_per.data(), sigma_limit);
+	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density, 2e3, 1e2, 0.0, tetrahedron_collision_stiffness_per.data(), sigma_limit);
 	for (int i = 0; i < tetrahedron_num; ++i) {
 		tetrahedron[i].recordInitialMesh(single_tetrahedron_info);
 	}
@@ -444,14 +444,14 @@ void Scene::setAveEdgeLength()
 	int edge_size = 0;
 	for (int i = 0; i < cloth.size(); ++i) {
 		for (int j = 0; j < cloth[i].mesh_struct.edges.size(); ++j) {
-			edge_length_temp += cloth[i].mesh_struct.edges[j].length;
+			edge_length_temp += cloth[i].mesh_struct.edge_length[j];
 		}
 		edge_size += cloth[i].mesh_struct.edges.size();
 	}
 
 	for (int i = 0; i < tetrahedron.size(); ++i) {
 		for (int j = 0; j < tetrahedron[i].mesh_struct.edges.size(); ++j) {
-			edge_length_temp += tetrahedron[i].mesh_struct.edges[j].length;
+			edge_length_temp += tetrahedron[i].mesh_struct.edge_length[j];
 		}
 		edge_size += tetrahedron[i].mesh_struct.edges.size();
 	}

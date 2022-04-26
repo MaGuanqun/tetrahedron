@@ -163,8 +163,8 @@ void SetModel::splitPath(std::string& path, std::string& name)
 void SetModel::moveBodyCapsule(OriMesh& ori_mesh)
 {
 	//band capsule
-	double move[3] = { 0.0,-0.9,-0.3 };//this is for two prisms
-	//double move[3] = { -60, -130,-30 };//this is for two dragons
+	//double move[3] = { 0.0,-0.9,-0.3 };//this is for two prisms
+	double move[3] = { -60, -130,-30 };//this is for two dragons
 	// move capsule
 	//double move[3] = { 0.0,-0.3,-0.35 };
 	//sphere

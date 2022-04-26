@@ -7,26 +7,29 @@ void SpatialHashing::initialHashCellLength(std::vector<Cloth>* cloth, std::vecto
 	double max_length = 0;
 	double ave_length = 0;
 	int edge_num = 0;
-	std::vector<MeshStruct::Edge>* edge;
+	double* edge_length;
+	unsigned int edge_size;
 	for (int i = 0; i < cloth->size(); ++i) {
-		edge = &cloth->data()[i].mesh_struct.edges;
-		for (int j = 0; j < edge->size(); ++j) {
-			if (max_length < (*edge)[j].length) {
-				max_length = (*edge)[j].length;
+		edge_size = cloth->data()[i].mesh_struct.edge_length.size();
+		edge_length = cloth->data()[i].mesh_struct.edge_length.data();
+		for (int j = 0; j < edge_size; ++j) {
+			if (max_length < edge_length[j]) {
+				max_length = edge_length[j];
 			}
-			ave_length += (*edge)[j].length;
+			ave_length += edge_length[j];
 		}
-		edge_num += edge->size();
+		edge_num += edge_size;
 	}
 	for (int i = 0; i < tetrahedron->size(); ++i) {
-		edge = &tetrahedron->data()[i].mesh_struct.edges;
-		for (int j = 0; j < edge->size(); ++j) {
-			if (max_length < (*edge)[j].length) {
-				max_length = (*edge)[j].length;
+		edge_size = tetrahedron->data()[i].mesh_struct.edge_length.size();
+		edge_length = tetrahedron->data()[i].mesh_struct.edge_length.data();
+		for (int j = 0; j < edge_size; ++j) {
+			if (max_length < edge_length[j]) {
+				max_length = edge_length[j];
 			}
-			ave_length += (*edge)[j].length;
+			ave_length += edge_length[j];
 		}
-		edge_num += edge->size();
+		edge_num += edge_size;
 	}
 
 	ave_length /= (double)edge_num;

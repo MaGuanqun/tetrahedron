@@ -6,8 +6,8 @@ ProjectDynamic::ProjectDynamic()
 	gravity_ = 9.8;
 	total_thread_num = std::thread::hardware_concurrency();
 	temEnergy.resize(total_thread_num);
-	outer_itr_conv_rate = 8e-3;// 7.5e-2; 
-	local_global_conv_rate = 1e-2;
+	outer_itr_conv_rate = 8e-4;// 7.5e-2; 
+	local_global_conv_rate = 1e-3;
 	sub_step_num = 1;
 
 	use_dierct_solve_for_coarest_mesh = true;
@@ -1472,7 +1472,7 @@ bool ProjectDynamic::innerIterationConvergeCondition()
 {
 	//return local_global_iteration_num > max_inner_iteration_num;
 
-	if (local_global_iteration_num > 0) {
+	if (local_global_iteration_num > 10) {
 		bool energy_changing = fabs(current_PD_energy - previous_PD_energy) / previous_PD_energy < local_global_conv_rate || current_PD_energy < 5e-15;
 		if (energy_changing) {
 			return true;
