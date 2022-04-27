@@ -145,7 +145,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	std::array<double, 4>collision_stiffness_per = { 2e5,2e5,2e5, 2e5 };// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point,
 	std::vector<std::array<double, 4>>collision_stiffness(cloth_num, collision_stiffness_per);
 	for (int i = 0; i < cloth_num; ++i) {
-		single_cloth_info.push_back(SingleClothInfo(cloth_density, 1e3, 1e6, 3e-3, collision_stiffness[i].data(), 0.5, 0.4, collision_stiffness_per[1]));
+		single_cloth_info.push_back(SingleClothInfo(cloth_density, 1e3, 1e6, 3e3, collision_stiffness[i].data(), 0.5, 0.4, collision_stiffness_per[1]));
 	}
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].recordInitialMesh(single_cloth_info[i]);
