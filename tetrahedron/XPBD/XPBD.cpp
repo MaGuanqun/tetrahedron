@@ -9,6 +9,7 @@ XPBD::XPBD()
 	sub_step_num = 1;
 	iteration_number = 50;
 	time_step = 1.0 / 100.0;
+	damping_coe = 0.02;
 }
 
 
@@ -163,12 +164,13 @@ void XPBD::solveEdgeLengthConstraint()
 	unsigned int size;
 	MeshStruct* mesh_struct_;
 	std::array<double, 3>* vertex_pos;
+	std::array<double, 3>* initial_vertex_pos;
 	double stiffness;
 	unsigned int* edge_vertex_index;
 	double* mass_inv;
-	double delta_t = sub_time_step;
+	//double delta_t = sub_time_step;
 	double* lambda_ = lambda.data()+ constraint_index_start[1];
-
+	//double damping_stiffness = damping_coe;
 	//for (unsigned int i = 0; i < mesh_struct[0]->vertex_position.size(); ++i) {
 	//	std::cout << vertex_position[0][i].data()[0]<<" "<< vertex_position[0][i][0] << std::endl;
 	//}
@@ -177,6 +179,7 @@ void XPBD::solveEdgeLengthConstraint()
 		mesh_struct_ = mesh_struct[i];
 		size = mesh_struct_->edge_length.size();
 		vertex_pos = vertex_position[i];
+		initial_vertex_pos = initial_vertex_position[i];
 
 		//std::cout << vertex_position[i] << " " << vertex_pos << std::endl;
 
@@ -186,8 +189,9 @@ void XPBD::solveEdgeLengthConstraint()
 		for (unsigned int j = 0; j < size; ++j) {			
 			//std::cout << *lambda_ << " " << vertex_position[i][edge_vertex_index[j << 1]].data()[0] << " " << vertex_position[i][edge_vertex_index[(j << 1) + 1]].data()[0] << std::endl;
 			XPBD_constraint.solveEdgeLengthConstraint(vertex_pos[edge_vertex_index[j << 1]].data(),
-				vertex_pos[edge_vertex_index[(j << 1) + 1]].data(), mesh_struct_->edge_length[j], stiffness, delta_t, mass_inv[edge_vertex_index[j << 1]],
-				mass_inv[edge_vertex_index[(j << 1) + 1]], *lambda_);
+				vertex_pos[edge_vertex_index[(j << 1) + 1]].data(), mesh_struct_->edge_length[j], stiffness, sub_time_step, mass_inv[edge_vertex_index[j << 1]],
+				mass_inv[edge_vertex_index[(j << 1) + 1]], *lambda_, damping_coe, initial_vertex_pos[edge_vertex_index[j << 1]].data(),
+				initial_vertex_pos[edge_vertex_index[(j << 1)+1]].data());
 			//std::cout << *lambda_ << " " << vertex_position[i][edge_vertex_index[j << 1]].data()[0] << " " << vertex_position[i][edge_vertex_index[(j << 1) + 1]].data()[0] << std::endl;
 			//std::cout << vertex_pos[edge_vertex_index[j << 1]].data()[0]<<" "<< vertex_pos[edge_vertex_index[(j << 1) + 1]].data()[0]<<" "<< edge_vertex_index[j << 1] << " " << edge_vertex_index[(j << 1) + 1] << std::endl;		
 			lambda_++;
@@ -206,9 +210,10 @@ void XPBD::solveBendingConstraint()
 	VectorXd* vertex_lbo_;
 	MeshStruct* mesh_struct_;
 	std::array<double, 3>*vertex_pos;
+	std::array<double, 3>* initial_vertex_pos;
 	double stiffness;
 	double* lambda_ = lambda.data();
-	double delta_t = sub_time_step;
+	//double delta_t = sub_time_step;
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		stiffness = cloth->data()[i].bend_stiffness;
 		mesh_struct_ = mesh_struct[i];
@@ -218,9 +223,11 @@ void XPBD::solveBendingConstraint()
 		lbo_weight_ = lbo_weight[i].data();
 		vertex_lbo_ = vertex_lbo[i].data();
 		vertex_pos = vertex_position[i];
+		initial_vertex_pos = initial_vertex_position[i];
 		for (unsigned int j = 0; j < size; ++j) {
 			XPBD_constraint.solveBendingConstraint(vertex_pos[j].data(), mass_inv[j], vertex_pos, mesh_struct_->vertices[j].neighbor_vertex,
-				rest_mean_curvature_norm_[j], lbo_weight_[j], vertex_lbo_[j], stiffness, delta_t, mass_inv, *lambda_);
+				rest_mean_curvature_norm_[j], lbo_weight_[j], vertex_lbo_[j], stiffness, sub_time_step, mass_inv, *lambda_,damping_coe,
+				initial_vertex_pos[j].data(),initial_vertex_pos);
 			lambda_++;
 		}		
 	}

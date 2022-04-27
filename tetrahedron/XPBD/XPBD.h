@@ -71,6 +71,7 @@ private:
 	void setConstraintIndex();
 	Collision collision;
 	void updatePosition();
+	double damping_coe;
 
 };
 

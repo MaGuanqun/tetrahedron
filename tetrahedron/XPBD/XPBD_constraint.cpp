@@ -1,45 +1,67 @@
 #include"XPBD_constraint.h"
 
 void XPBDconstraint::solveEdgeLengthConstraint(double* p0, double* p1, const double rest_length, const double stiffness, double dt,
-	double inv_mass0, double inv_mass1, double& lambda)
-{
-	dt = dt *dt;
+	double inv_mass0, double inv_mass1, double& lambda, const double damping_stiffness, double* initial_p0, double* inital_p1)
+{	
+	double gamma = damping_stiffness / (stiffness*dt);
+	dt = dt * dt;
 	double C = sqrt(EDGE_LENGTH(p0, p1)) - rest_length;
-	//std::cout << p0[0]<<" "<<p1[0] << std::endl;
-	double delta_lambda = -(C + lambda / (stiffness * dt)) / (inv_mass0 + inv_mass1 + 1.0 / (stiffness * dt));
-	lambda += delta_lambda;
 	double n[3];
 	SUB(n, p0, p1);
-	double n_coeff = delta_lambda / sqrt(DOT(n, n));
-	//std::cout << "nn coef " << sqrt(DOT(n, n))<<" "<<n[0] << std::endl;
+	double n_[3];
+	double n_norm = sqrt(DOT(n, n));
+	double n_coeff = gamma / n_norm;
+	MULTI(n_, n, n_coeff); 
+
+	double delta_lambda = -(C + lambda / (stiffness * dt) + (n_[0]*(p0[0] - initial_p0[0] - p1[0] + inital_p1[0] )
+		+ n_[1] * (p0[1] - initial_p0[1] - p1[1] + inital_p1[1])+ n_[2] * (p0[2] - initial_p0[2] - p1[2] + inital_p1[2]))) 
+		/ ((1.0+gamma)*(inv_mass0 + inv_mass1) + 1.0 / (stiffness * dt));
+	lambda += delta_lambda;
+	
+	
+	n_coeff = delta_lambda / n_norm;
 
 	MULTI_(n, n_coeff);
-	//std::cout << "n " << n[0] << std::endl;
 	ACCUMULATE_SUM_WITH_COE(p0, inv_mass0, n);
 	inv_mass1 *= -1.0;
 	ACCUMULATE_SUM_WITH_COE(p1, inv_mass1, n);
-	//std::cout << p0[0] << " " << p1[0] << std::endl;
 }
 
 void XPBDconstraint::solveBendingConstraint(double* center_vertex, double vertex_inv_mass,  std::array<double,3>* vertex_position, std::vector<unsigned int>& neighbor_vertex,
-	double rest_curvature_norm, double lbo_weight, VectorXd& vertex_lbo,  double stiffness, double dt, double* inv_mass, double &lambda)
+	double rest_curvature_norm, double lbo_weight, VectorXd& vertex_lbo,  double stiffness, double dt, double* inv_mass, double &lambda,
+	const double damping_stiffness, double* initial_center_vertex, std::array<double, 3>* inital_vertex_position)
 {
 	std::vector<VectorXd>q(3);
+	std::vector<VectorXd>q_initial(3);
 	double aq[3];
 	unsigned int size = neighbor_vertex.size() + 1;
 	VectorXd inv_m(size);
 	for (unsigned int j = 0; j < 3; ++j) {
 		q[j].resize(size);
+		q_initial[j].resize(size);
 	}
 	q[0][0] = center_vertex[0];
 	q[1][0] = center_vertex[1];
 	q[2][0] = center_vertex[2];
+
+	q_initial[0][0] = initial_center_vertex[0];
+	q_initial[1][0] = initial_center_vertex[1];
+	q_initial[2][0] = initial_center_vertex[2];
+
 	inv_m[0] = vertex_inv_mass;
+
+	unsigned int index;
 	for (unsigned int h = 1; h < size; h++) {
-		q[0][h] = vertex_position[neighbor_vertex[h-1]][0];
-		q[1][h] = vertex_position[neighbor_vertex[h-1]][1];
-		q[2][h] = vertex_position[neighbor_vertex[h-1]][2];
-		inv_m[h] = inv_mass[neighbor_vertex[h - 1]];
+		index = neighbor_vertex[h - 1];
+		q[0][h] = vertex_position[index][0];
+		q[1][h] = vertex_position[index][1];
+		q[2][h] = vertex_position[index][2];
+
+		q_initial[0][h] = inital_vertex_position[index][0];
+		q_initial[1][h] = inital_vertex_position[index][1];
+		q_initial[2][h] = inital_vertex_position[index][2];
+
+		inv_m[h] = inv_mass[index];
 	}
 	aq[0] = vertex_lbo.dot(q[0]);
 	aq[1] = vertex_lbo.dot(q[1]);
@@ -50,11 +72,14 @@ void XPBDconstraint::solveBendingConstraint(double* center_vertex, double vertex
 
 	//use q to store delta_C
 	for (unsigned int j = 0; j < 3; ++j) {
+		q_initial[j] = q[j] - q_initial[j];
 		q[j] = vertex_lbo * aq[j];
 	}
 	double alpha_ = lbo_weight / (stiffness * dt * dt);
-	double delta_lambda = -(C + alpha_ * lambda) / (q[0].dot(q[0].cwiseProduct(inv_m)) + q[1].dot(q[1].cwiseProduct(inv_m))
-		+ q[2].dot(q[2].cwiseProduct(inv_m)) + alpha_);
+	double gamma = lbo_weight * damping_stiffness / (stiffness * dt);
+	double delta_lambda = -(C + alpha_ * lambda + gamma * (q[0].dot(q_initial[0]) + q[1].dot(q_initial[1]) + q[2].dot(q_initial[2])))
+		/ ((1.0+gamma)*(q[0].dot(q[0].cwiseProduct(inv_m)) + q[1].dot(q[1].cwiseProduct(inv_m))
+			+ q[2].dot(q[2].cwiseProduct(inv_m))) + alpha_);
 	
 	//if (delta_lambda<5 && delta_lambda>-5) {
 
