@@ -23,8 +23,8 @@ public:
 	std::vector<int> vertex_surface_index;//size is the global vertex size, verted index -> surface index
 	std::vector<unsigned int> vertex_index_on_surface_begin_per_thread;
 
-	std::vector<Matrix3d> P_inv;
-	std::vector<Matrix<double,4,3>> AT;
+	//std::vector<Matrix3d> P_inv;
+	std::vector<Matrix<double,3,4>> A;
 
 	void prepareForDeformationGradient();
 	//std::vector<Matrix<double, 3, 3>>PT;//to record the restshape (PP^T)^-1 for deformation gradient

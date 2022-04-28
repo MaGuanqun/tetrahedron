@@ -288,6 +288,8 @@ void Tetrahedron::recordInitialMesh(SingleTetrahedronInfo& single_tetrahedron_in
 	volume_preserve_stiffness = single_tetrahedron_info_ref.volume_preserve_stiffness;
 	ARAP_stiffness = single_tetrahedron_info_ref.ARAP_stiffness;
 	memcpy(sigma_limit, single_tetrahedron_info_ref.sigma_limit, 16);
+	youngs_modulus = single_tetrahedron_info_ref.youngs_modulus;
+	poisson_ratio = single_tetrahedron_info_ref.poisson_ratio;
 }
 
 

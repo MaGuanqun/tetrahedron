@@ -69,9 +69,12 @@ private:
 	void solveEdgeLengthConstraint();
 	void solveConstraint();
 	void setConstraintIndex();
+	void solveTetStrainConstraint();
 	Collision collision;
 	void updatePosition();
 	double damping_coe;
+
+	void updateNormal();
 
 };
 

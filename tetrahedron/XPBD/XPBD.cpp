@@ -7,7 +7,7 @@ XPBD::XPBD()
 	gravity_ = 9.8;
 	total_thread_num = std::thread::hardware_concurrency();
 	sub_step_num = 1;
-	iteration_number = 50;
+	iteration_number = 200;
 	time_step = 1.0 / 100.0;
 	damping_coe = 0.02;
 }
@@ -137,13 +137,14 @@ void XPBD::PBDsolve()
 	}
 	thread->assignTask(this, XPBD_VELOCITY);	
 	updatePosition();
-
+	updateNormal();
 }
 
 
 
 void XPBD::updatePosition()
 {
+	
 	unsigned int vertex_num;
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		vertex_num = mesh_struct[i]->vertex_position.size();
@@ -155,7 +156,30 @@ void XPBD::solveConstraint()
 {
 	solveBendingConstraint();
 	solveEdgeLengthConstraint();
+	solveTetStrainConstraint();
+}
 
+
+
+void XPBD::updateNormal()
+{
+	TriangleMeshStruct* mesh_struct;
+	for (unsigned int j = 0; j < cloth->size(); ++j) {
+		mesh_struct = &(*cloth)[j].mesh_struct;
+		thread->assignTask(mesh_struct, FACE_NORMAL_RENDER);
+		thread->assignTask(mesh_struct, VERTEX_NORMAL_RENDER);
+	}
+	TetrahedronMeshStruct* mesh_struct_;
+	for (unsigned int j = 0; j < tetrahedron->size(); ++j) {
+		mesh_struct_ = &(*tetrahedron)[j].mesh_struct;
+		thread->assignTask(mesh_struct_, FACE_NORMAL_RENDER);
+		thread->assignTask(mesh_struct_, VERTEX_NORMAL_RENDER);
+	}
+	for (unsigned int j = 0; j < collider->size(); ++j) {
+		mesh_struct = &(*collider)[j].mesh_struct;
+		thread->assignTask(mesh_struct, FACE_NORMAL_RENDER);
+		thread->assignTask(mesh_struct, VERTEX_NORMAL_RENDER);
+	}
 }
 
 
@@ -196,6 +220,52 @@ void XPBD::solveEdgeLengthConstraint()
 			//std::cout << vertex_pos[edge_vertex_index[j << 1]].data()[0]<<" "<< vertex_pos[edge_vertex_index[(j << 1) + 1]].data()[0]<<" "<< edge_vertex_index[j << 1] << " " << edge_vertex_index[(j << 1) + 1] << std::endl;		
 			lambda_++;
 			
+		}
+	}
+}
+
+
+
+void XPBD::solveTetStrainConstraint()
+{
+	unsigned int size;
+	std::array<int, 4>* indices;
+	MeshStruct* mesh_struct_;
+	double* volume;
+	std::array<double, 3>* vertex_pos;
+	std::array<double, 3>* initial_vertex_pos;
+	double* mass_inv;
+	double stiffness;
+	Matrix<double, 3, 4>* A;
+	double* lambda_ = lambda.data() + constraint_index_start[2];
+	double* sigma_limit;
+	double youngs_modulus, poisson_ratio;
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		mesh_struct_ = mesh_struct[i+cloth->size()];
+		size =tetrahedron->data()[i].mesh_struct.indices.size();
+		indices =tetrahedron->data()[i].mesh_struct.indices.data();
+		volume = tetrahedron->data()[i].mesh_struct.volume.data();
+		vertex_pos = vertex_position[i+cloth->size()];
+		initial_vertex_pos = initial_vertex_position[i + cloth->size()];
+		stiffness = tetrahedron->data()[i].ARAP_stiffness;
+		A = tetrahedron->data()[i].mesh_struct.A.data();
+		sigma_limit = (*tetrahedron)[i].sigma_limit;
+		mass_inv = mesh_struct_->mass_inv.data();
+		youngs_modulus = tetrahedron->data()[i].youngs_modulus;
+		poisson_ratio = tetrahedron->data()[i].poisson_ratio;
+
+
+		//std::cout << "ARAP " << stiffness << " yong " << youngs_modulus << " " << "poiss " << poisson_ratio << std::endl;
+
+		//for (unsigned int j = 0; j < mesh_struct_->vertex_position.size(); ++j) {
+		//	std::cout << mass_inv[j] << std::endl;
+		//}
+
+
+		for (unsigned int j = 0; j < size; ++j) {
+			XPBD_constraint.solveTetStrainConstraint(vertex_pos, initial_vertex_pos, stiffness, sub_time_step, A[j], indices[j].data(), mass_inv,
+				*lambda_, damping_coe, volume[j], youngs_modulus, poisson_ratio);
+			lambda_ ++;
 		}
 	}
 }
@@ -310,6 +380,7 @@ void XPBD::updateTetrahedronAnchorVertices()
 		mass_inv = mesh_struct[i]->mass_inv.data();
 		anchor_vertex_size = mesh_struct[i]->anchor_vertex.size();
 		anchor_vertex = mesh_struct[i]->anchor_vertex.data();
+		mesh_struct[i]->mass_inv = mesh_struct[i]->initial_mass_inv;
 		for (unsigned int j = 0; j < anchor_vertex_size; ++j) {
 			mass_inv[anchor_vertex[j]] = 0.0;
 		}

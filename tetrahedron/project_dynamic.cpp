@@ -30,10 +30,11 @@ void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron
 	sub_time_step = time_step / (double)sub_step_num;
 	this->thread = thread;
 	tetrahedron_begin_obj_index = cloth->size();
+	collision.draw_culling = draw_culling_;
 	collision.initial(cloth, collider, tetrahedron, thread, tolerance_ratio);
 	total_collider_num = collider->size();
 	this->collider = collider;
-	collision.draw_culling = draw_culling_;
+	
 	setSystemIndexInfo();
 	initialPDvariable();
 	iteration_method.setBasicInfo(sys_size, thread, &global_mat);
@@ -411,7 +412,7 @@ void ProjectDynamic::copmuteGlobalStepMatrixSingleTetrahedron(TetrahedronMeshStr
 			index[j] += vertex_index_start;
 		}
 
-		AT_A = ((ARAP_stiffness + volume_preserve_stiffness) * mesh_struct.volume[i]) * mesh_struct.AT[i] * mesh_struct.AT[i].transpose();
+		AT_A = ((ARAP_stiffness + volume_preserve_stiffness) * mesh_struct.volume[i]) * mesh_struct.A[i].transpose() * mesh_struct.A[i];
 
 		for (unsigned int j = 0; j < 4; ++j) {
 			for (unsigned int k = j + 1; k < 4; ++k) {
@@ -576,8 +577,8 @@ void ProjectDynamic::computeGravity()
 		total_gravity[i].setZero();
 	}
 	//double gravity_accerlation[3] = { 0,0.0,gravity_};
-	double gravity_accerlation[3] = { gravity_, 0,0.0};
-	//double gravity_accerlation[3] = {0.0, -gravity_, 0.0};
+	//double gravity_accerlation[3] = { gravity_, 0,0.0};
+	double gravity_accerlation[3] = {0.0, -gravity_, 0.0};
 	std::vector<double>* mass_;
 	unsigned int vertex_index_start;
 
@@ -1660,7 +1661,7 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 	int temp_vertex_index;
 	Matrix3d transform;
 
-	Matrix3d* P_inv;
+	Matrix3d P_inv;
 	//double* det;
 
 	//Matrix<double, 3, 3>* PT;
@@ -1706,7 +1707,7 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 			sigma_min = (*tetrahedron)[j].sigma_limit[0];
 			sigma_max = (*tetrahedron)[j].sigma_limit[1];
 			
-			P_inv = (*tetrahedron)[j].mesh_struct.P_inv.data();
+			//P_inv = (*tetrahedron)[j].mesh_struct.P_inv.data();
 
 
 			for (unsigned int i = index_begin; i < index_end; ++i) {
@@ -1723,7 +1724,10 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 					q_e.col(j-1) = q.col(j) - q.col(0);	
 				}			
 
-				deformation_gradient = q_e * P_inv[i];
+
+				memcpy(P_inv.data(), mesh_struct->A[i].data() + 3, 72);
+
+				deformation_gradient = q_e * P_inv.transpose();
 				//transform = (q * PT_times_PPT_inv[i]);
 				//transform = PT[i].transpose()* q_e.transpose();
 	
@@ -1811,8 +1815,8 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 				//std::cout << temp_p.colwise().sum() << std::endl;
 
 				//p_volume_preserve = transform_for_volume_perserve * (PT_pos[i].transpose());
-				ATAp_ARAP_volume_preserve[i] = mesh_struct->AT[i] * 
-					((ARAP_stiffness * mesh_struct->volume[i]) * transform).transpose();//+(volume_preserve_stiffness * mesh_struct->volume[i])* transform_for_volume_perserve
+				ATAp_ARAP_volume_preserve[i] =
+					((ARAP_stiffness * mesh_struct->volume[i]) * transform * mesh_struct->A[i]).transpose();//+(volume_preserve_stiffness * mesh_struct->volume[i])* transform_for_volume_perserve
 				//.transpose()//+ volume_preserve_stiffness * p_volume_preserve
 																			   //tet_local_A*tet_local_A=tet_local_A, we omit it here   tet_local_A is symmetric, need not to use transpose
 				//mesh_struct->volume[i]*
@@ -1834,7 +1838,7 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 			sigma_min = (*tetrahedron)[j].sigma_limit[0];
 			sigma_max = (*tetrahedron)[j].sigma_limit[1];
 
-			P_inv = (*tetrahedron)[j].mesh_struct.P_inv.data();
+			//P_inv = (*tetrahedron)[j].mesh_struct.P_inv.data();
 
 			for (unsigned int i = index_begin; i < index_end; ++i) {
 				vertex_index = mesh_struct->indices[i].data();
@@ -1859,7 +1863,8 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 				}
 
 				//transform = q_e * p_e.inverse();
-				deformation_gradient = q_e * P_inv[i];
+				memcpy(P_inv.data(), mesh_struct->A[i].data() + 3, 72);
+				deformation_gradient = q_e * P_inv.transpose();
 
 				//transform = PT[i].transpose() * q_e.transpose();
 				//transform = (q * PT_times_PPT_inv[i]);				//
@@ -1914,8 +1919,7 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 			//	p = transform * (PT_pos[i].transpose());
 			//	temp_p = getARAPmatrix() * p.transpose();
 				//p_volume_preserve = transform_for_volume_perserve * (PT_pos[i].transpose());
-				ATAp_ARAP_volume_preserve[i] = mesh_struct->AT[i] *
-					((ARAP_stiffness * mesh_struct->volume[i]) * transform).transpose();//+ (volume_preserve_stiffness * mesh_struct->volume[i]) * transform_for_volume_perserve
+				ATAp_ARAP_volume_preserve[i] = ((ARAP_stiffness * mesh_struct->volume[i]) * transform * mesh_struct->A[i]).transpose();//+ (volume_preserve_stiffness * mesh_struct->volume[i]) * transform_for_volume_perserve
 				//tet_local_A*tet_local_A=tet_local_A, we omit it here   tet_local_A is symmetric, need not to use transpose
 			}
 		}

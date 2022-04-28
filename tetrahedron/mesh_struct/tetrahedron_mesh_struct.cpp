@@ -176,18 +176,16 @@ void TetrahedronMeshStruct::prepareForDeformationGradient()
 	//PT.resize(indices.size());
 	//PT_PPT_inv.resize(indices.size());
 
-	P_inv.resize(indices.size());
-	AT.resize(indices.size());
+	//P_inv.resize(indices.size());
+	A.resize(indices.size());
 	Matrix<double, 3, 3> p;
 	//Matrix<double, 3, 4> A;
 	//Matrix3d ppt;
 	for (int i = 0; i < indices.size(); ++i)
 	{
-		p = constructMatrixP(i);
-		P_inv[i] = p.inverse();
-
+		p = constructMatrixP(i).inverse();
 		//A = constructDeformGradientA(P_inv[i]);
-		AT[i] = constructDeformGradientA(P_inv[i]).transpose();
+		A[i] = constructDeformGradientA(p);
 
 		//std::cout << (ppt.inverse() * ppt) << std::endl;
 

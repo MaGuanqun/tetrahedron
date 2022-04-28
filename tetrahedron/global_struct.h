@@ -94,15 +94,20 @@ struct SingleTetrahedronInfo {
 	double volume_preserve_stiffness;
 	double collision_stiffness[4];			// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point
 	double sigma_limit[2];//max min sigma for volume preserve
+	double youngs_modulus;
+	double poisson_ratio;
 	SingleTetrahedronInfo() {};
 	SingleTetrahedronInfo(double density, double position_stiffness,
-		double ARAP_stiffness, double volume_preserve_stiffness, double* collision_stiffness, double* sigma_limit) {
+		double ARAP_stiffness, double volume_preserve_stiffness, double* collision_stiffness, double* sigma_limit,
+		double youngs_modulus, double poisson_ratio) {
 		this->density = density;
 		this->position_stiffness = position_stiffness;
 		this->volume_preserve_stiffness = volume_preserve_stiffness;
 		this->ARAP_stiffness = ARAP_stiffness;
 		memcpy(this->collision_stiffness, collision_stiffness, 32);
 		memcpy(this->sigma_limit, sigma_limit, 16);
+		this->youngs_modulus = youngs_modulus;
+		this->poisson_ratio = poisson_ratio;
 	};
 	SingleTetrahedronInfo& operator=(SingleTetrahedronInfo const& single_cloth_info)
 	{
@@ -110,6 +115,8 @@ struct SingleTetrahedronInfo {
 		this->position_stiffness = single_cloth_info.position_stiffness;
 		this->volume_preserve_stiffness = single_cloth_info.volume_preserve_stiffness;
 		this->ARAP_stiffness = single_cloth_info.ARAP_stiffness;
+		this->youngs_modulus = youngs_modulus;
+		this->poisson_ratio = poisson_ratio;
 		memcpy(this->collision_stiffness, single_cloth_info.collision_stiffness, 32);
 		memcpy(this->sigma_limit, single_cloth_info.sigma_limit, 16);
 		return *this;

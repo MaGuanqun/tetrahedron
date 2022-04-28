@@ -50,6 +50,7 @@ public:
 	std::vector<double>edge_length;// edge indices of every triangle
 	std::vector<unsigned int>edge_vertices;//vertex indices of every edge
 
+	
 
 	std::vector<std::array<double, 3>> vertex_position;
 	std::vector<std::array<int, 3>> triangle_indices;//if for tetrahedron, store the surface triangle	

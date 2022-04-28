@@ -1062,6 +1062,7 @@ void Collision::collisionCulling()
 	//std::cout << "total e-e pair " << num << std::endl;
 	//for (unsigned int j = 0; j < thread_num; ++j) {
 	//	spatial_hashing.vertex_triangle_pair[j][0] = 0;
+	//	spatial_hashing.edge_edge_pair[j][0] = 0;
 	//}
 
 	setPairIndexEveryThread();
