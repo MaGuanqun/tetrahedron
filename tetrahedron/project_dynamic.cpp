@@ -788,18 +788,19 @@ void ProjectDynamic::updateRenderPositionIPC()
 		thread->assignTask(mesh_struct, FACE_NORMAL_RENDER);
 		thread->assignTask(mesh_struct, VERTEX_NORMAL_RENDER);
 	}
-	TetrahedronMeshStruct* mesh_struct_;
-	for (unsigned int j = 0; j < total_tetrahedron_num; ++j) {
-		mesh_struct_ = &(*tetrahedron)[j].mesh_struct;
-		thread->assignTask(mesh_struct_, FACE_NORMAL_RENDER);
-		thread->assignTask(mesh_struct_, VERTEX_NORMAL_RENDER);
-	}
 	for (unsigned int j = 0; j < total_collider_num; ++j) {
 		mesh_struct = &(*collider)[j].mesh_struct;
 		thread->assignTask(mesh_struct, FACE_NORMAL_RENDER);
 		thread->assignTask(mesh_struct, VERTEX_NORMAL_RENDER);
 		mesh_struct->ori_face_normal_for_render = mesh_struct->ori_face_normal;
 	}
+	TetrahedronMeshStruct* mesh_struct_;
+	for (unsigned int j = 0; j < total_tetrahedron_num; ++j) {
+		mesh_struct_ = &(*tetrahedron)[j].mesh_struct;
+		thread->assignTask(mesh_struct_, FACE_NORMAL_RENDER);
+		thread->assignTask(mesh_struct_, VERTEX_NORMAL_RENDER);
+	}
+	
 }
 
 void ProjectDynamic::updateRenderPosition()

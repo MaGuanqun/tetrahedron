@@ -181,9 +181,9 @@ void XPBDconstraint::computeGreenStrainAndPiolaStress(
 	SUB((P.data() + 3), v2, v0);
 	SUB((P.data() + 6), v3, v0);
 	//first use eigen value to store the position of first vertex
-	Matrix3d P_inv;
-	memcpy(P_inv.data(), inv_rest_pos.data() + 3, 72);
-	F = P * P_inv.transpose();
+	Matrix3d P_inv_transpose;
+	memcpy(P_inv_transpose.data(), inv_rest_pos.data() + 3, 72);
+	F = P * P_inv_transpose.transpose();
 
 	if (F.determinant() < 0.58) {
 		JacobiSVD<Matrix3d> svd;
@@ -203,6 +203,7 @@ void XPBDconstraint::computeGreenStrainAndPiolaStress(
 	}
 
 	Matrix3d E;
+
 	//E= 0.5* (F^T F - I)
 	E.data()[0] = 0.5 * (F.data()[0] * F.data()[0] + F.data()[1] * F.data()[1] + F.data()[2] * F.data()[2] - 1.0);		// xx
 	E.data()[4] = 0.5 * (F.data()[3] * F.data()[3] + F.data()[4] * F.data()[4] + F.data()[5] * F.data()[5] - 1.0);		// yy
@@ -226,7 +227,15 @@ void XPBDconstraint::computeGreenStrainAndPiolaStress(
 	// psi= mu E:E + lambda/2 * tr(E)^2
 	double psi = mu * E.squaredNorm() + 0.5 * lambda * trace * trace;
 	C = rest_volume * psi;
+	
+	////Use E to temporary store P*P_inv_transpose*volume
+	//E = P * P_inv_transpose * rest_volume;
+	//memcpy((grad_C.data() + 3), E.data(), 72);
+	//grad_C.col(0) = -grad_C.col(1) - grad_C.col(2) - grad_C.col(3);
+	//Matrix<double, 3, 4> test;
+
 	grad_C = rest_volume * P * inv_rest_pos;
+
 }
 
 

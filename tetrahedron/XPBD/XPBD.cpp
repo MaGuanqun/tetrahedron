@@ -7,9 +7,9 @@ XPBD::XPBD()
 	gravity_ = 9.8;
 	total_thread_num = std::thread::hardware_concurrency();
 	sub_step_num = 1;
-	iteration_number = 200;
+	iteration_number = 50;
 	time_step = 1.0 / 100.0;
-	damping_coe = 0.02;
+	damping_coe = 0.0;
 }
 
 
@@ -36,6 +36,7 @@ void XPBD::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetra
 {
 	this->cloth = cloth;
 	this->tetrahedron = tetrahedron;
+	this->collider = collider;
 	sub_time_step = time_step / (double)sub_step_num;
 	this->thread = thread;
 
@@ -169,17 +170,18 @@ void XPBD::updateNormal()
 		thread->assignTask(mesh_struct, FACE_NORMAL_RENDER);
 		thread->assignTask(mesh_struct, VERTEX_NORMAL_RENDER);
 	}
+	for (unsigned int j = 0; j < collider->size(); ++j) {
+		mesh_struct = &(*collider)[j].mesh_struct;
+		thread->assignTask(mesh_struct, FACE_NORMAL_RENDER);
+		thread->assignTask(mesh_struct, VERTEX_NORMAL_RENDER);
+	}
 	TetrahedronMeshStruct* mesh_struct_;
 	for (unsigned int j = 0; j < tetrahedron->size(); ++j) {
 		mesh_struct_ = &(*tetrahedron)[j].mesh_struct;
 		thread->assignTask(mesh_struct_, FACE_NORMAL_RENDER);
 		thread->assignTask(mesh_struct_, VERTEX_NORMAL_RENDER);
 	}
-	for (unsigned int j = 0; j < collider->size(); ++j) {
-		mesh_struct = &(*collider)[j].mesh_struct;
-		thread->assignTask(mesh_struct, FACE_NORMAL_RENDER);
-		thread->assignTask(mesh_struct, VERTEX_NORMAL_RENDER);
-	}
+
 }
 
 
