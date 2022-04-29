@@ -6,8 +6,8 @@ XPBD::XPBD()
 {
 	gravity_ = 9.8;
 	total_thread_num = std::thread::hardware_concurrency();
-	sub_step_num = 1;
-	iteration_number = 50;
+	sub_step_num = 50;
+	iteration_number = 1;
 	time_step = 1.0 / 100.0;
 	damping_coe = 0.0;
 }
@@ -130,14 +130,17 @@ void XPBD::reorganzieDataOfObjects()
 
 void XPBD::PBDsolve()
 {
-	memset(lambda.data(), 0, 8*lambda.size());
-	memset(lambda_collision.data(), 0, 8*lambda_collision.size());
-	thread->assignTask(this, SET_POS_PREDICT);
-	for (unsigned int i = 0; i < iteration_number; ++i) {
-		solveConstraint();
+	for (unsigned int sub_step = 0; sub_step < sub_step_num; ++sub_step) {
+		memset(lambda.data(), 0, 8 * lambda.size());
+		memset(lambda_collision.data(), 0, 8 * lambda_collision.size());
+		thread->assignTask(this, SET_POS_PREDICT);
+		for (unsigned int i = 0; i < iteration_number; ++i) {
+			solveConstraint();
+		}
+		thread->assignTask(this, XPBD_VELOCITY);
+		updatePosition();
 	}
-	thread->assignTask(this, XPBD_VELOCITY);	
-	updatePosition();
+	
 	updateNormal();
 }
 
