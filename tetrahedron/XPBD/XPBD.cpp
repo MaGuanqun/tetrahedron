@@ -296,8 +296,6 @@ void XPBD::solveTetStrainConstraint()
 			lambda_++;
 		}
 
-
-
 		//original_vertex_pos = tetrahedron->data()[i].ori_vertices.data();
 		//for (unsigned int j = 0; j < size; ++j) {
 		//	XPBD_constraint.solveARAPConstraint2(original_vertex_pos, vertex_pos, initial_vertex_pos, stiffness, sub_time_step, A[j], indices[j].data(), mass_inv,

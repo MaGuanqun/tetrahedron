@@ -27,39 +27,39 @@ void XPBDconstraint::solveARAPConstraint(std::array<double, 3>* vertex_position,
 	eigen_value = svd.singularValues();
 	determinant = eigen_value[0] * eigen_value[1] * eigen_value[2];
 
-	//q_e = svd.matrixU();
-	//if (determinant < 0) {
-	//	q_e.col(2) *= -1.0;
-	//}
-
-
+	q_e = svd.matrixU();
 	if (determinant < 0) {
-		eigen_value[2] = -eigen_value[2];
+		q_e.col(2) *= -1.0;
 	}
-	for (unsigned int j = 0; j < 3; ++j) {
-		if (eigen_value[j] > 0) {
-			if (eigen_value[j] < sigma_min) {
-				eigen_value[j] = sigma_min;
-			}
-			else if (eigen_value[j] > sigma_max) {
-				eigen_value[j] = sigma_max;
-			}
-		}
-		else {
-			if (eigen_value[j] > -sigma_min) {
-				eigen_value[j] = -sigma_min;
-			}
-			else if (eigen_value[j] < -sigma_max) {
-				eigen_value[j] = -sigma_max;
-			}
-		}
-	}
-	//use q_e as a temp vector
-	for (unsigned int j = 0; j < 3; ++j) {
-		for (unsigned int k = 0; k < 3; ++k) {
-			q_e.data()[3 * j + k] = eigen_value[j] * svd.matrixU().data()[3 * j + k];
-		}
-	}
+
+
+	//if (determinant < 0) {
+	//	eigen_value[2] = -eigen_value[2];
+	//}
+	//for (unsigned int j = 0; j < 3; ++j) {
+	//	if (eigen_value[j] > 0) {
+	//		if (eigen_value[j] < sigma_min) {
+	//			eigen_value[j] = sigma_min;
+	//		}
+	//		else if (eigen_value[j] > sigma_max) {
+	//			eigen_value[j] = sigma_max;
+	//		}
+	//	}
+	//	else {
+	//		if (eigen_value[j] > -sigma_min) {
+	//			eigen_value[j] = -sigma_min;
+	//		}
+	//		else if (eigen_value[j] < -sigma_max) {
+	//			eigen_value[j] = -sigma_max;
+	//		}
+	//	}
+	//}
+	////use q_e as a temp vector
+	//for (unsigned int j = 0; j < 3; ++j) {
+	//	for (unsigned int k = 0; k < 3; ++k) {
+	//		q_e.data()[3 * j + k] = eigen_value[j] * svd.matrixU().data()[3 * j + k];
+	//	}
+	//}
 
 	//use P_inv to record transform
 	P_inv = q_e * svd.matrixV().transpose();
@@ -122,37 +122,45 @@ void XPBDconstraint::solveARAPConstraint2(std::array<double, 3>* original_vertex
 	deformation_gradient = q_e * P_inv.transpose();
 	JacobiSVD<Matrix3d> svd;
 	svd.compute(deformation_gradient, ComputeFullU | ComputeFullV);
-
 	eigen_value = svd.singularValues();
 	determinant = eigen_value[0] * eigen_value[1] * eigen_value[2];
 
+	q_e = svd.matrixU();
 	if (determinant < 0) {
-		eigen_value[2] = -eigen_value[2];
+		q_e.col(2) *= -1.0;
 	}
-	for (unsigned int j = 0; j < 3; ++j) {
-		if (eigen_value[j] > 0) {
-			if (eigen_value[j] < sigma_min) {
-				eigen_value[j] = sigma_min;
-			}
-			else if (eigen_value[j] > sigma_max) {
-				eigen_value[j] = sigma_max;
-			}
-		}
-		else {
-			if (eigen_value[j] > -sigma_min) {
-				eigen_value[j] = -sigma_min;
-			}
-			else if (eigen_value[j] < -sigma_max) {
-				eigen_value[j] = -sigma_max;
-			}
-		}
-	}
-	//use q_e as a temp vector
-	for (unsigned int j = 0; j < 3; ++j) {
-		for (unsigned int k = 0; k < 3; ++k) {
-			q_e.data()[3 * j + k] = eigen_value[j] * svd.matrixU().data()[3 * j + k];
-		}
-	}
+
+
+	
+
+	//q_e = svd.matrixU();
+	//if (determinant < 0) {
+	//	eigen_value[2] = -eigen_value[2];
+	//}
+	//for (unsigned int j = 0; j < 3; ++j) {
+	//	if (eigen_value[j] > 0) {
+	//		if (eigen_value[j] < sigma_min) {
+	//			eigen_value[j] = sigma_min;
+	//		}
+	//		else if (eigen_value[j] > sigma_max) {
+	//			eigen_value[j] = sigma_max;
+	//		}
+	//	}
+	//	else {
+	//		if (eigen_value[j] > -sigma_min) {
+	//			eigen_value[j] = -sigma_min;
+	//		}
+	//		else if (eigen_value[j] < -sigma_max) {
+	//			eigen_value[j] = -sigma_max;
+	//		}
+	//	}
+	//}
+	////use q_e as a temp vector
+	//for (unsigned int j = 0; j < 3; ++j) {
+	//	for (unsigned int k = 0; k < 3; ++k) {
+	//		q_e.data()[3 * j + k] = eigen_value[j] * svd.matrixU().data()[3 * j + k];
+	//	}
+	//}
 
 	//use P_inv to record transform
 	P_inv = q_e * svd.matrixV().transpose();
