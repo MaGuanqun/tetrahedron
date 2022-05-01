@@ -123,19 +123,21 @@ struct SingleTetrahedronInfo {
 	}
 };
 
-struct UpdateClothStiffness
+struct UpdateObjStiffness
 {
 	bool update_length;
 	double length_stiffness;
 	bool update_bend;
 	double bend_stiffness;
-
+	bool update_ARAP;
+	double ARAP_stiffness;
 	bool  update_collision[4];
 	double collision_stiffness[4];
 
-	UpdateClothStiffness() {
+	UpdateObjStiffness() {
 		update_length = false;
 		update_bend = false;
+		update_ARAP = false;
 		memset(update_collision, 0, 4);
 	}
 };

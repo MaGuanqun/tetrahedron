@@ -45,6 +45,10 @@ public:
 
 	void testForWritetToArray(int thread_No);
 	void testForWritetToArraySingle(int total_thread_num);
+	void updateStiffness(UpdateObjStiffness& update_obj_stiffness, std::vector<std::array<double, 3>>& cloth_stiffness, 
+		std::vector<std::array<double, 2>>& tet_stiffness, std::vector<std::array<double, 4>>& cloth_collision_stiffness,
+		std::vector<std::array<double, 4>>& tet_collision_stiffness);
+	void updateItrInfo(int* iteration_num);
 
 private:
 	bool use_PD;

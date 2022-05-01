@@ -45,6 +45,36 @@ public:
 		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0,
 		double* initial_compare_edge_vertex_1, double tolerance, double mass_e_0_0, double mass_e_0_1, double mass_e_1_0, double mass_e_1_1);
 
+
+	bool checkPointTriangle(double* initial_position, double* current_position,
+		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
+		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+		double* initial_triangle_normal, double tolerance);
+
+	bool checkEdgeEdge(double* current_edge_vertex_0, double* current_edge_vertex_1,
+		double* initial_edge_vertex_0, double* initial_edge_vertex_1,
+		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0,
+		double* initial_compare_edge_vertex_1, double tolerance);
+
+	void XPBDpointSelfTriangle(double* initial_position, double* current_position,
+		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
+		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+		double* initial_triangle_normal, double* current_triangle_normal,
+		double tolerance, double mass_inv_point, double mass_inv_t0, double mass_inv_t1, double mass_inv_t2,
+		double current_triangle_area, double& lambda, double stiffness, double damping_stiffness, double dt);
+	void XPBDedgeEdge(double* current_edge_vertex_0, double* current_edge_vertex_1,
+		double* initial_edge_vertex_0, double* initial_edge_vertex_1,
+		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0,
+		double* initial_compare_edge_vertex_1, double tolerance, double mas_inv_e_0_0, double mass_inv_e_0_1, double mass_inv_e_1_0, double mass_inv_e_1_1,
+		double& lambda, double stiffness, double damping_stiffness, double dt);
+
+	void XPBDpointTriangleCollider(double* initial_position, double* current_position,
+		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
+		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+		double* initial_triangle_normal, double* current_triangle_normal, double mass_inv_v,
+		double tolerance, double& lambda, double stiffness, double damping_stiffness, double dt);
+
+	
 private:
 	bool pointProjectOnTriangle(
 		const double* p,
@@ -66,10 +96,38 @@ private:
 		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
 		double* initial_triangle_normal, double* current_triangle_normal, double* barycentric,
 		double tolerance, double& triangle_side2, bool& should_be_front);
+	bool checkIfCollidePointTriangle(double* initial_point_position, double* current_point_position,
+		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
+		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+		double* initial_triangle_normal, double* barycentric, double tolerance);
 	void calDistancePointTriangle(double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
 		double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
 		double* current_triangle_normal, double constraint, double tolerance, bool is_front, double current_triangle_area,
 		double mass_point, double mass_t0, double mass_t1, double mass_t2);
+	bool checkIfCollideEdgeEdge(double* current_edge_vertex_0, double* current_edge_vertex_1, double* initial_edge_vertex_0, double* initial_edge_vertex_1,
+		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0, double* initial_compare_edge_vertex_1,
+		double* alpha, double tolerance);
+	void XPBDcalDistancePointTriangle(
+		double* initial_position,
+		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
+		double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+		double* current_triangle_normal, double constraint, double tolerance, bool is_front, double current_triangle_area,
+		double mass_inv_point, double mass_inv_t0, double mass_inv_t1, double mass_inv_t2, double& lambda, double stiffness, double damping_stiffness, double dt);
+	void XPBDcalDistanceEdgeEdge(double* norm, double distance, double* alpha, double* current_edge_vertex_0, double* current_edge_vertex_1,
+		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1,
+		double* initial_edge_vertex_0, double* initial_edge_vertex_1,
+		double* initial_compare_edge_vertex_0, double* initial_compare_edge_vertex_1,
+		double mass_inv_e_0_0, double mass_inv_e_0_1, double mass_inv_e_1_0, double mass_inv_e_1_1,
+		double& lambda, double stiffness, double damping_stiffness, double dt);
+	void XPBDcalDistancePointTriangleCollider(double* initial_position,
+		double* current_position, double mass_inv_vertex,
+		double* current_triangle_normal, double constraint, double tolerance,
+		double& lambda, double stiffness, double damping_stiffness, double dt);
+	bool checkIfCollidePointTriangleCollider(double* initial_point_position, double* current_point_position,
+		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
+		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+		double* initial_triangle_normal, double* barycentric,
+		double tolerance);
 
 };
 

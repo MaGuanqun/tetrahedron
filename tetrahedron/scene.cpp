@@ -76,6 +76,14 @@ void Scene::compareArray()
 }
 
 
+
+void Scene::updateItrInfo(int* iteration_num)
+{
+	if (!use_PD) {
+		xpbd.updateItrInfo(iteration_num);
+	}
+}
+
 void Scene::obtainConvergenceInfo(double* convergence_rate, int* iteration_num)
 {
 	if (use_PD) {
@@ -85,10 +93,8 @@ void Scene::obtainConvergenceInfo(double* convergence_rate, int* iteration_num)
 		iteration_num[OUTER] = project_dynamic.outer_iteration_num;
 	}
 	else {
-		convergence_rate[LOCAL_GLOBAL] = xpbd.iteration_number;
-		convergence_rate[OUTER] = xpbd.iteration_number;
 		iteration_num[LOCAL_GLOBAL] = xpbd.iteration_number;
-		iteration_num[OUTER] = xpbd.iteration_number;
+		iteration_num[OUTER] = xpbd.sub_step_num;
 	}
 }
 
@@ -153,8 +159,8 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 
 	std::array<double, 4>tetrahedron_collision_stiffness_per = {7,4, 4,2e1 };
 	double sigma_limit[2] = { 0.99,1.01 };
-	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density, 2e3, 1e2, 0.0, tetrahedron_collision_stiffness_per.data(), sigma_limit,
-		1e3,0.45);
+	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density, 2e3, 1e9, 0.0, tetrahedron_collision_stiffness_per.data(), sigma_limit,
+		5e4,0.45);
 	for (int i = 0; i < tetrahedron_num; ++i) {
 		tetrahedron[i].recordInitialMesh(single_tetrahedron_info);
 	}
@@ -529,7 +535,7 @@ void Scene::setAveEdgeLength()
 		project_dynamic.initialDHatTolerance(ave_edge_length);
 	}
 	else {
-		//xpbd.initialDHatTolerance(ave_edge_length);
+		xpbd.initialDHatTolerance(ave_edge_length);
 	}
 }
 
@@ -817,6 +823,48 @@ void Scene::testForWritetToArraySingle(int total_thread_num)
 	//std::cout << test_pair_single[0][4] << " " << test_pair_single[0][5] << " " << test_pair_single[0][6] << " " << test_pair_single[0][7] << std::endl;
 }
 
+
+
+void Scene::updateStiffness(UpdateObjStiffness& update_obj_stiffness, std::vector<std::array<double, 3>>& cloth_stiffness, std::vector<std::array<double, 2>>& tet_stiffness,
+	std::vector<std::array<double, 4>>& cloth_collision_stiffness,
+	std::vector<std::array<double, 4>>& tet_collision_stiffness)
+{
+	if (update_obj_stiffness.update_length) {
+		for (unsigned int i = 0; i < cloth_num; ++i) {
+			std::fill(cloth[i].length_stiffness.begin(), cloth[i].length_stiffness.end(), update_obj_stiffness.length_stiffness);
+			cloth_stiffness[i][0] = update_obj_stiffness.length_stiffness;
+		}
+		update_obj_stiffness.update_length = false;
+
+	}
+	if (update_obj_stiffness.update_bend) {
+		for (unsigned int i = 0; i < cloth_num; ++i) {
+			cloth[i].bend_stiffness = update_obj_stiffness.bend_stiffness;
+			cloth_stiffness[i][1] = update_obj_stiffness.bend_stiffness;
+		}
+		update_obj_stiffness.update_bend = false;		
+	}
+	if (update_obj_stiffness.update_ARAP) {
+		for (unsigned int i = 0; i < tetrahedron.size(); ++i) {
+			tetrahedron[i].ARAP_stiffness = update_obj_stiffness.ARAP_stiffness;
+			tet_stiffness[i][0]= update_obj_stiffness.ARAP_stiffness;
+		}
+		update_obj_stiffness.update_ARAP = false;
+	}
+	for (unsigned int j = 0; j < 4; ++j) {
+		if (update_obj_stiffness.update_collision[j]) {
+			for (unsigned int i = 0; i < tetrahedron.size(); ++i) {
+				tetrahedron[i].collision_stiffness[j]=update_obj_stiffness.collision_stiffness[j];
+				tet_collision_stiffness[i][j] = update_obj_stiffness.collision_stiffness[j];
+			}
+			for (unsigned int i = 0; i < cloth.size(); ++i) {
+				cloth[i].collision_stiffness[j]=update_obj_stiffness.collision_stiffness[j];
+				cloth_collision_stiffness[i][j] = update_obj_stiffness.collision_stiffness[j];
+			}
+			update_obj_stiffness.update_collision[j] = false;
+		}
+	}
+}
 
 //for (unsigned int m = 0; m < 100; ++m) {
 //	test_pair_[j] -= 2;

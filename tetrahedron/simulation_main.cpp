@@ -37,21 +37,23 @@ void simu_main(GLFWwindow* window, Input* input) {
 	std::vector<double>tetrahedron_mass;//vertices,edges
 	double time = 1.0;//fps, mass
 	bool reset_camera = false;
-	std::vector<std::array<double, 3>> cloth_stiffness;//stretch, bending, position
-	std::vector<std::array<double, 4>> cloth_collision_stiffness;//stretch, bending, position, collision, fricition
+	std::vector<std::array<double, 3>> cloth_stiffness;//stretch, bending, position, ARAP
+	std::vector<std::array<double, 4>> cloth_collision_stiffness;//
 	double simulation_parameter[2] = { 0.0,0.0 };//timestep, gravity
 	SaveImage save_image;
 	int iteration_number[2] = { 0,0 };
+	int set_iteration_num[2] = { 1000,1 }; //0:itr in a substep, 1:number of substep
 	double convergence_rate[2] = { 0.1,0.1 };
 	bool edit_PD_conv_rate = false;
 	time_t start_time;
 
 	std::vector<std::array<double, 2>> tetrahedron_stiffness;//ARAP, position
-	std::vector<std::array<double, 4>> tetrahedron_collision_stiffness;//stretch, bending, position, collision, fricition
-	bool set_stiffness[10];
-	memset(set_stiffness, 0, 10);
-	double temp_stiffness[6] = { 0.0,0.0,0.0,0.0,0.0,0.0 };
-	UpdateClothStiffness update_cloth_stiffness;
+	std::vector<std::array<double, 4>> tetrahedron_collision_stiffness;
+	bool set_stiffness[11];
+	memset(set_stiffness, 0, 11);
+	double temp_stiffness[7];
+	memset(temp_stiffness, 0, 56);
+	UpdateObjStiffness update_obj_stiffness;
 	double tolerance_ratio[4] = { 5e-2,5e-2,5e-2,5e-2 };
 
 	bool set_anchor[2] = { false,false };
@@ -177,8 +179,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 			}
 		}
 
-		imgui_windows.operationWindow(cloth_stiffness, simulation_parameter, cloth_collision_stiffness, set_stiffness, temp_stiffness,
-			update_cloth_stiffness, set_anchor, !scene.tetrahedron.empty());
+		imgui_windows.operationWindow(cloth_stiffness, tetrahedron_stiffness, simulation_parameter, cloth_collision_stiffness,tetrahedron_collision_stiffness, set_stiffness, temp_stiffness,
+			update_obj_stiffness, set_anchor, !scene.tetrahedron.empty());
 		if (!already_load_model) {
 			if (imgui_windows.loadModel(collider_path, object_path)) {
 				already_load_model = true;
@@ -211,7 +213,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 			//	record_matrix = false;
 			//	control_parameter[SAVE_OBJ] = false;
 			//}
-
+			scene.updateStiffness(update_obj_stiffness,cloth_stiffness,tetrahedron_stiffness,cloth_collision_stiffness,tetrahedron_collision_stiffness);			
+			scene.updateItrInfo(set_iteration_num);			
 			scene.setTolerance(tolerance_ratio);
 			scene.updateCloth(&camera, input->mouse.screen_pos, control_parameter, force_coe, record_matrix,
 				iteration_solver_iteration_num, input->mouse.leftButtonWasPressedPreviousAndThisFrame());
@@ -232,7 +235,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 		coordinateSystem.draw(&camera, cameraPos);
 		scene.drawSelectRange(set_anchor, input->mouse.left_press, input->mouse.prev_left_press);
 		time = (double)(clock() - start_time);
-		imgui_windows.infoWindow(cloth_info, cloth_mass, tetrahedron_info, tetrahedron_mass, time, iteration_number, convergence_rate, scene.time_stamp, edit_PD_conv_rate, control_parameter[START_SIMULATION]);
+		imgui_windows.infoWindow(cloth_info, cloth_mass, tetrahedron_info, tetrahedron_mass, time, iteration_number, set_iteration_num, convergence_rate, scene.time_stamp, edit_PD_conv_rate, control_parameter[START_SIMULATION]);
 		imgui_windows.iterationSolverInfoWindow(iteration_solver_iteration_num, use_itr_solver_method, itr_solver_items, itr_solver_item,
 			IM_ARRAYSIZE(itr_solver_items), &iteration_solver_conve_rate, record_matrix);
 

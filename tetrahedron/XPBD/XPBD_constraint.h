@@ -18,11 +18,17 @@ public:
 		const double damping_stiffness, double* initial_center_vertex, std::array<double, 3>* inital_vertex_position);
 	void solveARAPConstraint(std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position,
 		double stiffness, double dt,
-		Matrix<double, 3, 4>& A, int* vertex_index, double* inv_mass, double* lambda, const double damping_stiffness,
+		Matrix<double, 3, 4>& A, int* vertex_index, double* inv_mass, double& lambda, const double damping_stiffness,
 		double sigma_min, double sigma_max, double volume);
+	void solveARAPConstraint2(std::array<double, 3>* original_vertex_pos, std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position,
+		double stiffness, double dt,
+		Matrix<double, 3, 4>& A, int* vertex_index, double* inv_mass, double& lambda, const double damping_stiffness, double sigma_min,
+		double sigma_max, double volume);
+
 	void solveTetStrainConstraint(std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position,
 		double stiffness, double dt, Matrix<double, 3, 4>& A, int* vertex_index, double* inv_mass, double& lambda, const double damping_stiffness, double volume,
 		double youngs_modulus, double poisson_ratio);
+
 private:
 	void initialEdgeCotWeight(TriangleMeshStruct& mesh_struct, std::vector<double>& edge_cot_weight);
 	void computeLBOWeight(std::vector<double>& lbo_weight, TriangleMeshStruct& mesh_struct);

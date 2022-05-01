@@ -2,7 +2,7 @@
 
 void XPBDconstraint::solveARAPConstraint(std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position,
 	double stiffness, double dt,
-	Matrix<double,3,4>& A, int* vertex_index, double* inv_mass, double* lambda, const double damping_stiffness, double sigma_min,
+	Matrix<double,3,4>& A, int* vertex_index, double* inv_mass, double& lambda, const double damping_stiffness, double sigma_min,
 	double sigma_max, double volume)
 {
 	Vector3d eigen_value;
@@ -27,10 +27,15 @@ void XPBDconstraint::solveARAPConstraint(std::array<double, 3>* vertex_position,
 	eigen_value = svd.singularValues();
 	determinant = eigen_value[0] * eigen_value[1] * eigen_value[2];
 
+	//q_e = svd.matrixU();
+	//if (determinant < 0) {
+	//	q_e.col(2) *= -1.0;
+	//}
+
+
 	if (determinant < 0) {
 		eigen_value[2] = -eigen_value[2];
 	}
-
 	for (unsigned int j = 0; j < 3; ++j) {
 		if (eigen_value[j] > 0) {
 			if (eigen_value[j] < sigma_min) {
@@ -49,79 +54,162 @@ void XPBDconstraint::solveARAPConstraint(std::array<double, 3>* vertex_position,
 			}
 		}
 	}
-	//std::cout << eigen_value << std::endl;
-	//std::cout << "===" << std::endl;
 	//use q_e as a temp vector
 	for (unsigned int j = 0; j < 3; ++j) {
 		for (unsigned int k = 0; k < 3; ++k) {
 			q_e.data()[3 * j + k] = eigen_value[j] * svd.matrixU().data()[3 * j + k];
 		}
 	}
+
 	//use P_inv to record transform
 	P_inv = q_e * svd.matrixV().transpose();
 
 	//get delta_c
-	//Ax-q is deformation gradient-P_inv
+	Matrix<double, 3, 4> grad_C_transpose;
+	grad_C_transpose = volume * (deformation_gradient - P_inv) * A;
 
-	Vector4d delta_c_transpose;
-	Vector4d position_;
-	//deformation_gradient -= P_inv;
+	double C = 0.5 * volume * (deformation_gradient - P_inv).squaredNorm();
+	
 	double alpha_ = 1.0 / (stiffness * dt * dt);
-	double gamma = 0.0;// = damping_stiffness / (stiffness * dt);
- 
-	// to limit the deformation on three dimensions saparately, 
-	//we add connstraints on every dimension  
-	//C_x = |Aq_x|-|T_x|, C_y=|Aq_y|-|T_y|, C_z=|Aq_z|-|T_z|
+	double gamma = damping_stiffness / (stiffness * dt);
 
-	double C_;
-	double delta_lambda;
-	for (unsigned int k = 0; k < 3; ++k) {
-		C_ = deformation_gradient.row(k).norm();
-		for (unsigned int i = 0; i < 4; ++i) {
-			delta_c_transpose.data()[i] = (volume / C_) * A.col(i).dot(deformation_gradient.row(k));
-			position_.data()[i] = vertex_position[vertex_index[i]][k]- initial_vertex_position[vertex_index[i]][k];
+	Vector3d position_;
+	
+	double delta_lambda_numerator = 0.0;
+	for (unsigned int k = 0; k < 4; ++k) {
+		SUB(position_, vertex_position[vertex_index[k]], initial_vertex_position[vertex_index[k]]);
+		delta_lambda_numerator += grad_C_transpose.col(k).dot(position_);
+	}
+	
+
+	double delta_lambda_denominator = 0.0;
+	for (unsigned int k = 0; k < 4; ++k) {
+		delta_lambda_denominator += inv_mass[vertex_index[k]] * grad_C_transpose.col(k).squaredNorm();
+	}
+	double delta_lambda = -(C + alpha_ * lambda + gamma * delta_lambda_numerator)
+		/ ((1.0 + gamma) * delta_lambda_denominator + alpha_);
+	lambda += delta_lambda;
+	
+	double coe;
+	for (unsigned int k = 0; k < 4; ++k) {
+		coe = inv_mass[vertex_index[k]] * delta_lambda;
+		vertex_position[vertex_index[k]][0] += coe * grad_C_transpose.data()[3 * k];
+		vertex_position[vertex_index[k]][1] += coe * grad_C_transpose.data()[3 * k + 1];
+		vertex_position[vertex_index[k]][2] += coe * grad_C_transpose.data()[3 * k + 2];
+	}
+}
+
+void XPBDconstraint::solveARAPConstraint2(std::array<double, 3>* original_vertex_pos ,std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position,
+	double stiffness, double dt,
+	Matrix<double, 3, 4>& A, int* vertex_index, double* inv_mass, double& lambda, const double damping_stiffness, double sigma_min,
+	double sigma_max, double volume)
+{
+	Vector3d eigen_value;
+	Matrix3d q_e;
+	double determinant;
+	Vector3d position;
+	for (unsigned int i = 0; i < 3; ++i) {
+		memcpy(q_e.data() + 3 * i, vertex_position[vertex_index[i + 1]].data(), 24);
+	}
+	//first use eigen value to store the position of first vertex
+	memcpy(eigen_value.data(), vertex_position[vertex_index[0]].data(), 24);
+	for (unsigned int i = 0; i < 3; ++i) {
+		q_e.col(i) -= eigen_value;
+	}
+	Matrix3d deformation_gradient;
+	Matrix3d P_inv;
+	memcpy(P_inv.data(), A.data() + 3, 72);
+	deformation_gradient = q_e * P_inv.transpose();
+	JacobiSVD<Matrix3d> svd;
+	svd.compute(deformation_gradient, ComputeFullU | ComputeFullV);
+
+	eigen_value = svd.singularValues();
+	determinant = eigen_value[0] * eigen_value[1] * eigen_value[2];
+
+	if (determinant < 0) {
+		eigen_value[2] = -eigen_value[2];
+	}
+	for (unsigned int j = 0; j < 3; ++j) {
+		if (eigen_value[j] > 0) {
+			if (eigen_value[j] < sigma_min) {
+				eigen_value[j] = sigma_min;
+			}
+			else if (eigen_value[j] > sigma_max) {
+				eigen_value[j] = sigma_max;
+			}
 		}
-
-		C_ = volume*(C_ - P_inv.row(k).norm());		
-		delta_lambda = -(C_ + alpha_ * lambda[k] + gamma * delta_c_transpose.dot(position_))
-			/ ((1.0 + gamma) *
-				(inv_mass[vertex_index[0]] * delta_c_transpose.data()[0] * delta_c_transpose.data()[0]
-					+ inv_mass[vertex_index[1]] * delta_c_transpose.data()[1]* delta_c_transpose.data()[1]
-					+ inv_mass[vertex_index[2]] * delta_c_transpose.data()[2]* delta_c_transpose.data()[2]
-					+ inv_mass[vertex_index[3]] * delta_c_transpose.data()[3]* delta_c_transpose.data()[3])
-				+alpha_);
-
-		//if (abs(delta_lambda) > 1e1) {
-		//	std::cout << delta_lambda << " " << k << std::endl;
-		//}
-
-		lambda[k] += delta_lambda;
-
-		for (unsigned int i = 0; i < 4; ++i) {
-			delta_c_transpose.data()[i] *= (inv_mass[i] * delta_lambda);			
-			vertex_position[vertex_index[i]].data()[k] += delta_c_transpose.data()[i];
+		else {
+			if (eigen_value[j] > -sigma_min) {
+				eigen_value[j] = -sigma_min;
+			}
+			else if (eigen_value[j] < -sigma_max) {
+				eigen_value[j] = -sigma_max;
+			}
+		}
+	}
+	//use q_e as a temp vector
+	for (unsigned int j = 0; j < 3; ++j) {
+		for (unsigned int k = 0; k < 3; ++k) {
+			q_e.data()[3 * j + k] = eigen_value[j] * svd.matrixU().data()[3 * j + k];
 		}
 	}
 
-	//double C;
-	//for (unsigned int k = 0; k < 3; ++k) {
-	//	C = volume * (deformation_gradient.row(k).norm() - P_inv.row(k).norm());
-	//	delta_c_transpose = ((volume / C) * deformation_gradient).transpose() * A;
-	//	for (unsigned int i = 0; i < 4; ++i) {
-	//		position.data()[3 * i] -= initial_vertex_position[vertex_index[i]][0];
-	//		position.data()[3 * i + 1] -= initial_vertex_position[vertex_index[i]][1];
-	//		position.data()[3 * i + 2] -= initial_vertex_position[vertex_index[i]][2];
-	//	}
-	//	double delta_lambda = -(C + alpha_ * lambda + gamma * delta_c_transpose.cwiseProduct(position).sum())
-	//		/ ((1.0 + gamma) *
-	//			(inv_mass[vertex_index[0]] * delta_c_transpose.col(0).squaredNorm() + inv_mass[vertex_index[1]] * delta_c_transpose.col(1).squaredNorm()
-	//				+ inv_mass[vertex_index[2]] * delta_c_transpose.col(2).squaredNorm() + inv_mass[vertex_index[3]] * delta_c_transpose.col(3).squaredNorm()));
-	//	lambda += delta_lambda;
-	//	for (unsigned int i = 0; i < 4; ++i) {
-	//		delta_c_transpose.col(i) *= (inv_mass[i] * delta_lambda);
-	//		SUM_(vertex_position[vertex_index[i]].data(), (delta_c_transpose.data() + 3 * i));
-	//	}
-	//}
+	//use P_inv to record transform
+	P_inv = q_e * svd.matrixV().transpose();
+
+	Matrix<double, 3, 4> p_ori;
+	for (unsigned int i = 0; i < 4; ++i) {
+		memcpy(p_ori.data() + 3 * i, original_vertex_pos[vertex_index[i]].data(), 24);
+	}
+	Vector3d center = 0.25 * (p_ori.col(0) + p_ori.col(1) + p_ori.col(2) + p_ori.col(3));
+	for (unsigned int i = 0; i < 4; ++i) {
+		p_ori.col(i) -= center;
+	}
+	Matrix<double, 3, 4> p_target;
+	p_target = P_inv * p_ori;
+
+	//use p_ori to store the current_position
+	for (unsigned int i = 0; i < 4; ++i) {
+		memcpy(p_ori.data() + 3 * i, vertex_position[vertex_index[i]].data(), 24);
+	}
+	center = 0.25 * (p_ori.col(0) + p_ori.col(1) + p_ori.col(2) + p_ori.col(3));
+	for (unsigned int i = 0; i < 4; ++i) {
+		p_ori.col(i) -= center;
+	}
+
+	//get delta_c
+	Matrix<double, 3, 4> grad_C;
+	grad_C = volume * (p_ori - p_target);
+
+	double C = 0.5 * volume * (p_ori - p_target).squaredNorm();
+
+	double alpha_ = 1.0 / (stiffness * dt * dt);
+	double gamma = damping_stiffness / (stiffness * dt);
+
+	Vector3d position_;
+
+	double delta_lambda_numerator = 0.0;
+	for (unsigned int k = 0; k < 4; ++k) {
+		SUB(position_, vertex_position[vertex_index[k]], initial_vertex_position[vertex_index[k]]);
+		delta_lambda_numerator += grad_C.col(k).dot(position_);
+	}
+
+
+	double delta_lambda_denominator = 0.0;
+	for (unsigned int k = 0; k < 4; ++k) {
+		delta_lambda_denominator += inv_mass[vertex_index[k]] * grad_C.col(k).squaredNorm();
+	}
+	double delta_lambda = -(C + alpha_ * lambda + gamma * delta_lambda_numerator)
+		/ ((1.0 + gamma) * delta_lambda_denominator + alpha_);
+	lambda += delta_lambda;
+
+	double coe;
+	for (unsigned int k = 0; k < 4; ++k) {
+		coe = inv_mass[vertex_index[k]] * delta_lambda;
+		vertex_position[vertex_index[k]][0] += coe * grad_C.data()[3 * k];
+		vertex_position[vertex_index[k]][1] += coe * grad_C.data()[3 * k + 1];
+		vertex_position[vertex_index[k]][2] += coe * grad_C.data()[3 * k + 2];
+	}
 }
 
 

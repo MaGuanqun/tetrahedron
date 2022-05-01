@@ -106,6 +106,16 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	}
 }
 
+
+
+void Collision::setParameter(std::vector<double>* lambda, unsigned int* collision_lambda_index_start, double damp_stiffness, double dt)
+{
+	this->lambda = lambda;
+	this->collision_lambda_index_start = collision_lambda_index_start;
+	this->damp_stiffness= damp_stiffness;
+	this->dt = dt;
+}
+
 void Collision::updateEigenPosition()
 {
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
@@ -190,6 +200,7 @@ void Collision::reorganzieDataOfObjects()
 	triangle_normal_render_not_normalized.resize(total_obj_num);
 	cross_for_approx_CCD.resize(total_obj_num);
 	mass.resize(total_obj_num);
+	mass_inv.resize(total_obj_num);
 
 	triangle_normal_magnitude_reciprocal.resize(total_obj_num);
 
@@ -213,6 +224,7 @@ void Collision::reorganzieDataOfObjects()
 		triangle_normal_render_not_normalized[i] = cloth->data()[i].mesh_struct.ori_face_normal_for_render.data();
 		cross_for_approx_CCD[i] = cloth->data()[i].mesh_struct.cross_for_approx_CCD.data();
 		mass[i] = cloth->data()[i].mesh_struct.mass.data();
+		mass_inv[i] = cloth->data()[i].mesh_struct.mass_inv.data();
 		triangle_normal_magnitude_reciprocal[i] = cloth->data()[i].mesh_struct.triangle_normal_magnitude_reciprocal.data();
 	}
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
@@ -237,6 +249,7 @@ void Collision::reorganzieDataOfObjects()
 		triangle_normal_render_not_normalized[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.ori_face_normal_for_render.data();
 		cross_for_approx_CCD[i+ cloth->size()] = tetrahedron->data()[i].mesh_struct.cross_for_approx_CCD.data();
 		mass[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.mass.data();
+		mass_inv[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.mass_inv.data();
 		triangle_normal_magnitude_reciprocal[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.triangle_normal_magnitude_reciprocal.data();
 	}
 
@@ -1470,6 +1483,43 @@ void Collision::globalCollisionTime()
 }
 
 
+void Collision::getCollisionPair()
+{
+	for (unsigned int i = 0; i < collider->size(); ++i) {
+		thread->assignTask(&(*collider)[i].mesh_struct, FACE_NORMAL);
+	}
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL);
+	}
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL);
+	}
+	thread->assignTask(this, FIND_COLLISION_PAIR);
+	setTargetPositionEven();	
+}
+
+
+unsigned int Collision::collisionConstraintNumber(unsigned int point_triangle_collider_constraint, unsigned int& point_triangle_constraint, unsigned int& edge_edge_constraint)
+{
+	point_triangle_collider_constraint = 0;
+	point_triangle_constraint = 0;
+	edge_edge_constraint = 0;
+
+	for (unsigned int i = 0; i < thread_num; ++i) {
+		point_triangle_constraint += (point_triangle_target_pos_index[i][0] >> 2);
+		point_triangle_collider_constraint += (point_triangle_collider_target_pos_index[i][0] >> 2);
+		edge_edge_constraint += (edge_edge_target_pos_index[i][0] >> 2);
+	}
+	return point_triangle_collider_constraint+ point_triangle_constraint+ edge_edge_constraint;
+}
+
+
+
+
+
+
+
+
 void Collision::solveCollisionConstraintDCD()
 {
 	for (unsigned int i = 0; i < collider->size(); ++i) {
@@ -1483,11 +1533,11 @@ void Collision::solveCollisionConstraintDCD()
 	}
 
 	time_t t = clock();
-	for (unsigned int i = 0; i < 10; ++i) {
+	//for (unsigned int i = 0; i < 10; ++i) {
 		thread->assignTask(this, COLLISION_CONSTRAINT);
 		sumTargetPosition();
 		setTargetPositionEven();
-	}
+	//}
 	time_t t1 = clock();
 	//std::cout << "DCD " << t1 - t << std::endl;
 	//for (unsigned int i = 0; i < thread_num; ++i) {
@@ -1513,6 +1563,12 @@ void Collision::reSolveCollisionConstraintDCD()
 	//}
 
 	resumTargetPosition();
+}
+
+
+void Collision::XPBDsolveCollisionConstraint()
+{
+
 }
 
 
@@ -1543,6 +1599,22 @@ void Collision::testIfBuildCollisionConstraint()
 		}
 	}
 }
+
+//FIND_COLLISION_PAIR
+void Collision::getCollisionPair(int thread_No)
+{
+	checkTargetPosSize(thread_No);
+	point_triangle_target_pos_index[thread_No][0] = 0;
+	point_triangle_collider_target_pos_index[thread_No][0] = 0;
+	edge_edge_target_pos_index[thread_No][0] = 0;
+	pointTriangleCollisionPair(thread_No);
+	edgeEdgeCollisionPair(thread_No);
+	if (has_collider) {
+		pointTriangleColliderPair(thread_No);
+	}
+}
+
+
 
 //COLLISION_CONSTRAINT
 void Collision::collisionConstraint(int thread_No)
@@ -1651,6 +1723,30 @@ void Collision::checkTargetPosSize(int thread_No)
 }
 
 
+
+void Collision::solveXPBDpointTriangleResponse(int thread_No)
+{
+	if (point_triangle_target_position_element_start_per_thread[(thread_No + 1) << 1] > point_triangle_target_position_element_start_per_thread[thread_No << 1]) {
+		solveXPBDpointTriangleResponse(point_triangle_target_position_element_start_per_thread[thread_No << 1], point_triangle_target_position_element_start_per_thread[(thread_No << 1) + 1],
+			point_triangle_target_pos_index[point_triangle_target_position_element_start_per_thread[thread_No << 1]][0]);
+		for (unsigned int i = point_triangle_target_position_element_start_per_thread[thread_No << 1] + 1;
+			i < point_triangle_target_position_element_start_per_thread[(thread_No + 1) << 1]; ++i) {
+			solveXPBDpointTriangleResponse(i, 0,
+				point_triangle_target_pos_index[i][0]);
+		}
+		solveXPBDpointTriangleResponse(point_triangle_target_position_element_start_per_thread[(thread_No + 1) << 1], 0,
+			point_triangle_target_position_element_start_per_thread[(thread_No << 1) + 3]);
+	}
+	else {
+		solveXPBDpointTriangleResponse(point_triangle_target_position_element_start_per_thread[thread_No << 1], point_triangle_target_position_element_start_per_thread[(thread_No << 1) + 1],
+			point_triangle_target_position_element_start_per_thread[(thread_No << 1) + 3]);
+	}
+}
+
+
+
+
+
 void Collision::re_pointTriangleResponse(int thread_No, TargetPosition* target_pos)
 {
 	if (point_triangle_target_position_element_start_per_thread[(thread_No + 1) << 1] > point_triangle_target_position_element_start_per_thread[thread_No << 1]) {
@@ -1671,6 +1767,27 @@ void Collision::re_pointTriangleResponse(int thread_No, TargetPosition* target_p
 	/*re_pointTriangleResponse(thread_No, 0,
 		point_triangle_target_pos_index[thread_No][0], target_pos);*/
 }
+
+
+void Collision::pointTriangleCollisionPair(int thread_No)
+{
+	if (vertex_triangle_pair_index_start_per_thread[(thread_No + 1) << 1] > vertex_triangle_pair_index_start_per_thread[thread_No << 1]) {
+		pointTriangleCollisionPair(thread_No, vertex_triangle_pair_index_start_per_thread[thread_No << 1], vertex_triangle_pair_index_start_per_thread[(thread_No << 1) + 1],
+			spatial_hashing.vertex_triangle_pair[vertex_triangle_pair_index_start_per_thread[thread_No << 1]][0]);
+		for (unsigned int i = vertex_triangle_pair_index_start_per_thread[thread_No << 1] + 1;
+			i < vertex_triangle_pair_index_start_per_thread[(thread_No + 1) << 1]; ++i) {
+			pointTriangleCollisionPair(thread_No, i, 0,
+				spatial_hashing.vertex_triangle_pair[i][0]);
+		}
+		pointTriangleCollisionPair(thread_No, vertex_triangle_pair_index_start_per_thread[(thread_No + 1) << 1], 0,
+			vertex_triangle_pair_index_start_per_thread[(thread_No << 1) + 3]);
+	}
+	else {
+		pointTriangleCollisionPair(thread_No, vertex_triangle_pair_index_start_per_thread[thread_No << 1], vertex_triangle_pair_index_start_per_thread[(thread_No << 1) + 1],
+			vertex_triangle_pair_index_start_per_thread[(thread_No << 1) + 3]);
+	}
+}
+
 
 void Collision::pointTriangleResponse(int thread_No, TargetPosition* target_pos)
 {
@@ -1710,6 +1827,28 @@ void Collision::re_pointTriangleColliderResponse(int thread_No, TargetPosition* 
 	}
 }
 
+
+
+void Collision::pointTriangleColliderPair(int thread_No)
+{
+	if (vertex_obj_triangle_collider_pair_index_start_per_thread[(thread_No + 1) << 1] > vertex_obj_triangle_collider_pair_index_start_per_thread[thread_No << 1]) {
+		pointTriangleColliderPair(thread_No, vertex_obj_triangle_collider_pair_index_start_per_thread[thread_No << 1], vertex_obj_triangle_collider_pair_index_start_per_thread[(thread_No << 1) + 1],
+			spatial_hashing.vertex_obj_triangle_collider_pair[vertex_obj_triangle_collider_pair_index_start_per_thread[thread_No << 1]][0]);
+		for (unsigned int i = vertex_obj_triangle_collider_pair_index_start_per_thread[thread_No << 1] + 1;
+			i < vertex_obj_triangle_collider_pair_index_start_per_thread[(thread_No + 1) << 1]; ++i) {
+			pointTriangleColliderPair(thread_No, i, 0,
+				spatial_hashing.vertex_obj_triangle_collider_pair[i][0]);
+		}
+		pointTriangleColliderPair(thread_No, vertex_obj_triangle_collider_pair_index_start_per_thread[(thread_No + 1) << 1], 0,
+			vertex_obj_triangle_collider_pair_index_start_per_thread[(thread_No << 1) + 3]);
+	}
+	else {
+		pointTriangleColliderPair(thread_No, vertex_obj_triangle_collider_pair_index_start_per_thread[thread_No << 1], vertex_obj_triangle_collider_pair_index_start_per_thread[(thread_No << 1) + 1],
+			vertex_obj_triangle_collider_pair_index_start_per_thread[(thread_No << 1) + 3]);
+	}
+}
+
+
 void Collision::pointTriangleColliderResponse(int thread_No, TargetPosition* target_pos)
 {
 	if (vertex_obj_triangle_collider_pair_index_start_per_thread[(thread_No + 1) << 1] > vertex_obj_triangle_collider_pair_index_start_per_thread[thread_No << 1]) {
@@ -1748,6 +1887,29 @@ void Collision::pointColliderTriangleResponse(int thread_No, TargetPosition* tar
 	}
 }
 
+
+
+void Collision::solveXPBDedgeEdgeResponse(int thread_No)
+{
+	if (edge_edge_target_position_element_start_per_thread[(thread_No + 1) << 1] > edge_edge_target_position_element_start_per_thread[thread_No << 1]) {
+		solveXPBDedgeEdgeResponse(edge_edge_target_position_element_start_per_thread[thread_No << 1], edge_edge_target_position_element_start_per_thread[(thread_No << 1) + 1],
+			edge_edge_target_pos_index[edge_edge_target_position_element_start_per_thread[thread_No << 1]][0]);
+		for (unsigned int i = edge_edge_target_position_element_start_per_thread[thread_No << 1] + 1;
+			i < edge_edge_target_position_element_start_per_thread[(thread_No + 1) << 1]; ++i) {
+			solveXPBDedgeEdgeResponse(i, 0,
+				edge_edge_target_pos_index[i][0]);
+		}
+		solveXPBDedgeEdgeResponse(edge_edge_target_position_element_start_per_thread[(thread_No + 1) << 1], 0,
+			edge_edge_target_position_element_start_per_thread[(thread_No << 1) + 3]);
+	}
+	else {
+		solveXPBDedgeEdgeResponse(edge_edge_target_position_element_start_per_thread[thread_No << 1], edge_edge_target_position_element_start_per_thread[(thread_No << 1) + 1],
+			edge_edge_target_position_element_start_per_thread[(thread_No << 1) + 3]);
+	}
+}
+
+
+
 void Collision::re_edgeEdgeResponse(int thread_No, TargetPosition* target_pos)
 {
 	if (edge_edge_target_position_element_start_per_thread[(thread_No + 1) << 1] > edge_edge_target_position_element_start_per_thread[thread_No << 1]) {
@@ -1769,6 +1931,25 @@ void Collision::re_edgeEdgeResponse(int thread_No, TargetPosition* target_pos)
 		point_triangle_target_pos_index[thread_No][0], target_pos);*/
 }
 
+
+void Collision::edgeEdgeCollisionPair(int thread_No)
+{
+	if (edge_edge_pair_index_start_per_thread[(thread_No + 1) << 1] > edge_edge_pair_index_start_per_thread[thread_No << 1]) {
+		edgeEdgeCollisionPair(thread_No, edge_edge_pair_index_start_per_thread[thread_No << 1], edge_edge_pair_index_start_per_thread[(thread_No << 1) + 1],
+			spatial_hashing.edge_edge_pair[edge_edge_pair_index_start_per_thread[thread_No << 1]][0]);
+		for (unsigned int i = edge_edge_pair_index_start_per_thread[thread_No << 1] + 1;
+			i < edge_edge_pair_index_start_per_thread[(thread_No + 1) << 1]; ++i) {
+			edgeEdgeCollisionPair(thread_No, i, 0,
+				spatial_hashing.edge_edge_pair[i][0]);
+		}
+		edgeEdgeCollisionPair(thread_No, edge_edge_pair_index_start_per_thread[(thread_No + 1) << 1], 0,
+			edge_edge_pair_index_start_per_thread[(thread_No << 1) + 3]);
+	}
+	else {
+		edgeEdgeCollisionPair(thread_No, edge_edge_pair_index_start_per_thread[thread_No << 1], edge_edge_pair_index_start_per_thread[(thread_No << 1) + 1],
+			edge_edge_pair_index_start_per_thread[(thread_No << 1) + 3]);
+	}
+}
 
 void Collision::edgeEdgeResponse(int thread_No, TargetPosition* target_pos)
 {
@@ -1823,6 +2004,39 @@ void Collision::computeEnergy(unsigned int pair_thread_No, unsigned int index_st
 	//}
 }
 
+
+void Collision::solveXPBDpointTriangleResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end)
+{
+	unsigned int* target_pos_index_record_ = point_triangle_target_pos_index[pair_thread_No].data() + 1;
+	double tolerance = tolerance_radius[SELF_POINT_TRIANGLE];
+	double epsilon_ = epsilon;
+	int* indices;
+
+	double stiffness_initial = collision_stiffness[SELF_POINT_TRIANGLE];
+	double damp_coe = damp_stiffness;
+	double dt_ = dt;
+	double stiffness;
+	unsigned int* pair;
+	double* lambda_ = lambda->data() + collision_lambda_index_start[1];
+
+	for (unsigned int i = index_start; i < index_end; i += 4) {
+		stiffness = stiffness_initial;
+		pair = target_pos_index_record_ + i;
+		indices = triangle_indices[*(pair + 3)][*(pair + 2)].data();
+		dcd.XPBDpointSelfTriangle(vertex_for_render[*(pair + 1)][*pair].data(), vertex_position[*(pair + 1)][*pair].data(),
+			vertex_for_render[*(pair + 3)][indices[0]].data(), vertex_for_render[*(pair + 3)][indices[1]].data(),
+			vertex_for_render[*(pair + 3)][indices[2]].data(),
+			vertex_position[*(pair + 3)][indices[0]].data(), vertex_position[*(pair + 3)][indices[1]].data(),
+			vertex_position[*(pair + 3)][indices[2]].data(), triangle_normal_render[*(pair + 3)][*(pair + 2)].data(),
+			triangle_normal[*(pair + 3)][*(pair + 2)].data(),
+			tolerance,
+			mass_inv[*(pair + 1)][*pair], mass_inv[*(pair + 3)][indices[0]], mass_inv[*(pair + 3)][indices[1]], mass_inv[*(pair + 3)][indices[2]],
+			triangle_normal_magnitude_reciprocal[*(pair + 3)][*(pair + 2)], *lambda_,stiffness,damp_coe, dt_);
+		lambda_++;
+
+	}
+}
+
 void Collision::re_pointTriangleResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end, TargetPosition* target_pos)
 {
 	unsigned int* target_pos_index_record_ = point_triangle_target_pos_index[pair_thread_No].data() + 1;
@@ -1874,6 +2088,38 @@ void Collision::re_pointTriangleResponse(unsigned int pair_thread_No, unsigned i
 		}
 	}
 }
+
+
+void Collision::solveXPBDedgeEdgeResponse(unsigned int pair_thread_No, unsigned int start_pair_index,
+	unsigned int end_pair_index)
+{
+	unsigned int* target_pos_index_record_ = edge_edge_target_pos_index[pair_thread_No].data() + 1;
+	double tolerance = tolerance_radius[SELF_EDGE_EDGE];
+	double epsilon_ = epsilon;
+	unsigned int* indices;
+	unsigned int* compare_indices;
+	double stiffness_initial = collision_stiffness[SELF_EDGE_EDGE];
+	double stiffness;
+	unsigned int* pair;
+	double* lambda_ = lambda->data() + collision_lambda_index_start[2];
+	double damp_coe = damp_stiffness;
+	double dt_ = dt;
+	for (unsigned int i = start_pair_index; i < end_pair_index; i += 4) {
+		stiffness = stiffness_initial;
+		pair = target_pos_index_record_ + i;
+		indices = edge_vertices[*(pair + 1)] + ((*(pair)) << 1);
+		compare_indices = edge_vertices[*(pair + 3)] + ((*(pair + 2)) << 1);
+		dcd.XPBDedgeEdge(vertex_position[*(pair + 1)][*indices].data(), vertex_position[*(pair + 1)][*(indices + 1)].data(),
+			vertex_for_render[*(pair + 1)][*indices].data(), vertex_for_render[*(pair + 1)][*(indices + 1)].data(),
+			vertex_position[*(pair + 3)][*compare_indices].data(), vertex_position[*(pair + 3)][*(compare_indices + 1)].data(),
+			vertex_for_render[*(pair + 3)][*compare_indices].data(), vertex_for_render[*(pair + 3)][*(compare_indices + 1)].data(),
+			tolerance,
+			mass_inv[*(pair + 1)][*indices], mass_inv[*(pair + 1)][*(indices + 1)], mass_inv[*(pair + 3)][*compare_indices], mass_inv[*(pair + 3)][*(compare_indices + 1)],
+			*lambda_, stiffness, damp_coe,dt_);
+		lambda_ ++ ;
+	}
+}
+
 
 void Collision::re_edgeEdgeResponse(unsigned int pair_thread_No, unsigned int start_pair_index,
 	unsigned int end_pair_index, TargetPosition* target_pos)
@@ -1927,6 +2173,41 @@ void Collision::re_edgeEdgeResponse(unsigned int pair_thread_No, unsigned int st
 		}
 	}
 }
+
+
+
+void Collision::pointTriangleCollisionPair(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
+	unsigned int end_pair_index)
+{
+	//std::cout << thread_No<<" "<< start_pair_index << " " << end_pair_index << std::endl;
+	unsigned int* target_pos_index_ = point_triangle_target_pos_index[thread_No].data() + 1 + point_triangle_target_pos_index[thread_No][0];
+	//unsigned int* target_pos_index_ = target_position_index[thread_No].data() + 1 + (target_position_index[thread_No][0] << 1);
+	//double* target_pos_ = target_position_and_stiffness[thread_No].data() + (target_position_index[thread_No][0]<<2);
+
+	unsigned int* pair_ = spatial_hashing.vertex_triangle_pair[pair_thread_No] + 1;
+	//double d_hat_ = d_hat;
+	double tolerance = tolerance_radius[SELF_POINT_TRIANGLE];
+	int* indices;
+	unsigned int* pair;
+	for (unsigned int i = start_pair_index; i < end_pair_index; i += 4) {
+		pair = pair_ + i;
+		indices = triangle_indices[*(pair + 3)][*(pair + 2)].data();
+		if (dcd.checkPointTriangle(vertex_for_render[*(pair + 1)][*pair].data(), vertex_position[*(pair + 1)][*pair].data(),
+			vertex_for_render[*(pair + 3)][indices[0]].data(), vertex_for_render[*(pair + 3)][indices[1]].data(),
+			vertex_for_render[*(pair + 3)][indices[2]].data(),
+			vertex_position[*(pair + 3)][indices[0]].data(), vertex_position[*(pair + 3)][indices[1]].data(),
+			vertex_position[*(pair + 3)][indices[2]].data(), triangle_normal_render[*(pair + 3)][*(pair + 2)].data(),
+			tolerance))
+		{
+			memcpy(target_pos_index_, pair, 16);
+			target_pos_index_ += 4;
+		}
+	}
+
+	point_triangle_target_pos_index[thread_No][0] = target_pos_index_ - point_triangle_target_pos_index[thread_No].data() - 1;
+}
+
+
 
 void Collision::pointTriangleResponse(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
 	unsigned int end_pair_index, TargetPosition* target_pos)
@@ -2023,6 +2304,38 @@ void Collision::pointTriangleResponse(unsigned int thread_No, unsigned int pair_
 }
 
 
+void Collision::solveXPBDpointTriangleColliderResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end)
+{
+	unsigned int* target_pos_index_record_ = point_triangle_collider_target_pos_index[pair_thread_No].data() + 1;
+	double tolerance = tolerance_radius[BODY_POINT_TRIANGLE];
+	double epsilon_ = epsilon;
+	int* indices;
+	double target_pos_v[3];
+	double target_pos_tri[3][3];
+	double stiffness_initial = collision_stiffness[BODY_POINT_TRIANGLE];
+	double stiffness;
+	unsigned int* pair;
+	double damp_coe = damp_stiffness;
+	double* lambda_ = lambda->data() + collision_lambda_index_start[0];
+	double dt_ = dt;
+	for (unsigned int i = index_start; i < index_end; i += 4) {
+		stiffness = stiffness_initial;
+		pair = target_pos_index_record_ + i;
+		indices = triangle_indices_collider[*(pair + 3)][*(pair + 2)].data();
+		dcd.XPBDpointTriangleCollider(vertex_for_render[*(pair + 1)][*pair].data(), vertex_position[*(pair + 1)][*pair].data(),
+			vertex_for_render_collider[*(pair + 3)][indices[0]].data(), vertex_for_render_collider[*(pair + 3)][indices[1]].data(),
+			vertex_for_render_collider[*(pair + 3)][indices[2]].data(),
+			vertex_position_collider[*(pair + 3)][indices[0]].data(), vertex_position_collider[*(pair + 3)][indices[1]].data(),
+			vertex_position_collider[*(pair + 3)][indices[2]].data(),
+			triangle_normal_render_collider[*(pair + 3)][*(pair + 2)].data(),
+			triangle_normal_collider[*(pair + 3)][*(pair + 2)].data(),mass_inv[*(pair + 1)][*pair],
+			tolerance, *lambda_,stiffness, damp_coe,dt_);
+		lambda_++;
+		
+	}
+}
+
+
 void Collision::re_pointTriangleColliderResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end, TargetPosition* target_pos)
 {
 	unsigned int* target_pos_index_record_ = point_triangle_collider_target_pos_index[pair_thread_No].data() + 1;
@@ -2066,6 +2379,35 @@ void Collision::re_pointTriangleColliderResponse(unsigned int pair_thread_No, un
 				vertex_position[*(pair + 1)][*pair].data(), stiffness);
 		}
 	}
+}
+
+
+void Collision::pointTriangleColliderPair(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
+	unsigned int end_pair_index)
+{
+	unsigned int* target_pos_index_ = point_triangle_collider_target_pos_index[thread_No].data() + 1 + point_triangle_collider_target_pos_index[thread_No][0];
+	unsigned int* pair_ = spatial_hashing.vertex_obj_triangle_collider_pair[pair_thread_No] + 1;
+	//double d_hat_ = d_hat;
+	double tolerance = tolerance_radius[BODY_POINT_TRIANGLE];
+	int* indices;
+
+	unsigned int* pair;
+
+	for (unsigned int i = start_pair_index; i < end_pair_index; i += 4) {
+		pair = pair_ + i;
+		indices = triangle_indices_collider[*(pair + 3)][*(pair + 2)].data();
+		if (dcd.checkPointTriangle(vertex_for_render[*(pair + 1)][*pair].data(), vertex_position[*(pair + 1)][*pair].data(),
+			vertex_for_render_collider[*(pair + 3)][indices[0]].data(), vertex_for_render_collider[*(pair + 3)][indices[1]].data(),
+			vertex_for_render_collider[*(pair + 3)][indices[2]].data(),
+			vertex_position_collider[*(pair + 3)][indices[0]].data(), vertex_position_collider[*(pair + 3)][indices[1]].data(),
+			vertex_position_collider[*(pair + 3)][indices[2]].data(),
+			triangle_normal_render_collider[*(pair + 3)][*(pair + 2)].data(),tolerance))
+		{
+			memcpy(target_pos_index_, pair, 16);
+			target_pos_index_ += 4;
+		}
+	}
+	point_triangle_collider_target_pos_index[thread_No][0] = target_pos_index_ - point_triangle_collider_target_pos_index[thread_No].data() - 1;
 }
 
 void Collision::pointTriangleColliderResponse(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
@@ -2172,6 +2514,45 @@ void Collision::pointColliderTriangleResponse(unsigned int thread_No, unsigned i
 	}
 
 	target_position_index[thread_No][0] = (target_pos_index_ - target_position_index[thread_No].data() - 1) >> 1;*/
+}
+
+
+void Collision::edgeEdgeCollisionPair(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
+	unsigned int end_pair_index)
+{
+	//unsigned int* target_pos_index_ = target_position_index[thread_No].data() + 1 + (target_position_index[thread_No][0] << 1);
+	unsigned int* target_pos_index_ = edge_edge_target_pos_index[thread_No].data() + 1 + edge_edge_target_pos_index[thread_No][0];
+	//double* target_pos_ = target_position_and_stiffness[thread_No].data() + (target_position_index[thread_No][0] << 2);
+	unsigned int* pair_ = spatial_hashing.edge_edge_pair[pair_thread_No] + 1;
+	//double d_hat_ = d_hat;
+	double tolerance = tolerance_radius[SELF_EDGE_EDGE];
+	unsigned int* indices;
+	unsigned int* compare_indices;
+	unsigned int* pair;
+	for (unsigned int i = start_pair_index; i < end_pair_index; i += 4) {
+		pair = pair_ + i;
+		indices = edge_vertices[*(pair + 1)] + ((*(pair)) << 1);
+		compare_indices = edge_vertices[*(pair + 3)] + ((*(pair + 2)) << 1);
+		//if (collision_constraint.edgeEdgeResponse(target_pos_edge_0, target_pos_edge_1, target_pos_compare_edge_0, target_pos_compare_edge_1,
+		//	vertex_position[*(pair + 1)][*indices].data(), vertex_position[*(pair + 1)][*(indices + 1)].data(),
+		//	vertex_for_render[*(pair + 1)][*indices].data(), vertex_for_render[*(pair + 1)][*(indices + 1)].data(),
+		//	vertex_position[*(pair + 3)][*compare_indices].data(), vertex_position[*(pair + 3)][*(compare_indices + 1)].data(),
+		//	vertex_for_render[*(pair + 3)][*compare_indices].data(), vertex_for_render[*(pair + 3)][*(compare_indices + 1)].data(),
+		//	d_hat_, stiffness, epsilon_,
+		//	mass[*(pair + 1)][*indices], mass[*(pair + 1)][*(indices + 1)],
+		//	mass[*(pair + 3)][*compare_indices], mass[*(pair + 3)][*(compare_indices + 1)]))
+		if (dcd.checkEdgeEdge(
+			vertex_position[*(pair + 1)][*indices].data(), vertex_position[*(pair + 1)][*(indices + 1)].data(),
+			vertex_for_render[*(pair + 1)][*indices].data(), vertex_for_render[*(pair + 1)][*(indices + 1)].data(),
+			vertex_position[*(pair + 3)][*compare_indices].data(), vertex_position[*(pair + 3)][*(compare_indices + 1)].data(),
+			vertex_for_render[*(pair + 3)][*compare_indices].data(), vertex_for_render[*(pair + 3)][*(compare_indices + 1)].data(),
+			tolerance))
+		{
+			memcpy(target_pos_index_, pair, 16);
+			target_pos_index_ += 4;
+		}
+	}
+	edge_edge_target_pos_index[thread_No][0] = target_pos_index_ - edge_edge_target_pos_index[thread_No].data() - 1;
 }
 
 

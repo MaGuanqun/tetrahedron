@@ -113,6 +113,17 @@ public:
 
 	DrawCulling* draw_culling;
 
+	void getCollisionPair();
+	void getCollisionPair(int thread_No);
+
+
+	unsigned int collisionConstraintNumber(unsigned int point_triangle_collider_constraint, unsigned int& point_triangle_constraint, unsigned int& edge_edge_constraint);
+
+	void XPBDsolveCollisionConstraint();
+
+
+	void setParameter(std::vector<double>* lambda, unsigned int* collision_lambda_index_start, double damp_stiffness,double dt);
+	
 private:
 
 	unsigned int** vertex_edge_pair;
@@ -332,6 +343,7 @@ private:
 
 
 	std::vector<double*>mass;
+	std::vector<double*>mass_inv;
 
 	void reorganzieDataOfObjects();
 	bool has_collider;
@@ -485,4 +497,27 @@ private:
 
 
 	void testNearestPoint();
+
+	void pointTriangleCollisionPair(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
+		unsigned int end_pair_index);
+	void pointTriangleCollisionPair(int thread_No);
+	void edgeEdgeCollisionPair(int thread_No);
+	void edgeEdgeCollisionPair(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
+		unsigned int end_pair_index);
+
+	void pointTriangleColliderPair(int thread_No);
+	void pointTriangleColliderPair(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
+		unsigned int end_pair_index);
+
+	void solveXPBDpointTriangleResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
+	void solveXPBDedgeEdgeResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
+	void solveXPBDpointTriangleColliderResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
+
+	std::vector<double>* lambda;
+	unsigned int* collision_lambda_index_start;
+	double damp_stiffness;
+	double dt;
+	void solveXPBDpointTriangleResponse(int thread_No);
+	void solveXPBDpointTriangleColliderResponse(int thread_No);
+	void solveXPBDedgeEdgeResponse(int thread_No);
 };

@@ -285,6 +285,9 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
         //case FIND_PATCH_PAIRS:
         //    k = job([func, thread_id]() {func->findAllPatchPairs(thread_id); });
         //    break;  
+    case FIND_COLLISION_PAIR:
+        k = job([func, thread_id]() {func->getCollisionPair(thread_id); });
+        break;
     case  FIND_PRIMITIVE_AROUND:
         k = job([func, thread_id]() {func->findPrimitivesAround(thread_id); });
         //  k = job([func, thread_id]() {func->findPrimitivesAround(thread_id); });
@@ -574,6 +577,9 @@ job Thread::create_task(XPBD* func, int thread_id, XPBDFunc function_type)
     {
     case SET_POS_PREDICT:
         k = job([func, thread_id]() {func->setPosPredict(thread_id); });
+        break;
+    case SET_POS_PREDICT_SUB_TIME_STEP:
+        k = job([func, thread_id]() {func->setPosPredictSubTimeStep(thread_id); });
         break;
     case XPBD_VELOCITY:
         k = job([func, thread_id]() {func->computeVelocity(thread_id); });

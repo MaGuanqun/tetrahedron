@@ -22,11 +22,13 @@ public:
 	XPBD();
 	double time_step;
 	double gravity_;
+	unsigned int sub_step_num;
 	void PBDsolve();
 	void setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider,
 		Thread* thread, double* tolerance_ratio, DrawCulling* draw_culling_);
 	size_t* time_stamp;
 	void setPosPredict(int thread_No);
+	void setPosPredictSubTimeStep(int thread_No);
 	void computeVelocity(int thread_No);
 	unsigned int iteration_number;
 	void initial();
@@ -35,9 +37,10 @@ public:
 	void initialDHatTolerance(double ave_edge_length);
 	void updateTetrahedronAnchorVertices();
 	void addExternalForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int obj_No);
+	void updateItrInfo(int* iteration_num);
 private:
 	double gravity[3];
-	unsigned int sub_step_num;
+
 	unsigned int total_thread_num;
 	
 	std::vector<Cloth>* cloth;
@@ -63,6 +66,7 @@ private:
 	std::vector<double> lambda;
 	std::vector<double> lambda_collision;
 	std::vector<unsigned int>constraint_index_start;
+	std::vector<unsigned int>collision_constraint_index_start;
 
 	void initialClothBending();
 	void solveBendingConstraint();
@@ -75,6 +79,7 @@ private:
 	double damping_coe;
 
 	void updateNormal();
-
+	void initialCollisionConstriantNum();
+	bool perform_collision;
 };
 
