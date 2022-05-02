@@ -314,40 +314,36 @@ void DCD::XPBDcalDistanceEdgeEdge(double* norm, double distance, double* alpha, 
     
     //distance is C
     //grad_c
-    //grad_c_p0 = delta_p_0_coe * norm and so on
-    double delta_p_0_coe = alpha[0] * distance * mass_inv_e_0_0 / coe;
-    double delta_p_1_coe = alpha[1] * distance * mass_inv_e_0_1 / coe;
-    double delta_compare_p_0_coe = alpha[2] * distance * mass_inv_e_1_0 / coe;
-    double delta_compare_p_1_coe = alpha[3] * distance * mass_inv_e_1_1 / coe;
+    //grad_c_p0 = (+-) alpha * norm and so on
 
     double e[3];
     //use e[3] to store x_i-x_ori
     double lambda_numerator = 0.0;
     SUB(e, current_edge_vertex_0, initial_edge_vertex_0);
-    lambda_numerator += delta_p_0_coe * DOT(e, norm);
+    lambda_numerator -= alpha[0] * DOT(e, norm);
     SUB(e, current_edge_vertex_1, initial_edge_vertex_1);
-    lambda_numerator += delta_p_1_coe * DOT(e, norm);
+    lambda_numerator -= alpha[1] * DOT(e, norm);
     SUB(e, current_compare_edge_vertex_0, initial_compare_edge_vertex_0);
-    lambda_numerator += delta_compare_p_0_coe * DOT(e, norm);
+    lambda_numerator += alpha[2] * DOT(e, norm);
     SUB(e, current_compare_edge_vertex_1, initial_compare_edge_vertex_1);
-    lambda_numerator += delta_compare_p_1_coe * DOT(e, norm);
+    lambda_numerator += alpha[3] * DOT(e, norm);
 
 
     // lambda
     double alpha_ = 1.0 / (stiffness * dt * dt);
     double gamma = damping_stiffness / (stiffness * dt);
-    double delta_lambda = -(distance + alpha_ * lambda + gamma * lambda_numerator) / ((1 + gamma) * (mass_inv_e_0_0 * delta_p_0_coe * delta_p_0_coe
-        + mass_inv_e_0_1 * delta_p_1_coe * delta_p_1_coe + mass_inv_e_1_0 * delta_compare_p_0_coe * delta_compare_p_0_coe +
-        mass_inv_e_1_1 * delta_compare_p_1_coe * delta_compare_p_1_coe) + alpha_);
+    double delta_lambda = -(distance + alpha_ * lambda + gamma * lambda_numerator) / ((1 + gamma) * (mass_inv_e_0_0 * alpha[0] * alpha[0]
+        + mass_inv_e_0_1 * alpha[1] * alpha[1] + mass_inv_e_1_0 * alpha[2] * alpha[2] +
+        mass_inv_e_1_1 * alpha[3] * alpha[3]) + alpha_);
     lambda += delta_lambda;
 
-    coe = mass_inv_e_0_0 * delta_lambda * delta_p_0_coe;
+    coe = -mass_inv_e_0_0 * delta_lambda * alpha[0];
     ACCUMULATE_SUM_WITH_COE(current_edge_vertex_0, coe, norm);
-    coe = mass_inv_e_0_1 * delta_lambda * delta_p_1_coe;
+    coe = -mass_inv_e_0_1 * delta_lambda * alpha[1];
     ACCUMULATE_SUM_WITH_COE(current_edge_vertex_1, coe, norm);
-    coe = mass_inv_e_1_0 * delta_lambda * delta_compare_p_0_coe;
+    coe = mass_inv_e_1_0 * delta_lambda * alpha[2];
     ACCUMULATE_SUM_WITH_COE(current_compare_edge_vertex_0, coe, norm);
-    coe = mass_inv_e_1_1 * delta_lambda * delta_compare_p_1_coe;
+    coe = mass_inv_e_1_1 * delta_lambda * alpha[3];
     ACCUMULATE_SUM_WITH_COE(current_compare_edge_vertex_1, coe, norm);
 
 

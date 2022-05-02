@@ -100,7 +100,7 @@ void Collider::obtainAABB(bool has_tolerace)
 
 void Collider::setTolerance(double* tolerance_ratio, double ave_edge_length)
 {
-	tolerance = tolerance_ratio[BODY_POINT_TRIANGLE] * ave_edge_length;
+	tolerance = tolerance_ratio[AABB_SELF_PT] * ave_edge_length;
 	//tolerance = 0.5 * ave_edge_length;
 }
 

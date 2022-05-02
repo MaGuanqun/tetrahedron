@@ -349,7 +349,7 @@ void ImGuiWindows::infoWindow(std::vector<std::array<int, 3>>& cloth_info, std::
 	double time, int* iteration_num, int* set_itr_num, double* convergence_rate, int time_stamp, bool& start_edit, bool& start_simulation)
 {
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
-	ImGui::SetNextWindowSize(ImVec2(260, 330));
+	ImGui::SetNextWindowSize(ImVec2(280, 330));
 	ImGui::Begin("Basic Information This Time step");
 	ImGui::Text("stamp: %i", time_stamp);
 	ImGui::Text("Time(ms): %f", time);

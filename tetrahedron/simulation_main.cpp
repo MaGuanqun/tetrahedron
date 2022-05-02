@@ -42,7 +42,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	double simulation_parameter[2] = { 0.0,0.0 };//timestep, gravity
 	SaveImage save_image;
 	int iteration_number[2] = { 0,0 };
-	int set_iteration_num[2] = { 1000,1 }; //0:itr in a substep, 1:number of substep
+	int set_iteration_num[2] = { 200,1 }; //0:itr in a substep, 1:number of substep
 	double convergence_rate[2] = { 0.1,0.1 };
 	bool edit_PD_conv_rate = false;
 	time_t start_time;
@@ -54,7 +54,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	double temp_stiffness[7];
 	memset(temp_stiffness, 0, 56);
 	UpdateObjStiffness update_obj_stiffness;
-	double tolerance_ratio[4] = { 5e-2,5e-2,5e-2,5e-2 };
+	double tolerance_ratio[7] = { 5e-2,5e-2,5e-2,5e-2, 1e-1, 1e-1, 1e-1 };
 
 	bool set_anchor[2] = { false,false };
 

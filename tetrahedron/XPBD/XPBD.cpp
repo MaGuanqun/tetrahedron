@@ -11,7 +11,7 @@ XPBD::XPBD()
 	time_step = 1.0 / 100.0;
 	damping_coe = 0.02;
 
-	perform_collision = false;
+	perform_collision = true;
 }
 
 
@@ -48,16 +48,18 @@ void XPBD::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetra
 	sub_time_step = time_step / (double)sub_step_num;
 	this->thread = thread;
 
-	if (perform_collision) {
-		collision.draw_culling = draw_culling_;
-		collision.initial(cloth, collider, tetrahedron, thread, tolerance_ratio);
-		collision.setParameter(&lambda, collision_constraint_index_start.data(), damping_coe, sub_time_step);
-	}
+
 	total_obj_num = cloth->size() + tetrahedron->size();
 	reorganzieDataOfObjects();
 	initialVariable();
 	initialClothBending();
 	setConstraintIndex();
+
+	if (perform_collision) {
+		collision.draw_culling = draw_culling_;
+		collision.initial(cloth, collider, tetrahedron, thread, tolerance_ratio);
+		collision.setParameter(&lambda_collision, collision_constraint_index_start.data(), damping_coe, sub_time_step);
+	}
 }
 
 
@@ -102,7 +104,10 @@ void XPBD::setConstraintIndex()
 	}
 
 	lambda_collision.reserve(constraint_index_start[1] + constraint_number);
-	collision_constraint_index_start.resize(4,0);
+	collision_constraint_index_start.resize(3);
+	for (unsigned int i = 0; i < collision_constraint_index_start.size(); ++i) {
+		collision_constraint_index_start[i].resize(total_thread_num + 1, 0);
+	}
 }
 
 void XPBD::initialVariable()
@@ -145,9 +150,7 @@ void XPBD::reorganzieDataOfObjects()
 
 void XPBD::initialCollisionConstriantNum()
 {
-	lambda_collision.resize(collision.collisionConstraintNumber(collision_constraint_index_start[1], collision_constraint_index_start[2], collision_constraint_index_start[3]));
-	collision_constraint_index_start[2] += collision_constraint_index_start[1];
-	collision_constraint_index_start[3] += collision_constraint_index_start[2];
+	lambda_collision.resize(collision.collisionConstraintNumber(collision_constraint_index_start[0].data(), collision_constraint_index_start[1].data(), collision_constraint_index_start[2].data()));
 }
 
 void XPBD::PBDsolve()
@@ -160,16 +163,22 @@ void XPBD::PBDsolve()
 	}
 	for (unsigned int sub_step = 0; sub_step < sub_step_num; ++sub_step) {
 		memset(lambda.data(), 0, 8 * lambda.size());
-		memset(lambda_collision.data(), 0, 8 * lambda_collision.size());
-		thread->assignTask(this, SET_POS_PREDICT_SUB_TIME_STEP);
+		memset(lambda_collision.data(), 0, 8 * lambda_collision.size());		
+		if (sub_step_num > 1) {
+			thread->assignTask(this, SET_POS_PREDICT_SUB_TIME_STEP);
+		}
+
 		for (unsigned int i = 0; i < iteration_number; ++i) {
+			if (perform_collision) {
+				updateNormal();
+			}
 			solveConstraint();
 		}
 		thread->assignTask(this, XPBD_VELOCITY);
 		updatePosition();
 	}
 	
-	updateNormal();
+	updateRenderNormal();
 }
 
 
@@ -189,11 +198,27 @@ void XPBD::solveConstraint()
 	solveBendingConstraint();
 	solveEdgeLengthConstraint();
 	solveTetStrainConstraint();
+	if (perform_collision) {
+		collision.XPBDsolveCollisionConstraint();
+	}
 }
 
 
-
 void XPBD::updateNormal()
+{
+	for (unsigned int i = 0; i < collider->size(); ++i) {
+		thread->assignTask(&(*collider)[i].mesh_struct, FACE_NORMAL);
+	}
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL);
+	}
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL);
+	}
+}
+
+
+void XPBD::updateRenderNormal()
 {
 	TriangleMeshStruct* mesh_struct;
 	for (unsigned int j = 0; j < cloth->size(); ++j) {

@@ -66,7 +66,7 @@ private:
 	std::vector<double> lambda;
 	std::vector<double> lambda_collision;
 	std::vector<unsigned int>constraint_index_start;
-	std::vector<unsigned int>collision_constraint_index_start;
+	std::vector<std::vector<unsigned int>>collision_constraint_index_start;
 
 	void initialClothBending();
 	void solveBendingConstraint();
@@ -78,8 +78,10 @@ private:
 	void updatePosition();
 	double damping_coe;
 
-	void updateNormal();
+	void updateRenderNormal();
 	void initialCollisionConstriantNum();
 	bool perform_collision;
+
+	void updateNormal();
 };
 

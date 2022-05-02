@@ -33,9 +33,9 @@ void SpatialHashing::initialHashCellLength(std::vector<Cloth>* cloth, std::vecto
 	}
 
 	ave_length /= (double)edge_num;
-	cell_length = max_length + 2.0 * tolerance_ratio[SELF_POINT_TRIANGLE] * ave_length;
+	cell_length = max_length + 2.0 * tolerance_ratio[AABB_SELF_PT] * ave_length;
 	//cell_length = 1.0 * max_length +2.0 * tolerance_ratio[SELF_POINT_TRIANGLE] * ave_length;
-	std::cout << "tolerance__ " << tolerance_ratio[SELF_POINT_TRIANGLE] << std::endl;
+	std::cout << "AABB tolerance__ " << tolerance_ratio[AABB_SELF_PT] << std::endl;
 	std::cout << "ave_length " << ave_length << " max length " << max_length << " ratio " << (double)max_length / (double)ave_length << std::endl;
 	triangle_pair_number_thread.resize(thread_num);
 }

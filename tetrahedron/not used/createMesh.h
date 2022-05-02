@@ -381,14 +381,14 @@ public:
 		//}
 
 		////for two prisms.
-		//int col_num = 80;
-		//int row_num =40;
-		//for (int j = 0; j < row_num; j++) {
-		//	for (int i = 0; i < col_num; i++) {
-		//		mesh.vertices.push_back(std::array<double, 3>{1.6 * (double)i / (double)(col_num - 1) - 0.8,  //+0.9
-		//			-0.425, 0.8 * (double)j / (double)(row_num - 1) - 0.4});//-0.525,
-		//	}
-		//}
+		int col_num =80;
+		int row_num =80;
+		for (int j = 0; j < row_num; j++) {
+			for (int i = 0; i < col_num; i++) {
+				mesh.vertices.push_back(std::array<double, 3>{1.6 * (double)i / (double)(col_num - 1) - 0.8,  //+0.9
+					-0.425, 1.6 * (double)j / (double)(row_num - 1) - 0.8});//-0.525,
+			}
+		}
 		////for two dragons.
 		//int col_num = 50;
 		//int row_num = 100;
@@ -423,16 +423,16 @@ public:
 		//}
 
 
-		int col_num = 100;
-		int row_num = 100;
-		for (int j = 0; j < row_num; j++) {
-			for (int i = 0; i < col_num; i++) {
-				mesh.vertices.push_back(std::array<double, 3>{0.525,				
-					2.0 * (double)i / (double)(col_num - 1) - 0.75,
-					2.0 * (double)j / (double)(row_num - 1) - 1.3
-					});//-0.525,
-			}
-		}
+		//int col_num = 100;
+		//int row_num = 100;
+		//for (int j = 0; j < row_num; j++) {
+		//	for (int i = 0; i < col_num; i++) {
+		//		mesh.vertices.push_back(std::array<double, 3>{0.525,				
+		//			2.0 * (double)i / (double)(col_num - 1) - 0.75,
+		//			2.0 * (double)j / (double)(row_num - 1) - 1.3
+		//			});//-0.525,
+		//	}
+		//}
 
 
 		//int col_num = 2;
