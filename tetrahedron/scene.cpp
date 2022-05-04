@@ -61,6 +61,7 @@ Scene::Scene()
 	//compareArray();
 
 	//std::cout << cbrt(-27.0) << " " << cbrt(27.0) << std::endl;
+
 }
 
 
@@ -336,6 +337,8 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& wireframe,
 	//project_dynamic.collision.draw_culling.draw(camera, shadow.far_plane);
 
 
+	floor.draw(camera, object_shader_texture, &shadow, light, shadow.far_plane);
+
 	if (control_parameter[MOVE_OBJ]) {
 		if (intersection.happened) {
 			object_chosen_indicator.draw(wireframe_shader, camera);
@@ -446,7 +449,7 @@ void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_par
 				project_dynamic.updateSystemPos();
 			}
 			else {
-
+				getAABB();
 			}
 		}
 		setChosenIndicator();
@@ -754,6 +757,10 @@ void Scene::genShader()
 {
 	object_shader_front = new Shader("./shader/object_triangle.vs", "./shader/object_triangle.fs");
 	*object_shader_front = Shader("./shader/object_triangle.vs", "./shader/object_triangle.fs");
+
+	object_shader_texture = new Shader("./shader/object_triangle_texture.vs", "./shader/object_triangle_texture.fs");
+	*object_shader_texture = Shader("./shader/object_triangle_texture.vs", "./shader/object_triangle_texture.fs");
+
 	wireframe_shader = new Shader("./shader/wireframe.vs", "./shader/wireframe.fs");
 	*wireframe_shader = Shader("./shader/wireframe.vs", "./shader/wireframe.fs");
 }
@@ -888,4 +895,20 @@ void Scene::voidForWritetToArraySingle(int total_thread_num)
 	}
 
 
+}
+
+
+
+void Scene::getAABB()
+{
+	for (int i = 0; i < cloth.size(); ++i) {
+		cloth[i].obtainAABB(true);
+	}
+	for (int i = 0; i < collider.size(); ++i) {
+		collider[i].obtainAABB(true);
+	}
+	for (int i = 0; i < tetrahedron.size(); ++i) {
+		tetrahedron[i].obtainAABB(true);
+	}
+	//thread->assignTask(&mesh_patch, PATCH_AABB);
 }

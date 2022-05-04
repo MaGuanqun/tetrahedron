@@ -30,26 +30,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -152,6 +152,7 @@
     <ClCompile Include="basic\Coordinate.cpp" />
     <ClCompile Include="basic\cursor.cpp" />
     <ClCompile Include="basic\draw_vertex.cpp" />
+    <ClCompile Include="basic\floor.cpp" />
     <ClCompile Include="basic\object_chosen_indicator.cpp" />
     <ClCompile Include="basic\opengl_input.cpp" />
     <ClCompile Include="basic\pick_triangle.cpp" />
@@ -209,6 +210,7 @@
     <ClInclude Include="basic\draw_vertex.h" />
     <ClInclude Include="basic\EigenMatrixIO.h" />
     <ClInclude Include="basic\enum_setting.h" />
+    <ClInclude Include="basic\floor.h" />
     <ClInclude Include="basic\global.h" />
     <ClInclude Include="basic\intersection.h" />
     <ClInclude Include="basic\object_chosen_indicator.h" />

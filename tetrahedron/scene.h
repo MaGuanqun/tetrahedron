@@ -10,6 +10,7 @@
 #include"basic/set_tetrahedron_anchor.h"
 #include"basic/object_chosen_indicator.h"
 #include"XPBD/XPBD.h"
+#include"./basic/floor.h"
 
 class Scene
 {
@@ -82,6 +83,7 @@ private:
 
 	Shader* wireframe_shader;
 	Shader* object_shader_front;
+	Shader* object_shader_texture;
 	void genShader();
 
 	unsigned int total_obj_num;
@@ -104,4 +106,6 @@ private:
 
 	void setObjMoveInfo(Camera* camera, double* cursor_screen);
 	DrawCulling draw_culling;
+	void getAABB();
+	Floor floor;
 };
