@@ -39,7 +39,7 @@ void XPBD::updateItrInfo(int* iteration_num)
 }
 
 
-void XPBD::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider,
+void XPBD::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, Floor* floor,
 	Thread* thread, double* tolerance_ratio, DrawCulling* draw_culling_)
 {
 	this->cloth = cloth;
@@ -57,8 +57,8 @@ void XPBD::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetra
 
 	if (perform_collision) {
 		collision.draw_culling = draw_culling_;
-		collision.initial(cloth, collider, tetrahedron, thread, tolerance_ratio);
-		collision.setParameter(&lambda_collision, collision_constraint_index_start.data(), damping_coe, sub_time_step);
+		collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio);
+		collision.setParameter(&lambda_collision,lambda.data()+ constraint_index_start[3], collision_constraint_index_start.data(), damping_coe, sub_time_step);
 	}
 }
 
@@ -79,7 +79,7 @@ void XPBD::initialClothBending()
 
 void XPBD::setConstraintIndex()
 {
-	constraint_index_start.resize(4); //bending, edge_length, ARAP
+	constraint_index_start.resize(5); //bending, edge_length, ARAP, floor collision
 	constraint_index_start[0] = 0;
 	unsigned int constraint_number = 0;
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
@@ -96,7 +96,15 @@ void XPBD::setConstraintIndex()
 		constraint_number += tetrahedron->data()[i].mesh_struct.indices.size();
 	}
 	constraint_index_start[3] = constraint_number + constraint_index_start[2];
-	lambda.resize(constraint_index_start[3]);
+	constraint_number = 0;
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		constraint_number += mesh_struct[i]->vertex_position.size();
+	}
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		constraint_number += tetrahedron->data()[i].mesh_struct.vertex_index_on_sureface.size();
+	}
+	constraint_index_start[4] = constraint_number + constraint_index_start[3];
+	lambda.resize(constraint_index_start[4]);
 
 	constraint_number = 0;
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {

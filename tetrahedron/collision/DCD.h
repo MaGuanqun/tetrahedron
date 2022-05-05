@@ -75,6 +75,9 @@ public:
 		double tolerance, double& lambda, double stiffness, double damping_stiffness, double dt);
 
 	
+	void XPBDFloor(double* initial_position, double* current_position, unsigned int dimension, bool normal_direction, double mass_inv_v,
+		double tolerance, double& lambda, double stiffness, double damping_stiffness, double dt, double floor_value);
+
 private:
 	bool pointProjectOnTriangle(
 		const double* p,

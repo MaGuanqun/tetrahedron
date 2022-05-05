@@ -13,6 +13,7 @@
 #include"drawCulling.h"
 #include"primitive_distance.h"
 #include"DCD.h"
+#include"../basic/floor.h"
 //#include"mesh_patch.h"
 
 using namespace Eigen;
@@ -22,7 +23,7 @@ class Collision
 public:
 	double collision_time;
 
-	void initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread,
+	void initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread, Floor* floor,
 		double* tolerance_ratio);
 	void initialDHatTolerance(double ave_edge_length);
 	void findAllTrianglePairs(int thread_No);
@@ -122,9 +123,13 @@ public:
 	void XPBDsolveCollisionConstraint();
 
 
-	void setParameter(std::vector<double>* lambda, std::vector<unsigned int>* collision_lambda_index_start, double damp_stiffness,double dt);
+	void setParameter(std::vector<double>* lambda, double* floor_lambda, std::vector<unsigned int>* collision_lambda_index_start, double damp_stiffness,double dt);
 	
+
 private:
+
+
+	double* floor_lambda;
 
 	unsigned int** vertex_edge_pair;
 	unsigned int** vertex_obj_edge_collider_pair;
@@ -520,4 +525,8 @@ private:
 	void solveXPBDpointTriangleResponse(int thread_No);
 	void solveXPBDpointTriangleColliderResponse(int thread_No);
 	void solveXPBDedgeEdgeResponse(int thread_No);
+	Floor* floor;
+
+
+	void XPBDfloorCollisionResponse();
 };

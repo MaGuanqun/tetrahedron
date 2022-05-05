@@ -24,7 +24,7 @@ public:
 	double gravity_;
 	unsigned int sub_step_num;
 	void PBDsolve();
-	void setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider,
+	void setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, Floor* floor,
 		Thread* thread, double* tolerance_ratio, DrawCulling* draw_culling_);
 	size_t* time_stamp;
 	void setPosPredict(int thread_No);
@@ -64,6 +64,7 @@ private:
 	std::vector<std::vector<VectorXd>>vertex_lbo;
 	std::vector<std::vector<double>> rest_mean_curvature_norm;
 	std::vector<double> lambda;
+	
 	std::vector<double> lambda_collision;
 	std::vector<unsigned int>constraint_index_start;
 	std::vector<std::vector<unsigned int>>collision_constraint_index_start;

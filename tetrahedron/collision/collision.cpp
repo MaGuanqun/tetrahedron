@@ -1,7 +1,7 @@
 #include"collision.h"
 
 void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider,
-	std::vector<Tetrahedron>* tetrahedron, Thread* thread, double* tolerance_ratio)
+	std::vector<Tetrahedron>* tetrahedron, Thread* thread, Floor* floor,  double* tolerance_ratio)
 {
 	testNearestPoint();
 	conservative_rescaling = 0.9;
@@ -15,6 +15,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	this->collider = collider;
 	this->tetrahedron = tetrahedron;
 	this->thread = thread;
+	this->floor = floor;
 
 	max_index_number_in_one_cell = 1200;
 	max_index_number_in_one_cell_collider = 400;
@@ -108,8 +109,9 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 
 
 
-void Collision::setParameter(std::vector<double>* lambda, std::vector<unsigned int>* collision_lambda_index_start, double damp_stiffness, double dt)
+void Collision::setParameter(std::vector<double>* lambda, double* floor_lambda, std::vector<unsigned int>* collision_lambda_index_start, double damp_stiffness, double dt)
 {
+	this->floor_lambda = floor_lambda;
 	this->lambda = lambda;
 	this->collision_lambda_index_start = collision_lambda_index_start;
 	this->damp_stiffness= damp_stiffness;
@@ -1648,6 +1650,9 @@ void Collision::XPBDsolveCollisionConstraint()
 			solveXPBDpointTriangleColliderResponse(i);
 		}
 	}
+	if (floor->exist) {
+		XPBDfloorCollisionResponse();
+	}
 	for (unsigned int i = 0; i < thread_num; ++i) {
 		solveXPBDpointTriangleResponse(i);
 	}
@@ -1656,6 +1661,51 @@ void Collision::XPBDsolveCollisionConstraint()
 	}
 }
 
+
+
+void Collision::XPBDfloorCollisionResponse()
+{
+	double tolerance = tolerance_radius[BODY_POINT_TRIANGLE];
+	int* indices;
+	double target_pos_v[3];
+	double target_pos_tri[3][3];
+	double stiffness_initial = collision_stiffness[BODY_POINT_TRIANGLE];
+	unsigned int* pair;
+	double damp_coe = damp_stiffness;
+	//double* lambda_ = lambda->data() + collision_lambda_index_start[0];
+	double dt_ = dt;
+
+	unsigned int dimension = floor->dimension;
+    bool normal_direction = floor->normal_direction;
+
+	std::cout << dimension << " " << normal_direction << std::endl;
+
+
+	unsigned int size = 0;
+	double* lambda_ = floor_lambda;
+	double floor_value = floor->value;
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		size = cloth->data()[i].mesh_struct.vertex_for_render.size();
+		for (unsigned int j = 0; j < size; ++j) {
+			dcd.XPBDFloor(vertex_for_render[i][j].data(), vertex_position[i][j].data(), dimension, normal_direction, mass_inv[i][j], tolerance, *lambda_,
+				stiffness_initial, damp_coe, dt_, floor_value);
+			lambda_++;
+		}	
+	}
+	unsigned int* index;
+	unsigned int obj_index;
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		index = tetrahedron->data()[i].mesh_struct.vertex_index_on_sureface.data();
+		size = tetrahedron->data()[i].mesh_struct.vertex_index_on_sureface.size();
+		obj_index = i + cloth->size();
+		for (unsigned int j = 0; j < size; ++j) {
+			dcd.XPBDFloor(vertex_for_render[obj_index][index[j]].data(), vertex_position[obj_index][index[j]].data(), dimension, normal_direction,
+				mass_inv[obj_index][index[j]], tolerance, *lambda_, stiffness_initial, damp_coe, dt_, floor_value);
+			lambda_++;
+		}
+	}
+
+}
 
 
 void Collision::solveCollisionConstraint()
@@ -2413,6 +2463,10 @@ void Collision::pointTriangleResponse(unsigned int thread_No, unsigned int pair_
 	point_triangle_target_pos_index[thread_No][0] = target_pos_index_ - point_triangle_target_pos_index[thread_No].data() - 1;
 	//target_position_index[thread_No][0] = (target_pos_index_ - target_position_index[thread_No].data() - 1) >> 1;
 }
+
+
+
+
 
 
 void Collision::solveXPBDpointTriangleColliderResponse(double*& lambda_, unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end)

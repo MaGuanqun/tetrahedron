@@ -23,7 +23,7 @@ public:
 	double time_step;
 	double gravity_;
 	double outer_itr_conv_rate, local_global_conv_rate;
-	void setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, Thread* thread,
+	void setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, Floor* floor, Thread* thread,
 		double* tolerance_ratio, DrawCulling* draw_culling_);
 	void reset();
 	void initial();

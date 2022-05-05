@@ -12,31 +12,32 @@ Floor::Floor()
 	double vertex_texture_coordi[8] = { 0.0,1.0,0.0,0.0,1.0,0.0,1.0,1.0 };
 	vertex_texture_coordinate.resize(8);
 	memcpy(vertex_texture_coordinate.data(), vertex_texture_coordi, 64);
-	vertex_normal.resize(12);
+	vertex_normal_.resize(12);
 	genBuffer();
 	genTexture();
 
-	setFloor(1, -0.8);
+	setFloor(1, -0.35,true);
 }
 
 
-void Floor::setFloor(unsigned int dimension, double value)
+void Floor::setFloor(unsigned int dimension, double value, bool normal_direction)
 {
+	this->dimension = dimension;
+	this->exist = true;
 	double n[3] = { 0,0,0 };
+	this->value = value;
+	this->normal_direction = normal_direction;
 	switch (dimension)
 	{
 	case 0: {
 		double a[12] = { value, half_floor_length,half_floor_length, value,-half_floor_length,half_floor_length,
 		value,-half_floor_length,-half_floor_length,value,half_floor_length,-half_floor_length };
 		memcpy(vertex_position.data(), a, 96);
-		if (value > 0) {
-			n[0] = -1.0;
-		}
-		else {
+		if (normal_direction) {
 			n[0] = 1.0;
 		}
-		for (unsigned int i = 0; i < 4; ++i) {
-			memcpy(vertex_normal.data() + 3 * i, n, 24);
+		else {
+			n[0] = -1.0;
 		}
 	}
 		break;
@@ -44,14 +45,11 @@ void Floor::setFloor(unsigned int dimension, double value)
 		double a[12] = { -half_floor_length, value, -half_floor_length, half_floor_length, value,-half_floor_length,half_floor_length,
 		value,half_floor_length,-half_floor_length,value,half_floor_length };
 		memcpy(vertex_position.data(), a, 96);
-		if (value > 0) {
-			n[1] = -1.0;
-		}
-		else {
+		if (normal_direction) {
 			n[1] = 1.0;
 		}
-		for (unsigned int i = 0; i < 4; ++i) {
-			memcpy(vertex_normal.data() + 3 * i, n, 24);
+		else {
+			n[1] = -1.0;
 		}
 	}
 		break;
@@ -59,18 +57,20 @@ void Floor::setFloor(unsigned int dimension, double value)
 		double a[12] = { half_floor_length, half_floor_length, value, half_floor_length, -half_floor_length, value,-half_floor_length,-half_floor_length,
 		value,-half_floor_length,half_floor_length,value };
 		memcpy(vertex_position.data(), a, 96);
-		if (value > 0) {
-			n[2] = -1.0;
-		}
-		else {
+		if (normal_direction) {
 			n[2] = 1.0;
 		}
-		for (unsigned int i = 0; i < 4; ++i) {
-			memcpy(vertex_normal.data() + 3 * i, n, 24);
+		else {
+			n[2] = -1.0;
 		}
+
 	}
 		break;
 	}
+	for (unsigned int i = 0; i < 4; ++i) {
+		memcpy(vertex_normal_.data() + 3 * i, n, 24);
+	}
+
 	setBuffer();
 }
 
@@ -126,7 +126,7 @@ void Floor::setBuffer()
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
-	glBufferData(GL_ARRAY_BUFFER, vertex_normal.size() * sizeof(double), vertex_normal.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertex_normal_.size() * sizeof(double), vertex_normal_.data(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);

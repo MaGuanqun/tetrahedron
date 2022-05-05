@@ -22,7 +22,7 @@ ProjectDynamic::ProjectDynamic()
 
 }
 
-void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, 
+void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, Floor* floor,
 	Thread* thread,double* tolerance_ratio, DrawCulling* draw_culling_)
 {
 	this->cloth = cloth;
@@ -31,7 +31,7 @@ void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron
 	this->thread = thread;
 	tetrahedron_begin_obj_index = cloth->size();
 	collision.draw_culling = draw_culling_;
-	collision.initial(cloth, collider, tetrahedron, thread, tolerance_ratio);
+	collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio);
 	total_collider_num = collider->size();
 	this->collider = collider;
 	

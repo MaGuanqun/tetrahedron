@@ -645,6 +645,48 @@ bool DCD::checkEdgeEdgeCollision(double* current_edge_vertex_0, double* current_
 }
 
 
+void DCD::XPBDFloor(double* initial_position, double* current_position,unsigned int dimension, bool normal_direction, double mass_inv_v,
+    double tolerance, double& lambda, double stiffness, double damping_stiffness, double dt, double floor_value)
+{
+    double  constraint;
+    if (normal_direction) {
+        if (current_position[dimension] > floor_value + tolerance) {
+            return;
+        }
+        else {
+            constraint = current_position[dimension] - floor_value - tolerance;
+        }
+    }
+    else {
+        if (current_position[dimension] < floor_value - tolerance) {
+            return;
+        }
+        else {
+            constraint = floor_value - tolerance - current_position[dimension];
+        }
+    }
+    // lambda
+    double alpha_ = 1.0 / (stiffness * dt * dt);
+    double gamma = damping_stiffness / (stiffness * dt);
+
+    double coe_for_direction;
+    if (normal_direction) {
+        coe_for_direction = 1.0;
+    }
+    else {
+        coe_for_direction = -1.0;
+    }
+
+    double e[3];
+    SUB(e, current_position, initial_position);
+    double delta_lambda = -(constraint + alpha_ * lambda + gamma * e[dimension]* coe_for_direction) /
+        ((1 + gamma) * mass_inv_v + alpha_);
+    lambda += delta_lambda;
+    double coe = mass_inv_v * delta_lambda;
+    current_position[dimension] += coe * coe_for_direction;
+}
+
+
 void DCD::XPBDpointTriangleCollider(double* initial_position, double* current_position,
     double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
     double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,

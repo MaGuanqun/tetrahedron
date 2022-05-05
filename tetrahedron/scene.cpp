@@ -27,6 +27,7 @@ Scene::Scene()
 		xpbd.time_step = time_step;
 		xpbd.time_stamp= &time_stamp;
 	}
+
 	//test_array_size = 10000000;
 	//iteration_num_for_test_array = 1000;
 	//test_pair = new unsigned int* [thread.thread_num];
@@ -169,10 +170,10 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	draw_culling.initial(&cloth, &collider, &tetrahedron, &thread);
 
 	if (use_PD) {
-		project_dynamic.setForPD(&cloth, &tetrahedron, &collider, &thread, tolerance_ratio,&draw_culling);
+		project_dynamic.setForPD(&cloth, &tetrahedron, &collider, &floor,  &thread, tolerance_ratio,&draw_culling);
 	}
 	else {
-		xpbd.setForXPBD(&cloth, &tetrahedron, &collider, &thread, tolerance_ratio, &draw_culling);
+		xpbd.setForXPBD(&cloth, &tetrahedron, &collider, &floor, &thread, tolerance_ratio, &draw_culling);
 	}
 	setAveEdgeLength();
 	cursor.createVertices(0.03, camera_center);
@@ -336,9 +337,9 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& wireframe,
 	//project_dynamic.collision.draw_culling.drawTetTriangle(camera, wireframe_shader, light, shadow.far_plane);
 	//project_dynamic.collision.draw_culling.draw(camera, shadow.far_plane);
 
-
-	floor.draw(camera, object_shader_texture, &shadow, light, shadow.far_plane);
-
+	if (floor.exist) {
+		floor.draw(camera, object_shader_texture, &shadow, light, shadow.far_plane);
+	}
 	if (control_parameter[MOVE_OBJ]) {
 		if (intersection.happened) {
 			object_chosen_indicator.draw(wireframe_shader, camera);
