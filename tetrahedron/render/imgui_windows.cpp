@@ -150,7 +150,7 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 
 void ImGuiWindows::visualizationControlPanel(bool& reset_camera, std::vector<std::vector<bool>>& wireframe, std::vector<std::vector<bool>>& hide)
 {
-	ImGui::SetNextWindowPos(ImVec2(0, 630));
+	ImGui::SetNextWindowPos(ImVec2(0, 710));
 	ImGui::SetNextWindowSize(ImVec2(240, 370));
 	ImGui::Begin("Visualization");
 	ImGui::SetNextItemOpen(true);
@@ -426,6 +426,7 @@ void ImGuiWindows::helpMarker(const char* desc)
 }
 
 
+
 void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_stiffness, std::vector<std::array<double, 2>>& tet_stiffness, double* simulation_parameters, std::vector<std::array<double, 4>>& cloth_collision_stiffness,
 	std::vector<std::array<double, 4>>& tet_collision_stiffness,
 	bool* set_stiffness, double* temp_stiffness, UpdateObjStiffness& update_obj_stiffness, bool* set_anchor_point, bool tetrahedron_exist)
@@ -633,7 +634,94 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 	}
 }
 
+void ImGuiWindows::floorInfo(bool& exist, bool& show, bool& normal_direction, unsigned int& dimension, double* value, bool& eidit)
+{
+	ImGui::SetNextWindowPos(ImVec2(0, 470));
+	ImGui::SetNextWindowSize(ImVec2(240, 240));
+	ImGui::Begin("Floor");
+	if (exist) {
+		if (ImGui::Button("Delete Floor", ImVec2(160, 25))) {
+			exist = false;
+			show = false;
+		}
+	}
+	else {
+		if (ImGui::Button("Create Floor", ImVec2(160, 25))) {
+			exist = true;
+			show=true;
+		}
+	}
+	if (exist) {
+		if (show) {
+			if (ImGui::Button("Hide Floor", ImVec2(160, 25))) {
+				show = false;
+			}
+		}
+		else {
+			if (ImGui::Button("Show Floor", ImVec2(160, 25))) {
+				show = true;
+			}
+		}
+		ImGui::Text("Select floor direction");
+		std::string current_select =std::to_string(dimension);
+		if (ImGui::BeginCombo("##floor_dir", current_select.c_str()))
+		{
+			std::string name;
+			for (int n = 0; n < 3; n++)
+			{
+				name =std::to_string(n);
+				bool is_selected = (dimension == n);
+				if (ImGui::Selectable(name.c_str(), is_selected))
+				{
+					dimension = n;
+				}
+				if (is_selected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+		ImGui::Text("Select floor normal direction");
 
+		std::string  direction;
+		if (normal_direction) {
+			direction = "positive";
+		}
+		else {
+			direction = "negative";
+		}
+		if (ImGui::BeginCombo("##floor_normal_dir", direction.c_str()))
+		{
+			std::string name;
+			for (int n = 0; n < 2; n++)
+			{	
+				if (n == 0) {
+					name ="negative";
+				}
+				else {
+					name ="positive";
+				}
+				bool is_selected = ((int)normal_direction == n);
+				if (ImGui::Selectable(name.c_str(), is_selected))
+				{
+					normal_direction = n;
+				}
+				if (is_selected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+		if (ImGui::InputDouble("value##floor", value, 0.0f, 0.0f, "%.3f")) {
+			eidit = true;
+		}
+	}
+
+
+	ImGui::End();
+}
 
 void ImGuiWindows::iterationSolverInfoWindow(double& solver_iteration_num, int& itr_sovler_method,
 	char** itr_solver_items, char*& itr_solver_item, int item_num, double* conv_rate, bool& record_matrix)

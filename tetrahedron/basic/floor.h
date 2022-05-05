@@ -14,6 +14,7 @@ public:
 	void setFloor(unsigned int dimension, double value, bool normal_direction);
 
 	bool exist;
+	bool show;
 
 	bool normal_direction;
 	unsigned int dimension;

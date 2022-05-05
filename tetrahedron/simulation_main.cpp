@@ -71,6 +71,11 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 	double iteration_solver_iteration_num;
 
+
+	unsigned int floor_dimension=1;
+	bool floor_control[4] ={true,true,true,false};
+	double floor_value=-0.35;
+
 	//Eigen::Matrix<double, 3, 4> a;
 	//a.setOnes();
 	//for (int i = 0; i < 4; ++i) {
@@ -104,7 +109,6 @@ void simu_main(GLFWwindow* window, Input* input) {
 	//for (unsigned int i = 0; i < 8; ++i) {
 	//	std::cout << a[i] << " " << std::endl;
 	//}
-
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -204,6 +208,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 				control_parameter[SAVE_OBJ] = true;
 			}
 
+			scene.setFloorInfo(floor_control[0], floor_control[1], floor_control[2], floor_dimension, floor_value, floor_control[3], control_parameter);
+
 			//if (scene.time_stamp == 20 || scene.time_stamp == 50 || scene.time_stamp == 100) {
 			//	record_matrix = true;
 			//	control_parameter[SAVE_OBJ] = true;
@@ -229,6 +235,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 			control_parameter[ONE_FRAME] = false;
 		}
 
+		imgui_windows.floorInfo(floor_control[0], floor_control[1], floor_control[2], floor_dimension, &floor_value, floor_control[3]);
+
 		imgui_windows.controlWindow(control_parameter, &force_coe);
 		imgui_windows.visualizationControlPanel(control_parameter[INITIAL_CAMERA], wireframe, hide);
 
@@ -236,9 +244,9 @@ void simu_main(GLFWwindow* window, Input* input) {
 		scene.drawSelectRange(set_anchor, input->mouse.left_press, input->mouse.prev_left_press);
 		time = (double)(clock() - start_time);
 		imgui_windows.infoWindow(cloth_info, cloth_mass, tetrahedron_info, tetrahedron_mass, time, iteration_number, set_iteration_num, convergence_rate, scene.time_stamp, edit_PD_conv_rate, control_parameter[START_SIMULATION]);
-		imgui_windows.iterationSolverInfoWindow(iteration_solver_iteration_num, use_itr_solver_method, itr_solver_items, itr_solver_item,
-			IM_ARRAYSIZE(itr_solver_items), &iteration_solver_conve_rate, record_matrix);
-
+	//	imgui_windows.iterationSolverInfoWindow(iteration_solver_iteration_num, use_itr_solver_method, itr_solver_items, itr_solver_item,
+	//		IM_ARRAYSIZE(itr_solver_items), &iteration_solver_conve_rate, record_matrix);
+		
 		basic_imgui.imguiEndFrame();
 		glfwSwapBuffers(window);
 		input->beginFrame();

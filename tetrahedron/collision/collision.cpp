@@ -1678,7 +1678,7 @@ void Collision::XPBDfloorCollisionResponse()
 	unsigned int dimension = floor->dimension;
     bool normal_direction = floor->normal_direction;
 
-	std::cout << dimension << " " << normal_direction << std::endl;
+	//std::cout << dimension << " " << normal_direction << std::endl;
 
 
 	unsigned int size = 0;

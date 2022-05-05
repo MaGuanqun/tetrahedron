@@ -24,5 +24,7 @@ public:
 	void helpMarker(const char* desc);
 	ImGui::FileBrowser m_file_dialog_info;
 	bool load_collider_is_open = false;
+
+	void floorInfo(bool& exist, bool& show, bool& normal_direction, unsigned int& dimension, double* value, bool& eidit);
 };
 

@@ -23,7 +23,6 @@ Floor::Floor()
 void Floor::setFloor(unsigned int dimension, double value, bool normal_direction)
 {
 	this->dimension = dimension;
-	this->exist = true;
 	double n[3] = { 0,0,0 };
 	this->value = value;
 	this->normal_direction = normal_direction;

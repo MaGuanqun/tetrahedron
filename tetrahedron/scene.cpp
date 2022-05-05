@@ -77,7 +77,16 @@ void Scene::compareArray()
 	}
 }
 
-
+void Scene::setFloorInfo(bool exist, bool show, bool normal_direction, unsigned int dimension, double value, bool& eidit,bool* control_parameter)
+{
+	if (eidit) {
+		control_parameter[START_SIMULATION] = false;
+		eidit = false;
+	}
+	floor.show = show;
+	floor.exist = exist;
+	floor.setFloor(dimension, value, normal_direction);
+}
 
 void Scene::updateItrInfo(int* iteration_num)
 {
@@ -337,7 +346,7 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& wireframe,
 	//project_dynamic.collision.draw_culling.drawTetTriangle(camera, wireframe_shader, light, shadow.far_plane);
 	//project_dynamic.collision.draw_culling.draw(camera, shadow.far_plane);
 
-	if (floor.exist) {
+	if (floor.show) {
 		floor.draw(camera, object_shader_texture, &shadow, light, shadow.far_plane);
 	}
 	if (control_parameter[MOVE_OBJ]) {

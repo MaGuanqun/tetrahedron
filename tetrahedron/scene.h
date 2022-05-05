@@ -51,6 +51,8 @@ public:
 		std::vector<std::array<double, 4>>& tet_collision_stiffness);
 	void updateItrInfo(int* iteration_num);
 
+	void setFloorInfo(bool exist, bool show, bool normal_direction, unsigned int dimension, double value, bool& eidit,bool* control_parameter);
+
 private:
 	bool use_PD;
 	Light light;
