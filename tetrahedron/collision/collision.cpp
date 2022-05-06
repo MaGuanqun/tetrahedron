@@ -1154,7 +1154,7 @@ void Collision::collisionCulling()
 	//testCulling();
 	//draw_culling.drawAABBIntersectBetweenObjects();
 	//draw_culling.setCellData(&spatial_hashing.hash_value_for_test, spatial_hashing.cell_length, spatial_hashing.cell_number,
-	//	spatial_hashing.scene_aabb);
+	//spatial_hashing.scene_aabb);
 	//draw_culling.setSingleCellData(spatial_hashing.cell_length, spatial_hashing.cell_number, spatial_hashing.scene_aabb);
 	//draw_culling.setTetrahedronVertex();
 	//totalCount();

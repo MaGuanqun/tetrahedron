@@ -355,7 +355,7 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& wireframe,
 		}
 
 	}
-	//project_dynamic.collision.draw_culling.drawCell(camera, wireframe_shader);
+	//draw_culling.drawCell(camera, wireframe_shader);
 
 	//if (!draw_mesh_patch) {
 	//	//drawTriangle1.draw(camera, glm::vec3(0.0, 1.0, 0.0));

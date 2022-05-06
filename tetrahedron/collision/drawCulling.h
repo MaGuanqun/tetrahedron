@@ -4,6 +4,9 @@
 class DrawCulling
 {
 public:
+
+	bool show_spatial_hashing_cell = false;
+
 	void initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron,
 		Thread* thread);//, std::vector<std::vector<std::vector<unsigned int>>>* triangle_patch,std::vector<std::vector<std::vector<unsigned int>>>* patch_vertex
 

@@ -164,6 +164,7 @@
     <ClCompile Include="collision\CTCD.cpp" />
     <ClCompile Include="collision\DCD.cpp" />
     <ClCompile Include="collision\drawCulling.cpp" />
+    <ClCompile Include="collision\draw_collision.cpp" />
     <ClCompile Include="collision\expansion.cpp" />
     <ClCompile Include="collision\root_finder.cpp" />
     <ClCompile Include="collision\TightCCD.cpp" />
@@ -226,6 +227,7 @@
     <ClInclude Include="collision\CTCD.h" />
     <ClInclude Include="collision\DCD.h" />
     <ClInclude Include="collision\drawCulling.h" />
+    <ClInclude Include="collision\draw_collision.h" />
     <ClInclude Include="collision\floating.h" />
     <ClInclude Include="collision\primitive_distance.h" />
     <ClInclude Include="collision\root_finder.h" />

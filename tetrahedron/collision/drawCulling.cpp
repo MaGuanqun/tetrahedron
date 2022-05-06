@@ -10,7 +10,8 @@ void DrawCulling::initial(std::vector<Cloth>* cloth, std::vector<Collider>* coll
 	total_obj_num = cloth->size() + tetrahedron->size() + collider->size();
 	tetrahedron_end_index = cloth->size() + tetrahedron->size();
 	thread_num = thread->thread_num;
-	initialUsedIndicator();
+
+	//initialUsedIndicator();
 	setPalette();
 
 	light.ambient = glm::vec3(0.2, 0.2, 0.2);
