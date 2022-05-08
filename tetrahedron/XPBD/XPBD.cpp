@@ -40,7 +40,7 @@ void XPBD::updateItrInfo(int* iteration_num)
 
 
 void XPBD::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, Floor* floor,
-	Thread* thread, double* tolerance_ratio, DrawCulling* draw_culling_)
+	Thread* thread, double* tolerance_ratio)
 {
 	this->cloth = cloth;
 	this->tetrahedron = tetrahedron;
@@ -56,7 +56,6 @@ void XPBD::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetra
 	setConstraintIndex();
 
 	if (perform_collision) {
-		collision.draw_culling = draw_culling_;
 		collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio);
 		collision.setParameter(&lambda_collision,lambda.data()+ constraint_index_start[3], collision_constraint_index_start.data(), damping_coe, sub_time_step);
 	}

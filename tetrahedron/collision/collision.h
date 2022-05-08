@@ -10,10 +10,11 @@
 #include"../external/Eigen/Dense"
 #include"collision_constraint.h"
 #include"CCD.h"
-#include"drawCulling.h"
+//#include"drawCulling.h"
 #include"primitive_distance.h"
 #include"DCD.h"
 #include"../basic/floor.h"
+
 //#include"mesh_patch.h"
 
 using namespace Eigen;
@@ -112,7 +113,7 @@ public:
 	void solveCollisionConstraintDCD();
 	void reSolveCollisionConstraintDCD();
 
-	DrawCulling* draw_culling;
+	//DrawCulling* draw_culling;
 
 	void getCollisionPair();
 	void getCollisionPair(int thread_No);
@@ -125,9 +126,13 @@ public:
 
 	void setParameter(std::vector<double>* lambda, double* floor_lambda, std::vector<unsigned int>* collision_lambda_index_start, double damp_stiffness,double dt);
 	
+	
+
+
 
 private:
 
+	
 
 	double* floor_lambda;
 

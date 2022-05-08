@@ -23,7 +23,9 @@ public:
 	void setCollisionVertexData(std::vector<std::array<double, 3>*>& v_list, std::vector<std::vector<unsigned int>>& vertex_index);
 	
 	void setShaderData(Camera* camera);
-	void drawCollisionVertex(unsigned int obj_index, glm::vec3& color, float transparence);
+	void drawCollisionVertex(unsigned int obj_index, glm::vec3 color, float transparence);
+
+	
 
 private:
 	Shader* shader;

@@ -23,9 +23,10 @@ class Collision;
 class SpatialHashing;
 class RadixSort;
 class IterationMethod;
-class DrawCulling;
+//class DrawCulling;
 class Scene;
 class XPBD;
+class MoveObject;
 //class MeshPatch;
 
 using job = std::packaged_task<void()>;
@@ -118,9 +119,9 @@ private:
     job create_task(Tetrahedron* func, int thread_id, ObjectFunc function_type);// int jobNumber
     job create_task(Scene* func, int thread_id, SceneFuc function_type);// int jobNumber
     //job create_task(MeshPatch* func, int thread_id, MeshPatchFunc function_type);
-    job create_task(DrawCulling* func, int thread_id, DrawCullingFunc function_type, unsigned int key_id);
+    //job create_task(DrawCulling* func, int thread_id, DrawCullingFunc function_type, unsigned int key_id);
     job create_task(XPBD* func, int thread_id, XPBDFunc function_type);
-
+    job create_task(MoveObject* func, int thread_id, MoveObjectFunc function_type, unsigned int key_id);
 };
 
 

@@ -11,6 +11,7 @@
 #include"basic/object_chosen_indicator.h"
 #include"XPBD/XPBD.h"
 #include"./basic/floor.h"
+#include"./basic/move_object.h"
 
 class Scene
 {
@@ -31,7 +32,7 @@ public:
 		bool* control_parameter);
 	void getClothInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 3>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 4>>& collision_stiffness);
 	void updateCloth(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe, bool& record_matrix,
-		double& ave_iteration, bool mouse_is_pressed_previous_current_frame);
+		double& ave_iteration); // bool mouse_is_pressed_previous_current_frame
 	void initialIntersection();
 	void obtainConvergenceInfo(double* convergence_rate, int* iteration_num);
 	void updateConvRate(double* convergence_rate);
@@ -107,7 +108,9 @@ private:
 	//unsigned int thread_test[80001];
 
 	void setObjMoveInfo(Camera* camera, double* cursor_screen);
-	DrawCulling draw_culling;
+	//DrawCulling draw_culling;
 	void getAABB();
 	Floor floor;
+	MoveObject move_object;
+	void moveObj(Camera* camera, double* cursor_screen, bool only_move_vertex_pos);
 };

@@ -343,16 +343,14 @@ void DrawVertex::setShaderData(Camera* camera)
 	shader->setVec3("viewPos", camera->position);
 }
 
-void DrawVertex::drawCollisionVertex(unsigned int obj_index, glm::vec3& color, float transparence)
+void DrawVertex::drawCollisionVertex(unsigned int obj_index, glm::vec3 color, float transparence)
 {
-	if (!.empty()) {
-	
-		shader->setVec3("color", color);
-		
+	if (!vertex_pos[obj_index].empty()) {
+		shader->setVec3("color", color);		
 		shader->setFloat("transparence", transparence);
-		glBindVertexArray(VAO);
+		glBindVertexArray(VAO1[obj_index]);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, vertex_sphere_indices[obj_index].size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 	}
 }

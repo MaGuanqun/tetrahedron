@@ -25,7 +25,7 @@ public:
 	unsigned int sub_step_num;
 	void PBDsolve();
 	void setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, Floor* floor,
-		Thread* thread, double* tolerance_ratio, DrawCulling* draw_culling_);
+		Thread* thread, double* tolerance_ratio);
 	size_t* time_stamp;
 	void setPosPredict(int thread_No);
 	void setPosPredictSubTimeStep(int thread_No);

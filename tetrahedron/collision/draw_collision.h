@@ -16,10 +16,11 @@ public:
 
 	void setInPairInfo(std::vector<unsigned int>* point_triangle, std::vector<unsigned int>* point_triangle_collider, std::vector<unsigned int>* edge_edge);
 
-	void setElementIndices(bool show_vertex_triangle);
-	bool show_vertex_triangle;
-	void drawVT_triangle(Light& light, float& far_plane, Camera* camera, Shader* object_shader_front);
-	void drawVT_point();
+	void setElementIndices();
+
+	void drawCollision(bool draw_VT, Light& light, float& far_plane, Camera* camera, Shader* object_shader_front);
+
+
 private:
 
 	std::vector<unsigned int>* point_triangle_target_pos_index;
@@ -74,6 +75,7 @@ private:
 	std::vector<unsigned int*>edge_indices;
 	void setColliderTriangleIndices();
 	void setEdgeIndices();
+	void setVertexIndices();
 	void setVertexTriangleBuffer(unsigned int obj_index);
 	void setEdgeEdgeBuffer(unsigned int obj_index);
 	std::vector<unsigned int>vertex_number;
@@ -87,7 +89,7 @@ private:
 	void initialBoolean();
 	void resetBooleanVector();
 
-
-
+	void drawVertex(Camera* camera);
+	void drawVT_triangle(Light& light, float& far_plane, Camera* camera, Shader* object_shader_front);
 
 };

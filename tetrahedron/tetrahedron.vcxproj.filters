@@ -136,9 +136,6 @@
     <ClCompile Include="iteration_method.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="collision\drawCulling.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="basic\object_chosen_indicator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -161,6 +158,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="collision\draw_collision.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="collision\test_draw_collision.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="basic\move_object.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -315,9 +318,6 @@
     <ClInclude Include="basic\write_txt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="collision\drawCulling.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="basic\object_chosen_indicator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -340,6 +340,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="collision\draw_collision.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="collision\test_draw_collision.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="basic\move_object.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

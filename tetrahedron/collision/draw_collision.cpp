@@ -24,7 +24,7 @@ void DrawCollision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* co
 	genBuffer();
 	reorganzieDataOfObjects();
 	initialBoolean();
-
+	draw_vertex.setInObjNum(tetrahedron_end_index);
 
 }
 
@@ -151,7 +151,7 @@ void DrawCollision::resetBooleanVector()
 	}
 }
 
-void DrawCollision::setElementIndices(bool show_vertex_triangle)
+void DrawCollision::setElementIndices()
 {
 	setIndicesSize();
 	resetBooleanVector();
@@ -162,13 +162,47 @@ void DrawCollision::setElementIndices(bool show_vertex_triangle)
 	}
 	resetBooleanVector();
 	setEdgeIndices();
-	this->show_vertex_triangle = show_vertex_triangle;
+	resetBooleanVector();
+	setVertexIndices();
+
 	setBuffer();
+	draw_vertex.setCollisionVertexData(vertex_for_render, vertex_index);
+
 }
 
 
-void 
 
+void DrawCollision::setVertexIndices()
+{
+	unsigned int* pair_index;
+	unsigned int size;
+
+	for (unsigned int i = 0; i < thread_num; ++i) {
+		pair_index = point_triangle_target_pos_index[i].data() + 1;
+		size = point_triangle_target_pos_index[i][0];
+		for (unsigned int j = 0; j < size; j += 4) {		
+			if (!obj_is_used[*(pair_index + 1)][*pair_index]) {
+				vertex_index[*(pair_index + 1)].push_back(*pair_index );
+				obj_is_used[*(pair_index + 1)][*pair_index] = true;
+			}
+			pair_index += 4;
+		}
+	}
+
+	if (!collider->empty()) {
+		for (unsigned int i = 0; i < thread_num; ++i) {
+			pair_index = point_triangle_collider_target_pos_index[i].data() + 1;
+			size = point_triangle_collider_target_pos_index[i][0];
+			for (unsigned int j = 0; j < size; j += 4) {
+				if (!obj_is_used[*(pair_index + 1)][*pair_index]) {
+					vertex_index[*(pair_index + 1)].push_back(*pair_index);
+					obj_is_used[*(pair_index + 1)][*pair_index] = true;
+				}
+				pair_index += 4;
+			}
+		}
+	}
+}
 
 
 void DrawCollision::setTriangleIndices()
@@ -179,14 +213,14 @@ void DrawCollision::setTriangleIndices()
 	for (unsigned int i = 0; i < thread_num; ++i) {
 		pair_index = point_triangle_target_pos_index[i].data()+1;
 		size = point_triangle_target_pos_index[i][0];
-		for(unsigned int j=0;j<size;j+=4){			
-			pair_index += 4;
+		for(unsigned int j=0;j<size;j+=4){		
 			if (!obj_is_used[*(pair_index + 3)][*(pair_index + 2)]) {
 				triangle_vertex_index[*(pair_index + 3)].resize(triangle_vertex_index[*(pair_index + 3)].size() + 3);
 				memcpy(triangle_vertex_index[*(pair_index + 3)].data() + triangle_vertex_index[*(pair_index + 3)].size() - 3,
 					triangle_indices[*(pair_index + 3)][*(pair_index + 2)].data(), 12);				
 				obj_is_used[*(pair_index + 3)][*(pair_index + 2)] = true;
 			}
+			pair_index += 4;
 		}
 	}
 }
@@ -199,8 +233,7 @@ void DrawCollision::setEdgeIndices()
 	for (unsigned int i = 0; i < thread_num; ++i) {
 		pair_index = edge_edge_target_pos_index[i].data() + 1;
 		size = edge_edge_target_pos_index[i][0];
-		for (unsigned int j = 0; j < size; j += 4) {
-			pair_index += 4;
+		for (unsigned int j = 0; j < size; j += 4) {		
 			if (!obj_is_used[*(pair_index + 1)][*(pair_index)]) {
 				edge_vertex_index[*(pair_index + 1)].emplace_back(edge_indices[*(pair_index + 1)][(*pair_index) << 1]);
 				edge_vertex_index[*(pair_index + 1)].emplace_back(edge_indices[*(pair_index + 1)][((*pair_index) << 1) + 1]);
@@ -211,12 +244,36 @@ void DrawCollision::setEdgeIndices()
 				edge_vertex_index[*(pair_index + 3)].emplace_back(edge_indices[*(pair_index + 3)][((*(pair_index + 2)) << 1) + 1]);
 				obj_is_used[*(pair_index + 3)][*(pair_index + 2)] = true;
 			}
+			pair_index += 4;
 		}
 	}
 }
 
 
+void DrawCollision::drawVertex(Camera* camera)
+{
+	draw_vertex.setShaderData(camera);
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		draw_vertex.drawCollisionVertex(i, glm::vec3(cloth->data()[i].material.front_material.Kd[2], cloth->data()[i].material.front_material.Kd[1], cloth->data()[i].material.front_material.Kd[0]),
+			1.0);
+	}
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		draw_vertex.drawCollisionVertex(i+cloth->size(), glm::vec3(tetrahedron->data()[i].material.Kd[2], tetrahedron->data()[i].material.Kd[1], tetrahedron->data()[i].material.Kd[0]),
+			1.0);
+	}
 
+}
+
+void DrawCollision::drawCollision(bool draw_VT, Light& light, float& far_plane, Camera* camera, Shader* object_shader_front)
+{
+	if (draw_VT) {
+		drawVertex(camera);
+		drawVT_triangle(light, far_plane, camera, object_shader_front);
+	}
+	else {
+
+	}
+}
 
 void DrawCollision::drawVT_triangle(Light& light, float& far_plane, Camera* camera, Shader* object_shader_front)
 {
@@ -236,18 +293,18 @@ void DrawCollision::drawVT_triangle(Light& light, float& far_plane, Camera* came
 	object_shader_front->setFloat("transparence", 1.0);
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		object_shader_front->setFloat("material.Ns", cloth->data()[i].material.front_material.Ns);
-		object_shader_front->setVec3("material.Kd", glm::vec3(cloth->data()[i].material.front_material.Kd[1], cloth->data()[i].material.front_material.Kd[2], cloth->data()[i].material.front_material.Kd[0]));
-		object_shader_front->setVec3("material.Ka", glm::vec3(cloth->data()[i].material.front_material.Ka[1], cloth->data()[i].material.front_material.Ka[2], cloth->data()[i].material.front_material.Ka[0]));
-		object_shader_front->setVec3("material.Ks", glm::vec3(cloth->data()[i].material.front_material.Ks[1], cloth->data()[i].material.front_material.Ks[2], cloth->data()[i].material.front_material.Ks[0]));
+		object_shader_front->setVec3("material.Kd", glm::vec3(cloth->data()[i].material.front_material.Kd[1], cloth->data()[i].material.front_material.Kd[0], cloth->data()[i].material.front_material.Kd[2]));
+		object_shader_front->setVec3("material.Ka", glm::vec3(cloth->data()[i].material.front_material.Ka[1], cloth->data()[i].material.front_material.Ka[0], cloth->data()[i].material.front_material.Ka[2]));
+		object_shader_front->setVec3("material.Ks", glm::vec3(cloth->data()[i].material.front_material.Ks[1], cloth->data()[i].material.front_material.Ks[0], cloth->data()[i].material.front_material.Ks[2]));
 		glBindVertexArray(VT_VAO[i]);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glDrawElements(GL_TRIANGLES,  triangle_vertex_index[i].size(), GL_UNSIGNED_INT, 0);
 	}
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		object_shader_front->setFloat("material.Ns", tetrahedron->data()[i].material.Ns);
-		object_shader_front->setVec3("material.Kd", glm::vec3(tetrahedron->data()[i].material.Kd[1], tetrahedron->data()[i].material.Kd[2], tetrahedron->data()[i].material.Kd[0]));
-		object_shader_front->setVec3("material.Ka", glm::vec3(tetrahedron->data()[i].material.Ka[1], tetrahedron->data()[i].material.Ka[2], tetrahedron->data()[i].material.Ka[0]));
-		object_shader_front->setVec3("material.Ks", glm::vec3(tetrahedron->data()[i].material.Ks[1], tetrahedron->data()[i].material.Ks[2], tetrahedron->data()[i].material.Ks[0]));
+		object_shader_front->setVec3("material.Kd", glm::vec3(tetrahedron->data()[i].material.Kd[1], tetrahedron->data()[i].material.Kd[0], tetrahedron->data()[i].material.Kd[2]));
+		object_shader_front->setVec3("material.Ka", glm::vec3(tetrahedron->data()[i].material.Ka[1], tetrahedron->data()[i].material.Ka[0], tetrahedron->data()[i].material.Ka[2]));
+		object_shader_front->setVec3("material.Ks", glm::vec3(tetrahedron->data()[i].material.Ks[1], tetrahedron->data()[i].material.Ks[0], tetrahedron->data()[i].material.Ks[2]));
 		glBindVertexArray(VT_VAO[i+cloth->size()]);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glDrawElements(GL_TRIANGLES, triangle_vertex_index[i + cloth->size()].size(), GL_UNSIGNED_INT, 0);
@@ -341,41 +398,41 @@ void DrawCollision::setColliderTriangleIndices()
 	for (unsigned int i = 0; i < thread_num; ++i) {
 		pair_index = point_triangle_collider_target_pos_index[i].data() + 1;
 		size = point_triangle_collider_target_pos_index[i][0];
-		for (unsigned int j = 0; j < size; j += 4) {
-			pair_index += 4;
+		for (unsigned int j = 0; j < size; j += 4) {		
 			if (!obj_is_used[*(pair_index + 3)][*(pair_index + 2)]) {
 				collider_triangle_vertex_index[*(pair_index + 3)].resize(collider_triangle_vertex_index[*(pair_index + 3)].size() + 3);
 				memcpy(collider_triangle_vertex_index[*(pair_index + 3)].data() + collider_triangle_vertex_index[*(pair_index + 3)].size() - 3,
 					collider_triangle_indices[*(pair_index + 3)][*(pair_index + 2)].data(), 12);
 				obj_is_used[*(pair_index + 3)][*(pair_index + 2)] = true;
 			}			
+			pair_index += 4;
 		}
 	}
 }
 
 void DrawCollision::setIndicesSize()
 {
-	unsigned int count = 0;
-	for (unsigned int i = 0; i < thread->thread_num; ++i) {
-		count += point_triangle_target_pos_index[i][0];
-	}
 	for (unsigned int i = 0; i < tetrahedron_end_index; ++i) {
-		triangle_vertex_index[i].reserve(count / tetrahedron_end_index);
+		triangle_vertex_index[i].clear();
+		edge_vertex_index[i].clear();
+		vertex_index[i].clear();
 	}
-	count = 0;
-	for (unsigned int i = 0; i < thread->thread_num; ++i) {
-		count += edge_edge_target_pos_index[i][0];
+
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		triangle_vertex_index[i].reserve(cloth->data()[i].mesh_struct.triangle_indices.size()/2);
+		edge_vertex_index[i].reserve(cloth->data()[i].mesh_struct.edge_vertices.size()/6);
+		vertex_index[i].reserve(cloth->data()[i].mesh_struct.vertex_position.size()/6);
 	}
-	for (unsigned int i = 0; i < tetrahedron_end_index; ++i) {
-		edge_vertex_index[i].reserve(count / tetrahedron_end_index);
-	}
-	count = 0;
-	for (unsigned int i = 0; i < thread->thread_num; ++i) {
-		count += point_triangle_collider_target_pos_index[i][0];
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		triangle_vertex_index[i+cloth->size()].reserve(tetrahedron->data()[i].mesh_struct.triangle_indices.size() / 2);
+		edge_vertex_index[i+cloth->size()].reserve(tetrahedron->data()[i].mesh_struct.edge_vertices.size() / 2);
+		vertex_index[i+cloth->size()].reserve(tetrahedron->data()[i].mesh_struct.vertex_position.size() / 6);
 	}
 	for (unsigned int i = 0; i < collider->size(); ++i) {
-		collider_triangle_vertex_index[i].reserve(count / collider->size());
+		collider_triangle_vertex_index[i].clear();
+		collider_triangle_vertex_index[i].reserve(collider->data()[i].mesh_struct.triangle_indices.size()/2);
 	}
+
 
 }
 

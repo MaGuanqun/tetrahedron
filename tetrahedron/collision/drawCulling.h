@@ -4,17 +4,13 @@
 class DrawCulling
 {
 public:
-
+	
 	bool show_spatial_hashing_cell = false;
 
 	void initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron,
 		Thread* thread);//, std::vector<std::vector<std::vector<unsigned int>>>* triangle_patch,std::vector<std::vector<std::vector<unsigned int>>>* patch_vertex
 
 	void draw(Camera* camera, float& far_plane);
-	void move(unsigned int obj_No, double* displacement);
-	void move(int thread_No, unsigned int obj_No);
-
-	void moveDiffInitialCurrent(int thread_No, unsigned int obj_No);
 
 	void setThreadDataTogether(int thread_No);
 	void setAllTriangle(int thread_No);
@@ -25,8 +21,6 @@ public:
 		unsigned int** spatial_hashing_triangle_index_collider, std::vector<std::vector<unsigned int>>* prefix_sum,
 		std::vector<std::vector<unsigned int>>* prefix_sum_collider, std::vector<unsigned int>* actual_exist_cell_begin_per_thread);
 
-	//type=1 for dinosaur, type=2 for dragon, type=3 cloth
-	void moveScript(unsigned int type);
 	size_t time_step = 0;
 
 
@@ -47,6 +41,7 @@ public:
 
 
 private:
+
 	std::vector<Cloth>* cloth;
 	std::vector<Tetrahedron>* tetrahedron;
 	std::vector<Collider>* collider;
@@ -116,12 +111,8 @@ private:
 	std::vector<unsigned int> pos_start_thread;//the pos & color start index for every thread
 	Light light;
 
-	void recordDisplacement();
-	std::vector<std::array<double, 3>> total_displacement;
 
 
-	std::vector<std::array<double, 3>> displacement_test;
-	std::vector<std::array<double, 3>> displacement_test_render;
 
 	std::vector<unsigned int>* hash;
 

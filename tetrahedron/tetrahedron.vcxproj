@@ -153,6 +153,7 @@
     <ClCompile Include="basic\cursor.cpp" />
     <ClCompile Include="basic\draw_vertex.cpp" />
     <ClCompile Include="basic\floor.cpp" />
+    <ClCompile Include="basic\move_object.cpp" />
     <ClCompile Include="basic\object_chosen_indicator.cpp" />
     <ClCompile Include="basic\opengl_input.cpp" />
     <ClCompile Include="basic\pick_triangle.cpp" />
@@ -163,10 +164,10 @@
     <ClCompile Include="collision\collision_constraint.cpp" />
     <ClCompile Include="collision\CTCD.cpp" />
     <ClCompile Include="collision\DCD.cpp" />
-    <ClCompile Include="collision\drawCulling.cpp" />
     <ClCompile Include="collision\draw_collision.cpp" />
     <ClCompile Include="collision\expansion.cpp" />
     <ClCompile Include="collision\root_finder.cpp" />
+    <ClCompile Include="collision\test_draw_collision.cpp" />
     <ClCompile Include="collision\TightCCD.cpp" />
     <ClCompile Include="collision\interval.cpp" />
     <ClCompile Include="collision\parallel_radix_sort.cpp" />
@@ -214,6 +215,7 @@
     <ClInclude Include="basic\floor.h" />
     <ClInclude Include="basic\global.h" />
     <ClInclude Include="basic\intersection.h" />
+    <ClInclude Include="basic\move_object.h" />
     <ClInclude Include="basic\object_chosen_indicator.h" />
     <ClInclude Include="basic\opengl_input.h" />
     <ClInclude Include="basic\pick_triangle.h" />
@@ -226,11 +228,11 @@
     <ClInclude Include="collision\collision_constraint.h" />
     <ClInclude Include="collision\CTCD.h" />
     <ClInclude Include="collision\DCD.h" />
-    <ClInclude Include="collision\drawCulling.h" />
     <ClInclude Include="collision\draw_collision.h" />
     <ClInclude Include="collision\floating.h" />
     <ClInclude Include="collision\primitive_distance.h" />
     <ClInclude Include="collision\root_finder.h" />
+    <ClInclude Include="collision\test_draw_collision.h" />
     <ClInclude Include="collision\TightCCD.h" />
     <ClInclude Include="collision\parallel_radix_sort.h" />
     <ClInclude Include="collision\predictive_contact.h" />

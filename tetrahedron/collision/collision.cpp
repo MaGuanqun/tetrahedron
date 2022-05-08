@@ -50,7 +50,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	//the above last input variable should be actual_exist_cell_begin_per_thread(sorting) /cell_begin_per_thread(unsorting)
 	//draw_culling.setInSpatialHashingValue(spatial_hashing.spatial_hashing_cell, spatial_hashing.spatial_hashing_cell_collider,
 	//	spatial_hashing.hash_cell_count);
-	draw_culling->vertex_tet_pair = spatial_hashing.vertex_tet_pair.data();
+	//draw_culling->vertex_tet_pair = spatial_hashing.vertex_tet_pair.data();
 
 
 	edge_edge_count.resize(thread_num, 0);
@@ -105,6 +105,9 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	else {
 		memcpy(collision_stiffness, cloth->data()[0].collision_stiffness, 32);
 	}
+
+	
+
 }
 
 
@@ -5441,6 +5444,7 @@ void Collision::initialPair()
 	}
 	
 }
+
 
 
 

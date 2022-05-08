@@ -9,9 +9,10 @@
 #include"collision/collision.h"
 #include"collision/parallel_radix_sort.h"
 #include"iteration_method.h"
-#include"collision/drawCulling.h"
+//#include"collision/drawCulling.h"
 #include"scene.h"
 #include"./XPBD/XPBD.h"
+#include"./basic/move_object.h"
 //#include"collision/mesh_patch.h"
 
 Thread::Thread()
@@ -549,7 +550,7 @@ job Thread::create_task(IterationMethod* func, IterationMethodFunc function_type
 }
 
 
-job Thread::create_task(DrawCulling* func, int thread_id, DrawCullingFunc function_type, unsigned int key_id)
+job Thread::create_task(MoveObject* func, int thread_id, MoveObjectFunc function_type, unsigned int key_id)
 {
     job k;
     switch (function_type)
@@ -557,18 +558,27 @@ job Thread::create_task(DrawCulling* func, int thread_id, DrawCullingFunc functi
     case MOVE_OBJECT:
         k = job([func, thread_id, key_id]() {func->move(thread_id, key_id); });
         break;
-    case SET_POSITION_COLOR:
-        k = job([func, thread_id, key_id]() {func->setAllTriangle(thread_id); });
-        break;
-    case SET_DATA_TOGETHER:
-        k = job([func, thread_id, key_id]() {func->setThreadDataTogether(thread_id); });
-        break;
     case MOVE_OBJECT2:
         k = job([func, thread_id, key_id]() {func->moveDiffInitialCurrent(thread_id, key_id); });
         break;
     }
     return k;
 }
+
+//job Thread::create_task(DrawCulling* func, int thread_id, DrawCullingFunc function_type, unsigned int key_id)
+//{
+//    job k;
+//    switch (function_type)
+//    {
+//    case SET_POSITION_COLOR:
+//        k = job([func, thread_id, key_id]() {func->setAllTriangle(thread_id); });
+//        break;
+//    case SET_DATA_TOGETHER:
+//        k = job([func, thread_id, key_id]() {func->setThreadDataTogether(thread_id); });
+//        break;
+//    }
+//    return k;
+//}
 
 job Thread::create_task(XPBD* func, int thread_id, XPBDFunc function_type)
 {

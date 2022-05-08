@@ -176,13 +176,14 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 		tetrahedron[i].recordInitialMesh(single_tetrahedron_info);
 	}
 
-	draw_culling.initial(&cloth, &collider, &tetrahedron, &thread);
+	move_object.initial(&cloth, &collider, &tetrahedron, &thread);
+	//draw_culling.initial(&cloth, &collider, &tetrahedron, &thread);
 
 	if (use_PD) {
-		project_dynamic.setForPD(&cloth, &tetrahedron, &collider, &floor,  &thread, tolerance_ratio,&draw_culling);
+		project_dynamic.setForPD(&cloth, &tetrahedron, &collider, &floor,  &thread, tolerance_ratio);
 	}
 	else {
-		xpbd.setForXPBD(&cloth, &tetrahedron, &collider, &floor, &thread, tolerance_ratio, &draw_culling);
+		xpbd.setForXPBD(&cloth, &tetrahedron, &collider, &floor, &thread, tolerance_ratio);
 	}
 	setAveEdgeLength();
 	cursor.createVertices(0.03, camera_center);
@@ -441,12 +442,19 @@ void Scene::resetIntersectionState()
 }
 
 
+void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe, bool& record_matrix,
+	double& ave_iteration)
+{
+
+}
+
+
 void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe, bool& record_matrix,
-	double& ave_iteration, bool mouse_is_pressed_previous_current_frame)
+	double& ave_iteration)
 {
 	if (control_parameter[MOVE_OBJ_SCRIPT]) {
 		if (use_PD) {
-			draw_culling.moveScript(2);
+			move_object.moveScript(2);
 		}
 		control_parameter[MOVE_OBJ_SCRIPT] = false;
 	}
@@ -656,9 +664,7 @@ void Scene::getCursorPos(double* cursor_pos, std::vector<std::array<double, 3>>&
 }
 
 
-
-
-void Scene::setObjMoveInfo(Camera* camera, double* cursor_screen)
+void Scene::moveObj(Camera* camera, double* cursor_screen, bool only_move_vertex_pos)
 {
 	double cursor_pos[3];
 	double force_direction[3];
@@ -679,13 +685,15 @@ void Scene::setObjMoveInfo(Camera* camera, double* cursor_screen)
 	camera->getCursorPosInSpace(cursor_pos_in_space, cursor_screen, cursor_pos);
 	double displacement[3];
 	SUB(displacement, cursor_pos_in_space, cursor_pos);
-	draw_culling.move(intersection.obj_No, displacement);
+	move_object.move(intersection.obj_No, displacement, only_move_vertex_pos);
 
-	/*std::cout << "original after move " << std::endl;
-	std::cout << tetrahedron[1].mesh_struct.vertex_for_render[0][0] << " " << tetrahedron[1].mesh_struct.vertex_for_render[0][1] << " " << tetrahedron[1].mesh_struct.vertex_for_render[0][2] << std::endl;
-	std::cout << tetrahedron[1].mesh_struct.vertex_position[0][0] << " " << tetrahedron[1].mesh_struct.vertex_position[0][1] << " " << tetrahedron[1].mesh_struct.vertex_position[0][2] << std::endl;
-	*/
+}
 
+
+
+void Scene::setObjMoveInfo(Camera* camera, double* cursor_screen)
+{
+	moveObj(camera, cursor_screen, false);
 	for (unsigned int j = 0; j < cloth.size(); ++j) {
 		cloth[j].ori_vertices= cloth[j].mesh_struct.vertex_position;
 	}

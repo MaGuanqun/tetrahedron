@@ -20,8 +20,12 @@ void simu_main(GLFWwindow* window, Input* input) {
 	Camera camera(cameraPos, normalize(glm::vec3(0.0f, 1.0f, 0.0f)));
 	float zoom_value = 1.0;
 	CoordinateSystem coordinateSystem;
-	bool control_parameter[13];
-	memset(control_parameter, 0, 13);
+	bool control_parameter[16];
+	memset(control_parameter, 0, 16);
+	control_parameter[ONLY_COLLISION_TEST] = true;
+	control_parameter[USE_XPBD] = true;
+
+
 	ImGuiWindows imgui_windows;
 	float force_coe = 0.1;
 	std::vector<std::vector<bool>> wireframe(3);
@@ -75,40 +79,6 @@ void simu_main(GLFWwindow* window, Input* input) {
 	unsigned int floor_dimension=1;
 	bool floor_control[4] ={true,true,true,false};
 	double floor_value=-0.35;
-
-	//Eigen::Matrix<double, 3, 4> a;
-	//a.setOnes();
-	//for (int i = 0; i < 4; ++i) {
-	//	a(0, i) += i;
-	//}
-	//Vector3d b;
-	//b << 2, 3, 4;
-	//a=a.asDiagonal()
-	//a = a.colwise()-b;
-	//a = a.transpose();
-	//std::cout << a << std::endl;
-
-	//std::vector<unsigned int> a(2, 1);
-	////for (unsigned int i = 0; i < 2; ++i) {
-	//	//a.emplace_back(3);
-	////	a.back()++;
-	////}
-	//for (unsigned int i = 0; i < a.size(); ++i) {
-	//	std::cout << a[i] << " ";
-	//}
-
-	//unsigned int a = 1;
-	//a <<= 1;
-	//std::cout << "test " << a << std::endl;
-
-	//std::vector<double> a(8);
-	//double* a_ = a.data();
-	//for (unsigned int i = 0; i < 8; ++i) {
-	//	*(a_++) = i;
-	//}
-	//for (unsigned int i = 0; i < 8; ++i) {
-	//	std::cout << a[i] << " " << std::endl;
-	//}
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -223,7 +193,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 			scene.updateItrInfo(set_iteration_num);			
 			scene.setTolerance(tolerance_ratio);
 			scene.updateCloth(&camera, input->mouse.screen_pos, control_parameter, force_coe, record_matrix,
-				iteration_solver_iteration_num, input->mouse.leftButtonWasPressedPreviousAndThisFrame());
+				iteration_solver_iteration_num);
 			scene.drawScene(&camera, wireframe, hide, control_parameter);
 			scene.selectAnchor(control_parameter, set_anchor, input->mouse.screen_pos, input->mouse.left_press, input->mouse.prev_left_press, &camera, hide[TETRAHEDRON_]);
 			scene.obtainConvergenceInfo(convergence_rate, iteration_number);
@@ -237,15 +207,22 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 		imgui_windows.floorInfo(floor_control[0], floor_control[1], floor_control[2], floor_dimension, &floor_value, floor_control[3]);
 
+		
 		imgui_windows.controlWindow(control_parameter, &force_coe);
+		
 		imgui_windows.visualizationControlPanel(control_parameter[INITIAL_CAMERA], wireframe, hide);
 
 		coordinateSystem.draw(&camera, cameraPos);
 		scene.drawSelectRange(set_anchor, input->mouse.left_press, input->mouse.prev_left_press);
 		time = (double)(clock() - start_time);
 		imgui_windows.infoWindow(cloth_info, cloth_mass, tetrahedron_info, tetrahedron_mass, time, iteration_number, set_iteration_num, convergence_rate, scene.time_stamp, edit_PD_conv_rate, control_parameter[START_SIMULATION]);
-	//	imgui_windows.iterationSolverInfoWindow(iteration_solver_iteration_num, use_itr_solver_method, itr_solver_items, itr_solver_item,
-	//		IM_ARRAYSIZE(itr_solver_items), &iteration_solver_conve_rate, record_matrix);
+		if (!control_parameter[ONLY_COLLISION_TEST]) {
+			if (!control_parameter[USE_XPBD]) {
+				imgui_windows.iterationSolverInfoWindow(iteration_solver_iteration_num, use_itr_solver_method, itr_solver_items, itr_solver_item,
+					IM_ARRAYSIZE(itr_solver_items), &iteration_solver_conve_rate, record_matrix);
+			}			
+		}
+	
 		
 		basic_imgui.imguiEndFrame();
 		glfwSwapBuffers(window);
