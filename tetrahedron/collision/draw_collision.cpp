@@ -116,17 +116,21 @@ void DrawCollision::reorganzieDataOfObjects()
 
 	vertex_for_render.resize(total_obj_num);
 	vertex_normal_for_render.resize(total_obj_num);
+	vertex_number.resize(total_obj_num);
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
-		vertex_for_render[i] = &cloth->data()[i].mesh_struct.vertex_for_render;
-		vertex_normal_for_render[i] = &cloth->data()[i].mesh_struct.vertex_normal_for_render;
+		vertex_number[i] = cloth->data()[i].mesh_struct.vertex_for_render.size();
+		vertex_for_render[i] = cloth->data()[i].mesh_struct.vertex_for_render.data();
+		vertex_normal_for_render[i] = cloth->data()[i].mesh_struct.vertex_normal_for_render.data();
 	}
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
-		vertex_for_render[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct.vertex_for_render;
-		vertex_normal_for_render[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct.vertex_normal_for_render;
+		vertex_number[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_for_render.size();
+		vertex_for_render[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_for_render.data();
+		vertex_normal_for_render[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_normal_for_render.data();
 	}
 	for (unsigned int i = 0; i < collider->size(); ++i) {
-		vertex_for_render[i + tetrahedron_end_index] = &collider->data()[i].mesh_struct.vertex_for_render;
-		vertex_normal_for_render[i + tetrahedron_end_index] = &collider->data()[i].mesh_struct.vertex_normal_for_render;
+		vertex_number[i + tetrahedron_end_index] = collider->data()[i].mesh_struct.vertex_for_render.size();
+		vertex_for_render[i + tetrahedron_end_index] = collider->data()[i].mesh_struct.vertex_for_render.data();
+		vertex_normal_for_render[i + tetrahedron_end_index] =collider->data()[i].mesh_struct.vertex_normal_for_render.data();
 	}
 
 }
@@ -161,6 +165,9 @@ void DrawCollision::setElementIndices(bool show_vertex_triangle)
 	this->show_vertex_triangle = show_vertex_triangle;
 	setBuffer();
 }
+
+
+void 
 
 
 
@@ -208,7 +215,10 @@ void DrawCollision::setEdgeIndices()
 	}
 }
 
-void DrawCollision::draw(Light& light, float& far_plane, Camera* camera, Shader* object_shader_front)
+
+
+
+void DrawCollision::drawVT_triangle(Light& light, float& far_plane, Camera* camera, Shader* object_shader_front)
 {
 	object_shader_front->use();
 	object_shader_front->setInt("depthMap", 0);
@@ -224,15 +234,36 @@ void DrawCollision::draw(Light& light, float& far_plane, Camera* camera, Shader*
 	object_shader_front->setMat4("view", camera->GetViewMatrix());
 	object_shader_front->setMat4("model", glm::mat4(1.0));
 	object_shader_front->setFloat("transparence", 1.0);
-	object_shader_front->setVec3("material.Kd", glm::vec3(material.front_material.Kd[0], material.front_material.Kd[1], material.front_material.Kd[2]));
-	object_shader_front->setVec3("material.Ka", glm::vec3(material.front_material.Ka[0], material.front_material.Ka[1], material.front_material.Ka[2]));
-	object_shader_front->setVec3("material.Ks", glm::vec3(material.front_material.Ks[0], material.front_material.Ks[1], material.front_material.Ks[2]));
-	object_shader_front->setFloat("material.Ns", material.front_material.Ns);
-	glBindVertexArray(VAO);
-	glPolygonMode(GL_FRONT, GL_FILL);
-	glCullFace(GL_BACK);
-	glDrawElements(GL_TRIANGLES, 3 * mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		object_shader_front->setFloat("material.Ns", cloth->data()[i].material.front_material.Ns);
+		object_shader_front->setVec3("material.Kd", glm::vec3(cloth->data()[i].material.front_material.Kd[1], cloth->data()[i].material.front_material.Kd[2], cloth->data()[i].material.front_material.Kd[0]));
+		object_shader_front->setVec3("material.Ka", glm::vec3(cloth->data()[i].material.front_material.Ka[1], cloth->data()[i].material.front_material.Ka[2], cloth->data()[i].material.front_material.Ka[0]));
+		object_shader_front->setVec3("material.Ks", glm::vec3(cloth->data()[i].material.front_material.Ks[1], cloth->data()[i].material.front_material.Ks[2], cloth->data()[i].material.front_material.Ks[0]));
+		glBindVertexArray(VT_VAO[i]);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glDrawElements(GL_TRIANGLES,  triangle_vertex_index[i].size(), GL_UNSIGNED_INT, 0);
+	}
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		object_shader_front->setFloat("material.Ns", tetrahedron->data()[i].material.Ns);
+		object_shader_front->setVec3("material.Kd", glm::vec3(tetrahedron->data()[i].material.Kd[1], tetrahedron->data()[i].material.Kd[2], tetrahedron->data()[i].material.Kd[0]));
+		object_shader_front->setVec3("material.Ka", glm::vec3(tetrahedron->data()[i].material.Ka[1], tetrahedron->data()[i].material.Ka[2], tetrahedron->data()[i].material.Ka[0]));
+		object_shader_front->setVec3("material.Ks", glm::vec3(tetrahedron->data()[i].material.Ks[1], tetrahedron->data()[i].material.Ks[2], tetrahedron->data()[i].material.Ks[0]));
+		glBindVertexArray(VT_VAO[i+cloth->size()]);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glDrawElements(GL_TRIANGLES, triangle_vertex_index[i + cloth->size()].size(), GL_UNSIGNED_INT, 0);
+	}
+	for (unsigned int i = 0; i < collider->size(); ++i) {
+		object_shader_front->setFloat("material.Ns", collider->data()[i].material.front_material.Ns);
+		object_shader_front->setVec3("material.Kd", glm::vec3(collider->data()[i].material.front_material.Kd[1], collider->data()[i].material.front_material.Kd[2], collider->data()[i].material.front_material.Kd[0]));
+		object_shader_front->setVec3("material.Ka", glm::vec3(collider->data()[i].material.front_material.Ka[1], collider->data()[i].material.front_material.Ka[2], collider->data()[i].material.front_material.Ka[0]));
+		object_shader_front->setVec3("material.Ks", glm::vec3(collider->data()[i].material.front_material.Ks[1], collider->data()[i].material.front_material.Ks[2], collider->data()[i].material.front_material.Ks[0]));
+		glBindVertexArray(VT_VAO[i+ tetrahedron_end_index]);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glDrawElements(GL_TRIANGLES, collider_triangle_vertex_index[i].size(), GL_UNSIGNED_INT, 0);
+	}
+	glBindVertexArray(0);
 }
+
 
 
 void DrawCollision::setBuffer()
@@ -255,13 +286,13 @@ void DrawCollision::setColliderBuffer(unsigned int obj_index)
 {
 	glBindVertexArray(VT_VAO[obj_index]);
 	glBindBuffer(GL_ARRAY_BUFFER, VT_VBO[3 * obj_index]);
-	glBufferData(GL_ARRAY_BUFFER, vertex_for_render[obj_index]->size() * sizeof(std::array<double, 3>), vertex_for_render[obj_index]->data()[0].data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertex_number[obj_index]* sizeof(std::array<double, 3>), vertex_for_render[obj_index][0].data(), GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VT_EBO[obj_index]);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, collider_triangle_vertex_index[obj_index- tetrahedron_end_index].size() * sizeof(int), collider_triangle_vertex_index[obj_index- tetrahedron_end_index].data(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
 	glBindBuffer(GL_ARRAY_BUFFER, VT_VBO[3 * obj_index + 1]);
-	glBufferData(GL_ARRAY_BUFFER, vertex_normal_for_render[obj_index]->size() * sizeof(std::array<double, 3>), vertex_normal_for_render[obj_index]->data()[0].data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertex_number[obj_index] * sizeof(std::array<double, 3>), vertex_normal_for_render[obj_index][0].data(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
 	glBindVertexArray(0);
@@ -271,13 +302,13 @@ void DrawCollision::setEdgeEdgeBuffer(unsigned int obj_index)
 {
 	glBindVertexArray(EE_VAO[obj_index]);
 	glBindBuffer(GL_ARRAY_BUFFER, EE_VBO[3 * obj_index]);
-	glBufferData(GL_ARRAY_BUFFER, vertex_for_render[obj_index]->size() * sizeof(std::array<double, 3>), vertex_for_render[obj_index]->data()[0].data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertex_number[obj_index]* sizeof(std::array<double, 3>), vertex_for_render[obj_index][0].data(), GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EE_EBO[obj_index]);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, edge_vertex_index[obj_index].size() * sizeof(unsigned int), edge_vertex_index[obj_index].data(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
 	glBindBuffer(GL_ARRAY_BUFFER, EE_VBO[3 * obj_index + 1]);
-	glBufferData(GL_ARRAY_BUFFER, vertex_normal_for_render[obj_index]->size() * sizeof(std::array<double, 3>), vertex_normal_for_render[obj_index]->data()[0].data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertex_number[obj_index]* sizeof(std::array<double, 3>), vertex_normal_for_render[obj_index][0].data(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
 	glBindVertexArray(0);
@@ -289,13 +320,13 @@ void DrawCollision::setVertexTriangleBuffer(unsigned int obj_index)
 {
 	glBindVertexArray(VT_VAO[obj_index]);
 	glBindBuffer(GL_ARRAY_BUFFER, VT_VBO[3*obj_index]);
-	glBufferData(GL_ARRAY_BUFFER, vertex_for_render[obj_index]->size() * sizeof(std::array<double, 3>), vertex_for_render[obj_index]->data()[0].data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertex_number[obj_index]* sizeof(std::array<double, 3>), vertex_for_render[obj_index][0].data(), GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VT_EBO[obj_index]);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER,triangle_vertex_index[obj_index].size() * sizeof(int), triangle_vertex_index[obj_index].data(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
 	glBindBuffer(GL_ARRAY_BUFFER, VT_VBO[3*obj_index+1]);
-	glBufferData(GL_ARRAY_BUFFER, vertex_normal_for_render[obj_index]->size() * sizeof(std::array<double, 3>), vertex_normal_for_render[obj_index]->data()[0].data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertex_number[obj_index] * sizeof(std::array<double, 3>), vertex_normal_for_render[obj_index][0].data(), GL_STATIC_DRAW);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
 	glBindVertexArray(0);

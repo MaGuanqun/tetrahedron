@@ -38,6 +38,37 @@ void DrawVertex::setVertex(std::vector<std::array<double, 3>>& v_list, std::vect
 	}
 }
 
+void DrawVertex::setInObjNum(unsigned int obj_num)
+{
+	vertex_pos.resize(obj_num);
+	normal.resize(obj_num);
+	vertex_sphere_indices.resize(obj_num);
+	VAO1.resize(obj_num);
+	VBO1.resize(obj_num << 1);
+	EBO1.resize(obj_num);
+	genBuffer1();
+}
+
+
+void DrawVertex::setCollisionVertexData(std::vector<std::array<double, 3>*>& v_list, std::vector<std::vector<unsigned int>>& vertex_index)
+{
+	initialVertex(v_list.size(), vertex_index);
+	setVertexAccumulate(v_list, vertex_index);
+	setBuffer1();
+}
+
+void DrawVertex::initialVertex(unsigned int obj_num, std::vector<std::vector<unsigned int>>& vertex_index)
+{
+	for (unsigned int i = 0; i < obj_num; ++i) {
+		vertex_pos[i].clear();
+		vertex_pos[i].reserve(sphere_vertex_num* vertex_index[i].size());
+		normal[i].clear();
+		normal[i].reserve(sphere_vertex_num * vertex_index[i].size());
+		vertex_sphere_indices[i].clear();
+		vertex_sphere_indices[i].reserve(basic_index.size() * vertex_index[i].size());
+	}
+}
+
 void DrawVertex::initialVertex(int vertex_num)
 {
 	draw_vertex.clear();
@@ -47,6 +78,29 @@ void DrawVertex::initialVertex(int vertex_num)
 	indices.clear();
 	indices.reserve(vertex_num * basic_index.size());
 }
+
+
+void DrawVertex::setVertexAccumulate(std::vector<std::array<double, 3>*>& v_list, std::vector<std::vector<unsigned int>>& vertex_index)
+{
+	std::array<double, 3>v;
+	int ind;
+	for (unsigned int k = 0; k < vertex_index.size(); ++k) {
+		for (int i = 0; i < vertex_index[k].size(); i++) {
+			for (int j = 0; j < sphere_vertex_num; j++) {
+				SUM(v.data(), v_list[k][vertex_index[k][i]].data(), sphere[j].data());
+				vertex_pos[k].push_back(v);
+			}
+			normal[k].insert(normal[k].end(), sphere_normal.begin(), sphere_normal.end());
+			ind = i * sphere_vertex_num;
+			for (int j = 0; j < basic_index.size(); ++j) {
+				vertex_sphere_indices[k].push_back(basic_index[j] + ind);
+			}
+		}
+	}
+}
+
+
+
 void DrawVertex::setVertexAccumulate(std::vector<std::array<double, 3>>& v_list, std::vector<int>& index)
 {
 
@@ -198,11 +252,44 @@ void DrawVertex::setBasicSphere()
 	}
 }
 
+void DrawVertex::genBuffer1()
+{
+	glGenVertexArrays(VAO1.size(), VAO1.data());
+	glGenBuffers(2* VAO1.size(), VBO1.data());
+	glGenBuffers(VAO1.size(), EBO1.data());
+
+}
+
 void DrawVertex::genBuffer()
 {
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(2, VBO);
 	glGenBuffers(1, &EBO);
+}
+
+void DrawVertex::setBuffer1()
+{
+	for (unsigned int i = 0; i < VAO1.size(); ++i) {
+		if (!vertex_pos[i].empty()) {
+			setBuffer1(i);
+		}
+	}
+}
+
+void DrawVertex::setBuffer1(unsigned int obj_No)
+{
+	glBindVertexArray(VAO1[obj_No]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO1[obj_No<<1]);
+	glBufferData(GL_ARRAY_BUFFER, vertex_pos[obj_No].size() * sizeof(std::array<double, 3>), vertex_pos[obj_No][0].data(), GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO1[obj_No]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, vertex_sphere_indices[obj_No].size() * sizeof(int), &vertex_sphere_indices[obj_No][0], GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO1[(obj_No<<1)+1]);
+	glBufferData(GL_ARRAY_BUFFER, normal[obj_No].size() * sizeof(std::array<double, 3>), normal[obj_No][0].data(), GL_STATIC_DRAW);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
+	glBindVertexArray(0);
 }
 
 void DrawVertex::setBuffer()
@@ -234,6 +321,34 @@ void DrawVertex::draw(Camera* camera,glm::vec3& color,float transparence)
 		shader->setVec3("light.diffuse", light.diffuse);
 		shader->setVec3("light.specular", light.specular);
 		shader->setVec3("viewPos", camera->position);
+		shader->setFloat("transparence", transparence);
+		glBindVertexArray(VAO);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+	}
+}
+
+
+void DrawVertex::setShaderData(Camera* camera)
+{
+	shader->use();
+	shader->setMat4("projection", camera->GetProjectMatrix());
+	shader->setMat4("view", camera->GetViewMatrix());
+	shader->setMat4("model", glm::mat4(1.0));
+	shader->setVec3("lightPos", camera->position);
+	shader->setVec3("light.ambient", light.ambient);
+	shader->setVec3("light.diffuse", light.diffuse);
+	shader->setVec3("light.specular", light.specular);
+	shader->setVec3("viewPos", camera->position);
+}
+
+void DrawVertex::drawCollisionVertex(unsigned int obj_index, glm::vec3& color, float transparence)
+{
+	if (!.empty()) {
+	
+		shader->setVec3("color", color);
+		
 		shader->setFloat("transparence", transparence);
 		glBindVertexArray(VAO);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

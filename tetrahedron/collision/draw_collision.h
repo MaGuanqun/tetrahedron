@@ -5,6 +5,8 @@
 #include"../object/tetrahedron.h"
 #include"../thread.h"
 #include"../external/shader.h"
+#include"../basic/draw_vertex.h"
+
 
 class DrawCollision
 {
@@ -16,14 +18,15 @@ public:
 
 	void setElementIndices(bool show_vertex_triangle);
 	bool show_vertex_triangle;
-
+	void drawVT_triangle(Light& light, float& far_plane, Camera* camera, Shader* object_shader_front);
+	void drawVT_point();
 private:
 
 	std::vector<unsigned int>* point_triangle_target_pos_index;
 	std::vector<unsigned int>* point_triangle_collider_target_pos_index;
 	std::vector<unsigned int>* edge_edge_target_pos_index;
 
-
+	DrawVertex draw_vertex;
 
 
 	std::vector<Cloth>* cloth;
@@ -73,8 +76,9 @@ private:
 	void setEdgeIndices();
 	void setVertexTriangleBuffer(unsigned int obj_index);
 	void setEdgeEdgeBuffer(unsigned int obj_index);
-	std::vector<std::vector<std::array<double, 3>>*> vertex_for_render;
-	std::vector<std::vector<std::array<double, 3>>*> vertex_normal_for_render;
+	std::vector<unsigned int>vertex_number;
+	std::vector<std::array<double, 3>*> vertex_for_render;
+	std::vector<std::array<double, 3>*> vertex_normal_for_render;
 	void setBuffer();
 	void setColliderBuffer(unsigned int obj_index);
 
@@ -84,6 +88,6 @@ private:
 	void resetBooleanVector();
 
 
-	void draw(Light& light, float& far_plane, Camera* camera, Shader* object_shader_front);
+
 
 };
