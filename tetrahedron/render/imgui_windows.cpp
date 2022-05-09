@@ -38,6 +38,14 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 			helpMarker(
 				"Reset with current stiffness");
 		}
+		else {
+			if (ImGui::Button("Start Detection", ImVec2(160, 25)))
+			{
+				control_parameter[ONE_FRAME] = true;
+				control_parameter[MOVE_OBJ] = false;
+				control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
+			}
+		}
 		if (ImGui::Button("Initial Simulation", ImVec2(160, 25))) {
 			control_parameter[INITIAL_SIMULATION] = true;
 		}
@@ -180,7 +188,8 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 }
 
 
-void ImGuiWindows::visualizationControlPanel(bool& reset_camera, std::vector<std::vector<bool>>& wireframe, std::vector<std::vector<bool>>& hide)
+void ImGuiWindows::visualizationControlPanel(bool& reset_camera, std::vector<std::vector<bool>>& wireframe, 
+	std::vector<std::vector<bool>>& hide, bool only_collision_test, std::vector<std::vector<bool>>& show_collision_element)
 {
 	ImGui::SetNextWindowPos(ImVec2(0, 710));
 	ImGui::SetNextWindowSize(ImVec2(240, 370));
@@ -225,6 +234,22 @@ void ImGuiWindows::visualizationControlPanel(bool& reset_camera, std::vector<std
 					wireframe[COLLIDER_][i] = true;
 				}
 			}
+			if (only_collision_test) {
+				if (show_collision_element[COLLIDER_][i]) {
+					tempString = "Hide Collision##Collider" + std::to_string(i);
+					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+					{
+						show_collision_element[COLLIDER_][i] = false;
+					}
+				}
+				else {
+					tempString = "Show Collision##Collider" + std::to_string(i);
+					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+					{
+						show_collision_element[COLLIDER_][i] = true;
+					}
+				}
+			}
 			ImGui::TreePop();
 		}
 	}
@@ -260,6 +285,22 @@ void ImGuiWindows::visualizationControlPanel(bool& reset_camera, std::vector<std
 					wireframe[CLOTH_][i] = true;
 				}
 			}
+			if (only_collision_test) {
+				if (show_collision_element[CLOTH_][i]) {
+					tempString = "Hide Collision##cloth" + std::to_string(i);
+					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+					{
+						show_collision_element[CLOTH_][i] = false;
+					}
+				}
+				else {
+					tempString = "Show Collision##cloth" + std::to_string(i);
+					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+					{
+						show_collision_element[CLOTH_][i] = true;
+					}
+				}
+			}
 			ImGui::TreePop();
 		}
 	}
@@ -293,6 +334,22 @@ void ImGuiWindows::visualizationControlPanel(bool& reset_camera, std::vector<std
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
 					wireframe[TETRAHEDRON_][i] = true;
+				}
+			}
+			if (only_collision_test) {
+				if (show_collision_element[TETRAHEDRON_][i]) {
+					tempString = "Hide Collision##tetrahedron" + std::to_string(i);
+					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+					{
+						show_collision_element[TETRAHEDRON_][i] = false;
+					}
+				}
+				else {
+					tempString = "Show Collision##tetrahedron" + std::to_string(i);
+					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+					{
+						show_collision_element[TETRAHEDRON_][i] = true;
+					}
 				}
 			}
 			ImGui::TreePop();

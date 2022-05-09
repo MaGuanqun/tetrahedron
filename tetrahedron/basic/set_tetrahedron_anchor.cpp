@@ -27,7 +27,7 @@ void SetTetrahedronAnchor::setCorner(double* screen_pos, bool pre_press_state, s
 		setPosition();
 		for (int i = 0; i < tetrahedron.size(); ++i) {
 			if (!hide[i]) {
-				findAllSelectVertex(tetrahedron[i].mesh_struct.vertex_for_render, camera, tetrahedron[i].mesh_struct.anchor_vertex);			
+				findAllSelectVertex(tetrahedron[i].mesh_struct.vertex_position, camera, tetrahedron[i].mesh_struct.anchor_vertex);
 			}
 		}	
 		int all_select_num = 0;
@@ -39,7 +39,7 @@ void SetTetrahedronAnchor::setCorner(double* screen_pos, bool pre_press_state, s
 		draw_vertex.initialVertex(all_select_num / 5);
 		for (int i = 0; i < tetrahedron.size(); ++i) {
 			if (!hide[i]) {
-				findSurfaceVertex(tetrahedron[i].mesh_struct.vertex_for_render, camera, tetrahedron[i].mesh_struct.anchor_vertex, tetrahedron[i].mesh_struct.vertex_on_surface);
+				findSurfaceVertex(tetrahedron[i].mesh_struct.vertex_position, camera, tetrahedron[i].mesh_struct.anchor_vertex, tetrahedron[i].mesh_struct.vertex_on_surface);
 			}
 		}
 		draw_vertex.draw(camera, vertex_color);

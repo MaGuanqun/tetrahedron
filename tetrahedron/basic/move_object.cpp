@@ -54,6 +54,7 @@ void MoveObject::move(unsigned int obj_No, double* displacement, bool only_move_
 {
 	this->displacement = displacement;
 	thread->assignTask(this, MOVE_OBJECT, obj_No);
+	std::cout << only_move_vertex_pos << std::endl;
 	if (!only_move_vertex_pos) {
 		if (obj_No < cloth->size()) {
 			cloth->data()[obj_No].mesh_struct.vertex_for_render = cloth->data()[obj_No].mesh_struct.vertex_position;
@@ -119,17 +120,17 @@ void MoveObject::move(int thread_No, unsigned int obj_No)
 	memcpy(displacement_, displacement, 24);
 
 	if (obj_No < cloth->size()) {
-		position = cloth->data()[obj_No].mesh_struct.vertex_for_render.data();
+		position = cloth->data()[obj_No].mesh_struct.vertex_position.data();
 		vertex_start = cloth->data()[obj_No].mesh_struct.vertex_index_begin_per_thread[thread_No];
 		vertex_end = cloth->data()[obj_No].mesh_struct.vertex_index_begin_per_thread[thread_No + 1];
 	}
 	else if (obj_No < tetrahedron_end_index) {
-		position = tetrahedron->data()[obj_No - cloth->size()].mesh_struct.vertex_for_render.data();
+		position = tetrahedron->data()[obj_No - cloth->size()].mesh_struct.vertex_position.data();
 		vertex_start = tetrahedron->data()[obj_No - cloth->size()].mesh_struct.vertex_index_begin_per_thread[thread_No];
 		vertex_end = tetrahedron->data()[obj_No - cloth->size()].mesh_struct.vertex_index_begin_per_thread[thread_No + 1];
 	}
 	else {
-		position = collider->data()[obj_No - tetrahedron_end_index].mesh_struct.vertex_for_render.data();
+		position = collider->data()[obj_No - tetrahedron_end_index].mesh_struct.vertex_position.data();
 		vertex_start = collider->data()[obj_No - tetrahedron_end_index].mesh_struct.vertex_index_begin_per_thread[thread_No];
 		vertex_end = collider->data()[obj_No - tetrahedron_end_index].mesh_struct.vertex_index_begin_per_thread[thread_No + 1];
 	}

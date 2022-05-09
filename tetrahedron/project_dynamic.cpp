@@ -811,19 +811,19 @@ void ProjectDynamic::updateRenderPosition()
 		mesh_struct = &(*cloth)[j].mesh_struct;
 		mesh_struct->vertex_for_render = mesh_struct->vertex_position;
 		mesh_struct->face_normal_for_render = mesh_struct->face_normal;
-		thread->assignTask(mesh_struct, VERTEX_NORMAL_RENDER);
+		thread->assignTask(mesh_struct, VERTEX_NORMAL);
 	}
 	for (unsigned int j = 0; j < total_tetrahedron_num; ++j) {
 		mesh_struct_ = &(*tetrahedron)[j].mesh_struct;
 		mesh_struct_->vertex_for_render = mesh_struct_->vertex_position;
 		mesh_struct_->face_normal_for_render = mesh_struct_->face_normal;
-		thread->assignTask(mesh_struct_, VERTEX_NORMAL_RENDER);
+		thread->assignTask(mesh_struct_, VERTEX_NORMAL);
 	}
 	for (unsigned int j = 0; j < total_collider_num; ++j) {
 		mesh_struct = &(*collider)[j].mesh_struct;
 		mesh_struct->vertex_for_render = mesh_struct->vertex_position;
 		mesh_struct->face_normal_for_render = mesh_struct->face_normal;
-		thread->assignTask(mesh_struct, VERTEX_NORMAL_RENDER);
+		thread->assignTask(mesh_struct, VERTEX_NORMAL);
 	}
 }
 

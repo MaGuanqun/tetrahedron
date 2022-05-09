@@ -20,8 +20,8 @@ void TestDrawCollision::setCollisionData()
 
 
 
-void TestDrawCollision::drawCollision(bool draw_VT, Light& light, float& far_plane, Camera* camera, Shader* object_shader_front)
+void TestDrawCollision::drawCollision(bool draw_VT, Light& light,Camera* camera, Shader* object_shader_front, std::vector<std::vector<bool>>& show_collision_element)
 {
-	draw_collision.drawCollision(draw_VT, light, far_plane, camera, object_shader_front);
+	draw_collision.drawCollision(draw_VT, light, camera, object_shader_front, show_collision_element);
 }
 

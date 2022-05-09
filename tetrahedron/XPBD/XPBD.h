@@ -38,6 +38,7 @@ public:
 	void updateTetrahedronAnchorVertices();
 	void addExternalForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int obj_No);
 	void updateItrInfo(int* iteration_num);
+
 private:
 	double gravity[3];
 
@@ -84,5 +85,6 @@ private:
 	bool perform_collision;
 
 	void updateNormal();
+	void updateRenderVertexNormal();
 };
 

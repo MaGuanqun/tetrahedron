@@ -174,7 +174,7 @@ void XPBD::PBDsolve()
 		if (sub_step_num > 1) {
 			thread->assignTask(this, SET_POS_PREDICT_SUB_TIME_STEP);
 		}
-
+	
 		for (unsigned int i = 0; i < iteration_number; ++i) {
 			if (perform_collision) {
 				updateNormal();
@@ -183,9 +183,10 @@ void XPBD::PBDsolve()
 		}
 		thread->assignTask(this, XPBD_VELOCITY);
 		updatePosition();
+		updateRenderNormal();
 	}
-	
-	updateRenderNormal();
+	updateRenderVertexNormal();
+
 }
 
 
@@ -225,26 +226,35 @@ void XPBD::updateNormal()
 }
 
 
-void XPBD::updateRenderNormal()
+void XPBD::updateRenderVertexNormal()
 {
-	TriangleMeshStruct* mesh_struct;
-	for (unsigned int j = 0; j < cloth->size(); ++j) {
-		mesh_struct = &(*cloth)[j].mesh_struct;
-		thread->assignTask(mesh_struct, FACE_NORMAL_RENDER);
-		thread->assignTask(mesh_struct, VERTEX_NORMAL_RENDER);
-	}
-	for (unsigned int j = 0; j < collider->size(); ++j) {
-		mesh_struct = &(*collider)[j].mesh_struct;
-		thread->assignTask(mesh_struct, FACE_NORMAL_RENDER);
-		thread->assignTask(mesh_struct, VERTEX_NORMAL_RENDER);
-	}
-	TetrahedronMeshStruct* mesh_struct_;
-	for (unsigned int j = 0; j < tetrahedron->size(); ++j) {
-		mesh_struct_ = &(*tetrahedron)[j].mesh_struct;
-		thread->assignTask(mesh_struct_, FACE_NORMAL_RENDER);
-		thread->assignTask(mesh_struct_, VERTEX_NORMAL_RENDER);
+	for (unsigned int i = 0; i < collider->size(); ++i) {
+		thread->assignTask(&(*collider)[i].mesh_struct, VERTEX_NORMAL_RENDER);
+		(*collider)[i].mesh_struct.vertex_normal = (*collider)[i].mesh_struct.vertex_normal_for_render;
 	}
 
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		thread->assignTask(&(*cloth)[i].mesh_struct, VERTEX_NORMAL_RENDER);
+		(*cloth)[i].mesh_struct.vertex_normal = (*cloth)[i].mesh_struct.vertex_normal_for_render;
+	}
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		thread->assignTask(&(*tetrahedron)[i].mesh_struct, VERTEX_NORMAL_RENDER);
+		(*tetrahedron)[i].mesh_struct.vertex_normal = (*tetrahedron)[i].mesh_struct.vertex_normal_for_render;
+	}
+}
+
+
+void XPBD::updateRenderNormal()
+{
+	for (unsigned int i = 0; i < collider->size(); ++i) {
+		thread->assignTask(&(*collider)[i].mesh_struct, FACE_NORMAL_RENDER);
+	}
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL_RENDER);
+	}
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL_RENDER);
+	}
 }
 
 

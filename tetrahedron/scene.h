@@ -12,6 +12,7 @@
 #include"XPBD/XPBD.h"
 #include"./basic/floor.h"
 #include"./basic/move_object.h"
+#include"collision/test_draw_collision.h"
 
 class Scene
 {
@@ -27,9 +28,9 @@ public:
 	bool* control_parameter;
 	void initial();
 	void reset();
-	void loadMesh(std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio);
+	void loadMesh(std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio, bool* control_parameter);
 	void drawScene(Camera* camera, std::vector<std::vector<bool>>& wireframe, std::vector<std::vector<bool>>& hide,
-		bool* control_parameter);
+		bool* control_parameter, std::vector<std::vector<bool>>& show_collision_element);
 	void getClothInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 3>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 4>>& collision_stiffness);
 	void updateCloth(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe, bool& record_matrix,
 		double& ave_iteration); // bool mouse_is_pressed_previous_current_frame
@@ -56,6 +57,7 @@ public:
 
 private:
 	bool use_PD;
+	bool only_test_collision;
 	Light light;
 	int cloth_num, collider_num, tetrahedron_num;
 
@@ -113,4 +115,8 @@ private:
 	Floor floor;
 	MoveObject move_object;
 	void moveObj(Camera* camera, double* cursor_screen, bool only_move_vertex_pos);
+	void updateObjSimulation(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe, bool& record_matrix,
+		double& ave_iteration);
+	void updateSceneCollisionTest(Camera* camera, double* cursor_screen, bool* control_parameter);
+	TestDrawCollision test_draw_collision;
 };

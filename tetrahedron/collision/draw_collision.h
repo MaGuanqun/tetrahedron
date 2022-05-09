@@ -18,7 +18,7 @@ public:
 
 	void setElementIndices();
 
-	void drawCollision(bool draw_VT, Light& light, float& far_plane, Camera* camera, Shader* object_shader_front);
+	void drawCollision(bool draw_VT, Light& light, Camera* camera, Shader* object_shader_front, std::vector<std::vector<bool>>& show_collision_element);
 
 
 private:
@@ -89,7 +89,7 @@ private:
 	void initialBoolean();
 	void resetBooleanVector();
 
-	void drawVertex(Camera* camera);
-	void drawVT_triangle(Light& light, float& far_plane, Camera* camera, Shader* object_shader_front);
+	void drawVertex(Camera* camera, std::vector<std::vector<bool>>& show_collision_element);
+	void drawVT_triangle(Light& light, Camera* camera, Shader* object_shader_front, std::vector<std::vector<bool>>& show_collision_element);
 
 };
