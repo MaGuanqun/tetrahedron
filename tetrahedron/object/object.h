@@ -29,6 +29,8 @@ protected:
 	void setRepresentativeVertex(std::vector<std::array<int, 3>>& face, std::vector<MeshStruct::Vertex>& vertex);
 
 	std::vector<std::array<double, 6>> obj_aabb_per_thread;
+	std::vector<std::array<double, 6>> current_obj_pos_aabb_per_thread;
+
 
 	void combineObjAABB();
 	void getAABB(double* target, double* aabb0, double* aabb1, double* aabb2, double* aabb3);
@@ -56,6 +58,7 @@ public:
 	std::vector<std::vector<std::vector<unsigned int>>>triangle_neighbor_obj_triangle;
 
 	double obj_aabb[6];
-
+	double current_obj_pos_aabb[6];
+	void combineCurrentAABB();
 
 };

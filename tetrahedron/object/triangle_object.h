@@ -24,7 +24,7 @@ public:
 	std::vector<int> vertex_from_rep_triangle_index;
 	void getEdgeTriangleAABBPerThread(int thread_No);
 	void getVertexAABBPerThread(int thread_No, bool has_tolerance);
-	
+	void getCurrentPosAABB(int thread_No);
 private:
 	
 };

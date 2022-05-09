@@ -5,6 +5,7 @@ void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 {
 	total_thread_num = std::thread::hardware_concurrency();
 	obj_aabb_per_thread.resize(total_thread_num);
+	current_obj_pos_aabb_per_thread.resize(total_thread_num);
 	this->thread = thread;
 	mesh_struct.thread = thread;
 	setMeshStruct(density, ori_mesh);
@@ -70,6 +71,13 @@ void Tetrahedron::setRepresentativePrimitve()
 	}
 }
 
+void Tetrahedron::obtainCurrentAABB()
+{
+	thread->assignTask(this, CURRENT_AABB);
+	combineCurrentAABB();
+}
+
+
 void Tetrahedron::obtainAABB(bool has_tolerace)
 {
 	if (has_tolerace) {
@@ -83,6 +91,29 @@ void Tetrahedron::obtainAABB(bool has_tolerace)
 	combineObjAABB();
 
 	thread->assignTask(this, TETRAHEDRON_AABB);
+}
+
+//CURRENT_AABB
+void Tetrahedron::getCurrentPosAABB(int thread_No)
+{
+	double aabb[6];
+	memset(aabb + 3, 0xFE, 24); //set double to -5.31401e+303
+	memset(aabb, 0x7F, 24); //set double to 1.38242e+306
+	std::array<double, 3>* vertex = mesh_struct.vertex_position.data();
+	unsigned int end = mesh_struct.vertex_index_begin_per_thread[thread_No + 1];
+	for (unsigned int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < end; ++i) {
+		for (unsigned int j = 0; j < 3; ++j) {
+			if (aabb[j] > vertex[i].data()[j]) {
+				aabb[j] = vertex[i].data()[j];
+			}
+		}
+		for (unsigned int j = 3; j < 6; ++j) {
+			if (aabb[j] < vertex[i].data()[j-3]) {
+				aabb[j] = vertex[i].data()[j-3];
+			}
+		}
+	}
+	memcpy(current_obj_pos_aabb_per_thread[thread_No].data(), aabb, 48);
 }
 
 

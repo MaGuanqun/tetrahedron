@@ -119,4 +119,6 @@ private:
 		double& ave_iteration);
 	void updateSceneCollisionTest(Camera* camera, double* cursor_screen, bool* control_parameter);
 	TestDrawCollision test_draw_collision;
+
+	void getCurrentAABB();
 };

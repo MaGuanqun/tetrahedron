@@ -40,6 +40,7 @@ void Collider::loadMesh(OriMesh& ori_mesh, Thread* thread)
 	this->thread = thread;
 	total_thread_num = std::thread::hardware_concurrency();
 	obj_aabb_per_thread.resize(total_thread_num);
+	current_obj_pos_aabb_per_thread.resize(total_thread_num);
 	setMeshStruct(ori_mesh);
 	mesh_struct.thread = thread;
 	mesh_struct.initialNormalSize();
@@ -82,7 +83,11 @@ void Collider::obtainAABB(bool has_tolerace)
 	combineObjAABB();
 }
 
-
+void Collider::obtainCurrentAABB()
+{
+	thread->assignTask(this, CURRENT_AABB);
+	combineCurrentAABB();
+}
 
 
 ////EDGE_TRIANGLE_AABB

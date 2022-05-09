@@ -202,6 +202,9 @@ job Thread::create_task(Cloth* func, int thread_id, ObjectFunc function_type)// 
     case VERTEX_AABB_WITHOUT_TOLERANCE:
         k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id, false); });
         break;
+    case CURRENT_AABB:
+        k = job([func, thread_id]() {func->getCurrentPosAABB(thread_id); });
+        break;
     }
     return k;
 }
@@ -230,6 +233,9 @@ job Thread::create_task(Tetrahedron* func, int thread_id, ObjectFunc function_ty
     case TETRAHEDRON_AABB:
         k = job([func, thread_id]() {func->getTetAABBPerThread(thread_id); });
         break;
+    case CURRENT_AABB:
+        k = job([func, thread_id]() {func->getCurrentPosAABB(thread_id); });
+        break;
     }
     return k;
 }
@@ -251,6 +257,9 @@ job Thread::create_task(Collider* func, int thread_id, ObjectFunc function_type)
         break;
     case VERTEX_AABB_WITHOUT_TOLERANCE:
         k = job([func, thread_id]() {func->getVertexAABBPerThread(thread_id, false); });
+        break;
+    case CURRENT_AABB:
+        k = job([func, thread_id]() {func->getCurrentPosAABB(thread_id); });
         break;
     }
     return k;

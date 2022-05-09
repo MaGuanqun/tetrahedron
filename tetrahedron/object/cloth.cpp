@@ -65,6 +65,7 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 {
 	total_thread_num = std::thread::hardware_concurrency();
 	obj_aabb_per_thread.resize(total_thread_num);
+	current_obj_pos_aabb_per_thread.resize(total_thread_num);
 	setMeshStruct(density, ori_mesh);
 	this->thread = thread;
 	mesh_struct.thread = thread;
@@ -246,6 +247,14 @@ void Cloth::setAnchor()
 //		getAABB(triangle_AABB[i], vertex_AABB[vertex_index[0]], vertex_AABB[vertex_index[1]], vertex_AABB[vertex_index[2]]);
 //	}
 //}
+
+
+
+void Cloth::obtainCurrentAABB()
+{
+	thread->assignTask(this, CURRENT_AABB);
+	combineCurrentAABB();
+}
 
 
 void Cloth::obtainAABB(bool has_tolerace)

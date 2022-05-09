@@ -469,11 +469,11 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 		if (intersection.happened_include_collider) {
 			setObjMoveInfo(camera, cursor_screen);
 			if (use_PD) {
-				project_dynamic.collision.getAABB();
+				getCurrentAABB();
 				project_dynamic.updateSystemPos();
 			}
 			else {
-				getAABB();
+				getCurrentAABB();
 			}
 		}
 		setChosenIndicator();
@@ -510,13 +510,14 @@ void Scene::updateSceneCollisionTest(Camera* camera, double* cursor_screen, bool
 	if (control_parameter[MOVE_OBJ]) {
 		if (intersection.happened_include_collider) {
 			moveObj(camera, cursor_screen, false);			
+			getCurrentAABB();
 		}
 		setChosenIndicator();
 	}
 	if (control_parameter[ONLY_MOVE_CURRENT_POSITION]) {
 		if (intersection.happened_include_collider) {
 			moveObj(camera, cursor_screen, true);
-			getAABB();
+			getCurrentAABB();
 		}
 		setChosenIndicator();
 	}
@@ -544,13 +545,13 @@ void Scene::setChosenIndicator()
 	if (intersection.happened) {
 		//std::cout << cursor_screen[0] << " " << cursor_screen[1] << " " << force_coe << std::end
 		if (intersection.obj_No < cloth.size()) {
-			object_chosen_indicator.updatePosition(cloth[intersection.obj_No].obj_aabb);
+			object_chosen_indicator.updatePosition(cloth[intersection.obj_No].current_obj_pos_aabb);
 		}
 		else if (intersection.obj_No < obj_num_except_collider) {
-			object_chosen_indicator.updatePosition(tetrahedron[intersection.obj_No - cloth.size()].obj_aabb);
+			object_chosen_indicator.updatePosition(tetrahedron[intersection.obj_No - cloth.size()].current_obj_pos_aabb);
 		}
 		else {
-			object_chosen_indicator.updatePosition(collider[intersection.obj_No - obj_num_except_collider].obj_aabb);
+			object_chosen_indicator.updatePosition(collider[intersection.obj_No - obj_num_except_collider].current_obj_pos_aabb);
 		}
 	}
 }
@@ -966,4 +967,19 @@ void Scene::getAABB()
 		tetrahedron[i].obtainAABB(true);
 	}
 	//thread->assignTask(&mesh_patch, PATCH_AABB);
+}
+
+
+void Scene::getCurrentAABB()
+{
+	for (int i = 0; i < cloth.size(); ++i) {
+		cloth[i].obtainCurrentAABB();
+	}
+	for (int i = 0; i < collider.size(); ++i) {
+		collider[i].obtainCurrentAABB();
+	}
+	for (int i = 0; i < tetrahedron.size(); ++i) {
+		tetrahedron[i].obtainCurrentAABB();
+	}
+
 }

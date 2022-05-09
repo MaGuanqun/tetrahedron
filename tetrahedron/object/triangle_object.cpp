@@ -57,6 +57,31 @@ void TriangleObject::setRepresentativePrimitve()
 	}
 }
 
+//CURRENT_AABB
+void TriangleObject::getCurrentPosAABB(int thread_No)
+{
+	double aabb[6];
+	memset(aabb + 3, 0xFE, 24); //set double to -5.31401e+303
+	memset(aabb, 0x7F, 24); //set double to 1.38242e+306
+
+	std::array<double, 3>* vertex = mesh_struct.vertex_position.data();
+	unsigned int end = mesh_struct.vertex_index_begin_per_thread[thread_No + 1];
+	for (unsigned int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < end; ++i) {
+		for (unsigned int j = 0; j < 3; ++j) {
+			if (aabb[j] > vertex[i].data()[j]) {
+				aabb[j] = vertex[i].data()[j];
+			}
+		}
+		for (unsigned int j = 3; j < 6; ++j) {
+			if (aabb[j] < vertex[i].data()[j-3]) {
+				aabb[j] = vertex[i].data()[j-3];
+			}
+		}
+	}
+	memcpy(current_obj_pos_aabb_per_thread[thread_No].data(), aabb, 48);
+}
+
+
 //VERTEX_AABB
 //VERTEX_AABB_WITHOUT_TOLERANCE
 void TriangleObject::getVertexAABBPerThread(int thread_No, bool has_tolerance)

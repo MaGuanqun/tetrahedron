@@ -298,9 +298,9 @@ void DrawCollision::drawVT_triangle(Light& light,  Camera* camera, Shader* objec
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		if (show_collision_element[CLOTH_][i]) {
 			object_shader_front->setFloat("material.Ns", cloth->data()[i].material.front_material.Ns);
-			object_shader_front->setVec3("material.Kd", glm::vec3(cloth->data()[i].material.front_material.Kd[1], cloth->data()[i].material.front_material.Kd[0], cloth->data()[i].material.front_material.Kd[2]));
-			object_shader_front->setVec3("material.Ka", glm::vec3(cloth->data()[i].material.front_material.Ka[1], cloth->data()[i].material.front_material.Ka[0], cloth->data()[i].material.front_material.Ka[2]));
-			object_shader_front->setVec3("material.Ks", glm::vec3(cloth->data()[i].material.front_material.Ks[1], cloth->data()[i].material.front_material.Ks[0], cloth->data()[i].material.front_material.Ks[2]));
+			object_shader_front->setVec3("material.Kd", glm::vec3(0.5*cloth->data()[i].material.front_material.Kd[0], cloth->data()[i].material.front_material.Kd[2], cloth->data()[i].material.front_material.Kd[1]));
+			object_shader_front->setVec3("material.Ka", glm::vec3(0.5 * cloth->data()[i].material.front_material.Ka[0], cloth->data()[i].material.front_material.Ka[2], cloth->data()[i].material.front_material.Ka[1]));
+			object_shader_front->setVec3("material.Ks", glm::vec3(0.5 * cloth->data()[i].material.front_material.Ks[0], cloth->data()[i].material.front_material.Ks[2], cloth->data()[i].material.front_material.Ks[1]));
 			glBindVertexArray(VT_VAO[i]);
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			glDrawElements(GL_TRIANGLES, triangle_vertex_index[i].size(), GL_UNSIGNED_INT, 0);
@@ -309,9 +309,9 @@ void DrawCollision::drawVT_triangle(Light& light,  Camera* camera, Shader* objec
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		if (show_collision_element[TETRAHEDRON_][i]) {
 			object_shader_front->setFloat("material.Ns", tetrahedron->data()[i].material.Ns);
-			object_shader_front->setVec3("material.Kd", glm::vec3(tetrahedron->data()[i].material.Kd[1], tetrahedron->data()[i].material.Kd[0], tetrahedron->data()[i].material.Kd[2]));
-			object_shader_front->setVec3("material.Ka", glm::vec3(tetrahedron->data()[i].material.Ka[1], tetrahedron->data()[i].material.Ka[0], tetrahedron->data()[i].material.Ka[2]));
-			object_shader_front->setVec3("material.Ks", glm::vec3(tetrahedron->data()[i].material.Ks[1], tetrahedron->data()[i].material.Ks[0], tetrahedron->data()[i].material.Ks[2]));
+			object_shader_front->setVec3("material.Kd", glm::vec3(0.5 * tetrahedron->data()[i].material.Kd[0], tetrahedron->data()[i].material.Kd[2], tetrahedron->data()[i].material.Kd[1]));
+			object_shader_front->setVec3("material.Ka", glm::vec3(0.5 * tetrahedron->data()[i].material.Ka[0], tetrahedron->data()[i].material.Ka[2], tetrahedron->data()[i].material.Ka[1]));
+			object_shader_front->setVec3("material.Ks", glm::vec3(0.5 * tetrahedron->data()[i].material.Ks[0], tetrahedron->data()[i].material.Ks[2], tetrahedron->data()[i].material.Ks[1]));
 			glBindVertexArray(VT_VAO[i + cloth->size()]);
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			glDrawElements(GL_TRIANGLES, triangle_vertex_index[i + cloth->size()].size(), GL_UNSIGNED_INT, 0);

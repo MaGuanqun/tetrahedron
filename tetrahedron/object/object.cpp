@@ -25,6 +25,24 @@ void Object::combineObjAABB()
 	}
 }
 
+void Object::combineCurrentAABB()
+{
+	memcpy(current_obj_pos_aabb, current_obj_pos_aabb_per_thread[0].data(), 48);
+	for (unsigned int i = 1; i < total_thread_num; ++i) {
+		for (unsigned int j = 0; j < 3; ++j) {
+			if (current_obj_pos_aabb[j] > current_obj_pos_aabb_per_thread[i][j]) {
+				current_obj_pos_aabb[j] = current_obj_pos_aabb_per_thread[i][j];
+			}
+		}
+		for (unsigned int j = 3; j < 6; ++j) {
+			if (current_obj_pos_aabb[j] < current_obj_pos_aabb_per_thread[i][j]) {
+				current_obj_pos_aabb[j] = current_obj_pos_aabb_per_thread[i][j];
+			}
+		}
+	}
+}
+
+
 void Object::setWireframwColor(double* color)
 {
 	wireframe_color = glm::vec3(color[0], color[1], color[2]);

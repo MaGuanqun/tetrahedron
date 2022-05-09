@@ -21,6 +21,7 @@ void ObjectChosenIndicator::updatePosition(double* AABB)
 	double center[3] = { 0.5 * (AABB[0] + AABB[3]),0.5 * (AABB[1] + AABB[4]),0.5 * (AABB[2] + AABB[5]) };
 	double radius = 0.5 * sqrt((AABB[0] - AABB[3]) * (AABB[0] - AABB[3]) + (AABB[1] - AABB[4]) * (AABB[1] - AABB[4])
 		+ (AABB[2] - AABB[5]) * (AABB[2] - AABB[5]));
+
 	for (int i = 0; i < vertex_num; i++)
 	{
 		circle_vertices[0][3 * i] = center[0]+ radius * sin(DEG_RADIANS(360.0 * (double)i / (double)vertex_num));
