@@ -5,8 +5,6 @@ PickTriangle::PickTriangle()
 
 	shader = new Shader("./shader/picking.vs", "./shader/picking.fs");
 	*shader = Shader("./shader/picking.vs", "./shader/picking.fs");
-	collider_shader = new Shader("./shader/wireframe.vs", "./shader/wireframe.fs");
-	*collider_shader = Shader("./shader/wireframe.vs", "./shader/wireframe.fs");
 }
 
 void PickTriangle::initalFBO()

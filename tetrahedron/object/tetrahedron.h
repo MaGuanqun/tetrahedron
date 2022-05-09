@@ -21,7 +21,9 @@ public:
 	TetrahedronMeshStruct mesh_struct;
 	void drawShadow(Camera* camera, Shader* shader);
 	void drawWireframe(Camera* camera, Shader* wireframe_shader);
+	void drawWireframeOriPos(Camera* camera, Shader* wireframe_shader);
 	void setBuffer();
+	void setBufferOriPos();
 	void simpDraw(Camera* camera, Shader* shader);
 
 	int tetrahedron_num;
@@ -55,5 +57,7 @@ public:
 	std::vector<int> surface_vertex_from_rep_triangle_index;
 	void getCurrentPosAABB(int thread_No);
 	void obtainCurrentAABB();
+
+	void drawOriPos(Camera* camera, Shader* object_shader_front);
 };
 

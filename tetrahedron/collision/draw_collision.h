@@ -91,5 +91,5 @@ private:
 
 	void drawVertex(Camera* camera, std::vector<std::vector<bool>>& show_collision_element);
 	void drawVT_triangle(Light& light, Camera* camera, Shader* object_shader_front, std::vector<std::vector<bool>>& show_collision_element);
-
+	void drawEdge(Light& light, Camera* camera, Shader* object_shader_front, std::vector<std::vector<bool>>& show_collision_element);
 };

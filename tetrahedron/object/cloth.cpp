@@ -2,6 +2,39 @@
 #include"../mesh_struct/triangle_mesh_struct.h"
 #include<thread>
 
+
+void Cloth::drawOriPos(Camera* camera, Shader* object_shader_front)
+{
+	if (!mesh_struct.triangle_indices.empty()) {
+		object_shader_front->use();
+		object_shader_front->setVec3("viewPos", camera->position);
+		object_shader_front->setBool("lightShadowOn", true);
+		object_shader_front->setMat4("projection", camera->GetProjectMatrix());
+		object_shader_front->setMat4("view", camera->GetViewMatrix());
+		object_shader_front->setMat4("model", glm::mat4(1.0));
+		object_shader_front->setFloat("transparence", 0.4);
+		object_shader_front->setVec3("material.Kd", glm::vec3(material.front_material.Kd[0], material.front_material.Kd[1], material.front_material.Kd[2]));
+		object_shader_front->setVec3("material.Ka", glm::vec3(material.front_material.Ka[0], material.front_material.Ka[1], material.front_material.Ka[2]));
+		object_shader_front->setVec3("material.Ks", glm::vec3(material.front_material.Ks[0], material.front_material.Ks[1], material.front_material.Ks[2]));
+		object_shader_front->setFloat("material.Ns", material.front_material.Ns);
+		glBindVertexArray(VAO_ori);
+		glPolygonMode(GL_FRONT, GL_FILL);
+		glCullFace(GL_BACK);
+		glDrawElements(GL_TRIANGLES, 3 * mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
+
+		object_shader_front->setVec3("material.Kd", glm::vec3(material.back_material.Kd[0], material.back_material.Kd[1], material.back_material.Kd[2]));
+		object_shader_front->setVec3("material.Ka", glm::vec3(material.back_material.Ka[0], material.back_material.Ka[1], material.back_material.Ka[2]));
+		object_shader_front->setVec3("material.Ks", glm::vec3(material.back_material.Ks[0], material.back_material.Ks[1], material.back_material.Ks[2]));
+		object_shader_front->setFloat("material.Ns", material.back_material.Ns);
+		glBindVertexArray(VAO_ori);
+		glPolygonMode(GL_BACK, GL_FILL);
+		glCullFace(GL_FRONT);
+		glDrawElements(GL_TRIANGLES, 3 * mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+	}
+}
+
+
 void Cloth::draw(Camera* camera, Shader* object_shader_front)
 {
 	if (!mesh_struct.triangle_indices.empty()) {
@@ -20,14 +53,7 @@ void Cloth::draw(Camera* camera, Shader* object_shader_front)
 		glPolygonMode(GL_FRONT, GL_FILL);
 		glCullFace(GL_BACK);
 		glDrawElements(GL_TRIANGLES, 3 * mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
-		//glBindVertexArray(0);
-		//object_shader_back->use();
-		//object_shader_back->setVec3("viewPos", camera->position);
-		//object_shader_back->setBool("lightShadowOn", true);
-		//object_shader_back->setMat4("projection", camera->GetProjectMatrix());
-		//object_shader_back->setMat4("view", camera->GetViewMatrix());
-		//object_shader_back->setMat4("model", glm::mat4(1.0));
-		//object_shader_front->setFloat("transparence", 1.0);
+
 		object_shader_front->setVec3("material.Kd", glm::vec3(material.back_material.Kd[0], material.back_material.Kd[1], material.back_material.Kd[2]));
 		object_shader_front->setVec3("material.Ka", glm::vec3(material.back_material.Ka[0], material.back_material.Ka[1], material.back_material.Ka[2]));
 		object_shader_front->setVec3("material.Ks", glm::vec3(material.back_material.Ks[0], material.back_material.Ks[1], material.back_material.Ks[2]));

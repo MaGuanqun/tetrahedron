@@ -114,6 +114,7 @@ void SetTetrahedronAnchor::draw()
 	shader->setMat4("view", view);
 	shader->setMat4("model", glm::mat4(1.0));
 	shader->setVec3("color", glm::vec3(0.0f, 1.0f, 0.0f));
+	shader->setFloat("transparent", 1.0f);
 	glBindVertexArray(VAO);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDrawArrays(GL_LINE_LOOP, 0, 4);

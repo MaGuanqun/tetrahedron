@@ -59,6 +59,7 @@ void ObjectChosenIndicator::draw(Shader* shader, Camera* camera)
 	shader->setMat4("projection", camera->GetProjectMatrix());
 	shader->setMat4("view", camera->GetViewMatrix());
 	shader->setMat4("model", glm::mat4(1.0));
+	shader->setFloat("transparent", 1.0f);
 	for (int i = 0; i < 3; i++)
 	{
 		shader->setVec3("color", circle_color[i]);
@@ -68,7 +69,7 @@ void ObjectChosenIndicator::draw(Shader* shader, Camera* camera)
 		glDrawArrays(GL_LINE_LOOP, 0, vertex_num);
 		glBindVertexArray(0);
 	}
-
+	glLineWidth(1.0f);
 }
 
 void ObjectChosenIndicator::genBuffer()

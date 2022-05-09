@@ -20,17 +20,22 @@ void simu_main(GLFWwindow* window, Input* input) {
 	Camera camera(cameraPos, normalize(glm::vec3(0.0f, 1.0f, 0.0f)));
 	float zoom_value = 1.0;
 	CoordinateSystem coordinateSystem;
-	bool control_parameter[16];
-	memset(control_parameter, 0, 16);
+	bool control_parameter[17];
+	memset(control_parameter, 0, 17);
 	control_parameter[ONLY_COLLISION_TEST] = true;
 	control_parameter[USE_XPBD] = true;
+	control_parameter[DRAW_VT] = true;
 
 
 	ImGuiWindows imgui_windows;
 	float force_coe = 0.1;
-	std::vector<std::vector<bool>> wireframe(3);
-	std::vector<std::vector<bool>> hide(3);
-	std::vector<std::vector<bool>> show_collision_element(3);
+
+
+
+	std::vector<std::vector<bool>> show_element(15); //0~2 hide, 3~5 wireframe, 6~8 show_colision_element, 9~11 show ori position 12~14 show ori position wireframe
+	//std::vector<std::vector<bool>> wireframe(3);
+	//std::vector<std::vector<bool>> hide(3);
+	//std::vector<std::vector<bool>> show_collision_element(3);
 	std::vector<std::string> collider_path;
 	std::vector<std::string> object_path;
 	bool already_load_model = false;
@@ -122,18 +127,16 @@ void simu_main(GLFWwindow* window, Input* input) {
 		}
 
 		if (control_parameter[RESET_SIMULATION]) {
-			for (int i = 0; i < wireframe.size(); ++i) {
-				std::fill(wireframe[i].begin(), wireframe[i].end(), false);
-				std::fill(show_collision_element[i].begin(), show_collision_element[i].end(), false);
+			for (int i = 3; i < 15; ++i) {
+				std::fill(show_element[i].begin(), show_element[i].end(), false);
 			}
 			control_parameter[START_SIMULATION] = false;
 			scene.reset();
 			control_parameter[RESET_SIMULATION] = false;
 		}
 		if (control_parameter[INITIAL_SIMULATION]) {
-			for (int i = 0; i < wireframe.size(); ++i) {
-				std::fill(wireframe[i].begin(), wireframe[i].end(), false);
-				std::fill(show_collision_element[i].begin(), show_collision_element[i].end(), false);
+			for (int i = 3; i < 15; ++i) {
+				std::fill(show_element[i].begin(), show_element[i].end(), false);
 			}
 			control_parameter[START_SIMULATION] = false;
 			scene.initial();
@@ -152,7 +155,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 			}
 			if (input->mouse.leftButtonWasPressedThisFrame() && !input->mouse.rightButtonIsPressed()
 				&& !control_parameter[START_TEST]) {
-				scene.obtainCursorIntersection(input->mouse.screen_pos, &camera, hide);
+				scene.obtainCursorIntersection(input->mouse.screen_pos, &camera, show_element);
 			}
 		}
 		if (!control_parameter[ONLY_COLLISION_TEST]) {
@@ -168,7 +171,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 				scene.getClothInfo(cloth_info, cloth_mass, cloth_stiffness, simulation_parameter, cloth_collision_stiffness);
 				scene.getTetrahedronInfo(tetrahedron_info, tetrahedron_mass, tetrahedron_stiffness, simulation_parameter, tetrahedron_collision_stiffness);
 				camera_from_origin = scene.shadow.camera_from_origin;
-				setHideWireframe(hide, wireframe, show_collision_element, scene.collider.size(), scene.cloth.size(), scene.tetrahedron.size());
+				setHideWireframe(show_element, scene.collider.size(), scene.cloth.size(), scene.tetrahedron.size());
 
 
 				//scene.testBVH();
@@ -198,8 +201,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 			scene.setTolerance(tolerance_ratio);
 			scene.updateCloth(&camera, input->mouse.screen_pos, control_parameter, force_coe, record_matrix,
 				iteration_solver_iteration_num);
-			scene.drawScene(&camera, wireframe, hide, control_parameter, show_collision_element);
-			scene.selectAnchor(control_parameter, set_anchor, input->mouse.screen_pos, input->mouse.left_press, input->mouse.prev_left_press, &camera, hide[TETRAHEDRON_]);
+			scene.drawScene(&camera, show_element, control_parameter);
+			scene.selectAnchor(control_parameter, set_anchor, input->mouse.screen_pos, input->mouse.left_press, input->mouse.prev_left_press, &camera, show_element[TETRAHEDRON_]);
 			scene.obtainConvergenceInfo(convergence_rate, iteration_number);
 
 		}
@@ -214,7 +217,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 		
 		imgui_windows.controlWindow(control_parameter, &force_coe);
 		
-		imgui_windows.visualizationControlPanel(control_parameter[INITIAL_CAMERA], wireframe, hide,control_parameter[ONLY_COLLISION_TEST], show_collision_element);
+		imgui_windows.visualizationControlPanel(control_parameter[INITIAL_CAMERA], show_element, control_parameter[ONLY_COLLISION_TEST]);
 
 		coordinateSystem.draw(&camera, cameraPos);
 		scene.drawSelectRange(set_anchor, input->mouse.left_press, input->mouse.prev_left_press);
@@ -241,23 +244,22 @@ void simu_main(GLFWwindow* window, Input* input) {
 }
 
 
-void setHideWireframe(std::vector<std::vector<bool>>& hide, std::vector<std::vector<bool>>& wireframe, std::vector<std::vector<bool>>& show_collision_element, int collider_num, int cloth_num, int tetrahedron_num)
+void setHideWireframe(std::vector<std::vector<bool>>& show_element, int collider_num, int cloth_num, int tetrahedron_num)
 {
 	if (collider_num > 0) {
-		hide[COLLIDER_].resize(collider_num, false);
-		wireframe[COLLIDER_].resize(collider_num, false);
-		show_collision_element[COLLIDER_].resize(collider_num, false);
-
+		for (unsigned int i = 0; i < 5; ++i) {
+			show_element[COLLIDER_+ 3*i].resize(collider_num, false);
+		}
 	}
 	if (tetrahedron_num > 0) {
-		hide[TETRAHEDRON_].resize(tetrahedron_num, false);
-		wireframe[TETRAHEDRON_].resize(tetrahedron_num, false);
-		show_collision_element[TETRAHEDRON_].resize(tetrahedron_num, false);
+		for (unsigned int i = 0; i < 5; ++i) {
+			show_element[TETRAHEDRON_ + 3 * i].resize(tetrahedron_num, false);
+		}
 	}
 	if (cloth_num > 0) {
-		hide[CLOTH_].resize(cloth_num, false);
-		wireframe[CLOTH_].resize(cloth_num, false);
-		show_collision_element[CLOTH_].resize(cloth_num, false);
+		for (unsigned int i = 0; i < 5; ++i) {
+			show_element[CLOTH_ + 3 * i].resize(cloth_num, false);
+		}
 	}
 
 }

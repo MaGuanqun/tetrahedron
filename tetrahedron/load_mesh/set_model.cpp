@@ -134,9 +134,9 @@ void SetModel::setTetFrontMaterial(OriMesh& ori_mesh, int& index)
 		Ks = { 0.094, 0.2, 0.242 };
 		break;
 	case 1:
-		Kd = { 0.1, 0.1, 0.6 };
-		Ka = { 0.02, 0.02, 0.12 };
-		Ks = { 0.04, 0.04, 0.24 };
+		Kd = { 0.3, 0.1, 0.6 };
+		Ka = { 0.06, 0.02, 0.12 };
+		Ks = { 0.12, 0.04, 0.24 };
 		break;
 	default:
 		Kd = { 0.5, 0.5, 0.5 };

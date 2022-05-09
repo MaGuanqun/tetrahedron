@@ -14,6 +14,11 @@ protected:
 	unsigned int VBO[3];
 	unsigned int EBO;
 
+
+	unsigned int VAO_ori;
+	unsigned int VBO_ori[3];
+	unsigned int EBO_ori;
+
 	int total_thread_num;
 	void genBuffer();
 

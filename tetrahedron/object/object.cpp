@@ -5,6 +5,13 @@ void Object::genBuffer()
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(3, VBO);
 	glGenBuffers(1, &EBO);
+
+
+	glGenVertexArrays(1, &VAO_ori);
+	glGenBuffers(3, VBO_ori);
+	glGenBuffers(1, &EBO_ori);
+
+
 }
 
 

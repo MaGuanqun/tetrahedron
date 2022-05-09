@@ -24,7 +24,7 @@ private:
 	unsigned int picking_FBO;
 	unsigned int picking_RBO_color;
 	Shader* shader;
-	Shader* collider_shader;
+
 	int picking_base_ID;
 	void readPixel(std::vector<unsigned char>* pixel_value, unsigned int* FBO, int* pos);
 	void initalFBO();

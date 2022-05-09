@@ -16,6 +16,7 @@ public:
 	std::vector<std::vector<std::vector<int>>>collider_triangle_obj_vertex;
 	void initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num);
 	void obtainCurrentAABB();
+	void drawOriPos(Camera* camera, Shader* object_shader_front);
 
 private:
 	void setMeshStruct(OriMesh& ori_mesh);

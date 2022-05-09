@@ -29,8 +29,8 @@ public:
 	void initial();
 	void reset();
 	void loadMesh(std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio, bool* control_parameter);
-	void drawScene(Camera* camera, std::vector<std::vector<bool>>& wireframe, std::vector<std::vector<bool>>& hide,
-		bool* control_parameter, std::vector<std::vector<bool>>& show_collision_element);
+	void drawScene(Camera* camera, std::vector<std::vector<bool>>& show_element,
+		bool* control_parameter);
 	void getClothInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 3>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 4>>& collision_stiffness);
 	void updateCloth(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe, bool& record_matrix,
 		double& ave_iteration); // bool mouse_is_pressed_previous_current_frame
@@ -121,4 +121,6 @@ private:
 	TestDrawCollision test_draw_collision;
 
 	void getCurrentAABB();
+
+	void updateBufferOriPos();
 };

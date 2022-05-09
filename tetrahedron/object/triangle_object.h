@@ -17,7 +17,9 @@ public:
 	TriangleMeshStruct mesh_struct;
 	void drawShadow(Camera* camera, Shader* shader);
 	void drawWireframe(Camera* camera, Shader* wireframe_shader);
+	void drawWireframeOriPos(Camera* camera, Shader* wireframe_shader);
 	void setBuffer();
+	void setBufferOriPos();
 	void simpDraw(Camera* camera, Shader* shader);
 	Material material;
 	void reset();

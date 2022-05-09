@@ -306,10 +306,10 @@ void Scene::getTetrahedronInfo(std::vector<std::array<int, 3>>& mesh_info, std::
 	}
 }
 
-void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& wireframe, std::vector<std::vector<bool>>& hide,
-	bool* control_parameter, std::vector<std::vector<bool>>& show_collision_element)
+void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_element,
+	bool* control_parameter)
 {
-	shadow.drawShadow(camera, hide, cloth, collider, tetrahedron);
+	shadow.drawShadow(camera, show_element, cloth, collider, tetrahedron);
 	glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -319,37 +319,36 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& wireframe,
 	glBindTexture(GL_TEXTURE_CUBE_MAP, shadow.depth_map);
 	glEnable(GL_CULL_FACE);
 	for (int j = 0; j < cloth_num; ++j) {
-		if (!hide[CLOTH_][j]) {
+		if (!show_element[CLOTH_][j]) {
 			cloth[j].setSceneShader(light, camera, shadow.far_plane, object_shader_front);
 			cloth[j].draw(camera, object_shader_front);
 		}
 	}
 	glDisable(GL_CULL_FACE);
 	for (int j = 0; j < tetrahedron_num; ++j) {
-		if (!hide[TETRAHEDRON_][j]) {
+		if (!show_element[TETRAHEDRON_][j]) {
 			tetrahedron[j].setSceneShader(light, camera, shadow.far_plane, object_shader_front);
 			tetrahedron[j].draw(camera, object_shader_front);
 		}
 	}
 	for (int j = 0; j < collider.size(); ++j) {
-		if (!hide[COLLIDER_][j]) {
+		if (!show_element[COLLIDER_][j]) {
 			collider[j].setSceneShader(light, camera, shadow.far_plane, object_shader_front);
 			collider[j].draw(camera, object_shader_front);
 		}
 	}
-
 	for (int i = 0; i < collider.size(); ++i) {
-		if (wireframe[COLLIDER_][i]) {
+		if (show_element[3+COLLIDER_][i]) {
 			collider[i].drawWireframe(camera, wireframe_shader);
 		}
 	}
 	for (int j = 0; j < cloth_num; ++j) {
-		if (wireframe[CLOTH_][j]) {
+		if (show_element[3+CLOTH_][j]) {
 			cloth[j].drawWireframe(camera, wireframe_shader);
 		}
 	}
 	for (int j = 0; j < tetrahedron_num; ++j) {
-		if (wireframe[TETRAHEDRON_][j]) {
+		if (show_element[3+TETRAHEDRON_][j]) {
 			tetrahedron[j].drawWireframe(camera, wireframe_shader);
 		}
 	}
@@ -368,7 +367,7 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& wireframe,
 	//draw_culling.drawCell(camera, wireframe_shader);
 
 	if (control_parameter[ONLY_COLLISION_TEST]) {
-		test_draw_collision.drawCollision(true, light, camera, object_shader_front,show_collision_element);
+		test_draw_collision.drawCollision(control_parameter[DRAW_VT], light, camera, object_shader_front, show_element,&shadow,wireframe_shader);
 	}
 	else {
 		if (intersection.happened && (!control_parameter[MOVE_OBJ])) {
@@ -532,6 +531,7 @@ void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_par
 {
 	if (control_parameter[ONLY_COLLISION_TEST]) {
 		updateSceneCollisionTest(camera, cursor_screen, control_parameter);
+		updateBufferOriPos();
 	}
 	else {
 		updateObjSimulation(camera, cursor_screen, control_parameter, force_coe, record_matrix, ave_iteration);
@@ -553,6 +553,19 @@ void Scene::setChosenIndicator()
 		else {
 			object_chosen_indicator.updatePosition(collider[intersection.obj_No - obj_num_except_collider].current_obj_pos_aabb);
 		}
+	}
+}
+
+void Scene::updateBufferOriPos()
+{
+	for (int i = 0; i < cloth.size(); ++i) {
+		cloth[i].setBufferOriPos();
+	}
+	for (int i = 0; i < collider.size(); ++i) {
+		collider[i].setBufferOriPos();
+	}
+	for (int i = 0; i < tetrahedron.size(); ++i) {
+		tetrahedron[i].setBufferOriPos();
 	}
 }
 

@@ -141,6 +141,20 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 		}
 	}
 	else {
+		if (control_parameter[DRAW_VT]) {
+			ImGui::Text("Show VT collision pair");
+			if (ImGui::Button("Switch to EE", ImVec2(160, 25)))
+			{
+				control_parameter[DRAW_VT] = false;
+			}
+		}
+		else {
+			ImGui::Text("Show EE collision pair");
+			if (ImGui::Button("Switch to VT", ImVec2(160, 25)))
+			{
+				control_parameter[DRAW_VT] = true;
+			}
+		}
 		ImGui::Text("Move Step 1:");
 		if (control_parameter[MOVE_OBJ]) {
 			if (ImGui::Button("Stop move object", ImVec2(160, 25)))
@@ -188,8 +202,8 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 }
 
 
-void ImGuiWindows::visualizationControlPanel(bool& reset_camera, std::vector<std::vector<bool>>& wireframe, 
-	std::vector<std::vector<bool>>& hide, bool only_collision_test, std::vector<std::vector<bool>>& show_collision_element)
+void ImGuiWindows::visualizationControlPanel(bool& reset_camera, std::vector<std::vector<bool>>& show_element,
+	bool only_collision_test)
 {
 	ImGui::SetNextWindowPos(ImVec2(0, 710));
 	ImGui::SetNextWindowSize(ImVec2(240, 370));
@@ -202,160 +216,243 @@ void ImGuiWindows::visualizationControlPanel(bool& reset_camera, std::vector<std
 		reset_camera = true;
 	}
 	std::string tempString;
-	for (int i = 0; i < wireframe[COLLIDER_].size(); ++i) {
+	for (int i = 0; i < show_element[COLLIDER_].size(); ++i) {
 		ImGui::SetNextItemOpen(true);
 		tempString = "Collider " + std::to_string(i);
 		if (ImGui::TreeNode(tempString.c_str())) {
-			if (hide[COLLIDER_][i]) {
+			if (show_element[COLLIDER_][i]) {
 				tempString = "Show##Collider" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					hide[COLLIDER_][i] = false;
+					show_element[COLLIDER_][i] = false;
 				}
 			}
 			else {
 				tempString = "Hide##Collider" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					hide[COLLIDER_][i] = true;
+					show_element[COLLIDER_][i] = true;
 				}
 			}
-			if (wireframe[COLLIDER_][i]) {
+			if (show_element[3+COLLIDER_][i]) {
 				tempString = "Hide WireFrame##Collider" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					wireframe[COLLIDER_][i] = false;
+					show_element[3+COLLIDER_][i] = false;
 				}
 			}
 			else {
 				tempString = "Show WireFrame##Collider" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					wireframe[COLLIDER_][i] = true;
+					show_element[3+COLLIDER_][i] = true;
 				}
 			}
 			if (only_collision_test) {
-				if (show_collision_element[COLLIDER_][i]) {
+				if (show_element[6+COLLIDER_][i]) {
 					tempString = "Hide Collision##Collider" + std::to_string(i);
 					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 					{
-						show_collision_element[COLLIDER_][i] = false;
+						show_element[6+COLLIDER_][i] = false;
 					}
 				}
 				else {
 					tempString = "Show Collision##Collider" + std::to_string(i);
 					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 					{
-						show_collision_element[COLLIDER_][i] = true;
+						show_element[6+COLLIDER_][i] = true;
+					}
+				}
+				if (show_element[9 + COLLIDER_][i]) {
+					tempString = "Hide Ori Pos##Collider" + std::to_string(i);
+					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+					{
+						show_element[9 + COLLIDER_][i] = false;
+					}
+				}
+				else {
+					tempString = "Show Ori Pos##Collider" + std::to_string(i);
+					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+					{
+						show_element[9 + COLLIDER_][i] = true;
+					}
+				}
+				if (show_element[12 + COLLIDER_][i]) {
+					tempString = "Hide Ori Wireframe##Collider" + std::to_string(i);
+					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+					{
+						show_element[12 + COLLIDER_][i] = false;
+					}
+				}
+				else {
+					tempString = "Show Ori Wireframe##Collider" + std::to_string(i);
+					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+					{
+						show_element[12 + COLLIDER_][i] = true;
 					}
 				}
 			}
 			ImGui::TreePop();
 		}
 	}
-	for (int i = 0; i < wireframe[CLOTH_].size(); ++i) {
+	for (int i = 0; i < show_element[CLOTH_].size(); ++i) {
 		ImGui::SetNextItemOpen(true);
 		tempString = "cloth " + std::to_string(i);
 		if (ImGui::TreeNode(tempString.c_str())) {
-			if (hide[CLOTH_][i]) {
+			if (show_element[CLOTH_][i]) {
 				tempString = "Show##cloth" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					hide[CLOTH_][i] = false;
+					show_element[CLOTH_][i] = false;
 				}
 			}
 			else {
 				tempString = "Hide##cloth" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					hide[CLOTH_][i] = true;
+					show_element[CLOTH_][i] = true;
 				}
 			}
-			if (wireframe[CLOTH_][i]) {
+			if (show_element[3+CLOTH_][i]) {
 				tempString = "Hide WireFrame##cloth" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					wireframe[CLOTH_][i] = false;
+					show_element[3+CLOTH_][i] = false;
 				}
 			}
 			else {
 				tempString = "Show WireFrame##cloth" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					wireframe[CLOTH_][i] = true;
+					show_element[3+CLOTH_][i] = true;
 				}
 			}
 			if (only_collision_test) {
-				if (show_collision_element[CLOTH_][i]) {
+				if (show_element[6+CLOTH_][i]) {
 					tempString = "Hide Collision##cloth" + std::to_string(i);
 					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 					{
-						show_collision_element[CLOTH_][i] = false;
+						show_element[6+CLOTH_][i] = false;
 					}
 				}
 				else {
 					tempString = "Show Collision##cloth" + std::to_string(i);
 					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 					{
-						show_collision_element[CLOTH_][i] = true;
+						show_element[6+CLOTH_][i] = true;
+					}
+				}
+				if (show_element[9 + CLOTH_][i]) {
+					tempString = "Hide Ori Pos##cloth" + std::to_string(i);
+					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+					{
+						show_element[9 + CLOTH_][i] = false;
+					}
+				}
+				else {
+					tempString = "Show Ori Pos##cloth" + std::to_string(i);
+					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+					{
+						show_element[9 + CLOTH_][i] = true;
+					}
+				}
+				if (show_element[12 + CLOTH_][i]) {
+					tempString = "Hide Ori Wireframe##cloth" + std::to_string(i);
+					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+					{
+						show_element[12 + CLOTH_][i] = false;
+					}
+				}
+				else {
+					tempString = "Show Ori Wireframe##cloth" + std::to_string(i);
+					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+					{
+						show_element[12 + CLOTH_][i] = true;
 					}
 				}
 			}
 			ImGui::TreePop();
 		}
 	}
-	for (int i = 0; i < wireframe[TETRAHEDRON_].size(); ++i) {
+	for (int i = 0; i < show_element[TETRAHEDRON_].size(); ++i) {
 		ImGui::SetNextItemOpen(true);
 		tempString = "tet " + std::to_string(i);
 		if (ImGui::TreeNode(tempString.c_str())) {
-			if (hide[TETRAHEDRON_][i]) {
+			if (show_element[TETRAHEDRON_][i]) {
 				tempString = "Show##tetrahedron" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					hide[TETRAHEDRON_][i] = false;
+					show_element[TETRAHEDRON_][i] = false;
 				}
 			}
 			else {
 				tempString = "Hide##tetrahedron" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					hide[TETRAHEDRON_][i] = true;
+					show_element[TETRAHEDRON_][i] = true;
 				}
 			}
-			if (wireframe[TETRAHEDRON_][i]) {
+			if (show_element[3+TETRAHEDRON_][i]) {
 				tempString = "Hide WireFrame##tetrahedron" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					wireframe[TETRAHEDRON_][i] = false;
+					show_element[3+TETRAHEDRON_][i] = false;
 				}
 			}
 			else {
 				tempString = "Show WireFrame##tetrahedron" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					wireframe[TETRAHEDRON_][i] = true;
+					show_element[3+TETRAHEDRON_][i] = true;
 				}
 			}
 			if (only_collision_test) {
-				if (show_collision_element[TETRAHEDRON_][i]) {
+				if (show_element[6+TETRAHEDRON_][i]) {
 					tempString = "Hide Collision##tetrahedron" + std::to_string(i);
 					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 					{
-						show_collision_element[TETRAHEDRON_][i] = false;
+						show_element[6+TETRAHEDRON_][i] = false;
 					}
 				}
 				else {
 					tempString = "Show Collision##tetrahedron" + std::to_string(i);
 					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 					{
-						show_collision_element[TETRAHEDRON_][i] = true;
+						show_element[6+TETRAHEDRON_][i] = true;
+					}
+				}
+				if (show_element[9 + TETRAHEDRON_][i]) {
+					tempString = "Hide Ori Pos##tetrahedron" + std::to_string(i);
+					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+					{
+						show_element[9 + TETRAHEDRON_][i] = false;
+					}
+				}
+				else {
+					tempString = "Show Ori Pos##tetrahedron" + std::to_string(i);
+					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+					{
+						show_element[9 + TETRAHEDRON_][i] = true;
+					}
+				}
+				if (show_element[12 + TETRAHEDRON_][i]) {
+					tempString = "Hide Ori Wireframe##tetrahedron" + std::to_string(i);
+					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+					{
+						show_element[12 + TETRAHEDRON_][i] = false;
+					}
+				}
+				else {
+					tempString = "Show Ori Wireframe##tetrahedron" + std::to_string(i);
+					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
+					{
+						show_element[12 + TETRAHEDRON_][i] = true;
 					}
 				}
 			}
 			ImGui::TreePop();
 		}
 	}
-
 	ImGui::End();
 }
 

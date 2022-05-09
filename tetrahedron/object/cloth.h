@@ -52,6 +52,8 @@ public:
 
 	void obtainCurrentAABB();
 
+	void drawOriPos(Camera* camera, Shader* object_shader_front);
+
 private:
 	void setMeshStruct(double density, OriMesh& ori_mesh);
 
