@@ -10,7 +10,7 @@ class ObjectChosenIndicator
 public:
 	ObjectChosenIndicator();
 	void updatePosition(double* AABB);
-	void draw(Shader* shader, Camera* camera, unsigned int dimension);
+	void draw(Shader* shader, Camera* camera, unsigned int dimension, float line_width);
 	bool pickAxes(Shader* shader, Camera* camera, unsigned int& dimension, int* pos);
 
 private:

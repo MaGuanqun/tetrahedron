@@ -98,7 +98,7 @@ void ObjectChosenIndicator::decideAxe(unsigned int& dimension, unsigned int* FBO
 	std::vector<unsigned char> pixel_value(3);
 	readPixel(&pixel_value, FBO, pos);
 	for (unsigned int i = 0; i < 3; ++i) {
-		if ((int)(pixel_value[0]) > 250) {
+		if ((int)(pixel_value[i]) > 250) {
 			dimension = i;
 			return;
 		}
@@ -116,17 +116,15 @@ void ObjectChosenIndicator::readPixel(std::vector<unsigned char>* pixel_value, u
 
 void ObjectChosenIndicator::writingFBO(Camera* camera, Shader* shader)
 {
-	
-
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glBindFramebuffer(GL_FRAMEBUFFER, picking_FBO);	
-	draw(shader, camera,4);
+	draw(shader, camera,4,12.0f);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 
-void ObjectChosenIndicator::draw(Shader* shader, Camera* camera, unsigned int dimension)
+void ObjectChosenIndicator::draw(Shader* shader, Camera* camera, unsigned int dimension, float line_width)
 {
 	shader->use();
 	shader->setMat4("projection", camera->GetProjectMatrix());
@@ -139,10 +137,10 @@ void ObjectChosenIndicator::draw(Shader* shader, Camera* camera, unsigned int di
 		glBindVertexArray(VAO[i]);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		if (dimension == i) {
-			glLineWidth(6.0f);
+			glLineWidth(2.0f*line_width);
 		}
 		else {
-			glLineWidth(3.0f);
+			glLineWidth(line_width);
 		}		
 		glDrawArrays(GL_LINE_LOOP, 0, vertex_num);
 		glBindVertexArray(0);

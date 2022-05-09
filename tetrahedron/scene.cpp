@@ -364,12 +364,12 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 	}
 	if (control_parameter[MOVE_OBJ] || control_parameter[ONLY_MOVE_CURRENT_POSITION]) {
 		if (intersection.happened) {
-			object_chosen_indicator.draw(wireframe_shader, camera, select_dimension_index);
+			object_chosen_indicator.draw(wireframe_shader, camera, select_dimension_index,3.0);
 		}
 	}
 	else {
 		if (intersect_when_rotation) {
-			object_chosen_indicator.draw(wireframe_shader, camera, select_dimension_index);
+			object_chosen_indicator.draw(wireframe_shader, camera, select_dimension_index,3.0);
 		}
 	}
 	//draw_culling.drawCell(camera, wireframe_shader);
@@ -730,12 +730,13 @@ void Scene::testBVH()
 
 void Scene::pickAxes(double* pos, Camera* camera)
 {
-	int mouse_pos[2];
-	mouse_pos[0] = pos[0];
-	mouse_pos[1] = SCR_HEIGHT - pos[1];
+	if (intersect_when_rotation) {
+		int mouse_pos[2];
+		mouse_pos[0] = pos[0];
+		mouse_pos[1] = SCR_HEIGHT - pos[1];
+		if (object_chosen_indicator.pickAxes(wireframe_shader, camera, select_dimension_index, mouse_pos)) {
 
-	if (object_chosen_indicator.pickAxes(wireframe_shader, camera, select_dimension_index, mouse_pos)) {
-		
+		}
 	}
 }
 
