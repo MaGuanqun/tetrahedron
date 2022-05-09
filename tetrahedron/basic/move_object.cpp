@@ -141,6 +141,23 @@ void MoveObject::move(int thread_No, unsigned int obj_No)
 }
 
 
+void MoveObject::rotation(double* AABB, double * angle)
+{
+
+}
+
+
+void MoveObject::moveAroundAxes(int thread_No, int obj_index)
+{
+
+}
+
+
+void MoveObject::moveAroundAxe(int thread_No, int obj_index, unsigned int dimension)
+{
+
+}
+
 //void MoveObject::moveScript(unsigned int type)
 //{
 //	displacement_test.resize(2);

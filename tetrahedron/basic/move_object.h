@@ -21,7 +21,7 @@ public:
 
 	int select_object_index;
 
-
+	void rotation(double* AABB, double* angle);
 
 private:
 	std::vector<Cloth>* cloth;
