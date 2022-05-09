@@ -19,6 +19,10 @@ public:
 	void moveScript(unsigned int type);
 
 
+	int select_object_index;
+
+
+
 private:
 	std::vector<Cloth>* cloth;
 	std::vector<Tetrahedron>* tetrahedron;

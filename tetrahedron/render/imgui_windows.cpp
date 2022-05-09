@@ -167,6 +167,23 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 			{
 				control_parameter[MOVE_OBJ] = true;
 				control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
+				control_parameter[ROTATION] = false;
+				control_parameter[ONLY_ROTATE_CURRENT] = false;
+			}
+		}
+		if (control_parameter[ROTATION]) {
+			if (ImGui::Button("Stop rotate object", ImVec2(160, 25)))
+			{
+				control_parameter[ROTATION] = false;
+			}
+		}
+		else {
+			if (ImGui::Button("Start rotate object", ImVec2(160, 25)))
+			{
+				control_parameter[ROTATION] = true;
+				control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
+				control_parameter[MOVE_OBJ] = false;
+				control_parameter[ONLY_ROTATE_CURRENT] = false;
 			}
 		}
 		ImGui::Text("Move Step 2:");
@@ -181,6 +198,21 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 			{
 				control_parameter[ONLY_MOVE_CURRENT_POSITION] = true;
 				control_parameter[MOVE_OBJ] = false;
+			}
+		}
+		if (control_parameter[ONLY_ROTATE_CURRENT]) {
+			if (ImGui::Button("Stop rotate current pos", ImVec2(160, 25)))
+			{
+				control_parameter[ONLY_ROTATE_CURRENT] = false;
+			}
+		}
+		else {
+			if (ImGui::Button("Start rotate current pos", ImVec2(160, 25)))
+			{
+				control_parameter[ONLY_ROTATE_CURRENT] = true;
+				control_parameter[MOVE_OBJ] = false;
+				control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
+				control_parameter[ROTATION] = false;
 			}
 		}
 	}

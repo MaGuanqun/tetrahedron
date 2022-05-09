@@ -2,6 +2,7 @@
 
 ObjectChosenIndicator::ObjectChosenIndicator()
 {
+	initalFBO();
 	vertex_num = 50;
 	circle_vertices.resize(3);
 	for (unsigned int i = 0; i < circle_vertices.size(); ++i) {
@@ -53,19 +54,96 @@ void ObjectChosenIndicator::setBuffer()
 }
 
 
-void ObjectChosenIndicator::draw(Shader* shader, Camera* camera)
+void ObjectChosenIndicator::initalFBO()
+{
+	glGenFramebuffers(1, &picking_FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, picking_FBO);
+
+	glGenRenderbuffers(1, &picking_RBO_color);
+	glBindRenderbuffer(GL_RENDERBUFFER, picking_RBO_color);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB, SCR_WIDTH, SCR_HEIGHT);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, picking_RBO_color);
+
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+}
+
+
+bool ObjectChosenIndicator::pickAxes(Shader* shader, Camera* camera, unsigned int& dimension, int* pos)
+{
+	glDisable(GL_BLEND);
+	glDisable(GL_MULTISAMPLE);
+	glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+
+	writingFBO(camera, shader);
+	decideAxe(dimension, &picking_FBO, pos);
+	glEnable(GL_MULTISAMPLE);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	if (dimension == 4) {
+		return false;
+	}
+	return true;
+}
+
+
+void ObjectChosenIndicator::decideAxe(unsigned int& dimension, unsigned int* FBO, int* pos)
+{
+	dimension = 4;
+	std::vector<unsigned char> pixel_value(3);
+	readPixel(&pixel_value, FBO, pos);
+	for (unsigned int i = 0; i < 3; ++i) {
+		if ((int)(pixel_value[0]) > 250) {
+			dimension = i;
+			return;
+		}
+	}
+}
+
+void ObjectChosenIndicator::readPixel(std::vector<unsigned char>* pixel_value, unsigned int* FBO, int* pos)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, *FBO);
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	glReadPixels(pos[0], pos[1], 1, 1, GL_RGB, GL_UNSIGNED_BYTE, &(*pixel_value)[0]);
+	glDeleteFramebuffers(1, FBO);
+}
+
+
+void ObjectChosenIndicator::writingFBO(Camera* camera, Shader* shader)
+{
+	
+
+	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glBindFramebuffer(GL_FRAMEBUFFER, picking_FBO);	
+	draw(shader, camera,4);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+
+void ObjectChosenIndicator::draw(Shader* shader, Camera* camera, unsigned int dimension)
 {
 	shader->use();
 	shader->setMat4("projection", camera->GetProjectMatrix());
 	shader->setMat4("view", camera->GetViewMatrix());
 	shader->setMat4("model", glm::mat4(1.0));
 	shader->setFloat("transparent", 1.0f);
-	for (int i = 0; i < 3; i++)
+	for (unsigned int i = 0; i < 3; i++)
 	{
 		shader->setVec3("color", circle_color[i]);
 		glBindVertexArray(VAO[i]);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		glLineWidth(3.0f);
+		if (dimension == i) {
+			glLineWidth(6.0f);
+		}
+		else {
+			glLineWidth(3.0f);
+		}		
 		glDrawArrays(GL_LINE_LOOP, 0, vertex_num);
 		glBindVertexArray(0);
 	}

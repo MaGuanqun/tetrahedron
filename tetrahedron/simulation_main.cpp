@@ -20,8 +20,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 	Camera camera(cameraPos, normalize(glm::vec3(0.0f, 1.0f, 0.0f)));
 	float zoom_value = 1.0;
 	CoordinateSystem coordinateSystem;
-	bool control_parameter[17];
-	memset(control_parameter, 0, 17);
+	bool control_parameter[19];
+	memset(control_parameter, 0, 19);
 	control_parameter[ONLY_COLLISION_TEST] = true;
 	control_parameter[USE_XPBD] = true;
 	control_parameter[DRAW_VT] = true;
@@ -153,10 +153,12 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 				scene.resetIntersectionState();
 			}
+			std::cout << "test-1" << std::endl;
 			if (input->mouse.leftButtonWasPressedThisFrame() && !input->mouse.rightButtonIsPressed()
 				&& !control_parameter[START_TEST]) {
 				scene.obtainCursorIntersection(input->mouse.screen_pos, &camera, show_element);
 			}
+			std::cout << "test0" << std::endl;
 		}
 		if (!control_parameter[ONLY_COLLISION_TEST]) {
 			imgui_windows.operationWindow(cloth_stiffness, tetrahedron_stiffness, simulation_parameter, cloth_collision_stiffness, tetrahedron_collision_stiffness, set_stiffness, temp_stiffness,
@@ -196,9 +198,11 @@ void simu_main(GLFWwindow* window, Input* input) {
 			//	record_matrix = false;
 			//	control_parameter[SAVE_OBJ] = false;
 			//}
+			std::cout << "test1" << std::endl;
 			scene.updateStiffness(update_obj_stiffness,cloth_stiffness,tetrahedron_stiffness,cloth_collision_stiffness,tetrahedron_collision_stiffness);			
 			scene.updateItrInfo(set_iteration_num);			
 			scene.setTolerance(tolerance_ratio);
+			std::cout << "test2" << std::endl;
 			scene.updateCloth(&camera, input->mouse.screen_pos, control_parameter, force_coe, record_matrix,
 				iteration_solver_iteration_num);
 			scene.drawScene(&camera, show_element, control_parameter);

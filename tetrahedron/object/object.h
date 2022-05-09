@@ -41,6 +41,9 @@ protected:
 	void getAABB(double* target, double* aabb0, double* aabb1, double* aabb2, double* aabb3);
 private:
 public:
+
+	double rotation_angle[3] = { 0.0,0.0,0.0 };
+
 	double tolerance;
 	double mass;
 	std::vector<double>coe_neighbor_vertex_force;

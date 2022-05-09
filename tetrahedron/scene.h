@@ -55,6 +55,10 @@ public:
 
 	void setFloorInfo(bool exist, bool show, bool normal_direction, unsigned int dimension, double value, bool& eidit,bool* control_parameter);
 
+	void pickAxes(double* pos, Camera* camera);
+
+	unsigned int select_dimension_index;
+	bool start_rotation;
 private:
 	bool use_PD;
 	bool only_test_collision;
@@ -123,4 +127,7 @@ private:
 	void getCurrentAABB();
 
 	void updateBufferOriPos();
+
+	bool intersect_when_rotation;
+
 };

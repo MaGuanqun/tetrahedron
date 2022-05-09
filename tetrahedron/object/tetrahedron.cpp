@@ -386,6 +386,7 @@ void Tetrahedron::recordInitialMesh(SingleTetrahedronInfo& single_tetrahedron_in
 
 void Tetrahedron::initial()
 {
+	memset(rotation_angle, 0, 24);
 	mesh_struct.vertex_position = ori_vertices;
 	mesh_struct.vertex_for_render = ori_vertices;
 	mesh_struct.anchor_vertex.clear();
@@ -402,6 +403,7 @@ void Tetrahedron::initial()
 
 void Tetrahedron::reset(bool use_PD)
 {
+	memset(rotation_angle, 0, 24);
 	mesh_struct.vertex_position = ori_vertices;
 	mesh_struct.vertex_for_render = ori_vertices;
 	mesh_struct.getRenderNormal();

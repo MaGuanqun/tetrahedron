@@ -24,6 +24,9 @@ Scene::Scene()
 	xpbd.time_stamp= &time_stamp;
 
 
+	select_dimension_index = 4;
+	intersect_when_rotation = false;
+	start_rotation = false;
 	//test_array_size = 10000000;
 	//iteration_num_for_test_array = 1000;
 	//test_pair = new unsigned int* [thread.thread_num];
@@ -124,6 +127,7 @@ void Scene::updateConvRate(double* convergence_rate)
 
 void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio, bool* control_parameter)
 {
+	this->control_parameter = control_parameter;
 	use_PD = !control_parameter[USE_XPBD];
 	only_test_collision = control_parameter[ONLY_COLLISION_TEST];
 	Preprocessing preprocessing;
@@ -181,7 +185,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	}
 
 	move_object.initial(&cloth, &collider, &tetrahedron, &thread);
-	//draw_culling.initial(&cloth, &collider, &tetrahedron, &thread);
+
 	if (control_parameter[ONLY_COLLISION_TEST]) {
 		test_draw_collision.initial(&cloth, &collider, &tetrahedron, &thread, &floor, tolerance_ratio);
 	}
@@ -360,9 +364,13 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 	}
 	if (control_parameter[MOVE_OBJ] || control_parameter[ONLY_MOVE_CURRENT_POSITION]) {
 		if (intersection.happened) {
-			object_chosen_indicator.draw(wireframe_shader, camera);
+			object_chosen_indicator.draw(wireframe_shader, camera, select_dimension_index);
 		}
-
+	}
+	else {
+		if (intersect_when_rotation) {
+			object_chosen_indicator.draw(wireframe_shader, camera, select_dimension_index);
+		}
 	}
 	//draw_culling.drawCell(camera, wireframe_shader);
 
@@ -506,6 +514,10 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 
 void Scene::updateSceneCollisionTest(Camera* camera, double* cursor_screen, bool* control_parameter)
 {
+	if (!(control_parameter[ONLY_ROTATE_CURRENT] || control_parameter[ROTATION])) {
+		intersect_when_rotation = false;
+	}
+
 	if (control_parameter[MOVE_OBJ]) {
 		if (intersection.happened_include_collider) {
 			moveObj(camera, cursor_screen, false);			
@@ -513,9 +525,21 @@ void Scene::updateSceneCollisionTest(Camera* camera, double* cursor_screen, bool
 		}
 		setChosenIndicator();
 	}
+	if (control_parameter[ROTATION]) {
+		if (intersect_when_rotation) {
+			getCurrentAABB();
+		}
+		setChosenIndicator();
+	}
 	if (control_parameter[ONLY_MOVE_CURRENT_POSITION]) {
 		if (intersection.happened_include_collider) {
 			moveObj(camera, cursor_screen, true);
+			getCurrentAABB();
+		}
+		setChosenIndicator();
+	}
+	if (control_parameter[ONLY_ROTATE_CURRENT]) {
+		if (intersect_when_rotation) {
 			getCurrentAABB();
 		}
 		setChosenIndicator();
@@ -542,18 +566,31 @@ void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_par
 
 void Scene::setChosenIndicator()
 {
-	if (intersection.happened) {
-		//std::cout << cursor_screen[0] << " " << cursor_screen[1] << " " << force_coe << std::end
-		if (intersection.obj_No < cloth.size()) {
-			object_chosen_indicator.updatePosition(cloth[intersection.obj_No].current_obj_pos_aabb);
+		if (intersection.happened) {
+			//std::cout << cursor_screen[0] << " " << cursor_screen[1] << " " << force_coe << std::end
+			if (intersection.obj_No < cloth.size()) {
+				object_chosen_indicator.updatePosition(cloth[intersection.obj_No].current_obj_pos_aabb);
+			}
+			else if (intersection.obj_No < obj_num_except_collider) {
+				object_chosen_indicator.updatePosition(tetrahedron[intersection.obj_No - cloth.size()].current_obj_pos_aabb);
+			}
+			else {
+				object_chosen_indicator.updatePosition(collider[intersection.obj_No - obj_num_except_collider].current_obj_pos_aabb);
+			}
 		}
-		else if (intersection.obj_No < obj_num_except_collider) {
-			object_chosen_indicator.updatePosition(tetrahedron[intersection.obj_No - cloth.size()].current_obj_pos_aabb);
+		else if (intersect_when_rotation) {
+			if (move_object.select_object_index < cloth.size()) {
+				object_chosen_indicator.updatePosition(cloth[move_object.select_object_index].current_obj_pos_aabb);
+			}
+			else if (move_object.select_object_index < obj_num_except_collider) {
+				object_chosen_indicator.updatePosition(tetrahedron[move_object.select_object_index - cloth.size()].current_obj_pos_aabb);
+			}
+			else {
+				object_chosen_indicator.updatePosition(collider[move_object.select_object_index - obj_num_except_collider].current_obj_pos_aabb);
+			}
 		}
-		else {
-			object_chosen_indicator.updatePosition(collider[intersection.obj_No - obj_num_except_collider].current_obj_pos_aabb);
-		}
-	}
+	
+	
 }
 
 void Scene::updateBufferOriPos()
@@ -690,6 +727,19 @@ void Scene::testBVH()
 	std::cout << t5 << std::endl;
 }
 
+
+void Scene::pickAxes(double* pos, Camera* camera)
+{
+	int mouse_pos[2];
+	mouse_pos[0] = pos[0];
+	mouse_pos[1] = SCR_HEIGHT - pos[1];
+
+	if (object_chosen_indicator.pickAxes(wireframe_shader, camera, select_dimension_index, mouse_pos)) {
+		
+	}
+}
+
+
 void Scene::obtainCursorIntersection(double* pos, Camera* camera, std::vector<std::vector<bool>>& hide)
 {
 	int mouse_pos[2];
@@ -704,6 +754,11 @@ void Scene::obtainCursorIntersection(double* pos, Camera* camera, std::vector<st
 		intersection.setIntersection(chosen_index);
 		if (chosen_index[1] < obj_num_except_collider) {
 			intersection.happened = true;
+
+			if (control_parameter[ROTATION] || control_parameter[ONLY_ROTATE_CURRENT]) {
+				intersect_when_rotation = true;
+				move_object.select_object_index = intersection.obj_No;
+			}
 		}
 	}
 }
