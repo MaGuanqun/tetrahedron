@@ -54,7 +54,7 @@ void MoveObject::move(unsigned int obj_No, double* displacement, bool only_move_
 {
 	this->displacement = displacement;
 	thread->assignTask(this, MOVE_OBJECT, obj_No);
-	std::cout << only_move_vertex_pos << std::endl;
+
 	if (!only_move_vertex_pos) {
 		if (obj_No < cloth->size()) {
 			cloth->data()[obj_No].mesh_struct.vertex_for_render = cloth->data()[obj_No].mesh_struct.vertex_position;
