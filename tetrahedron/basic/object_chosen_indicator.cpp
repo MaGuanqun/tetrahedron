@@ -131,6 +131,9 @@ void ObjectChosenIndicator::draw(Shader* shader, Camera* camera, unsigned int di
 	shader->setMat4("view", camera->GetViewMatrix());
 	shader->setMat4("model", glm::mat4(1.0));
 	shader->setFloat("transparent", 1.0f);
+
+	//std::cout <<"kk "<< dimension << " " << line_width << std::endl;
+
 	for (unsigned int i = 0; i < 3; i++)
 	{
 		shader->setVec3("color", circle_color[i]);
@@ -145,6 +148,7 @@ void ObjectChosenIndicator::draw(Shader* shader, Camera* camera, unsigned int di
 		glDrawArrays(GL_LINE_LOOP, 0, vertex_num);
 		glBindVertexArray(0);
 	}
+	
 	glLineWidth(1.0f);
 }
 

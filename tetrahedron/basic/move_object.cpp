@@ -141,22 +141,133 @@ void MoveObject::move(int thread_No, unsigned int obj_No)
 }
 
 
-void MoveObject::rotation(double* AABB, double * angle)
+void MoveObject::rotation(double angle_move, unsigned int dimension, bool only_move_vertex_pos)
 {
+	if (select_object_index < cloth->size()) {
+		memcpy(center, cloth->data()[select_object_index].center, 24);
+	}
+	else if (select_object_index < tetrahedron_end_index) {
+		memcpy(center, tetrahedron->data()[select_object_index - cloth->size()].center, 24);
+	}
+	else {
+		memcpy(center, collider->data()[select_object_index - tetrahedron_end_index].center, 24);
+	}
+
+	this->angle_move = angle_move;
+	select_dimension = dimension;
+
+
+
+	thread->assignTask(this, ROTATE_AROUND_AXIS, select_object_index);
+	if (!only_move_vertex_pos) {
+		if (select_object_index < cloth->size()) {
+			cloth->data()[select_object_index].mesh_struct.vertex_for_render = cloth->data()[select_object_index].mesh_struct.vertex_position;
+		}
+		else if (select_object_index < tetrahedron_end_index) {
+			tetrahedron->data()[select_object_index - cloth->size()].mesh_struct.vertex_for_render = tetrahedron->data()[select_object_index - cloth->size()].mesh_struct.vertex_position;
+		}
+		else {
+			collider->data()[select_object_index - tetrahedron_end_index].mesh_struct.vertex_for_render = collider->data()[select_object_index - tetrahedron_end_index].mesh_struct.vertex_position;
+		}
+	}
 
 }
 
-
-void MoveObject::moveAroundAxes(int thread_No, int obj_index)
+//ROTATE_AROUND_AXIS
+void MoveObject::rotateAroundAxis(int thread_No, unsigned int obj_No)
 {
+	unsigned int dimension;
+	double angle;
+	dimension = select_dimension;
+	angle = angle_move;
 
+	double center[3];
+	memcpy(center, this->center, 24);
+
+
+	std::array<double, 3>* position;
+	unsigned int vertex_start, vertex_end;
+
+	double v0[3];
+	double v1[3];
+	switch (dimension)
+	{
+	case 0:
+		v0[0] = 0;  v0[1] = cos(angle); v0[2] = -sin(angle);
+		v1[0] = 0;	 v1[1] = -v0[2];		v1[2] = v0[1];
+		break;
+	case 1:
+		v0[0] = cos(angle);	v0[1] = 0; 		v0[2] = sin(angle);
+		v1[0] = -v0[2];		v1[1] = 0;		v1[2] = v0[0];
+		break;
+	case 2:
+		v0[0] = cos(angle);		v0[1] = -sin(angle);  v0[2] = 0;
+		v1[0] = -v0[1];		v1[1] = v0[0];  v1[2] = 0;
+		break;
+	}
+	if (obj_No < cloth->size()) {
+		position = cloth->data()[obj_No].mesh_struct.vertex_position.data();
+		vertex_start = cloth->data()[obj_No].mesh_struct.vertex_index_begin_per_thread[thread_No];
+		vertex_end = cloth->data()[obj_No].mesh_struct.vertex_index_begin_per_thread[thread_No + 1];
+	}
+	else if (obj_No < tetrahedron_end_index) {
+		position = tetrahedron->data()[obj_No - cloth->size()].mesh_struct.vertex_position.data();
+		vertex_start = tetrahedron->data()[obj_No - cloth->size()].mesh_struct.vertex_index_begin_per_thread[thread_No];
+		vertex_end = tetrahedron->data()[obj_No - cloth->size()].mesh_struct.vertex_index_begin_per_thread[thread_No + 1];
+	}
+	else {
+		position = collider->data()[obj_No - tetrahedron_end_index].mesh_struct.vertex_position.data();
+		vertex_start = collider->data()[obj_No - tetrahedron_end_index].mesh_struct.vertex_index_begin_per_thread[thread_No];
+		vertex_end = collider->data()[obj_No - tetrahedron_end_index].mesh_struct.vertex_index_begin_per_thread[thread_No + 1];
+	}
+
+	double temp_position0, temp_position1;
+	switch (dimension)
+	{
+	case 0:
+		for (unsigned int i = vertex_start; i < vertex_end; ++i) {
+			position[i][1] -= center[1];
+			position[i][2] -= center[2];
+			temp_position0 = position[i].data()[1] * v0[1] + position[i].data()[2] * v0[2];
+			temp_position1 = position[i].data()[1] * v1[1] + position[i].data()[2] * v1[2];
+			position[i].data()[1] = temp_position0 + center[1];
+			position[i].data()[2] = temp_position1 + center[2];
+		}
+		break;
+	case 1:
+		for (unsigned int i = vertex_start; i < vertex_end; ++i) {
+			position[i][0] -= center[0];
+			position[i][2] -= center[2];
+			temp_position0 = position[i].data()[0] * v0[0] + position[i].data()[2] * v0[2];
+			temp_position1 = position[i].data()[0] * v1[0] + position[i].data()[2] * v1[2];
+			position[i].data()[0] = temp_position0 + center[0];
+			position[i].data()[2] = temp_position1 + center[2];
+		}
+		break;
+	case 2:
+		for (unsigned int i = vertex_start; i < vertex_end; ++i) {
+			position[i][0] -= center[0];
+			position[i][1] -= center[1];
+			temp_position0 = position[i].data()[0] * v0[0] + position[i].data()[1] * v0[1];
+			temp_position1 = position[i].data()[0] * v1[0] + position[i].data()[1] * v1[1];
+			position[i].data()[0] = temp_position0 + center[0];
+			position[i].data()[1] = temp_position1 + center[1];
+		}
+		break;
+	}
 }
 
 
-void MoveObject::moveAroundAxe(int thread_No, int obj_index, unsigned int dimension)
-{
-
-}
+//void MoveObject::moveAroundAxes(int thread_No, int obj_index)
+//{
+//
+//}
+//
+//
+//void MoveObject::moveAroundAxe(int thread_No, int obj_index, unsigned int dimension)
+//{
+//
+//}
 
 //void MoveObject::moveScript(unsigned int type)
 //{

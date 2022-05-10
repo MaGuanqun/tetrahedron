@@ -42,6 +42,9 @@ protected:
 private:
 public:
 
+	double center[3];
+
+
 	double rotation_angle[3] = { 0.0,0.0,0.0 };
 
 	double tolerance;

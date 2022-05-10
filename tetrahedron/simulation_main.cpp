@@ -97,25 +97,28 @@ void simu_main(GLFWwindow* window, Input* input) {
 		input->guiCaptureMouse = io.WantCaptureMouse;
 		input->guiCaptureKeyboard = io.WantCaptureKeyboard;
 
-		if (input->mouse.scroll_callback) {
-			if (!scene.intersection.happened && !set_anchor[0]) {
-				if (zoom_value > 0.025) {
-					zoom_value -= 0.025 * input->mouse.scroll;
-					zoom_value = myMax(zoom_value, 0.026);
-					zoom_value = myMin(zoom_value, 3.0);
+		if (!(control_parameter[ROTATION] || control_parameter[ONLY_ROTATE_CURRENT])) {
+			if (input->mouse.scroll_callback) {
+				if (!scene.intersection.happened && !set_anchor[0]) {
+					if (zoom_value > 0.025) {
+						zoom_value -= 0.025 * input->mouse.scroll;
+						zoom_value = myMax(zoom_value, 0.026);
+						zoom_value = myMin(zoom_value, 3.0);
+					}
+					camera.zoomInOut((float)zoom_value * camera_from_origin);
 				}
-				camera.zoomInOut((float)zoom_value * camera_from_origin);
 			}
 		}
-
 		if (input->mouse.mouse_callback) {
 			if (!scene.intersection.happened && !set_anchor[0]) {
-				if (input->mouse.leftButtonIsPressed()) {
-					if (!input->mouse.rightButtonIsPressed()) {
-						camera.rotation(input->mouse.angle[0], input->mouse.angle[1], 1);
-					}
-					if (input->mouse.rightButtonIsPressed()) {
-						camera.move(-input->mouse.move_direction[0], -input->mouse.move_direction[1]);
+				if (!(control_parameter[ROTATION] || control_parameter[ONLY_ROTATE_CURRENT])) {
+					if (input->mouse.leftButtonIsPressed()) {
+						if (!input->mouse.rightButtonIsPressed()) {
+							camera.rotation(input->mouse.angle[0], input->mouse.angle[1], 1);
+						}
+						if (input->mouse.rightButtonIsPressed()) {
+							camera.move(-input->mouse.move_direction[0], -input->mouse.move_direction[1]);
+						}
 					}
 				}
 			}

@@ -9,6 +9,9 @@ void MouseInput::beginFrame() {
 	prev_left_press = left_press;
 	prev_right_press = right_press;
 
+	memset(angle, 0, 8);
+	memset(move_direction, 0, 16);
+
 	mouse_callback = false;
 	scroll_callback = false;
 }
@@ -46,17 +49,19 @@ void Input::keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 
 
 void Input::mouseCallback(GLFWwindow* window, double xpos, double ypos) {
+
 	mouse.screen_pos[0] = xpos;
 	mouse.screen_pos[1] = ypos;
 
 	mouse.mouse_callback = true;
-
 	if (mouse.right_press || mouse.left_press) {
 		mouse.angle[0] = M_PI * (xpos- mouse.last_screen_pos[0]) / SCR_WIDTH;
 		mouse.angle[1] = M_PI * (mouse.last_screen_pos[1] - ypos) / SCR_HEIGHT;
 		mouse.move_direction[0]= xpos - mouse.last_screen_pos[0];
 		mouse.move_direction[1] = mouse.last_screen_pos[1] - ypos;
+
 	}
+
 }
 
 void Input::mouseButtonCallback(GLFWwindow* window, int button, int action, int mod)

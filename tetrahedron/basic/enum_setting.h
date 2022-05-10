@@ -96,7 +96,7 @@ enum DrawCullingFunc {
 };
 
 enum MoveObjectFunc {
-    MOVE_OBJECT, MOVE_OBJECT2
+    MOVE_OBJECT, MOVE_OBJECT2, ROTATE_AROUND_AXIS
 };
 
 enum CollisionIndicateType {

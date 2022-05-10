@@ -38,8 +38,9 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 
 	initialCollidePairInfo();
 	reorganzieDataOfObjects();
-	collision_constraint.testPT();
-	approx_CCD.test();
+
+	//collision_constraint.testPT();
+	//approx_CCD.test();
 	//CCD::test();
 	//std::cout <<"floor coordinate "<< (*collider)[0].ori_vertices[0][1] << std::endl;
 

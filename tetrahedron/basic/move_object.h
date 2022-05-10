@@ -21,7 +21,11 @@ public:
 
 	int select_object_index;
 
-	void rotation(double* AABB, double* angle);
+	void rotation(double angle_move, unsigned int dimension, bool only_move_vertex_pos);
+	void rotateAroundAxis(int thread_No, unsigned int obj_No);
+
+	int select_object_index;
+	unsigned int select_dimension;
 
 private:
 	std::vector<Cloth>* cloth;
@@ -38,5 +42,11 @@ private:
 
 	std::vector<std::array<double, 3>> displacement_test;
 	std::vector<std::array<double, 3>> displacement_test_render;
+
+
+
+	double angle_move;
+
+	double center[3];
 
 };

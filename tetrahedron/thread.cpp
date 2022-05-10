@@ -570,6 +570,9 @@ job Thread::create_task(MoveObject* func, int thread_id, MoveObjectFunc function
     case MOVE_OBJECT2:
         k = job([func, thread_id, key_id]() {func->moveDiffInitialCurrent(thread_id, key_id); });
         break;
+    case ROTATE_AROUND_AXIS:
+        k = job([func, thread_id, key_id]() {func->rotateAroundAxis(thread_id, key_id); });
+        break;
     }
     return k;
 }
