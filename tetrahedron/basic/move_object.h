@@ -24,7 +24,6 @@ public:
 	void rotation(double angle_move, unsigned int dimension, bool only_move_vertex_pos);
 	void rotateAroundAxis(int thread_No, unsigned int obj_No);
 
-	int select_object_index;
 	unsigned int select_dimension;
 
 private:

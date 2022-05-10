@@ -25,6 +25,7 @@ void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	setBuffer();
 	setRepresentativePrimitve();
 	initialHashAABB();
+	obtainAABBMoveRadius();
 }
 
 
@@ -89,10 +90,10 @@ void Tetrahedron::setRepresentativePrimitve()
 	}
 }
 
-void Tetrahedron::obtainCurrentAABB()
+void Tetrahedron::obtainAABBMoveRadius()
 {
 	thread->assignTask(this, CURRENT_AABB);
-	combineCurrentAABB();
+	combineCurrentAABBMoveRadius();
 }
 
 

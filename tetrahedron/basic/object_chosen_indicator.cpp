@@ -17,11 +17,8 @@ ObjectChosenIndicator::ObjectChosenIndicator()
 }
 
 
-void ObjectChosenIndicator::updatePosition(double* AABB)
+void ObjectChosenIndicator::updatePosition(double* center, double radius)
 {
-	double center[3] = { 0.5 * (AABB[0] + AABB[3]),0.5 * (AABB[1] + AABB[4]),0.5 * (AABB[2] + AABB[5]) };
-	double radius = 0.5 * sqrt((AABB[0] - AABB[3]) * (AABB[0] - AABB[3]) + (AABB[1] - AABB[4]) * (AABB[1] - AABB[4])
-		+ (AABB[2] - AABB[5]) * (AABB[2] - AABB[5]));
 
 	for (int i = 0; i < vertex_num; i++)
 	{

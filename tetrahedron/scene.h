@@ -124,10 +124,12 @@ private:
 	void updateSceneCollisionTest(Camera* camera, double* cursor_screen, bool* control_parameter);
 	TestDrawCollision test_draw_collision;
 
-	void getCurrentAABB();
+	//void getCurrentAABB();
 
 	void updateBufferOriPos();
 
 	bool intersect_when_rotation;
+
+	void rotate(Camera* camera, float* angle, bool only_move_vertex_pos);
 
 };

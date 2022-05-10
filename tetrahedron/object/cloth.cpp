@@ -114,6 +114,7 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	update_stiffness_iteration_number.resize(mesh_struct.vertices.size());
 	initialHashAABB();
 	setRepresentativePrimitve();
+	obtainAABBMoveRadius();
 }
 
 
@@ -269,10 +270,10 @@ void Cloth::setAnchor()
 
 
 
-void Cloth::obtainCurrentAABB()
+void Cloth::obtainAABBMoveRadius()
 {
 	thread->assignTask(this, CURRENT_AABB);
-	combineCurrentAABB();
+	combineCurrentAABBMoveRadius();
 }
 
 

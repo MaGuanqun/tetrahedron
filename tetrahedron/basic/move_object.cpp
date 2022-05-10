@@ -46,6 +46,15 @@ void MoveObject::moveScript(unsigned int type)
 	}
 	for (unsigned int i = 0; i < displacement_test.size(); ++i) {
 		thread->assignTask(this, MOVE_OBJECT2, i);
+		if (i < cloth->size()) {
+			SUM_(cloth->data()[i].center, displacement_test[i]);
+		}
+		else if (i < tetrahedron_end_index) {
+			SUM_(tetrahedron->data()[i - cloth->size()].center, displacement_test[i]);
+		}
+		else {
+			SUM_(collider->data()[i - tetrahedron_end_index].center, displacement_test[i]);
+		}
 	}
 }
 
@@ -55,18 +64,28 @@ void MoveObject::move(unsigned int obj_No, double* displacement, bool only_move_
 	this->displacement = displacement;
 	thread->assignTask(this, MOVE_OBJECT, obj_No);
 
-	if (!only_move_vertex_pos) {
-		if (obj_No < cloth->size()) {
-			cloth->data()[obj_No].mesh_struct.vertex_for_render = cloth->data()[obj_No].mesh_struct.vertex_position;
-		}
-		else if (obj_No < tetrahedron_end_index) {
-			tetrahedron->data()[obj_No - cloth->size()].mesh_struct.vertex_for_render = tetrahedron->data()[obj_No - cloth->size()].mesh_struct.vertex_position;
-		}
-		else {
-			collider->data()[obj_No - tetrahedron_end_index].mesh_struct.vertex_for_render = collider->data()[obj_No - tetrahedron_end_index].mesh_struct.vertex_position;
-		}
+	if (obj_No < cloth->size()) {
+		SUM_(cloth->data()[obj_No].center, displacement);
 	}
-	SUM_(total_displacement[obj_No], displacement);
+	else if (obj_No < tetrahedron_end_index) {
+		SUM_(tetrahedron->data()[obj_No - cloth->size()].center, displacement);
+	}
+	else {
+		SUM_(collider->data()[obj_No - tetrahedron_end_index].center, displacement);
+	}
+
+	//if (!only_move_vertex_pos) {
+	//	if (obj_No < cloth->size()) {
+	//		cloth->data()[obj_No].mesh_struct.vertex_for_render = cloth->data()[obj_No].mesh_struct.vertex_position;
+	//	}
+	//	else if (obj_No < tetrahedron_end_index) {
+	//		tetrahedron->data()[obj_No - cloth->size()].mesh_struct.vertex_for_render = tetrahedron->data()[obj_No - cloth->size()].mesh_struct.vertex_position;
+	//	}
+	//	else {
+	//		collider->data()[obj_No - tetrahedron_end_index].mesh_struct.vertex_for_render = collider->data()[obj_No - tetrahedron_end_index].mesh_struct.vertex_position;
+	//	}
+	//}
+	//SUM_(total_displacement[obj_No], displacement);
 	//std::cout << "======" << std::endl;
 	//for (unsigned int i = 0; i < total_obj_num; ++i) {
 	//	std::cout << total_displacement[i][0] << ", " << total_displacement[i][1] << ", " << total_displacement[i][2] << std::endl;

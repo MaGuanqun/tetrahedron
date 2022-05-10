@@ -39,11 +39,14 @@ protected:
 
 	void combineObjAABB();
 	void getAABB(double* target, double* aabb0, double* aabb1, double* aabb2, double* aabb3);
+
+	void setCenterRotationCircleRadius(double* AABB);
+	void combineCurrentAABBMoveRadius();
 private:
 public:
 
 	double center[3];
-
+	double move_circle_radius;
 
 	double rotation_angle[3] = { 0.0,0.0,0.0 };
 
@@ -69,7 +72,6 @@ public:
 	std::vector<std::vector<std::vector<unsigned int>>>triangle_neighbor_obj_triangle;
 
 	double obj_aabb[6];
-	double current_obj_pos_aabb[6];
-	void combineCurrentAABB();
+
 
 };

@@ -50,7 +50,7 @@ public:
 	std::vector<std::vector<std::vector<int>>>collide_vertex_collider_triangle;
 	std::vector<std::vector<std::vector<int>>>collide_edge_obj_edge;//except collider
 
-	void obtainCurrentAABB();
+	void obtainAABBMoveRadius();
 
 	void drawOriPos(Camera* camera, Shader* object_shader_front);
 

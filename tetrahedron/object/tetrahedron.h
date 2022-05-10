@@ -56,7 +56,7 @@ public:
 	void initialNeighborPrimitiveRecording(int cloth_num, int tetrahedron_num, int collider_num, bool use_BVH);
 	std::vector<int> surface_vertex_from_rep_triangle_index;
 	void getCurrentPosAABB(int thread_No);
-	void obtainCurrentAABB();
+	void obtainAABBMoveRadius();
 
 	void drawOriPos(Camera* camera, Shader* object_shader_front);
 };

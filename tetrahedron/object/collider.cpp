@@ -80,6 +80,7 @@ void Collider::loadMesh(OriMesh& ori_mesh, Thread* thread)
 	ori_vertices = mesh_struct.vertex_position;
 	initialHashAABB();
 	setRepresentativePrimitve();
+	obtainAABBMoveRadius();
 }
 
 void Collider::setMeshStruct(OriMesh& ori_mesh)
@@ -106,10 +107,10 @@ void Collider::obtainAABB(bool has_tolerace)
 	combineObjAABB();
 }
 
-void Collider::obtainCurrentAABB()
+void Collider::obtainAABBMoveRadius()
 {
 	thread->assignTask(this, CURRENT_AABB);
-	combineCurrentAABB();
+	combineCurrentAABBMoveRadius();
 }
 
 

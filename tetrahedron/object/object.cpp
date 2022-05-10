@@ -32,8 +32,9 @@ void Object::combineObjAABB()
 	}
 }
 
-void Object::combineCurrentAABB()
+void Object::combineCurrentAABBMoveRadius()
 {
+	double current_obj_pos_aabb[6];
 	memcpy(current_obj_pos_aabb, current_obj_pos_aabb_per_thread[0].data(), 48);
 	for (unsigned int i = 1; i < total_thread_num; ++i) {
 		for (unsigned int j = 0; j < 3; ++j) {
@@ -47,6 +48,17 @@ void Object::combineCurrentAABB()
 			}
 		}
 	}
+	setCenterRotationCircleRadius(current_obj_pos_aabb);
+}
+
+void Object::setCenterRotationCircleRadius(double* AABB)
+{
+	center[0] = 0.5 * (AABB[0] + AABB[3]);
+	center[1] = 0.5 * (AABB[1] + AABB[4]);
+	center[2] = 0.5 * (AABB[2] + AABB[5]);
+	
+	move_circle_radius = 0.5 * sqrt((AABB[0] - AABB[3]) * (AABB[0] - AABB[3]) + (AABB[1] - AABB[4]) * (AABB[1] - AABB[4])
+		+ (AABB[2] - AABB[5]) * (AABB[2] - AABB[5]));
 }
 
 
