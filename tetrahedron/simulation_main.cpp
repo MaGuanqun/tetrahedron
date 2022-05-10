@@ -205,7 +205,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 			scene.updateItrInfo(set_iteration_num);			
 			scene.setTolerance(tolerance_ratio);
 			scene.updateCloth(&camera, input->mouse.screen_pos, control_parameter, force_coe, record_matrix,
-				iteration_solver_iteration_num);
+				iteration_solver_iteration_num, input->mouse.angle);
 			scene.drawScene(&camera, show_element, control_parameter);
 			scene.selectAnchor(control_parameter, set_anchor, input->mouse.screen_pos, input->mouse.left_press, input->mouse.prev_left_press, &camera, show_element[TETRAHEDRON_]);
 			scene.obtainConvergenceInfo(convergence_rate, iteration_number);

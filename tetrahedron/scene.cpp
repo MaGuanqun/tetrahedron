@@ -512,7 +512,7 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 }
 
 
-void Scene::updateSceneCollisionTest(Camera* camera, double* cursor_screen, bool* control_parameter)
+void Scene::updateSceneCollisionTest(Camera* camera, double* cursor_screen, bool* control_parameter, float* angle)
 {
 	if (!(control_parameter[ONLY_ROTATE_CURRENT] || control_parameter[ROTATION])) {
 		intersect_when_rotation = false;
@@ -521,13 +521,12 @@ void Scene::updateSceneCollisionTest(Camera* camera, double* cursor_screen, bool
 	if (control_parameter[MOVE_OBJ]) {
 		if (intersection.happened_include_collider) {
 			moveObj(camera, cursor_screen, false);			
-
 		}
 		setChosenIndicator();
 	}
 	if (control_parameter[ROTATION]) {
 		if (intersect_when_rotation) {
-
+			rotate(camera, angle, false);
 		}
 		setChosenIndicator();
 	}
@@ -540,7 +539,7 @@ void Scene::updateSceneCollisionTest(Camera* camera, double* cursor_screen, bool
 	}
 	if (control_parameter[ONLY_ROTATE_CURRENT]) {
 		if (intersect_when_rotation) {
-
+			rotate(camera, angle, true);
 		}
 		setChosenIndicator();
 	}
@@ -551,10 +550,10 @@ void Scene::updateSceneCollisionTest(Camera* camera, double* cursor_screen, bool
 
 
 void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe, bool& record_matrix,
-	double& ave_iteration)
+	double& ave_iteration, float* angle)
 {
 	if (control_parameter[ONLY_COLLISION_TEST]) {
-		updateSceneCollisionTest(camera, cursor_screen, control_parameter);
+		updateSceneCollisionTest(camera, cursor_screen, control_parameter,angle);
 		updateBufferOriPos();
 	}
 	else {
@@ -774,7 +773,14 @@ void Scene::getCursorPos(double* cursor_pos, std::vector<std::array<double, 3>>&
 
 void Scene::rotate(Camera* camera, float* angle, bool only_move_vertex_pos)
 {
-
+	float angle_move;
+	if (abs(angle[0]) > abs(angle[1])) {
+		angle_move = angle[0];
+	}
+	else {
+		angle_move = angle[1];
+	}
+	move_object.rotation(angle_move, select_dimension_index, only_move_vertex_pos);
 }
 
 

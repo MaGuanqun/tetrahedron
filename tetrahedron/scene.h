@@ -33,7 +33,7 @@ public:
 		bool* control_parameter);
 	void getClothInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 3>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 4>>& collision_stiffness);
 	void updateCloth(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe, bool& record_matrix,
-		double& ave_iteration); // bool mouse_is_pressed_previous_current_frame
+		double& ave_iteration, float* angle); // bool mouse_is_pressed_previous_current_frame
 	void initialIntersection();
 	void obtainConvergenceInfo(double* convergence_rate, int* iteration_num);
 	void updateConvRate(double* convergence_rate);
@@ -121,7 +121,7 @@ private:
 	void moveObj(Camera* camera, double* cursor_screen, bool only_move_vertex_pos);
 	void updateObjSimulation(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe, bool& record_matrix,
 		double& ave_iteration);
-	void updateSceneCollisionTest(Camera* camera, double* cursor_screen, bool* control_parameter);
+	void updateSceneCollisionTest(Camera* camera, double* cursor_screen, bool* control_parameter,float* angle);
 	TestDrawCollision test_draw_collision;
 
 	//void getCurrentAABB();
