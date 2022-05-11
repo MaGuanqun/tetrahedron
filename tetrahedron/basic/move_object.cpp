@@ -159,23 +159,82 @@ void MoveObject::move(int thread_No, unsigned int obj_No)
 
 }
 
+void MoveObject::updateRotationMatrix(double angle_move, unsigned int dimension, double* rotation_matrix)
+{
+	double v[9];
+	memset(v, 0, 72);
+	v[0] = v[4] = v[8] = 1.0;
+	switch (dimension)
+	{
+	case 0:		
+		v[0] = 1.0;
+		v[4] = cos(angle_move); v[5] = -sin(angle_move);
+		v[7] = -v[5];		v[8] = v[4];
+		break;
+	case 1:
+		v[0] = cos(angle_move);	v[2] = sin(angle_move);
+		v[4] = 1.0;
+		v[6] = -v[2];		v[8] = v[0];
+		break;
+	case 2:
+		v[0] = cos(angle_move);		v[1] = -sin(angle_move);  
+		v[3] = -v[1];		v[4] = v[0];  
+		v[8] = 1;
+		break;
+	}
+
+	std::cout << "updateRotationMatrix v ";
+	for (unsigned int i = 0; i < 9; ++i) {
+		std::cout << v[i] << " ";
+	}
+
+	double temp_rotate_matrix[9];//change to row major
+	temp_rotate_matrix[0] = rotation_matrix[0];
+	temp_rotate_matrix[1] = rotation_matrix[3];
+	temp_rotate_matrix[2] = rotation_matrix[6];
+	temp_rotate_matrix[3] = rotation_matrix[1];
+	temp_rotate_matrix[4] = rotation_matrix[4];
+	temp_rotate_matrix[5] = rotation_matrix[7];
+	temp_rotate_matrix[6] = rotation_matrix[2];
+	temp_rotate_matrix[7] = rotation_matrix[5];
+	temp_rotate_matrix[8] = rotation_matrix[8];
+
+
+	std::cout << "updateRotationMatrix temp_rotate ";
+	for (unsigned int i = 0; i < 9; ++i) {
+		std::cout << temp_rotate_matrix[i] << " ";
+	}
+
+	for (unsigned int i = 0; i < 3; ++i) {
+		rotation_matrix[3*i] = DOT(temp_rotate_matrix, (v+3*i));
+		rotation_matrix[3*i+1] = DOT((temp_rotate_matrix + 3), (v+3*i));
+		rotation_matrix[3*i+2] = DOT((temp_rotate_matrix + 6), (v+3*i));
+	}
+
+	std::cout << "updateRotationMatrix rotation_matrix  ";
+	for (unsigned int i = 0; i < 9; ++i) {
+		std::cout << rotation_matrix[i] << " ";
+	}
+}
+
 
 void MoveObject::rotation(double angle_move, unsigned int dimension, bool only_move_vertex_pos)
 {
 	if (select_object_index < cloth->size()) {
 		memcpy(center, cloth->data()[select_object_index].center, 24);
+		updateRotationMatrix(angle_move, dimension, cloth->data()[select_object_index].rotation_matrix);
 	}
 	else if (select_object_index < tetrahedron_end_index) {
 		memcpy(center, tetrahedron->data()[select_object_index - cloth->size()].center, 24);
+		updateRotationMatrix(angle_move,dimension, tetrahedron->data()[select_object_index - cloth->size()].rotation_matrix);
 	}
 	else {
 		memcpy(center, collider->data()[select_object_index - tetrahedron_end_index].center, 24);
+		updateRotationMatrix(angle_move, dimension, collider->data()[select_object_index - tetrahedron_end_index].rotation_matrix);
 	}
 
 	this->angle_move = angle_move;
 	select_dimension = dimension;
-
-
 
 	thread->assignTask(this, ROTATE_AROUND_AXIS, select_object_index);
 	if (!only_move_vertex_pos) {

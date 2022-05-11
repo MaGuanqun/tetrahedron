@@ -165,12 +165,25 @@ void Cloth::recordInitialMesh(SingleClothInfo& single_cloth_info_ref)
 
 }
 
+void Cloth::reset()
+{
+	memset(rotation_matrix, 0, 72);
+	rotation_matrix[0] = rotation_matrix[4] = rotation_matrix[8] = 1.0;
+	mesh_struct.vertex_position = ori_vertices;
+	mesh_struct.vertex_for_render = ori_vertices;
+	mesh_struct.getRenderNormal();
+	mesh_struct.getNormal();
+	for (int i = 0; i < mesh_struct.anchor_vertex.size(); ++i) {
+		mesh_struct.anchor_position[i] = mesh_struct.vertex_position[mesh_struct.anchor_vertex[i]];
+	}
+	obtainAABBMoveRadius();
+}
 
 
 void Cloth::initial()
 {
-	memset(rotation_angle, 0, 24);
-
+	memset(rotation_matrix, 0, 72);
+	rotation_matrix[0] = rotation_matrix[4] = rotation_matrix[8] = 1.0;
 	mesh_struct.vertex_position = ori_vertices;
 	mesh_struct.vertex_for_render = ori_vertices;
 	mesh_struct.getRenderNormal();
@@ -185,7 +198,17 @@ void Cloth::initial()
 		collision_stiff_indicator[i] = collision_stiffness_update_indicator * single_cloth_info_ref.collision_stiffness[i];
 	}
 	memcpy(collision_stiffness, single_cloth_info_ref.collision_stiffness, 16);
+	obtainAABBMoveRadius();
 }
+
+
+void Cloth::obtainAABBMoveRadius()
+{
+	thread->assignTask(this, CURRENT_AABB);
+	combineCurrentAABBMoveRadius();
+}
+
+
 
 void Cloth::initialMouseChosenVertex()
 {
@@ -270,11 +293,7 @@ void Cloth::setAnchor()
 
 
 
-void Cloth::obtainAABBMoveRadius()
-{
-	thread->assignTask(this, CURRENT_AABB);
-	combineCurrentAABBMoveRadius();
-}
+
 
 
 void Cloth::obtainAABB(bool has_tolerace)

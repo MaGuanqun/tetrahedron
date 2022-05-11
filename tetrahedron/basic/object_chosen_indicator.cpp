@@ -17,22 +17,41 @@ ObjectChosenIndicator::ObjectChosenIndicator()
 }
 
 
-void ObjectChosenIndicator::updatePosition(double* center, double radius)
+void ObjectChosenIndicator::updatePosition(double* center, double radius, double* angle_matrix)
 {
+	std::cout << "updatePosition ";
+	for (unsigned int i = 0; i < 9; ++i) {
+		std::cout << angle_matrix[i] << " ";
+	}
+	std::cout << std::endl;
+	double temp_position0, temp_position1, temp_position2;
 
 	for (int i = 0; i < vertex_num; i++)
 	{
-		circle_vertices[0][3 * i] = center[0]+ radius * sin(DEG_RADIANS(360.0 * (double)i / (double)vertex_num));
-		circle_vertices[0][3 * i + 1] = center[1] + radius * cos(DEG_RADIANS(360.0 * (double)i / (double)vertex_num));
-		circle_vertices[0][3 * i + 2] = center[2];
+		circle_vertices[2][3 * i] = radius * sin(DEG_RADIANS(360.0 * (double)i / (double)vertex_num));
+		circle_vertices[2][3 * i + 1] =  radius * cos(DEG_RADIANS(360.0 * (double)i / (double)vertex_num));
+		circle_vertices[2][3 * i + 2] = 0.0;
 
-		circle_vertices[1][3 * i] = center[0];
-		circle_vertices[1][3 * i + 1] = center[1] + radius * sin(DEG_RADIANS(360.0 * (double)i / (double)vertex_num));
-		circle_vertices[1][3 * i + 2] = center[2] + radius * cos(DEG_RADIANS(360.0 * (double)i / (double)vertex_num));
+		circle_vertices[0][3 * i] = 0.0;
+		circle_vertices[0][3 * i + 1] = radius * sin(DEG_RADIANS(360.0 * (double)i / (double)vertex_num));
+		circle_vertices[0][3 * i + 2] = radius * cos(DEG_RADIANS(360.0 * (double)i / (double)vertex_num));
 
-		circle_vertices[2][3 * i] = center[0] + radius * cos(DEG_RADIANS(360.0 * (double)i / (double)vertex_num));
-		circle_vertices[2][3 * i + 1] = center[1];
-		circle_vertices[2][3 * i + 2] = center[2] + radius * sin(DEG_RADIANS(360.0 * (double)i / (double)vertex_num));
+		circle_vertices[1][3 * i] = radius * cos(DEG_RADIANS(360.0 * (double)i / (double)vertex_num));
+		circle_vertices[1][3 * i + 1] = 0.0;
+		circle_vertices[1][3 * i + 2] = radius * sin(DEG_RADIANS(360.0 * (double)i / (double)vertex_num));
+
+
+		for (unsigned int j = 0; j < 3; ++j) {
+			temp_position0 = circle_vertices[j][3 * i] * angle_matrix[0] +  
+				circle_vertices[j][3 * i + 1] * angle_matrix[1] + circle_vertices[j][3 * i + 2] * angle_matrix[2];
+			temp_position1 = circle_vertices[j][3 * i] * angle_matrix[3] + 
+				circle_vertices[j][3 * i + 1] * angle_matrix[4] + circle_vertices[j][3 * i + 2] * angle_matrix[5];
+			temp_position2 = circle_vertices[j][3 * i] * angle_matrix[6] +
+				circle_vertices[j][3 * i + 1] * angle_matrix[7] + circle_vertices[j][3 * i + 2] * angle_matrix[8];
+			circle_vertices[j][3 * i] = temp_position0 + center[0];
+			circle_vertices[j][3 * i + 1] = temp_position1 + center[1];
+			circle_vertices[j][3 * i + 2] = temp_position2 + center[2];
+		}
 	}	
 	setBuffer();
 }

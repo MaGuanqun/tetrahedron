@@ -47,5 +47,5 @@ private:
 	double angle_move;
 
 	double center[3];
-
+	void updateRotationMatrix(double angle_move, unsigned int dimension, double* rotation_matrix);
 };

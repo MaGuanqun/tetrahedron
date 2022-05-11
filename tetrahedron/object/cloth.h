@@ -51,9 +51,8 @@ public:
 	std::vector<std::vector<std::vector<int>>>collide_edge_obj_edge;//except collider
 
 	void obtainAABBMoveRadius();
-
 	void drawOriPos(Camera* camera, Shader* object_shader_front);
-
+	void reset();
 private:
 	void setMeshStruct(double density, OriMesh& ori_mesh);
 

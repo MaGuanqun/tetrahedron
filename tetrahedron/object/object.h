@@ -48,7 +48,7 @@ public:
 	double center[3];
 	double move_circle_radius;
 
-	double rotation_angle[3] = { 0.0,0.0,0.0 };
+	double rotation_matrix[9] = {1.0,0.0,0.0,	0.0,1.0,0.0	,0.0,0.0,1.0};//store in column major
 
 	double tolerance;
 	double mass;

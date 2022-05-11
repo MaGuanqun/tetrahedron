@@ -533,7 +533,6 @@ void Scene::updateSceneCollisionTest(Camera* camera, double* cursor_screen, bool
 	if (control_parameter[ONLY_MOVE_CURRENT_POSITION]) {
 		if (intersection.happened_include_collider) {
 			moveObj(camera, cursor_screen, true);
-
 		}
 		setChosenIndicator();
 	}
@@ -568,24 +567,24 @@ void Scene::setChosenIndicator()
 		if (intersection.happened) {
 			//std::cout << cursor_screen[0] << " " << cursor_screen[1] << " " << force_coe << std::end
 			if (intersection.obj_No < cloth.size()) {
-				object_chosen_indicator.updatePosition(cloth[intersection.obj_No].center, cloth[intersection.obj_No].move_circle_radius);
+				object_chosen_indicator.updatePosition(cloth[intersection.obj_No].center, cloth[intersection.obj_No].move_circle_radius, cloth[intersection.obj_No].rotation_matrix);
 			}
 			else if (intersection.obj_No < obj_num_except_collider) {
-				object_chosen_indicator.updatePosition(tetrahedron[intersection.obj_No - cloth.size()].center, tetrahedron[intersection.obj_No - cloth.size()].move_circle_radius);
+				object_chosen_indicator.updatePosition(tetrahedron[intersection.obj_No - cloth.size()].center, tetrahedron[intersection.obj_No - cloth.size()].move_circle_radius, tetrahedron[intersection.obj_No - cloth.size()].rotation_matrix);
 			}
 			else {
-				object_chosen_indicator.updatePosition(collider[intersection.obj_No - obj_num_except_collider].center, collider[intersection.obj_No - obj_num_except_collider].move_circle_radius);
+				object_chosen_indicator.updatePosition(collider[intersection.obj_No - obj_num_except_collider].center, collider[intersection.obj_No - obj_num_except_collider].move_circle_radius, collider[intersection.obj_No - obj_num_except_collider].rotation_matrix);
 			}
 		}
 		else if (intersect_when_rotation) {
 			if (move_object.select_object_index < cloth.size()) {
-				object_chosen_indicator.updatePosition(cloth[move_object.select_object_index].center, cloth[move_object.select_object_index].move_circle_radius);
+				object_chosen_indicator.updatePosition(cloth[move_object.select_object_index].center, cloth[move_object.select_object_index].move_circle_radius, cloth[intersection.obj_No].rotation_matrix);
 			}
 			else if (move_object.select_object_index < obj_num_except_collider) {
-				object_chosen_indicator.updatePosition(tetrahedron[move_object.select_object_index - cloth.size()].center, tetrahedron[move_object.select_object_index - cloth.size()].move_circle_radius);
+				object_chosen_indicator.updatePosition(tetrahedron[move_object.select_object_index - cloth.size()].center, tetrahedron[move_object.select_object_index - cloth.size()].move_circle_radius, tetrahedron[intersection.obj_No - cloth.size()].rotation_matrix);
 			}
 			else {
-				object_chosen_indicator.updatePosition(collider[move_object.select_object_index - obj_num_except_collider].center, collider[move_object.select_object_index - obj_num_except_collider].move_circle_radius);
+				object_chosen_indicator.updatePosition(collider[move_object.select_object_index - obj_num_except_collider].center, collider[move_object.select_object_index - obj_num_except_collider].move_circle_radius, collider[intersection.obj_No - obj_num_except_collider].rotation_matrix);
 			}
 		}
 	
