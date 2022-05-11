@@ -573,11 +573,11 @@ void Scene::setChosenIndicator()
 				}
 				else if (move_object.select_object_index < obj_num_except_collider) {
 					object_chosen_indicator.updatePosition(tetrahedron[move_object.select_object_index - cloth.size()].center, tetrahedron[move_object.select_object_index - cloth.size()].move_circle_radius, tetrahedron[move_object.select_object_index - cloth.size()].rotation_matrix);
-					std::cout << "should be  ";
-					for (unsigned int i = 0; i < 9; ++i) {
-						std::cout << tetrahedron[move_object.select_object_index-cloth.size()].rotation_matrix[i] << " ";
-					}
-					std::cout << std::endl;
+					//std::cout << "should be  ";
+					//for (unsigned int i = 0; i < 9; ++i) {
+					//	std::cout << tetrahedron[move_object.select_object_index-cloth.size()].rotation_matrix[i] << " ";
+					//}
+					//std::cout << std::endl;
 				}
 				else {
 					object_chosen_indicator.updatePosition(collider[move_object.select_object_index - obj_num_except_collider].center, collider[move_object.select_object_index - obj_num_except_collider].move_circle_radius, collider[move_object.select_object_index - obj_num_except_collider].rotation_matrix);
@@ -782,12 +782,47 @@ void Scene::rotate(Camera* camera, float* angle, bool only_move_vertex_pos)
 		float angle_move;
 		if (abs(angle[0]) > abs(angle[1])) {
 			angle_move = -angle[0];
+			//if (sameDirection(camera, move_object.select_object_index)) {				
+			//}
+			//else {
+			//	angle_move = angle[0];
+			//}
 		}
 		else {
 			angle_move = -angle[1];
+			//if (sameDirection(camera, move_object.select_object_index)) {				
+			//}
+			//else {
+			//	angle_move = angle[1];
+			//}
 		}
 		move_object.rotation(angle_move, select_dimension_index, only_move_vertex_pos);
 	}
+}
+
+bool Scene::sameDirection(Camera* camera, unsigned int obj_index)
+{
+	double camera_y[3] = { camera->up.x, camera->up.y, camera->up.z };
+	double rotation_axis[3];
+	if (obj_index < cloth.size()) {
+		rotation_axis[0] = cloth[obj_index].rotation_matrix[0];
+		rotation_axis[1] = cloth[obj_index].rotation_matrix[3];
+		rotation_axis[2] = cloth[obj_index].rotation_matrix[6];
+	}
+	else if (obj_index < obj_num_except_collider) {
+		rotation_axis[0] = tetrahedron[obj_index- cloth.size()].rotation_matrix[0];
+		rotation_axis[1] = tetrahedron[obj_index- cloth.size()].rotation_matrix[3];
+		rotation_axis[2] = tetrahedron[obj_index- cloth.size()].rotation_matrix[6];
+	}
+	else {
+		rotation_axis[0] = collider[obj_index - obj_num_except_collider].rotation_matrix[0];
+		rotation_axis[1] = collider[obj_index - obj_num_except_collider].rotation_matrix[3];
+		rotation_axis[2] = collider[obj_index - obj_num_except_collider].rotation_matrix[6];
+	}
+	if (DOT(camera_y, rotation_axis) < 0) {
+		return false;
+	}
+	return true;
 }
 
 

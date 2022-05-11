@@ -136,6 +136,8 @@ private:
 
 	void rotate(Camera* camera, float* angle, bool only_move_vertex_pos);
 
+	bool sameDirection(Camera* camera, unsigned int obj_index);
+
 
 
 };
