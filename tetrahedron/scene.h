@@ -13,6 +13,7 @@
 #include"./basic/floor.h"
 #include"./basic/move_object.h"
 #include"collision/test_draw_collision.h"
+#include"basic/opengl_input.h"
 
 class Scene
 {
@@ -59,6 +60,9 @@ public:
 
 	unsigned int select_dimension_index;
 	bool start_rotation;
+
+	Input* input;
+
 private:
 	bool use_PD;
 	bool only_test_collision;
@@ -131,5 +135,7 @@ private:
 	bool intersect_when_rotation;
 
 	void rotate(Camera* camera, float* angle, bool only_move_vertex_pos);
+
+
 
 };

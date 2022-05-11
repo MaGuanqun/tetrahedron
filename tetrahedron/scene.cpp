@@ -564,8 +564,27 @@ void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_par
 
 void Scene::setChosenIndicator()
 {
-		if (intersection.happened) {
-			//std::cout << cursor_screen[0] << " " << cursor_screen[1] << " " << force_coe << std::end
+		if (intersect_when_rotation){
+			if (input->mouse.leftButtonWasPressedPreviousAndThisFrame()) {
+				
+
+				if (move_object.select_object_index < cloth.size()) {
+					object_chosen_indicator.updatePosition(cloth[move_object.select_object_index].center, cloth[move_object.select_object_index].move_circle_radius, cloth[move_object.select_object_index].rotation_matrix);
+				}
+				else if (move_object.select_object_index < obj_num_except_collider) {
+					object_chosen_indicator.updatePosition(tetrahedron[move_object.select_object_index - cloth.size()].center, tetrahedron[move_object.select_object_index - cloth.size()].move_circle_radius, tetrahedron[move_object.select_object_index - cloth.size()].rotation_matrix);
+					std::cout << "should be  ";
+					for (unsigned int i = 0; i < 9; ++i) {
+						std::cout << tetrahedron[move_object.select_object_index-cloth.size()].rotation_matrix[i] << " ";
+					}
+					std::cout << std::endl;
+				}
+				else {
+					object_chosen_indicator.updatePosition(collider[move_object.select_object_index - obj_num_except_collider].center, collider[move_object.select_object_index - obj_num_except_collider].move_circle_radius, collider[move_object.select_object_index - obj_num_except_collider].rotation_matrix);
+				}
+			}
+		}
+		else if (intersection.happened) {
 			if (intersection.obj_No < cloth.size()) {
 				object_chosen_indicator.updatePosition(cloth[intersection.obj_No].center, cloth[intersection.obj_No].move_circle_radius, cloth[intersection.obj_No].rotation_matrix);
 			}
@@ -575,20 +594,7 @@ void Scene::setChosenIndicator()
 			else {
 				object_chosen_indicator.updatePosition(collider[intersection.obj_No - obj_num_except_collider].center, collider[intersection.obj_No - obj_num_except_collider].move_circle_radius, collider[intersection.obj_No - obj_num_except_collider].rotation_matrix);
 			}
-		}
-		else if (intersect_when_rotation) {
-			if (move_object.select_object_index < cloth.size()) {
-				object_chosen_indicator.updatePosition(cloth[move_object.select_object_index].center, cloth[move_object.select_object_index].move_circle_radius, cloth[intersection.obj_No].rotation_matrix);
-			}
-			else if (move_object.select_object_index < obj_num_except_collider) {
-				object_chosen_indicator.updatePosition(tetrahedron[move_object.select_object_index - cloth.size()].center, tetrahedron[move_object.select_object_index - cloth.size()].move_circle_radius, tetrahedron[intersection.obj_No - cloth.size()].rotation_matrix);
-			}
-			else {
-				object_chosen_indicator.updatePosition(collider[move_object.select_object_index - obj_num_except_collider].center, collider[move_object.select_object_index - obj_num_except_collider].move_circle_radius, collider[intersection.obj_No - obj_num_except_collider].rotation_matrix);
-			}
-		}
-	
-	
+		}	
 }
 
 void Scene::updateBufferOriPos()
@@ -772,14 +778,16 @@ void Scene::getCursorPos(double* cursor_pos, std::vector<std::array<double, 3>>&
 
 void Scene::rotate(Camera* camera, float* angle, bool only_move_vertex_pos)
 {
-	float angle_move;
-	if (abs(angle[0]) > abs(angle[1])) {
-		angle_move = angle[0];
+	if (input->mouse.leftButtonWasPressedPreviousAndThisFrame()) {
+		float angle_move;
+		if (abs(angle[0]) > abs(angle[1])) {
+			angle_move = -angle[0];
+		}
+		else {
+			angle_move = -angle[1];
+		}
+		move_object.rotation(angle_move, select_dimension_index, only_move_vertex_pos);
 	}
-	else {
-		angle_move = angle[1];
-	}
-	move_object.rotation(angle_move, select_dimension_index, only_move_vertex_pos);
 }
 
 

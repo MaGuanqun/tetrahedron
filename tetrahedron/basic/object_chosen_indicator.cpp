@@ -19,11 +19,6 @@ ObjectChosenIndicator::ObjectChosenIndicator()
 
 void ObjectChosenIndicator::updatePosition(double* center, double radius, double* angle_matrix)
 {
-	std::cout << "updatePosition ";
-	for (unsigned int i = 0; i < 9; ++i) {
-		std::cout << angle_matrix[i] << " ";
-	}
-	std::cout << std::endl;
 	double temp_position0, temp_position1, temp_position2;
 
 	for (int i = 0; i < vertex_num; i++)

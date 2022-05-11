@@ -164,29 +164,6 @@ void MoveObject::updateRotationMatrix(double angle_move, unsigned int dimension,
 	double v[9];
 	memset(v, 0, 72);
 	v[0] = v[4] = v[8] = 1.0;
-	switch (dimension)
-	{
-	case 0:		
-		v[0] = 1.0;
-		v[4] = cos(angle_move); v[5] = -sin(angle_move);
-		v[7] = -v[5];		v[8] = v[4];
-		break;
-	case 1:
-		v[0] = cos(angle_move);	v[2] = sin(angle_move);
-		v[4] = 1.0;
-		v[6] = -v[2];		v[8] = v[0];
-		break;
-	case 2:
-		v[0] = cos(angle_move);		v[1] = -sin(angle_move);  
-		v[3] = -v[1];		v[4] = v[0];  
-		v[8] = 1;
-		break;
-	}
-
-	std::cout << "updateRotationMatrix v ";
-	for (unsigned int i = 0; i < 9; ++i) {
-		std::cout << v[i] << " ";
-	}
 
 	double temp_rotate_matrix[9];//change to row major
 	temp_rotate_matrix[0] = rotation_matrix[0];
@@ -200,9 +177,22 @@ void MoveObject::updateRotationMatrix(double angle_move, unsigned int dimension,
 	temp_rotate_matrix[8] = rotation_matrix[8];
 
 
-	std::cout << "updateRotationMatrix temp_rotate ";
-	for (unsigned int i = 0; i < 9; ++i) {
-		std::cout << temp_rotate_matrix[i] << " ";
+	double axis[3];
+	switch (dimension)
+	{
+	case 0:		
+		memcpy(axis, temp_rotate_matrix, 24);
+		rotateAroundVector(v, axis, angle_move);
+		break;
+	case 1:		
+		memcpy(axis, (temp_rotate_matrix+3), 24);
+	//	std::cout << axis[0] << " " << axis[1] << " " << axis[2] << std::endl;
+		rotateAroundVector(v, axis, angle_move);
+		break;
+	case 2:
+		memcpy(axis, (temp_rotate_matrix + 6), 24);
+		rotateAroundVector(v, axis, angle_move);
+		break;
 	}
 
 	for (unsigned int i = 0; i < 3; ++i) {
@@ -210,30 +200,59 @@ void MoveObject::updateRotationMatrix(double angle_move, unsigned int dimension,
 		rotation_matrix[3*i+1] = DOT((temp_rotate_matrix + 3), (v+3*i));
 		rotation_matrix[3*i+2] = DOT((temp_rotate_matrix + 6), (v+3*i));
 	}
-
-	std::cout << "updateRotationMatrix rotation_matrix  ";
-	for (unsigned int i = 0; i < 9; ++i) {
-		std::cout << rotation_matrix[i] << " ";
-	}
 }
 
 
 void MoveObject::rotation(double angle_move, unsigned int dimension, bool only_move_vertex_pos)
 {
+	double* ori_rotation_matrix;
+
 	if (select_object_index < cloth->size()) {
 		memcpy(center, cloth->data()[select_object_index].center, 24);
-		updateRotationMatrix(angle_move, dimension, cloth->data()[select_object_index].rotation_matrix);
+		ori_rotation_matrix = cloth->data()[select_object_index].rotation_matrix;
+		
 	}
 	else if (select_object_index < tetrahedron_end_index) {
 		memcpy(center, tetrahedron->data()[select_object_index - cloth->size()].center, 24);
-		updateRotationMatrix(angle_move,dimension, tetrahedron->data()[select_object_index - cloth->size()].rotation_matrix);
+		ori_rotation_matrix = tetrahedron->data()[select_object_index - cloth->size()].rotation_matrix;
 	}
 	else {
 		memcpy(center, collider->data()[select_object_index - tetrahedron_end_index].center, 24);
-		updateRotationMatrix(angle_move, dimension, collider->data()[select_object_index - tetrahedron_end_index].rotation_matrix);
+		ori_rotation_matrix = collider->data()[select_object_index - tetrahedron_end_index].rotation_matrix;
+	}
+	
+	memset(rotation_matrix, 0, 72);
+	rotation_matrix[0] = 1.0;
+	rotation_matrix[4] = 1.0;
+	rotation_matrix[8] = 1.0;
+
+	double axis[3];
+	switch (dimension)
+	{
+	case 0:
+		axis[0] = ori_rotation_matrix[0]; axis[1] = ori_rotation_matrix[3]; axis[2] = ori_rotation_matrix[6];
+		rotateAroundVector(rotation_matrix, axis, angle_move);
+		break;
+	case 1:
+		axis[0] = ori_rotation_matrix[1]; axis[1] = ori_rotation_matrix[4]; axis[2] = ori_rotation_matrix[7];
+		rotateAroundVector(rotation_matrix, axis, angle_move);
+		break;
+	case 2:
+		axis[0] = ori_rotation_matrix[2]; axis[1] = ori_rotation_matrix[5]; axis[2] = ori_rotation_matrix[8];
+		rotateAroundVector(rotation_matrix, axis, angle_move);
+		break;
 	}
 
-	this->angle_move = angle_move;
+	//std::cout << "rotation_matrix " << std::endl;
+	//for (unsigned int i = 0; i < 9; ++i) {
+	//	std::cout << rotation_matrix[i] << " ";
+	//}
+	//std::cout << std::endl;
+
+	updateRotationMatrix(angle_move, dimension, ori_rotation_matrix);
+
+
+
 	select_dimension = dimension;
 
 	thread->assignTask(this, ROTATE_AROUND_AXIS, select_object_index);
@@ -254,11 +273,6 @@ void MoveObject::rotation(double angle_move, unsigned int dimension, bool only_m
 //ROTATE_AROUND_AXIS
 void MoveObject::rotateAroundAxis(int thread_No, unsigned int obj_No)
 {
-	unsigned int dimension;
-	double angle;
-	dimension = select_dimension;
-	angle = angle_move;
-
 	double center[3];
 	memcpy(center, this->center, 24);
 
@@ -266,23 +280,9 @@ void MoveObject::rotateAroundAxis(int thread_No, unsigned int obj_No)
 	std::array<double, 3>* position;
 	unsigned int vertex_start, vertex_end;
 
-	double v0[3];
-	double v1[3];
-	switch (dimension)
-	{
-	case 0:
-		v0[0] = 0;  v0[1] = cos(angle); v0[2] = -sin(angle);
-		v1[0] = 0;	 v1[1] = -v0[2];		v1[2] = v0[1];
-		break;
-	case 1:
-		v0[0] = cos(angle);	v0[1] = 0; 		v0[2] = sin(angle);
-		v1[0] = -v0[2];		v1[1] = 0;		v1[2] = v0[0];
-		break;
-	case 2:
-		v0[0] = cos(angle);		v0[1] = -sin(angle);  v0[2] = 0;
-		v1[0] = -v0[1];		v1[1] = v0[0];  v1[2] = 0;
-		break;
-	}
+	double rotation_matrix[9];
+	memcpy(rotation_matrix, this->rotation_matrix, 72);
+	
 	if (obj_No < cloth->size()) {
 		position = cloth->data()[obj_No].mesh_struct.vertex_position.data();
 		vertex_start = cloth->data()[obj_No].mesh_struct.vertex_index_begin_per_thread[thread_No];
@@ -299,39 +299,18 @@ void MoveObject::rotateAroundAxis(int thread_No, unsigned int obj_No)
 		vertex_end = collider->data()[obj_No - tetrahedron_end_index].mesh_struct.vertex_index_begin_per_thread[thread_No + 1];
 	}
 
-	double temp_position0, temp_position1;
-	switch (dimension)
-	{
-	case 0:
-		for (unsigned int i = vertex_start; i < vertex_end; ++i) {
-			position[i][1] -= center[1];
-			position[i][2] -= center[2];
-			temp_position0 = position[i].data()[1] * v0[1] + position[i].data()[2] * v0[2];
-			temp_position1 = position[i].data()[1] * v1[1] + position[i].data()[2] * v1[2];
-			position[i].data()[1] = temp_position0 + center[1];
-			position[i].data()[2] = temp_position1 + center[2];
-		}
-		break;
-	case 1:
-		for (unsigned int i = vertex_start; i < vertex_end; ++i) {
-			position[i][0] -= center[0];
-			position[i][2] -= center[2];
-			temp_position0 = position[i].data()[0] * v0[0] + position[i].data()[2] * v0[2];
-			temp_position1 = position[i].data()[0] * v1[0] + position[i].data()[2] * v1[2];
-			position[i].data()[0] = temp_position0 + center[0];
-			position[i].data()[2] = temp_position1 + center[2];
-		}
-		break;
-	case 2:
-		for (unsigned int i = vertex_start; i < vertex_end; ++i) {
-			position[i][0] -= center[0];
-			position[i][1] -= center[1];
-			temp_position0 = position[i].data()[0] * v0[0] + position[i].data()[1] * v0[1];
-			temp_position1 = position[i].data()[0] * v1[0] + position[i].data()[1] * v1[1];
-			position[i].data()[0] = temp_position0 + center[0];
-			position[i].data()[1] = temp_position1 + center[1];
-		}
-		break;
+	double temp_position0, temp_position1, temp_position2;
+
+	for (unsigned int i = vertex_start; i < vertex_end; ++i) {
+		position[i][0] -= center[0];
+		position[i][1] -= center[1];
+		position[i][2] -= center[2];
+		temp_position0 = DOT(position[i], rotation_matrix);
+		temp_position1 = DOT(position[i], (rotation_matrix+3));
+		temp_position2 = DOT(position[i], (rotation_matrix+6));
+		position[i].data()[0] = temp_position0 + center[0];
+		position[i].data()[1] = temp_position1 + center[1];
+		position[i].data()[2] = temp_position2 + center[2];
 	}
 }
 

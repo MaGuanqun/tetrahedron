@@ -259,6 +259,25 @@ inline void arrangeIndex(int total_thread_num, int total_num, std::vector<int>& 
 	begin[total_thread_num] = total_num;
 }
 
+//rotation matrix store in column major
+inline void rotateAroundVector(double* rotation_matrix, double* rotate_axis, double angle)
+{
+	double cos_ = cos(angle);
+	double sin_ = sin(angle);
+	rotation_matrix[0] = rotate_axis[0] * rotate_axis[0] * (1.0 - cos_) + cos_;
+	rotation_matrix[1]= rotate_axis[0] * rotate_axis[1] * (1.0 - cos_) + rotate_axis[2]*sin_;
+	rotation_matrix[2]= rotate_axis[0] * rotate_axis[2] * (1.0 - cos_) - rotate_axis[1]*sin_;
+	rotation_matrix[3]= rotate_axis[0] * rotate_axis[1] * (1.0 - cos_) - rotate_axis[2]*sin_;
+	rotation_matrix[4]= rotate_axis[1] * rotate_axis[1] * (1.0 - cos_) +cos_;
+	rotation_matrix[5] = rotate_axis[2] * rotate_axis[1] * (1.0 - cos_) + rotate_axis[0] * sin_;
+	rotation_matrix[6] = rotate_axis[2] * rotate_axis[0] * (1.0 - cos_) + rotate_axis[1] * sin_;
+	rotation_matrix[7] = rotate_axis[2] * rotate_axis[1] * (1.0 - cos_) - rotate_axis[0] * sin_;
+	rotation_matrix[8] = rotate_axis[2] * rotate_axis[2] * (1.0 - cos_) + cos_;
+	normalize(rotation_matrix);
+	normalize(rotation_matrix+3);
+	normalize(rotation_matrix+6);
+}
+
 inline void inverse3X3(double* matrix, double* inverse)
 {
 	double det = matrix[0] * (matrix[8] * matrix[4] - matrix[7] * matrix[5])

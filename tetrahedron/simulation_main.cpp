@@ -86,6 +86,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool floor_control[4] ={true,true,true,false};
 	double floor_value=-0.35;
 
+	scene.input= input;
+
 	while (!glfwWindowShouldClose(window))
 	{
 		start_time = clock();
