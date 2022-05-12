@@ -74,17 +74,17 @@ void MoveObject::move(unsigned int obj_No, double* displacement, bool only_move_
 		SUM_(collider->data()[obj_No - tetrahedron_end_index].center, displacement);
 	}
 
-	//if (!only_move_vertex_pos) {
-	//	if (obj_No < cloth->size()) {
-	//		cloth->data()[obj_No].mesh_struct.vertex_for_render = cloth->data()[obj_No].mesh_struct.vertex_position;
-	//	}
-	//	else if (obj_No < tetrahedron_end_index) {
-	//		tetrahedron->data()[obj_No - cloth->size()].mesh_struct.vertex_for_render = tetrahedron->data()[obj_No - cloth->size()].mesh_struct.vertex_position;
-	//	}
-	//	else {
-	//		collider->data()[obj_No - tetrahedron_end_index].mesh_struct.vertex_for_render = collider->data()[obj_No - tetrahedron_end_index].mesh_struct.vertex_position;
-	//	}
-	//}
+	if (!only_move_vertex_pos) {
+		if (obj_No < cloth->size()) {
+			cloth->data()[obj_No].mesh_struct.vertex_for_render = cloth->data()[obj_No].mesh_struct.vertex_position;
+		}
+		else if (obj_No < tetrahedron_end_index) {
+			tetrahedron->data()[obj_No - cloth->size()].mesh_struct.vertex_for_render = tetrahedron->data()[obj_No - cloth->size()].mesh_struct.vertex_position;
+		}
+		else {
+			collider->data()[obj_No - tetrahedron_end_index].mesh_struct.vertex_for_render = collider->data()[obj_No - tetrahedron_end_index].mesh_struct.vertex_position;
+		}
+	}
 	//SUM_(total_displacement[obj_No], displacement);
 	//std::cout << "======" << std::endl;
 	//for (unsigned int i = 0; i < total_obj_num; ++i) {

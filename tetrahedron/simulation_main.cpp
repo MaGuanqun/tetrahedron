@@ -20,8 +20,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 	Camera camera(cameraPos, normalize(glm::vec3(0.0f, 1.0f, 0.0f)));
 	float zoom_value = 1.0;
 	CoordinateSystem coordinateSystem;
-	bool control_parameter[19];
-	memset(control_parameter, 0, 19);
+	bool control_parameter[21];
+	memset(control_parameter, 0, 21);
 	control_parameter[ONLY_COLLISION_TEST] = true;
 	control_parameter[USE_XPBD] = true;
 	control_parameter[DRAW_VT] = true;

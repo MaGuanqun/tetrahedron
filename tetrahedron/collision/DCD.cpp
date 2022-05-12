@@ -235,10 +235,12 @@ void DCD::XPBDedgeEdge(double* current_edge_vertex_0, double* current_edge_verte
     double& lambda, double stiffness, double damping_stiffness, double dt)
 {
     double barycentric[4];
-    if (CCD::internal::edgeEdgeDistanceType(initial_edge_vertex_0, initial_edge_vertex_1,
-        initial_compare_edge_vertex_0, initial_compare_edge_vertex_1, barycentric) != 8) {
-        return;
-    }
+    CCD::internal::edgeEdgeDistanceType(initial_edge_vertex_0, initial_edge_vertex_1,
+        initial_compare_edge_vertex_0, initial_compare_edge_vertex_1, barycentric);
+    //if (CCD::internal::edgeEdgeDistanceType(initial_edge_vertex_0, initial_edge_vertex_1,
+    //    initial_compare_edge_vertex_0, initial_compare_edge_vertex_1, barycentric) != 8) {
+    //    return;
+    //}
     double norm[3];
     double distance2;
     if (checkEdgeEdgeCollision(current_edge_vertex_0, current_edge_vertex_1, initial_edge_vertex_0, initial_edge_vertex_1, current_compare_edge_vertex_0, current_compare_edge_vertex_1,

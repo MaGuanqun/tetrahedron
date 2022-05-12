@@ -215,6 +215,19 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 				control_parameter[ROTATION] = false;
 			}
 		}
+		if (control_parameter[DRAW_SPATIAL_HASHING]) {
+			if (ImGui::Button("Hide Spatial Hashing Cell", ImVec2(160, 25)))
+			{
+				control_parameter[DRAW_SPATIAL_HASHING] = false;
+			}
+		}
+		else {
+			if (ImGui::Button("Show Spatial Hashing Cell", ImVec2(160, 25)))
+			{
+				control_parameter[DRAW_SPATIAL_HASHING] = true;
+				control_parameter[SPATIAL_HASHING_UPDATE] = true;
+			}
+		}
 	}
 	ImGui::End();
 	if (!control_parameter[ONLY_COLLISION_TEST]) {

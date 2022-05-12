@@ -448,6 +448,8 @@ void Collision::buildBVH()
 }
 
 
+
+
 void Collision::globalCollision()
 {
 	getAABB();
@@ -1031,6 +1033,15 @@ void Collision::testCulling()
 		}
 	}
 }
+
+
+void Collision::buildSpatialHashingForOri()
+{
+	getAABB();
+	getSceneAABB();
+	spatial_hashing.buildSpatialHashingForOri(scene_aabb);
+ }
+
 
 void Collision::collisionCulling()
 {

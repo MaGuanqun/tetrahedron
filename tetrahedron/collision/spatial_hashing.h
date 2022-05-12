@@ -66,6 +66,17 @@ public:
 
 	void findAllPairsHashTableElementwise(int thread_No);
 
+
+	std::vector<std::vector<unsigned int>> ori_hash_value;// the hash value computed by length * width * height
+	void initialOriHashValue();
+
+	unsigned int cell_number[3];
+	unsigned int cell_num0_cell_num1;
+
+	void oriTriangleHashing(int thread_No);
+
+	void buildSpatialHashingForOri(double* scene_aabb);
+
 private:
 
 	void deleteArray();
@@ -236,5 +247,8 @@ private:
 	std::vector<MeshStruct::Vertex*> vertices;
 	std::vector<MeshStruct::Edge*> edges;
 	
+	void initialTriangleHashValue(double* aabb,
+		std::vector<unsigned int>* spatial_hashing_cell, double* scene_aabb, double cell_length);
+	void setSpatialHashingInitialCount();
 };
 

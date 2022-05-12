@@ -5,11 +5,13 @@ void TestDrawCollision::initial(std::vector<Cloth>* cloth, std::vector<Collider>
 	std::vector<Tetrahedron>* tetrahedron, Thread* thread, Floor* floor, double* tolerance_ratio)
 {
 	collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio);
+	collision.spatial_hashing.initialOriHashValue();
 	draw_collision.initial(cloth, collider, tetrahedron, thread);
 	draw_collision.setInPairInfo(collision.point_triangle_target_pos_index.data(), collision.point_triangle_collider_target_pos_index.data(), collision.edge_edge_target_pos_index.data());
 	this->cloth = cloth;
 	this->collider = collider;
 	this->tetrahedron = tetrahedron;
+	this->thread = thread;
 }
 
 
@@ -20,6 +22,17 @@ void TestDrawCollision::setCollisionData()
 	collision.getCollisionPair();
 	draw_collision.setElementIndices();
 }
+
+
+
+
+
+void TestDrawCollision::setForOriSpatialHashing()
+{
+	collision.buildSpatialHashingForOri();	
+	draw_spatial_hashing.setCellData(&collision.spatial_hashing.ori_hash_value, collision.spatial_hashing.cell_length, collision.spatial_hashing.cell_number, collision.spatial_hashing.scene_aabb);
+}
+
 
 
 

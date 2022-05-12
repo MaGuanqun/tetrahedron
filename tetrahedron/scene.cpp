@@ -107,7 +107,8 @@ void Scene::obtainConvergenceInfo(double* convergence_rate, int* iteration_num)
 		}
 		else {
 			iteration_num[LOCAL_GLOBAL] = xpbd.iteration_number;
-			iteration_num[OUTER] = xpbd.sub_step_num;
+			iteration_num[OUTER] = xpbd.outer_iteration_number;
+			//iteration_num[OUTER] = xpbd.sub_step_num;
 		}
 	}
 }
@@ -383,6 +384,12 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 		}
 	}
 
+	if(control_parameter[DRAW_SPATIAL_HASHING]){
+		test_draw_collision.draw_spatial_hashing.drawCell(camera, wireframe_shader);
+	}
+
+
+
 	if (control_parameter[SAVE_OBJ]) {
 		saveObj();
 	}
@@ -545,6 +552,13 @@ void Scene::updateSceneCollisionTest(Camera* camera, double* cursor_screen, bool
 	if (control_parameter[ONE_FRAME]) {
 		test_draw_collision.setCollisionData();
 	}
+	if (control_parameter[SPATIAL_HASHING_UPDATE]) {
+		std::cout << "set in data " << std::endl;
+		getAABB();
+		test_draw_collision.setForOriSpatialHashing();
+		control_parameter[SPATIAL_HASHING_UPDATE] = false;
+	}
+
 }
 
 
@@ -848,7 +862,6 @@ void Scene::moveObj(Camera* camera, double* cursor_screen, bool only_move_vertex
 	double displacement[3];
 	SUB(displacement, cursor_pos_in_space, cursor_pos);
 	move_object.move(intersection.obj_No, displacement, only_move_vertex_pos);
-
 }
 
 

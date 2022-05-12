@@ -31,6 +31,7 @@ public:
 	void setPosPredictSubTimeStep(int thread_No);
 	void computeVelocity(int thread_No);
 	unsigned int iteration_number;
+	unsigned int outer_iteration_number;
 	void initial();
 	void reset();
 	void resetExternalForce();
@@ -38,6 +39,9 @@ public:
 	void updateTetrahedronAnchorVertices();
 	void addExternalForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int obj_No);
 	void updateItrInfo(int* iteration_num);
+
+	void PBD_IPCSolve();
+
 
 private:
 	double gravity[3];
@@ -86,5 +90,8 @@ private:
 
 	void updateNormal();
 	void updateRenderVertexNormal();
+
+
+
 };
 

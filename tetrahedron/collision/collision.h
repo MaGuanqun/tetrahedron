@@ -15,6 +15,8 @@
 #include"DCD.h"
 #include"../basic/floor.h"
 
+
+
 //#include"mesh_patch.h"
 
 using namespace Eigen;
@@ -125,11 +127,11 @@ public:
 
 
 	void setParameter(std::vector<double>* lambda, double* floor_lambda, std::vector<unsigned int>* collision_lambda_index_start, double damp_stiffness,double dt);
-	
-	
 
 
 
+	SpatialHashing spatial_hashing;
+	void buildSpatialHashingForOri();
 private:
 
 	
@@ -165,7 +167,7 @@ private:
 	Thread* thread;
 	PredictiveContact predictive_contact;
 
-	SpatialHashing spatial_hashing;
+
 	//bool use_BVH;
 
 	std::vector<unsigned int> vertex_triangle_pair_index_start_per_thread;//thread_No, index, respectively

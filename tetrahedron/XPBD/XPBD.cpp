@@ -8,6 +8,7 @@ XPBD::XPBD()
 	total_thread_num = std::thread::hardware_concurrency();
 	sub_step_num =1;
 	iteration_number =1000;
+
 	time_step = 1.0 / 100.0;
 	damping_coe = 0.02;
 
@@ -34,7 +35,8 @@ void XPBD::reset()
 void XPBD::updateItrInfo(int* iteration_num)
 {
 	iteration_number = iteration_num[LOCAL_GLOBAL];
-	sub_step_num = iteration_num[OUTER];
+	outer_iteration_number = iteration_num[OUTER];
+	//sub_step_num = iteration_num[OUTER];
 	sub_time_step = time_step / (double)sub_step_num;
 }
 
@@ -159,6 +161,20 @@ void XPBD::initialCollisionConstriantNum()
 {
 	lambda_collision.resize(collision.collisionConstraintNumber(collision_constraint_index_start[0].data(), collision_constraint_index_start[1].data(), collision_constraint_index_start[2].data()));
 }
+
+
+void XPBD::PBD_IPCSolve()
+{
+	thread->assignTask(this, SET_POS_PREDICT);
+
+	for (unsigned int i = 0; i < iteration_number; ++i) {
+
+
+
+	}
+
+}
+
 
 void XPBD::PBDsolve()
 {
