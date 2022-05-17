@@ -343,8 +343,8 @@ private:
 	std::vector<MeshStruct::Face*> faces;
 	std::vector<MeshStruct::Edge*> edges;
 
-	std::vector<int*> face_edges;
-	std::vector<int*> collider_face_edges;
+	std::vector<unsigned int*> face_edges;
+	std::vector<unsigned int*> collider_face_edges;
 
 	std::vector<unsigned int*> edge_vertices;
 	std::vector<unsigned int*> collider_edge_vertices;

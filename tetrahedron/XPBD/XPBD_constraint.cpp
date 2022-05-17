@@ -64,11 +64,20 @@ void XPBDconstraint::solveARAPConstraint(std::array<double, 3>* vertex_position,
 	//use P_inv to record transform
 	P_inv = q_e * svd.matrixV().transpose();
 
+	//if((deformation_gradient-P_inv).squaredNorm)
+
 	//get delta_c
 	Matrix<double, 3, 4> grad_C_transpose;
+
+
 	grad_C_transpose = volume * (deformation_gradient - P_inv) * A;
 
 	double C = 0.5 * volume * (deformation_gradient - P_inv).squaredNorm();
+
+
+
+
+
 	
 	double alpha_ = 1.0 / (stiffness * dt * dt);
 	double gamma = damping_stiffness / (stiffness * dt);

@@ -29,8 +29,8 @@ protected:
 	void getAABB(double* target, double* aabb0, double* aabb1);
 	Thread* thread;
 	void setOrder(bool* in_this_triangle, unsigned int count, int* index);
-	void setOrderEdge(bool* in_this_triangle, unsigned int count, int* index);
-	void setRepresentativeEdge(int* face_edges, int face_size, int edge_size);
+	void setOrderEdge(bool* in_this_triangle, unsigned int count, unsigned int* index);
+	void setRepresentativeEdge(unsigned int* face_edges, int face_size, int edge_size);
 	void setRepresentativeVertex(std::vector<std::array<int, 3>>& face, std::vector<MeshStruct::Vertex>& vertex);
 
 	std::vector<std::array<double, 6>> obj_aabb_per_thread;

@@ -46,7 +46,7 @@ public:
 	std::vector<Face> faces;
 	std::vector<Edge> edges;
 
-	std::vector<int>face_edges;// edge indices of every triangle
+	std::vector<unsigned int>face_edges;// edge indices of every triangle
 	std::vector<double>edge_length;// edge indices of every triangle
 	std::vector<unsigned int>edge_vertices;//vertex indices of every edge
 

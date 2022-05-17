@@ -158,7 +158,7 @@ void Object::setOrder(bool* in_this_triangle, unsigned int count, int* index)
 	}
 }
 
-void Object::setOrderEdge(bool* in_this_triangle, unsigned int count, int* index)
+void Object::setOrderEdge(bool* in_this_triangle, unsigned int count, unsigned int* index)
 {
 	if (count == 1) {
 		if (in_this_triangle[1]) {
@@ -189,7 +189,7 @@ void Object::setOrderEdge(bool* in_this_triangle, unsigned int count, int* index
 
 
 
-void Object::setRepresentativeEdge(int* face_edges, int face_size, int edge_size)
+void Object::setRepresentativeEdge(unsigned int* face_edges, int face_size, int edge_size)
 {
 	unsigned int count;
 	bool in_this_triangle[3];

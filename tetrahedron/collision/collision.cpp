@@ -3011,11 +3011,11 @@ void Collision::findVertexEdgePair(int thread_No, unsigned int pair_thread_No, u
 	unsigned int end_pair_index, CollisionIndicateType type)
 {
 	unsigned int* pair;
-	int* indices;
+	unsigned int* indices;
 	int edge_num;
 	unsigned int* vertex_edge_pair_ ;
 
-	int** face_edges_;
+	unsigned int** face_edges_;
 	unsigned int** representative_edge_num_;
 	std::array<double, 6>** vertex_aabb_;
 	std::array<double, 6>** edge_aabb_;	
@@ -5307,7 +5307,7 @@ void Collision::findEdgeAroundEdge(int thread_No)
 	int compare_edge_index;
 	unsigned int obj_No, obj_No2;
 
-	int* face_edges;
+	unsigned int* face_edges;
 	unsigned int* edge_vertex_index;
 
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
