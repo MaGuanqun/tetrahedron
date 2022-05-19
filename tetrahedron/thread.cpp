@@ -13,6 +13,7 @@
 #include"scene.h"
 #include"./XPBD/XPBD.h"
 #include"./basic/move_object.h"
+#include"newton_method.h"
 //#include"collision/mesh_patch.h"
 
 Thread::Thread()
@@ -436,7 +437,47 @@ job Thread::create_task(RadixSort* func, int thread_id, RadixSortFunc function_t
 }
 
 
-
+job Thread::create_task(NewtonMethod* func, int thread_id, NewtonMethodFunc function_type)
+{
+    job k;
+    switch (function_type)
+    {
+    case UPDATE_HESSIAN_FIXED_STRUCTURE:
+        k = job([func, thread_id]() {func->updateHessianFixedStructure(thread_id); });
+        break;
+    case UPDATE_DIAGONAL_HESSIAN_FIXED_STRUCTURE:
+        k = job([func, thread_id]() {func->setHessianDiagonalFixedStructure(thread_id); });
+        break;
+    case UPDATE_INTERNAL_FORCE:
+        k = job([func, thread_id]() {func->updateInternalForce(thread_id); });
+        break;
+    case SUM_B:
+        k = job([func, thread_id]() {func->sumB(thread_id); });
+        break;
+    case SET_S_N:
+        k = job([func, thread_id]() {func->setSn(thread_id); });
+        break;
+    case UPDATE_ANCHOR_POINT_HESSIAN:
+        k = job([func, thread_id]() {func->updateHessianForFixPoint(thread_id); });
+        break;
+    case UPDATE_POSITION_NEWTON:
+        k = job([func, thread_id]() {func->updatePosition(thread_id); });
+        break;
+    case VELOCITY_NEWTON:
+        k = job([func, thread_id]() {func->updateVelocity(thread_id); });
+        break;
+    case SET_MASS_SPRING:
+        k = job([func, thread_id]() {func->massSpring(thread_id); });
+        break;
+    case SET_HESSIAN_DIAGONAL:
+        k = job([func, thread_id]() {func->setHessianDiagonal(thread_id); });
+        break;
+    case GET_COEFF_ADDRESS:
+        k = job([func, thread_id]() {func->hessianCoeffAddress(thread_id); });
+        break;
+    }
+    return k;
+}
 
 
 job Thread::create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type)

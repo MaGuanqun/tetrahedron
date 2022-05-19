@@ -14,6 +14,7 @@
 #include"./basic/move_object.h"
 #include"collision/test_draw_collision.h"
 #include"basic/opengl_input.h"
+#include"newton_method.h"
 
 class Scene
 {
@@ -64,7 +65,7 @@ public:
 	Input* input;
 
 private:
-	bool use_PD;
+	unsigned int use_method;
 	bool only_test_collision;
 	Light light;
 	int cloth_num, collider_num, tetrahedron_num;
@@ -81,6 +82,8 @@ private:
 	void updateBuffer();
 	ProjectDynamic project_dynamic;
 	XPBD xpbd;
+
+	NewtonMethod newton_method;
 
 	double ave_edge_length;
 

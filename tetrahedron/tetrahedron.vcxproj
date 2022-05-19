@@ -190,6 +190,7 @@
     <ClCompile Include="mesh_struct\mesh_struct.cpp" />
     <ClCompile Include="mesh_struct\tetrahedron_mesh_struct.cpp" />
     <ClCompile Include="mesh_struct\triangle_mesh_struct.cpp" />
+    <ClCompile Include="newton_method.cpp" />
     <ClCompile Include="object\collider.cpp" />
     <ClCompile Include="object\object.cpp" />
     <ClCompile Include="object\tetrahedron.cpp" />
@@ -252,6 +253,7 @@
     <ClInclude Include="mesh_struct\mesh_struct.h" />
     <ClInclude Include="mesh_struct\tetrahedron_mesh_struct.h" />
     <ClInclude Include="mesh_struct\triangle_mesh_struct.h" />
+    <ClInclude Include="newton_method.h" />
     <ClInclude Include="not used\createMesh.h" />
     <ClInclude Include="object\collider.h" />
     <ClInclude Include="object\object.h" />

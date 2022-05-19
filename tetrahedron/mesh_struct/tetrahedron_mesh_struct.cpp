@@ -1,6 +1,67 @@
 #include"tetrahedron_mesh_struct.h"
 
 
+void TetrahedronMeshStruct::setTetEdges()
+{
+	std::vector<std::vector<unsigned int>> edge_vertex(vertex_position.size());
+	
+	for (unsigned int i = 0; i < indices.size(); ++i) {
+		addTetEdges(indices[i][0], indices[i][1], edge_vertex);
+		addTetEdges(indices[i][0], indices[i][2], edge_vertex);
+		addTetEdges(indices[i][0], indices[i][3], edge_vertex);
+		addTetEdges(indices[i][1], indices[i][2], edge_vertex);
+		addTetEdges(indices[i][1], indices[i][3], edge_vertex);
+		addTetEdges(indices[i][2], indices[i][3], edge_vertex);
+	}
+	tet_edge_vertices.reserve(20 * vertex_position.size());
+	for (unsigned int i = 0; i < vertex_position.size(); ++i) {
+		for (unsigned int j = 0; j < edge_vertex[i].size(); ++j) {
+			tet_edge_vertices.emplace_back(i);
+			tet_edge_vertices.emplace_back(edge_vertex[i][j]);
+		}		
+	}
+	tet_edge_vertices.shrink_to_fit();
+
+	tet_edge_index_begin_per_thread.resize(thread->thread_num + 1);
+	arrangeIndex(thread->thread_num, tet_edge_vertices.size()>>1, tet_edge_index_begin_per_thread.data());
+	tet_rest_edge_length.resize(tet_edge_vertices.size() >> 1);
+	
+	double temp[3];
+	for (unsigned int i = 0; i < tet_edge_vertices.size(); i += 2) {
+		SUB(temp, vertex_position[tet_edge_vertices[i]], vertex_position[tet_edge_vertices[i + 1]]);
+		tet_rest_edge_length[i >> 1] = sqrt(DOT(temp, temp));
+	}	
+
+	//for (unsigned int i = 0; i < tet_edge_vertices.size(); i += 2) {
+	//	std::cout << tet_edge_vertices[i] << " " << tet_edge_vertices[i + 1] << std::endl;
+	//}
+
+
+}
+
+void TetrahedronMeshStruct::addTetEdges(unsigned int p0, unsigned int p1, std::vector<std::vector<unsigned int>>& edge_vertex)
+{
+	unsigned int v0, v1;
+	if (p0 < p1) {
+		v0 = p0; v1 = p1;
+	}
+	else {
+		v0 = p1; v1 = p0;
+	}
+	if (edge_vertex[v0].empty()) {
+		edge_vertex[v0].reserve(10);
+		edge_vertex[v0].emplace_back(v1);
+	}
+	else {
+		for (unsigned int i = 0; i < edge_vertex[v0].size(); ++i) {
+			if (v1 == edge_vertex[v0][i]) {
+				return;
+			}
+		}
+		edge_vertex[v0].emplace_back(v1);
+	}
+}
+
 void TetrahedronMeshStruct::findSurface()
 {
 	triangle_indices.reserve(indices.size());
@@ -37,7 +98,7 @@ void TetrahedronMeshStruct::findSurface()
 	vertex_index_on_sureface.reserve(vertex_position.size());
 	vertex_surface_index.resize(vertex_position.size(), -1);
 
-	std::cout << "vertex_surface_index " << vertex_surface_index.size() << std::endl;
+	//std::cout << "vertex_surface_index " << vertex_surface_index.size() << std::endl;
 
 	for (unsigned int i = 0; i < vertex_on_surface.size(); ++i) {
 		if (vertex_on_surface[i]) {

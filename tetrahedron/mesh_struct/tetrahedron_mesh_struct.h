@@ -23,6 +23,8 @@ public:
 	std::vector<int> vertex_surface_index;//size is the global vertex size, verted index -> surface index
 	std::vector<unsigned int> vertex_index_on_surface_begin_per_thread;
 
+	std::vector<unsigned int>tet_edge_index_begin_per_thread;
+
 	//std::vector<Matrix3d> P_inv;
 	std::vector<Matrix<double,3,4>> A;
 
@@ -42,10 +44,11 @@ public:
 
 	//std::vector<std::array<int, 2>> edge_vertex_index_on_surface;
 
-
+	std::vector<unsigned int> tet_edge_vertices;
+	std::vector<double> tet_rest_edge_length;
 
 	//void setVertexIndexOnSurfaceEdgeTriangle();
-
+	void setTetEdges();
 private:
 	struct TetrahedronFace {
 		std::array<int, 3> index;
@@ -78,5 +81,8 @@ private:
 	Matrix<double, 3, 3> constructMatrixP(int tetra_index);
 	Matrix<double, 3, 4> constructMatrixP_pos(int tetra_index);
 	Matrix<double, 3, 4> constructDeformGradientA(Matrix3d& p);
+
+
+	void addTetEdges(unsigned int p0, unsigned int p1, std::vector<std::vector<unsigned int>>& edge_vertex);
 };
 

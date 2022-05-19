@@ -20,10 +20,12 @@ void simu_main(GLFWwindow* window, Input* input) {
 	Camera camera(cameraPos, normalize(glm::vec3(0.0f, 1.0f, 0.0f)));
 	float zoom_value = 1.0;
 	CoordinateSystem coordinateSystem;
-	bool control_parameter[21];
-	memset(control_parameter, 0, 21);
-	control_parameter[ONLY_COLLISION_TEST] = true;
-	control_parameter[USE_XPBD] = true;
+	bool control_parameter[23];
+	memset(control_parameter, 0, 23);
+	control_parameter[ONLY_COLLISION_TEST] = false;
+	control_parameter[USE_XPBD] = false;
+	control_parameter[USE_PD_] = false;
+	control_parameter[USE_NEWTON_] = true;
 	control_parameter[DRAW_VT] = true;
 
 
@@ -231,7 +233,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 		time = (double)(clock() - start_time);
 		imgui_windows.infoWindow(cloth_info, cloth_mass, tetrahedron_info, tetrahedron_mass, time, iteration_number, set_iteration_num, convergence_rate, scene.time_stamp, edit_PD_conv_rate, control_parameter[START_SIMULATION]);
 		if (!control_parameter[ONLY_COLLISION_TEST]) {
-			if (!control_parameter[USE_XPBD]) {
+			if (control_parameter[USE_PD_]) {
 				imgui_windows.iterationSolverInfoWindow(iteration_solver_iteration_num, use_itr_solver_method, itr_solver_items, itr_solver_item,
 					IM_ARRAYSIZE(itr_solver_items), &iteration_solver_conve_rate, record_matrix);
 			}			

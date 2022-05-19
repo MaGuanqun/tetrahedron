@@ -13,6 +13,7 @@ void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mesh_struct.initialNormalSize();
 	mesh_struct.setFace();
 	mesh_struct.setEdge();
+	mesh_struct.setTetEdges();
 	//mesh_struct.addArounVertex();
 	mesh_struct.setThreadIndex(total_thread_num);
 	mesh_struct.vertex_for_render = mesh_struct.vertex_position;
@@ -382,6 +383,7 @@ void Tetrahedron::recordInitialMesh(SingleTetrahedronInfo& single_tetrahedron_in
 	memcpy(sigma_limit, single_tetrahedron_info_ref.sigma_limit, 16);
 	youngs_modulus = single_tetrahedron_info_ref.youngs_modulus;
 	poisson_ratio = single_tetrahedron_info_ref.poisson_ratio;
+	edge_length_stiffness = single_tetrahedron_info_ref.edge_length_stiffness;
 }
 
 
@@ -401,13 +403,14 @@ void Tetrahedron::initial()
 	ARAP_stiffness = single_tetrahedron_info_ref.ARAP_stiffness;
 	volume_preserve_stiffness = single_tetrahedron_info_ref.volume_preserve_stiffness;
 	position_stiffness = single_tetrahedron_info_ref.position_stiffness;
+	edge_length_stiffness = single_tetrahedron_info_ref.edge_length_stiffness;
 	std::array<double, 4> collision_stiff_indicator;
 	memcpy(collision_stiffness, single_tetrahedron_info_ref.collision_stiffness, 16);
 	mesh_struct.mass_inv = mesh_struct.initial_mass_inv;
 	obtainAABBMoveRadius();
 }
 
-void Tetrahedron::reset(bool use_PD)
+void Tetrahedron::reset(bool use_XPBD)
 {
 	memset(rotation_matrix, 0, 72);
 	rotation_matrix[0] = 1.0;
@@ -418,7 +421,7 @@ void Tetrahedron::reset(bool use_PD)
 	mesh_struct.vertex_for_render = ori_vertices;
 	mesh_struct.getRenderNormal();
 	mesh_struct.getNormal();
-	if (use_PD) {
+	if (!use_XPBD) {
 		for (int i = 0; i < mesh_struct.anchor_vertex.size(); ++i) {
 			mesh_struct.anchor_position[i] = mesh_struct.vertex_position[mesh_struct.anchor_vertex[i]];
 		}

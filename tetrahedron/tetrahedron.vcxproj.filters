@@ -169,6 +169,9 @@
     <ClCompile Include="collision\draw_spatial_hashing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="newton_method.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="basic\basic_imgui.h">
@@ -352,6 +355,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="collision\draw_spatial_hashing.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="newton_method.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

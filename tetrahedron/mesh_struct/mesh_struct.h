@@ -94,7 +94,7 @@ public:
 
 	std::vector<std::array<int, 3>> surface_triangle_index_in_order;//this is for representative triangle
 
-	
+	void updateAnchorPerThread(int total_thread_num);
 
 protected:
 	int type;
