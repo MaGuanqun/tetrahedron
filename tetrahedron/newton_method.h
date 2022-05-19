@@ -50,7 +50,7 @@ public:
 	void addExternalClothForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int cloth_No);
 
 	void updateVelocity(int thread_No);
-
+	void updateIndexBeginPerObj();
 private:
 
 	unsigned int max_itr_num;
@@ -82,13 +82,21 @@ private:
 	void initialHessianNnz();
 	//void recordEdgeHessian();
 
-	std::vector<unsigned int*> edge_index_begin_per_thread_for_mass_spring;
-	std::vector<unsigned int*> vertex_index_begin_per_thread;
+	std::vector<unsigned int*> edge_index_begin_per_thread_for_mass_spring; //store unfixed edges
+	std::vector<unsigned int*> only_one_vertex_fixed_edge_index_begin_per_thread;
+
+	std::vector<unsigned int>total_vertex_num;
+
+	//std::vector<unsigned int*> vertex_index_begin_per_thread;
 
 	std::vector<std::vector<std::array<double, 3>>*> anchor_position;
 
 	std::vector<unsigned int*> anchor_vertex_begin_per_thread;
 	std::vector<std::vector<int>*> anchor_vertex;
+
+	std::vector<unsigned int*> unfixed_vertex_begin_per_thread;
+	std::vector<std::vector<unsigned int>*> unfixed_vertex;
+
 
 	VectorXd Sn; //Sn=M(x_n + delta_t * v_n) //also store f_ext
 	VectorXd f_ext;
@@ -124,12 +132,17 @@ private:
 
 	std::vector<unsigned int> vertex_begin_per_obj;
 	std::vector<unsigned int> off_diagonal_hessian_nnz_index_begin_per_thread;
-	std::vector<unsigned int> edge_begin_per_obj;
-	std::vector<unsigned int*> edge_vertices_mass_spring;
+	//std::vector<unsigned int> edge_begin_per_obj;
 
+	std::vector<std::vector<unsigned int>*> edge_vertices_mass_spring;
+	std::vector<std::vector<unsigned int>*> only_one_vertex_fix_edge_vertices; //first index is unfixed (use unfixed index, need to transfer it to get the real index), second index is fixed, it is directly the real index
+	
 	std::vector<double>edge_length_stiffness;
 	std::vector<double>anchor_stiffness;
-	std::vector<double*>rest_length;//have not compute it
+
+	std::vector<std::vector<double>*>unfixed_rest_length;//
+	std::vector<std::vector<double>*>fixed_one_vertices_rest_length;//
+
 
 	std::vector<double*> mass;
 
@@ -160,5 +173,10 @@ private:
 	bool convergenceCondition();
 
 	void storeInitialPosition();
+
+	void computeHessianOnlyOneVertexFixedEdge(double* vertex_position_0, double* vertex_position_1, double* diagonal_coeff_0,
+		double stiffness, double rest_length, double time_step_square);
+	void updateInternalForceOnlyOneEdgeFixed(double* vertex_position_0, double* vertex_position_1, double* force_0,
+		double stiffness, double rest_length);
 
 }; 

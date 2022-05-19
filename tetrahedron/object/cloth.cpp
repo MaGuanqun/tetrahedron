@@ -111,6 +111,8 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	setAnchor();
 	mesh_struct.setAnchorPosition();
 
+	
+
 	update_stiffness_iteration_number.resize(mesh_struct.vertices.size());
 	initialHashAABB();
 	setRepresentativePrimitve();

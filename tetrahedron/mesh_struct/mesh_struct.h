@@ -66,6 +66,11 @@ public:
 	std::vector<std::array<double, 3>> ori_face_normal;//not normalized
 	std::vector<std::array<double, 3>> cross_for_approx_CCD;// (p1(t1)-p0(t1))?p2(t0)-p0(t0))+(p1(t0)-p0(t0))x(p2(t1)-p0(t1)) t0 is the start of the time step, t1 is the current
 
+	std::vector<unsigned int> unfixed_point_index;
+	std::vector<unsigned int> unfixed_edge_vertex_index; // the index is for the unfixed index, need to transfer it to get the real index
+	std::vector<unsigned int> only_one_vertex_fix_edge; //first index is unfixed (use unfixed index, need to transfer it to get the real index), second index is fixed, it is directly the real index
+
+	
 	Thread* thread;
 	std::vector<double>mass;
 	std::vector<double>mass_inv;
@@ -76,6 +81,16 @@ public:
 	std::vector<unsigned int> anchor_index_begin_per_thread;
 
 	std::vector<unsigned int> edge_index_begin_per_thread;
+
+
+
+	std::vector<unsigned int> only_one_vertex_fixed_edge_index_begin_per_thread;
+	std::vector<unsigned int> unfixed_vertex_index_begin_per_thread;
+	std::vector<unsigned int> unfixed_edge_index_begin_per_thread;
+
+	std::vector<double> unfixed_rest_edge_length;
+	std::vector<double> fixed_one_vertex_rest_edge_length;
+
 
 	std::vector<std::array<floating, 3>> f_face_normal_for_render;
 	std::vector<std::array<floating, 3>> f_face_normal;
@@ -95,6 +110,7 @@ public:
 	std::vector<std::array<int, 3>> surface_triangle_index_in_order;//this is for representative triangle
 
 	void updateAnchorPerThread(int total_thread_num);
+
 
 protected:
 	int type;

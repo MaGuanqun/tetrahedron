@@ -13,7 +13,6 @@ void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mesh_struct.initialNormalSize();
 	mesh_struct.setFace();
 	mesh_struct.setEdge();
-	mesh_struct.setTetEdges();
 	//mesh_struct.addArounVertex();
 	mesh_struct.setThreadIndex(total_thread_num);
 	mesh_struct.vertex_for_render = mesh_struct.vertex_position;
@@ -22,6 +21,7 @@ void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mass = mesh_struct.setMass(density);
 	mesh_struct.prepareForDeformationGradient();	
 	mesh_struct.recordTetIndexForSurfaceIndex();
+
 	genBuffer();
 	setBuffer();
 	setRepresentativePrimitve();

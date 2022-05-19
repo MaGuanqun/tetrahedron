@@ -22,21 +22,91 @@ void TetrahedronMeshStruct::setTetEdges()
 	}
 	tet_edge_vertices.shrink_to_fit();
 
-	tet_edge_index_begin_per_thread.resize(thread->thread_num + 1);
-	arrangeIndex(thread->thread_num, tet_edge_vertices.size()>>1, tet_edge_index_begin_per_thread.data());
-	tet_rest_edge_length.resize(tet_edge_vertices.size() >> 1);
+	unfixed_edge_index_begin_per_thread.resize(thread->thread_num + 1);
+	arrangeIndex(thread->thread_num, tet_edge_vertices.size()>>1, unfixed_edge_index_begin_per_thread.data());
+	tet_edge_rest_length.resize(tet_edge_vertices.size() >> 1);
 	
 	double temp[3];
 	for (unsigned int i = 0; i < tet_edge_vertices.size(); i += 2) {
 		SUB(temp, vertex_position[tet_edge_vertices[i]], vertex_position[tet_edge_vertices[i + 1]]);
-		tet_rest_edge_length[i >> 1] = sqrt(DOT(temp, temp));
+		tet_edge_rest_length[i >> 1] = sqrt(DOT(temp, temp));
 	}	
+	unfixed_rest_edge_length = tet_edge_rest_length;
 
+	only_one_vertex_fixed_edge_index_begin_per_thread.resize(thread->thread_num + 1);
+	unfixed_vertex_index_begin_per_thread.resize(thread->thread_num + 1);
+	arrangeIndex(thread->thread_num, 0, only_one_vertex_fixed_edge_index_begin_per_thread.data());
+	arrangeIndex(thread->thread_num, vertex_position.size(), unfixed_vertex_index_begin_per_thread.data());
 	//for (unsigned int i = 0; i < tet_edge_vertices.size(); i += 2) {
 	//	std::cout << tet_edge_vertices[i] << " " << tet_edge_vertices[i + 1] << std::endl;
 	//}
 
 
+}
+
+
+void TetrahedronMeshStruct::initialUnfixedIndex()
+{
+	setTetEdges();
+	unfixed_point_index.resize(vertex_position.size());
+	for (unsigned int i = 0; i < unfixed_point_index.size(); ++i) {
+		unfixed_point_index[i] = i;
+	}
+	unfixed_edge_vertex_index =tet_edge_vertices;
+}
+
+void TetrahedronMeshStruct::updateUnfixedPointData()
+{
+	unfixed_point_index.clear();
+	std::vector<bool> is_vertex_fixed(vertex_position.size(),false);
+	for (unsigned int i = 0; i < anchor_vertex.size(); ++i) {
+		is_vertex_fixed[anchor_vertex[i]] = true;
+	}
+	for (unsigned int i = 0; i < vertex_position.size(); ++i) {
+		if (!is_vertex_fixed[i]) {
+			unfixed_point_index.emplace_back(i);
+		}
+	}
+
+	std::vector<unsigned int> real_index_to_unfixed_index(vertex_position.size());
+	for (unsigned int i = 0; i < unfixed_point_index.size(); ++i) {
+		real_index_to_unfixed_index[unfixed_point_index[i]] = i;
+	}
+
+	unfixed_rest_edge_length.clear();
+	fixed_one_vertex_rest_edge_length.clear();
+
+	//edge_vertex_index;
+	unfixed_edge_vertex_index.clear();
+	only_one_vertex_fix_edge.clear();
+	only_one_vertex_fix_edge.reserve(anchor_position.size());
+	for (unsigned int i = 0; i < tet_edge_vertices.size(); i += 2) {
+		if (is_vertex_fixed[tet_edge_vertices[i]]) {
+			if (!is_vertex_fixed[tet_edge_vertices[i+1]]) {
+				only_one_vertex_fix_edge.emplace_back(real_index_to_unfixed_index[tet_edge_vertices[i + 1]]);
+				only_one_vertex_fix_edge.emplace_back(tet_edge_vertices[i]);
+				fixed_one_vertex_rest_edge_length.emplace_back(tet_edge_rest_length[i >> 1]);
+			}
+		}
+		else {
+			if (is_vertex_fixed[tet_edge_vertices[i + 1]]) {
+				only_one_vertex_fix_edge.emplace_back(real_index_to_unfixed_index[tet_edge_vertices[i]]);
+				only_one_vertex_fix_edge.emplace_back(tet_edge_vertices[i + 1]);
+				fixed_one_vertex_rest_edge_length.emplace_back(tet_edge_rest_length[i >> 1]);
+			}
+			else {
+				unfixed_edge_vertex_index.emplace_back(real_index_to_unfixed_index[tet_edge_vertices[i]]);
+				unfixed_edge_vertex_index.emplace_back(real_index_to_unfixed_index[tet_edge_vertices[i + 1]]);
+				unfixed_rest_edge_length.emplace_back(tet_edge_rest_length[i >> 1]);
+			}
+		}
+	}
+
+
+
+	arrangeIndex(thread->thread_num, unfixed_edge_vertex_index.size() >> 1, unfixed_edge_index_begin_per_thread.data());
+	arrangeIndex(thread->thread_num, only_one_vertex_fix_edge.size() >> 1, only_one_vertex_fixed_edge_index_begin_per_thread.data());
+	arrangeIndex(thread->thread_num, unfixed_point_index.size(), unfixed_vertex_index_begin_per_thread.data());
 }
 
 void TetrahedronMeshStruct::addTetEdges(unsigned int p0, unsigned int p1, std::vector<std::vector<unsigned int>>& edge_vertex)

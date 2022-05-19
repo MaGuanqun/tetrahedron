@@ -183,9 +183,18 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	double tetrahedron_density = 0.1;
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].loadMesh(preprocessing.ori_simulation_mesh[cloth_index_in_object[i]], cloth_density, &thread);
+		if (use_method==NEWTON_)
+		{
+			cloth[i].mesh_struct.initialUnfixedIndex();
+		}
 	}
 	for (int i = 0; i < tetrahedron_num; ++i) {
 		tetrahedron[i].loadMesh(preprocessing.ori_simulation_mesh[tetrahedron_index_in_object[i]], tetrahedron_density, &thread);
+		if (use_method == NEWTON_)
+		{
+			tetrahedron[i].mesh_struct.initialUnfixedIndex();
+			
+		}
 	}
 	setWireframwColor();
 	std::vector<SingleClothInfo> single_cloth_info;
@@ -760,26 +769,29 @@ void Scene::selectAnchor(bool* control_parameter, bool* select_anchor, double* s
 		}
 	}
 	if (select_anchor[1]) {
-		if (use_method!=XPBD_) {
-			for (int i = 0; i < tetrahedron.size(); ++i) {
-				tetrahedron[i].mesh_struct.setAnchorPosition();
-				tetrahedron[i].mesh_struct.updateAnchorPerThread(thread.thread_num);
-			}
-		}
 		select_anchor[1] = false;
 		switch (use_method)
 		{
 		case PD_:
+			for (int i = 0; i < tetrahedron.size(); ++i) {
+				tetrahedron[i].mesh_struct.setAnchorPosition();
+				tetrahedron[i].mesh_struct.updateAnchorPerThread(thread.thread_num);
+			}
 			project_dynamic.updateTetrahedronAnchorVertices();
+			break;
+		case NEWTON_:
+			for (int i = 0; i < tetrahedron.size(); ++i) {
+				tetrahedron[i].mesh_struct.setAnchorPosition();
+				tetrahedron[i].mesh_struct.updateAnchorPerThread(thread.thread_num);
+				tetrahedron[i].mesh_struct.updateUnfixedPointData();
+				newton_method.updateIndexBeginPerObj();
+			}
 			break;
 		case XPBD_:
 			xpbd.updateTetrahedronAnchorVertices();
 			break;
 		}
 	}
-
-
-
 }
 
 void Scene::drawSelectRange(bool* select_anchor, bool press_state, bool pre_press_state)

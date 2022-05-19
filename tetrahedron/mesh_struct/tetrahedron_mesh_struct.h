@@ -23,8 +23,6 @@ public:
 	std::vector<int> vertex_surface_index;//size is the global vertex size, verted index -> surface index
 	std::vector<unsigned int> vertex_index_on_surface_begin_per_thread;
 
-	std::vector<unsigned int>tet_edge_index_begin_per_thread;
-
 	//std::vector<Matrix3d> P_inv;
 	std::vector<Matrix<double,3,4>> A;
 
@@ -45,7 +43,13 @@ public:
 	//std::vector<std::array<int, 2>> edge_vertex_index_on_surface;
 
 	std::vector<unsigned int> tet_edge_vertices;
-	std::vector<double> tet_rest_edge_length;
+
+	std::vector<double>tet_edge_rest_length;
+
+	void initialUnfixedIndex();
+
+
+	void updateUnfixedPointData();
 
 	//void setVertexIndexOnSurfaceEdgeTriangle();
 	void setTetEdges();

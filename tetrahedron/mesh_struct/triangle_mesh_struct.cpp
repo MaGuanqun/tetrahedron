@@ -85,6 +85,79 @@ void TriangleMeshStruct::getRenderVertexNormalPerThread(int thread_id)
 
 }
 
+void TriangleMeshStruct::initialUnfixedIndex()
+{
+	int total_thread_num_ = thread->thread_num;
+	unfixed_point_index.resize(vertex_position.size());
+	for (unsigned int i = 0; i < unfixed_point_index.size(); ++i) {
+		unfixed_point_index[i] = i;
+	}
+	unfixed_edge_vertex_index = edge_vertices;
+	unfixed_rest_edge_length = edge_length;
+
+	only_one_vertex_fixed_edge_index_begin_per_thread.resize(total_thread_num_+1, 0);
+	unfixed_edge_index_begin_per_thread.resize(total_thread_num_+1, 0);
+	arrangeIndex(total_thread_num_, edges.size(), unfixed_edge_index_begin_per_thread.data());
+	arrangeIndex(total_thread_num_, 0, only_one_vertex_fixed_edge_index_begin_per_thread.data());
+	unfixed_vertex_index_begin_per_thread.resize(total_thread_num_+1, 0);
+	arrangeIndex(total_thread_num_, vertex_position.size(), unfixed_vertex_index_begin_per_thread.data());
+	updateUnfixedPointData();
+
+}
+
+
+void TriangleMeshStruct::updateUnfixedPointData()
+{
+	unfixed_point_index.clear();
+	std::vector<bool> is_vertex_fixed(vertex_position.size(), false);
+	for (unsigned int i = 0; i < anchor_vertex.size(); ++i) {
+		is_vertex_fixed[anchor_vertex[i]] = true;
+	}
+	for (unsigned int i = 0; i < vertex_position.size(); ++i) {
+		if (!is_vertex_fixed[i]) {
+			unfixed_point_index.emplace_back(i);
+		}
+	}
+
+	std::vector<unsigned int> real_index_to_unfixed_index(vertex_position.size());
+	for (unsigned int i = 0; i < unfixed_point_index.size(); ++i) {
+		real_index_to_unfixed_index[unfixed_point_index[i]] = i;
+	}
+
+	unfixed_rest_edge_length.clear();
+	fixed_one_vertex_rest_edge_length.clear();
+
+	//edge_vertex_index;
+	unfixed_edge_vertex_index.clear();
+	only_one_vertex_fix_edge.clear();
+	only_one_vertex_fix_edge.reserve(anchor_position.size());
+	for (unsigned int i = 0; i < edge_vertices.size(); i += 2) {
+		if (is_vertex_fixed[edge_vertices[i]]) {
+			if (!is_vertex_fixed[edge_vertices[i + 1]]) {
+				only_one_vertex_fix_edge.emplace_back(real_index_to_unfixed_index[edge_vertices[i + 1]]);
+				only_one_vertex_fix_edge.emplace_back(edge_vertices[i]);
+				fixed_one_vertex_rest_edge_length.emplace_back(edge_length[i >> 1]);
+			}
+		}
+		else {
+			if (is_vertex_fixed[edge_vertices[i + 1]]) {
+				only_one_vertex_fix_edge.emplace_back(real_index_to_unfixed_index[edge_vertices[i]]);
+				only_one_vertex_fix_edge.emplace_back(edge_vertices[i + 1]);
+				fixed_one_vertex_rest_edge_length.emplace_back(edge_length[i >> 1]);
+			}
+			else {
+				unfixed_edge_vertex_index.emplace_back(real_index_to_unfixed_index[edge_vertices[i]]);
+				unfixed_edge_vertex_index.emplace_back(real_index_to_unfixed_index[edge_vertices[i + 1]]);
+				unfixed_rest_edge_length.emplace_back(edge_length[i >> 1]);
+			}
+		}
+	}
+	arrangeIndex(thread->thread_num, only_one_vertex_fix_edge.size() >> 1, only_one_vertex_fixed_edge_index_begin_per_thread.data());
+	arrangeIndex(thread->thread_num, unfixed_edge_vertex_index.size() >> 1, unfixed_edge_index_begin_per_thread.data());
+	arrangeIndex(thread->thread_num, unfixed_point_index.size(), unfixed_vertex_index_begin_per_thread.data());
+
+}
+
 
 //void TriangleMeshStruct::getVertexNormal()
 //{
@@ -224,6 +297,7 @@ void TriangleMeshStruct::setThreadIndex(int total_thread_num_)
 	if (!edges.empty()) {
 		edge_index_begin_per_thread.resize(total_thread_num, 0);
 		arrangeIndex(total_thread_num_, edges.size(), edge_index_begin_per_thread.data());
+
 	}
 }
 

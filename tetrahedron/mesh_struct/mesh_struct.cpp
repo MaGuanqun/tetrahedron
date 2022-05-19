@@ -25,6 +25,7 @@ void MeshStruct::setAnchorPosition()
 }
 
 
+
 void MeshStruct::updateAnchorPerThread(int total_thread_num)
 {
 	arrangeIndex(total_thread_num, anchor_vertex.size(), anchor_index_begin_per_thread.data());

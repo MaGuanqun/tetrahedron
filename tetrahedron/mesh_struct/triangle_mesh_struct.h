@@ -19,6 +19,10 @@ public:
 	void getRenderVertexNormalPerThread(int thread_id);
 	//void getVertexNormal();
 	double setMass(double density);
+
+	void updateUnfixedPointData();
+	void initialUnfixedIndex();
+
 private:
 
 
