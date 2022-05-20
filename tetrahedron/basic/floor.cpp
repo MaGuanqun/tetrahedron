@@ -17,6 +17,11 @@ Floor::Floor()
 	genTexture();
 
 	setFloor(1, -0.35,true);
+
+	float Kd[3] = { 0.5,0.5,0.5 };
+	float Ka[3] = { 0.4,0.4,0.4 };
+	float Ks[3] = { 0.3,0.3,0.3 };
+	mesh_material.setMaterial(Kd, Ka, Ks);
 }
 
 

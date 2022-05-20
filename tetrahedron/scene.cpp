@@ -4,8 +4,8 @@
 Scene::Scene()
 {
 	light.ambient = glm::vec3(1.0, 1.0, 1.0);
-	light.diffuse = glm::vec3(0.8, 0.8, 0.8);
-	light.specular = glm::vec3(0.95, 0.95, 0.95);
+	light.diffuse = glm::vec3(0.9, 0.9, 0.9);
+	light.specular = glm::vec3(0.85, 0.85, 0.85);
 
 	time_step = 1.0 / 100.0;
 

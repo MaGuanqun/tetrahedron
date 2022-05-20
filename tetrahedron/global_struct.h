@@ -19,12 +19,18 @@ struct MeshMaterial {
 		Ns = mesh_material.Ns;
 		illum = mesh_material.illum;
 		density = mesh_material.density;
-		memcpy(Kd, mesh_material.Kd, 24);
-		memcpy(Ka, mesh_material.Ka, 24);
-		memcpy(Ks, mesh_material.Ks, 24);
-		memcpy(Tf, mesh_material.Tf, 24);
+		memcpy(Kd, mesh_material.Kd, 12);
+		memcpy(Ka, mesh_material.Ka, 12);
+		memcpy(Ks, mesh_material.Ks, 12);
+		memcpy(Tf, mesh_material.Tf, 12);
 		material_name = mesh_material.material_name;
 		return *this;
+	}
+	void setMaterial(float* kd, float* ka, float* ks)
+	{
+		memcpy(this->Kd, kd, 12);
+		memcpy(this->Ka, ka, 12);
+		memcpy(this->Ks, ks, 12);
 	}
 };
 

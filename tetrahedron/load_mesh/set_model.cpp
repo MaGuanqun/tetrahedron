@@ -17,9 +17,7 @@ void SetModel::load_getAABB(std::string& path, int& index, int obj_index)
 		std::cout << name << std::endl;
 		//if (name == "Avatar_low.obj") {
 		//	//create_mesh.setSphere(ori_mesh);
-
 			//create_mesh.setFloor(ori_mesh);
-
 		//	create_mesh.setMaterial1(ori_mesh);
 		//}
 		if (name == "floor.obj") {

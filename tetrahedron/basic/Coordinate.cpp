@@ -17,9 +17,9 @@ CoordinateSystem::CoordinateSystem()
     shader=new Shader("./shader/basic.vs", "./shader/basic.fs");
     *shader = Shader("./shader/basic.vs", "./shader/basic.fs");
     genBuffer();
-    light.ambient = glm::vec3(0.4, 0.4, 0.4);
-    light.diffuse=glm::vec3(0.8, 0.8, 0.8);
-    light.specular=glm::vec3(0.95, 0.95, 0.95);
+    light.ambient = glm::vec3(0.7, 0.7, 0.7);
+    light.diffuse=glm::vec3(0.85, 0.85, 0.85);
+    light.specular=glm::vec3(0.75, 0.75, 0.75);
 }
 
 void CoordinateSystem::draw(Camera* camera, glm::vec3& lightPos)
