@@ -47,7 +47,7 @@ public:
 	std::vector<Edge> edges;
 
 	std::vector<unsigned int>face_edges;// edge indices of every triangle
-	std::vector<double>edge_length;// edge indices of every triangle
+	std::vector<double>edge_length;// edge length of every triangle
 	std::vector<unsigned int>edge_vertices;//vertex indices of every edge
 
 	
@@ -85,7 +85,7 @@ public:
 
 	std::vector<unsigned int> edge_index_begin_per_thread;
 
-
+	std::vector<unsigned int> tet_edge_index_begin_per_thread;
 
 	std::vector<unsigned int> only_one_vertex_fixed_edge_index_begin_per_thread;
 	std::vector<unsigned int> unfixed_vertex_index_begin_per_thread;

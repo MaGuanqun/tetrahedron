@@ -121,6 +121,9 @@ private:
 	std::vector<std::vector<double>> rest_mean_curvature_norm;
 	std::vector<std::vector<Vector3d>> p_edge_length;
 	std::vector<std::vector < std::vector<VectorXd>>> p_bending;
+
+	std::vector<std::vector<Vector3d>> tet_edge_length;
+
 	std::vector<VectorXd> b;
 	std::vector<VectorXd> u_prediction;
 	std::vector<VectorXd> v;
@@ -204,7 +207,7 @@ private:
 	void setSystemIndexInfo();
 
 	void copmuteGlobalStepMatrixSingleTetrahedron(TetrahedronMeshStruct& mesh_struct, std::vector<Triplet<double>>& global_mat_nnz, int sys_size, double& ARAP_stiffness,
-		double& volume_preserve_stiffness, double position_stiffness, int vertex_index_start);
+		double& volume_preserve_stiffness, double position_stiffness, double length_stiffness, int vertex_index_start);
 	Matrix4d getARAPmatrix();
 	void updateTetrahedronAnchorVertices(int tetrahedron_index, TetrahedronMeshStruct& mesh_struct, int vertex_index_start, double position_stiffness);
 	void localARAPProjectionPerThread(int thread_id, bool with_energy);
@@ -214,7 +217,7 @@ private:
 		std::vector<Matrix<double,4,3>>& p_ARAP_volume_preserve, int tet_No, int dimension,
 		std::vector<std::array<double, 3>>& collision_b_sum, bool* collision_b_need_update, bool with_collision,
 		double position_stiffness, int vertex_index_start, std::array<int, 4>* indices, std::vector<int>& anchor_vertex,
-		std::array<double, 3>* anchor_pos);
+		std::array<double, 3>* anchor_pos, Vector3d* tet_edge_length);
 	Matrix4d tet_local_A;
 	void computeTetMass(double* mass_, VectorXd& mass_inv, VectorXd& mass, int vertex_index_start, int vertex_num);
 	bool getDigonalForVolumePreserve(Vector3d& svd_eigen, double max, double min, Vector3d& sigma);
@@ -224,4 +227,8 @@ private:
 	void testJacobiMatrix();
 	void testJacobi();
 	void setOverRelaxationCoefficient();
+
+	void localTetEdgeLengthProjectionPerThread(int thread_id, bool with_energy);
+
+	bool perform_collision;
 };

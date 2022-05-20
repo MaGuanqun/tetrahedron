@@ -20,6 +20,8 @@ ProjectDynamic::ProjectDynamic()
 	iteration_method.setConvergenceRate(1e-8, 100);
 	max_inner_iteration_num = 7;
 
+	perform_collision = false;
+
 }
 
 void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, Floor* floor,
@@ -31,6 +33,7 @@ void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron
 	this->thread = thread;
 	tetrahedron_begin_obj_index = cloth->size();
 	//collision.draw_culling = draw_culling_;
+
 	collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio);
 	total_collider_num = collider->size();
 	this->collider = collider;
@@ -245,8 +248,11 @@ void ProjectDynamic::initialTetrahedronPDvariable()
 	unsigned int vertex_start;
 	p_ARAP_volume_preserve.resize(total_tetrahedron_num);
 	std::array<double, 3>* position;
+	tet_edge_length.resize(total_tetrahedron_num);
+
 	for (unsigned int j = 0; j < total_tetrahedron_num; ++j) {
 		p_ARAP_volume_preserve[j].resize((*tetrahedron)[j].mesh_struct.indices.size());
+		tet_edge_length[j].resize((*tetrahedron)[j].mesh_struct.tet_edge_vertices.size() >> 1);
 		vertex_start = vertex_begin_per_tetrahedron[j];
 		position = (*tetrahedron)[j].mesh_struct.vertex_position.data();
 		for (unsigned int i = 0; i < 3; ++i) {
@@ -333,6 +339,7 @@ void ProjectDynamic::computeGlobalStepMatrix()
 	for (unsigned int i = 0; i < total_tetrahedron_num; ++i) {
 		copmuteGlobalStepMatrixSingleTetrahedron((*tetrahedron)[i].mesh_struct, global_mat_nnz, tetrahedron_sys_size[i],
 			(*tetrahedron)[i].ARAP_stiffness, (*tetrahedron)[i].volume_preserve_stiffness, (*tetrahedron)[i].position_stiffness,
+			tetrahedron->data()[i].edge_length_stiffness,
 			vertex_begin_per_tetrahedron[i]);
 	}
 
@@ -395,35 +402,43 @@ void ProjectDynamic::computeGlobalStepMatrix()
 }
 
 void ProjectDynamic::copmuteGlobalStepMatrixSingleTetrahedron(TetrahedronMeshStruct& mesh_struct, std::vector<Triplet<double>>& global_mat_nnz, int sys_size, double& ARAP_stiffness,
-	double& volume_preserve_stiffness, double position_stiffness, int vertex_index_start)
+	double& volume_preserve_stiffness, double position_stiffness, double length_stiffness,  int vertex_index_start)
 {
 	//ARAP + volume preserve: they have the same matrix.
 	//Matrix4d m_ARAP = (ARAP_stiffness+volume_preserve_stiffness) * m_for_ARAP;//
-	int index[4];
 
+	//int index[4];
 	//std::cout << "tet " << mesh_struct.indices.size() << std::endl;
+	//Matrix4d AT_A;
+	//for (unsigned int i = 0; i < mesh_struct.indices.size(); ++i) {
+	//	memcpy(index, mesh_struct.indices[i].data(), 16);
+	//	for (unsigned int j = 0; j < 4; ++j){
+	//		index[j] += vertex_index_start;
+	//	}
+	//	AT_A = ((ARAP_stiffness + volume_preserve_stiffness) * mesh_struct.volume[i]) * mesh_struct.A[i].transpose() * mesh_struct.A[i];
+	//	for (unsigned int j = 0; j < 4; ++j) {
+	//		for (unsigned int k = j + 1; k < 4; ++k) {
+	//			global_mat_nnz.push_back(Triplet<double>(index[j], index[k], AT_A.data()[4 * j + k]));//mesh_struct.volume[i] *
+	//			global_mat_nnz.push_back(Triplet<double>(index[k], index[j], AT_A.data()[4 * k + j]));// mesh_struct.volume[i] *
+	//		}
+	//		global_mat_nnz.push_back(Triplet<double>(index[j], index[j], AT_A.data()[4 * j + j]));//mesh_struct.volume[i] *
+	//	}
+	//	//std::cout << mesh_struct.volume[i] << std::endl;
+	//}
 
-	Matrix4d AT_A;
+	//std::cout <<"size "<<  mesh_struct.tet_edge_vertices.size()<<" "<< vertex_index_start << std::endl;
 
-
-	for (unsigned int i = 0; i < mesh_struct.indices.size(); ++i) {
-		memcpy(index, mesh_struct.indices[i].data(), 16);
-		for (unsigned int j = 0; j < 4; ++j){
-			index[j] += vertex_index_start;
-		}
-
-		AT_A = ((ARAP_stiffness + volume_preserve_stiffness) * mesh_struct.volume[i]) * mesh_struct.A[i].transpose() * mesh_struct.A[i];
-
-		for (unsigned int j = 0; j < 4; ++j) {
-			for (unsigned int k = j + 1; k < 4; ++k) {
-				global_mat_nnz.push_back(Triplet<double>(index[j], index[k], AT_A.data()[4 * j + k]));//mesh_struct.volume[i] *
-				global_mat_nnz.push_back(Triplet<double>(index[k], index[j], AT_A.data()[4 * k + j]));// mesh_struct.volume[i] *
-			}
-			global_mat_nnz.push_back(Triplet<double>(index[j], index[j], AT_A.data()[4 * j + j]));//mesh_struct.volume[i] *
-
-		}
-		//std::cout << mesh_struct.volume[i] << std::endl;
+	//edge length
+	int id0, id1;
+	for (int i = 0; i < mesh_struct.tet_edge_vertices.size(); i+=2) {
+		id0 = mesh_struct.tet_edge_vertices[i] + vertex_index_start;
+		id1 = mesh_struct.tet_edge_vertices[i + 1] + vertex_index_start;
+		global_mat_nnz.push_back(Triplet<double>(id0, id0, length_stiffness));
+		global_mat_nnz.push_back(Triplet<double>(id1, id1, length_stiffness));
+		global_mat_nnz.push_back(Triplet<double>(id0, id1, -length_stiffness));
+		global_mat_nnz.push_back(Triplet<double>(id1, id0, -length_stiffness));
 	}
+
 	//std::cout << "tet " << mesh_struct.indices.size() << std::endl;
 	
 	//position
@@ -1072,34 +1087,46 @@ void ProjectDynamic::PDsolve()
 		while (!PDLocalGlobalConvergeCondition()) {
 			//std::cout << "inner===" << std::endl;
 			initialEnergyLocalGlobal();
-			if (local_global_itr_in_single_outer == 0) {				
-				collision.collisionCulling();
-				collision.solveCollisionConstraintDCD();
-				PDupdateSystemMatrix();
-			}
-			else {
-				collision.reSolveCollisionConstraintDCD();
+			if (perform_collision) {
+				if (local_global_itr_in_single_outer == 0) {
+					collision.collisionCulling();
+					collision.solveCollisionConstraintDCD();
+					PDupdateSystemMatrix();
+				}
+				else {
+					collision.reSolveCollisionConstraintDCD();
+				}
 			}
 			//time_t t = clock();
 			localProjection();
 			for (unsigned int i = 0; i < total_thread_num; ++i) {
 				current_constraint_energy += temEnergy[i];
 			}
-			//thread->assignTask(this, CONSTRUCT_B_WITHOUT_COLLISION);
-			//thread->assignTask(this, SOLVE_WITHOUT_COLLISION);
-			thread->assignTask(this, CONSTRUCT_B);
-			//time_t t = clock();
-			//for (unsigned int i = 0; i < 10; ++i) {
+			current_collision_energy = 1e-15;
+			if (perform_collision) {
+				thread->assignTask(this, CONSTRUCT_B);
 				thread->assignTask(this, SOLVE_WITH_COLLISION);
 				solveClothSystem2(true);
+				for (unsigned int k = 0; k < total_cloth_num; ++k) {
+					current_collision_energy += collision.obj_target_pos.collision_energy;
+				}
+				current_constraint_energy += current_collision_energy;
+			}
+			else {
+				thread->assignTask(this, CONSTRUCT_B_WITHOUT_COLLISION);
+				thread->assignTask(this, SOLVE_WITHOUT_COLLISION);
+			}
+			//thread->assignTask(this, CONSTRUCT_B_WITHOUT_COLLISION);
+			//thread->assignTask(this, SOLVE_WITHOUT_COLLISION);
+			
+			//time_t t = clock();
+			//for (unsigned int i = 0; i < 10; ++i) {
+			
 			//}
 			//time_t t1 = clock();
 			
-			current_collision_energy = 1e-15;
-			for (unsigned int k = 0; k < total_cloth_num; ++k) {
-				current_collision_energy += collision.obj_target_pos.collision_energy;
-			}
-			current_constraint_energy += current_collision_energy;
+			
+
 			for (unsigned int i = 0; i < total_thread_num; ++i) {
 				current_PD_energy += temEnergy[i];
 			}
@@ -1141,9 +1168,8 @@ void ProjectDynamic::updateUVPerThread(int thread_id)
 		this_acceleration = &acceleration[j];
 		for (unsigned int i = system_vertex_index_per_thread[thread_id]; i < system_vertex_index_per_thread[thread_id + 1]; ++i) {
 			this_v->data()[i] = (this_u->data()[i] - this_u_->data()[i]) / sub_time_step;
-			this_v->data()[i] *= 0.98;
+		//	this_v->data()[i] *= 0.98;
 			this_acceleration->data()[i] = (this_v->data()[i] - this_v_->data()[i]) / sub_time_step;
-			//this_u_->data()[]
 		}
 		memcpy(this_u_->data() + system_vertex_index_per_thread[thread_id], this_u->data() + system_vertex_index_per_thread[thread_id],
 			8 * (system_vertex_index_per_thread[thread_id + 1] - system_vertex_index_per_thread[thread_id]));
@@ -1535,7 +1561,7 @@ bool ProjectDynamic::PDConvergeCondition()
 	bool energy_satisfied = system_energy && collision_energy;
 	bool need_to_stop = local_global_iteration_num > max_it - 3 || fabs(current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy < 5e-6;
 	//std::cout << outer_iteration_num << std::endl;
-	bool standard = (energy_satisfied || need_to_stop) && outer_iteration_num > 5;
+	bool standard = (energy_satisfied || need_to_stop) && outer_iteration_num > 0;
 	//if (outer_iteration_num > 0) {//
 	if (standard) {//
 		//std::cout << (current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy << std::endl;
@@ -1555,7 +1581,7 @@ bool ProjectDynamic::PDLocalGlobalConvergeCondition()
 	bool collision_energy = fabs(previous_collision_energy - current_collision_energy) / previous_collision_energy < local_global_conv_rate || current_collision_energy < 1e-14;
 	bool need_to_stop = fabs(current_PD_energy - previous_PD_energy) / previous_PD_energy < 5e-6 || local_global_iteration_num > max_it - 3;
 	bool energy_satisfied = system_energy && constraint_energy && collision_energy;
-	bool standard = (energy_satisfied || need_to_stop) && local_global_itr_in_single_outer > 5;
+	bool standard = (energy_satisfied || need_to_stop) && local_global_itr_in_single_outer > 2;
 
 	//if (local_global_itr_in_single_outer > 300) {
 	//	//std::cout<<"energy " << current_collision_energy<<" "<< abs(previous_collision_energy - current_collision_energy) / previous_collision_energy << std::endl;
@@ -1606,7 +1632,9 @@ void ProjectDynamic::localProjectionPerThread(int thread_id, bool with_energy)
 	//anchor
 	localPositionProjectionPerThread(thread_id, with_energy);
 	//ARAP
-	localARAPProjectionPerThread(thread_id, with_energy);
+	//localARAPProjectionPerThread(thread_id, with_energy);
+	//tet edge length
+	localTetEdgeLengthProjectionPerThread(thread_id, with_energy);
 }
 
 
@@ -1966,6 +1994,65 @@ bool ProjectDynamic::getDigonalForVolumePreserve(Vector3d& svd_eigen, double max
 
 }
 
+void ProjectDynamic::localTetEdgeLengthProjectionPerThread(int thread_id, bool with_energy)
+{
+	unsigned int vertex_index_start;
+	if (with_energy) {
+		Vector3d q0, q1, q01;
+		double curLen;
+		double* edges_length;
+		unsigned int* edge_vertices;
+		unsigned int* edge_index_begin_per_thread;
+		double length_stiffness;
+		for (unsigned int j = 0; j < total_tetrahedron_num; ++j) {
+			vertex_index_start = vertex_begin_per_tetrahedron[j];
+			edges_length = (*tetrahedron)[j].mesh_struct.tet_edge_rest_length.data();
+			edge_index_begin_per_thread = (*tetrahedron)[j].mesh_struct.tet_edge_index_begin_per_thread.data();
+			length_stiffness = (*tetrahedron)[j].edge_length_stiffness;
+			edge_vertices = (*tetrahedron)[j].mesh_struct.tet_edge_vertices.data();
+			for (unsigned int i = edge_index_begin_per_thread[thread_id]; i < edge_index_begin_per_thread[thread_id + 1]; ++i) {
+				q0.data()[0] = u[0].data()[edge_vertices[i << 1] + vertex_index_start];
+				q1.data()[0] = u[0].data()[edge_vertices[(i << 1) + 1] + vertex_index_start];
+				q0.data()[1] = u[1].data()[edge_vertices[i << 1] + vertex_index_start];
+				q1.data()[1] = u[1].data()[edge_vertices[(i << 1) + 1] + vertex_index_start];
+				q0.data()[2] = u[2].data()[edge_vertices[i << 1] + vertex_index_start];
+				q1.data()[2] = u[2].data()[edge_vertices[(i << 1) + 1] + vertex_index_start];
+				q01 = q0 - q1;
+				curLen = sqrt(dotProduct(q01.data(), q01.data()));
+				temEnergy[thread_id] += 0.5 * length_stiffness * (curLen - edges_length[i]) * (curLen - edges_length[i]);
+				tet_edge_length[j][i] = q01 * (length_stiffness / curLen * edges_length[i]);
+			}
+		}
+	}
+	else {
+		Vector3d q0, q1, q01;
+		double curLen;
+		double* edges_length;
+		unsigned int* edge_vertices;
+		unsigned int* edge_index_begin_per_thread;
+		double length_stiffness;
+		for (unsigned int j = 0; j < total_tetrahedron_num; ++j) {
+			vertex_index_start = vertex_begin_per_tetrahedron[j];
+			edges_length = (*tetrahedron)[j].mesh_struct.tet_edge_rest_length.data();
+			edge_index_begin_per_thread = (*tetrahedron)[j].mesh_struct.tet_edge_index_begin_per_thread.data();
+			length_stiffness = (*tetrahedron)[j].edge_length_stiffness;
+			edge_vertices = (*tetrahedron)[j].mesh_struct.tet_edge_vertices.data();
+			for (unsigned int i = edge_index_begin_per_thread[thread_id]; i < edge_index_begin_per_thread[thread_id + 1]; ++i) {
+				q0.data()[0] = u[0].data()[edge_vertices[i << 1] + vertex_index_start];
+				q1.data()[0] = u[0].data()[edge_vertices[(i << 1) + 1] + vertex_index_start];
+				q0.data()[1] = u[1].data()[edge_vertices[i << 1] + vertex_index_start];
+				q1.data()[1] = u[1].data()[edge_vertices[(i << 1) + 1] + vertex_index_start];
+				q0.data()[2] = u[2].data()[edge_vertices[i << 1] + vertex_index_start];
+				q1.data()[2] = u[2].data()[edge_vertices[(i << 1) + 1] + vertex_index_start];
+				q01 = q0 - q1;
+				curLen = sqrt(dotProduct(q01.data(), q01.data()));
+				tet_edge_length[j][i] = q01 * (length_stiffness / curLen * edges_length[i]);
+			}
+		}
+	}
+}
+
+
 
 //LOCAL_EDGE_LENGTH_PROJECTION
 void ProjectDynamic::localEdgeLengthProjectionPerThread(int thread_id, bool with_energy)
@@ -2181,7 +2268,7 @@ void ProjectDynamic::constructbPerThead(int thread_id, bool with_collision)
 			collision.obj_target_pos.b_sum[obj_No+tetrahedron_begin_obj_index], collision.obj_target_pos.need_update[obj_No + tetrahedron_begin_obj_index],
 			with_collision, (*tetrahedron)[obj_No].position_stiffness, vertex_begin_per_tetrahedron[obj_No],
 			(*tetrahedron)[obj_No].mesh_struct.indices.data(), (*tetrahedron)[obj_No].mesh_struct.anchor_vertex,
-			(*tetrahedron)[obj_No].mesh_struct.anchor_position.data());
+			(*tetrahedron)[obj_No].mesh_struct.anchor_position.data(), tet_edge_length[obj_No].data());
 
 	}
 }
@@ -2191,7 +2278,7 @@ void ProjectDynamic::constructbTetPerThead(double* b, TetrahedronMeshStruct& mes
 	std::vector<Matrix<double,4,3>>& p_ARAP_volume_preserve, int tet_No, int dimension,
 	std::vector<std::array<double, 3>>& collision_b_sum, bool* collision_b_need_update, bool with_collision,
 	double position_stiffness, int vertex_index_start, std::array<int, 4>* indices, std::vector<int>& anchor_vertex,
-	std::array<double, 3>* anchor_pos)
+	std::array<double, 3>* anchor_pos, Vector3d* tet_edge_length)
 {
 	unsigned int vertex_num = tetrahedron_sys_size[tet_No];
 	memset(b + vertex_index_start, 0, vertex_num<<3);
@@ -2204,13 +2291,21 @@ void ProjectDynamic::constructbTetPerThead(double* b, TetrahedronMeshStruct& mes
 		}
 	}
 
-	//ARAP + volime_preserve
-	int tet_size = mesh_struct.indices.size();
-	for (int i = 0; i < tet_size; ++i) {
-		for (int j = 0; j < 4; ++j) {
-			b[indices[i][j] + vertex_index_start] += p_ARAP_volume_preserve[i].data()[4 * dimension + j];
-		}		
+	//edge length
+	int edge_size = mesh_struct.tet_edge_vertices.size() >> 1;
+	for (int i = 0; i < edge_size; ++i) {
+		b[mesh_struct.tet_edge_vertices[i << 1] + vertex_index_start] += tet_edge_length[i].data()[dimension];
+		b[mesh_struct.tet_edge_vertices[(i << 1) + 1] + vertex_index_start] -= tet_edge_length[i].data()[dimension];
 	}
+
+	////ARAP + volime_preserve
+	//int tet_size = mesh_struct.indices.size();
+	//for (int i = 0; i < tet_size; ++i) {
+	//	for (int j = 0; j < 4; ++j) {
+	//		b[indices[i][j] + vertex_index_start] += p_ARAP_volume_preserve[i].data()[4 * dimension + j];
+	//	}		
+	//}
+	
 	//position
 	for (int i = 0; i < anchor_vertex.size(); ++i) {
 		b[anchor_vertex[i] + vertex_index_start] += position_stiffness * anchor_pos[i][dimension];

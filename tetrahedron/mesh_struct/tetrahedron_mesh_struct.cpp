@@ -37,6 +37,10 @@ void TetrahedronMeshStruct::setTetEdges()
 	unfixed_vertex_index_begin_per_thread.resize(thread->thread_num + 1);
 	arrangeIndex(thread->thread_num, 0, only_one_vertex_fixed_edge_index_begin_per_thread.data());
 	arrangeIndex(thread->thread_num, vertex_position.size(), unfixed_vertex_index_begin_per_thread.data());
+
+	tet_edge_index_begin_per_thread.resize(thread->thread_num + 1);
+	arrangeIndex(thread->thread_num, tet_edge_vertices.size() >> 1, tet_edge_index_begin_per_thread.data());
+
 	//for (unsigned int i = 0; i < tet_edge_vertices.size(); i += 2) {
 	//	std::cout << tet_edge_vertices[i] << " " << tet_edge_vertices[i + 1] << std::endl;
 	//}

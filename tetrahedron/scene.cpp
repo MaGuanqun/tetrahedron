@@ -184,18 +184,18 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	double tetrahedron_density = 0.1;
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].loadMesh(preprocessing.ori_simulation_mesh[cloth_index_in_object[i]], cloth_density, &thread);
-		if (use_method==NEWTON_)
-		{
+		//if (use_method==NEWTON_)
+		//{
 			cloth[i].mesh_struct.initialUnfixedIndex();
-		}
+		//}
 	}
 	for (int i = 0; i < tetrahedron_num; ++i) {
 		tetrahedron[i].loadMesh(preprocessing.ori_simulation_mesh[tetrahedron_index_in_object[i]], tetrahedron_density, &thread);
-		if (use_method == NEWTON_)
-		{
+		//if (use_method == NEWTON_)
+		//{
 			tetrahedron[i].mesh_struct.initialUnfixedIndex();
 			
-		}
+		//}
 	}
 	setWireframwColor();
 	std::vector<SingleClothInfo> single_cloth_info;
@@ -211,7 +211,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	std::array<double, 4>tetrahedron_collision_stiffness_per = {1e1,1e1, 1e1,1e1 };
 	double sigma_limit[2] = { 0.99,1.01 };
 	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density, 2e3, 1e9, 0.0, tetrahedron_collision_stiffness_per.data(), sigma_limit,
-		5e4,0.45,2.0e0);
+		5e4,0.45,1.5e0);
 	for (int i = 0; i < tetrahedron_num; ++i) {
 		tetrahedron[i].recordInitialMesh(single_tetrahedron_info);
 	}
@@ -777,6 +777,7 @@ void Scene::selectAnchor(bool* control_parameter, bool* select_anchor, double* s
 			for (int i = 0; i < tetrahedron.size(); ++i) {
 				tetrahedron[i].mesh_struct.setAnchorPosition();
 				tetrahedron[i].mesh_struct.updateAnchorPerThread(thread.thread_num);
+				//tetrahedron[i].mesh_struct.updateUnfixedPointData();
 			}
 			project_dynamic.updateTetrahedronAnchorVertices();
 			break;
@@ -790,6 +791,7 @@ void Scene::selectAnchor(bool* control_parameter, bool* select_anchor, double* s
 			break;
 		case XPBD_:
 			xpbd.updateTetrahedronAnchorVertices();
+
 			break;
 		}
 	}
