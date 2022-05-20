@@ -101,6 +101,10 @@ void TriangleMeshStruct::initialUnfixedIndex()
 	arrangeIndex(total_thread_num_, 0, only_one_vertex_fixed_edge_index_begin_per_thread.data());
 	unfixed_vertex_index_begin_per_thread.resize(total_thread_num_+1, 0);
 	arrangeIndex(total_thread_num_, vertex_position.size(), unfixed_vertex_index_begin_per_thread.data());
+
+
+	real_index_to_unfixed_index.resize(vertex_position.size());
+
 	updateUnfixedPointData();
 
 }
@@ -119,9 +123,12 @@ void TriangleMeshStruct::updateUnfixedPointData()
 		}
 	}
 
-	std::vector<unsigned int> real_index_to_unfixed_index(vertex_position.size());
+	
 	for (unsigned int i = 0; i < unfixed_point_index.size(); ++i) {
 		real_index_to_unfixed_index[unfixed_point_index[i]] = i;
+	}
+	for (unsigned int i = 0; i < anchor_vertex.size(); ++i) {
+		real_index_to_unfixed_index[anchor_vertex[i]] = vertex_position.size();
 	}
 
 	unfixed_rest_edge_length.clear();

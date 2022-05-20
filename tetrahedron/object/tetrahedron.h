@@ -8,8 +8,8 @@ private:
 	void initialHashAABB();
 
 	void setRepresentativePrimitve();
-
-
+	std::vector<std::vector<unsigned int>> neighbor_vertex_per_thread;
+	double* cursor_pos_;
 
 public:
 	std::vector<std::array<double, 6>> tet_AABB;
@@ -60,5 +60,9 @@ public:
 	void obtainAABBMoveRadius();
 
 	void drawOriPos(Camera* camera, Shader* object_shader_front);
+
+
+
+	void findAllNeighborVertex(int thread_No);
 };
 

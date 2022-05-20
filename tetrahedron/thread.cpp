@@ -237,6 +237,9 @@ job Thread::create_task(Tetrahedron* func, int thread_id, ObjectFunc function_ty
     case CURRENT_AABB:
         k = job([func, thread_id]() {func->getCurrentPosAABB(thread_id); });
         break;
+    case FIND_NEIGHBOR_VERTEX:
+        k = job([func, thread_id]() {func->findAllNeighborVertex(thread_id); });
+        break;
     }
     return k;
 }

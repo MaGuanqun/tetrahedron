@@ -53,6 +53,13 @@ void TetrahedronMeshStruct::initialUnfixedIndex()
 		unfixed_point_index[i] = i;
 	}
 	unfixed_edge_vertex_index =tet_edge_vertices;
+	real_index_to_unfixed_index.resize(vertex_position.size());
+	for (unsigned int i = 0; i < unfixed_point_index.size(); ++i) {
+		real_index_to_unfixed_index[unfixed_point_index[i]] = i;
+	}
+	for (unsigned int i = 0; i < anchor_vertex.size(); ++i) {
+		real_index_to_unfixed_index[anchor_vertex[i]] = vertex_position.size();
+	}
 }
 
 void TetrahedronMeshStruct::updateUnfixedPointData()
@@ -68,9 +75,12 @@ void TetrahedronMeshStruct::updateUnfixedPointData()
 		}
 	}
 
-	std::vector<unsigned int> real_index_to_unfixed_index(vertex_position.size());
+	
 	for (unsigned int i = 0; i < unfixed_point_index.size(); ++i) {
 		real_index_to_unfixed_index[unfixed_point_index[i]] = i;
+	}
+	for (unsigned int i = 0; i < anchor_vertex.size(); ++i) {
+		real_index_to_unfixed_index[anchor_vertex[i]] = vertex_position.size();
 	}
 
 	unfixed_rest_edge_length.clear();

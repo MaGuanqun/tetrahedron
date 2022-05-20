@@ -47,12 +47,13 @@ public:
 
 	void initial();
 	void initialDHatTolerance(double ave_edge_length);
-	void addExternalClothForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int cloth_No);
+	void addExternalForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int cloth_No);
 
 	void updateVelocity(int thread_No);
 	void updateIndexBeginPerObj();
 
 	size_t* time_stamp;
+	void resetExternalForce();
 
 private:
 
@@ -131,7 +132,7 @@ private:
 	std::vector<std::vector<double>> hessian_coeff_diagonal;// only store block<i,i> coefficient, also use this variable temporally store f_int in each thread 
 
 
-
+	std::vector<unsigned int*> real_index_to_unfixed_index;
 
 	std::vector<unsigned int> vertex_begin_per_obj;
 	std::vector<unsigned int> off_diagonal_hessian_nnz_index_begin_per_thread;
@@ -169,9 +170,10 @@ private:
 		double* force_1, double stiffness, double rest_length);
 
 	void computeGravity();
-	void setExternalForce();
 
-	SimplicialLLT<SparseMatrix<double>> global_llt;
+
+	//SparseLU<SparseMatrix<double>, COLAMDOrdering<int> >global_llt;
+	SimplicialLDLT<SparseMatrix<double>> global_llt;
 	void updateRenderPosition();
 	bool convergenceCondition();
 

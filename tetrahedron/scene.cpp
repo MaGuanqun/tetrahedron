@@ -202,7 +202,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	std::array<double, 4>collision_stiffness_per = { 2e5,2e5,2e5, 2e5 };// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point,
 	std::vector<std::array<double, 4>>collision_stiffness(cloth_num, collision_stiffness_per);
 	for (int i = 0; i < cloth_num; ++i) {
-		single_cloth_info.push_back(SingleClothInfo(cloth_density, 1e2, 1e6, 3e-3, collision_stiffness[i].data(), 0.5, 0.4, collision_stiffness_per[1]));
+		single_cloth_info.push_back(SingleClothInfo(cloth_density, 1e1, 1e6, 3e-3, collision_stiffness[i].data(), 0.5, 0.4, collision_stiffness_per[1]));
 	}
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].recordInitialMesh(single_cloth_info[i]);
@@ -211,7 +211,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	std::array<double, 4>tetrahedron_collision_stiffness_per = {1e1,1e1, 1e1,1e1 };
 	double sigma_limit[2] = { 0.99,1.01 };
 	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density, 2e3, 1e9, 0.0, tetrahedron_collision_stiffness_per.data(), sigma_limit,
-		5e4,0.45,1.5e0);
+		5e4,0.45,2.0e0);
 	for (int i = 0; i < tetrahedron_num; ++i) {
 		tetrahedron[i].recordInitialMesh(single_tetrahedron_info);
 	}
@@ -563,7 +563,7 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 			xpbd.resetExternalForce();
 			break;
 		case NEWTON_:
-			
+			newton_method.resetExternalForce();
 			break;
 		}
 		//std::cout << intersection.happened << " " << control_parameter[START_TEST] << std::endl;
@@ -857,7 +857,7 @@ void Scene::obtainCursorIntersection(double* pos, Camera* camera, std::vector<st
 		intersection.setIntersection(chosen_index);
 		if (chosen_index[1] < obj_num_except_collider) {
 			intersection.happened = true;
-
+			intersection.first_intersection_frame = true;
 			if (control_parameter[ROTATION] || control_parameter[ONLY_ROTATE_CURRENT]) {
 				intersect_when_rotation = true;
 				move_object.select_object_index = intersection.obj_No;
@@ -978,16 +978,25 @@ void Scene::setCursorForce(Camera* camera, double* cursor_screen, float force_co
 	double cursor_pos[3];
 	double force_direction[3];
 
+
 	if (intersection.obj_No < cloth.size()) {
 		getCursorPos(cursor_pos, cloth[intersection.obj_No].mesh_struct.vertex_position,
 			cloth[intersection.obj_No].mesh_struct.triangle_indices[intersection.face_index].data());
-		cloth[intersection.obj_No].findAllNeighborVertex(intersection.face_index, cursor_pos, ave_edge_length);
+		if (intersection.first_intersection_frame) {
+			cloth[intersection.obj_No].findAllNeighborVertex(intersection.face_index, cursor_pos, ave_edge_length);
+			intersection.first_intersection_frame = false;
+		}
 	}
-	else{
+	else {
 		getCursorPos(cursor_pos, tetrahedron[intersection.obj_No - cloth.size()].mesh_struct.vertex_position,
 			tetrahedron[intersection.obj_No - cloth.size()].mesh_struct.triangle_indices[intersection.face_index].data());
-		tetrahedron[intersection.obj_No-cloth.size()].findAllNeighborVertex(intersection.face_index, cursor_pos, ave_edge_length);
+		if (intersection.first_intersection_frame) {
+			tetrahedron[intersection.obj_No - cloth.size()].findAllNeighborVertex(intersection.face_index, cursor_pos, ave_edge_length);
+			intersection.first_intersection_frame = false;
+		}
 	}
+	
+	
 	double cursor_pos_in_space[3];
 	cursorMovement(camera, cursor_screen, force_direction, force_coe, cursor_pos, cursor_pos_in_space);
 	cursor.translate(cursor_pos, cursor_pos_in_space);
@@ -1001,7 +1010,7 @@ void Scene::setCursorForce(Camera* camera, double* cursor_screen, float force_co
 			xpbd.addExternalForce(force_direction, cloth[intersection.obj_No].coe_neighbor_vertex_force, cloth[intersection.obj_No].neighbor_vertex, intersection.obj_No);
 			break;
 		case NEWTON_:
-			//newton_method.initialDHatTolerance(ave_edge_length);
+			newton_method.addExternalForce(force_direction, cloth[intersection.obj_No].coe_neighbor_vertex_force, cloth[intersection.obj_No].neighbor_vertex, intersection.obj_No);
 			break;
 		}
 	}
@@ -1017,7 +1026,7 @@ void Scene::setCursorForce(Camera* camera, double* cursor_screen, float force_co
 			xpbd.addExternalForce(force_direction, tetrahedron[intersection.obj_No - cloth.size()].coe_neighbor_vertex_force, tetrahedron[intersection.obj_No - cloth.size()].neighbor_vertex, intersection.obj_No);
 			break;
 		case NEWTON_:
-			//newton_method.initialDHatTolerance(ave_edge_length);
+			newton_method.addExternalForce(force_direction, tetrahedron[intersection.obj_No - cloth.size()].coe_neighbor_vertex_force, tetrahedron[intersection.obj_No - cloth.size()].neighbor_vertex, intersection.obj_No);
 			break;
 		}
 	}

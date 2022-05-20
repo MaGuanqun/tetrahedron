@@ -65,6 +65,7 @@ void NewtonMethod::initialHessianNnz()
 	 Hessian.resize(3 * vertex_begin_per_obj[total_obj_num], 3 * vertex_begin_per_obj[total_obj_num]);
 	 b.resize(3 * vertex_begin_per_obj[total_obj_num]);
 	 Sn.resize(3 * vertex_begin_per_obj[total_obj_num]);
+	 f_ext.resize(3 * vertex_begin_per_obj[total_obj_num]);
 	 velocity.resize(3 * vertex_begin_per_obj[total_obj_num]);
 	 velocity.setZero();
 
@@ -178,23 +179,38 @@ void NewtonMethod::updateHessianFixedStructure()
 }
 
 
-
-
-
-
-
-
-
-void NewtonMethod::setExternalForce()
+void NewtonMethod::addExternalForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int obj_No)
 {
-	Sn = gravity;
+	if (!coe.empty()) {
+		unsigned int vertex_start = vertex_begin_per_obj[obj_No];
+		unsigned int* real_index_to_unfixed_index_ = real_index_to_unfixed_index[obj_No];
+		unsigned int size = total_vertex_num[obj_No];
+		unsigned int index;
+		for (unsigned int i = 0; i < coe.size(); ++i) {
+			if (real_index_to_unfixed_index_[neighbor_vertex[i]] < size) {
+				index = 3 * (vertex_start + real_index_to_unfixed_index_[neighbor_vertex[i]]);
+				for (unsigned int j = 0; j < 3; ++j) {
+					f_ext[index + j] += coe[i] * neighbor_vertex_force_direction[j];
+				}
+			}		
+		}
+	}
+}
+
+
+
+
+
+
+void NewtonMethod::resetExternalForce()
+{
+	f_ext = gravity;
 }
 
 
 
 void NewtonMethod::solveNewtonMethod()
 {
-	setExternalForce();
 	storeInitialPosition();
 	thread->assignTask(this, SET_S_N);
 	iteration_number = 0;
@@ -443,7 +459,7 @@ void NewtonMethod::setSn(int thread_No)
 			for (unsigned int k = 0; k < 3; ++k) {
 				Sn.data()[j + k] = mass_[unfixed_index_to_normal_index[l - vertex_start]]
 					* (vertex_pos[3 * unfixed_index_to_normal_index[l - vertex_start] + k]
-						+ time_step_ * velocity.data()[j + k]) + time_step_square_ * Sn.data()[j + k];
+						+ time_step_ * velocity.data()[j + k]) + time_step_square_ * f_ext.data()[j + k];
 			}
 		}
 	}
@@ -938,6 +954,7 @@ void NewtonMethod::reorganzieDataOfObjects()
 	unfixed_vertex_begin_per_thread.resize(total_obj_num);
 	unfixed_vertex.resize(total_obj_num);
 	total_vertex_num.resize(total_obj_num);
+	real_index_to_unfixed_index.resize(total_obj_num);
 
 
 	anchor_vertex.resize(total_obj_num);
@@ -952,7 +969,7 @@ void NewtonMethod::reorganzieDataOfObjects()
 		edge_vertices_mass_spring[i] = &cloth->data()[i].mesh_struct.unfixed_edge_vertex_index;
 		only_one_vertex_fix_edge_vertices[i] = &cloth->data()[i].mesh_struct.only_one_vertex_fix_edge;
 		unfixed_rest_length[i] = &cloth->data()[i].mesh_struct.unfixed_rest_edge_length;
-		fixed_one_vertices_rest_length[i] = &cloth->data()[i].mesh_struct.fixed_one_vertex_rest_edge_length;
+		fixed_one_vertices_rest_length[i] = &cloth->data()[i].mesh_struct.fixed_one_vertex_rest_edge_length;	
 
 		edge_length_stiffness[i] = cloth->data()[i].length_stiffness[0];
 		anchor_stiffness[i] = cloth->data()[i].position_stiffness;
@@ -964,9 +981,10 @@ void NewtonMethod::reorganzieDataOfObjects()
 		anchor_vertex[i] = &cloth->data()[i].mesh_struct.anchor_vertex;
 		anchor_position[i] = &cloth->data()[i].mesh_struct.anchor_position;
 		unfixed_vertex[i] = &cloth->data()[i].mesh_struct.unfixed_point_index;
-		vertex_begin_per_obj[i+1] = vertex_begin_per_obj[i]+ cloth->data()[i].mesh_struct.vertex_position.size();
+		vertex_begin_per_obj[i+1] = vertex_begin_per_obj[i]+ cloth->data()[i].mesh_struct.unfixed_point_index.size();
 		//edge_begin_per_obj[i+1] = edge_begin_per_obj[i]+ (cloth->data()[i].mesh_struct.edge_vertices.size()>>1);
 		total_vertex_num[i] = cloth->data()[i].mesh_struct.vertex_position.size();
+		real_index_to_unfixed_index[i] = cloth->data()[i].mesh_struct.real_index_to_unfixed_index.data();
 	}
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		vertex_position[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_position.data();
@@ -986,9 +1004,10 @@ void NewtonMethod::reorganzieDataOfObjects()
 		anchor_vertex[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct.anchor_vertex;
 		anchor_position[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct.anchor_position;
 		unfixed_vertex[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct.unfixed_point_index;
-		vertex_begin_per_obj[i + 1 + cloth->size()] = vertex_begin_per_obj[i + cloth->size()] + tetrahedron->data()[i].mesh_struct.vertex_position.size();
+		vertex_begin_per_obj[i + 1 + cloth->size()] = vertex_begin_per_obj[i + cloth->size()] + tetrahedron->data()[i].mesh_struct.unfixed_point_index.size();
 		//edge_begin_per_obj[i + 1 + cloth->size()] = edge_begin_per_obj[i + cloth->size()] + (tetrahedron->data()[i].mesh_struct.tet_edge_vertices.size()>>1);
 		total_vertex_num[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_position.size();
+		real_index_to_unfixed_index[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.real_index_to_unfixed_index.data();
 	}
 
 	//std::cout << edge_vertices_mass_spring[0]->size() << " " << only_one_vertex_fix_edge_vertices[0]->size() << " " <<

@@ -67,6 +67,9 @@ public:
 	std::vector<std::array<double, 3>> cross_for_approx_CCD;// (p1(t1)-p0(t1))?p2(t0)-p0(t0))+(p1(t0)-p0(t0))x(p2(t1)-p0(t1)) t0 is the start of the time step, t1 is the current
 
 	std::vector<unsigned int> unfixed_point_index;
+
+	std::vector<unsigned int>real_index_to_unfixed_index;
+
 	std::vector<unsigned int> unfixed_edge_vertex_index; // the index is for the unfixed index, need to transfer it to get the real index
 	std::vector<unsigned int> only_one_vertex_fix_edge; //first index is unfixed (use unfixed index, need to transfer it to get the real index), second index is fixed, it is directly the real index
 

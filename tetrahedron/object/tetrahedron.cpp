@@ -27,6 +27,8 @@ void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	setRepresentativePrimitve();
 	initialHashAABB();
 	obtainAABBMoveRadius();
+
+	neighbor_vertex_per_thread.resize(thread->thread_num);
 }
 
 
@@ -432,20 +434,37 @@ void Tetrahedron::reset(bool use_XPBD)
 
 void Tetrahedron::findAllNeighborVertex(int face_index, double cursor_pos[3], double average_edge_length)
 {
-	std::vector<bool>is_vertex_used(mesh_struct.vertices.size(), false);
-	neighbor_vertex.clear();
-	neighbor_vertex.push_back(mesh_struct.triangle_indices[face_index][0]);
-	is_vertex_used[mesh_struct.triangle_indices[face_index][0]] = true;
-	findNeighborVertex(mesh_struct.triangle_indices[face_index][0], 0, is_vertex_used);
+	neighbor_vertex.clear();	
+	cursor_pos_ = cursor_pos;
+	thread->assignTask(this, FIND_NEIGHBOR_VERTEX);
+	for (unsigned int i = 0; i < total_thread_num; ++i) {
+		neighbor_vertex.insert(neighbor_vertex.end(), neighbor_vertex_per_thread[i].begin(), neighbor_vertex_per_thread[i].end());
+	}
+	std::cout << neighbor_vertex.size() << std::endl;
+	if(neighbor_vertex.size()<4){
+		std::vector<bool>is_vertex_used(mesh_struct.vertices.size(), false);
+		for (unsigned int i = 0; i < neighbor_vertex.size(); ++i) {
+			is_vertex_used[neighbor_vertex[i]] = true;
+		}
+		if (!is_vertex_used[mesh_struct.triangle_indices[face_index][0]]) {
+			neighbor_vertex.push_back(mesh_struct.triangle_indices[face_index][0]);
+			is_vertex_used[mesh_struct.triangle_indices[face_index][0]] = true;
+		}			
+		findNeighborVertex(mesh_struct.triangle_indices[face_index][0], 0, is_vertex_used);
+	}
 	//findInnerVertex(is_vertex_used);
 	coe_neighbor_vertex_force.clear();
 	coe_neighbor_vertex_force.resize(neighbor_vertex.size());
-	double vec3[3];
+	//double vec3[3];
+	double force = 0.1/ neighbor_vertex.size();
 	for (int i = 0; i < neighbor_vertex.size(); i++) {
-		SUB(vec3, cursor_pos, mesh_struct.vertex_for_render[neighbor_vertex[i]]);
-		coe_neighbor_vertex_force[i] = gaussian(sqrt(DOT(vec3, vec3)) / average_edge_length, 5.0);
+		//SUB(vec3, cursor_pos, mesh_struct.vertex_for_render[neighbor_vertex[i]]);
+		coe_neighbor_vertex_force[i] = force;
+		//coe_neighbor_vertex_force[i] = gaussian(sqrt(DOT(vec3, vec3)) / average_edge_length, 5.0);
 	}
 }
+
+
 
 void Tetrahedron::findNeighborVertex(int vertex_index, int recursion_deepth, std::vector<bool>& is_vertex_used)
 {
@@ -536,6 +555,25 @@ void Tetrahedron::initialNeighborPrimitiveRecording(int cloth_num, int tetrahedr
 				surface_vertex_neighbor_collider_triangle[i][j].reserve(10);
 				collide_vertex_collider_triangle[i][j].reserve(10);
 			}
+		}
+	}
+}
+
+//FIND_NEIGHBOR_VERTEX
+void Tetrahedron::findAllNeighborVertex(int thread_No)
+{
+	std::vector<unsigned int>* neighbor_vertex = &neighbor_vertex_per_thread[thread_No];
+	neighbor_vertex->clear();
+	unsigned int end = mesh_struct.vertex_index_begin_per_thread[thread_No + 1];
+	double distance_2 = 0.1 * 0.1;
+	double temp[3];
+	double center[3];
+	memcpy(center, cursor_pos_, 24);
+	std::array<double, 3>* vertex_pos=mesh_struct.vertex_position.data();
+	for (unsigned int i = mesh_struct.vertex_index_begin_per_thread[thread_No]; i < end; ++i) {
+		SUB(temp, center, vertex_pos[i]);
+		if (DOT(temp, temp) < distance_2) {
+			neighbor_vertex->emplace_back(i);
 		}
 	}
 }
