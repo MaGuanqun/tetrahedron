@@ -11,7 +11,7 @@ NewtonMethod::NewtonMethod()
 	time_step_square = time_step * time_step;
 	conv_rate = time_step * 1e-5;
 
-	max_itr_num = 1;
+	max_itr_num = 100;
 }
 
 
@@ -206,7 +206,14 @@ void NewtonMethod::solveNewtonMethod()
 		updateRenderPosition();
 		updateHessianFixedStructure();
 		global_llt.factorize(Hessian);
-		delta_x = global_llt.solve(b);
+		delta_x =global_llt.solve(b);
+
+		//if (*time_stamp == 92 && iteration_number<5) {
+		//	std::cout << "====" << std::endl;
+		//	std::cout << delta_x.segment(0,10) << std::endl;
+		//	//std::cout << Hessian << std::endl;
+		//}
+
 		thread->assignTask(this, UPDATE_POSITION_NEWTON);
 		iteration_number++;
 	}
@@ -238,7 +245,7 @@ void NewtonMethod::initialDHatTolerance(double ave_edge_length)
 
 bool NewtonMethod::convergenceCondition()
 {
-	if (iteration_number < 1) {
+	if (iteration_number < 3) {
 		return true;
 	}
 
@@ -247,13 +254,15 @@ bool NewtonMethod::convergenceCondition()
 	}
 
 	double a = 0.0;
+	double b = 0.0;
 	for (unsigned int i = 0; i < delta_x.size(); i++) {
 		if (a < abs(delta_x.data()[i])) {
 			a = abs(delta_x.data()[i]);
+			//b = delta_x.data()[i];
 		}
 	}
 
-	//std::cout << conv_rate<<" "<< a << std::endl;
+	//std::cout << b << std::endl;
 
 	if (a > conv_rate) {
 		return true;
@@ -481,6 +490,7 @@ void NewtonMethod::updateVelocity(int thread_No)
 	unsigned int* unfixed_index_to_normal_index;
 	unsigned int vertex_start;
 
+	double time_step_ = time_step;
 
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		vertex_pos = vertex_position[i][0].data();
@@ -490,9 +500,9 @@ void NewtonMethod::updateVelocity(int thread_No)
 		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
 		for (unsigned int j = index_start; j < index_end; ++j) {
 			vertex_start = 3 * unfixed_index_to_normal_index[index];
-			velocity.data()[3*j] = vertex_pos[vertex_start] - position_of_beginning.data()[3*j];
-			velocity.data()[3*j+1] = vertex_pos[vertex_start +1] - position_of_beginning.data()[3*j+1];
-			velocity.data()[3*j+2] = vertex_pos[vertex_start +2] - position_of_beginning.data()[3*j+2];
+			velocity.data()[3*j] = (vertex_pos[vertex_start] - position_of_beginning.data()[3*j])/ time_step_;
+			velocity.data()[3*j+1] = (vertex_pos[vertex_start +1] - position_of_beginning.data()[3*j+1])/ time_step_;
+			velocity.data()[3*j+2] = (vertex_pos[vertex_start +2] - position_of_beginning.data()[3*j+2])/ time_step_;
 			index++;
 		}
 	}
@@ -789,6 +799,10 @@ void NewtonMethod::computeHessianOnlyOneVertexFixedEdge(double* vertex_position_
 	double coe = stiffness - stiffness * rest_length / length;
 	double coe2 = stiffness * rest_length / (length_ * length);
 
+	//if (length < 1e-8) {
+	//	std::cout << "too small "<<length << std::endl;
+	//}
+
 	diagonal_coeff_0[0] += time_step_square * (coe + coe2 * Ax[0] * Ax[0]);
 	diagonal_coeff_0[1] += time_step_square * (coe2 * Ax[1] * Ax[0]);
 	diagonal_coeff_0[2] += time_step_square * (coe2 * Ax[2] * Ax[0]);
@@ -806,6 +820,11 @@ void NewtonMethod::computeHessianFixedStructure(double* vertex_position_0, doubl
 	SUB(Ax, vertex_position_0, vertex_position_1);
 	double length_ = DOT(Ax, Ax);
 	double length = sqrt(length_);
+
+	//if (length < 1e-8) {
+	//	std::cout << "too small "<<length << std::endl;
+	//}
+
 	double coe = stiffness - stiffness*rest_length / length;
 	double coe2 = stiffness*rest_length / (length_*length);
 	//matrix store in row_major

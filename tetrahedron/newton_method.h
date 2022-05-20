@@ -51,6 +51,9 @@ public:
 
 	void updateVelocity(int thread_No);
 	void updateIndexBeginPerObj();
+
+	size_t* time_stamp;
+
 private:
 
 	unsigned int max_itr_num;
@@ -178,5 +181,7 @@ private:
 		double stiffness, double rest_length, double time_step_square);
 	void updateInternalForceOnlyOneEdgeFixed(double* vertex_position_0, double* vertex_position_1, double* force_0,
 		double stiffness, double rest_length);
+
+
 
 }; 
