@@ -469,6 +469,12 @@ job Thread::create_task(NewtonMethod* func, int thread_id, NewtonMethodFunc func
     case VELOCITY_NEWTON:
         k = job([func, thread_id]() {func->updateVelocity(thread_id); });
         break;
+    case VELOCITY_NEWTON_2:
+        k = job([func, thread_id]() {func->updateVelocity2(thread_id); });
+        break;
+    case UPDATE_DAMP:
+        k = job([func, thread_id]() {func->updateHessianForDamp(thread_id); });
+        break;
     case SET_MASS_SPRING:
         k = job([func, thread_id]() {func->massSpring(thread_id); });
         break;
@@ -478,6 +484,7 @@ job Thread::create_task(NewtonMethod* func, int thread_id, NewtonMethodFunc func
     case GET_COEFF_ADDRESS:
         k = job([func, thread_id]() {func->hessianCoeffAddress(thread_id); });
         break;
+
     }
     return k;
 }

@@ -360,6 +360,9 @@
     <ClInclude Include="newton_method.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="test_simu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

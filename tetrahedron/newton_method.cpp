@@ -11,7 +11,8 @@ NewtonMethod::NewtonMethod()
 	time_step_square = time_step * time_step;
 	conv_rate = time_step * 1e-5;
 
-	max_itr_num = 100;
+	max_itr_num = 50;
+	//damp_coe = 0.99;
 }
 
 
@@ -59,7 +60,7 @@ void NewtonMethod::initialHessianNnz()
 	hessian_nnz.resize(off_diagonal_hessian_nnz_index_begin_per_thread[total_thread_num]);	
 
 	 for (unsigned int i = 0; i < total_thread_num; ++i) {
-		 hessian_coeff_diagonal[i].resize(6*vertex_begin_per_obj[total_obj_num]);
+		 hessian_coeff_diagonal[i].resize(9*vertex_begin_per_obj[total_obj_num]);
 	}
 
 	 Hessian.resize(3 * vertex_begin_per_obj[total_obj_num], 3 * vertex_begin_per_obj[total_obj_num]);
@@ -175,6 +176,7 @@ void NewtonMethod::updateHessianFixedStructure()
 	thread->assignTask(this, UPDATE_DIAGONAL_HESSIAN_FIXED_STRUCTURE);
 	thread->assignTask(this, UPDATE_INTERNAL_FORCE);
 	thread->assignTask(this, SUM_B);
+	thread->assignTask(this, UPDATE_DAMP);
 	//thread->assignTask(this, UPDATE_ANCHOR_POINT_HESSIAN);
 }
 
@@ -231,9 +233,9 @@ void NewtonMethod::solveNewtonMethod()
 		//}
 
 		thread->assignTask(this, UPDATE_POSITION_NEWTON);
+		//thread->assignTask(this, VELOCITY_NEWTON);
 		iteration_number++;
 	}
-
 	thread->assignTask(this, VELOCITY_NEWTON);	
 }
 
@@ -293,6 +295,9 @@ void NewtonMethod::updateRenderPosition()
 	}
 }
 
+
+
+
 //UPDATE_INTERNAL_FORCE
 void NewtonMethod::updateInternalForce(int thread_No)
 {
@@ -308,6 +313,9 @@ void NewtonMethod::updateInternalForce(int thread_No)
 
 	unsigned int* unfixed_vertex_index;
 
+	unsigned int index_start;
+	double damp_stiff = *damp_stiffness;
+
 	for (unsigned int obj_No = 0; obj_No < total_obj_num; ++obj_No) {
 		vertex_pos = vertex_position[obj_No];
 		edge_vertex = edge_vertices_mass_spring[obj_No]->data();
@@ -316,10 +324,12 @@ void NewtonMethod::updateInternalForce(int thread_No)
 		rest_length_ = unfixed_rest_length[obj_No]->data();
 		edge_length_stiffness_ = edge_length_stiffness[obj_No];
 		unfixed_vertex_index = unfixed_vertex[obj_No]->data();
+		index_start = vertex_begin_per_obj[obj_No];
 		for (unsigned int i = vertex_begin; i < vertex_end; i += 2) {
 			updateInternalForce(vertex_pos[unfixed_vertex_index[edge_vertex[i]]].data(), vertex_pos[unfixed_vertex_index[edge_vertex[i + 1]]].data(),
-				hessian_coeff_diag + 3 * edge_vertex[i], hessian_coeff_diag + 3 * edge_vertex[i + 1],
-				edge_length_stiffness_, rest_length_[i >> 1]);
+				hessian_coeff_diag + 3 * (edge_vertex[i]+ index_start), hessian_coeff_diag + 3 * (edge_vertex[i + 1]+ index_start),
+				edge_length_stiffness_, rest_length_[i >> 1], velocity.data()+ 3 * (edge_vertex[i] + index_start),
+				velocity.data() + 3 * (edge_vertex[i + 1] + index_start), damp_stiff);
 		}
 		//only one vertex fixed in the edge
 		edge_vertex = only_one_vertex_fix_edge_vertices[obj_No]->data();
@@ -329,10 +339,15 @@ void NewtonMethod::updateInternalForce(int thread_No)
 		for (unsigned int i = vertex_begin; i < vertex_end; i += 2) {
 			updateInternalForceOnlyOneEdgeFixed(vertex_pos[unfixed_vertex_index[edge_vertex[i]]].data(), vertex_pos[edge_vertex[i + 1]].data(),
 				hessian_coeff_diag + 3 * edge_vertex[i],
-				edge_length_stiffness_, rest_length_[i >> 1]);
+				edge_length_stiffness_, rest_length_[i >> 1], velocity.data() + 3 * (edge_vertex[i] + index_start),
+				damp_stiff);
 		}
 	}
 }
+
+
+//void NewtonMethod::updateEnergy
+
 
 //UPDATE_HESSIAN_FIXED_STRUCTURE
 void NewtonMethod::updateHessianFixedStructure(int thread_No)
@@ -353,7 +368,7 @@ void NewtonMethod::updateHessianFixedStructure(int thread_No)
 	double time_step_square_ = time_step_square;
 	unsigned int vertex_begin_in_obj;
 	unsigned int* unfixed_index_to_normal_index;
-
+	double damp_stiff = *damp_stiffness;
 
 	for (unsigned int obj_No = 0; obj_No < total_obj_num; ++obj_No) {
 		vertex_begin_in_obj = vertex_begin_per_obj[obj_No];
@@ -368,8 +383,9 @@ void NewtonMethod::updateHessianFixedStructure(int thread_No)
 		for (unsigned int i = vertex_begin; i < vertex_end; i += 2) {
 			computeHessianFixedStructure(vertex_pos[unfixed_index_to_normal_index[edge_vertex[i]]].data(), 
 				vertex_pos[unfixed_index_to_normal_index[edge_vertex[i + 1]]].data(),
-				hessian_coeff_diag + 6 * (edge_vertex[i] + vertex_begin_in_obj), hessian_coeff_diag + 6 * (edge_vertex[i + 1] + vertex_begin_in_obj),
-				hessian_nnz_ + 18 * edge_no, edge_length_stiffness_, rest_length_[i >> 1], time_step_square_);
+				hessian_coeff_diag + 9 * (edge_vertex[i] + vertex_begin_in_obj), hessian_coeff_diag + 9 * (edge_vertex[i + 1] + vertex_begin_in_obj),
+				hessian_nnz_ + 18 * edge_no, edge_length_stiffness_, rest_length_[i >> 1], time_step_square_, velocity.data() + 3 * (edge_vertex[i] + vertex_begin_in_obj),
+				velocity.data() + 3 * (edge_vertex[i + 1] + vertex_begin_in_obj), damp_stiff);
 			edge_no++;		
 		}
 
@@ -381,8 +397,9 @@ void NewtonMethod::updateHessianFixedStructure(int thread_No)
 		for (unsigned int i = vertex_begin; i < vertex_end; i += 2) {
 			computeHessianOnlyOneVertexFixedEdge(vertex_pos[unfixed_index_to_normal_index[edge_vertex[i]]].data(),
 				vertex_pos[edge_vertex[i + 1]].data(),
-				hessian_coeff_diag + 6 * (edge_vertex[i] + vertex_begin_in_obj),
-				edge_length_stiffness_, rest_length_[i >> 1], time_step_square_);
+				hessian_coeff_diag + 9 * (edge_vertex[i] + vertex_begin_in_obj),
+				edge_length_stiffness_, rest_length_[i >> 1], time_step_square_, velocity.data() + 3 * (edge_vertex[i] + vertex_begin_in_obj),
+				damp_stiff);
 		}
 
 	}
@@ -422,7 +439,7 @@ void NewtonMethod::massSpring(int thread_No)
 		unfixed_index_to_normal_index = unfixed_vertex[obj_No]->data();
 		for (unsigned int i = edge_begin; i < edge_end; i += 2) {
 			computeHessian(vertex_pos[unfixed_index_to_normal_index[edge_vertex[i]]].data(), vertex_pos[unfixed_index_to_normal_index[edge_vertex[i + 1]]].data(),
-				hessian_coeff_diag + 6 * (edge_vertex[i]+ vertex_index_begin_in_system), hessian_coeff_diag + 6 * (edge_vertex[i + 1]+ vertex_index_begin_in_system),
+				hessian_coeff_diag + 9 * (edge_vertex[i]+ vertex_index_begin_in_system), hessian_coeff_diag + 9 * (edge_vertex[i + 1]+ vertex_index_begin_in_system),
 				hessian_nnz_ + 18 * edge_no, edge_length_stiffness_, rest_length_[i >> 1], 3 * (vertex_index_begin_in_system + edge_vertex[i]),
 				3 * (vertex_index_begin_in_system + edge_vertex[i + 1]), time_step_square_);
 			edge_no++;
@@ -524,6 +541,36 @@ void NewtonMethod::updateVelocity(int thread_No)
 	}
 }
 
+
+//VELOCITY_NEWTON_2
+void NewtonMethod::updateVelocity2(int thread_No)
+{
+	unsigned int index_end;
+	unsigned int index_start;
+	double* vertex_pos;
+	unsigned int index;
+
+	unsigned int* unfixed_index_to_normal_index;
+	unsigned int vertex_start;
+
+	double time_step_ = time_step;
+	double damp_coe_ = *damp_stiffness;
+
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		vertex_pos = vertex_position[i][0].data();
+		index = unfixed_vertex_begin_per_thread[i][thread_No];
+		index_end = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No + 1];
+		index_start = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No];
+		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
+		for (unsigned int j = index_start; j < index_end; ++j) {
+			vertex_start = 3 * unfixed_index_to_normal_index[index];
+			velocity.data()[3 * j] = damp_coe_ * (vertex_pos[vertex_start] - position_of_beginning.data()[3 * j]) / time_step_;
+			velocity.data()[3 * j + 1] = damp_coe_ * (vertex_pos[vertex_start + 1] - position_of_beginning.data()[3 * j + 1]) / time_step_;
+			velocity.data()[3 * j + 2] = damp_coe_ * (vertex_pos[vertex_start + 2] - position_of_beginning.data()[3 * j + 2]) / time_step_;
+			index++;
+		}
+	}
+}
 
 
 void NewtonMethod::storeInitialPosition()
@@ -629,6 +676,55 @@ void NewtonMethod::hessianCoeffAddress(int thread_No)
 
 }
 
+
+//UPDATE_DAMP
+void NewtonMethod::updateHessianForDamp(int thread_No)
+{
+	unsigned int index_end;
+	unsigned int index_start;
+
+	double* vertex_pos;
+
+	unsigned int index;
+	unsigned int* unfixed_index_to_normal_vertex;
+	unsigned int hessian_index_start;
+
+	double damp_stiff = *damp_stiffness * time_step;
+
+	unsigned int force_start_index;
+	double temp[3];
+
+
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		index_end = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No + 1];
+		index_start = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No];
+
+		unfixed_index_to_normal_vertex = unfixed_vertex[i]->data();
+
+		vertex_pos = vertex_position[i][0].data();
+
+		for (unsigned int l = index_start; l < index_end; ++l) {
+			index = 3 * unfixed_index_to_normal_vertex[l - vertex_begin_per_obj[i]];
+
+			hessian_index_start = 9 * l;
+			*Hessian_coeff_address[hessian_index_start] += damp_stiff;
+			*Hessian_coeff_address[hessian_index_start + 4] += damp_stiff;
+			*Hessian_coeff_address[hessian_index_start + 8] += damp_stiff;
+
+			force_start_index = 3 * l;
+
+			temp[0] = damp_stiff * (vertex_pos[index] - position_of_beginning[force_start_index]);
+			temp[1] = damp_stiff * (vertex_pos[index + 1] - position_of_beginning[force_start_index + 1]);
+			temp[2] = damp_stiff * (vertex_pos[index + 2] - position_of_beginning[force_start_index + 2]);
+
+			b[force_start_index] -= temp[0];
+			b[force_start_index + 1] -= temp[1];
+			b[force_start_index + 2] -= temp[2];
+		}
+
+	}
+}
+
 //UPDATE_ANCHOR_POINT_HESSIAN
 void NewtonMethod::updateHessianForFixPoint(int thread_No)
 {
@@ -692,8 +788,8 @@ void NewtonMethod::setHessianDiagonalFixedStructure(int thread_No)
 		index_end = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No + 1];
 		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
 		for (unsigned int j = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No]; j < index_end; ++j) {
-			vertex_start = 6 * j;
-			for (unsigned int m = 0; m < 6; ++m) {
+			vertex_start = 9 * j;
+			for (unsigned int m = 0; m < 9; ++m) {
 				for (unsigned int k = 1; k < total_thread_num_; ++k) {
 					hessian_coeff_diagonal_0[vertex_start + m] += hessian_coeff_diagonal[k][vertex_start + m];
 				}
@@ -701,20 +797,21 @@ void NewtonMethod::setHessianDiagonalFixedStructure(int thread_No)
 			mass_ = mass[i][unfixed_index_to_normal_index[j - vertex_begin_per_obj[i]]];
 
 			hessian_coeff_diagonal_0[vertex_start] += mass_;
-			hessian_coeff_diagonal_0[vertex_start + 3] += mass_;
-			hessian_coeff_diagonal_0[vertex_start + 5] += mass_;
+			hessian_coeff_diagonal_0[vertex_start + 4] += mass_;
+			hessian_coeff_diagonal_0[vertex_start + 8] += mass_;
 			hessian_index_start = 9 * j;
 
-			*Hessian_coeff_address[hessian_index_start] = hessian_coeff_diagonal_0[vertex_start];
-			*Hessian_coeff_address[hessian_index_start + 1] = hessian_coeff_diagonal_0[vertex_start + 1];
-			*Hessian_coeff_address[hessian_index_start + 2] = hessian_coeff_diagonal_0[vertex_start + 2];
-			*Hessian_coeff_address[hessian_index_start + 3] = hessian_coeff_diagonal_0[vertex_start + 1];
-			*Hessian_coeff_address[hessian_index_start + 4] = hessian_coeff_diagonal_0[vertex_start + 3];
-			*Hessian_coeff_address[hessian_index_start + 5] = hessian_coeff_diagonal_0[vertex_start + 4];
-			*Hessian_coeff_address[hessian_index_start + 6] = hessian_coeff_diagonal_0[vertex_start + 2];
-			*Hessian_coeff_address[hessian_index_start + 7] = hessian_coeff_diagonal_0[vertex_start + 4];
-			*Hessian_coeff_address[hessian_index_start + 8] = hessian_coeff_diagonal_0[vertex_start + 5];
-
+			for (unsigned int k = 0; k < 9; ++k) {
+				*Hessian_coeff_address[hessian_index_start + k] = hessian_coeff_diagonal_0[vertex_start + k];
+				//*Hessian_coeff_address[hessian_index_start + 1] = hessian_coeff_diagonal_0[vertex_start + 1];
+				//*Hessian_coeff_address[hessian_index_start + 2] = hessian_coeff_diagonal_0[vertex_start + 2];
+				//*Hessian_coeff_address[hessian_index_start + 3] = hessian_coeff_diagonal_0[vertex_start + 1];
+				//*Hessian_coeff_address[hessian_index_start + 4] = hessian_coeff_diagonal_0[vertex_start + 3];
+				//*Hessian_coeff_address[hessian_index_start + 5] = hessian_coeff_diagonal_0[vertex_start + 4];
+				//*Hessian_coeff_address[hessian_index_start + 6] = hessian_coeff_diagonal_0[vertex_start + 2];
+				//*Hessian_coeff_address[hessian_index_start + 7] = hessian_coeff_diagonal_0[vertex_start + 4];
+				//*Hessian_coeff_address[hessian_index_start + 8] = hessian_coeff_diagonal_0[vertex_start + 5];
+			}
 
 		}
 	}
@@ -736,27 +833,33 @@ void NewtonMethod::setHessianDiagonal(int thread_No)
 		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
 		index_end =vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No + 1];
 		for (unsigned int j = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No]; j < index_end; ++j) {
-			vertex_start = 6 * j;
-			for (unsigned int m = 0; m < 6; ++m) {
+			vertex_start = 9 * j;
+			for (unsigned int m = 0; m < 9; ++m) {
 				for (unsigned int k = 1; k < total_thread_num; ++k) {
 					hessian_coeff_diagonal_0[vertex_start + m] += hessian_coeff_diagonal[k][vertex_start + m];
 				}
 			}
 			mass_ = mass[i][unfixed_index_to_normal_index[j - vertex_begin_per_obj[i]]];
 			hessian_coeff_diagonal_0[vertex_start] += mass_;
-			hessian_coeff_diagonal_0[vertex_start + 3] += mass_;
-			hessian_coeff_diagonal_0[vertex_start + 5] += mass_;
+			hessian_coeff_diagonal_0[vertex_start + 4] += mass_;
+			hessian_coeff_diagonal_0[vertex_start + 8] += mass_;
 			hessian_index_start = 9 * j;
 			global_matrix_row_start = 3 * j;
 			hessian_nnz[hessian_index_start] = Triplet<double>(global_matrix_row_start, global_matrix_row_start, hessian_coeff_diagonal_0[vertex_start]);
 			hessian_nnz[hessian_index_start + 1] = Triplet<double>(global_matrix_row_start + 1, global_matrix_row_start, hessian_coeff_diagonal_0[vertex_start + 1]);
 			hessian_nnz[hessian_index_start + 2] = Triplet<double>(global_matrix_row_start + 2, global_matrix_row_start, hessian_coeff_diagonal_0[vertex_start + 2]);
-			hessian_nnz[hessian_index_start + 3] = Triplet<double>(global_matrix_row_start, global_matrix_row_start+1, hessian_coeff_diagonal_0[vertex_start + 1]);
-			hessian_nnz[hessian_index_start + 4] = Triplet<double>(global_matrix_row_start+1, global_matrix_row_start+1, hessian_coeff_diagonal_0[vertex_start + 3]);
-			hessian_nnz[hessian_index_start + 5] = Triplet<double>(global_matrix_row_start+2, global_matrix_row_start+1, hessian_coeff_diagonal_0[vertex_start + 4]);
-			hessian_nnz[hessian_index_start + 6] = Triplet<double>(global_matrix_row_start, global_matrix_row_start+2, hessian_coeff_diagonal_0[vertex_start + 2]);
-			hessian_nnz[hessian_index_start + 7] = Triplet<double>(global_matrix_row_start+1, global_matrix_row_start+2, hessian_coeff_diagonal_0[vertex_start + 4]);
-			hessian_nnz[hessian_index_start + 8] = Triplet<double>(global_matrix_row_start+2, global_matrix_row_start+2, hessian_coeff_diagonal_0[vertex_start + 5]);
+			hessian_nnz[hessian_index_start + 3] = Triplet<double>(global_matrix_row_start, global_matrix_row_start+1, hessian_coeff_diagonal_0[vertex_start + 3]);
+			hessian_nnz[hessian_index_start + 4] = Triplet<double>(global_matrix_row_start+1, global_matrix_row_start+1, hessian_coeff_diagonal_0[vertex_start + 4]);
+			hessian_nnz[hessian_index_start + 5] = Triplet<double>(global_matrix_row_start+2, global_matrix_row_start+1, hessian_coeff_diagonal_0[vertex_start + 5]);
+			hessian_nnz[hessian_index_start + 6] = Triplet<double>(global_matrix_row_start, global_matrix_row_start+2, hessian_coeff_diagonal_0[vertex_start + 6]);
+			hessian_nnz[hessian_index_start + 7] = Triplet<double>(global_matrix_row_start+1, global_matrix_row_start+2, hessian_coeff_diagonal_0[vertex_start + 7]);
+			hessian_nnz[hessian_index_start + 8] = Triplet<double>(global_matrix_row_start+2, global_matrix_row_start+2, hessian_coeff_diagonal_0[vertex_start + 8]);
+			/*hessian_nnz[hessian_index_start + 3] = Triplet<double>(global_matrix_row_start, global_matrix_row_start + 1, hessian_coeff_diagonal_0[vertex_start + 1]);
+			hessian_nnz[hessian_index_start + 4] = Triplet<double>(global_matrix_row_start + 1, global_matrix_row_start + 1, hessian_coeff_diagonal_0[vertex_start + 3]);
+			hessian_nnz[hessian_index_start + 5] = Triplet<double>(global_matrix_row_start + 2, global_matrix_row_start + 1, hessian_coeff_diagonal_0[vertex_start + 4]);
+			hessian_nnz[hessian_index_start + 6] = Triplet<double>(global_matrix_row_start, global_matrix_row_start + 2, hessian_coeff_diagonal_0[vertex_start + 2]);
+			hessian_nnz[hessian_index_start + 7] = Triplet<double>(global_matrix_row_start + 1, global_matrix_row_start + 2, hessian_coeff_diagonal_0[vertex_start + 4]);
+			hessian_nnz[hessian_index_start + 8] = Triplet<double>(global_matrix_row_start + 2, global_matrix_row_start + 2, hessian_coeff_diagonal_0[vertex_start + 5]);*/
 		}		
 	}
 }
@@ -779,25 +882,31 @@ void NewtonMethod::getHessianCoeffAddress(double** address, unsigned int start_i
 }
 
 
+
 void NewtonMethod::updateInternalForce(double* vertex_position_0, double* vertex_position_1, double* force_0,
-	double* force_1, double stiffness, double rest_length)
+	double* force_1, double stiffness, double rest_length, double* ori_position_0, double* ori_position_1, double damp_stiffness)
 {
 	double Ax[3];
 	SUB(Ax, vertex_position_0, vertex_position_1);
-	double length = sqrt(DOT(Ax, Ax));
-	double coe = stiffness - stiffness * rest_length / length;
+	double length_ = DOT(Ax, Ax);
+
+//	double coe3 = stiffness * damp_stiffness * damp_stiffness * (DOT(Ax, velocity_0) - DOT(Ax, velocity_1));
+
+	double coe = stiffness - stiffness * rest_length / sqrt(length_);// +coe3 / length_;
 	MULTI_(Ax, coe);
 	SUM_(force_1, Ax);
 	SUB_(force_0, Ax);
 }
 
 void NewtonMethod::updateInternalForceOnlyOneEdgeFixed(double* vertex_position_0, double* vertex_position_1, double* force_0,
-	double stiffness, double rest_length)
+	double stiffness, double rest_length, double* velocity_0,  double damp_stiffness)
 {
 	double Ax[3];
 	SUB(Ax, vertex_position_0, vertex_position_1);
-	double length = sqrt(DOT(Ax, Ax));
-	double coe = stiffness - stiffness * rest_length / length;
+	double length_ = DOT(Ax, Ax);
+
+	//double coe3 = stiffness * damp_stiffness * damp_stiffness * (DOT(Ax, velocity_0));
+	double coe = stiffness - stiffness * rest_length / sqrt(length_);// +coe3 / length_;
 
 	force_0[0] -= Ax[0] * coe;
 	force_0[1] -= Ax[1] * coe;
@@ -806,14 +915,17 @@ void NewtonMethod::updateInternalForceOnlyOneEdgeFixed(double* vertex_position_0
 }
 
 void NewtonMethod::computeHessianOnlyOneVertexFixedEdge(double* vertex_position_0, double* vertex_position_1, double* diagonal_coeff_0,
-	double stiffness, double rest_length, double time_step_square)
+	double stiffness, double rest_length, double time_step_square, double* velocity_0, double damp_stiffness)
 {
 	double Ax[3];
 	SUB(Ax, vertex_position_0, vertex_position_1);
 	double length_ = DOT(Ax, Ax);
 	double length = sqrt(length_);
-	double coe = stiffness - stiffness * rest_length / length;
-	double coe2 = stiffness * rest_length / (length_ * length);
+
+	//double coe3 = stiffness * damp_stiffness* damp_stiffness * (DOT(Ax, velocity_0));
+	double coe = stiffness - stiffness * rest_length / length;// +coe3 / length_;
+	double coe2 = stiffness * rest_length / (length_ * length);// +coe3 / (length_ * length_);
+
 
 	//if (length < 1e-8) {
 	//	std::cout << "too small "<<length << std::endl;
@@ -822,15 +934,21 @@ void NewtonMethod::computeHessianOnlyOneVertexFixedEdge(double* vertex_position_
 	diagonal_coeff_0[0] += time_step_square * (coe + coe2 * Ax[0] * Ax[0]);
 	diagonal_coeff_0[1] += time_step_square * (coe2 * Ax[1] * Ax[0]);
 	diagonal_coeff_0[2] += time_step_square * (coe2 * Ax[2] * Ax[0]);
-	diagonal_coeff_0[3] += time_step_square * (coe + coe2 * Ax[1] * Ax[1]);
-	diagonal_coeff_0[4] += time_step_square * (coe2 * Ax[2] * Ax[1]);
-	diagonal_coeff_0[5] += time_step_square * (coe + coe2 * Ax[2] * Ax[2]);
+	diagonal_coeff_0[3] += time_step_square * (coe2 * Ax[1] * Ax[0]);
+	diagonal_coeff_0[4] += time_step_square * (coe + coe2 * Ax[1] * Ax[1]);
+	diagonal_coeff_0[5] += time_step_square * (coe2 * Ax[2] * Ax[1]);
+	diagonal_coeff_0[6] += time_step_square * (coe2 * Ax[2] * Ax[0]);
+	diagonal_coeff_0[7] += time_step_square * (coe2 * Ax[2] * Ax[1]);
+	diagonal_coeff_0[8] += time_step_square * (coe + coe2 * Ax[2] * Ax[2]);
 
 }
 
 
+
+
 void NewtonMethod::computeHessianFixedStructure(double* vertex_position_0, double* vertex_position_1, double* diagonal_coeff_0,
-	double* diagonal_coeff_1, double** hessian_coeff_address, double stiffness, double rest_length, double time_step_square)
+	double* diagonal_coeff_1, double** hessian_coeff_address, double stiffness, double rest_length, double time_step_square,
+	double* ori_position_0, double* ori_position_1, double damp_stiffness)
 {
 	double Ax[3];
 	SUB(Ax, vertex_position_0, vertex_position_1);
@@ -841,33 +959,42 @@ void NewtonMethod::computeHessianFixedStructure(double* vertex_position_0, doubl
 	//	std::cout << "too small "<<length << std::endl;
 	//}
 
-	double coe = stiffness - stiffness*rest_length / length;
-	double coe2 = stiffness*rest_length / (length_*length);
+
+
+	//double coe3 = stiffness * damp_stiffness * damp_stiffness * (DOT(Ax, velocity_0) - DOT(Ax, velocity_1));
+
+	double coe = stiffness - stiffness * rest_length / length;// +coe3 / length_;
+	double coe2 = stiffness * rest_length / (length_ * length);// +coe3 / (length_ * length_);
+
 	//matrix store in row_major
-	double matrix[6] = { time_step_square * (coe + coe2 * Ax[0] * Ax[0]), time_step_square * (coe2 * Ax[1] * Ax[0]), time_step_square * (coe2 * Ax[2] * Ax[0]),
-		time_step_square * (coe + coe2 * Ax[1] * Ax[1]), time_step_square * (coe2 * Ax[2] * Ax[1]), time_step_square * (coe + coe2 * Ax[2] * Ax[2]) };
+	double matrix[9] = { time_step_square * (coe + coe2 * Ax[0] * Ax[0]), time_step_square * (coe2 * Ax[1] * Ax[0]), time_step_square * (coe2 * Ax[2] * Ax[0]),
+		time_step_square* (coe2 * Ax[1] * Ax[0]),	time_step_square * (coe + coe2 * Ax[1] * Ax[1]), time_step_square * (coe2 * Ax[2] * Ax[1]), 
+		time_step_square* (coe2 * Ax[2] * Ax[0]), time_step_square* (coe2 * Ax[2] * Ax[1]), 	time_step_square * (coe + coe2 * Ax[2] * Ax[2]) };
 
-	*hessian_coeff_address[0] = -matrix[0];
-	*hessian_coeff_address[1] = -matrix[1];
-	*hessian_coeff_address[2] = -matrix[2];
-	*hessian_coeff_address[3] = -matrix[1];
-	*hessian_coeff_address[4] = -matrix[3];
-	*hessian_coeff_address[5] = -matrix[4];
-	*hessian_coeff_address[6] = -matrix[2];
-	*hessian_coeff_address[7] = -matrix[4];
-	*hessian_coeff_address[8] = -matrix[5];
+	for (unsigned int i = 0; i < 9; ++i) {
+		*hessian_coeff_address[i] = -matrix[i];
+		*hessian_coeff_address[i+9] = -matrix[i];
+	}
+	//*hessian_coeff_address[1] = -matrix[1];
+	//*hessian_coeff_address[2] = -matrix[2];
+	//*hessian_coeff_address[3] = -matrix[1];
+	//*hessian_coeff_address[4] = -matrix[3];
+	//*hessian_coeff_address[5] = -matrix[4];
+	//*hessian_coeff_address[6] = -matrix[2];
+	//*hessian_coeff_address[7] = -matrix[4];
+	//*hessian_coeff_address[8] = -matrix[5];
 
-	*hessian_coeff_address[9] = -matrix[0];
-	*hessian_coeff_address[10] = -matrix[1];
-	*hessian_coeff_address[11] = -matrix[2];
-	*hessian_coeff_address[12] = -matrix[1];
-	*hessian_coeff_address[13] = -matrix[3];
-	*hessian_coeff_address[14] = -matrix[4];
-	*hessian_coeff_address[15] = -matrix[2];
-	*hessian_coeff_address[16] = -matrix[4];
-	*hessian_coeff_address[17] = -matrix[5];
+	//*hessian_coeff_address[9] = -matrix[0];
+	//*hessian_coeff_address[10] = -matrix[1];
+	//*hessian_coeff_address[11] = -matrix[2];
+	//*hessian_coeff_address[12] = -matrix[1];
+	//*hessian_coeff_address[13] = -matrix[3];
+	//*hessian_coeff_address[14] = -matrix[4];
+	//*hessian_coeff_address[15] = -matrix[2];
+	//*hessian_coeff_address[16] = -matrix[4];
+	//*hessian_coeff_address[17] = -matrix[5];
 
-	for (unsigned int i = 0; i < 6; ++i) {
+	for (unsigned int i = 0; i < 9; ++i) {
 		diagonal_coeff_0[i] += matrix[i];
 		diagonal_coeff_1[i] += matrix[i];
 	}
@@ -886,34 +1013,37 @@ void NewtonMethod::computeHessian(double* vertex_position_0, double* vertex_posi
 	double coe = stiffness - stiffness*rest_length / length;
 	double coe2 = stiffness*rest_length / length_;
 	//matrix store in row_major
-	double matrix[6] = { time_step_square * (coe + coe2 * Ax[0] * Ax[0]), 
-		time_step_square *(coe2 * Ax[1] * Ax[0]), 
-		time_step_square *(coe2 * Ax[2] * Ax[0]),
-		time_step_square * (coe + coe2 * Ax[1] * Ax[1]), 
-		time_step_square *(coe2 * Ax[2] * Ax[1]), 
-		time_step_square *(coe + coe2 * Ax[2] * Ax[2]) };
+	double matrix[9] = { time_step_square * (coe + coe2 * Ax[0] * Ax[0]), 	time_step_square *(coe2 * Ax[1] * Ax[0]), 	time_step_square *(coe2 * Ax[2] * Ax[0]),
+		time_step_square* (coe2 * Ax[1] * Ax[0]), time_step_square * (coe + coe2 * Ax[1] * Ax[1]), 	time_step_square *(coe2 * Ax[2] * Ax[1]), 
+		time_step_square* (coe2 * Ax[2] * Ax[0]),time_step_square* (coe2 * Ax[2] * Ax[1]), 	time_step_square *(coe + coe2 * Ax[2] * Ax[2]) };
 
 	hessian_nnz[0] = Triplet<double>(start_index_in_system_0, start_index_in_system_1, -matrix[0]);
 	hessian_nnz[1] = Triplet<double>(start_index_in_system_0+1, start_index_in_system_1, -matrix[1]);
 	hessian_nnz[2] = Triplet<double>(start_index_in_system_0+2, start_index_in_system_1, -matrix[2]);
-	hessian_nnz[3] = Triplet<double>(start_index_in_system_0, start_index_in_system_1+1, -matrix[1]);
-	hessian_nnz[4] = Triplet<double>(start_index_in_system_0+1, start_index_in_system_1+1, -matrix[3]);
-	hessian_nnz[5] = Triplet<double>(start_index_in_system_0+2, start_index_in_system_1+1, -matrix[4]);
-	hessian_nnz[6] = Triplet<double>(start_index_in_system_0, start_index_in_system_1+2, -matrix[2]);
-	hessian_nnz[7] = Triplet<double>(start_index_in_system_0+1, start_index_in_system_1+2, -matrix[4]);
-	hessian_nnz[8] = Triplet<double>(start_index_in_system_0+2, start_index_in_system_1+2, -matrix[5]);
+	hessian_nnz[3] = Triplet<double>(start_index_in_system_0, start_index_in_system_1 + 1, -matrix[3]);
+	hessian_nnz[4] = Triplet<double>(start_index_in_system_0 + 1, start_index_in_system_1 + 1, -matrix[4]);
+	hessian_nnz[5] = Triplet<double>(start_index_in_system_0 + 2, start_index_in_system_1 + 1, -matrix[5]);
+	hessian_nnz[6] = Triplet<double>(start_index_in_system_0, start_index_in_system_1 + 2, -matrix[6]);
+	hessian_nnz[7] = Triplet<double>(start_index_in_system_0 + 1, start_index_in_system_1 + 2, -matrix[7]);
+	hessian_nnz[8] = Triplet<double>(start_index_in_system_0 + 2, start_index_in_system_1 + 2, -matrix[8]);
+	//hessian_nnz[3] = Triplet<double>(start_index_in_system_0, start_index_in_system_1+1, -matrix[1]);
+	//hessian_nnz[4] = Triplet<double>(start_index_in_system_0+1, start_index_in_system_1+1, -matrix[3]);
+	//hessian_nnz[5] = Triplet<double>(start_index_in_system_0+2, start_index_in_system_1+1, -matrix[4]);
+	//hessian_nnz[6] = Triplet<double>(start_index_in_system_0, start_index_in_system_1+2, -matrix[2]);
+	//hessian_nnz[7] = Triplet<double>(start_index_in_system_0+1, start_index_in_system_1+2, -matrix[4]);
+	//hessian_nnz[8] = Triplet<double>(start_index_in_system_0+2, start_index_in_system_1+2, -matrix[5]);
 
 	hessian_nnz[9] = Triplet<double>(start_index_in_system_1, start_index_in_system_0, -matrix[0]);
 	hessian_nnz[10] = Triplet<double>(start_index_in_system_1 + 1, start_index_in_system_0, -matrix[1]);
 	hessian_nnz[11] = Triplet<double>(start_index_in_system_1 + 2, start_index_in_system_0, -matrix[2]);
-	hessian_nnz[12] = Triplet<double>(start_index_in_system_1, start_index_in_system_0 + 1, -matrix[1]);
-	hessian_nnz[13] = Triplet<double>(start_index_in_system_1 + 1, start_index_in_system_0 + 1, -matrix[3]);
-	hessian_nnz[14] = Triplet<double>(start_index_in_system_1 + 2, start_index_in_system_0 + 1, -matrix[4]);
-	hessian_nnz[15] = Triplet<double>(start_index_in_system_1, start_index_in_system_0 + 2, -matrix[2]);
-	hessian_nnz[16] = Triplet<double>(start_index_in_system_1 + 1, start_index_in_system_0 + 2, -matrix[4]);
-	hessian_nnz[17] = Triplet<double>(start_index_in_system_1 + 2, start_index_in_system_0 + 2, -matrix[5]);
+	hessian_nnz[12] = Triplet<double>(start_index_in_system_1, start_index_in_system_0 + 1, -matrix[3]);
+	hessian_nnz[13] = Triplet<double>(start_index_in_system_1 + 1, start_index_in_system_0 + 1, -matrix[4]);
+	hessian_nnz[14] = Triplet<double>(start_index_in_system_1 + 2, start_index_in_system_0 + 1, -matrix[5]);
+	hessian_nnz[15] = Triplet<double>(start_index_in_system_1, start_index_in_system_0 + 2, -matrix[6]);
+	hessian_nnz[16] = Triplet<double>(start_index_in_system_1 + 1, start_index_in_system_0 + 2, -matrix[7]);
+	hessian_nnz[17] = Triplet<double>(start_index_in_system_1 + 2, start_index_in_system_0 + 2, -matrix[8]);
 
-	for (unsigned int i = 0; i<6; ++i) {
+	for (unsigned int i = 0; i<9; ++i) {
 		diagonal_coeff_0[i] += matrix[i];
 		diagonal_coeff_1[i] += matrix[i];
 	}

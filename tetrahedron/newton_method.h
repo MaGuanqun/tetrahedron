@@ -50,12 +50,17 @@ public:
 	void addExternalForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int cloth_No);
 
 	void updateVelocity(int thread_No);
+	void updateVelocity2(int thread_No);
 	void updateIndexBeginPerObj();
 
 	size_t* time_stamp;
 	void resetExternalForce();
 
+	double* damp_stiffness;
+	void updateHessianForDamp(int thread_No);
+
 private:
+
 
 	unsigned int max_itr_num;
 
@@ -161,13 +166,14 @@ private:
 	void getHessianCoeffAddress(double** address, unsigned int start_index_in_system_0, unsigned int start_index_in_system_1);
 
 	void computeHessianFixedStructure(double* vertex_position_0, double* vertex_position_1, double* diagonal_coeff_0,
-		double* diagonal_coeff_1, double** hessian_coeff_address, double stiffness, double rest_length, double time_step_square);
+		double* diagonal_coeff_1, double** hessian_coeff_address, double stiffness, double rest_length, double time_step_square,
+		double* velocity_0, double* velocity_1, double damp_stiffness);
 
 
 	void updateHessianFixedStructure();
 
 	void updateInternalForce(double* vertex_position_0, double* vertex_position_1, double* force_0,
-		double* force_1, double stiffness, double rest_length);
+		double* force_1, double stiffness, double rest_length, double* ori_position_0, double* ori_position_1, double damp_stiffness);
 
 	void computeGravity();
 
@@ -180,10 +186,11 @@ private:
 	void storeInitialPosition();
 
 	void computeHessianOnlyOneVertexFixedEdge(double* vertex_position_0, double* vertex_position_1, double* diagonal_coeff_0,
-		double stiffness, double rest_length, double time_step_square);
+		double stiffness, double rest_length, double time_step_square, double* velocity_0,  double damp_stiffness);
 	void updateInternalForceOnlyOneEdgeFixed(double* vertex_position_0, double* vertex_position_1, double* force_0,
-		double stiffness, double rest_length);
+		double stiffness, double rest_length, double* velocity_0, double damp_stiffness);
 
+	//double damp_coe;
 
 
 }; 

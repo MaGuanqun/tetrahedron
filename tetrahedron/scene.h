@@ -63,7 +63,7 @@ public:
 	bool start_rotation;
 
 	Input* input;
-
+	void setDampStiffness(double* damp_stiffness);
 private:
 	unsigned int use_method;
 	bool only_test_collision;

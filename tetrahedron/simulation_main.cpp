@@ -5,8 +5,10 @@
 #include"render/imgui_windows.h"
 #include"scene.h"
 #include"render/saveImage.h"
+#include"test_simu.h"
 
 void simu_main(GLFWwindow* window, Input* input) {
+	//test::testDampDerivative();
 	// Set up GUI
 	BasicImGui basic_imgui;
 	basic_imgui.initialImGui(window);
@@ -24,8 +26,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 	memset(control_parameter, 0, 23);
 	control_parameter[ONLY_COLLISION_TEST] = false;
 	control_parameter[USE_XPBD] = false;
-	control_parameter[USE_PD_] = true;
-	control_parameter[USE_NEWTON_] = false;
+	control_parameter[USE_PD_] = false;
+	control_parameter[USE_NEWTON_] = true;
 	control_parameter[DRAW_VT] = true;
 
 
@@ -68,6 +70,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 	UpdateObjStiffness update_obj_stiffness;
 	double tolerance_ratio[7] = { 5e-2,5e-2,5e-2,5e-2, 1e-1, 1e-1, 1e-1 };
 
+	double damp_stiffness=0.00;
+	scene.setDampStiffness(&damp_stiffness);
 	bool set_anchor[2] = { false,false };
 
 	const char* itr_solver_items_[] = { "Direct", "Jacobi","Chebyshev jacobi","Super Jacobi","Chebyshev super Jacobi", "Gauss Seidel", "PCG", "Chebyshev Gauss Seidel" };
