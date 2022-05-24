@@ -1880,7 +1880,217 @@ void SpatialHashing::setPairAveInThreadVertexTriangle()
 		global_cell_start_vertex_triangle[i << 1] = non_empty_cell_index_vertex_triangle[0][non_empty_cell_index_ave_begin_per_thread_vertex_triangle[i] + 1];
 		global_cell_start_vertex_triangle[(i << 1) + 1] = non_empty_cell_index_vertex_triangle[0][non_empty_cell_index_ave_begin_per_thread_vertex_triangle[i + 1]] + 1;
 	}
+}
 
-	
 
+void SpatialHashing::selectCell(double* start_pos, double* dir, std::vector<unsigned int>& select_hash_index, std::vector<unsigned int>&	initial_hash_index)
+{
+	double start_position[3];
+	double end[3];
+	memcpy(start_position, start_pos, 24);
+	select_hash_index.clear();
+	initial_hash_index.clear();
+	if (intersectSpatialHasingCube(scene_aabb, start_position, dir, end)) {
+		collectAllVoxel(select_hash_index, initial_hash_index, start_position, end, scene_aabb);
+	}
+}
+
+void SpatialHashing::findAllElementsInOneCell(unsigned int select_hash_index, unsigned int ori_hash_index,
+	std::vector<std::vector<unsigned int>>& vertex_index, std::vector<std::vector<unsigned int>>& triangle_index,
+	std::vector<std::vector<unsigned int>>& edge_index)
+{
+	double aabb[6];
+	unsigned int index[3];
+	index[2] = ori_hash_index / cell_num0_cell_num1;
+	index[1] = (ori_hash_index % cell_num0_cell_num1) / cell_number[0];
+	index[0] = (ori_hash_index % cell_num0_cell_num1) % cell_number[0];
+	for (unsigned int i = 0; i < 3; ++i) {
+		aabb[i] = cell_length * index[i] + scene_aabb[i];
+		aabb[i + 3] = aabb[i] + cell_length;
+	}
+
+	unsigned int hash_location;
+	for (unsigned int i = 0; i < spatial_hashing_cell_triangle_size[0][select_hash_index]; i += 2) {
+		hash_location = select_hash_index * max_index_number_in_one_cell + i;
+		if (AABB::AABB_intersection(aabb, obj_tri_aabb[spatial_hashing_cell_triangle[0][hash_location + 1]][spatial_hashing_cell_triangle[0][hash_location]].data())) {
+			triangle_index[spatial_hashing_cell_triangle[0][hash_location + 1]].emplace_back(spatial_hashing_cell_triangle[0][hash_location]);
+		}
+	}
+	for (unsigned int i = 0; i < spatial_hashing_cell_vertex_size[0][select_hash_index]; i += 2) {
+		hash_location = select_hash_index * max_index_number_in_one_cell_vertex + i;
+		if (AABB::AABB_intersection(aabb, obj_vertex_aabb[spatial_hashing_cell_vertex[0][hash_location + 1]][spatial_hashing_cell_vertex[0][hash_location]].data())) {
+			vertex_index[spatial_hashing_cell_vertex[0][hash_location + 1]].emplace_back(spatial_hashing_cell_vertex[0][hash_location]);
+		}
+	}
+	for (unsigned int i = 0; i < spatial_hashing_cell_edge_size[0][select_hash_index]; i += 2) {
+		hash_location = select_hash_index * max_index_number_in_one_cell_edge + i;
+		if (AABB::AABB_intersection(aabb, obj_edge_aabb[spatial_hashing_cell_edge[0][hash_location + 1]][spatial_hashing_cell_edge[0][hash_location]].data())) {
+			edge_index[spatial_hashing_cell_edge[0][hash_location + 1]].emplace_back(spatial_hashing_cell_edge[0][hash_location]);
+		}
+	}
+}
+
+
+bool SpatialHashing::intersectSpatialHasingCube(double* AABB, double* start, double* direction, double* end)
+{
+	double t_xmin = (AABB[0] -start[0]) / direction[0];
+	double t_xmax = (AABB[3] - start[0]) / direction[0];
+	double t_ymin = (AABB[1] -start[1]) / direction[1];
+	double t_ymax = (AABB[4] - start[1]) / direction[1];
+	double t_zmin = (AABB[2] -start[2]) / direction[2];
+	double t_zmax = (AABB[5] - start[2]) / direction[2];
+
+
+	double t;
+	if (direction[0] < 0)
+	{
+		t = t_xmax;
+		t_xmax = t_xmin;
+		t_xmin = t;
+	}
+	if (direction[1] < 0)
+	{
+		t = t_ymax;
+		t_ymax = t_ymin;
+		t_ymin = t;
+	}
+	if (direction[2] < 0)
+	{
+		t = t_zmax;
+		t_zmax = t_zmin;
+		t_zmin = t;
+	}
+
+	double t_enter = myMax(t_xmin, t_ymin);
+	if (t_enter < t_zmin) {
+		t_enter = t_zmin;
+	}
+	double t_exit = myMin(t_xmax, t_ymax);
+	if (t_exit > t_zmax) {
+		t_exit = t_zmax;
+	}
+
+	std::cout << t_enter << " " << t_exit << std::endl;
+
+	if (t_enter <= t_exit && t_exit >= 0) {
+		end[0] = start[0] + direction[0] * t_exit;
+		end[1] = start[1] + direction[1] * t_exit;
+		end[2] = start[2] + direction[2] * t_exit;
+		if (t_enter > 0) {//the start point(camera pos) is in the spatial cube
+			start[0] += direction[0] * t_enter;
+			start[1] += direction[1] * t_enter;
+			start[2] += direction[2] * t_enter;
+		}
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+
+void SpatialHashing::collectAllVoxel(std::vector<unsigned int>& select_hash_index, std::vector<unsigned int>&
+	initial_hash_index, double start__[3], double end__[3], double* scene_aabb)
+//collect all voxels that possible be selected by the mouse
+{
+	double start[3];
+	double end[3];
+	int d[3];
+	double tDelta[3];
+	double tMax[3];
+	int voxel[3];
+	unsigned int hash_value;
+	unsigned int ori_hash_value;
+
+	double start_[3];
+	double end_[3];
+	SUB(start_, start__, scene_aabb);
+	SUB(end_, end__, scene_aabb);
+
+	//int around[8][3] = { 1,1,1,1,1,-1,
+	//	1,-1,1,1,-1,-1,
+	//	-1,1,1,-1,1,-1,
+	//	-1,-1,1,-1,-1,-1 };
+	start[0] = start_[0] / cell_length;
+	start[1] = start_[1] / cell_length;
+	start[2] = start_[2] / cell_length;
+	end[0] = end_[0] / cell_length;
+	end[1] = end_[1] / cell_length;
+	end[2] = end_[2] / cell_length;
+	d[0] = SIGN(end[0] - start[0]);
+	d[1] = SIGN(end[1] - start[1]);
+	d[2] = SIGN(end[2] - start[2]);
+	if (d[0] != 0) {
+		tDelta[0] = (double)d[0] / (end[0] - start[0]);
+	}
+	else tDelta[0] = 1e7;
+	if (d[0] > 0) {
+		tMax[0] = tDelta[0] * frac1(start[0]);
+	}
+	else tMax[0] = tDelta[0] * frac0(start[0]);
+	voxel[0] = (int)floor(start[0]);
+	if (d[1] != 0) {
+		tDelta[1] = d[1] / (end[1] - start[1]);
+	}
+	else tDelta[1] = 1e7;
+	if (d[1] > 0) {
+		tMax[1] = tDelta[1] * frac1(start[1]);
+	}
+	else tMax[1] = tDelta[1] * frac0(start[1]);
+	voxel[1] = (int)floor(start[1]);
+	if (d[2] != 0) {
+		tDelta[2] = d[2] / (end[2] - start[2]);
+	}
+	else tDelta[2] = 1e7;
+	if (d[2] > 0) {
+		tMax[2] = tDelta[2] * frac1(start[2]);
+	}
+	else tMax[2] = tDelta[2] * frac0(start[2]);
+	voxel[2] = (int)floor(start[2]);					
+	hash_value = ((voxel[0] * P1) ^ (P2 * voxel[1]) ^ (voxel[2] * P3)) % hash_cell_count;
+	ori_hash_value = voxel[1] * cell_number[0] + cell_num0_cell_num1 * voxel[2] + voxel[0];
+	select_hash_index.emplace_back(hash_value);
+	initial_hash_index.emplace_back(ori_hash_value);
+	while (true) {
+		if (tMax[0] > 1 && tMax[1] > 1 && tMax[2] > 1) {
+			break;
+		}
+		if (tMax[0] < tMax[1]) {
+			if (tMax[0] < tMax[2]) {
+				voxel[0] += d[0];
+				tMax[0] += tDelta[0];
+			}
+			else {
+				voxel[2] += d[2];
+				tMax[2] += tDelta[2];
+			}
+		}
+		else {
+			if (tMax[1] < tMax[2]) {
+				voxel[1] += d[1];
+				tMax[1] += tDelta[1];
+			}
+			else {
+				voxel[2] += d[2];
+				tMax[2] += tDelta[2];
+			}
+		}
+		if (voxel[0] > -1 && voxel[0] < cell_number[0] &&
+			voxel[1] > -1 && voxel[1] < cell_number[1] &&
+			voxel[2] > -1 && voxel[2] < cell_number[2]) {
+			hash_value = ((voxel[0] * P1) ^ (P2 * voxel[1]) ^ (voxel[2] * P3)) % hash_cell_count;
+			ori_hash_value = voxel[1] * cell_number[0] + cell_num0_cell_num1 * voxel[2] + voxel[0];
+			select_hash_index.emplace_back(hash_value);
+			initial_hash_index.emplace_back(ori_hash_value);
+		}
+	}
+}
+
+inline double SpatialHashing::frac0(double x)
+{
+	return x - floor(x);
+}
+inline double SpatialHashing::frac1(double x)
+{
+	return 1.0 - x + floor(x);
 }

@@ -172,6 +172,36 @@ void DrawCollision::setElementIndices()
 
 
 
+void DrawCollision::setElementInOneCell(std::vector<std::vector<unsigned int>>& vertex_index, std::vector<std::vector<unsigned int>>& triangle_index,
+	std::vector<std::vector<unsigned int>>& edge_index)
+{
+	setIndicesSize();
+	resetBooleanVector();
+	setTriangleIndicesInOneCell(triangle_index);
+	resetBooleanVector();
+	setVertexIndicesInOneCell(vertex_index);
+	resetBooleanVector();
+	setEdgeIndicesInOneCell(edge_index);
+
+	setBuffer();
+	draw_vertex.setCollisionVertexData(vertex_for_render, vertex_index);
+}
+
+
+void DrawCollision::setVertexIndicesInOneCell(std::vector<std::vector<unsigned int>>& vertex_index_)
+{
+	for (unsigned int i = 0; i < vertex_index_.size(); ++i) {
+		for (unsigned int j = 0; j < vertex_index_[i].size(); ++j) {
+			if (!obj_is_used[i][vertex_index_[i][j]]) {
+				vertex_index[i].emplace_back(vertex_index_[i][j]);
+				obj_is_used[i][vertex_index_[i][j]] = true;
+			}
+		}
+	}
+}
+
+
+
 void DrawCollision::setVertexIndices()
 {
 	unsigned int* pair_index;
@@ -182,7 +212,7 @@ void DrawCollision::setVertexIndices()
 		size = point_triangle_target_pos_index[i][0];
 		for (unsigned int j = 0; j < size; j += 4) {		
 			if (!obj_is_used[*(pair_index + 1)][*pair_index]) {
-				vertex_index[*(pair_index + 1)].push_back(*pair_index );
+				vertex_index[*(pair_index + 1)].emplace_back(*pair_index );
 				obj_is_used[*(pair_index + 1)][*pair_index] = true;
 			}
 			pair_index += 4;
@@ -195,10 +225,25 @@ void DrawCollision::setVertexIndices()
 			size = point_triangle_collider_target_pos_index[i][0];
 			for (unsigned int j = 0; j < size; j += 4) {
 				if (!obj_is_used[*(pair_index + 1)][*pair_index]) {
-					vertex_index[*(pair_index + 1)].push_back(*pair_index);
+					vertex_index[*(pair_index + 1)].emplace_back(*pair_index);
 					obj_is_used[*(pair_index + 1)][*pair_index] = true;
 				}
 				pair_index += 4;
+			}
+		}
+	}
+}
+
+
+void DrawCollision::setTriangleIndicesInOneCell(std::vector<std::vector<unsigned int>>& triangle_index)
+{
+	for (unsigned int i = 0; i < triangle_index.size(); ++i) {
+		for (unsigned int j = 0; j < triangle_index[i].size(); ++j) {
+			if (!obj_is_used[i][triangle_index[i][j]]) {
+				triangle_vertex_index[i].resize(triangle_vertex_index[i].size() + 3);
+				memcpy(triangle_vertex_index[i].data() + triangle_vertex_index[i].size() - 3,
+					triangle_indices[i][triangle_index[i][j]].data(), 12);
+				obj_is_used[i][triangle_index[i][j]] = true;
 			}
 		}
 	}
@@ -224,6 +269,21 @@ void DrawCollision::setTriangleIndices()
 		}
 	}
 }
+
+
+void DrawCollision::setEdgeIndicesInOneCell(std::vector<std::vector<unsigned int>>& edge_index)
+{
+	for (unsigned int i = 0; i < edge_index.size(); ++i) {
+		for (unsigned int j = 0; j < edge_index[i].size(); ++j) {
+			if (!obj_is_used[i][edge_index[i][j]]) {
+				edge_vertex_index[i].emplace_back(edge_indices[i][edge_index[i][j]<<1]);
+				edge_vertex_index[i].emplace_back(edge_indices[i][(edge_index[i][j] << 1) + 1]);
+				obj_is_used[i][edge_index[i][j]] = true;
+			}
+		}
+	}
+}
+
 
 void DrawCollision::setEdgeIndices()
 {
@@ -372,6 +432,7 @@ void DrawCollision::drawVT_triangle(Light& light,  Camera* camera, Shader* objec
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			glDrawElements(GL_TRIANGLES, triangle_vertex_index[i + cloth->size()].size(), GL_UNSIGNED_INT, 0);
 		}
+		
 	}
 	for (unsigned int i = 0; i < collider->size(); ++i) {
 		if (show_collision_element[6 + COLLIDER_][i]) {
@@ -453,6 +514,8 @@ void DrawCollision::setVertexTriangleBuffer(unsigned int obj_index)
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
 	glBindVertexArray(0);
+
+	
 }
 
 

@@ -47,5 +47,7 @@ public:
     void move(float y_pos, float z_pos);
     void rotation(float angleY, float angleZ, int type);  
 
+    void getCursorPosCameraCenterPlane(double* cursor_pos_in_space, double* cursor_screen);
+
 };
 #endif

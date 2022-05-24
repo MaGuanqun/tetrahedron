@@ -20,6 +20,8 @@ public:
 
 	void drawCollision(bool draw_VT, Light& light, Camera* camera, Shader* object_shader_front, std::vector<std::vector<bool>>& show_collision_element);
 
+	void setElementInOneCell(std::vector<std::vector<unsigned int>>& vertex_index, std::vector<std::vector<unsigned int>>& triangle_index,
+		std::vector<std::vector<unsigned int>>& edge_index);
 
 private:
 
@@ -92,4 +94,9 @@ private:
 	void drawVertex(Camera* camera, std::vector<std::vector<bool>>& show_collision_element);
 	void drawVT_triangle(Light& light, Camera* camera, Shader* object_shader_front, std::vector<std::vector<bool>>& show_collision_element);
 	void drawEdge(Light& light, Camera* camera, Shader* object_shader_front, std::vector<std::vector<bool>>& show_collision_element);
+
+
+	void setTriangleIndicesInOneCell(std::vector<std::vector<unsigned int>>& triangle_index);
+	void setEdgeIndicesInOneCell(std::vector<std::vector<unsigned int>>& edge_index);
+	void setVertexIndicesInOneCell(std::vector<std::vector<unsigned int>>& vertex_index_);
 };

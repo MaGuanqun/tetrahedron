@@ -1209,6 +1209,11 @@ void Collision::getSceneAABB()
 		scene_aabb[i + 3] += 0.1;
 		scene_aabb[i] -= 0.1;
 	}
+	//std::cout << scene_aabb[1] << std::endl;
+	//for (unsigned int i = 0; i < 3; ++i) {
+	//	scene_aabb[i + 3] = scene_aabb[i] + spatial_hashing.cell_length * (double)((unsigned int)floor((scene_aabb[i + 3] - scene_aabb[i]) / cell_length) + 1);
+	//}
+	//std::cout << scene_aabb[4] << std::endl;
 }
 
 

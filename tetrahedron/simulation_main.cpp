@@ -22,8 +22,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 	Camera camera(cameraPos, normalize(glm::vec3(0.0f, 1.0f, 0.0f)));
 	float zoom_value = 1.0;
 	CoordinateSystem coordinateSystem;
-	bool control_parameter[24];
-	memset(control_parameter, 0, 24);
+	bool control_parameter[26];
+	memset(control_parameter, 0, 26);
 	control_parameter[ONLY_COLLISION_TEST] = true;
 	control_parameter[USE_XPBD] = false;
 	control_parameter[USE_PD_] = false;
@@ -33,8 +33,6 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 	ImGuiWindows imgui_windows;
 	float force_coe = 0.1;
-
-
 
 	std::vector<std::vector<bool>> show_element(15); //0~2 hide, 3~5 wireframe, 6~8 show_colision_element, 9~11 show ori position 12~14 show ori position wireframe
 	//std::vector<std::vector<bool>> wireframe(3);
@@ -94,6 +92,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 	scene.input= input;
 
+	int cell_index_chose = 0;
+
 	while (!glfwWindowShouldClose(window))
 	{
 		start_time = clock();
@@ -104,6 +104,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 		input->guiCaptureMouse = io.WantCaptureMouse;
 		input->guiCaptureKeyboard = io.WantCaptureKeyboard;
+
+		imgui_windows.controlWindow(control_parameter, &force_coe);
 
 		if (couldMoveCamera(input,control_parameter)) {
 			if (input->mouse.scroll_callback) {
@@ -212,8 +214,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 			scene.updateStiffness(update_obj_stiffness,cloth_stiffness,tetrahedron_stiffness,cloth_collision_stiffness,tetrahedron_collision_stiffness);			
 			scene.updateItrInfo(set_iteration_num);			
 			scene.setTolerance(tolerance_ratio);
-			scene.updateCloth(&camera, input->mouse.screen_pos, control_parameter, force_coe, record_matrix,
-				iteration_solver_iteration_num, input->mouse.angle);
+			scene.updateCloth(&camera, input, control_parameter, force_coe, record_matrix,
+				iteration_solver_iteration_num, cell_index_chose);
 			scene.drawScene(&camera, show_element, control_parameter);
 			scene.selectAnchor(control_parameter, set_anchor, input->mouse.screen_pos, input->mouse.left_press, input->mouse.prev_left_press, &camera, show_element[TETRAHEDRON_]);
 			scene.obtainConvergenceInfo(convergence_rate, iteration_number);
@@ -228,7 +230,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 		imgui_windows.floorInfo(floor_control[0], floor_control[1], floor_control[2], floor_dimension, &floor_value, floor_control[3]);
 
 		
-		imgui_windows.controlWindow(control_parameter, &force_coe);
+		
 		
 		imgui_windows.visualizationControlPanel(control_parameter[INITIAL_CAMERA], show_element, control_parameter[ONLY_COLLISION_TEST]);
 

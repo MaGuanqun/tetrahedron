@@ -234,6 +234,17 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 				control_parameter[SHORTCUT_INSTRUCTION] = true;
 			}
 		}
+		if (control_parameter[DRAW_SPATIAL_HASHING]) {
+			ImGui::Text("Draw Collision in a cell");
+			if (ImGui::Button("<<front.", ImVec2(120, 25))) {
+				control_parameter[SEARCH_LEFT_SH_CELL]=true;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button(">>back.", ImVec2(120, 25))) {
+				control_parameter[SEARCH_RIGHT_SH_CELL] = true;
+			}
+		}
+
 	}
 	ImGui::End();
 	if (!control_parameter[ONLY_COLLISION_TEST]) {

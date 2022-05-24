@@ -72,6 +72,19 @@ void Camera::getCursorPosInSpace(double* cursor_pos_in_space, double* cursor_scr
 }
 
 
+void Camera::getCursorPosCameraCenterPlane(double* cursor_pos_in_space, double* cursor_screen)
+{
+    double dir[3];
+    glm::vec3 position2center = center - position;
+    position2center = normalize(position2center);
+    glm::vec3 screen_horiz = normalize(glm::cross(position2center, up));
+    double height_coe = 2.0 * (0.5 - cursor_screen[1] / (double)SCR_HEIGHT) * (double)maxHightValue;
+    double width_coe = 2.0 * (cursor_screen[0] / (double)SCR_WIDTH - 0.5) * (double)maxHightValue * ((double)SCR_WIDTH / (double)SCR_HEIGHT);
+    cursor_pos_in_space[0] = center.x + up.x * height_coe + screen_horiz[0] * width_coe;
+    cursor_pos_in_space[1] = center.y + up.y * height_coe + screen_horiz[1] * width_coe;
+    cursor_pos_in_space[2] = center.z + up.z * height_coe + screen_horiz[2] * width_coe;
+}
+
 glm::vec3 Camera::rotationxyz(float angle, glm::vec3& rotate_axe, glm::vec3& vec)
 {
     rotate_axe = glm::normalize(rotate_axe);

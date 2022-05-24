@@ -77,6 +77,13 @@ public:
 
 	void buildSpatialHashingForOri(double* scene_aabb);
 
+	void selectCell(double* start_pos, double* dir, std::vector<unsigned int>& select_hash_index
+		, std::vector<unsigned int>& initial_hash_index);
+
+	void 	findAllElementsInOneCell(unsigned int select_hash_index, unsigned int ori_hash_index,
+		std::vector<std::vector<unsigned int>>& vertex_index, std::vector<std::vector<unsigned int>>& triangle_index,
+		std::vector<std::vector<unsigned int>>& edge_index);
+
 private:
 
 	void deleteArray();
@@ -250,5 +257,13 @@ private:
 	void initialTriangleHashValue(double* aabb,
 		std::vector<unsigned int>* spatial_hashing_cell, double* scene_aabb, double cell_length);
 	void setSpatialHashingInitialCount();
+
+	void 	collectAllVoxel(std::vector<unsigned int>& select_hash_index, std::vector<unsigned int>&
+		initial_hash_index, double start__[3], double end__[3],
+		double* scene_aabb);
+	bool intersectSpatialHasingCube(double* AABB, double* start, double* direction, double* end);
+
+	inline double frac0(double x);
+	inline double frac1(double x);
 };
 

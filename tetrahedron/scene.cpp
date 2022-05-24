@@ -435,6 +435,8 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 
 	if(control_parameter[DRAW_SPATIAL_HASHING]){
 		test_draw_collision.draw_spatial_hashing.drawCell(camera, wireframe_shader);
+		test_draw_collision.draw_spatial_hashing.drawCellSelect(camera, wireframe_shader);
+		test_draw_collision.draw_spatial_hashing.drawCellSelectOne(camera, wireframe_shader);
 	}
 
 
@@ -591,7 +593,9 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 }
 
 
-void Scene::updateSceneCollisionTest(Camera* camera, double* cursor_screen, bool* control_parameter, float* angle)
+
+
+void Scene::updateSceneCollisionTest(Camera* camera, Input* input, bool* control_parameter, int& select_hash_cell)
 {
 	if (!(control_parameter[ONLY_ROTATE_CURRENT] || control_parameter[ROTATION])) {
 		intersect_when_rotation = false;
@@ -599,25 +603,25 @@ void Scene::updateSceneCollisionTest(Camera* camera, double* cursor_screen, bool
 
 	if (control_parameter[MOVE_OBJ]) {
 		if (intersection.happened_include_collider) {
-			moveObj(camera, cursor_screen, false);			
+			moveObj(camera, input->mouse.screen_pos, false);
 		}
 		setChosenIndicator();
 	}
 	if (control_parameter[ROTATION]) {
 		if (intersect_when_rotation) {
-			rotate(camera, angle, false);
+			rotate(camera, input->mouse.angle, false);
 		}
 		setChosenIndicator();
 	}
 	if (control_parameter[ONLY_MOVE_CURRENT_POSITION]) {
 		if (intersection.happened_include_collider) {
-			moveObj(camera, cursor_screen, true);
+			moveObj(camera, input->mouse.screen_pos, true);
 		}
 		setChosenIndicator();
 	}
 	if (control_parameter[ONLY_ROTATE_CURRENT]) {
 		if (intersect_when_rotation) {
-			rotate(camera, angle, true);
+			rotate(camera, input->mouse.angle, true);
 		}
 		setChosenIndicator();
 	}
@@ -625,24 +629,49 @@ void Scene::updateSceneCollisionTest(Camera* camera, double* cursor_screen, bool
 		test_draw_collision.setCollisionData();
 	}
 	if (control_parameter[SPATIAL_HASHING_UPDATE]) {
-		std::cout << "set in data " << std::endl;
 		getAABB();
 		test_draw_collision.setForOriSpatialHashing();
+
 		control_parameter[SPATIAL_HASHING_UPDATE] = false;
+	}
+
+	if (control_parameter[DRAW_SPATIAL_HASHING]) {
+		if (input->mouse.leftButtonIsPressed() && !control_parameter[SEARCH_LEFT_SH_CELL]
+			&& !control_parameter[SEARCH_RIGHT_SH_CELL] && !input->keyboard.keyIsPressed(GLFW_KEY_LEFT_CONTROL)
+			&& !input->keyboard.keyIsPressed(GLFW_KEY_RIGHT_CONTROL)) {
+			select_hash_cell = 0;
+			test_draw_collision.obtianSpatialHashingCell(camera, input->mouse.screen_pos);
+			test_draw_collision.setForSelectCell();
+			test_draw_collision.obtainElementsInOneCell(select_hash_cell);
+			test_draw_collision.setForSelectCellOne(select_hash_cell);
+		}
+		if (control_parameter[SEARCH_LEFT_SH_CELL]) {
+			select_hash_cell--;
+			test_draw_collision.obtainElementsInOneCell(select_hash_cell);
+			test_draw_collision.setForSelectCellOne(select_hash_cell);
+			control_parameter[SEARCH_LEFT_SH_CELL] = false;
+		}
+		if (control_parameter[SEARCH_RIGHT_SH_CELL]) {
+			select_hash_cell++;
+			test_draw_collision.obtainElementsInOneCell(select_hash_cell);
+			test_draw_collision.setForSelectCellOne(select_hash_cell);
+			control_parameter[SEARCH_RIGHT_SH_CELL] = false;
+		}
+		
 	}
 
 }
 
 
-void Scene::updateCloth(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe, bool& record_matrix,
-	double& ave_iteration, float* angle)
+void Scene::updateCloth(Camera* camera, Input* input, bool* control_parameter, float force_coe, bool& record_matrix,
+	double& ave_iteration, int& select_hash_cell_index)
 {
 	if (control_parameter[ONLY_COLLISION_TEST]) {
-		updateSceneCollisionTest(camera, cursor_screen, control_parameter,angle);
+		updateSceneCollisionTest(camera, input, control_parameter, select_hash_cell_index);
 		updateBufferOriPos();
 	}
 	else {
-		updateObjSimulation(camera, cursor_screen, control_parameter, force_coe, record_matrix, ave_iteration);
+		updateObjSimulation(camera, input->mouse.screen_pos, control_parameter, force_coe, record_matrix, ave_iteration);
 	}
 	updateBuffer();
 }
@@ -924,6 +953,9 @@ bool Scene::sameDirection(Camera* camera, unsigned int obj_index)
 	}
 	return true;
 }
+
+
+
 
 
 void Scene::moveObj(Camera* camera, double* cursor_screen, bool only_move_vertex_pos)

@@ -17,11 +17,24 @@ public:
 
 	DrawSpatialHashing draw_spatial_hashing;
 	void setForOriSpatialHashing();
+	void setForSelectCell();
+	void setForSelectCellOne(int index);
+	void obtianSpatialHashingCell(Camera* camera, double* cursor_screen);
+
+	void obtainElementsInOneCell(int& index_chosen);
 private:
 	DrawCollision draw_collision;
 	std::vector<Cloth>* cloth;
 	std::vector<Collider>* collider;
 	std::vector<Tetrahedron>* tetrahedron;
 	Thread* thread;
+	std::vector<unsigned int> select_hash_index;
+	std::vector<unsigned int> select_ori_hash_index;
 
+	std::vector<std::vector<unsigned int>> vertex_index_in_one_cell;
+	std::vector<std::vector<unsigned int>> triangle_index_in_one_cell;
+	std::vector<std::vector<unsigned int>> edge_index_in_one_cell;
+
+	unsigned int total_obj_num;
+	bool isIndexNotEmpty();
 };
