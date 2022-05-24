@@ -70,7 +70,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	UpdateObjStiffness update_obj_stiffness;
 	double tolerance_ratio[7] = { 5e-2,5e-2,5e-2,5e-2, 1e-1, 1e-1, 1e-1 };
 
-	double damp_stiffness=0.00;
+	double damp_stiffness=1.0;
 	scene.setDampStiffness(&damp_stiffness);
 	bool set_anchor[2] = { false,false };
 

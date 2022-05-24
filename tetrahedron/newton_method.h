@@ -178,17 +178,18 @@ private:
 	void computeGravity();
 
 
-	//SparseLU<SparseMatrix<double>, COLAMDOrdering<int> >global_llt;
-	SimplicialLDLT<SparseMatrix<double>> global_llt;
+	SparseLU<SparseMatrix<double>, COLAMDOrdering<int> >global_llt;
+	//SimplicialLDLT<SparseMatrix<double>> global_llt;
+
 	void updateRenderPosition();
 	bool convergenceCondition();
 
 	void storeInitialPosition();
 
 	void computeHessianOnlyOneVertexFixedEdge(double* vertex_position_0, double* vertex_position_1, double* diagonal_coeff_0,
-		double stiffness, double rest_length, double time_step_square, double* velocity_0,  double damp_stiffness);
+		double stiffness, double rest_length, double time_step_square, double* ori_position_0, double* ori_position_1,  double damp_stiffness);
 	void updateInternalForceOnlyOneEdgeFixed(double* vertex_position_0, double* vertex_position_1, double* force_0,
-		double stiffness, double rest_length, double* velocity_0, double damp_stiffness);
+		double stiffness, double rest_length, double* ori_position_0, double* ori_position_1, double damp_stiffness);
 
 	//double damp_coe;
 

@@ -176,7 +176,7 @@ void NewtonMethod::updateHessianFixedStructure()
 	thread->assignTask(this, UPDATE_DIAGONAL_HESSIAN_FIXED_STRUCTURE);
 	thread->assignTask(this, UPDATE_INTERNAL_FORCE);
 	thread->assignTask(this, SUM_B);
-	thread->assignTask(this, UPDATE_DAMP);
+	//thread->assignTask(this, UPDATE_DAMP);
 	//thread->assignTask(this, UPDATE_ANCHOR_POINT_HESSIAN);
 }
 
@@ -226,10 +226,11 @@ void NewtonMethod::solveNewtonMethod()
 		global_llt.factorize(Hessian);
 		delta_x =global_llt.solve(b);
 
+		//std::cout << Hessian << std::endl;
 		//if (*time_stamp == 92 && iteration_number<5) {
 		//	std::cout << "====" << std::endl;
 		//	std::cout << delta_x.segment(0,10) << std::endl;
-		//	//std::cout << Hessian << std::endl;
+		//std::cout << Hessian << std::endl;
 		//}
 
 		thread->assignTask(this, UPDATE_POSITION_NEWTON);
@@ -263,7 +264,7 @@ void NewtonMethod::initialDHatTolerance(double ave_edge_length)
 
 bool NewtonMethod::convergenceCondition()
 {
-	if (iteration_number < 3) {
+	if (iteration_number < 2) {
 		return true;
 	}
 
@@ -308,13 +309,14 @@ void NewtonMethod::updateInternalForce(int thread_No)
 	unsigned int vertex_end;
 	unsigned int* edge_vertex;
 	std::array<double, 3>* vertex_pos;
+
 	double* rest_length_;
 	double edge_length_stiffness_;
 
 	unsigned int* unfixed_vertex_index;
 
 	unsigned int index_start;
-	double damp_stiff = *damp_stiffness;
+	double damp_stiff = *damp_stiffness / time_step;
 
 	for (unsigned int obj_No = 0; obj_No < total_obj_num; ++obj_No) {
 		vertex_pos = vertex_position[obj_No];
@@ -325,11 +327,13 @@ void NewtonMethod::updateInternalForce(int thread_No)
 		edge_length_stiffness_ = edge_length_stiffness[obj_No];
 		unfixed_vertex_index = unfixed_vertex[obj_No]->data();
 		index_start = vertex_begin_per_obj[obj_No];
+
+
 		for (unsigned int i = vertex_begin; i < vertex_end; i += 2) {
 			updateInternalForce(vertex_pos[unfixed_vertex_index[edge_vertex[i]]].data(), vertex_pos[unfixed_vertex_index[edge_vertex[i + 1]]].data(),
 				hessian_coeff_diag + 3 * (edge_vertex[i]+ index_start), hessian_coeff_diag + 3 * (edge_vertex[i + 1]+ index_start),
-				edge_length_stiffness_, rest_length_[i >> 1], velocity.data()+ 3 * (edge_vertex[i] + index_start),
-				velocity.data() + 3 * (edge_vertex[i + 1] + index_start), damp_stiff);
+				edge_length_stiffness_, rest_length_[i >> 1], position_of_beginning.data()+ 3 * (edge_vertex[i] + index_start),
+				position_of_beginning.data() + 3 * (edge_vertex[i + 1] + index_start), damp_stiff);
 		}
 		//only one vertex fixed in the edge
 		edge_vertex = only_one_vertex_fix_edge_vertices[obj_No]->data();
@@ -339,7 +343,8 @@ void NewtonMethod::updateInternalForce(int thread_No)
 		for (unsigned int i = vertex_begin; i < vertex_end; i += 2) {
 			updateInternalForceOnlyOneEdgeFixed(vertex_pos[unfixed_vertex_index[edge_vertex[i]]].data(), vertex_pos[edge_vertex[i + 1]].data(),
 				hessian_coeff_diag + 3 * edge_vertex[i],
-				edge_length_stiffness_, rest_length_[i >> 1], velocity.data() + 3 * (edge_vertex[i] + index_start),
+				edge_length_stiffness_, rest_length_[i >> 1], position_of_beginning.data() + 3 * (edge_vertex[i] + index_start),
+				vertex_pos[edge_vertex[i + 1]].data(),
 				damp_stiff);
 		}
 	}
@@ -368,7 +373,7 @@ void NewtonMethod::updateHessianFixedStructure(int thread_No)
 	double time_step_square_ = time_step_square;
 	unsigned int vertex_begin_in_obj;
 	unsigned int* unfixed_index_to_normal_index;
-	double damp_stiff = *damp_stiffness;
+	double damp_stiff = *damp_stiffness * time_step;
 
 	for (unsigned int obj_No = 0; obj_No < total_obj_num; ++obj_No) {
 		vertex_begin_in_obj = vertex_begin_per_obj[obj_No];
@@ -384,8 +389,8 @@ void NewtonMethod::updateHessianFixedStructure(int thread_No)
 			computeHessianFixedStructure(vertex_pos[unfixed_index_to_normal_index[edge_vertex[i]]].data(), 
 				vertex_pos[unfixed_index_to_normal_index[edge_vertex[i + 1]]].data(),
 				hessian_coeff_diag + 9 * (edge_vertex[i] + vertex_begin_in_obj), hessian_coeff_diag + 9 * (edge_vertex[i + 1] + vertex_begin_in_obj),
-				hessian_nnz_ + 18 * edge_no, edge_length_stiffness_, rest_length_[i >> 1], time_step_square_, velocity.data() + 3 * (edge_vertex[i] + vertex_begin_in_obj),
-				velocity.data() + 3 * (edge_vertex[i + 1] + vertex_begin_in_obj), damp_stiff);
+				hessian_nnz_ + 18 * edge_no, edge_length_stiffness_, rest_length_[i >> 1], time_step_square_, position_of_beginning.data() + 3 * (edge_vertex[i] + vertex_begin_in_obj),
+				position_of_beginning.data() + 3 * (edge_vertex[i + 1] + vertex_begin_in_obj), damp_stiff);
 			edge_no++;		
 		}
 
@@ -398,7 +403,8 @@ void NewtonMethod::updateHessianFixedStructure(int thread_No)
 			computeHessianOnlyOneVertexFixedEdge(vertex_pos[unfixed_index_to_normal_index[edge_vertex[i]]].data(),
 				vertex_pos[edge_vertex[i + 1]].data(),
 				hessian_coeff_diag + 9 * (edge_vertex[i] + vertex_begin_in_obj),
-				edge_length_stiffness_, rest_length_[i >> 1], time_step_square_, velocity.data() + 3 * (edge_vertex[i] + vertex_begin_in_obj),
+				edge_length_stiffness_, rest_length_[i >> 1], time_step_square_, position_of_beginning.data() + 3 * (edge_vertex[i] + vertex_begin_in_obj),
+				vertex_pos[edge_vertex[i + 1]].data(),
 				damp_stiff);
 		}
 
@@ -893,13 +899,21 @@ void NewtonMethod::updateInternalForce(double* vertex_position_0, double* vertex
 //	double coe3 = stiffness * damp_stiffness * damp_stiffness * (DOT(Ax, velocity_0) - DOT(Ax, velocity_1));
 
 	double coe = stiffness - stiffness * rest_length / sqrt(length_);// +coe3 / length_;
+
+	double Ax_[3];
+	SUB(Ax_, ori_position_0, ori_position_1);
+	SUB(Ax_, Ax, Ax_);
+	double x0AAx = damp_stiffness * DOT(Ax, Ax_) / length_;
+	coe += x0AAx;
+
+
 	MULTI_(Ax, coe);
 	SUM_(force_1, Ax);
 	SUB_(force_0, Ax);
 }
 
 void NewtonMethod::updateInternalForceOnlyOneEdgeFixed(double* vertex_position_0, double* vertex_position_1, double* force_0,
-	double stiffness, double rest_length, double* velocity_0,  double damp_stiffness)
+	double stiffness, double rest_length, double* ori_position_0, double* ori_position_1,  double damp_stiffness)
 {
 	double Ax[3];
 	SUB(Ax, vertex_position_0, vertex_position_1);
@@ -908,6 +922,12 @@ void NewtonMethod::updateInternalForceOnlyOneEdgeFixed(double* vertex_position_0
 	//double coe3 = stiffness * damp_stiffness * damp_stiffness * (DOT(Ax, velocity_0));
 	double coe = stiffness - stiffness * rest_length / sqrt(length_);// +coe3 / length_;
 
+	double Ax_[3];
+	SUB(Ax_, ori_position_0, ori_position_1);
+	SUB(Ax_, Ax, Ax_);
+	double x0AAx = damp_stiffness * DOT(Ax, Ax_) / length_;
+	coe += x0AAx;
+
 	force_0[0] -= Ax[0] * coe;
 	force_0[1] -= Ax[1] * coe;
 	force_0[2] -= Ax[2] * coe;
@@ -915,7 +935,7 @@ void NewtonMethod::updateInternalForceOnlyOneEdgeFixed(double* vertex_position_0
 }
 
 void NewtonMethod::computeHessianOnlyOneVertexFixedEdge(double* vertex_position_0, double* vertex_position_1, double* diagonal_coeff_0,
-	double stiffness, double rest_length, double time_step_square, double* velocity_0, double damp_stiffness)
+	double stiffness, double rest_length, double time_step_square, double* ori_position_0, double* ori_position_1,  double damp_stiffness)
 {
 	double Ax[3];
 	SUB(Ax, vertex_position_0, vertex_position_1);
@@ -931,15 +951,37 @@ void NewtonMethod::computeHessianOnlyOneVertexFixedEdge(double* vertex_position_
 	//	std::cout << "too small "<<length << std::endl;
 	//}
 
-	diagonal_coeff_0[0] += time_step_square * (coe + coe2 * Ax[0] * Ax[0]);
-	diagonal_coeff_0[1] += time_step_square * (coe2 * Ax[1] * Ax[0]);
-	diagonal_coeff_0[2] += time_step_square * (coe2 * Ax[2] * Ax[0]);
-	diagonal_coeff_0[3] += time_step_square * (coe2 * Ax[1] * Ax[0]);
-	diagonal_coeff_0[4] += time_step_square * (coe + coe2 * Ax[1] * Ax[1]);
-	diagonal_coeff_0[5] += time_step_square * (coe2 * Ax[2] * Ax[1]);
-	diagonal_coeff_0[6] += time_step_square * (coe2 * Ax[2] * Ax[0]);
-	diagonal_coeff_0[7] += time_step_square * (coe2 * Ax[2] * Ax[1]);
-	diagonal_coeff_0[8] += time_step_square * (coe + coe2 * Ax[2] * Ax[2]);
+	double Ax_[3];
+	SUB(Ax_, ori_position_0, ori_position_1);
+	double x0AAx = DOT(Ax, Ax_) / length_;
+	double coe_grad_damp = damp_stiffness * (1.0 - x0AAx);
+	x0AAx /= length_;
+	double temp_vec[3];
+	temp_vec[0] = damp_stiffness * (Ax_[0] / length_ - 2.0 * x0AAx * Ax[0]);
+	temp_vec[1] = damp_stiffness * (Ax_[1] / length_ - 2.0 * x0AAx * Ax[1]);
+	temp_vec[2] = damp_stiffness * (Ax_[2] / length_ - 2.0 * x0AAx * Ax[2]);
+
+	double damp_derivative[9] = {
+	 coe_grad_damp - Ax[0] * temp_vec[0], -Ax[1] * temp_vec[0],-Ax[2] * temp_vec[0],
+	 -Ax[0] * temp_vec[1], coe_grad_damp - Ax[1] * temp_vec[1],-Ax[2] * temp_vec[1],
+	  -Ax[0] * temp_vec[2],  -Ax[1] * temp_vec[2], coe_grad_damp - Ax[2] * temp_vec[2]
+	};
+
+	//std::cout << "temp vec " << temp_vec[0] << " " << temp_vec[1] << " " << temp_vec[2] << std::endl;
+	//std::cout << "Ax " << Ax[0] << " " << Ax[1] << " " << Ax[2] << std::endl;
+	//for (unsigned int i = 0; i < 3; ++i) {
+	//	std::cout << damp_derivative[i] << " " << damp_derivative[i + 3] << " " << damp_derivative[i + 6] << std::endl;
+	//}
+
+	diagonal_coeff_0[0] += time_step_square * (coe + coe2 * Ax[0] * Ax[0]) + damp_derivative[0];
+	diagonal_coeff_0[1] += time_step_square * (coe2 * Ax[1] * Ax[0]) + damp_derivative[1];
+	diagonal_coeff_0[2] += time_step_square * (coe2 * Ax[2] * Ax[0]) + damp_derivative[2];
+	diagonal_coeff_0[3] += time_step_square * (coe2 * Ax[1] * Ax[0]) + damp_derivative[3];
+	diagonal_coeff_0[4] += time_step_square * (coe + coe2 * Ax[1] * Ax[1]) + damp_derivative[4];
+	diagonal_coeff_0[5] += time_step_square * (coe2 * Ax[2] * Ax[1]) + damp_derivative[5];
+	diagonal_coeff_0[6] += time_step_square * (coe2 * Ax[2] * Ax[0]) + damp_derivative[6];
+	diagonal_coeff_0[7] += time_step_square * (coe2 * Ax[2] * Ax[1]) + damp_derivative[7];
+	diagonal_coeff_0[8] += time_step_square * (coe + coe2 * Ax[2] * Ax[2]) + +damp_derivative[8];
 
 }
 
@@ -971,9 +1013,25 @@ void NewtonMethod::computeHessianFixedStructure(double* vertex_position_0, doubl
 		time_step_square* (coe2 * Ax[1] * Ax[0]),	time_step_square * (coe + coe2 * Ax[1] * Ax[1]), time_step_square * (coe2 * Ax[2] * Ax[1]), 
 		time_step_square* (coe2 * Ax[2] * Ax[0]), time_step_square* (coe2 * Ax[2] * Ax[1]), 	time_step_square * (coe + coe2 * Ax[2] * Ax[2]) };
 
+	double Ax_[3];
+	SUB(Ax_, ori_position_0, ori_position_1);
+	double x0AAx =  DOT(Ax, Ax_) / length_;
+	double coe_grad_damp = damp_stiffness *( 1.0 - x0AAx);
+	x0AAx /= length_;
+	double temp_vec[3];
+	temp_vec[0] = damp_stiffness * (Ax_[0] / length_ - 2.0 * x0AAx * Ax[0]);
+	temp_vec[1] = damp_stiffness * (Ax_[1] / length_ - 2.0 * x0AAx * Ax[1]);
+	temp_vec[2] = damp_stiffness * (Ax_[2] / length_ - 2.0 * x0AAx * Ax[2]);
+
+	double damp_derivative[9] = {
+	 coe_grad_damp - Ax[0] * temp_vec[0], -Ax[1] * temp_vec[0],-Ax[2] * temp_vec[0],
+	 -Ax[0] * temp_vec[1], coe_grad_damp - Ax[1] * temp_vec[1],-Ax[2] * temp_vec[1],
+	  -Ax[0] * temp_vec[2],  -Ax[1] * temp_vec[2], coe_grad_damp - Ax[2] * temp_vec[2]
+	};
+
 	for (unsigned int i = 0; i < 9; ++i) {
-		*hessian_coeff_address[i] = -matrix[i];
-		*hessian_coeff_address[i+9] = -matrix[i];
+		*hessian_coeff_address[i] = -(matrix[i]+ damp_derivative[i]);
+		*hessian_coeff_address[i+9] = -(matrix[i] + damp_derivative[i]);
 	}
 	//*hessian_coeff_address[1] = -matrix[1];
 	//*hessian_coeff_address[2] = -matrix[2];
@@ -995,8 +1053,8 @@ void NewtonMethod::computeHessianFixedStructure(double* vertex_position_0, doubl
 	//*hessian_coeff_address[17] = -matrix[5];
 
 	for (unsigned int i = 0; i < 9; ++i) {
-		diagonal_coeff_0[i] += matrix[i];
-		diagonal_coeff_1[i] += matrix[i];
+		diagonal_coeff_0[i] += matrix[i] + damp_derivative[i];
+		diagonal_coeff_1[i] += matrix[i] + damp_derivative[i];
 	}
 
 }
