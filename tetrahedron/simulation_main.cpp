@@ -22,9 +22,9 @@ void simu_main(GLFWwindow* window, Input* input) {
 	Camera camera(cameraPos, normalize(glm::vec3(0.0f, 1.0f, 0.0f)));
 	float zoom_value = 1.0;
 	CoordinateSystem coordinateSystem;
-	bool control_parameter[23];
-	memset(control_parameter, 0, 23);
-	control_parameter[ONLY_COLLISION_TEST] = false;
+	bool control_parameter[24];
+	memset(control_parameter, 0, 24);
+	control_parameter[ONLY_COLLISION_TEST] = true;
 	control_parameter[USE_XPBD] = false;
 	control_parameter[USE_PD_] = false;
 	control_parameter[USE_NEWTON_] = true;
@@ -105,7 +105,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 		input->guiCaptureMouse = io.WantCaptureMouse;
 		input->guiCaptureKeyboard = io.WantCaptureKeyboard;
 
-		if (!(control_parameter[ROTATION] || control_parameter[ONLY_ROTATE_CURRENT])) {
+		if (couldMoveCamera(input,control_parameter)) {
 			if (input->mouse.scroll_callback) {
 				if (!scene.intersection.happened && !set_anchor[0]) {
 					if (zoom_value > 0.025) {
@@ -119,7 +119,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 		}
 		if (input->mouse.mouse_callback) {
 			if (!scene.intersection.happened && !set_anchor[0]) {
-				if (!(control_parameter[ROTATION] || control_parameter[ONLY_ROTATE_CURRENT])) {
+				if (couldMoveCamera(input, control_parameter)) {
 					if (input->mouse.leftButtonIsPressed()) {
 						if (!input->mouse.rightButtonIsPressed()) {
 							camera.rotation(input->mouse.angle[0], input->mouse.angle[1], 1);
@@ -242,6 +242,16 @@ void simu_main(GLFWwindow* window, Input* input) {
 					IM_ARRAYSIZE(itr_solver_items), &iteration_solver_conve_rate, record_matrix);
 			}			
 		}
+
+		if (control_parameter[ONLY_COLLISION_TEST]) {
+			switchObjMoveMode(input, control_parameter);
+		}
+
+		if (input->keyboard.keyIsPressed(GLFW_KEY_S)) {
+			control_parameter[ONE_FRAME] = true;
+		}
+
+	
 	
 		
 		basic_imgui.imguiEndFrame();
@@ -275,4 +285,47 @@ void setHideWireframe(std::vector<std::vector<bool>>& show_element, int collider
 		}
 	}
 
+}
+
+bool couldMoveCamera(Input* input, bool* control_parameter)
+{
+	if (!(control_parameter[ROTATION] || control_parameter[ONLY_ROTATE_CURRENT])) {
+		return true;
+	}
+	else {
+		if (input->keyboard.keyIsPressed(GLFW_KEY_M)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void switchObjMoveMode(Input* input, bool* control_parameter)
+{
+	if (input->keyboard.keyIsPressed(GLFW_KEY_R)&& !input->keyboard.keyIsPressed(GLFW_KEY_LEFT_CONTROL) && !input->keyboard.keyIsPressed(GLFW_KEY_RIGHT_CONTROL)) {
+		control_parameter[ROTATION] = true;
+		control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
+		control_parameter[MOVE_OBJ] = false;
+		control_parameter[ONLY_ROTATE_CURRENT] = false;
+	}
+	if ((input->keyboard.keyIsPressed(GLFW_KEY_LEFT_CONTROL) || input->keyboard.keyIsPressed(GLFW_KEY_RIGHT_CONTROL))&&
+		input->keyboard.keyIsPressed(GLFW_KEY_R)) {
+		control_parameter[ONLY_ROTATE_CURRENT] = true;
+		control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
+		control_parameter[MOVE_OBJ] = false;
+		control_parameter[ROTATION] = false;
+	}
+	if (input->keyboard.keyIsPressed(GLFW_KEY_T) && !input->keyboard.keyIsPressed(GLFW_KEY_LEFT_CONTROL) && !input->keyboard.keyIsPressed(GLFW_KEY_RIGHT_CONTROL)) {
+		control_parameter[MOVE_OBJ] = true;
+		control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
+		control_parameter[ROTATION] = false;
+		control_parameter[ONLY_ROTATE_CURRENT] = false;
+	}
+	if ((input->keyboard.keyIsPressed(GLFW_KEY_LEFT_CONTROL) || input->keyboard.keyIsPressed(GLFW_KEY_RIGHT_CONTROL)) &&
+		input->keyboard.keyIsPressed(GLFW_KEY_T)) {
+		control_parameter[ONLY_MOVE_CURRENT_POSITION] = true;
+		control_parameter[ONLY_ROTATE_CURRENT] = false;
+		control_parameter[MOVE_OBJ] = false;
+		control_parameter[ROTATION] = false;
+	}
 }

@@ -228,6 +228,12 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 				control_parameter[SPATIAL_HASHING_UPDATE] = true;
 			}
 		}
+		if (!control_parameter[SHORTCUT_INSTRUCTION]) {
+			if (ImGui::Button("Shortcut instuct.", ImVec2(160, 25)))
+			{
+				control_parameter[SHORTCUT_INSTRUCTION] = true;
+			}
+		}
 	}
 	ImGui::End();
 	if (!control_parameter[ONLY_COLLISION_TEST]) {
@@ -243,6 +249,21 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 			ImGui::TextWrapped("Force depends on force coefficient and cursor moving speed.");
 			ImGui::End();
 		}
+	}
+
+
+	if (control_parameter[SHORTCUT_INSTRUCTION]) {
+		ImGui::SetNextWindowSize(ImVec2(330, 400));
+		ImGui::Begin("Shortcut Instruction", &control_parameter[SHORTCUT_INSTRUCTION]);
+		ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.9f);
+		ImGui::SetNextItemOpen(true);
+		ImGui::TextWrapped("Press \"S\" to start detection");
+		ImGui::TextWrapped("Press \"M\" to move camera in rotation and translation mode");
+		ImGui::TextWrapped("Press \"R\" to start rotation mode");
+		ImGui::TextWrapped("Press \"T\" to start translation mode");
+		ImGui::TextWrapped("Press \"Ctrl + T\" to start translation mode (only move current position)");
+		ImGui::TextWrapped("Press \"Ctrl + R\" to start rotation mode (only move current position)");
+		ImGui::End();
 	}
 }
 
