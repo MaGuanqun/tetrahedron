@@ -23,6 +23,9 @@ public:
 	void setElementInOneCell(std::vector<std::vector<unsigned int>>& vertex_index, std::vector<std::vector<unsigned int>>& triangle_index,
 		std::vector<std::vector<unsigned int>>& edge_index);
 
+	void drawCollisionCell(bool draw_VT, Light& light, Camera* camera, Shader* object_shader_front, std::vector<std::vector<bool>>& show_collision_element,
+		bool show_all_element);
+
 private:
 
 	std::vector<unsigned int>* point_triangle_target_pos_index;
@@ -49,6 +52,27 @@ private:
 	std::vector<unsigned int>EE_VBO;
 	std::vector<unsigned int>EE_EBO;
 
+
+	std::vector<unsigned int>VT_VAO_collide_in_a_cell;
+	std::vector<unsigned int>VT_VBO_collide_in_a_cell;
+	std::vector<unsigned int>VT_EBO_collide_in_a_cell;
+
+
+	std::vector<unsigned int>EE_VAO_collide_in_a_cell;
+	std::vector<unsigned int>EE_VBO_collide_in_a_cell;
+	std::vector<unsigned int>EE_EBO_collide_in_a_cell;
+
+
+	std::vector<unsigned int>VT_VAO_all_cell;
+	std::vector<unsigned int>VT_VBO_all_cell;
+	std::vector<unsigned int>VT_EBO_all_cell;
+
+	std::vector<unsigned int>EE_VAO_all_cell;
+	std::vector<unsigned int>EE_VBO_all_cell;
+	std::vector<unsigned int>EE_EBO_all_cell;
+
+
+
 	std::vector<std::vector<int>> triangle_vertex_index;
 	std::vector<std::vector<int>> collider_triangle_vertex_index;
 	std::vector<std::vector<unsigned int>> edge_vertex_index;
@@ -56,13 +80,18 @@ private:
 	std::vector<std::vector<unsigned int>> vertex_index;
 
 
-	unsigned int VAO1;
-	unsigned int VBO1;
-	unsigned int EBO1;
+	std::vector<std::vector<int>> triangle_vertex_index_in_a_cell;
+	std::vector<std::vector<int>> collider_triangle_vertex_index_in_a_cell;
+	std::vector<std::vector<unsigned int>> edge_vertex_index_in_a_cell;
+	std::vector<std::vector<unsigned int>> vertex_index_in_a_cell;
 
-	unsigned int VAO2;
-	unsigned int VBO2;
-	unsigned int EBO2;
+
+
+	std::vector<std::vector<int>> triangle_vertex_index_all_cell;
+	std::vector<std::vector<int>> collider_triangle_vertex_index_all_cell;
+	std::vector<std::vector<unsigned int>> edge_vertex_index_all_cell;
+	std::vector<std::vector<unsigned int>> vertex_index_all_cell;
+
 
 	Shader* shader;
 	Light light;
@@ -92,8 +121,15 @@ private:
 	void resetBooleanVector();
 
 	void drawVertex(Camera* camera, std::vector<std::vector<bool>>& show_collision_element);
-	void drawVT_triangle(Light& light, Camera* camera, Shader* object_shader_front, std::vector<std::vector<bool>>& show_collision_element);
-	void drawEdge(Light& light, Camera* camera, Shader* object_shader_front, std::vector<std::vector<bool>>& show_collision_element);
+
+	void drawVertexCell(Camera* camera, std::vector<std::vector<bool>>& show_collision_element, bool show_all_element);
+
+
+	void drawVT_triangle(Light& light, Camera* camera, Shader* object_shader_front, std::vector<std::vector<bool>>& show_collision_element,
+		unsigned int* VT_VAO, std::vector<int>* triangle_vertex_index, std::vector<int>* collider_triangle_vertex_index);
+
+	void drawEdge(Light& light, Camera* camera, Shader* object_shader_front, std::vector<std::vector<bool>>& show_collision_element,
+		unsigned int* EE_VAO, std::vector<unsigned int>* edge_vertex_index);
 
 
 	void setTriangleIndicesInOneCell(std::vector<std::vector<unsigned int>>& triangle_index);
