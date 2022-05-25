@@ -280,14 +280,28 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 
 
 void ImGuiWindows::visualizationControlPanel(bool& reset_camera, std::vector<std::vector<bool>>& show_element,
-	bool only_collision_test)
+	bool only_collision_test, bool* control_parameter)
 {
 	ImGui::SetNextWindowPos(ImVec2(0, 710));
 	ImGui::SetNextWindowSize(ImVec2(240, 370));
 	ImGui::Begin("Visualization");
 	ImGui::SetNextItemOpen(true);
 	//	if (ImGui::TreeNode("Visualization")) {
-	int cloth_no = -1;;
+	int cloth_no = -1;
+
+	if (control_parameter[SHARP_EDGE_SHADING]) {
+		if (ImGui::Button("Swith to soft edge", ImVec2(160, 25)))
+		{
+			control_parameter[SHARP_EDGE_SHADING] = false;
+		}
+	}
+	else {
+		if (ImGui::Button("Swith to sharp edge", ImVec2(160, 25)))
+		{
+			control_parameter[SHARP_EDGE_SHADING] = true;
+		}
+	}
+
 	if (ImGui::Button("Reset Camera", ImVec2(160, 25)))
 	{
 		reset_camera = true;

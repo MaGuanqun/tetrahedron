@@ -372,6 +372,14 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, shadow.depth_map);
 	glEnable(GL_CULL_FACE);
+
+	if (control_parameter[SHARP_EDGE_SHADING]) {
+		object_shader_front = object_shader_front_sharp_edge;
+	}
+	else {
+		object_shader_front = object_shader_front_soft_edge;
+	}
+
 	for (int j = 0; j < cloth_num; ++j) {
 		if (!show_element[CLOTH_][j]) {
 			cloth[j].setSceneShader(light, camera, shadow.far_plane, object_shader_front);
@@ -1087,8 +1095,12 @@ void Scene::cursorMovement(Camera* camera, double* cursor_screen, double* force_
 
 void Scene::genShader()
 {
-	object_shader_front = new Shader("./shader/object_triangle.vs", "./shader/object_triangle.fs");
-	*object_shader_front = Shader("./shader/object_triangle.vs", "./shader/object_triangle.fs");
+	object_shader_front_soft_edge = new Shader("./shader/object_triangle.vs", "./shader/object_triangle.fs");
+	*object_shader_front_soft_edge = Shader("./shader/object_triangle.vs", "./shader/object_triangle.fs");
+
+	object_shader_front_sharp_edge = new Shader("./shader/object_tetrahedron.vs", "./shader/object_tetrahedron.fs", "./shader/object_tetrahedron.gs");
+	*object_shader_front_sharp_edge = Shader("./shader/object_tetrahedron.vs", "./shader/object_tetrahedron.fs", "./shader/object_tetrahedron.gs");
+
 
 	object_shader_texture = new Shader("./shader/object_triangle_texture.vs", "./shader/object_triangle_texture.fs");
 	*object_shader_texture = Shader("./shader/object_triangle_texture.vs", "./shader/object_triangle_texture.fs");

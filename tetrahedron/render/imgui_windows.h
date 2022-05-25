@@ -8,7 +8,7 @@ class ImGuiWindows
 public:
 	void controlWindow(bool* control_parameter, float* force_coe);
 	void visualizationControlPanel(bool& reset_camera, std::vector<std::vector<bool>>& show_element,
-		bool only_collision_test);
+		bool only_collision_test, bool* control_parameter);
 	bool loadModel(std::vector<std::string>& collider_path, std::vector<std::string>& object_path);
 	void infoWindow(std::vector<std::array<int, 3>>& cloth_info, std::vector<double>& cloth_mass,
 		std::vector<std::array<int, 3>>& tetrahedron_info, std::vector<double>& tetrahedron_mass,

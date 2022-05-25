@@ -22,8 +22,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 	Camera camera(cameraPos, normalize(glm::vec3(0.0f, 1.0f, 0.0f)));
 	float zoom_value = 1.0;
 	CoordinateSystem coordinateSystem;
-	bool control_parameter[26];
-	memset(control_parameter, 0, 26);
+	bool control_parameter[27];
+	memset(control_parameter, 0, 27);
 	control_parameter[ONLY_COLLISION_TEST] = true;
 	control_parameter[USE_XPBD] = false;
 	control_parameter[USE_PD_] = false;
@@ -232,7 +232,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 		
 		
 		
-		imgui_windows.visualizationControlPanel(control_parameter[INITIAL_CAMERA], show_element, control_parameter[ONLY_COLLISION_TEST]);
+		imgui_windows.visualizationControlPanel(control_parameter[INITIAL_CAMERA], show_element, control_parameter[ONLY_COLLISION_TEST], control_parameter);
 
 		coordinateSystem.draw(&camera, cameraPos);
 		scene.drawSelectRange(set_anchor, input->mouse.left_press, input->mouse.prev_left_press);

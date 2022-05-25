@@ -98,7 +98,9 @@ private:
 	SetTetrahedronAnchor set_tetrahedron_anchor;
 
 	Shader* wireframe_shader;
+	Shader* object_shader_front_soft_edge;
 	Shader* object_shader_front;
+	Shader* object_shader_front_sharp_edge;
 	Shader* object_shader_texture;
 	void genShader();
 

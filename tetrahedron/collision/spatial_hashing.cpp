@@ -1969,9 +1969,6 @@ bool SpatialHashing::intersectSpatialHasingCube(double* AABB, double* start, dou
 	if (t_exit > t_zmax) {
 		t_exit = t_zmax;
 	}
-
-	std::cout << t_enter << " " << t_exit << std::endl;
-
 	if (t_enter <= t_exit && t_exit >= 0) {
 		end[0] = start[0] + direction[0] * t_exit;
 		end[1] = start[1] + direction[1] * t_exit;
