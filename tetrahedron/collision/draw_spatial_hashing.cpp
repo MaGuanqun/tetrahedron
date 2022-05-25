@@ -213,11 +213,9 @@ void DrawSpatialHashing::drawCellSelect(Camera* camera, Shader* shader)
 	shader->setMat4("projection", camera->GetProjectMatrix());
 	shader->setMat4("view", camera->GetViewMatrix());
 	shader->setFloat("transparent", 1.0f);
-	glLineWidth(2.0);
 	glBindVertexArray(VAO2);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDrawElements(GL_LINES, edge_index_select.size(), GL_UNSIGNED_INT, 0);
-	glLineWidth(1.0);
 	glBindVertexArray(0);
 }
 

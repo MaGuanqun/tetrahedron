@@ -46,6 +46,7 @@ void DrawCollision::initialBoolean()
 		max = collider->size();
 	}
 	obj_is_used.resize(max);
+	obj_is_used2.resize(max);
 	unsigned int count = 0;
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		count = cloth->data()[i].mesh_struct.vertex_position.size();
@@ -67,6 +68,7 @@ void DrawCollision::initialBoolean()
 			}
 		}
 		obj_is_used[i].resize(count,false);
+		obj_is_used2[i].resize(count,false);
 	}
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		count = tetrahedron->data()[i].mesh_struct.vertex_position.size();
@@ -88,6 +90,7 @@ void DrawCollision::initialBoolean()
 			}
 		}
 		obj_is_used[i+cloth->size()].resize(count, false);
+		obj_is_used2[i+cloth->size()].resize(count, false);
 	}
 	if (tetrahedron_end_index < collider->size()) {
 		for (unsigned int i = tetrahedron_end_index; i < collider->size(); ++i) {
@@ -99,6 +102,7 @@ void DrawCollision::initialBoolean()
 				count = collider->data()[i].mesh_struct.triangle_indices.size();
 			}
 			obj_is_used[i].resize(count, false);
+			obj_is_used2[i].resize(count, false);
 		}	
 	}
 }
@@ -154,8 +158,7 @@ void DrawCollision::setInPairInfo(std::vector<unsigned int>* point_triangle, std
 }
 
 
-
-void DrawCollision::resetBooleanVector()
+void DrawCollision::resetBooleanVector(std::vector<std::vector<bool>>& obj_is_used)
 {
 	for (unsigned int i = 0; i < obj_is_used.size(); ++i) {
 		std::fill(obj_is_used[i].begin(), obj_is_used[i].end(), false);
@@ -164,16 +167,16 @@ void DrawCollision::resetBooleanVector()
 
 void DrawCollision::setElementIndices()
 {
-	setIndicesSize();
-	resetBooleanVector();
+	setIndicesSize(triangle_vertex_index.data(),edge_vertex_index.data(),vertex_index.data(),collider_triangle_vertex_index.data());
+	resetBooleanVector(obj_is_used);
 	setTriangleIndices();
 	if (!collider->empty()) {
-		resetBooleanVector();
+		resetBooleanVector(obj_is_used);
 		setColliderTriangleIndices();
 	}
-	resetBooleanVector();
+	resetBooleanVector(obj_is_used);
 	setEdgeIndices();
-	resetBooleanVector();
+	resetBooleanVector(obj_is_used);
 	setVertexIndices();
 
 	setBuffer();
@@ -183,35 +186,64 @@ void DrawCollision::setElementIndices()
 
 
 
-void DrawCollision::setElementInOneCell(std::vector<std::vector<unsigned int>>& vertex_index, std::vector<std::vector<unsigned int>>& triangle_index,
+void DrawCollision::setElementInAllCell(std::vector<std::vector<unsigned int>>& vertex_index, std::vector<std::vector<unsigned int>>& triangle_index,
 	std::vector<std::vector<unsigned int>>& edge_index)
 {
-	setIndicesSize();
-	resetBooleanVector();
+	setIndicesSize(triangle_vertex_index_all_cell.data(), edge_vertex_index_all_cell.data(), vertex_index_all_cell.data(), collider_triangle_vertex_index_all_cell.data());
+	resetBooleanVector(obj_is_used);
+	setTriangleIndicesInAllCell(triangle_index);
+	resetBooleanVector(obj_is_used);
+	setVertexIndicesInAllCell(vertex_index);
+	resetBooleanVector(obj_is_used);
+	setEdgeIndicesInAllCell(edge_index);
+
+	setBufferAllCell();
+	draw_vertex.setCollisionVertexDataAllCell(vertex_for_render, vertex_index_all_cell);
+}
+
+void DrawCollision::setElementInOneCell(std::vector<std::vector<unsigned int>>& triangle_index,
+	std::vector<std::vector<unsigned int>>& edge_index)
+{
+	setIndicesSize(triangle_vertex_index_in_a_cell.data(), edge_vertex_index_in_a_cell.data(), vertex_index_in_a_cell.data(), collider_triangle_vertex_index_in_a_cell.data());
+	resetBooleanVector(obj_is_used);
+	resetBooleanVector(obj_is_used2);
+
+	setBooleanTrue(obj_is_used.data(), obj_is_used2.data(), true);
 	setTriangleIndicesInOneCell(triangle_index);
-	resetBooleanVector();
-	setVertexIndicesInOneCell(vertex_index);
-	resetBooleanVector();
+	setVertexIndicesInOneCell(vertex_index_all_cell);
+
+	resetBooleanVector(obj_is_used);
+	setBooleanTrue(obj_is_used.data(), obj_is_used2.data(), false);
 	setEdgeIndicesInOneCell(edge_index);
 
-	setBuffer();
-	draw_vertex.setCollisionVertexData(vertex_for_render, vertex_index);
+	setBufferInACell();
+	draw_vertex.setCollisionVertexDataInACell(vertex_for_render, vertex_index_in_a_cell);
 }
 
 
-void DrawCollision::setVertexIndicesInOneCell(std::vector<std::vector<unsigned int>>& vertex_index_)
+
+void DrawCollision::setVertexIndicesInAllCell(std::vector<std::vector<unsigned int>>& vertex_index_)
 {
 	for (unsigned int i = 0; i < vertex_index_.size(); ++i) {
 		for (unsigned int j = 0; j < vertex_index_[i].size(); ++j) {
 			if (!obj_is_used[i][vertex_index_[i][j]]) {
-				vertex_index[i].emplace_back(vertex_index_[i][j]);
+				vertex_index_all_cell[i].emplace_back(vertex_index_[i][j]);
 				obj_is_used[i][vertex_index_[i][j]] = true;
 			}
 		}
 	}
 }
 
-
+void DrawCollision::setVertexIndicesInOneCell(std::vector<std::vector<unsigned int>>& vertex_index_)
+{
+	for (unsigned int i = 0; i < vertex_index_.size(); ++i) {
+		for (unsigned int j = 0; j < vertex_index_[i].size(); ++j) {
+			if (obj_is_used[i][vertex_index_[i][j]]) {
+				vertex_index_in_a_cell[i].emplace_back(vertex_index_[i][j]);
+			}
+		}
+	}
+}
 
 void DrawCollision::setVertexIndices()
 {
@@ -246,15 +278,61 @@ void DrawCollision::setVertexIndices()
 }
 
 
-void DrawCollision::setTriangleIndicesInOneCell(std::vector<std::vector<unsigned int>>& triangle_index)
+void DrawCollision::setBooleanTrue(std::vector<bool>* obj_is_used, std::vector<bool>* obj_is_used2, bool for_vt)
+{
+	unsigned int* pair_index;
+	unsigned int size;
+	if (for_vt) {
+		for (unsigned int i = 0; i < thread_num; ++i) {
+			pair_index = point_triangle_target_pos_index[i].data() + 1;
+			size = point_triangle_target_pos_index[i][0];
+			for (unsigned int j = 0; j < size; j += 4) {
+				obj_is_used[*(pair_index + 1)][*pair_index] = true;
+				obj_is_used2[*(pair_index + 3)][*(pair_index + 2)] = true;
+				pair_index += 4;
+			}
+		}
+	}
+	else {
+		for (unsigned int i = 0; i < thread_num; ++i) {
+			pair_index = edge_edge_target_pos_index[i].data() + 1;
+			size = edge_edge_target_pos_index[i][0];
+			for (unsigned int j = 0; j < size; j += 4) {
+				obj_is_used[*(pair_index + 1)][*pair_index] = true;
+				obj_is_used[*(pair_index + 3)][*(pair_index + 2)] = true;
+				pair_index += 4;
+			}
+		}
+	}
+}
+
+
+void DrawCollision::setTriangleIndicesInAllCell(std::vector<std::vector<unsigned int>>& triangle_index)
 {
 	for (unsigned int i = 0; i < triangle_index.size(); ++i) {
 		for (unsigned int j = 0; j < triangle_index[i].size(); ++j) {
 			if (!obj_is_used[i][triangle_index[i][j]]) {
-				triangle_vertex_index[i].resize(triangle_vertex_index[i].size() + 3);
-				memcpy(triangle_vertex_index[i].data() + triangle_vertex_index[i].size() - 3,
+				triangle_vertex_index_all_cell[i].resize(triangle_vertex_index_all_cell[i].size() + 3);
+				memcpy(triangle_vertex_index_all_cell[i].data() + triangle_vertex_index_all_cell[i].size() - 3,
 					triangle_indices[i][triangle_index[i][j]].data(), 12);
 				obj_is_used[i][triangle_index[i][j]] = true;
+			}
+		}
+	}
+}
+
+
+
+
+
+void DrawCollision::setTriangleIndicesInOneCell(std::vector<std::vector<unsigned int>>& triangle_index)
+{
+	for (unsigned int i = 0; i < triangle_index.size(); ++i) {
+		for (unsigned int j = 0; j < triangle_index[i].size(); ++j) {
+			if (obj_is_used2[i][triangle_index[i][j]]) {
+				triangle_vertex_index_in_a_cell[i].resize(triangle_vertex_index_in_a_cell[i].size() + 3);
+				memcpy(triangle_vertex_index_in_a_cell[i].data() + triangle_vertex_index_in_a_cell[i].size() - 3,
+					triangle_indices[i][triangle_index[i][j]].data(), 12);
 			}
 		}
 	}
@@ -282,18 +360,32 @@ void DrawCollision::setTriangleIndices()
 }
 
 
-void DrawCollision::setEdgeIndicesInOneCell(std::vector<std::vector<unsigned int>>& edge_index)
+void DrawCollision::setEdgeIndicesInAllCell(std::vector<std::vector<unsigned int>>& edge_index)
 {
 	for (unsigned int i = 0; i < edge_index.size(); ++i) {
 		for (unsigned int j = 0; j < edge_index[i].size(); ++j) {
 			if (!obj_is_used[i][edge_index[i][j]]) {
-				edge_vertex_index[i].emplace_back(edge_indices[i][edge_index[i][j]<<1]);
-				edge_vertex_index[i].emplace_back(edge_indices[i][(edge_index[i][j] << 1) + 1]);
+				edge_vertex_index_all_cell[i].emplace_back(edge_indices[i][edge_index[i][j]<<1]);
+				edge_vertex_index_all_cell[i].emplace_back(edge_indices[i][(edge_index[i][j] << 1) + 1]);
 				obj_is_used[i][edge_index[i][j]] = true;
 			}
 		}
 	}
 }
+
+
+void DrawCollision::setEdgeIndicesInOneCell(std::vector<std::vector<unsigned int>>& edge_index)
+{
+	for (unsigned int i = 0; i < edge_index.size(); ++i) {
+		for (unsigned int j = 0; j < edge_index[i].size(); ++j) {
+			if (obj_is_used[i][edge_index[i][j]]) {
+				edge_vertex_index_in_a_cell[i].emplace_back(edge_indices[i][edge_index[i][j] << 1]);
+				edge_vertex_index_in_a_cell[i].emplace_back(edge_indices[i][(edge_index[i][j] << 1) + 1]);
+			}
+		}
+	}
+}
+
 
 
 void DrawCollision::setEdgeIndices()
@@ -371,27 +463,31 @@ void DrawCollision::drawVertexCell(Camera* camera, std::vector<std::vector<bool>
 	}
 }
 
-void DrawCollision::drawCollision(bool draw_VT, Light& light, Camera* camera, Shader* object_shader_front, std::vector<std::vector<bool>>& show_collision_element)
+void DrawCollision::drawCollision(bool draw_VT, Light& light, Camera* camera, Shader* object_shader_front, Shader* wireframe_shader, std::vector<std::vector<bool>>& show_collision_element)
 {
 	if (draw_VT) {
 		drawVertex(camera, show_collision_element);
-		drawVT_triangle(light, camera, object_shader_front, show_collision_element, VT_VAO.data(), triangle_vertex_index.data(), collider_triangle_vertex_index.data());
+		drawVT_triangle(light, camera, object_shader_front, show_collision_element, VT_VAO.data(), triangle_vertex_index.data(),
+			collider_triangle_vertex_index.data(), wireframe_shader);
 	}
 	else {
 		drawEdge(light, camera, object_shader_front, show_collision_element,EE_VAO.data(),edge_vertex_index.data());
 	}
 }
 
-void DrawCollision::drawCollisionCell(bool draw_VT, Light& light, Camera* camera, Shader* object_shader_front, std::vector<std::vector<bool>>& show_collision_element,
+void DrawCollision::drawCollisionCell(bool draw_VT, Light& light, Camera* camera, Shader* object_shader_front, Shader* wireframe_shader,
+	std::vector<std::vector<bool>>& show_collision_element,
 	bool show_all_element)
 {
 	if (draw_VT) {
 		drawVertexCell(camera, show_collision_element, show_all_element);
 		if (show_all_element) {
-			drawVT_triangle(light, camera, object_shader_front, show_collision_element, VT_VAO_all_cell.data(), triangle_vertex_index_all_cell.data(), collider_triangle_vertex_index_all_cell.data());
+			drawVT_triangle(light, camera, object_shader_front, show_collision_element, VT_VAO_all_cell.data(), triangle_vertex_index_all_cell.data(), collider_triangle_vertex_index_all_cell.data(),
+				wireframe_shader);
 		}
 		else {
-			drawVT_triangle(light, camera, object_shader_front, show_collision_element, VT_VAO_collide_in_a_cell.data(), triangle_vertex_index_all_cell.data(), collider_triangle_vertex_index_all_cell.data());
+			drawVT_triangle(light, camera, object_shader_front, show_collision_element, VT_VAO_collide_in_a_cell.data(), triangle_vertex_index_in_a_cell.data(), collider_triangle_vertex_index_in_a_cell.data(),
+				wireframe_shader);
 		}
 	}
 	else {
@@ -405,23 +501,13 @@ void DrawCollision::drawCollisionCell(bool draw_VT, Light& light, Camera* camera
 }
 
 
+
 void DrawCollision::drawEdge(Light& light, Camera* camera, Shader* object_shader_front, std::vector<std::vector<bool>>& show_collision_element,
-	unsigned int* EE_VAO, std::vector<unsigned int>* edge_vertex_index)
+	unsigned int* EE_VAO, std::vector<int>* edge_vertex_index)
 {
+
+	setInShader(light, camera, object_shader_front);
 	object_shader_front->use();
-	object_shader_front->setInt("depthMap", 0);
-	object_shader_front->setFloat("far_plane", camera->far_plane);
-	object_shader_front->setBool("lightIsChosen", true);
-	object_shader_front->setVec3("lightPos", camera->position);
-	object_shader_front->setVec3("light.ambient", light.ambient);
-	object_shader_front->setVec3("light.diffuse", light.diffuse);
-	object_shader_front->setVec3("light.specular", light.specular);
-	object_shader_front->setVec3("viewPos", camera->position);
-	object_shader_front->setBool("lightShadowOn", true);
-	object_shader_front->setMat4("projection", camera->GetProjectMatrix());
-	object_shader_front->setMat4("view", camera->GetViewMatrix());
-	object_shader_front->setMat4("model", glm::mat4(1.0));
-	object_shader_front->setFloat("transparence", 1.0);
 	glLineWidth(4.0);
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		if (show_collision_element[6+CLOTH_][i]) {
@@ -462,9 +548,7 @@ void DrawCollision::drawEdge(Light& light, Camera* camera, Shader* object_shader
 
 
 
-
-void DrawCollision::drawVT_triangle(Light& light,  Camera* camera, Shader* object_shader_front, std::vector<std::vector<bool>>& show_collision_element,
-	unsigned int* VT_VAO, std::vector<int>* triangle_vertex_index, std::vector<int>* collider_triangle_vertex_index)
+void DrawCollision::setInShader(Light& light, Camera* camera, Shader* object_shader_front)
 {
 	object_shader_front->use();
 	object_shader_front->setInt("depthMap", 0);
@@ -479,7 +563,52 @@ void DrawCollision::drawVT_triangle(Light& light,  Camera* camera, Shader* objec
 	object_shader_front->setMat4("projection", camera->GetProjectMatrix());
 	object_shader_front->setMat4("view", camera->GetViewMatrix());
 	object_shader_front->setMat4("model", glm::mat4(1.0));
-	object_shader_front->setFloat("transparence", 1.0);
+	object_shader_front->setFloat("transparence", 0.4);
+}
+
+
+void DrawCollision::drawVT_triangleWireframe(Camera* camera, Shader* wireframe_shader, std::vector<std::vector<bool>>& show_collision_element,
+	unsigned int* VT_VAO, std::vector<int>* triangle_vertex_index, std::vector<int>* collider_triangle_vertex_index)
+{
+
+	wireframe_shader->use();
+	wireframe_shader->setMat4("projection", camera->GetProjectMatrix());
+	wireframe_shader->setMat4("view", camera->GetViewMatrix());
+	wireframe_shader->setMat4("model", glm::mat4(1.0));
+	wireframe_shader->setFloat("transparent", 1.0f);
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		if (show_collision_element[6 + CLOTH_][i]) {
+			wireframe_shader->setVec3("color", cloth->data()[i].wireframe_color);
+			glBindVertexArray(VT_VAO[i]);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			glDrawElements(GL_TRIANGLES, triangle_vertex_index[i].size(), GL_UNSIGNED_INT, 0);
+		}
+	}
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		if (show_collision_element[6 + TETRAHEDRON_][i]) {
+			wireframe_shader->setVec3("color", tetrahedron->data()[i].wireframe_color);
+			glBindVertexArray(VT_VAO[i + cloth->size()]);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			glDrawElements(GL_TRIANGLES, triangle_vertex_index[i].size(), GL_UNSIGNED_INT, 0);
+		}
+	}
+	for (unsigned int i = 0; i < collider->size(); ++i) {
+		if (show_collision_element[6 + COLLIDER_][i]) {
+			wireframe_shader->setVec3("color", collider->data()[i].wireframe_color);
+			glBindVertexArray(VT_VAO[i + tetrahedron_end_index]);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			glDrawElements(GL_TRIANGLES, triangle_vertex_index[i].size(), GL_UNSIGNED_INT, 0);
+		}
+	}
+	glBindVertexArray(0);
+}
+
+
+void DrawCollision::drawVT_triangle(Light& light,  Camera* camera, Shader* object_shader_front, std::vector<std::vector<bool>>& show_collision_element,
+	unsigned int* VT_VAO, std::vector<int>* triangle_vertex_index, std::vector<int>* collider_triangle_vertex_index, Shader* wireframe_shader)
+{
+	setInShader(light, camera, object_shader_front);
+	object_shader_front->use();
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		if (show_collision_element[6+CLOTH_][i]) {
 			object_shader_front->setFloat("material.Ns", cloth->data()[i].material.front_material.Ns);
@@ -515,6 +644,9 @@ void DrawCollision::drawVT_triangle(Light& light,  Camera* camera, Shader* objec
 		}
 	}
 	glBindVertexArray(0);
+
+	drawVT_triangleWireframe(camera, wireframe_shader, show_collision_element, VT_VAO, triangle_vertex_index, collider_triangle_vertex_index);
+
 }
 
 
@@ -522,54 +654,53 @@ void DrawCollision::drawVT_triangle(Light& light,  Camera* camera, Shader* objec
 void DrawCollision::setBuffer()
 {
 	for (unsigned int i = 0; i < tetrahedron_end_index; ++i) {
-		setVertexTriangleBuffer(i);
+		setBuffer(i,VT_VAO.data(),VT_VBO.data(),VT_EBO.data(),triangle_vertex_index.data());
 	}
 	if (!collider->empty()) {
 		for (unsigned int i = 0; i < collider->size(); ++i) {
-			setColliderBuffer(i + tetrahedron_end_index);
+			setBuffer(i + tetrahedron_end_index, VT_VAO.data(), VT_VBO.data(), VT_EBO.data(), collider_triangle_vertex_index.data());
 		}	
 	}
 	for (unsigned int i = 0; i < tetrahedron_end_index; ++i) {
-		setEdgeEdgeBuffer(i);
+		setBuffer(i,EE_VAO.data(),EE_VBO.data(),EE_EBO.data(), edge_vertex_index.data());
 	}
 }
 
 
-void DrawCollision::setColliderBuffer(unsigned int obj_index)
+void DrawCollision::setBufferAllCell()
 {
-	glBindVertexArray(VT_VAO[obj_index]);
-	glBindBuffer(GL_ARRAY_BUFFER, VT_VBO[3 * obj_index]);
-	glBufferData(GL_ARRAY_BUFFER, vertex_number[obj_index]* sizeof(std::array<double, 3>), vertex_for_render[obj_index][0].data(), GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VT_EBO[obj_index]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, collider_triangle_vertex_index[obj_index- tetrahedron_end_index].size() * sizeof(int), collider_triangle_vertex_index[obj_index- tetrahedron_end_index].data(), GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
-	glBindBuffer(GL_ARRAY_BUFFER, VT_VBO[3 * obj_index + 1]);
-	glBufferData(GL_ARRAY_BUFFER, vertex_number[obj_index] * sizeof(std::array<double, 3>), vertex_normal_for_render[obj_index][0].data(), GL_STATIC_DRAW);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
-	glBindVertexArray(0);
-}
-
-void DrawCollision::setEdgeEdgeBuffer(unsigned int obj_index)
-{
-	glBindVertexArray(EE_VAO[obj_index]);
-	glBindBuffer(GL_ARRAY_BUFFER, EE_VBO[3 * obj_index]);
-	glBufferData(GL_ARRAY_BUFFER, vertex_number[obj_index]* sizeof(std::array<double, 3>), vertex_for_render[obj_index][0].data(), GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EE_EBO[obj_index]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, edge_vertex_index[obj_index].size() * sizeof(unsigned int), edge_vertex_index[obj_index].data(), GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
-	glBindBuffer(GL_ARRAY_BUFFER, EE_VBO[3 * obj_index + 1]);
-	glBufferData(GL_ARRAY_BUFFER, vertex_number[obj_index]* sizeof(std::array<double, 3>), vertex_normal_for_render[obj_index][0].data(), GL_STATIC_DRAW);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
-	glBindVertexArray(0);
+	for (unsigned int i = 0; i < tetrahedron_end_index; ++i) {
+		setBuffer(i, VT_VAO_all_cell.data(), VT_VBO_all_cell.data(), VT_EBO_all_cell.data(), triangle_vertex_index_all_cell.data());
+	}
+	if (!collider->empty()) {
+		for (unsigned int i = 0; i < collider->size(); ++i) {
+			setBuffer(i + tetrahedron_end_index, VT_VAO_all_cell.data(), VT_VBO_all_cell.data(), VT_EBO_all_cell.data(), collider_triangle_vertex_index_all_cell.data());
+		}
+	}
+	for (unsigned int i = 0; i < tetrahedron_end_index; ++i) {
+		setBuffer(i, EE_VAO_all_cell.data(), EE_VBO_all_cell.data(), EE_EBO_all_cell.data(), edge_vertex_index_all_cell.data());
+	}
 }
 
 
+void DrawCollision::setBufferInACell()
+{
+	for (unsigned int i = 0; i < tetrahedron_end_index; ++i) {
+		setBuffer(i, VT_VAO_collide_in_a_cell.data(), VT_VBO_collide_in_a_cell.data(), VT_EBO_collide_in_a_cell.data(), triangle_vertex_index_in_a_cell.data());
+	}
+	if (!collider->empty()) {
+		for (unsigned int i = 0; i < collider->size(); ++i) {
+			setBuffer(i + tetrahedron_end_index, VT_VAO_collide_in_a_cell.data(), VT_VBO_collide_in_a_cell.data(), VT_EBO_collide_in_a_cell.data(), collider_triangle_vertex_index_in_a_cell.data());
+		}
+	}
+	for (unsigned int i = 0; i < tetrahedron_end_index; ++i) {
+		setBuffer(i, EE_VAO_collide_in_a_cell.data(), EE_VBO_collide_in_a_cell.data(), EE_EBO_collide_in_a_cell.data(), edge_vertex_index_in_a_cell.data());
+	}
+}
 
-void DrawCollision::setVertexTriangleBuffer(unsigned int obj_index)
+
+void DrawCollision::setBuffer(unsigned int obj_index, unsigned int* VT_VAO, unsigned int* VT_VBO, unsigned int* VT_EBO,
+	std::vector<int>* triangle_vertex_index)
 {
 	glBindVertexArray(VT_VAO[obj_index]);
 	glBindBuffer(GL_ARRAY_BUFFER, VT_VBO[3*obj_index]);
@@ -608,7 +739,8 @@ void DrawCollision::setColliderTriangleIndices()
 	}
 }
 
-void DrawCollision::setIndicesSize()
+void DrawCollision::setIndicesSize(std::vector<int>* triangle_vertex_index, std::vector<int>* edge_vertex_index, std::vector<unsigned int>* vertex_index,
+	std::vector<int>* collider_triangle_vertex_index)
 {
 	for (unsigned int i = 0; i < tetrahedron_end_index; ++i) {
 		triangle_vertex_index[i].clear();

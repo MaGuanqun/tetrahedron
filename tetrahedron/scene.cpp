@@ -433,7 +433,8 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 	//draw_culling.drawCell(camera, wireframe_shader);
 
 	if (control_parameter[ONLY_COLLISION_TEST]) {
-		test_draw_collision.drawCollision(control_parameter[DRAW_VT], light, camera, object_shader_front, show_element,&shadow,wireframe_shader);
+		test_draw_collision.drawCollision(control_parameter[DRAW_VT], light, camera, object_shader_front, show_element,&shadow,wireframe_shader,
+			!control_parameter[DRAW_SPATIAL_HASHING],control_parameter[DRAW_ALL_PAIRS_IN_A_CELL]);
 	}
 	else {
 		if (intersection.happened && (!control_parameter[MOVE_OBJ])) {

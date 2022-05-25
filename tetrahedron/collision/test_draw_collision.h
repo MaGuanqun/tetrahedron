@@ -13,7 +13,7 @@ public:
 		std::vector<Tetrahedron>* tetrahedron, Thread* thread, Floor* floor, double* tolerance_ratio);
 	void setCollisionData();
 	void drawCollision(bool draw_VT, Light& light,  Camera* camera, Shader* object_shader_front, 
-		std::vector<std::vector<bool>>& drawCollision, Shadow* shadow,  Shader* wireframe_shader);
+		std::vector<std::vector<bool>>& drawCollision, Shadow* shadow,  Shader* wireframe_shader, bool draw_all_collision_pair, bool draw_all_element);
 
 	DrawSpatialHashing draw_spatial_hashing;
 	void setForOriSpatialHashing();

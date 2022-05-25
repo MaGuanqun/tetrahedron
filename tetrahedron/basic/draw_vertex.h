@@ -21,6 +21,8 @@ public:
 	void setVertexAccumulate(std::vector<std::array<double, 3>>& v_list, std::vector<int>& index);
 
 	void setCollisionVertexData(std::vector<std::array<double, 3>*>& v_list, std::vector<std::vector<unsigned int>>& vertex_index);
+	void setCollisionVertexDataAllCell(std::vector<std::array<double, 3>*>& v_list, std::vector<std::vector<unsigned int>>& vertex_index);
+	void setCollisionVertexDataInACell(std::vector<std::array<double, 3>*>& v_list, std::vector<std::vector<unsigned int>>& vertex_index);
 	
 	void setShaderData(Camera* camera);
 
@@ -74,10 +76,12 @@ private:
 	void setBufferAllCell();
 	void setBufferOneCell();
 
-	void setVertexAccumulate(std::vector<std::array<double, 3>*>& v_list, std::vector<std::vector<unsigned int>>& vertex_index);
+	void setVertexAccumulate(std::vector<std::array<double, 3>*>& v_list, std::vector<std::vector<unsigned int>>& vertex_index,
+		std::vector < std::array<double, 3>>* vertex_pos, std::vector<int>* vertex_sphere_indices, std::vector<std::array<double, 3>>* normal);
 	void initialVertex(unsigned int obj_num, std::vector<std::vector<unsigned int>>& vertex_index,
 		std::vector<std::array<double, 3>>* vertex_pos, std::vector < std::array<double, 3>>* normal, std::vector<int>* vertex_sphere_indices);
-	void drawCollisionVertex(unsigned int obj_index, glm::vec3 color, float transparence, std::vector<int>* vertex_sphere_indices);
+	void drawCollisionVertex(unsigned int obj_index, glm::vec3 color, float transparence, std::vector<int>* vertex_sphere_indices,
+		unsigned int* VAO1);
 };
 
 

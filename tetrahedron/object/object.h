@@ -22,7 +22,7 @@ protected:
 	int total_thread_num;
 	void genBuffer();
 
-	glm::vec3 wireframe_color;
+
 
 	void getAABB(double* target, double* aabb0, double* aabb1, double* aabb2);
 	void getAABB(double* target, double* aabb0, double* aabb1, double radius);
@@ -44,7 +44,7 @@ protected:
 	void combineCurrentAABBMoveRadius();
 private:
 public:
-
+	glm::vec3 wireframe_color;
 	double center[3];
 	double move_circle_radius;
 

@@ -22,8 +22,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 	Camera camera(cameraPos, normalize(glm::vec3(0.0f, 1.0f, 0.0f)));
 	float zoom_value = 1.0;
 	CoordinateSystem coordinateSystem;
-	bool control_parameter[27];
-	memset(control_parameter, 0, 27);
+	bool control_parameter[28];
+	memset(control_parameter, 0, 28);
 	control_parameter[ONLY_COLLISION_TEST] = true;
 	control_parameter[USE_XPBD] = false;
 	control_parameter[USE_PD_] = false;

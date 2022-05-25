@@ -243,6 +243,16 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 			if (ImGui::Button(">>back.", ImVec2(120, 25))) {
 				control_parameter[SEARCH_RIGHT_SH_CELL] = true;
 			}
+			if (control_parameter[DRAW_ALL_PAIRS_IN_A_CELL]) {
+				if (ImGui::Button("Only show collision", ImVec2(120, 25))) {
+					control_parameter[DRAW_ALL_PAIRS_IN_A_CELL] = false;
+				}
+			}
+			else {
+				if (ImGui::Button("Show all primitive", ImVec2(120, 25))) {
+					control_parameter[DRAW_ALL_PAIRS_IN_A_CELL] = true;
+				}
+			}
 		}
 
 	}

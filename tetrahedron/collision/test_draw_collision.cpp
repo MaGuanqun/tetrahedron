@@ -48,6 +48,12 @@ bool TestDrawCollision::isIndexNotEmpty()
 		if (!triangle_index_in_one_cell[i].empty()) {
 			return true;
 		}
+		if (!vertex_index_in_one_cell[i].empty()) {
+			return true;
+		}
+		if (!edge_index_in_one_cell[i].empty()) {
+			return true;
+		}
 	}
 	return false;
 }
@@ -82,7 +88,8 @@ void TestDrawCollision::obtainElementsInOneCell(int& index_chosen)
 		}
 		//std::cout << index_chosen << std::endl;
 	}
-	draw_collision.setElementInOneCell(vertex_index_in_one_cell, triangle_index_in_one_cell, edge_index_in_one_cell);
+	draw_collision.setElementInAllCell(vertex_index_in_one_cell, triangle_index_in_one_cell, edge_index_in_one_cell);
+	draw_collision.setElementInOneCell(triangle_index_in_one_cell, edge_index_in_one_cell);
 }
 
 void TestDrawCollision::setForOriSpatialHashing()
@@ -101,16 +108,14 @@ void TestDrawCollision::setForSelectCellOne(int index)
 	draw_spatial_hashing.setCellData(select_ori_hash_index[index], collision.spatial_hashing.cell_length, collision.spatial_hashing.cell_number, collision.spatial_hashing.scene_aabb);
 }
 
-void TestDrawCollision::drawCollision(bool draw_VT, Light& light,Camera* camera, Shader* object_shader_front, 
-	std::vector<std::vector<bool>>& show_element, Shadow* shadow, Shader* wireframe_shader)
+void TestDrawCollision::drawCollision(bool draw_VT, Light& light, Camera* camera, Shader* object_shader_front, 
+	std::vector<std::vector<bool>>& show_element, Shadow* shadow, Shader* wireframe_shader, bool draw_all_collision_pair, bool draw_all_element)
 {
-	draw_collision.drawCollision(draw_VT, light, camera, object_shader_front, show_element);
-
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, shadow->depth_map);
 	glEnable(GL_CULL_FACE);
 	for (int j = 0; j < cloth->size(); ++j) {
-		if (show_element[9+CLOTH_][j]) {
+		if (show_element[9 + CLOTH_][j]) {
 			cloth->data()[j].setSceneShader(light, camera, shadow->far_plane, object_shader_front);
 			cloth->data()[j].drawOriPos(camera, object_shader_front);
 		}
@@ -144,7 +149,13 @@ void TestDrawCollision::drawCollision(bool draw_VT, Light& light,Camera* camera,
 			tetrahedron->data()[j].drawWireframeOriPos(camera, wireframe_shader);
 		}
 	}
-	
+	if (draw_all_collision_pair) {
+		draw_collision.drawCollision(draw_VT, light, camera, object_shader_front, wireframe_shader, show_element);
+	}
+	else {
+		draw_collision.drawCollisionCell(draw_VT, light, camera, object_shader_front, wireframe_shader, show_element,draw_all_element);
+	}
+
 }
 
 

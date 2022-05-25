@@ -43,13 +43,22 @@ void DrawVertex::setInObjNum(unsigned int obj_num)
 	vertex_pos.resize(obj_num);
 	normal.resize(obj_num);
 	vertex_sphere_indices.resize(obj_num);
+
 	VAO1.resize(obj_num);
 	VBO1.resize(obj_num << 1);
 	EBO1.resize(obj_num);
 
+	vertex_pos_all_cell.resize(obj_num);
+	normal_all_cell.resize(obj_num);
+	vertex_sphere_indices_all_cell.resize(obj_num);
+
 	VAO_all_cell.resize(obj_num);
 	VBO_all_cell.resize(obj_num << 1);
 	EBO_all_cell.resize(obj_num);
+
+	vertex_pos_in_a_cell.resize(obj_num);
+	normal_in_a_cell.resize(obj_num);
+	vertex_sphere_indices_in_a_cell.resize(obj_num);
 
 	VAO_in_a_cell.resize(obj_num);
 	VBO_in_a_cell.resize(obj_num << 1);
@@ -64,17 +73,25 @@ void DrawVertex::setInObjNum(unsigned int obj_num)
 void DrawVertex::setCollisionVertexData(std::vector<std::array<double, 3>*>& v_list, std::vector<std::vector<unsigned int>>& vertex_index)
 {
 	initialVertex(v_list.size(), vertex_index,vertex_pos.data(),normal.data(),vertex_sphere_indices.data());
-	setVertexAccumulate(v_list, vertex_index);
+	setVertexAccumulate(v_list, vertex_index, vertex_pos.data(), vertex_sphere_indices.data(), normal.data());
 	setBuffer1();
 }
 
 
 
-void DrawVertex::setCollisionVertexData(std::vector<std::array<double, 3>*>& v_list, std::vector<std::vector<unsigned int>>& vertex_index)
+void DrawVertex::setCollisionVertexDataAllCell(std::vector<std::array<double, 3>*>& v_list, std::vector<std::vector<unsigned int>>& vertex_index)
 {
-	initialVertex(v_list.size(), vertex_index, vertex_pos.data(), normal.data(), vertex_sphere_indices.data())
-	setVertexAccumulate(v_list, vertex_index);
-	setBuffer1();
+	initialVertex(v_list.size(), vertex_index, vertex_pos_all_cell.data(), normal_all_cell.data(), vertex_sphere_indices_all_cell.data());
+	setVertexAccumulate(v_list, vertex_index, vertex_pos_all_cell.data(), vertex_sphere_indices_all_cell.data(), normal_all_cell.data());
+	setBufferAllCell();
+}
+
+
+void DrawVertex::setCollisionVertexDataInACell(std::vector<std::array<double, 3>*>& v_list, std::vector<std::vector<unsigned int>>& vertex_index)
+{
+	initialVertex(v_list.size(), vertex_index, vertex_pos_in_a_cell.data(), normal_in_a_cell.data(), vertex_sphere_indices_in_a_cell.data());
+	setVertexAccumulate(v_list, vertex_index, vertex_pos_in_a_cell.data(), vertex_sphere_indices_in_a_cell.data(), normal_in_a_cell.data());
+	setBufferOneCell();
 }
 
 
@@ -104,7 +121,8 @@ void DrawVertex::initialVertex(int vertex_num)
 }
 
 
-void DrawVertex::setVertexAccumulate(std::vector<std::array<double, 3>*>& v_list, std::vector<std::vector<unsigned int>>& vertex_index)
+void DrawVertex::setVertexAccumulate(std::vector<std::array<double, 3>*>& v_list, std::vector<std::vector<unsigned int>>& vertex_index,
+	std::vector < std::array<double, 3>>* vertex_pos, std::vector<int>* vertex_sphere_indices, std::vector<std::array<double, 3>>* normal)
 {
 	std::array<double, 3>v;
 	int ind;
@@ -112,12 +130,12 @@ void DrawVertex::setVertexAccumulate(std::vector<std::array<double, 3>*>& v_list
 		for (int i = 0; i < vertex_index[k].size(); i++) {
 			for (int j = 0; j < sphere_vertex_num; j++) {
 				SUM(v.data(), v_list[k][vertex_index[k][i]].data(), sphere[j].data());
-				vertex_pos[k].push_back(v);
+				vertex_pos[k].emplace_back(v);
 			}
 			normal[k].insert(normal[k].end(), sphere_normal.begin(), sphere_normal.end());
 			ind = i * sphere_vertex_num;
 			for (int j = 0; j < basic_index.size(); ++j) {
-				vertex_sphere_indices[k].push_back(basic_index[j] + ind);
+				vertex_sphere_indices[k].emplace_back(basic_index[j] + ind);
 			}
 		}
 	}
@@ -400,21 +418,21 @@ void DrawVertex::setShaderData(Camera* camera)
 
 void DrawVertex::drawOneCellVertex(unsigned int obj_index, glm::vec3 color, float transparence)
 {
-	drawCollisionVertex(obj_index, color, transparence, vertex_sphere_indices_in_a_cell.data());
+	drawCollisionVertex(obj_index, color, transparence, vertex_sphere_indices_in_a_cell.data(), VAO_in_a_cell.data());
 }
 
 
 void DrawVertex::drawAllCellVertex(unsigned int obj_index, glm::vec3 color, float transparence)
 {
-	drawCollisionVertex(obj_index, color, transparence, vertex_sphere_indices_all_cell.data());
+	drawCollisionVertex(obj_index, color, transparence, vertex_sphere_indices_all_cell.data(), VAO_all_cell.data());
 }
 
 void DrawVertex::drawAllCollisionVertex(unsigned int obj_index, glm::vec3 color, float transparence)
 {
-	drawCollisionVertex(obj_index, color, transparence, vertex_sphere_indices.data());
+	drawCollisionVertex(obj_index, color, transparence, vertex_sphere_indices.data(),VAO1.data());
 }
 
-void DrawVertex::drawCollisionVertex(unsigned int obj_index, glm::vec3 color, float transparence, std::vector<int>* vertex_sphere_indices)
+void DrawVertex::drawCollisionVertex(unsigned int obj_index, glm::vec3 color, float transparence, std::vector<int>* vertex_sphere_indices, unsigned int* VAO1)
 {
 	if (!vertex_pos[obj_index].empty()) {
 		shader->setVec3("color", color);		
