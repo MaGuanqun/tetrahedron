@@ -26,8 +26,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 	memset(control_parameter, 0, 28);
 	control_parameter[ONLY_COLLISION_TEST] = true;
 	control_parameter[USE_XPBD] = false;
-	control_parameter[USE_PD_] = false;
-	control_parameter[USE_NEWTON_] = true;
+	control_parameter[USE_PD_] = true;
+	control_parameter[USE_NEWTON_] = false;
 	control_parameter[DRAW_VT] = true;
 
 
@@ -173,7 +173,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 			}
 		
 		}
-		if (!control_parameter[ONLY_COLLISION_TEST]) {
+		if (control_parameter[USE_PD_] || control_parameter[USE_XPBD]) {
 			imgui_windows.operationWindow(cloth_stiffness, tetrahedron_stiffness, simulation_parameter, cloth_collision_stiffness, tetrahedron_collision_stiffness, set_stiffness, temp_stiffness,
 				update_obj_stiffness, set_anchor, !scene.tetrahedron.empty());
 		}

@@ -58,7 +58,7 @@ public:
 
 	double* damp_stiffness;
 	void updateHessianForDamp(int thread_No);
-
+	Collision collision;
 private:
 
 
@@ -72,7 +72,7 @@ private:
 	Thread* thread;
 
 	bool perform_collision;
-	Collision collision;
+
 
 	VectorXd b; //solve Ax=b
 

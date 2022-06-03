@@ -12,11 +12,14 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 	ImGui::Begin("Control Panel");
 	ImGui::SetNextItemOpen(true);
 	if (ImGui::TreeNode("State Control")) {
-		if (!control_parameter[ONLY_COLLISION_TEST]) {
+		if (control_parameter[USE_XPBD] || control_parameter[USE_PD_] || control_parameter[USE_NEWTON_]) {			
 			if (ImGui::Button("1 Frame", ImVec2(160, 25)))
 			{
 				control_parameter[ONE_FRAME] = true;
 				control_parameter[MOVE_OBJ] = false;
+				control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
+				control_parameter[ROTATION] = false;
+				control_parameter[ONLY_ROTATE_CURRENT] = false;
 			}
 			if (control_parameter[START_SIMULATION]) {
 				if (ImGui::Button("Pause Simulation", ImVec2(160, 25)))
@@ -29,6 +32,9 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 				{
 					control_parameter[START_SIMULATION] = true;
 					control_parameter[MOVE_OBJ] = false;
+					control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
+					control_parameter[ROTATION] = false;
+					control_parameter[ONLY_ROTATE_CURRENT] = false;
 				}
 			}
 			if (ImGui::Button("Reset Simulation", ImVec2(160, 25))) {
@@ -56,7 +62,7 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 	}
 	ImGui::SetNextItemOpen(true);
 	if (ImGui::TreeNode("Simulation control")) {
-		if (!control_parameter[ONLY_COLLISION_TEST]) {
+		//if (!control_parameter[ONLY_COLLISION_TEST]) {
 			ImGui::TextWrapped("Pause simulaition rightly after adding a force and relasing the mouse.");
 			if (control_parameter[STOP_AFTER_RELEASE_MOUSE]) {
 				if (ImGui::Button("Off", ImVec2(160, 25)))
@@ -70,7 +76,7 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 					control_parameter[STOP_AFTER_RELEASE_MOUSE] = true;
 				}
 			}
-		}
+		//}
 		if (control_parameter[OUTPUT_IMAGE]) {
 			ImGui::TextWrapped("Press end to stop recording screen.");
 			if (ImGui::Button("End##record_screen", ImVec2(160, 25)))
@@ -102,45 +108,32 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 		}
 		ImGui::TreePop();
 	}
-	if (!control_parameter[ONLY_COLLISION_TEST]) {
-		ImGui::SetNextItemOpen(true);
-		if (ImGui::TreeNode("Set cursor force")) {
-			if (!control_parameter[SET_CURSOR_FORCE]) {
-				if (ImGui::Button("Set force", ImVec2(160, 25)))
-				{
-					control_parameter[SET_CURSOR_FORCE] = true;
-				}
-			}
-			ImGui::TreePop();
-		}
-		ImGui::SetNextItemOpen(true);
-		if (ImGui::TreeNode("Start Test")) {
-			if (ImGui::Button("Start test", ImVec2(160, 25)))
+	ImGui::SetNextItemOpen(true);
+	if (ImGui::TreeNode("Set cursor force")) {
+		if (!control_parameter[SET_CURSOR_FORCE]) {
+			if (ImGui::Button("Set force", ImVec2(160, 25)))
 			{
-				control_parameter[START_TEST] = true;
-				control_parameter[INITIAL_TEST] = true;
-			}
-			ImGui::TreePop();
-		}
-		if (ImGui::Button("Move obj test", ImVec2(160, 25)))
-		{
-			control_parameter[MOVE_OBJ_SCRIPT] = true;
-		}
-		if (control_parameter[MOVE_OBJ]) {
-			if (ImGui::Button("Stop move object", ImVec2(160, 25)))
-			{
-				control_parameter[MOVE_OBJ] = false;
+				control_parameter[SET_CURSOR_FORCE] = true;
 			}
 		}
-		else {
-			if (ImGui::Button("Start move object", ImVec2(160, 25)))
-			{
-				control_parameter[MOVE_OBJ] = true;
-				control_parameter[START_SIMULATION] = false;
-			}
-		}
+		ImGui::TreePop();
 	}
-	else {
+	//if (!control_parameter[ONLY_COLLISION_TEST]) {
+		//ImGui::SetNextItemOpen(true);
+		//if (ImGui::TreeNode("Start Test")) {
+		//	if (ImGui::Button("Start test", ImVec2(160, 25)))
+		//	{
+		//		control_parameter[START_TEST] = true;
+		//		control_parameter[INITIAL_TEST] = true;
+		//	}
+		//	ImGui::TreePop();
+		//}
+		//if (ImGui::Button("Move obj test", ImVec2(160, 25)))
+		//{
+		//	control_parameter[MOVE_OBJ_SCRIPT] = true;
+		//}
+	//}
+	if (control_parameter[ONLY_COLLISION_TEST]) {
 		if (control_parameter[DRAW_VT]) {
 			ImGui::Text("Show VT collision pair");
 			if (ImGui::Button("Switch to EE", ImVec2(160, 25)))
@@ -155,66 +148,68 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 				control_parameter[DRAW_VT] = true;
 			}
 		}
-		ImGui::Text("Move Step 1:");
-		if (control_parameter[MOVE_OBJ]) {
-			if (ImGui::Button("Stop move object", ImVec2(160, 25)))
-			{
-				control_parameter[MOVE_OBJ] = false;
-			}
+	}
+	ImGui::Text("Move Step 1:");
+	if (control_parameter[MOVE_OBJ]) {
+		if (ImGui::Button("Stop move object", ImVec2(160, 25)))
+		{
+			control_parameter[MOVE_OBJ] = false;
 		}
-		else {
-			if (ImGui::Button("Start move object", ImVec2(160, 25)))
-			{
-				control_parameter[MOVE_OBJ] = true;
-				control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
-				control_parameter[ROTATION] = false;
-				control_parameter[ONLY_ROTATE_CURRENT] = false;
-			}
+	}
+	else {
+		if (ImGui::Button("Start move object", ImVec2(160, 25)))
+		{
+			control_parameter[MOVE_OBJ] = true;
+			control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
+			control_parameter[ROTATION] = false;
+			control_parameter[ONLY_ROTATE_CURRENT] = false;
 		}
-		if (control_parameter[ROTATION]) {
-			if (ImGui::Button("Stop rotate object", ImVec2(160, 25)))
-			{
-				control_parameter[ROTATION] = false;
-			}
+	}
+	if (control_parameter[ROTATION]) {
+		if (ImGui::Button("Stop rotate object", ImVec2(160, 25)))
+		{
+			control_parameter[ROTATION] = false;
 		}
-		else {
-			if (ImGui::Button("Start rotate object", ImVec2(160, 25)))
-			{
-				control_parameter[ROTATION] = true;
-				control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
-				control_parameter[MOVE_OBJ] = false;
-				control_parameter[ONLY_ROTATE_CURRENT] = false;
-			}
+	}
+	else {
+		if (ImGui::Button("Start rotate object", ImVec2(160, 25)))
+		{
+			control_parameter[ROTATION] = true;
+			control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
+			control_parameter[MOVE_OBJ] = false;
+			control_parameter[ONLY_ROTATE_CURRENT] = false;
 		}
-		ImGui::Text("Move Step 2:");
-		if (control_parameter[ONLY_MOVE_CURRENT_POSITION]) {
-			if (ImGui::Button("Stop move current pos", ImVec2(160, 25)))
-			{
-				control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
-			}
+	}
+	ImGui::Text("Move Step 2:");
+	if (control_parameter[ONLY_MOVE_CURRENT_POSITION]) {
+		if (ImGui::Button("Stop move current pos", ImVec2(160, 25)))
+		{
+			control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
 		}
-		else {
-			if (ImGui::Button("Start move current pos", ImVec2(160, 25)))
-			{
-				control_parameter[ONLY_MOVE_CURRENT_POSITION] = true;
-				control_parameter[MOVE_OBJ] = false;
-			}
+	}
+	else {
+		if (ImGui::Button("Start move current pos", ImVec2(160, 25)))
+		{
+			control_parameter[ONLY_MOVE_CURRENT_POSITION] = true;
+			control_parameter[MOVE_OBJ] = false;
 		}
-		if (control_parameter[ONLY_ROTATE_CURRENT]) {
-			if (ImGui::Button("Stop rotate current pos", ImVec2(160, 25)))
-			{
-				control_parameter[ONLY_ROTATE_CURRENT] = false;
-			}
+	}
+	if (control_parameter[ONLY_ROTATE_CURRENT]) {
+		if (ImGui::Button("Stop rotate current pos", ImVec2(160, 25)))
+		{
+			control_parameter[ONLY_ROTATE_CURRENT] = false;
 		}
-		else {
-			if (ImGui::Button("Start rotate current pos", ImVec2(160, 25)))
-			{
-				control_parameter[ONLY_ROTATE_CURRENT] = true;
-				control_parameter[MOVE_OBJ] = false;
-				control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
-				control_parameter[ROTATION] = false;
-			}
+	}
+	else {
+		if (ImGui::Button("Start rotate current pos", ImVec2(160, 25)))
+		{
+			control_parameter[ONLY_ROTATE_CURRENT] = true;
+			control_parameter[MOVE_OBJ] = false;
+			control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
+			control_parameter[ROTATION] = false;
 		}
+	}
+	if (control_parameter[ONLY_COLLISION_TEST]) {
 		if (control_parameter[DRAW_SPATIAL_HASHING]) {
 			if (ImGui::Button("Hide Spatial Hashing Cell", ImVec2(160, 25)))
 			{
@@ -237,7 +232,7 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 		if (control_parameter[DRAW_SPATIAL_HASHING]) {
 			ImGui::Text("Draw Collision in a cell");
 			if (ImGui::Button("<<front.", ImVec2(120, 25))) {
-				control_parameter[SEARCH_LEFT_SH_CELL]=true;
+				control_parameter[SEARCH_LEFT_SH_CELL] = true;
 			}
 			ImGui::SameLine();
 			if (ImGui::Button(">>back.", ImVec2(120, 25))) {
@@ -257,20 +252,19 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 
 	}
 	ImGui::End();
-	if (!control_parameter[ONLY_COLLISION_TEST]) {
-		if (control_parameter[SET_CURSOR_FORCE]) {
-			ImGui::SetNextWindowSize(ImVec2(330, 240));
-			ImGui::Begin("Set Cursor Force", &control_parameter[SET_CURSOR_FORCE]);
-			ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.9f);
-			ImGui::SetNextItemOpen(true);
-			if (ImGui::TreeNode("Set force coefficient")) {
-				ImGui::SliderFloat("##set force coefficient", force_coe, 0.01, 1.0, "force coefficient = %.2f");
-				ImGui::TreePop();
-			}
-			ImGui::TextWrapped("Force depends on force coefficient and cursor moving speed.");
-			ImGui::End();
+	if (control_parameter[SET_CURSOR_FORCE]) {
+		ImGui::SetNextWindowSize(ImVec2(330, 240));
+		ImGui::Begin("Set Cursor Force", &control_parameter[SET_CURSOR_FORCE]);
+		ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.9f);
+		ImGui::SetNextItemOpen(true);
+		if (ImGui::TreeNode("Set force coefficient")) {
+			ImGui::SliderFloat("##set force coefficient", force_coe, 0.01, 1.0, "force coefficient = %.2f");
+			ImGui::TreePop();
 		}
+		ImGui::TextWrapped("Force depends on force coefficient and cursor moving speed.");
+		ImGui::End();
 	}
+	
 
 
 	if (control_parameter[SHORTCUT_INSTRUCTION]) {

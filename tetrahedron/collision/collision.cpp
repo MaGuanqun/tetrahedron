@@ -1794,7 +1794,6 @@ void Collision::collisionConstraint(int thread_No)
 		pointTriangleColliderResponse(thread_No, target_pos);
 		//edgeEdgeColliderResponse(thread_No, target_pos);
 	}
-
 }
 
 

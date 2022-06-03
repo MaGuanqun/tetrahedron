@@ -20,7 +20,7 @@ ProjectDynamic::ProjectDynamic()
 	iteration_method.setConvergenceRate(1e-8, 100);
 	max_inner_iteration_num = 7;
 
-	perform_collision = false;
+	perform_collision = true;
 
 }
 
@@ -1149,7 +1149,6 @@ void ProjectDynamic::PDsolve()
 		thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL);
 	}
 	updateRenderPosition();
-
 	//std::cout << "==========================" << std::endl;
 }
 

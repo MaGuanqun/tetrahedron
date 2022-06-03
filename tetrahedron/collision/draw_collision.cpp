@@ -150,8 +150,9 @@ void DrawCollision::reorganzieDataOfObjects()
 
 }
 
-void DrawCollision::setInPairInfo(std::vector<unsigned int>* point_triangle, std::vector<unsigned int>*point_triangle_collider, std::vector<unsigned int>* edge_edge)
+void DrawCollision::setInPairInfo(std::vector < std::vector<unsigned int>>* point_triangle, std::vector < std::vector<unsigned int>>*point_triangle_collider, std::vector < std::vector<unsigned int>>* edge_edge)
 {
+	//std::cout << "initial draw c " << point_triangle << std::endl;
 	point_triangle_target_pos_index = point_triangle;
 	point_triangle_collider_target_pos_index = point_triangle_collider;
 	edge_edge_target_pos_index = edge_edge;
@@ -169,6 +170,10 @@ void DrawCollision::setElementIndices()
 {
 	setIndicesSize(triangle_vertex_index.data(),edge_vertex_index.data(),vertex_index.data(),collider_triangle_vertex_index.data());
 	resetBooleanVector(obj_is_used);
+
+
+	//std::cout << "compare " << point_triangle_target_pos_index->data() << std::endl;
+
 	setTriangleIndices();
 	if (!collider->empty()) {
 		resetBooleanVector(obj_is_used);
@@ -180,6 +185,9 @@ void DrawCollision::setElementIndices()
 	setVertexIndices();
 
 	setBuffer();
+
+	//std::cout << vertex_index[0].size() << std::endl;
+
 	draw_vertex.setCollisionVertexData(vertex_for_render, vertex_index);
 
 }
@@ -251,8 +259,8 @@ void DrawCollision::setVertexIndices()
 	unsigned int size;
 
 	for (unsigned int i = 0; i < thread_num; ++i) {
-		pair_index = point_triangle_target_pos_index[i].data() + 1;
-		size = point_triangle_target_pos_index[i][0];
+		pair_index = point_triangle_target_pos_index->data()[i].data() + 1;
+		size = point_triangle_target_pos_index->data()[i][0];
 		for (unsigned int j = 0; j < size; j += 4) {		
 			if (!obj_is_used[*(pair_index + 1)][*pair_index]) {
 				vertex_index[*(pair_index + 1)].emplace_back(*pair_index );
@@ -264,8 +272,8 @@ void DrawCollision::setVertexIndices()
 
 	if (!collider->empty()) {
 		for (unsigned int i = 0; i < thread_num; ++i) {
-			pair_index = point_triangle_collider_target_pos_index[i].data() + 1;
-			size = point_triangle_collider_target_pos_index[i][0];
+			pair_index = point_triangle_collider_target_pos_index->data()[i].data() + 1;
+			size = point_triangle_collider_target_pos_index->data()[i][0];
 			for (unsigned int j = 0; j < size; j += 4) {
 				if (!obj_is_used[*(pair_index + 1)][*pair_index]) {
 					vertex_index[*(pair_index + 1)].emplace_back(*pair_index);
@@ -284,8 +292,8 @@ void DrawCollision::setBooleanTrue(std::vector<bool>* obj_is_used, std::vector<b
 	unsigned int size;
 	if (for_vt) {
 		for (unsigned int i = 0; i < thread_num; ++i) {
-			pair_index = point_triangle_target_pos_index[i].data() + 1;
-			size = point_triangle_target_pos_index[i][0];
+			pair_index = point_triangle_target_pos_index->data()[i].data() + 1;
+			size = point_triangle_target_pos_index->data()[i][0];
 			for (unsigned int j = 0; j < size; j += 4) {
 				obj_is_used[*(pair_index + 1)][*pair_index] = true;
 				obj_is_used2[*(pair_index + 3)][*(pair_index + 2)] = true;
@@ -295,8 +303,8 @@ void DrawCollision::setBooleanTrue(std::vector<bool>* obj_is_used, std::vector<b
 	}
 	else {
 		for (unsigned int i = 0; i < thread_num; ++i) {
-			pair_index = edge_edge_target_pos_index[i].data() + 1;
-			size = edge_edge_target_pos_index[i][0];
+			pair_index = edge_edge_target_pos_index->data()[i].data() + 1;
+			size = edge_edge_target_pos_index->data()[i][0];
 			for (unsigned int j = 0; j < size; j += 4) {
 				obj_is_used[*(pair_index + 1)][*pair_index] = true;
 				obj_is_used[*(pair_index + 3)][*(pair_index + 2)] = true;
@@ -345,8 +353,8 @@ void DrawCollision::setTriangleIndices()
 	unsigned int size;
 
 	for (unsigned int i = 0; i < thread_num; ++i) {
-		pair_index = point_triangle_target_pos_index[i].data()+1;
-		size = point_triangle_target_pos_index[i][0];
+		pair_index = point_triangle_target_pos_index->data()[i].data()+1;
+		size = point_triangle_target_pos_index->data()[i][0];
 		for(unsigned int j=0;j<size;j+=4){		
 			if (!obj_is_used[*(pair_index + 3)][*(pair_index + 2)]) {
 				triangle_vertex_index[*(pair_index + 3)].resize(triangle_vertex_index[*(pair_index + 3)].size() + 3);
@@ -356,6 +364,7 @@ void DrawCollision::setTriangleIndices()
 			}
 			pair_index += 4;
 		}
+		//std::cout<<"draw " << size << std::endl;
 	}
 }
 
@@ -394,8 +403,8 @@ void DrawCollision::setEdgeIndices()
 	unsigned int size;
 
 	for (unsigned int i = 0; i < thread_num; ++i) {
-		pair_index = edge_edge_target_pos_index[i].data() + 1;
-		size = edge_edge_target_pos_index[i][0];
+		pair_index = edge_edge_target_pos_index->data()[i].data() + 1;
+		size = edge_edge_target_pos_index->data()[i][0];
 		for (unsigned int j = 0; j < size; j += 4) {		
 			if (!obj_is_used[*(pair_index + 1)][*(pair_index)]) {
 				edge_vertex_index[*(pair_index + 1)].emplace_back(edge_indices[*(pair_index + 1)][(*pair_index) << 1]);
@@ -607,14 +616,14 @@ void DrawCollision::drawVT_triangleWireframe(Camera* camera, Shader* wireframe_s
 void DrawCollision::drawVT_triangle(Light& light,  Camera* camera, Shader* object_shader_front, std::vector<std::vector<bool>>& show_collision_element,
 	unsigned int* VT_VAO, std::vector<int>* triangle_vertex_index, std::vector<int>* collider_triangle_vertex_index, Shader* wireframe_shader)
 {
-	setInShader(light, camera, object_shader_front,0.4);
+	setInShader(light, camera, object_shader_front,1.0);
 	object_shader_front->use();
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		if (show_collision_element[6+CLOTH_][i]) {
 			object_shader_front->setFloat("material.Ns", cloth->data()[i].material.front_material.Ns);
-			object_shader_front->setVec3("material.Kd", glm::vec3(4.0*cloth->data()[i].material.front_material.Kd[0], cloth->data()[i].material.front_material.Kd[2], cloth->data()[i].material.front_material.Kd[1]));
-			object_shader_front->setVec3("material.Ka", glm::vec3(4.0 * cloth->data()[i].material.front_material.Ka[0], cloth->data()[i].material.front_material.Ka[2], cloth->data()[i].material.front_material.Ka[1]));
-			object_shader_front->setVec3("material.Ks", glm::vec3(4.0 * cloth->data()[i].material.front_material.Ks[0], cloth->data()[i].material.front_material.Ks[2], cloth->data()[i].material.front_material.Ks[1]));
+			object_shader_front->setVec3("material.Kd", glm::vec3(0.5*cloth->data()[i].material.front_material.Kd[0], cloth->data()[i].material.front_material.Kd[2], cloth->data()[i].material.front_material.Kd[1]));
+			object_shader_front->setVec3("material.Ka", glm::vec3(0.5 * cloth->data()[i].material.front_material.Ka[0], cloth->data()[i].material.front_material.Ka[2], cloth->data()[i].material.front_material.Ka[1]));
+			object_shader_front->setVec3("material.Ks", glm::vec3(0.5 * cloth->data()[i].material.front_material.Ks[0], cloth->data()[i].material.front_material.Ks[2], cloth->data()[i].material.front_material.Ks[1]));
 			glBindVertexArray(VT_VAO[i]);
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			glDrawElements(GL_TRIANGLES, triangle_vertex_index[i].size(), GL_UNSIGNED_INT, 0);
@@ -623,9 +632,9 @@ void DrawCollision::drawVT_triangle(Light& light,  Camera* camera, Shader* objec
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		if (show_collision_element[6 + TETRAHEDRON_][i]) {
 			object_shader_front->setFloat("material.Ns", tetrahedron->data()[i].material.Ns);
-			object_shader_front->setVec3("material.Kd", glm::vec3(4.0 * tetrahedron->data()[i].material.Kd[0], tetrahedron->data()[i].material.Kd[2], tetrahedron->data()[i].material.Kd[1]));
-			object_shader_front->setVec3("material.Ka", glm::vec3(4.0 * tetrahedron->data()[i].material.Ka[0], tetrahedron->data()[i].material.Ka[2], tetrahedron->data()[i].material.Ka[1]));
-			object_shader_front->setVec3("material.Ks", glm::vec3(4.0 * tetrahedron->data()[i].material.Ks[0], tetrahedron->data()[i].material.Ks[2], tetrahedron->data()[i].material.Ks[1]));
+			object_shader_front->setVec3("material.Kd", glm::vec3(0.5 * tetrahedron->data()[i].material.Kd[0], tetrahedron->data()[i].material.Kd[2], tetrahedron->data()[i].material.Kd[1]));
+			object_shader_front->setVec3("material.Ka", glm::vec3(0.5 * tetrahedron->data()[i].material.Ka[0], tetrahedron->data()[i].material.Ka[2], tetrahedron->data()[i].material.Ka[1]));
+			object_shader_front->setVec3("material.Ks", glm::vec3(0.5 * tetrahedron->data()[i].material.Ks[0], tetrahedron->data()[i].material.Ks[2], tetrahedron->data()[i].material.Ks[1]));
 			glBindVertexArray(VT_VAO[i + cloth->size()]);
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			glDrawElements(GL_TRIANGLES, triangle_vertex_index[i + cloth->size()].size(), GL_UNSIGNED_INT, 0);
@@ -725,8 +734,8 @@ void DrawCollision::setColliderTriangleIndices()
 	unsigned int size;
 
 	for (unsigned int i = 0; i < thread_num; ++i) {
-		pair_index = point_triangle_collider_target_pos_index[i].data() + 1;
-		size = point_triangle_collider_target_pos_index[i][0];
+		pair_index = point_triangle_collider_target_pos_index->data()[i].data() + 1;
+		size = point_triangle_collider_target_pos_index->data()[i][0];
 		for (unsigned int j = 0; j < size; j += 4) {		
 			if (!obj_is_used[*(pair_index + 3)][*(pair_index + 2)]) {
 				collider_triangle_vertex_index[*(pair_index + 3)].resize(collider_triangle_vertex_index[*(pair_index + 3)].size() + 3);

@@ -41,7 +41,7 @@ public:
 	void updateItrInfo(int* iteration_num);
 
 	void PBD_IPCSolve();
-
+	Collision collision;
 
 private:
 	double gravity[3];
@@ -80,7 +80,7 @@ private:
 	void solveConstraint();
 	void setConstraintIndex();
 	void solveTetStrainConstraint();
-	Collision collision;
+
 	void updatePosition();
 	double damping_coe;
 

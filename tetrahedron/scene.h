@@ -130,7 +130,7 @@ private:
 	void moveObj(Camera* camera, double* cursor_screen, bool only_move_vertex_pos);
 	void updateObjSimulation(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe, bool& record_matrix,
 		double& ave_iteration);
-	void updateSceneCollisionTest(Camera* camera, Input* input, bool* control_parameter, int& select_hash_cell);
+	void updateSceneCollisionTest(bool* control_parameter);
 	TestDrawCollision test_draw_collision;
 
 	//void getCurrentAABB();
@@ -143,6 +143,6 @@ private:
 
 	bool sameDirection(Camera* camera, unsigned int obj_index);
 
-
-
+	void setMove(Camera* camera, Input* input, bool* control_parameter);
+	void drawSpatialHashing(Camera* camera, Input* input, int& select_hash_cell);
 };

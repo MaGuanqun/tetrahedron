@@ -14,7 +14,7 @@ public:
 	void initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron,
 		Thread* thread);
 
-	void setInPairInfo(std::vector<unsigned int>* point_triangle, std::vector<unsigned int>* point_triangle_collider, std::vector<unsigned int>* edge_edge);
+	void setInPairInfo(std::vector < std::vector<unsigned int>>* point_triangle, std::vector < std::vector<unsigned int>>* point_triangle_collider, std::vector < std::vector<unsigned int>>* edge_edge);
 
 	void setElementIndices();
 
@@ -32,9 +32,9 @@ public:
 
 private:
 
-	std::vector<unsigned int>* point_triangle_target_pos_index;
-	std::vector<unsigned int>* point_triangle_collider_target_pos_index;
-	std::vector<unsigned int>* edge_edge_target_pos_index;
+	std::vector<std::vector<unsigned int>>* point_triangle_target_pos_index;
+	std::vector < std::vector<unsigned int>>* point_triangle_collider_target_pos_index;
+	std::vector < std::vector<unsigned int>>* edge_edge_target_pos_index;
 
 	DrawVertex draw_vertex;
 

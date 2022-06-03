@@ -91,19 +91,19 @@ void Scene::setFloorInfo(bool exist, bool show, bool normal_direction, unsigned 
 
 void Scene::updateItrInfo(int* iteration_num)
 {
-	if (!only_test_collision) {
+	//if (!only_test_collision) {
 		switch (use_method)
 		{
 		case XPBD_:
 			xpbd.updateItrInfo(iteration_num);
 			break;
 		}
-	}
+	//}
 }
 
 void Scene::obtainConvergenceInfo(double* convergence_rate, int* iteration_num)
 {
-	if (!only_test_collision) {
+	//if (!only_test_collision) {
 		switch (use_method)
 		{
 		case PD_:
@@ -121,12 +121,12 @@ void Scene::obtainConvergenceInfo(double* convergence_rate, int* iteration_num)
 			iteration_num[OUTER] = newton_method.iteration_number;
 			break;
 		}
-	}
+	//}
 }
 
 void Scene::updateConvRate(double* convergence_rate)
 {
-	if (!only_test_collision) {
+//	if (!only_test_collision) {
 		switch (use_method)
 		{
 		case PD_:
@@ -137,11 +137,12 @@ void Scene::updateConvRate(double* convergence_rate)
 			newton_method.conv_rate=time_step * convergence_rate[OUTER];
 			break;
 		}		
-	}
+//	}
 }
 
 void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio, bool* control_parameter)
 {
+	use_method =10;
 	this->control_parameter = control_parameter;
 	if (control_parameter[USE_XPBD]) {
 		use_method = XPBD_;
@@ -218,22 +219,21 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 
 	move_object.initial(&cloth, &collider, &tetrahedron, &thread);
 
-	if (control_parameter[ONLY_COLLISION_TEST]) {
-		test_draw_collision.initial(&cloth, &collider, &tetrahedron, &thread, &floor, tolerance_ratio);
+	switch (use_method)
+	{
+	case PD_:
+		project_dynamic.setForPD(&cloth, &tetrahedron, &collider, &floor, &thread, tolerance_ratio);
+		break;
+	case XPBD_:
+		xpbd.setForXPBD(&cloth, &tetrahedron, &collider, &floor, &thread, tolerance_ratio);
+		break;
+	case NEWTON_:
+		newton_method.setForNewtonMethod(&cloth, &tetrahedron, &collider, &floor, &thread, tolerance_ratio);
+		break;
 	}
-	else {
-		switch (use_method)
-		{
-		case PD_:
-			project_dynamic.setForPD(&cloth, &tetrahedron, &collider, &floor, &thread, tolerance_ratio);
-			break;
-		case XPBD_:
-			xpbd.setForXPBD(&cloth, &tetrahedron, &collider, &floor, &thread, tolerance_ratio);
-			break;
-		case NEWTON_:
-			newton_method.setForNewtonMethod(&cloth, &tetrahedron, &collider, &floor, &thread, tolerance_ratio);
-			break;
-		}
+	if (control_parameter[ONLY_COLLISION_TEST]) {
+		test_draw_collision.initial(&cloth, &collider, &tetrahedron, &thread, &floor, tolerance_ratio, &project_dynamic.collision,
+			&xpbd.collision, &newton_method.collision,use_method);
 	}
 
 	setAveEdgeLength();
@@ -372,7 +372,6 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, shadow.depth_map);
 	glEnable(GL_CULL_FACE);
-
 	if (control_parameter[SHARP_EDGE_SHADING]) {
 		object_shader_front = object_shader_front_sharp_edge;
 	}
@@ -386,13 +385,14 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 			cloth[j].draw(camera, object_shader_front);
 		}
 	}
-	glDisable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 	for (int j = 0; j < tetrahedron_num; ++j) {
 		if (!show_element[TETRAHEDRON_][j]) {
 			tetrahedron[j].setSceneShader(light, camera, shadow.far_plane, object_shader_front);
 			tetrahedron[j].draw(camera, object_shader_front);
 		}
 	}
+	glDisable(GL_CULL_FACE);
 	for (int j = 0; j < collider.size(); ++j) {
 		if (!show_element[COLLIDER_][j]) {
 			collider[j].setSceneShader(light, camera, shadow.far_plane, object_shader_front);
@@ -432,15 +432,15 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 	}
 	//draw_culling.drawCell(camera, wireframe_shader);
 
-	if (control_parameter[ONLY_COLLISION_TEST]) {
-		test_draw_collision.drawCollision(control_parameter[DRAW_VT], light, camera, object_shader_front, show_element,&shadow,wireframe_shader,
-			!control_parameter[DRAW_SPATIAL_HASHING],control_parameter[DRAW_ALL_PAIRS_IN_A_CELL]);
+
+	test_draw_collision.drawCollision(control_parameter[DRAW_VT], light, camera, object_shader_front, show_element,&shadow,wireframe_shader,
+		!control_parameter[DRAW_SPATIAL_HASHING],control_parameter[DRAW_ALL_PAIRS_IN_A_CELL]);
+
+	if (intersection.happened && (!(control_parameter[MOVE_OBJ]|| control_parameter[ONLY_MOVE_CURRENT_POSITION]
+		|| control_parameter[ROTATION] || control_parameter[ONLY_ROTATE_CURRENT]))) {
+		cursor.draw(camera);
 	}
-	else {
-		if (intersection.happened && (!control_parameter[MOVE_OBJ])) {
-			cursor.draw(camera);
-		}
-	}
+
 
 	if(control_parameter[DRAW_SPATIAL_HASHING]){
 		test_draw_collision.draw_spatial_hashing.drawCell(camera, wireframe_shader);
@@ -467,7 +467,7 @@ void Scene::saveObj()
 
 void Scene::initial()
 {
-	if (!only_test_collision) {
+	//if (!only_test_collision) {
 		switch (use_method)
 		{
 		case PD_:
@@ -480,7 +480,7 @@ void Scene::initial()
 			newton_method.initial();
 			break;
 		}
-	}
+	//}
 	for (int i = 0; i < cloth.size(); ++i) {
 		cloth[i].initial();
 	}
@@ -497,7 +497,7 @@ void Scene::initial()
 
 void Scene::reset()
 {
-	if (!only_test_collision) {
+	//if (!only_test_collision) {
 		switch (use_method)
 		{
 		case PD_:
@@ -510,7 +510,7 @@ void Scene::reset()
 			newton_method.initial();
 			break;
 		}
-	}
+	//}
 	for (int i = 0; i < cloth.size(); ++i) {
 		cloth[i].reset();
 	}
@@ -543,27 +543,6 @@ void Scene::resetIntersectionState()
 void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe, bool& record_matrix,
 	double& ave_iteration)
 {
-	
-	if (control_parameter[MOVE_OBJ_SCRIPT]) {
-		if (use_method==PD_) {
-			move_object.moveScript(2);
-		}
-		control_parameter[MOVE_OBJ_SCRIPT] = false;
-	}
-
-	if (control_parameter[MOVE_OBJ]) {
-		if (intersection.happened_include_collider) {
-			setObjMoveInfo(camera, cursor_screen);
-			switch (use_method)
-			{
-			case PD_:
-				project_dynamic.updateSystemPos();
-				break;
-			}
-		}
-		setChosenIndicator();
-	}
-
 	if (control_parameter[START_SIMULATION] || control_parameter[ONE_FRAME]) {
 		switch (use_method)
 		{
@@ -598,13 +577,16 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 		//project_dynamic.PD_IPC_solve(record_matrix);
 		//project_dynamic.update_ave_iteration_record(ave_iteration);
 		time_stamp++;
+		//std::cout << "main " << project_dynamic.collision.point_triangle_target_pos_index.data() << std::endl;
+		//std::cout << "main add" << &project_dynamic.collision.point_triangle_target_pos_index << std::endl;
+		//std::cout << "main " << project_dynamic.collision.point_triangle_target_pos_index[0][0] << std::endl;
+		if (control_parameter[ONLY_COLLISION_TEST]) {
+			test_draw_collision.draw_collision.setElementIndices();
+		}
 	}
 }
 
-
-
-
-void Scene::updateSceneCollisionTest(Camera* camera, Input* input, bool* control_parameter, int& select_hash_cell)
+void Scene::setMove(Camera* camera, Input* input, bool* control_parameter)
 {
 	if (!(control_parameter[ONLY_ROTATE_CURRENT] || control_parameter[ROTATION])) {
 		intersect_when_rotation = false;
@@ -613,30 +595,56 @@ void Scene::updateSceneCollisionTest(Camera* camera, Input* input, bool* control
 	if (control_parameter[MOVE_OBJ]) {
 		if (intersection.happened_include_collider) {
 			moveObj(camera, input->mouse.screen_pos, false);
+			switch (use_method)
+			{
+			case PD_:
+				project_dynamic.updateSystemPos();
+				break;
+			}
 		}
 		setChosenIndicator();
 	}
 	if (control_parameter[ROTATION]) {
 		if (intersect_when_rotation) {
 			rotate(camera, input->mouse.angle, false);
+			switch (use_method)
+			{
+			case PD_:
+				project_dynamic.updateSystemPos();
+				break;
+			}
 		}
 		setChosenIndicator();
 	}
 	if (control_parameter[ONLY_MOVE_CURRENT_POSITION]) {
 		if (intersection.happened_include_collider) {
 			moveObj(camera, input->mouse.screen_pos, true);
+			switch (use_method)
+			{
+			case PD_:
+				project_dynamic.updateSystemPos();
+				break;
+			}
 		}
 		setChosenIndicator();
 	}
 	if (control_parameter[ONLY_ROTATE_CURRENT]) {
 		if (intersect_when_rotation) {
 			rotate(camera, input->mouse.angle, true);
+			switch (use_method)
+			{
+			case PD_:
+				project_dynamic.updateSystemPos();
+				break;
+			}
 		}
 		setChosenIndicator();
 	}
-	if (control_parameter[ONE_FRAME]) {
-		test_draw_collision.setCollisionData();
-	}
+}
+
+
+void Scene::drawSpatialHashing(Camera* camera, Input* input, int& select_hash_cell)
+{
 	if (control_parameter[SPATIAL_HASHING_UPDATE]) {
 		getAABB();
 		test_draw_collision.setForOriSpatialHashing();
@@ -666,7 +674,15 @@ void Scene::updateSceneCollisionTest(Camera* camera, Input* input, bool* control
 			test_draw_collision.setForSelectCellOne(select_hash_cell);
 			control_parameter[SEARCH_RIGHT_SH_CELL] = false;
 		}
-		
+
+	}
+}
+
+
+void Scene::updateSceneCollisionTest(bool* control_parameter)
+{	
+	if (control_parameter[ONE_FRAME]) {
+		test_draw_collision.setCollisionData();
 	}
 
 }
@@ -675,13 +691,19 @@ void Scene::updateSceneCollisionTest(Camera* camera, Input* input, bool* control
 void Scene::updateCloth(Camera* camera, Input* input, bool* control_parameter, float force_coe, bool& record_matrix,
 	double& ave_iteration, int& select_hash_cell_index)
 {
-	if (control_parameter[ONLY_COLLISION_TEST]) {
-		updateSceneCollisionTest(camera, input, control_parameter, select_hash_cell_index);
-		updateBufferOriPos();
+	setMove(camera, input, control_parameter);
+	if (use_method < 3) {
+		updateObjSimulation(camera, input->mouse.screen_pos, control_parameter, force_coe, record_matrix, ave_iteration);
+	
 	}
 	else {
-		updateObjSimulation(camera, input->mouse.screen_pos, control_parameter, force_coe, record_matrix, ave_iteration);
+		if (control_parameter[ONLY_COLLISION_TEST]) {
+			updateSceneCollisionTest(control_parameter);
+		}
 	}
+	drawSpatialHashing(camera, input, select_hash_cell_index);
+	updateBufferOriPos();
+
 	updateBuffer();
 }
 
@@ -767,7 +789,7 @@ void Scene::setAveEdgeLength()
 	}
 
 	ave_edge_length = edge_length_temp / (double)edge_size;
-	if (!only_test_collision) {
+	//if (!only_test_collision) {
 		switch (use_method)
 		{
 		case PD_:
@@ -780,7 +802,7 @@ void Scene::setAveEdgeLength()
 			newton_method.initialDHatTolerance(ave_edge_length);
 			break;
 		}
-	}
+	//}
 }
 
 void Scene::setTolerance(double* tolerance_ratio)
