@@ -1,5 +1,7 @@
 #pragma once
 #include"../basic/global.h"
+#ifndef  PRIMITIVE_DISTANCE
+#define  PRIMITIVE_DISTANCE
 namespace CCD {
     namespace internal {
         //For a matrix M(2X3)=(basic0,basis1)^T, here to solve MM^Tx=Mvec    
@@ -683,3 +685,5 @@ namespace CCD {
         }
     }
 }
+
+#endif // ! PRIMITIVE_DISTANCE

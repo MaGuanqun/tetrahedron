@@ -151,7 +151,7 @@ private:
 	void setEdgeIndicesInAllCell(std::vector<std::vector<unsigned int>>& edge_index);
 	void setVertexIndicesInAllCell(std::vector<std::vector<unsigned int>>& vertex_index_);
 
-	void setInShader(Light& light, Camera* camera, Shader* object_shader_front);
+	void setInShader(Light& light, Camera* camera, Shader* object_shader_front, double transparent);
 
 
 	void drawVT_triangleWireframe(Camera* camera, Shader* wireframe_shader, std::vector<std::vector<bool>>& show_collision_element,

@@ -506,14 +506,14 @@ void DrawCollision::drawEdge(Light& light, Camera* camera, Shader* object_shader
 	unsigned int* EE_VAO, std::vector<int>* edge_vertex_index)
 {
 
-	setInShader(light, camera, object_shader_front);
+	setInShader(light, camera, object_shader_front,1.0);
 	object_shader_front->use();
 	glLineWidth(4.0);
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		if (show_collision_element[6+CLOTH_][i]) {
 			object_shader_front->setFloat("material.Ns", cloth->data()[i].material.front_material.Ns);
 			object_shader_front->setVec3("material.Kd", glm::vec3(4.0 * cloth->data()[i].material.front_material.Kd[0], cloth->data()[i].material.front_material.Kd[2], cloth->data()[i].material.front_material.Kd[1]));
-			object_shader_front->setVec3("material.Ka", glm::vec3(4.0 * cloth->data()[i].material.front_material.Ka[0], cloth->data()[i].material.front_material.Ka[2], cloth->data()[i].material.front_material.Ka[1]));
+			object_shader_front->setVec3("material.Ka", glm::vec3(4.0 * cloth->data()[i].material.front_material.Ka[0], 0.3*cloth->data()[i].material.front_material.Ka[2], 0.3*cloth->data()[i].material.front_material.Ka[1]));
 			object_shader_front->setVec3("material.Ks", glm::vec3(4.0 * cloth->data()[i].material.front_material.Ks[0], cloth->data()[i].material.front_material.Ks[2], cloth->data()[i].material.front_material.Ks[1]));
 			glBindVertexArray(EE_VAO[i]);
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -524,7 +524,7 @@ void DrawCollision::drawEdge(Light& light, Camera* camera, Shader* object_shader
 		if (show_collision_element[6+TETRAHEDRON_][i]) {
 			object_shader_front->setFloat("material.Ns", tetrahedron->data()[i].material.Ns);
 			object_shader_front->setVec3("material.Kd", glm::vec3(4.0 * tetrahedron->data()[i].material.Kd[0], tetrahedron->data()[i].material.Kd[2], tetrahedron->data()[i].material.Kd[1]));
-			object_shader_front->setVec3("material.Ka", glm::vec3(4.0 * tetrahedron->data()[i].material.Ka[0], tetrahedron->data()[i].material.Ka[2], tetrahedron->data()[i].material.Ka[1]));
+			object_shader_front->setVec3("material.Ka", glm::vec3(4.0 * tetrahedron->data()[i].material.Ka[0],0.3* tetrahedron->data()[i].material.Ka[2],0.3* tetrahedron->data()[i].material.Ka[1]));
 			object_shader_front->setVec3("material.Ks", glm::vec3(4.0 * tetrahedron->data()[i].material.Ks[0], tetrahedron->data()[i].material.Ks[2], tetrahedron->data()[i].material.Ks[1]));
 			glBindVertexArray(EE_VAO[i + cloth->size()]);
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -548,7 +548,7 @@ void DrawCollision::drawEdge(Light& light, Camera* camera, Shader* object_shader
 
 
 
-void DrawCollision::setInShader(Light& light, Camera* camera, Shader* object_shader_front)
+void DrawCollision::setInShader(Light& light, Camera* camera, Shader* object_shader_front, double transparent)
 {
 	object_shader_front->use();
 	object_shader_front->setInt("depthMap", 0);
@@ -563,7 +563,7 @@ void DrawCollision::setInShader(Light& light, Camera* camera, Shader* object_sha
 	object_shader_front->setMat4("projection", camera->GetProjectMatrix());
 	object_shader_front->setMat4("view", camera->GetViewMatrix());
 	object_shader_front->setMat4("model", glm::mat4(1.0));
-	object_shader_front->setFloat("transparence", 0.4);
+	object_shader_front->setFloat("transparence", transparent);
 }
 
 
@@ -607,7 +607,7 @@ void DrawCollision::drawVT_triangleWireframe(Camera* camera, Shader* wireframe_s
 void DrawCollision::drawVT_triangle(Light& light,  Camera* camera, Shader* object_shader_front, std::vector<std::vector<bool>>& show_collision_element,
 	unsigned int* VT_VAO, std::vector<int>* triangle_vertex_index, std::vector<int>* collider_triangle_vertex_index, Shader* wireframe_shader)
 {
-	setInShader(light, camera, object_shader_front);
+	setInShader(light, camera, object_shader_front,0.4);
 	object_shader_front->use();
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		if (show_collision_element[6+CLOTH_][i]) {

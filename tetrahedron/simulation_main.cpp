@@ -87,7 +87,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 
 	unsigned int floor_dimension=1;
-	bool floor_control[4] ={true,true,true,false};
+	bool floor_control[4] ={false,false,true,false};
 	double floor_value=-0.35;
 
 	scene.input= input;

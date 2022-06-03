@@ -45,9 +45,9 @@ void SetModel::load_getAABB(std::string& path, int& index, int obj_index)
 		read_ele.load(path.c_str(), ori_mesh);
 		setTetFrontMaterial(ori_mesh, index);
 
-		if (obj_index == 1) {
-			moveBodyCapsule(ori_mesh);
-		}
+		//if (obj_index == 1) {
+		//	moveBodyCapsule(ori_mesh);
+		//}
 
 	}
 	
@@ -128,12 +128,12 @@ void SetModel::setTetFrontMaterial(OriMesh& ori_mesh, int& index)
 	{
 	case 0:
 		Kd = { 0.235, 0.5, 0.605 };		
-		Ka = { 0.047, 0.1, 0.121 };
+		Ka = { 0.1175, 0.25, 0.3025 };
 		Ks = { 0.094, 0.2, 0.242 };
 		break;
 	case 1:
 		Kd = { 0.3, 0.1, 0.6 };
-		Ka = { 0.06, 0.02, 0.12 };
+		Ka = { 0.15, 0.05, 0.3 };
 		Ks = { 0.12, 0.04, 0.24 };
 		break;
 	default:

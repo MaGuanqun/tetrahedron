@@ -1,5 +1,6 @@
 #include"newton_method.h"
 
+
 NewtonMethod::NewtonMethod()
 {
 	gravity_ = 9.8;
@@ -223,6 +224,8 @@ void NewtonMethod::solveNewtonMethod()
 	{
 		updateRenderPosition();
 		updateHessianFixedStructure();
+
+
 		global_llt.factorize(Hessian);
 		delta_x =global_llt.solve(b);
 

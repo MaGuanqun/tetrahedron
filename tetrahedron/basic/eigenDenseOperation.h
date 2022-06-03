@@ -3,6 +3,8 @@
 #include"../external/Eigen/Sparse"
 using namespace Eigen;
 
+#ifndef EIGEN_DENSE_OPERATION
+#define EIGEN_DENSE_OPERATION
 namespace denseOperation {
 
 	inline double dotProduct(const Vector3d& a, const Vector3d& b) {
@@ -166,3 +168,5 @@ namespace denseOperation {
 	}
 }
 
+
+#endif // !EIGEN_DENSE_OPERATION
