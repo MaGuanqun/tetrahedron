@@ -107,9 +107,10 @@ void TestDrawCollision::obtainElementsInOneCell(int& index_chosen)
 			}
 		}
 		//std::cout << index_chosen << std::endl;
+
+		draw_collision.setElementInAllCell(vertex_index_in_one_cell, triangle_index_in_one_cell, edge_index_in_one_cell);
+		draw_collision.setElementInOneCell(triangle_index_in_one_cell, edge_index_in_one_cell);
 	}
-	draw_collision.setElementInAllCell(vertex_index_in_one_cell, triangle_index_in_one_cell, edge_index_in_one_cell);
-	draw_collision.setElementInOneCell(triangle_index_in_one_cell, edge_index_in_one_cell);
 }
 
 void TestDrawCollision::setForOriSpatialHashing()
@@ -125,7 +126,9 @@ void TestDrawCollision::setForSelectCell()
 }
 void TestDrawCollision::setForSelectCellOne(int index)
 {
-	draw_spatial_hashing.setCellData(select_ori_hash_index[index], collision->spatial_hashing.cell_length, collision->spatial_hashing.cell_number, collision->spatial_hashing.scene_aabb);
+	if (!select_hash_index.empty()) {
+		draw_spatial_hashing.setCellData(select_ori_hash_index[index], collision->spatial_hashing.cell_length, collision->spatial_hashing.cell_number, collision->spatial_hashing.scene_aabb);
+	}
 }
 
 void TestDrawCollision::drawCollision(bool draw_VT, Light& light, Camera* camera, Shader* object_shader_front, 

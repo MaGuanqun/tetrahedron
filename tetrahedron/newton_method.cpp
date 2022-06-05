@@ -1352,7 +1352,8 @@ void NewtonMethod::updateInternalForce(double* vertex_position_0, double* vertex
 	SUB(Ax_, Ax, Ax_);
 	double x0AAx;
 	//x0AAx = damp_stiffness * DOT(Ax, Ax_) / length_;
-	//coe += x0AAx;	MULTI_(Ax, coe);
+	//coe += x0AAx;	
+	MULTI_(Ax, coe);
 	SUM_(force_1, Ax);
 	SUB_(force_0, Ax);
 

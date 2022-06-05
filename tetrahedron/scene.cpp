@@ -150,7 +150,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	else if (control_parameter[USE_PD_]) {
 		use_method = PD_;
 	}
-	else {
+	else if(control_parameter[USE_NEWTON_]) {
 		use_method = NEWTON_;
 	}
 	only_test_collision = control_parameter[ONLY_COLLISION_TEST];
@@ -181,7 +181,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	cloth.resize(cloth_num);
 	tetrahedron.resize(tetrahedron_num);
 	setTolerance(tolerance_ratio);
-	double cloth_density = 10.0;
+	double cloth_density = 1.0;
 	double tetrahedron_density = 0.1;
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].loadMesh(preprocessing.ori_simulation_mesh[cloth_index_in_object[i]], cloth_density, &thread);

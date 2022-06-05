@@ -232,7 +232,7 @@ private:
 	std::vector<VectorXd> b_thread;
 
 	double beta, gamma;
-	bool is_newmark = true;
+	bool is_newmark = false;
 	void 	solveNewtonMethod_();
 	void newmarkBetaMethod();
 	void updateK();
