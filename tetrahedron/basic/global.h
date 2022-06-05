@@ -47,12 +47,18 @@ dest[0] = v1[0] - v2[0];\
 dest[1] = v1[1] - v2[1];\
 dest[2] = v1[2] - v2[2];
 
+
+
 #undef SUB_
 #define SUB_(dest,v1) \
 dest[0] -= v1[0];\
 dest[1] -= v1[1];\
 dest[2] -= v1[2];
 
+#undef SUB_2_
+#define SUB_2_(dest,v1) \
+dest[0] -= v1[0];\
+dest[1] -= v1[1];
 
 #undef MID
 #define MID(dest,v1,v2)\
@@ -72,6 +78,11 @@ dest[2] = v1[2] + v2[2];
 dest[0] += v1[0];\
 dest[1] += v1[1];\
 dest[2] += v1[2];
+
+#undef SUM_2_
+#define SUM_2_(dest,v1)\
+dest[0] += v1[0];\
+dest[1] += v1[1];
 
 #undef SUM_2
 #define SUM_2(dest,v1,v2)\
@@ -97,6 +108,9 @@ dest[2]/=value;
 
 #undef DOT
 #define DOT(v1,v2) (v1[0]*v2[0]+v1[1]*v2[1]+v1[2]*v2[2])
+
+#undef DOT_2
+#define DOT_2(v1,v2) (v1[0]*v2[0]+v1[1]*v2[1])
 
 #undef EDGE_LENGTH
 #define EDGE_LENGTH(v1,v2) ((v1[0]-v2[0])*(v1[0]-v2[0])+(v1[1]-v2[1])*(v1[1]-v2[1])+(v1[2]-v2[2])*(v1[2]-v2[2]))
@@ -182,17 +196,17 @@ dest[2] += coe* v0[2];
 
 
 inline double gaussian(double x, double sigma) {
-    return std::exp(-x * x / (2.0 * sigma * sigma));
+	return std::exp(-x * x / (2.0 * sigma * sigma));
 
 }
 
 inline void normalize(double* x) {
-    double norm = sqrt(DOT(x, x));
-    if (norm > 1e-15) {
-        x[0] /= norm;
-        x[1] /= norm;
-        x[2] /= norm;
-    }
+	double norm = sqrt(DOT(x, x));
+	if (norm > 1e-15) {
+		x[0] /= norm;
+		x[1] /= norm;
+		x[2] /= norm;
+	}
 }
 
 
@@ -265,17 +279,17 @@ inline void rotateAroundVector(double* rotation_matrix, double* rotate_axis, dou
 	double cos_ = cos(angle);
 	double sin_ = sin(angle);
 	rotation_matrix[0] = rotate_axis[0] * rotate_axis[0] * (1.0 - cos_) + cos_;
-	rotation_matrix[1]= rotate_axis[0] * rotate_axis[1] * (1.0 - cos_) + rotate_axis[2]*sin_;
-	rotation_matrix[2]= rotate_axis[0] * rotate_axis[2] * (1.0 - cos_) - rotate_axis[1]*sin_;
-	rotation_matrix[3]= rotate_axis[0] * rotate_axis[1] * (1.0 - cos_) - rotate_axis[2]*sin_;
-	rotation_matrix[4]= rotate_axis[1] * rotate_axis[1] * (1.0 - cos_) +cos_;
+	rotation_matrix[1] = rotate_axis[0] * rotate_axis[1] * (1.0 - cos_) + rotate_axis[2] * sin_;
+	rotation_matrix[2] = rotate_axis[0] * rotate_axis[2] * (1.0 - cos_) - rotate_axis[1] * sin_;
+	rotation_matrix[3] = rotate_axis[0] * rotate_axis[1] * (1.0 - cos_) - rotate_axis[2] * sin_;
+	rotation_matrix[4] = rotate_axis[1] * rotate_axis[1] * (1.0 - cos_) + cos_;
 	rotation_matrix[5] = rotate_axis[2] * rotate_axis[1] * (1.0 - cos_) + rotate_axis[0] * sin_;
 	rotation_matrix[6] = rotate_axis[2] * rotate_axis[0] * (1.0 - cos_) + rotate_axis[1] * sin_;
 	rotation_matrix[7] = rotate_axis[2] * rotate_axis[1] * (1.0 - cos_) - rotate_axis[0] * sin_;
 	rotation_matrix[8] = rotate_axis[2] * rotate_axis[2] * (1.0 - cos_) + cos_;
 	normalize(rotation_matrix);
-	normalize(rotation_matrix+3);
-	normalize(rotation_matrix+6);
+	normalize(rotation_matrix + 3);
+	normalize(rotation_matrix + 6);
 }
 
 inline void inverse3X3(double* matrix, double* inverse)

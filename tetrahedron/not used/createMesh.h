@@ -7,17 +7,17 @@ class CreateMesh
 public:
 
 
-	CreateMesh(OriMesh& mesh) 
+	CreateMesh(OriMesh& mesh)
 	{
-		
-		
+
+
 	}
 
 	void setMaterial1(OriMesh& mesh)
 	{
 
 
-		
+
 		//only one cloth
 		//int col_num = 15;
 		//int row_num = 15;
@@ -60,7 +60,7 @@ public:
 		//mesh.vertices.push_back({ -0.02,0.2,-0.02 });
 		//mesh.vertices.push_back({ 0.02,0.2,-0.02 });
 
-		
+
 		//mesh.vertices.push_back({ 0.0,0.125,0.0 });
 		//mesh.vertices.push_back({ 0.125,0.0,0.0 });
 		//mesh.vertices.push_back({ -0.125,0.0,0.0 });
@@ -81,7 +81,7 @@ public:
 		//			1.4 * (double)j / (double)(row_num - 1) - 0.7, 0.2 * (double)j / (double)(row_num - 1) - 0.1});//
 		//	}
 		//}
-		
+
 		//int col_num = 3;
 		//int row_num = 3;
 		//for (int j = 0; j < row_num; j++) {
@@ -94,15 +94,15 @@ public:
 		//	}
 		//}
 
-		int col_num = 31;
-		int row_num = 31;
+		int col_num = 15;
+		int row_num = 15;
 		for (int j = 0; j < row_num; j++) {
 			for (int i = 0; i < col_num; i++) {
 				//mesh.vertices.push_back(std::array<double, 3>{ 0.7 * (double)j / (double)(row_num - 1) + 0.575, 0.35 * (double)i / (double)(col_num - 1),//+0.9
 				//mesh.vertices.push_back(std::array<double, 3>{0.7* (double)i / (double)(col_num - 1) - 0.35,  //+0.9
 				//	0.4 * (double)j / (double)(row_num - 1) - 0.285, 0.7 * (double)j / (double)(row_num - 1) - 0.35});//
 				mesh.vertices.push_back(std::array<double, 3>{0.7 * (double)i / (double)(col_num - 1) - 0.35,  //+0.9
-					0.7 * (double)j / (double)(row_num - 1) - 0.585, 0.1 * (double)j / (double)(row_num - 1) - 0.1});//
+					0.7 * (double)j / (double)(row_num - 1) - 0.585, 0.0});//0.1 * (double)j / (double)(row_num - 1) - 0.1
 			}
 		}
 
@@ -121,7 +121,7 @@ public:
 		//			0.954 * (double)j / (double)(row_num - 1) - 0.6, 0.3 * (double)j / (double)(row_num - 1) - 0.6});// 
 		//	}
 		//}
-		
+
 		//this is for adding force
 		//for (int j = 0; j < row_num; j++) {
 		//	for (int i = 0; i < col_num; i++) {
@@ -140,7 +140,7 @@ public:
 		//			1.2 * (double)j / (double)(row_num - 1) - 0.2, 1.6 * (double)j / (double)(row_num - 1) - 0.5});//
 		//	}
 		//}
-		
+
 		//int col_num = 10;
 		//int row_num = 10;
 		//for (int j = 0; j < row_num; j++) {
@@ -194,7 +194,7 @@ public:
 		//			0.7 * (double)i / (double)(col_num - 1)+0.55, 0.7 * (double)j / (double)(col_num - 1) -0.35});	
 		//	}
 		//}
-		
+
 		//move capsule
 		//int col_num = 41;
 		//int row_num = 41;
@@ -291,7 +291,7 @@ public:
 		initialMaterial(mesh, 2);
 
 	}
-	
+
 
 	void setMaterial2(OriMesh& mesh)
 	{
@@ -309,7 +309,7 @@ public:
 		//mesh.vertices.push_back({ -0.02,0.2,-0.02 });
 		//mesh.vertices.push_back({ 0.02,0.2,-0.02 });
 	// 
-		
+
 		// 
 		// 
 		//mesh.vertices.push_back({ 0.125,0.2,0.125 });		
@@ -319,13 +319,13 @@ public:
 		//
 		//cloth falls on other cloth
 		int col_num = 30;
-		int row_num = 30;		
+		int row_num = 30;
 		for (int j = 0; j < col_num; j++) {
 			for (int i = 0; i < col_num; i++) {
 				//mesh.vertices.push_back(std::array<double, 3>{ 0.7 * (double)j / (double)(col_num - 1) -0.35, 0.2,// 0.5 * (double)i / (double)(col_num - 1) + 0.6,
 				//	0.7 * (double)i / (double)(col_num - 1) -0.35});// +  //, 1.35 - 0.2 * (double)i / (double)(col_num - 1)
 				mesh.vertices.push_back(std::array<double, 3>{0.7 * (double)i / (double)(col_num - 1) - 0.35,  //+0.9
-					0.4 * (double)j / (double)(row_num - 1) - 0.285, 0.7 * (double)j / (double)(row_num - 1) -0.8});//
+					0.4 * (double)j / (double)(row_num - 1) - 0.285, 0.7 * (double)j / (double)(row_num - 1) - 0.8});//
 			}
 		}
 
@@ -370,7 +370,7 @@ public:
 
 	}
 
-	void setFloor(OriMesh& mesh) 
+	void setFloor(OriMesh& mesh)
 	{
 		//int col_num = 30;
 		//for (int j = 0; j <col_num; j++) {
@@ -381,8 +381,8 @@ public:
 		//}
 
 		////for two prisms.
-		int col_num =40;
-		int row_num =40;
+		int col_num = 40;
+		int row_num = 40;
 		for (int j = 0; j < row_num; j++) {
 			for (int i = 0; i < col_num; i++) {
 				mesh.vertices.push_back(std::array<double, 3>{1.6 * (double)i / (double)(col_num - 1) - 0.8,  //+0.9
@@ -457,17 +457,17 @@ public:
 		//}
 	}
 
-	void setCylinder(OriMesh& mesh,double r, double length, int col_num, int row_num, int type)
+	void setCylinder(OriMesh& mesh, double r, double length, int col_num, int row_num, int type)
 	{
-		for (int j = 0; j <row_num; j++) {
+		for (int j = 0; j < row_num; j++) {
 			for (int i = 0; i < col_num; i++) {
-				mesh.vertices.push_back(std::array<double, 3>{	
-					r*(1.0+1.5* length * (1.0- (double)j / (double)(row_num - 1)))*sin(2.0 * M_PI * (double)i / (double)col_num),
-					0.5-length*(double)(row_num - 1-j) / (double)(row_num - 1),// - 0.5* length,				
-					r* (1.0 + 1.5 * length * (1.0- (double)j / (double)(row_num - 1)))* cos(2.0 * M_PI * (double)i / (double)col_num)});
+				mesh.vertices.push_back(std::array<double, 3>{
+					r* (1.0 + 1.5 * length * (1.0 - (double)j / (double)(row_num - 1)))* sin(2.0 * M_PI * (double)i / (double)col_num),
+						0.5 - length * (double)(row_num - 1 - j) / (double)(row_num - 1),// - 0.5* length,				
+						r* (1.0 + 1.5 * length * (1.0 - (double)j / (double)(row_num - 1)))* cos(2.0 * M_PI * (double)i / (double)col_num)});
 			}
 		}
-		cylinderIndices(mesh, 0, col_num* row_num, col_num, row_num);
+		cylinderIndices(mesh, 0, col_num * row_num, col_num, row_num);
 		initialMaterial(mesh, type);
 	}
 
@@ -482,21 +482,21 @@ public:
 		int globe_num_2 = 20;
 
 		double half_capsule_length = 0.4;
-		double capsule_length = 2.0* half_capsule_length;
+		double capsule_length = 2.0 * half_capsule_length;
 
-		mesh.vertices.push_back(std::array<double, 3>{half_capsule_length + r,0.0, 0.0});
+		mesh.vertices.push_back(std::array<double, 3>{half_capsule_length + r, 0.0, 0.0});
 		for (int j = 1; j < globe_row; j++) {
 			for (int i = 0; i < col_num; i++) {
 				mesh.vertices.push_back(std::array<double, 3>{
-					r* cos(M_PI * (double)j / (double)globe_num_2) + half_capsule_length,
-					r* sin(M_PI* (double)j / (double)globe_num_2)* sin(2.0 * M_PI * (double)i / (double)col_num),
+					r* cos(M_PI* (double)j / (double)globe_num_2) + half_capsule_length,
+						r* sin(M_PI* (double)j / (double)globe_num_2)* sin(2.0 * M_PI * (double)i / (double)col_num),
 						r* sin(M_PI* (double)j / (double)globe_num_2)* cos(2.0 * M_PI * (double)i / (double)col_num)});
 			}
 		}
-		
+
 		int first_half_sphere = mesh.vertices.size() - col_num;
 
-		for (int j = row_num - 2; j >0; j--) {
+		for (int j = row_num - 2; j > 0; j--) {
 			for (int i = 0; i < col_num; i++) {
 				mesh.vertices.push_back(std::array<double, 3>{capsule_length* (double)j / (double)(row_num - 1) - half_capsule_length,
 					r* sin(2.0 * M_PI * (double)i / (double)col_num),
@@ -507,20 +507,20 @@ public:
 		int before_last_half_sphere = mesh.vertices.size();
 		int total_num = row_num * col_num;
 
-		for (int j = globe_row-1; j>0; j--) {
+		for (int j = globe_row - 1; j > 0; j--) {
 			for (int i = 0; i < col_num; i++) {
 				mesh.vertices.push_back(std::array<double, 3>{
 					-r * cos(M_PI * (double)j / (double)globe_num_2) - half_capsule_length,
-					r* sin(M_PI* (double)j / (double)globe_num_2)* sin(2.0 * M_PI * (double)i / (double)col_num),
+						r* sin(M_PI* (double)j / (double)globe_num_2)* sin(2.0 * M_PI * (double)i / (double)col_num),
 						r* sin(M_PI* (double)j / (double)globe_num_2)* cos(2.0 * M_PI * (double)i / (double)col_num)});
 			}
 		}
 		mesh.vertices.push_back(std::array<double, 3>{-half_capsule_length - r, 0.0, 0.0});
 
-		
+
 
 		globeIndices(globe_row, col_num, mesh, before_last_half_sphere);
-		cylinderIndices(mesh,first_half_sphere, total_num,col_num,row_num);
+		cylinderIndices(mesh, first_half_sphere, total_num, col_num, row_num);
 
 	}
 
@@ -547,7 +547,7 @@ public:
 
 private:
 
-	
+
 
 	glm::mat3x3 band_rotate;
 	glm::mat3x3 band_rotate_reverse;
@@ -580,7 +580,7 @@ private:
 	}
 
 
-	void rotateCloth(double* body_center, OriMesh& mesh){
+	void rotateCloth(double* body_center, OriMesh& mesh) {
 		double move[3];
 		memcpy(move, body_center, 24);
 		glm::vec3 body_pos;
@@ -654,11 +654,11 @@ private:
 			if ((i + 1) % col_num != 0 && i < totalNum - col_num) {
 				mesh.indices.push_back(i);
 				mesh.indices.push_back(i + col_num + 1);
-				mesh.indices.push_back(i+1);				
+				mesh.indices.push_back(i + 1);
 				mesh.indices.push_back(i);
 				mesh.indices.push_back(i + col_num);
-				mesh.indices.push_back(i+col_num+1);
-				
+				mesh.indices.push_back(i + col_num + 1);
+
 			}
 		}
 		//mesh.virtual_face_indices = mesh.indices;
@@ -945,38 +945,38 @@ private:
 		assert(row_num % 2 == 0);
 		int totalNum = mesh.vertices.size();
 		int index;
-		for (int j = 0; j < row_num-1; j += 2) {
-			for (int i = 0; i < col_num-1; i+=2) {			
+		for (int j = 0; j < row_num - 1; j += 2) {
+			for (int i = 0; i < col_num - 1; i += 2) {
 				index = col_num * j + i;
-				mesh.indices.push_back(index);				
+				mesh.indices.push_back(index);
 				mesh.indices.push_back(index + col_num);
 				mesh.indices.push_back(index + 1);
-				mesh.indices.push_back(index+1);				
+				mesh.indices.push_back(index + 1);
 				mesh.indices.push_back(index + col_num);
-				mesh.indices.push_back(index + col_num + 1); 
+				mesh.indices.push_back(index + col_num + 1);
 
-				mesh.indices.push_back(index + 1);				
+				mesh.indices.push_back(index + 1);
 				mesh.indices.push_back(index + col_num + 1);
 				mesh.indices.push_back(index + col_num + 2);
 
-				mesh.indices.push_back(index + col_num);			
-				mesh.indices.push_back(index + 2*col_num+1);
+				mesh.indices.push_back(index + col_num);
+				mesh.indices.push_back(index + 2 * col_num + 1);
 				mesh.indices.push_back(index + col_num + 1);
 
-				mesh.indices.push_back(index + col_num +1 );				
+				mesh.indices.push_back(index + col_num + 1);
 				mesh.indices.push_back(index + 2 * col_num + 1);
 				mesh.indices.push_back(index + col_num + 2);
 
-				mesh.indices.push_back(index + col_num);				
+				mesh.indices.push_back(index + col_num);
 				mesh.indices.push_back(index + 2 * col_num);
 				mesh.indices.push_back(index + 2 * col_num + 1);
 
 
-				mesh.indices.push_back(index + col_num + 2);				
-				mesh.indices.push_back(index + 2*col_num + 1);
+				mesh.indices.push_back(index + col_num + 2);
+				mesh.indices.push_back(index + 2 * col_num + 1);
 				mesh.indices.push_back(index + 2 * col_num + 2);
 
-				mesh.indices.push_back(index + 1);				
+				mesh.indices.push_back(index + 1);
 				mesh.indices.push_back(index + col_num + 2);
 				mesh.indices.push_back(index + 2);
 			}
@@ -986,23 +986,23 @@ private:
 
 	void cylinderIndices(OriMesh& mesh, int first_half_sphere, int total_num, int col_num, int row_num)
 	{
-		
+
 		for (int i = 0; i < total_num; i++) {
 			if ((i + 1) % col_num != 0 && i < total_num - col_num) {
-				mesh.indices.push_back(i+ first_half_sphere);				
+				mesh.indices.push_back(i + first_half_sphere);
 				mesh.indices.push_back(i + 1 + first_half_sphere);
 				mesh.indices.push_back(i + col_num + 1 + first_half_sphere);
-				mesh.indices.push_back(i + first_half_sphere);				
+				mesh.indices.push_back(i + first_half_sphere);
 				mesh.indices.push_back(i + col_num + 1 + first_half_sphere);
 				mesh.indices.push_back(i + col_num + first_half_sphere);
 			}
 		}
 		for (int i = 0; i < row_num - 1; ++i) {
-			mesh.indices.push_back(col_num * (i+1) + first_half_sphere);			
-			mesh.indices.push_back(col_num * (i+1)-1 + first_half_sphere);
+			mesh.indices.push_back(col_num * (i + 1) + first_half_sphere);
+			mesh.indices.push_back(col_num * (i + 1) - 1 + first_half_sphere);
 			mesh.indices.push_back(col_num * i + first_half_sphere);
-			mesh.indices.push_back(col_num * (i +1)- 1 + first_half_sphere);			
-			mesh.indices.push_back(col_num * (i +1) + first_half_sphere);
+			mesh.indices.push_back(col_num * (i + 1) - 1 + first_half_sphere);
+			mesh.indices.push_back(col_num * (i + 1) + first_half_sphere);
 			mesh.indices.push_back(col_num * (i + 2) - 1 + first_half_sphere);
 		}
 	}
@@ -1032,42 +1032,42 @@ private:
 			globe_indices.push_back(vertex_num);
 			globe_indices.push_back(i + 1);
 			globe_indices.push_back(i);
-		
-			globe_indices.push_back(pre_vertex_num+i + 1);
+
+			globe_indices.push_back(pre_vertex_num + i + 1);
 			globe_indices.push_back(vertex_num + 1);
-			globe_indices.push_back(pre_vertex_num+i);
+			globe_indices.push_back(pre_vertex_num + i);
 
 		}
 		globe_indices.push_back(vertex_num);
 		globe_indices.push_back(0);
-		globe_indices.push_back(col-1);		
+		globe_indices.push_back(col - 1);
 		globe_indices.push_back(pre_vertex_num);
-		globe_indices.push_back(vertex_num+1);
-		globe_indices.push_back(pre_vertex_num+col-1);
+		globe_indices.push_back(vertex_num + 1);
+		globe_indices.push_back(pre_vertex_num + col - 1);
 		mesh.indices.insert(mesh.indices.end(), globe_indices.begin(), globe_indices.end());
 	}
-	
+
 
 	void globeIndices(int row, int col, OriMesh& mesh, int cylinder_vertex_num)
 	{
 		std::vector<int>globe_indices;
-		for (int j = 1; j < row-1; ++j) {
-			for (int i = 0; i < col-1; ++i) {
-				globe_indices.push_back(col * (j - 1) + i);				
+		for (int j = 1; j < row - 1; ++j) {
+			for (int i = 0; i < col - 1; ++i) {
+				globe_indices.push_back(col * (j - 1) + i);
 				globe_indices.push_back(col * (j - 1) + i + 1);
 				globe_indices.push_back(col * j + i);
-				globe_indices.push_back(col * j + i);				
+				globe_indices.push_back(col * j + i);
 				globe_indices.push_back(col * (j - 1) + i + 1);
 				globe_indices.push_back(col * j + i + 1);
 			}
-			globe_indices.push_back(col * (j - 1) + col-1);			
+			globe_indices.push_back(col * (j - 1) + col - 1);
 			globe_indices.push_back(col * (j - 1));
 			globe_indices.push_back(col * j + col - 1);
-			globe_indices.push_back(col * (j - 1));			
+			globe_indices.push_back(col * (j - 1));
 			globe_indices.push_back(col * j);
 			globe_indices.push_back(col * j + col - 1);
 		}
-	//	mesh.indices.insert(mesh.indices.end(), globe_indices.begin(), globe_indices.end());
+		//	mesh.indices.insert(mesh.indices.end(), globe_indices.begin(), globe_indices.end());
 		for (int i = 0; i < globe_indices.size() / 3; ++i) {
 			mesh.indices.push_back(globe_indices[3 * i] + 1);
 			mesh.indices.push_back(globe_indices[3 * i + 1] + 1);
@@ -1077,25 +1077,25 @@ private:
 			mesh.indices.push_back(globe_indices[3 * i + 2] + cylinder_vertex_num);
 		}
 
-		globe_indices.clear();	
+		globe_indices.clear();
 		for (int i = 0; i < col - 1; ++i) {
-			globe_indices.push_back(0);			
-			globe_indices.push_back(i+2);
+			globe_indices.push_back(0);
+			globe_indices.push_back(i + 2);
 			globe_indices.push_back(i + 1);
 		}
-		globe_indices.push_back(0);	
+		globe_indices.push_back(0);
 		globe_indices.push_back(1);
 		globe_indices.push_back(col);
 
 		mesh.indices.insert(mesh.indices.end(), globe_indices.begin(), globe_indices.end());
 		int vertex_num = (row - 1) * col;
 		globe_indices.clear();
-		for (int i = 0; i < col - 1; ++i) {			
-			globe_indices.push_back((row-2)*col+ i);			
+		for (int i = 0; i < col - 1; ++i) {
+			globe_indices.push_back((row - 2) * col + i);
 			globe_indices.push_back((row - 2) * col + i + 1);
 			globe_indices.push_back(vertex_num);
 		}
-		globe_indices.push_back((row - 1) * col - 1);	
+		globe_indices.push_back((row - 1) * col - 1);
 		globe_indices.push_back((row - 2) * col);
 		globe_indices.push_back(vertex_num);
 		for (int i = 0; i < globe_indices.size() / 3; ++i) {

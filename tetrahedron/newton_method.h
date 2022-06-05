@@ -57,8 +57,21 @@ public:
 	void resetExternalForce();
 
 	double* damp_stiffness;
+
+	double* rayleigh_damp_stiffness;
+
 	void updateHessianForDamp(int thread_No);
 	Collision collision;
+
+	void computeEnergy(int thread_No);
+
+	void updatePositionFromOri(int thread_No);
+
+
+
+	void setBn(int thread_No);
+	void updateVelocityAccelerationNewMark(int thread_No);
+	void setHessianDiagonalFixedStructureInitialStiffness(int thread_No);
 private:
 
 
@@ -77,6 +90,7 @@ private:
 	VectorXd b; //solve Ax=b
 
 	SparseMatrix<double> Hessian;
+	SparseMatrix<double> ori_stiffness_matrix_record;
 
 	std::vector<double*> Hessian_coeff_address;
 
@@ -112,10 +126,12 @@ private:
 
 	VectorXd position_of_beginning;
 
+	VectorXd position_of_max_step;
 
 	VectorXd gravity;
 
 	VectorXd velocity;
+	VectorXd acceleration;
 
 	VectorXd delta_x; // displacement in a newton iteration step
 
@@ -145,8 +161,8 @@ private:
 
 	std::vector<std::vector<unsigned int>*> edge_vertices_mass_spring;
 	std::vector<std::vector<unsigned int>*> only_one_vertex_fix_edge_vertices; //first index is unfixed (use unfixed index, need to transfer it to get the real index), second index is fixed, it is directly the real index
-	
-	std::vector<double>edge_length_stiffness;
+
+	std::vector<double*>edge_length_stiffness;
 	std::vector<double>anchor_stiffness;
 
 	std::vector<std::vector<double>*>unfixed_rest_length;//
@@ -167,7 +183,7 @@ private:
 
 	void computeHessianFixedStructure(double* vertex_position_0, double* vertex_position_1, double* diagonal_coeff_0,
 		double* diagonal_coeff_1, double** hessian_coeff_address, double stiffness, double rest_length, double time_step_square,
-		double* velocity_0, double* velocity_1, double damp_stiffness);
+		double damp_stiffness, double* damp_force_0, double* damp_force_1);
 
 
 	void updateHessianFixedStructure();
@@ -178,8 +194,8 @@ private:
 	void computeGravity();
 
 
-	SparseLU<SparseMatrix<double>, COLAMDOrdering<int> >global_llt;
-	//SimplicialLDLT<SparseMatrix<double>> global_llt;
+	//SparseLU<SparseMatrix<double>, COLAMDOrdering<int> >global_llt;
+	SimplicialLDLT<SparseMatrix<double>> global_llt;
 
 	void updateRenderPosition();
 	bool convergenceCondition();
@@ -187,11 +203,47 @@ private:
 	void storeInitialPosition();
 
 	void computeHessianOnlyOneVertexFixedEdge(double* vertex_position_0, double* vertex_position_1, double* diagonal_coeff_0,
-		double stiffness, double rest_length, double time_step_square, double* ori_position_0, double* ori_position_1,  double damp_stiffness);
+		double stiffness, double rest_length, double time_step_square, double damp_stiffness,
+		double* damp_force_0);
 	void updateInternalForceOnlyOneEdgeFixed(double* vertex_position_0, double* vertex_position_1, double* force_0,
 		double stiffness, double rest_length, double* ori_position_0, double* ori_position_1, double damp_stiffness);
 
 	//double damp_coe;
 
+	//unsigned int obj_dimension = 2;
 
-}; 
+	void computeMassSpringEnergy(int thread_No);
+	void computeInertial(int thread_No);
+	double computeMassSpringEnergy(double* position_0, double* position_1, double rest_length, double stiffness);
+	std::vector<double> energy_per_thread;
+	void computeEnergy();
+	double total_energy;
+	double previous_energy;
+	double displacement_coe;
+
+	bool change_direction;
+	void computeResidual();
+
+	double residual;
+
+	std::vector<double>store_residual;
+	std::vector<double>log_store_residual;
+
+	std::vector<VectorXd> b_thread;
+
+	double beta, gamma;
+	bool is_newmark = true;
+	void 	solveNewtonMethod_();
+	void newmarkBetaMethod();
+	void updateK();
+	void setK();
+	void setBn();
+
+	VectorXd pos_dis;
+
+	std::vector<double> store_ori_value;
+
+	double previous_frame_rayleigh_damp_stiffness_beta;
+	std::vector<double>previous_frame_edge_length_stiffness;
+	bool edgeLengthStiffnessHasChanged();
+};

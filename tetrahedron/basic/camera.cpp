@@ -1,6 +1,6 @@
 #include"camera.h"
 
-Camera::Camera(glm::vec3 position, glm::vec3 up, glm::vec3 center, float fov):
+Camera::Camera(glm::vec3 position, glm::vec3 up, glm::vec3 center, float fov) :
     position(position), center(center), ori_position(position), ori_center(center), fov(fov)
 {
     far_plane = 20.0 * sqrt(dot(position - center, position - center));
@@ -55,8 +55,8 @@ void Camera::getCursorPosInSpace(double* cursor_pos_in_space, double* cursor_scr
     object_from_camera.x = object_position[0] - position.x;
     object_from_camera.y = object_position[1] - position.y;
     object_from_camera.z = object_position[2] - position.z;
-    glm::vec3 position2center=center-position;
-    position2center=normalize(position2center);
+    glm::vec3 position2center = center-position;
+    position2center = normalize(position2center);
     float dis = dot(object_from_camera, position2center);
     glm::vec3 object_plane_center = position2center * dis;
     double max_hight = 2.0 * dis * tan(glm::radians(fov / 2.0f));
@@ -94,14 +94,14 @@ glm::vec3 Camera::rotationxyz(float angle, glm::vec3& rotate_axe, glm::vec3& vec
         rotate_axe.x * rotate_axe.y, rotate_axe.y * rotate_axe.y, rotate_axe.y * rotate_axe.z,
         rotate_axe.x * rotate_axe.z, rotate_axe.y * rotate_axe.z, rotate_axe.z * rotate_axe.z);
 
-    glm::mat3x3 Rot = cos(angle) * (glm::mat3(1.0f)-uxu) + sin(angle) * ux + uxu;
+    glm::mat3x3 Rot = cos(angle) * (glm::mat3(1.0f) - uxu) + sin(angle) * ux + uxu;
     return Rot * vec;
 }
 
 void Camera::move(float y_pos, float z_pos)
 {
-    float dis =2.0f * tan(glm::radians(fov / 2.0f)) * sqrt(glm::dot(position - center, position - center));
-    glm::vec3 move = y_pos * y_vec / (float)SCR_HEIGHT *dis
+    float dis = 2.0f * tan(glm::radians(fov / 2.0f)) * sqrt(glm::dot(position - center, position - center));
+    glm::vec3 move = y_pos * y_vec / (float)SCR_HEIGHT * dis
         + z_pos / (float)SCR_HEIGHT * up * dis;
     position += move;
     center += move;
@@ -136,5 +136,5 @@ void Camera::rotation(float angleY, float angleZ, int type) //type to note if th
     }
     position = position_center + center;
     up = glm::normalize(up);
-    y_vec= glm::normalize(glm::cross(up, position - center));
+    y_vec = glm::normalize(glm::cross(up, position - center));
 }

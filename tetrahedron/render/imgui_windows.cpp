@@ -12,7 +12,7 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 	ImGui::Begin("Control Panel");
 	ImGui::SetNextItemOpen(true);
 	if (ImGui::TreeNode("State Control")) {
-		if (control_parameter[USE_XPBD] || control_parameter[USE_PD_] || control_parameter[USE_NEWTON_]) {			
+		if (control_parameter[USE_XPBD] || control_parameter[USE_PD_] || control_parameter[USE_NEWTON_]) {
 			if (ImGui::Button("1 Frame", ImVec2(160, 25)))
 			{
 				control_parameter[ONE_FRAME] = true;
@@ -62,7 +62,7 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 	}
 	ImGui::SetNextItemOpen(true);
 	if (ImGui::TreeNode("Simulation control")) {
-		//if (!control_parameter[ONLY_COLLISION_TEST]) {
+	//if (!control_parameter[ONLY_COLLISION_TEST]) {
 			ImGui::TextWrapped("Pause simulaition rightly after adding a force and relasing the mouse.");
 			if (control_parameter[STOP_AFTER_RELEASE_MOUSE]) {
 				if (ImGui::Button("Off", ImVec2(160, 25)))
@@ -108,17 +108,17 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 		}
 		ImGui::TreePop();
 	}
-	ImGui::SetNextItemOpen(true);
-	if (ImGui::TreeNode("Set cursor force")) {
-		if (!control_parameter[SET_CURSOR_FORCE]) {
-			if (ImGui::Button("Set force", ImVec2(160, 25)))
-			{
-				control_parameter[SET_CURSOR_FORCE] = true;
+		ImGui::SetNextItemOpen(true);
+		if (ImGui::TreeNode("Set cursor force")) {
+			if (!control_parameter[SET_CURSOR_FORCE]) {
+				if (ImGui::Button("Set force", ImVec2(160, 25)))
+				{
+					control_parameter[SET_CURSOR_FORCE] = true;
+				}
 			}
+			ImGui::TreePop();
 		}
-		ImGui::TreePop();
-	}
-	//if (!control_parameter[ONLY_COLLISION_TEST]) {
+		//if (!control_parameter[ONLY_COLLISION_TEST]) {
 		//ImGui::SetNextItemOpen(true);
 		//if (ImGui::TreeNode("Start Test")) {
 		//	if (ImGui::Button("Start test", ImVec2(160, 25)))
@@ -132,139 +132,139 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 		//{
 		//	control_parameter[MOVE_OBJ_SCRIPT] = true;
 		//}
-	//}
-	if (control_parameter[ONLY_COLLISION_TEST]) {
-		if (control_parameter[DRAW_VT]) {
-			ImGui::Text("Show VT collision pair");
-			if (ImGui::Button("Switch to EE", ImVec2(160, 25)))
-			{
-				control_parameter[DRAW_VT] = false;
-			}
-		}
-		else {
-			ImGui::Text("Show EE collision pair");
-			if (ImGui::Button("Switch to VT", ImVec2(160, 25)))
-			{
-				control_parameter[DRAW_VT] = true;
-			}
-		}
-	}
-	ImGui::Text("Move Step 1:");
-	if (control_parameter[MOVE_OBJ]) {
-		if (ImGui::Button("Stop move object", ImVec2(160, 25)))
-		{
-			control_parameter[MOVE_OBJ] = false;
-		}
-	}
-	else {
-		if (ImGui::Button("Start move object", ImVec2(160, 25)))
-		{
-			control_parameter[MOVE_OBJ] = true;
-			control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
-			control_parameter[ROTATION] = false;
-			control_parameter[ONLY_ROTATE_CURRENT] = false;
-		}
-	}
-	if (control_parameter[ROTATION]) {
-		if (ImGui::Button("Stop rotate object", ImVec2(160, 25)))
-		{
-			control_parameter[ROTATION] = false;
-		}
-	}
-	else {
-		if (ImGui::Button("Start rotate object", ImVec2(160, 25)))
-		{
-			control_parameter[ROTATION] = true;
-			control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
-			control_parameter[MOVE_OBJ] = false;
-			control_parameter[ONLY_ROTATE_CURRENT] = false;
-		}
-	}
-	ImGui::Text("Move Step 2:");
-	if (control_parameter[ONLY_MOVE_CURRENT_POSITION]) {
-		if (ImGui::Button("Stop move current pos", ImVec2(160, 25)))
-		{
-			control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
-		}
-	}
-	else {
-		if (ImGui::Button("Start move current pos", ImVec2(160, 25)))
-		{
-			control_parameter[ONLY_MOVE_CURRENT_POSITION] = true;
-			control_parameter[MOVE_OBJ] = false;
-		}
-	}
-	if (control_parameter[ONLY_ROTATE_CURRENT]) {
-		if (ImGui::Button("Stop rotate current pos", ImVec2(160, 25)))
-		{
-			control_parameter[ONLY_ROTATE_CURRENT] = false;
-		}
-	}
-	else {
-		if (ImGui::Button("Start rotate current pos", ImVec2(160, 25)))
-		{
-			control_parameter[ONLY_ROTATE_CURRENT] = true;
-			control_parameter[MOVE_OBJ] = false;
-			control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
-			control_parameter[ROTATION] = false;
-		}
-	}
-	if (control_parameter[ONLY_COLLISION_TEST]) {
-		if (control_parameter[DRAW_SPATIAL_HASHING]) {
-			if (ImGui::Button("Hide Spatial Hashing Cell", ImVec2(160, 25)))
-			{
-				control_parameter[DRAW_SPATIAL_HASHING] = false;
-			}
-		}
-		else {
-			if (ImGui::Button("Show Spatial Hashing Cell", ImVec2(160, 25)))
-			{
-				control_parameter[DRAW_SPATIAL_HASHING] = true;
-				control_parameter[SPATIAL_HASHING_UPDATE] = true;
-			}
-		}
-		if (!control_parameter[SHORTCUT_INSTRUCTION]) {
-			if (ImGui::Button("Shortcut instuct.", ImVec2(160, 25)))
-			{
-				control_parameter[SHORTCUT_INSTRUCTION] = true;
-			}
-		}
-		if (control_parameter[DRAW_SPATIAL_HASHING]) {
-			ImGui::Text("Draw Collision in a cell");
-			if (ImGui::Button("<<front.", ImVec2(120, 25))) {
-				control_parameter[SEARCH_LEFT_SH_CELL] = true;
-			}
-			ImGui::SameLine();
-			if (ImGui::Button(">>back.", ImVec2(120, 25))) {
-				control_parameter[SEARCH_RIGHT_SH_CELL] = true;
-			}
-			if (control_parameter[DRAW_ALL_PAIRS_IN_A_CELL]) {
-				if (ImGui::Button("Only show collision", ImVec2(120, 25))) {
-					control_parameter[DRAW_ALL_PAIRS_IN_A_CELL] = false;
+		//}
+		if (control_parameter[ONLY_COLLISION_TEST]) {
+			if (control_parameter[DRAW_VT]) {
+				ImGui::Text("Show VT collision pair");
+				if (ImGui::Button("Switch to EE", ImVec2(160, 25)))
+				{
+					control_parameter[DRAW_VT] = false;
 				}
 			}
 			else {
-				if (ImGui::Button("Show all primitive", ImVec2(120, 25))) {
-					control_parameter[DRAW_ALL_PAIRS_IN_A_CELL] = true;
+				ImGui::Text("Show EE collision pair");
+				if (ImGui::Button("Switch to VT", ImVec2(160, 25)))
+				{
+					control_parameter[DRAW_VT] = true;
 				}
 			}
 		}
-
-	}
-	ImGui::End();
-	if (control_parameter[SET_CURSOR_FORCE]) {
-		ImGui::SetNextWindowSize(ImVec2(330, 240));
-		ImGui::Begin("Set Cursor Force", &control_parameter[SET_CURSOR_FORCE]);
-		ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.9f);
-		ImGui::SetNextItemOpen(true);
-		if (ImGui::TreeNode("Set force coefficient")) {
-			ImGui::SliderFloat("##set force coefficient", force_coe, 0.01, 1.0, "force coefficient = %.2f");
-			ImGui::TreePop();
+		ImGui::Text("Move Step 1:");
+		if (control_parameter[MOVE_OBJ]) {
+			if (ImGui::Button("Stop move object", ImVec2(160, 25)))
+			{
+				control_parameter[MOVE_OBJ] = false;
+			}
 		}
-		ImGui::TextWrapped("Force depends on force coefficient and cursor moving speed.");
-		ImGui::End();
-	}
-	
+		else {
+			if (ImGui::Button("Start move object", ImVec2(160, 25)))
+			{
+				control_parameter[MOVE_OBJ] = true;
+				control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
+				control_parameter[ROTATION] = false;
+				control_parameter[ONLY_ROTATE_CURRENT] = false;
+			}
+		}
+		if (control_parameter[ROTATION]) {
+			if (ImGui::Button("Stop rotate object", ImVec2(160, 25)))
+			{
+				control_parameter[ROTATION] = false;
+			}
+		}
+		else {
+			if (ImGui::Button("Start rotate object", ImVec2(160, 25)))
+			{
+				control_parameter[ROTATION] = true;
+				control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
+				control_parameter[MOVE_OBJ] = false;
+				control_parameter[ONLY_ROTATE_CURRENT] = false;
+			}
+		}
+		ImGui::Text("Move Step 2:");
+		if (control_parameter[ONLY_MOVE_CURRENT_POSITION]) {
+			if (ImGui::Button("Stop move current pos", ImVec2(160, 25)))
+			{
+				control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
+			}
+		}
+		else {
+			if (ImGui::Button("Start move current pos", ImVec2(160, 25)))
+			{
+				control_parameter[ONLY_MOVE_CURRENT_POSITION] = true;
+				control_parameter[MOVE_OBJ] = false;
+			}
+		}
+		if (control_parameter[ONLY_ROTATE_CURRENT]) {
+			if (ImGui::Button("Stop rotate current pos", ImVec2(160, 25)))
+			{
+				control_parameter[ONLY_ROTATE_CURRENT] = false;
+			}
+		}
+		else {
+			if (ImGui::Button("Start rotate current pos", ImVec2(160, 25)))
+			{
+				control_parameter[ONLY_ROTATE_CURRENT] = true;
+				control_parameter[MOVE_OBJ] = false;
+				control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
+				control_parameter[ROTATION] = false;
+			}
+		}
+		if (control_parameter[ONLY_COLLISION_TEST]) {
+			if (control_parameter[DRAW_SPATIAL_HASHING]) {
+				if (ImGui::Button("Hide Spatial Hashing Cell", ImVec2(160, 25)))
+				{
+					control_parameter[DRAW_SPATIAL_HASHING] = false;
+				}
+			}
+			else {
+				if (ImGui::Button("Show Spatial Hashing Cell", ImVec2(160, 25)))
+				{
+					control_parameter[DRAW_SPATIAL_HASHING] = true;
+					control_parameter[SPATIAL_HASHING_UPDATE] = true;
+				}
+			}
+			if (!control_parameter[SHORTCUT_INSTRUCTION]) {
+				if (ImGui::Button("Shortcut instuct.", ImVec2(160, 25)))
+				{
+					control_parameter[SHORTCUT_INSTRUCTION] = true;
+				}
+			}
+			if (control_parameter[DRAW_SPATIAL_HASHING]) {
+				ImGui::Text("Draw Collision in a cell");
+				if (ImGui::Button("<<front.", ImVec2(120, 25))) {
+					control_parameter[SEARCH_LEFT_SH_CELL] = true;
+				}
+				ImGui::SameLine();
+				if (ImGui::Button(">>back.", ImVec2(120, 25))) {
+					control_parameter[SEARCH_RIGHT_SH_CELL] = true;
+				}
+				if (control_parameter[DRAW_ALL_PAIRS_IN_A_CELL]) {
+					if (ImGui::Button("Only show collision", ImVec2(120, 25))) {
+						control_parameter[DRAW_ALL_PAIRS_IN_A_CELL] = false;
+					}
+				}
+				else {
+					if (ImGui::Button("Show all primitive", ImVec2(120, 25))) {
+						control_parameter[DRAW_ALL_PAIRS_IN_A_CELL] = true;
+					}
+				}
+			}
+
+		}
+	ImGui::End();
+		if (control_parameter[SET_CURSOR_FORCE]) {
+			ImGui::SetNextWindowSize(ImVec2(330, 240));
+			ImGui::Begin("Set Cursor Force", &control_parameter[SET_CURSOR_FORCE]);
+			ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.9f);
+			ImGui::SetNextItemOpen(true);
+			if (ImGui::TreeNode("Set force coefficient")) {
+				ImGui::SliderFloat("##set force coefficient", force_coe, 0.01, 1.0, "force coefficient = %.2f");
+				ImGui::TreePop();
+			}
+			ImGui::TextWrapped("Force depends on force coefficient and cursor moving speed.");
+			ImGui::End();
+		}
+
 
 
 	if (control_parameter[SHORTCUT_INSTRUCTION]) {
@@ -329,33 +329,33 @@ void ImGuiWindows::visualizationControlPanel(bool& reset_camera, std::vector<std
 					show_element[COLLIDER_][i] = true;
 				}
 			}
-			if (show_element[3+COLLIDER_][i]) {
+			if (show_element[3 + COLLIDER_][i]) {
 				tempString = "Hide WireFrame##Collider" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					show_element[3+COLLIDER_][i] = false;
+					show_element[3 + COLLIDER_][i] = false;
 				}
 			}
 			else {
 				tempString = "Show WireFrame##Collider" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					show_element[3+COLLIDER_][i] = true;
+					show_element[3 + COLLIDER_][i] = true;
 				}
 			}
 			if (only_collision_test) {
-				if (show_element[6+COLLIDER_][i]) {
+				if (show_element[6 + COLLIDER_][i]) {
 					tempString = "Hide Collision##Collider" + std::to_string(i);
 					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 					{
-						show_element[6+COLLIDER_][i] = false;
+						show_element[6 + COLLIDER_][i] = false;
 					}
 				}
 				else {
 					tempString = "Show Collision##Collider" + std::to_string(i);
 					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 					{
-						show_element[6+COLLIDER_][i] = true;
+						show_element[6 + COLLIDER_][i] = true;
 					}
 				}
 				if (show_element[9 + COLLIDER_][i]) {
@@ -408,33 +408,33 @@ void ImGuiWindows::visualizationControlPanel(bool& reset_camera, std::vector<std
 					show_element[CLOTH_][i] = true;
 				}
 			}
-			if (show_element[3+CLOTH_][i]) {
+			if (show_element[3 + CLOTH_][i]) {
 				tempString = "Hide WireFrame##cloth" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					show_element[3+CLOTH_][i] = false;
+					show_element[3 + CLOTH_][i] = false;
 				}
 			}
 			else {
 				tempString = "Show WireFrame##cloth" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					show_element[3+CLOTH_][i] = true;
+					show_element[3 + CLOTH_][i] = true;
 				}
 			}
 			if (only_collision_test) {
-				if (show_element[6+CLOTH_][i]) {
+				if (show_element[6 + CLOTH_][i]) {
 					tempString = "Hide Collision##cloth" + std::to_string(i);
 					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 					{
-						show_element[6+CLOTH_][i] = false;
+						show_element[6 + CLOTH_][i] = false;
 					}
 				}
 				else {
 					tempString = "Show Collision##cloth" + std::to_string(i);
 					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 					{
-						show_element[6+CLOTH_][i] = true;
+						show_element[6 + CLOTH_][i] = true;
 					}
 				}
 				if (show_element[9 + CLOTH_][i]) {
@@ -487,33 +487,33 @@ void ImGuiWindows::visualizationControlPanel(bool& reset_camera, std::vector<std
 					show_element[TETRAHEDRON_][i] = true;
 				}
 			}
-			if (show_element[3+TETRAHEDRON_][i]) {
+			if (show_element[3 + TETRAHEDRON_][i]) {
 				tempString = "Hide WireFrame##tetrahedron" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					show_element[3+TETRAHEDRON_][i] = false;
+					show_element[3 + TETRAHEDRON_][i] = false;
 				}
 			}
 			else {
 				tempString = "Show WireFrame##tetrahedron" + std::to_string(i);
 				if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 				{
-					show_element[3+TETRAHEDRON_][i] = true;
+					show_element[3 + TETRAHEDRON_][i] = true;
 				}
 			}
 			if (only_collision_test) {
-				if (show_element[6+TETRAHEDRON_][i]) {
+				if (show_element[6 + TETRAHEDRON_][i]) {
 					tempString = "Hide Collision##tetrahedron" + std::to_string(i);
 					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 					{
-						show_element[6+TETRAHEDRON_][i] = false;
+						show_element[6 + TETRAHEDRON_][i] = false;
 					}
 				}
 				else {
 					tempString = "Show Collision##tetrahedron" + std::to_string(i);
 					if (ImGui::Button(tempString.c_str(), ImVec2(160, 25)))
 					{
-						show_element[6+TETRAHEDRON_][i] = true;
+						show_element[6 + TETRAHEDRON_][i] = true;
 					}
 				}
 				if (show_element[9 + TETRAHEDRON_][i]) {
@@ -635,7 +635,7 @@ void ImGuiWindows::infoWindow(std::vector<std::array<int, 3>>& cloth_info, std::
 	ImGui::Text("stamp: %i", time_stamp);
 	ImGui::Text("Time(ms): %f", time);
 	ImGui::SetNextItemOpen(true);
-	if (ImGui::TreeNode("Iteration")) {		
+	if (ImGui::TreeNode("Iteration")) {
 		if (!start_edit) {
 			if (ImGui::Button("Edit Itr", ImVec2(160, 25))) {
 				start_edit = true;
@@ -708,9 +708,10 @@ void ImGuiWindows::helpMarker(const char* desc)
 
 
 
-void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_stiffness, std::vector<std::array<double, 2>>& tet_stiffness, double* simulation_parameters, std::vector<std::array<double, 4>>& cloth_collision_stiffness,
+void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_stiffness, std::vector<std::array<double, 3>>& tet_stiffness, double* simulation_parameters, std::vector<std::array<double, 4>>& cloth_collision_stiffness,
 	std::vector<std::array<double, 4>>& tet_collision_stiffness,
-	bool* set_stiffness, double* temp_stiffness, UpdateObjStiffness& update_obj_stiffness, bool* set_anchor_point, bool tetrahedron_exist)
+	bool* set_stiffness, double* temp_stiffness, UpdateObjStiffness& update_obj_stiffness, bool* set_anchor_point, bool tetrahedron_exist,
+	double* damp_stiffness, double* rayleigh_damp_stiffness)
 {
 	ImGui::SetNextWindowPos(ImVec2(0, 330));
 	ImGui::SetNextWindowSize(ImVec2(240, 140));
@@ -773,6 +774,7 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 			if (ImGui::TreeNode(tempString.c_str())) {
 				ImGui::Text("ARAP: %.2e", tet_stiffness[i][0]);
 				ImGui::Text("Position: %.2e", tet_stiffness[i][1]);
+				ImGui::Text("Edge Length: %.2e", tet_stiffness[i][2]);
 				ImGui::Text("Collision stiffness:(P point, E edge, T triangle)");
 				ImGui::Text("Self-collision:");
 				ImGui::Text("PT: %.2e", tet_collision_stiffness[i][SELF_POINT_TRIANGLE]);
@@ -792,6 +794,41 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 		ImGui::SetNextWindowSize(ImVec2(300, 330));
 		ImGui::Begin("Set Stiffness##1", set_stiffness + EDIT);
 		ImGui::PushItemWidth(ImGui::GetFontSize() * 7.0f);
+		ImGui::Text("Damp stiffness: ");
+		if (ImGui::InputDouble("##dampStiff", &temp_stiffness[DAMP_STIFFNESS], 0.0f, 0.0f, "%.4f")) {
+			set_stiffness[EDIT_DAMP_STIFFNESS] = false;
+		}
+		ImGui::SameLine();
+		if (!set_stiffness[EDIT_DAMP_STIFFNESS]) {
+			if (ImGui::Button("Save##dampStiff", ImVec2(80, 25))) {
+				set_stiffness[EDIT_DAMP_STIFFNESS] = true;
+				*damp_stiffness = temp_stiffness[DAMP_STIFFNESS];
+			}
+		}
+		else {
+			ImGui::Text("Saved");
+		}
+		ImGui::Text("Rayleigh Damp stiffness: ");
+		ImGui::Text("alpha: ");
+		ImGui::SameLine();
+		if (ImGui::InputDouble("##rayleighDampStiffAlpha", &temp_stiffness[RAYLEIGH_DAMP_STIFFNESS_ALPHA], 0.0f, 0.0f, "%.4f")) {
+			set_stiffness[EDIT_DAMP_STIFFNESS] = false;
+		}
+		ImGui::Text("beta: ");
+		ImGui::SameLine();
+		if (ImGui::InputDouble("##rayleighDampStiffBeta", &temp_stiffness[RAYLEIGH_DAMP_STIFFNESS_BETA], 0.0f, 0.0f, "%.4f")) {
+			set_stiffness[EDIT_DAMP_STIFFNESS] = false;
+		}
+		if (!set_stiffness[EDIT_DAMP_STIFFNESS]) {
+			if (ImGui::Button("Save##RayleidampStiff", ImVec2(80, 25))) {
+				set_stiffness[EDIT_DAMP_STIFFNESS] = true;
+				rayleigh_damp_stiffness[0] = temp_stiffness[RAYLEIGH_DAMP_STIFFNESS_ALPHA];
+				rayleigh_damp_stiffness[1] = temp_stiffness[RAYLEIGH_DAMP_STIFFNESS_BETA];
+			}
+		}
+		else {
+			ImGui::Text("Saved");
+		}
 		ImGui::Text("Length: ");
 		//ImGui::SameLine();
 		if (ImGui::InputDouble("##Length", &temp_stiffness[LENGTH], 0.0f, 0.0f, "%.2f")) {
@@ -844,8 +881,21 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 		else {
 			ImGui::Text("Saved");
 		}
-
-
+		ImGui::Text("Tet Edge Length: ");
+		if (ImGui::InputDouble("##TetEdgeLength", &temp_stiffness[TET_EDGE_LENGTH], 0.0f, 0.0f, "%.2e")) {
+			set_stiffness[EDIT_TET_EDGE_LENGTH] = false;
+		}
+		ImGui::SameLine();
+		if (!set_stiffness[EDIT_TET_EDGE_LENGTH]) {
+			if (ImGui::Button("Save##TetEdgeLength", ImVec2(80, 25))) {
+				set_stiffness[EDIT_TET_EDGE_LENGTH] = true;
+				update_obj_stiffness.update_tet_edge_length = true;
+				update_obj_stiffness.tet_edge_length_stiffness = temp_stiffness[TET_EDGE_LENGTH];
+			}
+		}
+		else {
+			ImGui::Text("Saved");
+		}
 		if (ImGui::Button("Set Collision", ImVec2(160, 25))) {
 			set_stiffness[EDIT_COLLISION] = true;
 		}
@@ -929,7 +979,7 @@ void ImGuiWindows::floorInfo(bool& exist, bool& show, bool& normal_direction, un
 	else {
 		if (ImGui::Button("Create Floor", ImVec2(160, 25))) {
 			exist = true;
-			show=true;
+			show = true;
 		}
 	}
 	if (exist) {
@@ -950,7 +1000,7 @@ void ImGuiWindows::floorInfo(bool& exist, bool& show, bool& normal_direction, un
 			std::string name;
 			for (int n = 0; n < 3; n++)
 			{
-				name =std::to_string(n);
+				name = std::to_string(n);
 				bool is_selected = (dimension == n);
 				if (ImGui::Selectable(name.c_str(), is_selected))
 				{
@@ -976,12 +1026,12 @@ void ImGuiWindows::floorInfo(bool& exist, bool& show, bool& normal_direction, un
 		{
 			std::string name;
 			for (int n = 0; n < 2; n++)
-			{	
+			{
 				if (n == 0) {
-					name ="negative";
+					name = "negative";
 				}
 				else {
-					name ="positive";
+					name = "positive";
 				}
 				bool is_selected = ((int)normal_direction == n);
 				if (ImGui::Selectable(name.c_str(), is_selected))

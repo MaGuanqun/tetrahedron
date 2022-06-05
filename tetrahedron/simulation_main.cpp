@@ -24,10 +24,10 @@ void simu_main(GLFWwindow* window, Input* input) {
 	CoordinateSystem coordinateSystem;
 	bool control_parameter[28];
 	memset(control_parameter, 0, 28);
-	control_parameter[ONLY_COLLISION_TEST] = true;
+	control_parameter[ONLY_COLLISION_TEST] = false;
 	control_parameter[USE_XPBD] = false;
-	control_parameter[USE_PD_] = true;
-	control_parameter[USE_NEWTON_] = false;
+	control_parameter[USE_PD_] = false;
+	control_parameter[USE_NEWTON_] = true;
 	control_parameter[DRAW_VT] = true;
 
 
@@ -59,17 +59,21 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool edit_PD_conv_rate = false;
 	time_t start_time;
 
-	std::vector<std::array<double, 2>> tetrahedron_stiffness;//ARAP, position
+	std::vector<std::array<double, 3>> tetrahedron_stiffness;//ARAP, position, edge_length
 	std::vector<std::array<double, 4>> tetrahedron_collision_stiffness;
-	bool set_stiffness[11];
-	memset(set_stiffness, 0, 11);
-	double temp_stiffness[7];
-	memset(temp_stiffness, 0, 56);
+	bool set_stiffness[13];
+	memset(set_stiffness, 0, 13);
+	double temp_stiffness[11] = { 1e1,1e1,1e1,1e1,1e1,3e-3,1e9,1.0,0.0,0.0,0.0 };
+	//memset(temp_stiffness, 0, 64);
 	UpdateObjStiffness update_obj_stiffness;
 	double tolerance_ratio[7] = { 5e-2,5e-2,5e-2,5e-2, 1e-1, 1e-1, 1e-1 };
 
-	double damp_stiffness=1.0;
-	scene.setDampStiffness(&damp_stiffness);
+	double damp_stiffness = temp_stiffness[DAMP_STIFFNESS];
+	double rayleigh_damp_stiffness[2] = { temp_stiffness[RAYLEIGH_DAMP_STIFFNESS_ALPHA], temp_stiffness[RAYLEIGH_DAMP_STIFFNESS_BETA] };
+	scene.setDampStiffness(&damp_stiffness, rayleigh_damp_stiffness);
+
+
+
 	bool set_anchor[2] = { false,false };
 
 	const char* itr_solver_items_[] = { "Direct", "Jacobi","Chebyshev jacobi","Super Jacobi","Chebyshev super Jacobi", "Gauss Seidel", "PCG", "Chebyshev Gauss Seidel" };
@@ -86,11 +90,11 @@ void simu_main(GLFWwindow* window, Input* input) {
 	double iteration_solver_iteration_num;
 
 
-	unsigned int floor_dimension=1;
-	bool floor_control[4] ={false,false,true,false};
-	double floor_value=-0.35;
+	unsigned int floor_dimension = 1;
+	bool floor_control[4] = { false,false,true,false };
+	double floor_value = -0.35;
 
-	scene.input= input;
+	scene.input = input;
 
 	int cell_index_chose = 0;
 
@@ -107,7 +111,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 		imgui_windows.controlWindow(control_parameter, &force_coe);
 
-		if (couldMoveCamera(input,control_parameter)) {
+		if (couldMoveCamera(input, control_parameter)) {
 			if (input->mouse.scroll_callback) {
 				if (!scene.intersection.happened && !set_anchor[0]) {
 					if (zoom_value > 0.025) {
@@ -171,17 +175,21 @@ void simu_main(GLFWwindow* window, Input* input) {
 				scene.obtainCursorIntersection(input->mouse.screen_pos, &camera, show_element);
 				scene.pickAxes(input->mouse.screen_pos, &camera);
 			}
-		
+
 		}
-		if (control_parameter[USE_PD_] || control_parameter[USE_XPBD]) {
+		if (control_parameter[USE_PD_] || control_parameter[USE_XPBD] || control_parameter[USE_NEWTON_]) {
 			imgui_windows.operationWindow(cloth_stiffness, tetrahedron_stiffness, simulation_parameter, cloth_collision_stiffness, tetrahedron_collision_stiffness, set_stiffness, temp_stiffness,
-				update_obj_stiffness, set_anchor, !scene.tetrahedron.empty());
+				update_obj_stiffness, set_anchor, !scene.tetrahedron.empty(), &damp_stiffness, rayleigh_damp_stiffness);
+			if (update_obj_stiffness.update_length) {
+				control_parameter[RESET_SIMULATION] = true;
+			}
 		}
 		if (!already_load_model) {
 			if (imgui_windows.loadModel(collider_path, object_path)) {
 				already_load_model = true;
 				scene.loadMesh(collider_path, object_path, tolerance_ratio, control_parameter);
-				glm::vec3 camera_pos = glm::vec3(0.6 * scene.shadow.camera_from_origin + scene.camera_center[0], scene.camera_center[1], -0.8 * scene.shadow.camera_from_origin + scene.camera_center[2]);
+				//glm::vec3 camera_pos = glm::vec3(0.6 * scene.shadow.camera_from_origin + scene.camera_center[0], scene.camera_center[1], -0.8 * scene.shadow.camera_from_origin + scene.camera_center[2]);
+				glm::vec3 camera_pos = glm::vec3(scene.camera_center[0], scene.camera_center[1], -scene.shadow.camera_from_origin + scene.camera_center[2]);
 				camera.updateCamera(camera_pos, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(scene.camera_center[0], scene.camera_center[1], scene.camera_center[2]));
 				scene.getClothInfo(cloth_info, cloth_mass, cloth_stiffness, simulation_parameter, cloth_collision_stiffness);
 				scene.getTetrahedronInfo(tetrahedron_info, tetrahedron_mass, tetrahedron_stiffness, simulation_parameter, tetrahedron_collision_stiffness);
@@ -211,8 +219,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 			//	record_matrix = false;
 			//	control_parameter[SAVE_OBJ] = false;
 			//}
-			scene.updateStiffness(update_obj_stiffness,cloth_stiffness,tetrahedron_stiffness,cloth_collision_stiffness,tetrahedron_collision_stiffness);			
-			scene.updateItrInfo(set_iteration_num);			
+			scene.updateStiffness(update_obj_stiffness, cloth_stiffness, tetrahedron_stiffness, cloth_collision_stiffness, tetrahedron_collision_stiffness);
+			scene.updateItrInfo(set_iteration_num);
 			scene.setTolerance(tolerance_ratio);
 			scene.updateCloth(&camera, input, control_parameter, force_coe, record_matrix,
 				iteration_solver_iteration_num, cell_index_chose);
@@ -229,9 +237,9 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 		imgui_windows.floorInfo(floor_control[0], floor_control[1], floor_control[2], floor_dimension, &floor_value, floor_control[3]);
 
-		
-		
-		
+
+
+
 		imgui_windows.visualizationControlPanel(control_parameter[INITIAL_CAMERA], show_element, control_parameter[ONLY_COLLISION_TEST], control_parameter);
 
 		coordinateSystem.draw(&camera, cameraPos);
@@ -242,7 +250,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 			if (control_parameter[USE_PD_]) {
 				imgui_windows.iterationSolverInfoWindow(iteration_solver_iteration_num, use_itr_solver_method, itr_solver_items, itr_solver_item,
 					IM_ARRAYSIZE(itr_solver_items), &iteration_solver_conve_rate, record_matrix);
-			}			
+			}
 		}
 
 		if (control_parameter[ONLY_COLLISION_TEST]) {
@@ -253,9 +261,9 @@ void simu_main(GLFWwindow* window, Input* input) {
 			control_parameter[ONE_FRAME] = true;
 		}
 
-	
-	
-		
+
+
+
 		basic_imgui.imguiEndFrame();
 		glfwSwapBuffers(window);
 		input->beginFrame();
@@ -273,7 +281,7 @@ void setHideWireframe(std::vector<std::vector<bool>>& show_element, int collider
 {
 	if (collider_num > 0) {
 		for (unsigned int i = 0; i < 5; ++i) {
-			show_element[COLLIDER_+ 3*i].resize(collider_num, false);
+			show_element[COLLIDER_ + 3 * i].resize(collider_num, false);
 		}
 	}
 	if (tetrahedron_num > 0) {
@@ -304,13 +312,13 @@ bool couldMoveCamera(Input* input, bool* control_parameter)
 
 void switchObjMoveMode(Input* input, bool* control_parameter)
 {
-	if (input->keyboard.keyIsPressed(GLFW_KEY_R)&& !input->keyboard.keyIsPressed(GLFW_KEY_LEFT_CONTROL) && !input->keyboard.keyIsPressed(GLFW_KEY_RIGHT_CONTROL)) {
+	if (input->keyboard.keyIsPressed(GLFW_KEY_R) && !input->keyboard.keyIsPressed(GLFW_KEY_LEFT_CONTROL) && !input->keyboard.keyIsPressed(GLFW_KEY_RIGHT_CONTROL)) {
 		control_parameter[ROTATION] = true;
 		control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;
 		control_parameter[MOVE_OBJ] = false;
 		control_parameter[ONLY_ROTATE_CURRENT] = false;
 	}
-	if ((input->keyboard.keyIsPressed(GLFW_KEY_LEFT_CONTROL) || input->keyboard.keyIsPressed(GLFW_KEY_RIGHT_CONTROL))&&
+	if ((input->keyboard.keyIsPressed(GLFW_KEY_LEFT_CONTROL) || input->keyboard.keyIsPressed(GLFW_KEY_RIGHT_CONTROL)) &&
 		input->keyboard.keyIsPressed(GLFW_KEY_R)) {
 		control_parameter[ONLY_ROTATE_CURRENT] = true;
 		control_parameter[ONLY_MOVE_CURRENT_POSITION] = false;

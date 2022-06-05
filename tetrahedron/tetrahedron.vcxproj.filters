@@ -363,6 +363,9 @@
     <ClInclude Include="test_simu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="test_assemble_matrix_newton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

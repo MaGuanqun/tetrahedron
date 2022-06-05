@@ -265,6 +265,7 @@
     <ClInclude Include="render\shadow.h" />
     <ClInclude Include="scene.h" />
     <ClInclude Include="simulation_main.h" />
+    <ClInclude Include="test_assemble_matrix_newton.h" />
     <ClInclude Include="test_simu.h" />
     <ClInclude Include="thread.h" />
     <ClInclude Include="XPBD\XPBD.h" />

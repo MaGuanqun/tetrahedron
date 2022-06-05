@@ -12,7 +12,8 @@
 
 namespace WriteTxt {
 
-	void writeTxt(std::vector<unsigned int>& result, std::string name)
+	template <class T>
+	inline void writeTxt(std::vector<T>& result, std::string name)
 	{
 		std::ofstream input_file;
 		std::string obj_name = name + ".txt";
@@ -26,7 +27,8 @@ namespace WriteTxt {
 		std::cout << "write " << obj_name << result.size() << std::endl;
 	}
 
-	void writeTxt(std::vector<double>& result, std::vector<int>& time, int precision, std::string name, std::string first_line)
+
+	inline void writeTxt(std::vector<double>& result, std::vector<int>& time, int precision, std::string name, std::string first_line)
 	{
 		std::ofstream input_file;
 		input_file.precision(precision);
@@ -48,7 +50,7 @@ namespace WriteTxt {
 	}
 
 
-	void addToTxt(std::vector<double>& result, std::vector<int>& time, int precision, std::string name, std::string first_line)
+	inline void addToTxt(std::vector<double>& result, std::vector<int>& time, int precision, std::string name, std::string first_line)
 	{
 		std::ofstream input_file;
 		input_file.precision(precision);

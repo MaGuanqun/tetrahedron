@@ -49,9 +49,9 @@ struct OriMesh {
 		if (!texture.empty()) {
 			texture = mesh.texture;
 		}
-		indices=mesh.indices;
-		front_material=mesh.front_material;
-		back_material=mesh.back_material;
+		indices = mesh.indices;
+		front_material = mesh.front_material;
+		back_material = mesh.back_material;
 		return *this;
 	}
 };
@@ -97,7 +97,7 @@ struct SingleTetrahedronInfo {
 	double density;
 	double edge_length_stiffness;
 	double position_stiffness;			// stiffness of position constraint
-	double ARAP_stiffness;		
+	double ARAP_stiffness;
 	double volume_preserve_stiffness;
 	double collision_stiffness[4];			// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point
 	double sigma_limit[2];//max min sigma for volume preserve
@@ -106,7 +106,7 @@ struct SingleTetrahedronInfo {
 	SingleTetrahedronInfo() {};
 	SingleTetrahedronInfo(double density, double position_stiffness,
 		double ARAP_stiffness, double volume_preserve_stiffness, double* collision_stiffness, double* sigma_limit,
-		double youngs_modulus, double poisson_ratio, double edge_length_stiffness){
+		double youngs_modulus, double poisson_ratio, double edge_length_stiffness) {
 		this->density = density;
 		this->position_stiffness = position_stiffness;
 		this->volume_preserve_stiffness = volume_preserve_stiffness;
@@ -142,11 +142,13 @@ struct UpdateObjStiffness
 	double ARAP_stiffness;
 	bool  update_collision[4];
 	double collision_stiffness[4];
-
+	bool update_tet_edge_length;
+	double tet_edge_length_stiffness;
 	UpdateObjStiffness() {
 		update_length = false;
 		update_bend = false;
 		update_ARAP = false;
+		update_tet_edge_length = false;
 		memset(update_collision, 0, 4);
 	}
 };

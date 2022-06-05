@@ -107,11 +107,11 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	genBuffer();
 	setBuffer();
 	setArea();
-	mass=mesh_struct.setMass(density);
+	mass = mesh_struct.setMass(density);
 	setAnchor();
 	mesh_struct.setAnchorPosition();
 
-	
+
 
 	update_stiffness_iteration_number.resize(mesh_struct.vertices.size());
 	initialHashAABB();
@@ -132,7 +132,7 @@ void Cloth::setMeshStruct(double density, OriMesh& ori_mesh)
 		memcpy(mesh_struct.triangle_indices[0].data(), ori_mesh.indices.data(), 12 * mesh_struct.triangle_indices.size());
 	}
 	this->density = density;
-	
+
 }
 
 
@@ -230,7 +230,7 @@ void Cloth::setAnchor()
 	//mesh_struct.mass_inv[31*31-1] = 0.0;
 	//mesh_struct.mass_inv[31*30] = 0.0;
 	//mesh_struct.anchor_vertex.push_back(31*31-1);
-	//mesh_struct.anchor_vertex.push_back(31*30);
+	mesh_struct.anchor_vertex.push_back(15 * 14);
 
 	//mesh_struct.anchor_vertex.push_back(100);
 	//mesh_struct.anchor_vertex.push_back(0);

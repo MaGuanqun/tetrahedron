@@ -30,7 +30,8 @@ public:
 	bool* control_parameter;
 	void initial();
 	void reset();
-	void loadMesh(std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio, bool* control_parameter);
+	void loadMesh(std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio,
+		bool* control_parameter);
 	void drawScene(Camera* camera, std::vector<std::vector<bool>>& show_element,
 		bool* control_parameter);
 	void getClothInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 3>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 4>>& collision_stiffness);
@@ -42,7 +43,7 @@ public:
 	void setTolerance(double* tolerance_ratio);
 	void testBVH();
 	void obtainCursorIntersection(double* pos, Camera* camera, std::vector<std::vector<bool>>& hide);
-	void getTetrahedronInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 2>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 4>>& collision_stiffness);
+	void getTetrahedronInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 3>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 4>>& collision_stiffness);
 	void selectAnchor(bool* control_parameter, bool* select_anchor, double* screen_pos, bool press_state, bool pre_press_state, Camera* camera, std::vector<bool>& hide);
 	void drawSelectRange(bool* select_anchor, bool press_state, bool pre_press_state);
 	void updateIterateSolverParameter(double rate, int itr_solver_method);
@@ -50,12 +51,12 @@ public:
 
 	void testForWritetToArray(int thread_No);
 	void testForWritetToArraySingle(int total_thread_num);
-	void updateStiffness(UpdateObjStiffness& update_obj_stiffness, std::vector<std::array<double, 3>>& cloth_stiffness, 
-		std::vector<std::array<double, 2>>& tet_stiffness, std::vector<std::array<double, 4>>& cloth_collision_stiffness,
+	void updateStiffness(UpdateObjStiffness& update_obj_stiffness, std::vector<std::array<double, 3>>& cloth_stiffness,
+		std::vector<std::array<double, 3>>& tet_stiffness, std::vector<std::array<double, 4>>& cloth_collision_stiffness,
 		std::vector<std::array<double, 4>>& tet_collision_stiffness);
 	void updateItrInfo(int* iteration_num);
 
-	void setFloorInfo(bool exist, bool show, bool normal_direction, unsigned int dimension, double value, bool& eidit,bool* control_parameter);
+	void setFloorInfo(bool exist, bool show, bool normal_direction, unsigned int dimension, double value, bool& eidit, bool* control_parameter);
 
 	void pickAxes(double* pos, Camera* camera);
 
@@ -63,7 +64,7 @@ public:
 	bool start_rotation;
 
 	Input* input;
-	void setDampStiffness(double* damp_stiffness);
+	void setDampStiffness(double* damp_stiffness, double* rayleigh_damp_stiffness);
 private:
 	unsigned int use_method;
 	bool only_test_collision;

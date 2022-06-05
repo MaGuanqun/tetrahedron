@@ -460,17 +460,29 @@ job Thread::create_task(NewtonMethod* func, int thread_id, NewtonMethodFunc func
     case SET_S_N:
         k = job([func, thread_id]() {func->setSn(thread_id); });
         break;
+    case SET_B_N:
+        k = job([func, thread_id]() {func->setBn(thread_id); });
+        break;
     case UPDATE_ANCHOR_POINT_HESSIAN:
         k = job([func, thread_id]() {func->updateHessianForFixPoint(thread_id); });
         break;
     case UPDATE_POSITION_NEWTON:
         k = job([func, thread_id]() {func->updatePosition(thread_id); });
         break;
+    case UPDATE_POSITION_NEWTON_FROM_ORI:
+        k = job([func, thread_id]() {func->updatePositionFromOri(thread_id); });
+        break;
     case VELOCITY_NEWTON:
         k = job([func, thread_id]() {func->updateVelocity(thread_id); });
         break;
     case VELOCITY_NEWTON_2:
         k = job([func, thread_id]() {func->updateVelocity2(thread_id); });
+        break;
+    case UPDATEVELOCITY_ACCELERATION_NEWMARK:
+        k = job([func, thread_id]() {func->updateVelocityAccelerationNewMark(thread_id); });
+        break;
+    case NEWTON_METHOD_ENERGY:
+        k = job([func, thread_id]() {func->computeEnergy(thread_id); });
         break;
     case UPDATE_DAMP:
         k = job([func, thread_id]() {func->updateHessianForDamp(thread_id); });
@@ -484,7 +496,9 @@ job Thread::create_task(NewtonMethod* func, int thread_id, NewtonMethodFunc func
     case GET_COEFF_ADDRESS:
         k = job([func, thread_id]() {func->hessianCoeffAddress(thread_id); });
         break;
-
+    case UPDATE_DIAGONAL_HESSIAN_FIXED_STRUCTURE_INITIAL_STIFFNESS:
+        k = job([func, thread_id]() {func->setHessianDiagonalFixedStructureInitialStiffness(thread_id); });
+        break;
     }
     return k;
 }
