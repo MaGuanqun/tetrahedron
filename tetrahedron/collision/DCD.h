@@ -2,6 +2,12 @@
 
 #include"../basic/global.h"
 #include"primitive_distance.h"
+#include"../external/Eigen/Dense"
+#include"../basic/eigenDenseOperation.h"
+#include "../external/Eigen/Eigenvalues"
+
+using namespace Eigen;
+using namespace denseOperation;
 
 #undef MAGNITUDE_CROSS
 #define MAGNITUDE_CROSS(dest,v1,v2, t) \
@@ -78,6 +84,10 @@ public:
 	void XPBDFloor(double* initial_position, double* current_position, unsigned int dimension, bool normal_direction, double mass_inv_v,
 		double tolerance, double& lambda, double stiffness, double damping_stiffness, double dt, double floor_value);
 
+
+
+
+
 private:
 	bool pointProjectOnTriangle(
 		const double* p,
@@ -131,6 +141,10 @@ private:
 		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
 		double* initial_triangle_normal, double* barycentric,
 		double tolerance);
+
+	void calAccurateDistancePointTriangle(double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
+		double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+		double tolerance, bool is_front, double current_triangle_area, double mass_point, double mass_t0, double mass_t1, double mass_t2);
 
 };
 

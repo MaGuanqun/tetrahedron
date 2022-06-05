@@ -181,6 +181,48 @@ void DCD::XPBDcalDistancePointTriangle(
 
 }
 
+
+void DCD::calAccurateDistancePointTriangle(double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
+    double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+    double tolerance, bool is_front, double current_triangle_area, double mass_point, double mass_t0, double mass_t1, double mass_t2)
+{
+    double center[3];
+    double mass_total = mass_point + mass_t0 + mass_t1 + mass_t2;
+    center[0] = (mass_point * current_position[0] + mass_t0 * current_triangle_position_0[0] + mass_t1 * current_triangle_position_1[0] + 
+        mass_t2 * current_triangle_position_2[0])/mass_total;
+    center[1] = (mass_point * current_position[1] + mass_t0 * current_triangle_position_0[1] + mass_t1 * current_triangle_position_1[1] +
+        mass_t2 * current_triangle_position_2[1]) / mass_total;
+    center[2] = (mass_point * current_position[2] + mass_t0 * current_triangle_position_0[2] + mass_t1 * current_triangle_position_1[2] +
+        mass_t2 * current_triangle_position_2[2]) / mass_total;
+    
+    Matrix<double,3,4> p;
+    for (unsigned int i = 0; i < 3; ++i) {
+        p.data()[i] = current_position[i] - center[i];
+        p.data()[3+i] = current_triangle_position_0[i] - center[i];
+        p.data()[6+i] = current_triangle_position_1[i] - center[i];
+        p.data()[9+i] = current_triangle_position_2[i] - center[i];
+    }
+    Matrix3d P_;
+    Vector4d mass = Vector4d(mass_point, mass_t0, mass_t1, mass_t2);
+    P_ = p * mass.asDiagonal() * p.transpose();
+    SelfAdjointEigenSolver<Matrix3d> es(P_);
+    Vector3d eigen_value = es.eigenvectors().col(0);
+    
+    Vector3d delta;
+    delta = eigen_value * (- dotProduct(eigen_value, p.col(0)));
+    SUM(vertex_target_pos, current_position, delta);
+    delta = eigen_value * (-dotProduct(eigen_value, p.col(1)));
+    SUM(triangle_target_pos_0, current_triangle_position_0, delta);
+    delta = eigen_value * (-dotProduct(eigen_value, p.col(2)));
+    SUM(triangle_target_pos_1, current_triangle_position_1, delta);
+    delta = eigen_value *(-dotProduct(eigen_value, p.col(3)));
+    SUM(triangle_target_pos_2, current_triangle_position_2, delta);   
+}
+
+
+
+
+
 void DCD::calDistancePointTriangle(double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
     double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
     double* current_triangle_normal, double constraint, double tolerance, bool is_front, double current_triangle_area,
@@ -268,7 +310,7 @@ bool DCD::edgeEdge(double* edge_target_pos_0, double* edge_target_pos_1,
     double barycentric[4];
     if (CCD::internal::edgeEdgeDistanceType(initial_edge_vertex_0, initial_edge_vertex_1,
         initial_compare_edge_vertex_0, initial_compare_edge_vertex_1, barycentric) != 8) {
-        //return false;
+        return false;
     }
     double norm[3];
     double distance2;
@@ -811,3 +853,6 @@ bool DCD::pointProjectOnTriangle(
     }
   
 }
+
+
+
