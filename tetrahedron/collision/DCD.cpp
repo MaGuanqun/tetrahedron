@@ -24,7 +24,7 @@ void DCD::XPBDpointSelfTriangle(double* initial_position, double* current_positi
     double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
     double* initial_triangle_normal, double* current_triangle_normal, 
     double tolerance, double mass_inv_point, double mass_inv_t0, double mass_inv_t1, double mass_inv_t2,
-    double current_triangle_area, double& lambda, double stiffness, double damping_stiffness, double dt)
+    double triangle_normal_magnitude_reciprocal, double& lambda, double stiffness, double damping_stiffness, double dt)
 {
     double barycentric[3];
     double current_side;
@@ -40,12 +40,161 @@ void DCD::XPBDpointSelfTriangle(double* initial_position, double* current_positi
         XPBDcalDistancePointTriangle(initial_position, initial_triangle_position_0, initial_triangle_position_1,
             initial_triangle_position_2,
             current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
-            current_triangle_normal, current_side, tolerance, should_be_front, current_triangle_area,
+            current_triangle_normal, current_side, tolerance, should_be_front, triangle_normal_magnitude_reciprocal,
             mass_inv_point, mass_inv_t0, mass_inv_t1, mass_inv_t2,lambda, stiffness, damping_stiffness,dt);
     }
 }
 
 
+void DCD::test()
+{
+    double info_p[3], info_v0[3], info_v1[3], info_v2[3];
+    for (unsigned int k = 0; k < 100; ++k) {
+        info_p[0] = ((double)rand() / (double)RAND_MAX - 0.5) * M_PI;
+        info_p[1]= ((double)rand() / (double)RAND_MAX)*2.0 * M_PI;
+        info_p[2] = 1.0;
+
+        info_v0[0] = ((double)rand() / (double)RAND_MAX - 0.5) * M_PI;
+        info_v0[1] = ((double)rand() / (double)RAND_MAX) * 2.0 * M_PI;
+        info_v0[2] = 1.0;
+
+        info_v1[0] = ((double)rand() / (double)RAND_MAX - 0.5) * M_PI;
+        info_v1[1] = ((double)rand() / (double)RAND_MAX) * 2.0 * M_PI;
+        info_v1[2] = 1.0;
+
+        info_v2[0] = ((double)rand() / (double)RAND_MAX - 0.5) * M_PI;
+        info_v2[1] = ((double)rand() / (double)RAND_MAX) * 2.0 * M_PI;
+        info_v2[2] = 1.0;
+
+        test(info_p, info_v0, info_v1, info_v2);
+
+	}
+}
+
+
+
+
+//vertex-triangle
+void DCD::test(double* info_p, double* info_v0, double* info_v1, double* info_v2) //[0] angle0, [1] angle1, [2]radius
+{
+
+
+
+	double initial_pos[3] = { info_p[2]*sin(info_p[0]),info_p[2] * cos(info_p[0]) * sin(info_p[1]),info_p[2] * cos(info_p[0])* cos(info_p[1]) };
+    double current_pos[3];
+    memcpy(current_pos, initial_pos, 24);
+	double initial_triangle_0[3] = { info_v0[2] * sin(info_v0[0]),info_v0[2] * cos(info_v0[0]) * sin(info_v0[1]),info_v0[2] * cos(info_v0[0]) * cos(info_v0[1]) };
+	double initial_triangle_1[3] = { info_v1[2] * sin(info_v1[0]),info_v1[2] * cos(info_v1[0]) * sin(info_v1[1]),info_v1[2] * cos(info_v1[0]) * cos(info_v1[1]) };
+	double initial_triangle_2[3] = { info_v2[2] * sin(info_v2[0]),info_v2[2] * cos(info_v2[0]) * sin(info_v2[1]),info_v2[2] * cos(info_v2[0]) * cos(info_v2[1]) };
+	double current_triangle_0[3];
+	double current_triangle_1[3];
+	double current_triangle_2[3];
+    memcpy(current_triangle_0, initial_triangle_0, 24);
+    memcpy(current_triangle_1, initial_triangle_1, 24);
+    memcpy(current_triangle_2, initial_triangle_2, 24);
+	//double current_triangle_1[3] = { -1.0,0.1,-0.8 };
+	//double current_triangle_2[3] = { -1.0,-0.1,0.8 };
+	double initial_tri_normal[3]; double tri_normal[3];
+    double temp[3];
+	double e1[3], e2[3];
+	double e3[3], e4[3];
+	SUB(e1, initial_triangle_1, initial_triangle_0);
+	SUB(e2, initial_triangle_2, initial_triangle_0);
+	CROSS(initial_tri_normal, e1, e2);
+    normalize(initial_tri_normal);
+	SUB(e3, current_triangle_1, current_triangle_0);
+	SUB(e4, current_triangle_2, current_triangle_0);
+	CROSS(tri_normal, e3, e4);
+    double current_area = 0.5 * sqrt(DOT(tri_normal, tri_normal));
+    normalize(tri_normal);
+	double t;
+	double e_0[3], e_1[3], e_2[3];
+	SUB(e_0, initial_pos, initial_triangle_0);
+	SUB(e_1, initial_pos, initial_triangle_1);
+	SUB(e_2, initial_pos, initial_triangle_2);
+	double u[3], u_0[3], u_1[3], u_2[3];
+	SUB(u, current_pos, initial_pos);
+	SUB(u_0, current_triangle_0, initial_triangle_0);
+	SUB(u_1, current_triangle_1, initial_triangle_1);
+	SUB(u_2, current_triangle_2, initial_triangle_2);
+	double e_[3];
+	SUB(e_, initial_triangle_1, initial_triangle_0);
+	double tolerance_2 = 0.9;
+    double massv=1.0;
+    double mass0=2.0;
+    double mass1=1.5;
+    double mass2=1.0;
+    double target_pos_v[3]; double target_pos_t0[3]; double target_pos_t1[3]; double target_pos_t2[3];
+    double distance_current = distanceFromTriangle(current_pos, current_triangle_0, current_triangle_1, current_triangle_2);
+
+    //if (distance_current > 1e-15) {
+    //    calAccurateDistancePointTriangle(target_pos_v, target_pos_t0, target_pos_t1, target_pos_t2,
+    //        current_pos, current_triangle_0, current_triangle_1, current_triangle_2,
+    //        tolerance_2, massv, mass0, mass1, mass2);
+    //    double distance_result = distanceFromTriangle(target_pos_v, target_pos_t0, target_pos_t1, target_pos_t2);
+    //    std::cout << "distance " << distance_current << " " << distance_result << std::endl;
+    //}
+
+    bool is_front;
+    if (abs(distance_current) > 1e-15) {
+        if (distance_current > 0) {
+            is_front = false;
+        }
+        else {
+            is_front = true;
+        }
+        iterationToGetResult(target_pos_v, target_pos_t0, target_pos_t1, target_pos_t2, current_pos, current_triangle_0, current_triangle_1, current_triangle_2,
+            is_front, massv, mass0, mass1, mass2);
+    }
+}
+
+
+
+double DCD::distanceFromTriangle(double* vertex_target_pos,
+    double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2)
+{
+    double normal[3];
+    double e0[3], e1[3], e2[3];
+    SUB(e0, vertex_target_pos, triangle_target_pos_0);
+    SUB(e1, triangle_target_pos_1, triangle_target_pos_0);
+    SUB(e2, triangle_target_pos_2, triangle_target_pos_0);
+    CROSS(normal, e1, e2);
+    if (sqrt(DOT(normal, normal)) < 1e-15) {
+        return 0.0;
+    }
+    normalized(normal);
+    return DOT(e0, normal);
+}
+
+
+bool DCD::accuratePointSelfTriangle(double* initial_position, double* current_position,
+    double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
+    double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+    double* initial_triangle_normal, double* current_triangle_normal, double* vertex_target_pos,
+    double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
+    double tolerance, double mass_point, double mass_t0, double mass_t1, double mass_t2,
+    double current_triangle_area)
+{
+    double barycentric[3];
+    double c_p[3];
+    double current_side;
+    bool should_be_front;
+
+    CCD::internal::pointTriangleNearestPoint(initial_position, initial_triangle_position_0, initial_triangle_position_1,
+        initial_triangle_position_2, initial_triangle_normal, barycentric);
+    if (checkIfCollidePointTriangle(initial_position, current_position,
+        initial_triangle_position_0, initial_triangle_position_1, initial_triangle_position_2,
+        current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
+        initial_triangle_normal, current_triangle_normal, barycentric,
+        tolerance, current_side, should_be_front)) {
+        calAccurateDistancePointTriangle(vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2,
+            current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
+           tolerance, mass_point, mass_t0, mass_t1, mass_t2);
+        return true;
+    }
+    return false;
+
+}
 
 
 
@@ -56,7 +205,7 @@ bool DCD::pointSelfTriangle(double* initial_position, double* current_position,
     double* initial_triangle_normal, double* current_triangle_normal, double* vertex_target_pos,
     double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
     double tolerance, double mass_point, double mass_t0, double mass_t1, double mass_t2,
-    double current_triangle_area)
+    double triangle_normal_magnitude_reciprocal)
 {
     double barycentric[3];
 	double c_p[3];
@@ -97,7 +246,7 @@ bool DCD::pointSelfTriangle(double* initial_position, double* current_position,
         tolerance, current_side, should_be_front)){
         calDistancePointTriangle(vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2,
             current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
-            current_triangle_normal, current_side, tolerance, should_be_front, current_triangle_area,
+            current_triangle_normal, current_side, tolerance, should_be_front, triangle_normal_magnitude_reciprocal,
             mass_point, mass_t0, mass_t1, mass_t2);
         return true;
     }
@@ -108,7 +257,7 @@ void DCD::XPBDcalDistancePointTriangle(
     double* initial_position,
     double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
     double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
-    double* current_triangle_normal, double constraint, double tolerance, bool is_front, double current_triangle_area,
+    double* current_triangle_normal, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal,
     double mass_inv_point, double mass_inv_t0, double mass_inv_t1, double mass_inv_t2, double& lambda, double stiffness, double damping_stiffness, double dt)
 {
     double grad_c_vertex[3];
@@ -133,18 +282,17 @@ void DCD::XPBDcalDistancePointTriangle(
         constraint += tolerance;
     }
     memcpy(grad_c_vertex, current_triangle_normal, 24);
-    current_triangle_area = 1.0 / current_triangle_area;
 
     double temp_vec[3];
     SUB(temp_vec, current_triangle_position_1, current_triangle_position_2);
-    MAGNITUDE_CROSS(grad_c_vertex_0, temp_vec, in_triangle, current_triangle_area);
+    MAGNITUDE_CROSS(grad_c_vertex_0, temp_vec, in_triangle, triangle_normal_magnitude_reciprocal);
     SUB_(grad_c_vertex_0, grad_c_vertex);
 
     SUB(temp_vec, current_triangle_position_2, current_triangle_position_0);
-    MAGNITUDE_CROSS(grad_c_vertex_1, temp_vec, in_triangle, current_triangle_area);
+    MAGNITUDE_CROSS(grad_c_vertex_1, temp_vec, in_triangle, triangle_normal_magnitude_reciprocal);
 
     SUB(temp_vec, current_triangle_position_0, current_triangle_position_1);
-    MAGNITUDE_CROSS(grad_c_vertex_2, temp_vec, in_triangle, current_triangle_area);
+    MAGNITUDE_CROSS(grad_c_vertex_2, temp_vec, in_triangle, triangle_normal_magnitude_reciprocal);
 
     
 
@@ -182,9 +330,12 @@ void DCD::XPBDcalDistancePointTriangle(
 }
 
 
+
+
+
 void DCD::calAccurateDistancePointTriangle(double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
     double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
-    double tolerance, bool is_front, double current_triangle_area, double mass_point, double mass_t0, double mass_t1, double mass_t2)
+    double tolerance, double mass_point, double mass_t0, double mass_t1, double mass_t2)
 {
     double center[3];
     double mass_total = mass_point + mass_t0 + mass_t1 + mass_t2;
@@ -221,11 +372,184 @@ void DCD::calAccurateDistancePointTriangle(double* vertex_target_pos, double* tr
 
 
 
+void DCD::iterationToGetResult(double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
+    double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+    bool is_front, double mass_point, double mass_t0, double mass_t1, double mass_t2)
+{
+    double delta_p[3];
+    double delta_v0[3]; double delta_v1[3]; double delta_v2[3];
+    double triangle_normal[3];
+    double triangle_normal_magnitude_reciprocal;
+    double constraint;
+    double max_move=1.0;
+    double tolerance;
+
+    memcpy(vertex_target_pos, current_position, 24);
+    memcpy(triangle_target_pos_0, current_triangle_position_0, 24);
+    memcpy(triangle_target_pos_1, current_triangle_position_1, 24);
+    memcpy(triangle_target_pos_2, current_triangle_position_2, 24);
+
+    decideTolerance(tolerance, max_move,1e-1, 1e-2, vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2);
+
+    computeNormalAndConstraint(vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2,
+        triangle_normal, triangle_normal_magnitude_reciprocal, constraint,is_front,tolerance);
+    double lambda = 0.0;
+    double L = 0;
+    int itr_num = 0;
+
+    while (!convergeCondition(itr_num, lambda, vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2,
+        current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
+        mass_point, mass_t0, mass_t1, mass_t2,constraint,is_front, max_move,L))
+    {
+        calPositionMove(delta_p, delta_v0, delta_v1, delta_v2,
+            vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2,
+            triangle_normal, constraint, tolerance, is_front, triangle_normal_magnitude_reciprocal,
+            mass_point, mass_t0, mass_t1, mass_t2,lambda);
+        SUM_(vertex_target_pos, delta_p);
+        SUM_(triangle_target_pos_0, delta_v0);
+        SUM_(triangle_target_pos_1, delta_v1);
+        SUM_(triangle_target_pos_2, delta_v2);
+
+        computeNormalAndConstraint(vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2,
+            triangle_normal, triangle_normal_magnitude_reciprocal, constraint, is_front, tolerance);
+    }
+
+}
+
+
+bool DCD::convergeCondition(int& itr_num, double lambda, double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
+    double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+    double mass_point, double mass_t0, double mass_t1, double mass_t2, double constraint, double is_front,
+    double max_move, double& L_)
+{
+    double delta_v[3];
+    double delta_t0[3]; double delta_t1[3]; double delta_t2[3];
+
+    SUB(delta_v, vertex_target_pos, current_position);
+    SUB(delta_t0, triangle_target_pos_0, current_triangle_position_0);
+    SUB(delta_t1, triangle_target_pos_1, current_triangle_position_1);
+    SUB(delta_t2, triangle_target_pos_2, current_triangle_position_2);
+
+    double L = 0.5 * (mass_point * DOT(delta_v, delta_v) + mass_t0 * DOT(delta_t0, delta_t0) + mass_t1 * DOT(delta_t1, delta_t1)
+        + mass_t2 * DOT(delta_t2, delta_t2));
+
+    if (is_front) {
+        L += lambda * constraint;
+    }
+    else {
+        L -= lambda * constraint;
+    }
+    
+
+    double max = abs(delta_v[0]);
+    for (unsigned int i = 0; i < 3; ++i) {
+        if (max > abs(delta_v[i])) {
+            max = abs(delta_v[i]);
+        }
+        if (max > abs(delta_t0[i])) {
+            max = abs(delta_t0[i]);
+        }
+        if (max > abs(delta_t1[i])) {
+            max = abs(delta_t1[i]);
+        }
+        if (max > abs(delta_t2[i])) {
+            max = abs(delta_t2[i]);
+        }
+    }
+
+    if (is_front) {
+        std::cout << "itr num " << itr_num << " " << is_front << " " << L << " " << " " << constraint<< std::endl;
+    }
+    else {
+        std::cout << "itr num " << itr_num << " " << is_front << " " << L << " " << " " << constraint << std::endl;
+    }
+    itr_num++;
+    //if (max > max_move  && itr_num >1) {
+    if (abs(L-L_)/L_ < 1e-4  && itr_num >1) {
+        L_ = L;
+        return true;
+    }
+    L_ = L;
+    return false;
+
+}
+
+void DCD::decideTolerance(double& tolerance, double& max_move, double ratio_tolerance, double ratio_max_move, double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2)
+{
+    double e0[3], e1[3], e2[3];
+    SUB(e0, triangle_target_pos_1, triangle_target_pos_2);
+    SUB(e1, triangle_target_pos_1, triangle_target_pos_0);
+    SUB(e2, triangle_target_pos_2, triangle_target_pos_0);
+    tolerance = ratio_tolerance * (sqrt(DOT(e0, e0)) + sqrt(DOT(e1, e1)) + sqrt(DOT(e2, e2))) / 3.0;
+    max_move = ratio_max_move * (sqrt(DOT(e0, e0)) + sqrt(DOT(e1, e1)) + sqrt(DOT(e2, e2))) / 3.0;
+
+}
+
+
+void DCD::computeNormalAndConstraint(double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
+    double* normal, double& triangle_normal_magnitude_reciprocal, double& constraint, bool is_front, double tolerance)
+{
+    double e0[3], e1[3], e2[3];
+    SUB(e0, vertex_target_pos, triangle_target_pos_0);
+    SUB(e1, triangle_target_pos_1, triangle_target_pos_0);
+    SUB(e2, triangle_target_pos_2, triangle_target_pos_0);
+    CROSS(normal, e1, e2);
+    triangle_normal_magnitude_reciprocal = 1.0 / sqrt(DOT(normal, normal));
+    MULTI_(normal, triangle_normal_magnitude_reciprocal);
+    constraint = DOT(e0, normal);
+    if (is_front) {
+        constraint -= tolerance;
+    }
+    else {
+        constraint += tolerance;
+    }
+}
+
+
+void DCD::calPositionMove(double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
+    double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+    double* current_triangle_normal, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal,
+    double mass_point, double mass_t0, double mass_t1, double mass_t2, double& lambda)
+{
+    double in_triangle[3], scale_norm[3];
+    SUB(in_triangle, current_position, current_triangle_position_0);
+    MULTI(scale_norm, current_triangle_normal, constraint);
+    SUB_(in_triangle, scale_norm);
+    memcpy(vertex_target_pos, current_triangle_normal, 24);
+
+    double temp_vec[3];
+    SUB(temp_vec, current_triangle_position_1, current_triangle_position_2);
+    MAGNITUDE_CROSS(triangle_target_pos_0, temp_vec, in_triangle, triangle_normal_magnitude_reciprocal);
+
+    SUB(temp_vec, current_triangle_position_2, current_triangle_position_0);
+    MAGNITUDE_CROSS(triangle_target_pos_1, temp_vec, in_triangle, triangle_normal_magnitude_reciprocal);
+
+    SUB(temp_vec, current_triangle_position_0, current_triangle_position_1);
+    MAGNITUDE_CROSS(triangle_target_pos_2, temp_vec, in_triangle, triangle_normal_magnitude_reciprocal);
+
+    SUB_(triangle_target_pos_0, vertex_target_pos);
+
+    double s = -constraint / (DOT(vertex_target_pos, vertex_target_pos) / mass_point + DOT(triangle_target_pos_0, triangle_target_pos_0) / mass_t0
+        + DOT(triangle_target_pos_1, triangle_target_pos_1) / mass_t1 + DOT(triangle_target_pos_2, triangle_target_pos_2) / mass_t2);
+    lambda = -s;
+
+    double tem_value;
+
+    tem_value = s / mass_point;
+    MULTI_(vertex_target_pos, tem_value);
+    tem_value = s / mass_t0;
+    MULTI_(triangle_target_pos_0, tem_value);
+    tem_value = s / mass_t1;
+    MULTI_(triangle_target_pos_1, tem_value);
+    tem_value = s / mass_t2;
+    MULTI_(triangle_target_pos_2, tem_value);
+}
+
 
 
 void DCD::calDistancePointTriangle(double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
     double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
-    double* current_triangle_normal, double constraint, double tolerance, bool is_front, double current_triangle_area,
+    double* current_triangle_normal, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal,
     double mass_point, double mass_t0, double mass_t1, double mass_t2)
 {
     double in_triangle[3], scale_norm[3];
@@ -239,17 +563,16 @@ void DCD::calDistancePointTriangle(double* vertex_target_pos, double* triangle_t
         constraint += tolerance;
     }
     memcpy(vertex_target_pos, current_triangle_normal, 24);
-    current_triangle_area = 1.0 / current_triangle_area;
 
     double temp_vec[3];
     SUB(temp_vec, current_triangle_position_1, current_triangle_position_2);
-    MAGNITUDE_CROSS(triangle_target_pos_0, temp_vec, in_triangle, current_triangle_area);
+    MAGNITUDE_CROSS(triangle_target_pos_0, temp_vec, in_triangle, triangle_normal_magnitude_reciprocal);
 
     SUB(temp_vec, current_triangle_position_2, current_triangle_position_0);
-    MAGNITUDE_CROSS(triangle_target_pos_1, temp_vec, in_triangle, current_triangle_area);
+    MAGNITUDE_CROSS(triangle_target_pos_1, temp_vec, in_triangle, triangle_normal_magnitude_reciprocal);
 
     SUB(temp_vec, current_triangle_position_0, current_triangle_position_1);
-    MAGNITUDE_CROSS(triangle_target_pos_2, temp_vec, in_triangle, current_triangle_area);
+    MAGNITUDE_CROSS(triangle_target_pos_2, temp_vec, in_triangle, triangle_normal_magnitude_reciprocal);
 
     SUB_(triangle_target_pos_0, vertex_target_pos);
 

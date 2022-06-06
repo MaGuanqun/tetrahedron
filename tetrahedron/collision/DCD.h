@@ -36,7 +36,7 @@ public:
 		double* initial_triangle_normal, double* current_triangle_normal, double* vertex_target_pos,
 		double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
 		double tolerance, double mass_point, double mass_t0, double mass_t1, double mass_t2,
-		double current_triangle_area);
+		double triangle_normal_magnitude_reciprocal);
 
 
 	bool pointTriangleCollider(double* initial_position, double* current_position,
@@ -67,7 +67,7 @@ public:
 		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
 		double* initial_triangle_normal, double* current_triangle_normal,
 		double tolerance, double mass_inv_point, double mass_inv_t0, double mass_inv_t1, double mass_inv_t2,
-		double current_triangle_area, double& lambda, double stiffness, double damping_stiffness, double dt);
+		double triangle_normal_magnitude_reciprocal, double& lambda, double stiffness, double damping_stiffness, double dt);
 	void XPBDedgeEdge(double* current_edge_vertex_0, double* current_edge_vertex_1,
 		double* initial_edge_vertex_0, double* initial_edge_vertex_1,
 		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0,
@@ -85,8 +85,15 @@ public:
 		double tolerance, double& lambda, double stiffness, double damping_stiffness, double dt, double floor_value);
 
 
+	bool accuratePointSelfTriangle(double* initial_position, double* current_position,
+		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
+		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+		double* initial_triangle_normal, double* current_triangle_normal, double* vertex_target_pos,
+		double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
+		double tolerance, double mass_point, double mass_t0, double mass_t1, double mass_t2,
+		double current_triangle_area);
 
-
+	void test();
 
 private:
 	bool pointProjectOnTriangle(
@@ -115,7 +122,7 @@ private:
 		double* initial_triangle_normal, double* barycentric, double tolerance);
 	void calDistancePointTriangle(double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
 		double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
-		double* current_triangle_normal, double constraint, double tolerance, bool is_front, double current_triangle_area,
+		double* current_triangle_normal, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal,
 		double mass_point, double mass_t0, double mass_t1, double mass_t2);
 	bool checkIfCollideEdgeEdge(double* current_edge_vertex_0, double* current_edge_vertex_1, double* initial_edge_vertex_0, double* initial_edge_vertex_1,
 		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0, double* initial_compare_edge_vertex_1,
@@ -124,7 +131,7 @@ private:
 		double* initial_position,
 		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
 		double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
-		double* current_triangle_normal, double constraint, double tolerance, bool is_front, double current_triangle_area,
+		double* current_triangle_normal, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal,
 		double mass_inv_point, double mass_inv_t0, double mass_inv_t1, double mass_inv_t2, double& lambda, double stiffness, double damping_stiffness, double dt);
 	void XPBDcalDistanceEdgeEdge(double* norm, double distance, double* alpha, double* current_edge_vertex_0, double* current_edge_vertex_1,
 		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1,
@@ -144,8 +151,27 @@ private:
 
 	void calAccurateDistancePointTriangle(double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
 		double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
-		double tolerance, bool is_front, double current_triangle_area, double mass_point, double mass_t0, double mass_t1, double mass_t2);
+		double tolerance, double mass_point, double mass_t0, double mass_t1, double mass_t2);
 
+	double distanceFromTriangle(double* vertex_target_pos,
+		double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2);
+	void test(double* info_p, double* info_v0, double* info_v1, double* info_v2);
+
+	void iterationToGetResult(double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
+		double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+		bool is_front, double mass_point, double mass_t0, double mass_t1, double mass_t2);
+	void calPositionMove(double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
+		double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+		double* current_triangle_normal, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal,
+		double mass_point, double mass_t0, double mass_t1, double mass_t2, double& lambda);
+	void computeNormalAndConstraint(double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
+		double* normal, double& area, double& constraint, bool is_front, double tolerance);
+
+	bool convergeCondition(int& itr_num,double lambda, double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
+		double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+		double mass_point, double mass_t0, double mass_t1, double mass_t2, double constraint, double is_front,
+		double max_move, double& L_);
+	void decideTolerance(double& tolerance, double& max_move, double ratio_tolerance, double ratio_max_move, double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2);
 };
 
 

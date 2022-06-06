@@ -24,7 +24,7 @@ void SetModel::load_getAABB(std::string& path, int& index, int obj_index)
 		//	create_mesh.setCapsule(ori_mesh); 
 			create_mesh.setFloor(ori_mesh);
 		}
-		if (name == "clothing.obj") {
+		else if (name == "clothing.obj") {
 			create_mesh.setMaterial1(ori_mesh);
 		}
 		else {

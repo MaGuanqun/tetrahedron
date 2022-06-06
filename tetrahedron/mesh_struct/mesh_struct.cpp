@@ -256,7 +256,8 @@ void MeshStruct::getFaceNormalPerThread(int thread_id)
 		CROSS(current_face_normal, e2, e0);
 		memcpy(ori_face_normal[j].data(), current_face_normal, 24);
 		triangle_normal_magnitude_reciprocal[j] = 1.0 / sqrt(DOT(current_face_normal, current_face_normal));
-		normalize(current_face_normal);
+		MULTI_(current_face_normal, triangle_normal_magnitude_reciprocal[j]);
+		//normalize(current_face_normal);
 
 		SUB(e3, vertex_for_render[triangle_vertex[1]], vertex_for_render[triangle_vertex[0]]);
 		SUB(e4, vertex_for_render[triangle_vertex[2]], vertex_for_render[triangle_vertex[0]]);

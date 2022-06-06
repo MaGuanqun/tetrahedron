@@ -3,6 +3,8 @@
 void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider,
 	std::vector<Tetrahedron>* tetrahedron, Thread* thread, Floor* floor,  double* tolerance_ratio)
 {
+	dcd.test();
+
 	testNearestPoint();
 	conservative_rescaling = 0.9;
 
@@ -2248,8 +2250,8 @@ void Collision::re_pointTriangleResponse(unsigned int pair_thread_No, unsigned i
 			vertex_position[*(pair + 3)][indices[2]].data(), triangle_normal_render[*(pair + 3)][*(pair + 2)].data(),
 			triangle_normal[*(pair + 3)][*(pair + 2)].data(),
 			target_pos_v, target_pos_tri[0], target_pos_tri[1], target_pos_tri[2], tolerance,
-			//mass[*(pair + 1)][*pair],mass[*(pair + 3)][indices[0]], mass[*(pair + 3)][indices[1]], mass[*(pair + 3)][indices[2]],
-			1.0,1.0,1.0,1.0,
+			mass[*(pair + 1)][*pair],mass[*(pair + 3)][indices[0]], mass[*(pair + 3)][indices[1]], mass[*(pair + 3)][indices[2]],
+			//1.0,1.0,1.0,1.0,
 			triangle_normal_magnitude_reciprocal[*(pair + 3)][*(pair + 2)]))
 		{
 			addTargetPosToSystem(vertex_b_sum[*(pair + 1)][*pair].data(), target_pos->collision_energy, vertex_position[*(pair + 1)][*pair].data(),
@@ -2329,8 +2331,8 @@ void Collision::re_edgeEdgeResponse(unsigned int pair_thread_No, unsigned int st
 			vertex_position[*(pair + 3)][*compare_indices].data(), vertex_position[*(pair + 3)][*(compare_indices + 1)].data(),
 			vertex_for_render[*(pair + 3)][*compare_indices].data(), vertex_for_render[*(pair + 3)][*(compare_indices + 1)].data(),
 			tolerance, 
-			1.0, 1.0, 1.0, 1.0
-			//mass[*(pair + 1)][*indices], mass[*(pair + 1)][*(indices + 1)],	mass[*(pair + 3)][*compare_indices], mass[*(pair + 3)][*(compare_indices + 1)]
+			//1.0, 1.0, 1.0, 1.0
+			mass[*(pair + 1)][*indices], mass[*(pair + 1)][*(indices + 1)],	mass[*(pair + 3)][*compare_indices], mass[*(pair + 3)][*(compare_indices + 1)]
 		))
 		{
 			addTargetPosToSystem(vertex_b_sum[*(pair + 1)][*indices].data(), target_pos->collision_energy, vertex_position[*(pair + 1)][*indices].data(),
@@ -2432,8 +2434,8 @@ void Collision::pointTriangleResponse(unsigned int thread_No, unsigned int pair_
 			vertex_position[*(pair + 3)][indices[2]].data(), triangle_normal_render[*(pair + 3)][*(pair + 2)].data(),
 			triangle_normal[*(pair + 3)][*(pair + 2)].data(),
 			target_pos_v, target_pos_tri[0], target_pos_tri[1], target_pos_tri[2], tolerance,
-			//mass[*(pair + 1)][*pair], mass[*(pair + 3)][indices[0]], mass[*(pair + 3)][indices[1]], mass[*(pair + 3)][indices[2]],
-			1.0,1.0,1.0,1.0,
+			mass[*(pair + 1)][*pair], mass[*(pair + 3)][indices[0]], mass[*(pair + 3)][indices[1]], mass[*(pair + 3)][indices[2]],
+			//1.0,1.0,1.0,1.0,
 			triangle_normal_magnitude_reciprocal[*(pair + 3)][*(pair + 2)]))
 		{
 			//std::cout << "should not occur point triangle collision" << std::endl;
@@ -2783,8 +2785,8 @@ void Collision::edgeEdgeResponse(unsigned int thread_No, unsigned int pair_threa
 			vertex_position[*(pair + 3)][*compare_indices].data(), vertex_position[*(pair + 3)][*(compare_indices + 1)].data(),
 			vertex_for_render[*(pair + 3)][*compare_indices].data(), vertex_for_render[*(pair + 3)][*(compare_indices + 1)].data(),
 			tolerance, 
-			1.0, 1.0, 1.0, 1.0
-			//mass[*(pair + 1)][*indices], mass[*(pair + 1)][*(indices + 1)],	mass[*(pair + 3)][*compare_indices], mass[*(pair + 3)][*(compare_indices + 1)]
+			//1.0, 1.0, 1.0, 1.0
+			mass[*(pair + 1)][*indices], mass[*(pair + 1)][*(indices + 1)],	mass[*(pair + 3)][*compare_indices], mass[*(pair + 3)][*(compare_indices + 1)]
 		))
 		{
 			addTargetPosToSystemTotal(vertex_b_sum[*(pair + 1)][*indices].data(), target_pos->collision_energy, vertex_position[*(pair + 1)][*indices].data(),
