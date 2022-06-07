@@ -6,19 +6,19 @@ ProjectDynamic::ProjectDynamic()
 	gravity_ = 9.8;
 	total_thread_num = std::thread::hardware_concurrency();
 	temEnergy.resize(total_thread_num);
-	outer_itr_conv_rate = 1.5e-3;// 7.5e-2; 
-	local_global_conv_rate = 2e-3;
+	outer_itr_conv_rate = 1e-3;// 7.5e-2; 
+	local_global_conv_rate = 1.5e-3;
 	sub_step_num = 1;
 
 	use_dierct_solve_for_coarest_mesh = true;
 	super_jacobi_step_size = 3;
-	max_it = 50;
+	max_it = 100;
 	max_jacobi_itr_num = 50;
 	displacement_norm_thread.resize(total_thread_num);
 
 
 	iteration_method.setConvergenceRate(1e-8, 100);
-	max_inner_iteration_num = 7;
+	max_inner_iteration_num = 20;
 
 	perform_collision = true;
 
@@ -1167,7 +1167,7 @@ void ProjectDynamic::updateUVPerThread(int thread_id)
 		this_acceleration = &acceleration[j];
 		for (unsigned int i = system_vertex_index_per_thread[thread_id]; i < system_vertex_index_per_thread[thread_id + 1]; ++i) {
 			this_v->data()[i] = (this_u->data()[i] - this_u_->data()[i]) / sub_time_step;
-		//	this_v->data()[i] *= 0.98;
+			this_v->data()[i] *= 0.98;
 			this_acceleration->data()[i] = (this_v->data()[i] - this_v_->data()[i]) / sub_time_step;
 		}
 		memcpy(this_u_->data() + system_vertex_index_per_thread[thread_id], this_u->data() + system_vertex_index_per_thread[thread_id],

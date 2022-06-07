@@ -159,7 +159,8 @@ private:
 
 	void iterationToGetResult(double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
 		double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
-		bool is_front, double mass_point, double mass_t0, double mass_t1, double mass_t2);
+		double* triangle_normal_ori, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal,
+		double mass_point, double mass_t0, double mass_t1, double mass_t2);
 	void calPositionMove(double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
 		double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
 		double* current_triangle_normal, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal,
@@ -170,8 +171,8 @@ private:
 	bool convergeCondition(int& itr_num,double lambda, double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
 		double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
 		double mass_point, double mass_t0, double mass_t1, double mass_t2, double constraint, double is_front,
-		double max_move, double& L_);
-	void decideTolerance(double& tolerance, double& max_move, double ratio_tolerance, double ratio_max_move, double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2);
+		double& L_);
+	void decideTolerance(double& tolerance, double ratio_tolerance, double ratio_max_move, double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2);
 };
 
 

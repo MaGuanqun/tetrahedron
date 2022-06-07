@@ -3,7 +3,7 @@
 void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider,
 	std::vector<Tetrahedron>* tetrahedron, Thread* thread, Floor* floor,  double* tolerance_ratio)
 {
-	dcd.test();
+	//dcd.test();
 
 	testNearestPoint();
 	conservative_rescaling = 0.9;

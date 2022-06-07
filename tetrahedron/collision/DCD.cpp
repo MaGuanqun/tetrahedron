@@ -143,8 +143,15 @@ void DCD::test(double* info_p, double* info_v0, double* info_v1, double* info_v2
         else {
             is_front = true;
         }
+        double tolerance;
+
+        double triangle_normal[3];
+        double triangle_normal_magnitude_reciprocal, constraint;
+        decideTolerance(tolerance, 1e-1, 1e-2, current_pos, current_triangle_0, current_triangle_1, current_triangle_2);
+        computeNormalAndConstraint(current_pos, current_triangle_0, current_triangle_1, current_triangle_2,
+        triangle_normal, triangle_normal_magnitude_reciprocal, constraint,is_front,tolerance);
         iterationToGetResult(target_pos_v, target_pos_t0, target_pos_t1, target_pos_t2, current_pos, current_triangle_0, current_triangle_1, current_triangle_2,
-            is_front, massv, mass0, mass1, mass2);
+            triangle_normal, constraint, tolerance, is_front, triangle_normal_magnitude_reciprocal, massv, mass0, mass1, mass2);
     }
 }
 
@@ -244,10 +251,14 @@ bool DCD::pointSelfTriangle(double* initial_position, double* current_position,
         current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
         initial_triangle_normal, current_triangle_normal, barycentric,
         tolerance, current_side, should_be_front)){
-        calDistancePointTriangle(vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2,
+        iterationToGetResult(vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2,
             current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
             current_triangle_normal, current_side, tolerance, should_be_front, triangle_normal_magnitude_reciprocal,
             mass_point, mass_t0, mass_t1, mass_t2);
+        //calDistancePointTriangle(vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2,
+        //    current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
+        //    current_triangle_normal, current_side, tolerance, should_be_front, triangle_normal_magnitude_reciprocal,
+        //    mass_point, mass_t0, mass_t1, mass_t2);
         return true;
     }
     return false;
@@ -374,32 +385,28 @@ void DCD::calAccurateDistancePointTriangle(double* vertex_target_pos, double* tr
 
 void DCD::iterationToGetResult(double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
     double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
-    bool is_front, double mass_point, double mass_t0, double mass_t1, double mass_t2)
+    double*  triangle_normal_ori, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal,
+    double mass_point, double mass_t0, double mass_t1, double mass_t2)
 {
     double delta_p[3];
     double delta_v0[3]; double delta_v1[3]; double delta_v2[3];
     double triangle_normal[3];
-    double triangle_normal_magnitude_reciprocal;
-    double constraint;
-    double max_move=1.0;
-    double tolerance;
-
+    memcpy(triangle_normal, triangle_normal_ori, 24);
     memcpy(vertex_target_pos, current_position, 24);
     memcpy(triangle_target_pos_0, current_triangle_position_0, 24);
     memcpy(triangle_target_pos_1, current_triangle_position_1, 24);
     memcpy(triangle_target_pos_2, current_triangle_position_2, 24);
 
-    decideTolerance(tolerance, max_move,1e-1, 1e-2, vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2);
-
-    computeNormalAndConstraint(vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2,
-        triangle_normal, triangle_normal_magnitude_reciprocal, constraint,is_front,tolerance);
+    //decideTolerance(tolerance, 1e-1, 1e-2, vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2);
+    //computeNormalAndConstraint(vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2,
+    //    triangle_normal, triangle_normal_magnitude_reciprocal, constraint,is_front,tolerance);
     double lambda = 0.0;
     double L = 0;
     int itr_num = 0;
 
     while (!convergeCondition(itr_num, lambda, vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2,
         current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
-        mass_point, mass_t0, mass_t1, mass_t2,constraint,is_front, max_move,L))
+        mass_point, mass_t0, mass_t1, mass_t2,constraint,is_front, L))
     {
         calPositionMove(delta_p, delta_v0, delta_v1, delta_v2,
             vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2,
@@ -420,7 +427,7 @@ void DCD::iterationToGetResult(double* vertex_target_pos, double* triangle_targe
 bool DCD::convergeCondition(int& itr_num, double lambda, double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
     double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
     double mass_point, double mass_t0, double mass_t1, double mass_t2, double constraint, double is_front,
-    double max_move, double& L_)
+    double& L_)
 {
     double delta_v[3];
     double delta_t0[3]; double delta_t1[3]; double delta_t2[3];
@@ -457,15 +464,22 @@ bool DCD::convergeCondition(int& itr_num, double lambda, double* vertex_target_p
         }
     }
 
-    if (is_front) {
-        std::cout << "itr num " << itr_num << " " << is_front << " " << L << " " << " " << constraint<< std::endl;
-    }
-    else {
-        std::cout << "itr num " << itr_num << " " << is_front << " " << L << " " << " " << constraint << std::endl;
-    }
+    //if (is_front) {
+    //    std::cout << "itr num " << itr_num << " " << is_front << " " << L << " " << " " << constraint<< std::endl;
+    //}
+    //else {
+    //    std::cout << "itr num " << itr_num << " " << is_front << " " << L << " " << " " << constraint << std::endl;
+    //}
     itr_num++;
+
+    if (itr_num >= 10) {
+        L_ = L;
+        //std::cout << "occur " << std::endl;
+        return true;
+    }
+
     //if (max > max_move  && itr_num >1) {
-    if (abs(L-L_)/L_ < 1e-4  && itr_num >1) {
+    if (abs(L-L_)/L_ < 1e-3  && itr_num >1) {
         L_ = L;
         return true;
     }
@@ -474,14 +488,14 @@ bool DCD::convergeCondition(int& itr_num, double lambda, double* vertex_target_p
 
 }
 
-void DCD::decideTolerance(double& tolerance, double& max_move, double ratio_tolerance, double ratio_max_move, double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2)
+void DCD::decideTolerance(double& tolerance, double ratio_tolerance, double ratio_max_move, double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2)
 {
     double e0[3], e1[3], e2[3];
     SUB(e0, triangle_target_pos_1, triangle_target_pos_2);
     SUB(e1, triangle_target_pos_1, triangle_target_pos_0);
     SUB(e2, triangle_target_pos_2, triangle_target_pos_0);
     tolerance = ratio_tolerance * (sqrt(DOT(e0, e0)) + sqrt(DOT(e1, e1)) + sqrt(DOT(e2, e2))) / 3.0;
-    max_move = ratio_max_move * (sqrt(DOT(e0, e0)) + sqrt(DOT(e1, e1)) + sqrt(DOT(e2, e2))) / 3.0;
+    //max_move = ratio_max_move * (sqrt(DOT(e0, e0)) + sqrt(DOT(e1, e1)) + sqrt(DOT(e2, e2))) / 3.0;
 
 }
 
