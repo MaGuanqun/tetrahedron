@@ -93,6 +93,9 @@ public:
 		double tolerance, double mass_point, double mass_t0, double mass_t1, double mass_t2,
 		double current_triangle_area);
 
+	bool PDFloor(double* target_position, double* current_position, unsigned int dimension, bool normal_direction,
+		double tolerance, double floor_value);
+
 	void test();
 
 private:

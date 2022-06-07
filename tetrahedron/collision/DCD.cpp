@@ -474,7 +474,7 @@ bool DCD::convergeCondition(int& itr_num, double lambda, double* vertex_target_p
 
     if (itr_num >= 10) {
         L_ = L;
-        //std::cout << "occur " << std::endl;
+        //std::cout << itr_num<<" " << std::endl;
         return true;
     }
 
@@ -1026,6 +1026,7 @@ bool DCD::checkEdgeEdgeCollision(double* current_edge_vertex_0, double* current_
 }
 
 
+
 void DCD::XPBDFloor(double* initial_position, double* current_position,unsigned int dimension, bool normal_direction, double mass_inv_v,
     double tolerance, double& lambda, double stiffness, double damping_stiffness, double dt, double floor_value)
 {
@@ -1142,6 +1143,33 @@ bool DCD::pointTriangleCollider(double* initial_position, double* current_positi
     vertex_target_pos[2] = current_position[2] - current_side * current_triangle_normal[2];
     return true;
 }
+
+
+bool DCD::PDFloor(double* target_position, double* current_position, unsigned int dimension, bool normal_direction,
+    double tolerance, double floor_value)
+{
+    if (normal_direction) {
+        if (current_position[dimension] > floor_value + tolerance) {
+            return false;
+        }
+        else {
+            memcpy(target_position, current_position, 24);
+            target_position[dimension] = floor_value + tolerance;
+            return true;           
+        }
+    }
+    else {
+        if (current_position[dimension] < floor_value - tolerance) {
+            return false;
+        }
+        else {
+            memcpy(target_position, current_position, 24);
+            target_position[dimension] = floor_value - tolerance;
+            return true;
+        }
+    }
+}
+
 
 
 void DCD::XPBDcalDistancePointTriangleCollider(double* initial_position,

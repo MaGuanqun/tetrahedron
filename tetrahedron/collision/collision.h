@@ -354,6 +354,9 @@ private:
 	std::vector<double*>collider_triangle_normal_magnitude_reciprocal;
 
 
+	std::vector<unsigned int*> vertex_index_start_per_thread;
+
+
 	std::vector<double*>mass;
 	std::vector<double*>mass_inv;
 
@@ -536,4 +539,8 @@ private:
 
 
 	void XPBDfloorCollisionResponse();
+
+	std::vector<std::vector<unsigned int>> floor_collision_vertex;
+	void floorCollisionVertex(int thread_No);
+	void re_FloorCollisionVertex(int thread_No);
 };
