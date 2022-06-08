@@ -7,10 +7,10 @@ XPBD::XPBD()
 	gravity_ = 9.8;
 	total_thread_num = std::thread::hardware_concurrency();
 	sub_step_num =1;
-	iteration_number =1000;
+	iteration_number =100;
 
 	time_step = 1.0 / 100.0;
-	damping_coe = 0.02;
+	damping_coe = 0.0;
 
 	perform_collision = true;
 }
@@ -385,20 +385,25 @@ void XPBD::solveBendingConstraint()
 	//double delta_t = sub_time_step;
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		stiffness = cloth->data()[i].bend_stiffness;
-		mesh_struct_ = mesh_struct[i];
-		mass_inv = mesh_struct_->mass_inv.data();
-		size = mesh_struct_->vertex_position.size();
-		rest_mean_curvature_norm_ = rest_mean_curvature_norm[i].data();
-		lbo_weight_ = lbo_weight[i].data();
-		vertex_lbo_ = vertex_lbo[i].data();
-		vertex_pos = vertex_position[i];
-		initial_vertex_pos = initial_vertex_position[i];
-		for (unsigned int j = 0; j < size; ++j) {
-			XPBD_constraint.solveBendingConstraint(vertex_pos[j].data(), mass_inv[j], vertex_pos, mesh_struct_->vertices[j].neighbor_vertex,
-				rest_mean_curvature_norm_[j], lbo_weight_[j], vertex_lbo_[j], stiffness, sub_time_step, mass_inv, *lambda_,damping_coe,
-				initial_vertex_pos[j].data(),initial_vertex_pos);
-			lambda_++;
-		}		
+		if (stiffness > 0.0) {
+			mesh_struct_ = mesh_struct[i];
+			mass_inv = mesh_struct_->mass_inv.data();
+			size = mesh_struct_->vertex_position.size();
+			rest_mean_curvature_norm_ = rest_mean_curvature_norm[i].data();
+			lbo_weight_ = lbo_weight[i].data();
+			vertex_lbo_ = vertex_lbo[i].data();
+			vertex_pos = vertex_position[i];
+			initial_vertex_pos = initial_vertex_position[i];
+			for (unsigned int j = 0; j < size; ++j) {
+				XPBD_constraint.solveBendingConstraint(vertex_pos[j].data(), mass_inv[j], vertex_pos, mesh_struct_->vertices[j].neighbor_vertex,
+					rest_mean_curvature_norm_[j], lbo_weight_[j], vertex_lbo_[j], stiffness, sub_time_step, mass_inv, *lambda_, damping_coe,
+					initial_vertex_pos[j].data(), initial_vertex_pos);
+				lambda_++;
+			}
+		}
+		else {
+			lambda_+= mesh_struct[i]->vertex_position.size();
+		}
 	}
 }
 
@@ -520,10 +525,7 @@ void XPBD::updateTetrahedronAnchorVertices()
 		mass_inv = mesh_struct[i]->mass_inv.data();
 		anchor_vertex_size = mesh_struct[i]->anchor_vertex.size();
 		anchor_vertex = mesh_struct[i]->anchor_vertex.data();
-		mesh_struct[i]->mass_inv = mesh_struct[i]->initial_mass_inv;
-		for (unsigned int j = 0; j < anchor_vertex_size; ++j) {
-			mass_inv[anchor_vertex[j]] = 0.0;
-		}
+		mesh_struct[i]->resetMassInv();
 	}
 }
 

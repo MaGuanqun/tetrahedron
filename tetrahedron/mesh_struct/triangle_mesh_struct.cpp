@@ -28,10 +28,8 @@ double TriangleMeshStruct::setMass(double density)
 			mass_ += mass[i];
 		}
 	}
-	for (int i = 0; i < vertices.size(); ++i) {
-		mass_inv[i] = 1.0 / mass[i];
-	}
-	initial_mass_inv = mass_inv;
+	resetMassInv();
+	//initial_mass_inv = mass_inv;
 	return mass_;
 }
 

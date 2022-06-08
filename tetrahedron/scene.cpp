@@ -140,7 +140,8 @@ void Scene::updateConvRate(double* convergence_rate)
 	// }
 }
 
-void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio, bool* control_parameter)
+void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio, bool* control_parameter,
+	double* initial_stiffness)
 {
 	use_method =10;
 	this->control_parameter = control_parameter;
@@ -185,34 +186,33 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	double tetrahedron_density = 0.1;
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].loadMesh(preprocessing.ori_simulation_mesh[cloth_index_in_object[i]], cloth_density, &thread);
-		//if (use_method==NEWTON_)
-		//{
-		cloth[i].mesh_struct.initialUnfixedIndex();
-		//}
+		if (use_method==NEWTON_)
+		{
+			cloth[i].mesh_struct.initialUnfixedIndex();
+		}
 	}
 	for (int i = 0; i < tetrahedron_num; ++i) {
 		tetrahedron[i].loadMesh(preprocessing.ori_simulation_mesh[tetrahedron_index_in_object[i]], tetrahedron_density, &thread);
-		//if (use_method == NEWTON_)
-		//{
-		tetrahedron[i].mesh_struct.initialUnfixedIndex();
-
-		//}
+		if (use_method == NEWTON_)
+		{
+			tetrahedron[i].mesh_struct.initialUnfixedIndex();
+		}
 	}
 	setWireframwColor();
 	std::vector<SingleClothInfo> single_cloth_info;
-	std::array<double, 4>collision_stiffness_per = { 2e5,2e5,2e5, 2e5 };// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point,
-	std::vector<std::array<double, 4>>collision_stiffness(cloth_num, collision_stiffness_per);
+	//std::array<double, 4>collision_stiffness_per = { 2e5,2e5,2e5, 2e5 };// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point,
+	//std::vector<std::array<double, 4>>collision_stiffness(cloth_num, collision_stiffness_per);
 	for (int i = 0; i < cloth_num; ++i) {
-		single_cloth_info.push_back(SingleClothInfo(cloth_density, 1e1, 1e6, 3e-3, collision_stiffness[i].data(), 0.5, 0.4, collision_stiffness_per[1]));
+		single_cloth_info.push_back(SingleClothInfo(cloth_density, initial_stiffness[LENGTH], 1e4, initial_stiffness[BENDING], initial_stiffness, 0.5, 0.4, initial_stiffness[LENGTH]));
 	}
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].recordInitialMesh(single_cloth_info[i]);
 	}
 
-	std::array<double, 4>tetrahedron_collision_stiffness_per = {1e1,1e1, 1e1,1e1 };
+	//std::array<double, 4>tetrahedron_collision_stiffness_per = {1e1,1e1, 1e1,1e1 };
 	double sigma_limit[2] = { 0.99,1.01 };
-	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density, 5e4, 5e10, 0.0, tetrahedron_collision_stiffness_per.data(), sigma_limit,
-		5e4,0.45,1.0e0);
+	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density, 5e4, initial_stiffness[ARAP], 0.0, initial_stiffness, sigma_limit,
+		5e4,0.45, initial_stiffness[TET_EDGE_LENGTH]);
 	for (int i = 0; i < tetrahedron_num; ++i) {
 		tetrahedron[i].recordInitialMesh(single_tetrahedron_info);
 	}

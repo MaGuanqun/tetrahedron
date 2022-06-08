@@ -65,30 +65,36 @@ void SpatialHashing::initialHashCell(unsigned int total_triangle_num, unsigned i
 	//}
 
 	unsigned int temp_hash_count = total_triangle_num / 4;
-	if (temp_hash_count <50) {
+	if (temp_hash_count < 50) {
 		temp_hash_count = 50;
 	}
 	hash_cell_count = findNeareastPrimeNumber(temp_hash_count);// 90191;// 24877;// 500009; //;// // ;// 32999;//  // 11987;//84947
 	//hash_cell_count = 90191;
 	std::cout << "total triangle " << total_triangle_num << " hash cell count " << hash_cell_count << std::endl;
 	this->max_index_number_in_one_cell = max_index_number_in_one_cell;// = 801;
-	this->max_index_number_in_one_cell_edge = max_index_number_in_one_cell;
-	this->max_index_number_in_one_cell_vertex = max_index_number_in_one_cell / 2 + 1;// 
 	this->max_index_number_in_one_cell_collider = max_index_number_in_one_cell_collider;// = 401;
-	this->max_index_number_in_one_cell_collider_vertex = max_index_number_in_one_cell_collider / 2 + 1;//
-	this->max_index_number_in_one_cell_collider_edge = max_index_number_in_one_cell_collider;//
+
+	if (searchPairByCell) {
+		this->max_index_number_in_one_cell_edge = max_index_number_in_one_cell;
+		this->max_index_number_in_one_cell_vertex = max_index_number_in_one_cell / 2 + 1;// 	
+		this->max_index_number_in_one_cell_collider_vertex = max_index_number_in_one_cell_collider / 2 + 1;//
+		this->max_index_number_in_one_cell_collider_edge = max_index_number_in_one_cell_collider;//
+	}
 	vertex_triangle_pair = new unsigned int* [thread_num];
 	vertex_obj_triangle_collider_pair = new unsigned int* [thread_num];
 	vertex_collider_triangle_obj_pair = new unsigned int* [thread_num];
 	edge_edge_pair = new unsigned int* [thread_num];
 	edge_edge_pair_collider = new unsigned int* [thread_num];
-	spatial_hashing_cell_triangle = new unsigned int* [thread_num];
-	spatial_hashing_cell_edge = new unsigned int* [thread_num];
-	spatial_hashing_cell_vertex = new unsigned int* [thread_num];
-	spatial_hashing_cell_collider_triangle = new unsigned int* [thread_num];
-	spatial_hashing_cell_collider_edge = new unsigned int* [thread_num];
-	spatial_hashing_cell_collider_vertex = new unsigned int* [thread_num];
 
+	spatial_hashing_cell_triangle = new unsigned int* [thread_num];
+	spatial_hashing_cell_collider_triangle = new unsigned int* [thread_num];
+
+	if (searchPairByCell) {
+		spatial_hashing_cell_edge = new unsigned int* [thread_num];
+		spatial_hashing_cell_vertex = new unsigned int* [thread_num];
+		spatial_hashing_cell_collider_edge = new unsigned int* [thread_num];
+		spatial_hashing_cell_collider_vertex = new unsigned int* [thread_num];
+	}
 
 
 	for (unsigned int i = 0; i < thread_num; ++i) {

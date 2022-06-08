@@ -24,7 +24,15 @@ void MeshStruct::setAnchorPosition()
 	}
 }
 
-
+void MeshStruct::resetMassInv()
+{
+	for (unsigned int i = 0; i < mass_inv.size(); ++i) {
+		mass_inv[i] = 1.0 / mass[i];
+	}
+	for (unsigned int i = 0; i < anchor_vertex.size(); ++i) {
+		mass_inv[anchor_vertex[i]] = 0.0;
+	}
+}
 
 void MeshStruct::updateAnchorPerThread(int total_thread_num)
 {

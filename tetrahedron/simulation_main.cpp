@@ -25,8 +25,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool control_parameter[28];
 	memset(control_parameter, 0, 28);
 	control_parameter[ONLY_COLLISION_TEST] = false;
-	control_parameter[USE_XPBD] = false;
-	control_parameter[USE_PD_] = true;
+	control_parameter[USE_XPBD] = true;
+	control_parameter[USE_PD_] = false;
 	control_parameter[USE_NEWTON_] = false;
 	control_parameter[DRAW_VT] = true;
 
@@ -54,7 +54,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	double simulation_parameter[2] = { 0.0,0.0 };//timestep, gravity
 	SaveImage save_image;
 	int iteration_number[2] = { 0,0 };
-	int set_iteration_num[2] = { 200,1 }; //0:itr in a substep, 1:number of substep
+	int set_iteration_num[2] = { 20,1 }; //0:itr in a substep, 1:number of substep
 	double convergence_rate[2] = { 0.1,0.1 };
 	bool edit_PD_conv_rate = false;
 	time_t start_time;
@@ -187,7 +187,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 		if (!already_load_model) {
 			if (imgui_windows.loadModel(collider_path, object_path)) {
 				already_load_model = true;
-				scene.loadMesh(collider_path, object_path, tolerance_ratio, control_parameter);
+				scene.loadMesh(collider_path, object_path, tolerance_ratio, control_parameter,temp_stiffness);
 				//glm::vec3 camera_pos = glm::vec3(0.6 * scene.shadow.camera_from_origin + scene.camera_center[0], scene.camera_center[1], -0.8 * scene.shadow.camera_from_origin + scene.camera_center[2]);
 				glm::vec3 camera_pos = glm::vec3(scene.camera_center[0], scene.camera_center[1], -scene.shadow.camera_from_origin + scene.camera_center[2]);
 				camera.updateCamera(camera_pos, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(scene.camera_center[0], scene.camera_center[1], scene.camera_center[2]));

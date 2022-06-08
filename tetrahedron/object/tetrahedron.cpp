@@ -408,7 +408,7 @@ void Tetrahedron::initial()
 	edge_length_stiffness = single_tetrahedron_info_ref.edge_length_stiffness;
 	std::array<double, 4> collision_stiff_indicator;
 	memcpy(collision_stiffness, single_tetrahedron_info_ref.collision_stiffness, 16);
-	mesh_struct.mass_inv = mesh_struct.initial_mass_inv;
+	mesh_struct.resetMassInv();
 	obtainAABBMoveRadius();
 }
 

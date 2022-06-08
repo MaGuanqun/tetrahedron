@@ -106,9 +106,9 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mesh_struct.getNormal();
 	genBuffer();
 	setBuffer();
-	setArea();
-	mass = mesh_struct.setMass(density);
+	setArea();	
 	setAnchor();
+	mass = mesh_struct.setMass(density);
 	mesh_struct.setAnchorPosition();
 
 
@@ -226,10 +226,10 @@ void Cloth::initialMouseChosenVertex()
 
 void Cloth::setAnchor()
 {
-	mesh_struct.anchor_vertex.push_back(0);
+//	mesh_struct.anchor_vertex.push_back(0);
 	//mesh_struct.mass_inv[31*31-1] = 0.0;
 	//mesh_struct.mass_inv[31*30] = 0.0;
-	//mesh_struct.anchor_vertex.push_back(31*31-1);
+	mesh_struct.anchor_vertex.push_back(15*15-1);
 	mesh_struct.anchor_vertex.push_back(15 * 14);
 
 	//mesh_struct.anchor_vertex.push_back(100);
