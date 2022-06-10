@@ -942,7 +942,7 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 6>>& cloth_sti
 		memset(set_stiffness + EDIT_LENGTH, 0, 2);
 	}
 	if (set_stiffness[EDIT_COLLISION]) {
-		ImGui::SetNextWindowSize(ImVec2(270, 230));
+		ImGui::SetNextWindowSize(ImVec2(540, 330));
 		ImGui::Begin("Set Collision", set_stiffness + EDIT_COLLISION);
 		ImGui::PushItemWidth(ImGui::GetFontSize() * 7.0f);
 		ImGui::Text("Cloth point triangle collision: ");

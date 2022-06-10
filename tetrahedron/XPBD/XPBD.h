@@ -98,11 +98,13 @@ private:
 	bool convergeCondition(unsigned int iteration_num);
 
 	std::vector<std::vector<std::array<double, 3>>> record_vertex_position;
+	std::vector<std::vector<std::array<double, 3>>> record_outer_vertex_position;
 	void recordVertexPosition();
 
 	std::vector<std::vector<unsigned int>* >unfixed_vertex;
 	double max_move_standard;//the max displacement to stop iteration
-
+	double outer_max_move_standard;//the max displacement to stop iteration
+		
 
 	double converge_condition_ratio;// converge_condition_ratio* edge length
 
@@ -110,9 +112,14 @@ private:
 	void setConvergeCondition();
 
 	unsigned int max_itartion_number;
+	unsigned int outer_max_itartion_number;
 
 	bool use_bending_based_on_vertex=true;
 
 	double velocity_damp;
+
+	void recordOuterVertexPosition();
+	bool outerConvergeCondition(unsigned int iteration_num);
+
 };
 

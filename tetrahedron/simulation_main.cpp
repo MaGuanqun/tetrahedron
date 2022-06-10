@@ -63,8 +63,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 	std::vector<std::array<double, 8>> tetrahedron_collision_stiffness;
 	bool set_stiffness[13];
 	memset(set_stiffness, 0, 13);
-	double temp_stiffness[18] = { 1e2,1e5,1e5,1e5,1e2,1e-5,1e10,1.0,0.0,0.0,0.0,
-	1e-3, 1e-2,1e-2,1e-2, 1e-3,1e-7,1e-2};
+	double temp_stiffness[18] = { 1e2,2e2,2e2,2e2,1e2,2e-6,1e10,1.0,0.0,0.0,0.0,
+	1e-3, 2e-3,3e-3,2e-3, 1e-4,2e-10,1e-2};
 	//memset(temp_stiffness, 0, 64);
 	UpdateObjStiffness update_obj_stiffness;
 	double tolerance_ratio[7] = { 1e-1,1e-1,1e-1,1e-1, 1e-1, 1e-1, 1e-1 };
@@ -93,7 +93,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 	unsigned int floor_dimension = 1;
 	bool floor_control[4] = { false,false,true,false };
-	double floor_value = -0.35;
+	double floor_value = -0.55;
 
 	scene.input = input;
 
