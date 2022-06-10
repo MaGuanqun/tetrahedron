@@ -31,6 +31,10 @@ public:
 	void draw(Camera* camera, Shader* object_shader_front);
 	void setSceneShader(Light& light, Camera* camera, float& far_plane, Shader* object_shader_front);
 
+	double damp_ARAP_stiffness;
+	double damp_volume_preserve_stiffness;
+	double damp_collision_stiffness[4];
+
 	double density;
 	double edge_length_stiffness;
 	double ARAP_stiffness;

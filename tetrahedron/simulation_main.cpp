@@ -49,24 +49,25 @@ void simu_main(GLFWwindow* window, Input* input) {
 	std::vector<double>tetrahedron_mass;//vertices,edges
 	double time = 1.0;//fps, mass
 	bool reset_camera = false;
-	std::vector<std::array<double, 3>> cloth_stiffness;//stretch, bending, position, ARAP
-	std::vector<std::array<double, 4>> cloth_collision_stiffness;//
+	std::vector<std::array<double, 6>> cloth_stiffness;//stretch, bending, position, ARAP
+	std::vector<std::array<double, 8>> cloth_collision_stiffness;//
 	double simulation_parameter[2] = { 0.0,0.0 };//timestep, gravity
 	SaveImage save_image;
 	int iteration_number[2] = { 0,0 };
-	int set_iteration_num[2] = { 20,1 }; //0:itr in a substep, 1:number of substep
+	int set_iteration_num[2] = { 100,1 }; //0:itr in a substep, 1:number of substep
 	double convergence_rate[2] = { 0.1,0.1 };
 	bool edit_PD_conv_rate = false;
 	time_t start_time;
 
-	std::vector<std::array<double, 3>> tetrahedron_stiffness;//ARAP, position, edge_length
-	std::vector<std::array<double, 4>> tetrahedron_collision_stiffness;
+	std::vector<std::array<double, 6>> tetrahedron_stiffness;//ARAP, position, edge_length
+	std::vector<std::array<double, 8>> tetrahedron_collision_stiffness;
 	bool set_stiffness[13];
 	memset(set_stiffness, 0, 13);
-	double temp_stiffness[11] = { 1e1,1e1,1e1,1e1,1e1,3e-3,1e10,1.0,0.0,0.0,0.0 };
+	double temp_stiffness[18] = { 1e2,1e5,1e5,1e5,1e2,1e-5,1e10,1.0,0.0,0.0,0.0,
+	1e-3, 1e-2,1e-2,1e-2, 1e-3,1e-7,1e-2};
 	//memset(temp_stiffness, 0, 64);
 	UpdateObjStiffness update_obj_stiffness;
-	double tolerance_ratio[7] = { 5e-2,5e-2,5e-2,5e-2, 1e-1, 1e-1, 1e-1 };
+	double tolerance_ratio[7] = { 1e-1,1e-1,1e-1,1e-1, 1e-1, 1e-1, 1e-1 };
 
 	double damp_stiffness = temp_stiffness[DAMP_STIFFNESS];
 	double rayleigh_damp_stiffness[2] = { temp_stiffness[RAYLEIGH_DAMP_STIFFNESS_ALPHA], temp_stiffness[RAYLEIGH_DAMP_STIFFNESS_BETA] };

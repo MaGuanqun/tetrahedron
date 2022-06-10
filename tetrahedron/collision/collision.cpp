@@ -120,7 +120,7 @@ void Collision::setParameter(std::vector<double>* lambda, double* floor_lambda, 
 	this->floor_lambda = floor_lambda;
 	this->lambda = lambda;
 	this->collision_lambda_index_start = collision_lambda_index_start;
-	this->damp_stiffness= damp_stiffness;
+	//this->damp_stiffness= damp_stiffness;
 	this->dt = dt;
 }
 
@@ -226,6 +226,7 @@ void Collision::reorganzieDataOfObjects()
 
 	vertex_index_start_per_thread.resize(total_obj_num);
 
+	damp_collision.resize(total_obj_num);
 
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		obj_tri_aabb[i] = cloth->data()[i].triangle_AABB.data();
@@ -250,6 +251,7 @@ void Collision::reorganzieDataOfObjects()
 		mass_inv[i] = cloth->data()[i].mesh_struct.mass_inv.data();
 		triangle_normal_magnitude_reciprocal[i] = cloth->data()[i].mesh_struct.triangle_normal_magnitude_reciprocal.data();
 		vertex_index_start_per_thread[i] = cloth->data()[i].mesh_struct.vertex_index_begin_per_thread.data();
+		damp_collision[i] = cloth->data()[i].damp_collision_stiffness;
 	}
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		obj_tri_aabb[i + cloth->size()] = tetrahedron->data()[i].triangle_AABB.data();
@@ -276,6 +278,7 @@ void Collision::reorganzieDataOfObjects()
 		mass_inv[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.mass_inv.data();
 		triangle_normal_magnitude_reciprocal[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.triangle_normal_magnitude_reciprocal.data();
 		vertex_index_start_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_index_begin_per_thread.data();
+		damp_collision[i + cloth->size()] = tetrahedron->data()[i].damp_collision_stiffness;
 	}
 
 	if (has_collider) {
@@ -1710,7 +1713,7 @@ void Collision::XPBDfloorCollisionResponse()
 	double target_pos_tri[3][3];
 	double stiffness_initial = collision_stiffness[BODY_POINT_TRIANGLE];
 	unsigned int* pair;
-	double damp_coe = damp_stiffness;
+	double damp_coe;
 	//double* lambda_ = lambda->data() + collision_lambda_index_start[0];
 	double dt_ = dt;
 
@@ -1725,6 +1728,7 @@ void Collision::XPBDfloorCollisionResponse()
 	double floor_value = floor->value;
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		size = cloth->data()[i].mesh_struct.vertex_for_render.size();
+		damp_coe = damp_collision[i][BODY_POINT_TRIANGLE];
 		for (unsigned int j = 0; j < size; ++j) {
 			dcd.XPBDFloor(vertex_for_render[i][j].data(), vertex_position[i][j].data(), dimension, normal_direction, mass_inv[i][j], tolerance, *lambda_,
 				stiffness_initial, damp_coe, dt_, floor_value);
@@ -1737,6 +1741,7 @@ void Collision::XPBDfloorCollisionResponse()
 		index = tetrahedron->data()[i].mesh_struct.vertex_index_on_sureface.data();
 		size = tetrahedron->data()[i].mesh_struct.vertex_index_on_sureface.size();
 		obj_index = i + cloth->size();
+		damp_coe = damp_collision[obj_index][BODY_POINT_TRIANGLE];
 		for (unsigned int j = 0; j < size; ++j) {
 			dcd.XPBDFloor(vertex_for_render[obj_index][index[j]].data(), vertex_position[obj_index][index[j]].data(), dimension, normal_direction,
 				mass_inv[obj_index][index[j]], tolerance, *lambda_, stiffness_initial, damp_coe, dt_, floor_value);
@@ -2219,7 +2224,6 @@ void Collision::solveXPBDpointTriangleResponse(double*&lambda_, unsigned int pai
 	int* indices;
 
 	double stiffness_initial = collision_stiffness[SELF_POINT_TRIANGLE];
-	double damp_coe = damp_stiffness;
 	double dt_ = dt;
 	double stiffness;
 	unsigned int* pair;
@@ -2238,7 +2242,7 @@ void Collision::solveXPBDpointTriangleResponse(double*&lambda_, unsigned int pai
 			tolerance,
 			mass_inv[*(pair + 1)][*pair], mass_inv[*(pair + 3)][indices[0]], mass_inv[*(pair + 3)][indices[1]], mass_inv[*(pair + 3)][indices[2]],
 			//1.0, 1.0, 1.0, 1.0,
-			triangle_normal_magnitude_reciprocal[*(pair + 3)][*(pair + 2)], *lambda_,stiffness,damp_coe, dt_);
+			triangle_normal_magnitude_reciprocal[*(pair + 3)][*(pair + 2)], *lambda_,stiffness, damp_collision[*(pair + 1)][SELF_POINT_TRIANGLE], dt_);
 		lambda_++;
 
 	}
@@ -2309,7 +2313,6 @@ void Collision::solveXPBDedgeEdgeResponse(double*& lambda_, unsigned int pair_th
 	double stiffness;
 	unsigned int* pair;
 	//double* lambda_ = lambda->data() + collision_lambda_index_start[2];
-	double damp_coe = damp_stiffness;
 	double dt_ = dt;
 	for (unsigned int i = start_pair_index; i < end_pair_index; i += 4) {
 		stiffness = stiffness_initial;
@@ -2323,7 +2326,7 @@ void Collision::solveXPBDedgeEdgeResponse(double*& lambda_, unsigned int pair_th
 			tolerance,
 			//1.0, 1.0, 1.0, 1.0,
 			mass_inv[*(pair + 1)][*indices], mass_inv[*(pair + 1)][*(indices + 1)], mass_inv[*(pair + 3)][*compare_indices], mass_inv[*(pair + 3)][*(compare_indices + 1)],
-			*lambda_, stiffness, damp_coe,dt_);
+			*lambda_, stiffness, damp_collision[*(pair + 1)][SELF_EDGE_EDGE], dt_);
 		lambda_ ++ ;
 	}
 }
@@ -2601,7 +2604,6 @@ void Collision::solveXPBDpointTriangleColliderResponse(double*& lambda_, unsigne
 	double stiffness_initial = collision_stiffness[BODY_POINT_TRIANGLE];
 	double stiffness;
 	unsigned int* pair;
-	double damp_coe = damp_stiffness;
 	//double* lambda_ = lambda->data() + collision_lambda_index_start[0];
 	double dt_ = dt;
 	for (unsigned int i = index_start; i < index_end; i += 4) {
@@ -2617,7 +2619,7 @@ void Collision::solveXPBDpointTriangleColliderResponse(double*& lambda_, unsigne
 			triangle_normal_collider[*(pair + 3)][*(pair + 2)].data(),
 			mass_inv[*(pair + 1)][*pair],
 			//1.0,
-			tolerance, *lambda_,stiffness, damp_coe,dt_);
+			tolerance, *lambda_,stiffness, damp_collision[*(pair + 1)][SELF_POINT_TRIANGLE], dt_);
 		lambda_++;
 		
 	}
@@ -4434,7 +4436,7 @@ void Collision::pointSelfTriangleClose(std::vector<int>* vertex_neighbor_triangl
 		initial_position = triangle_mesh->vertex_for_render.data();
 		triangle_indices = triangle_mesh->triangle_indices.data();
 		initial_face_normal = triangle_mesh->face_normal_for_render.data();
-		record_stiffness = (*cloth)[i].collision_stiffness_initial[SELF_POINT_TRIANGLE];
+		record_stiffness = (*cloth)[i].collision_stiffness[SELF_POINT_TRIANGLE];
 		for (int k = 0; k < neighbor_triangle->size(); ++k) {
 			triangle_index = (*neighbor_triangle)[k];
 			triangle_vertex_index = triangle_indices[triangle_index].data();
@@ -4489,7 +4491,7 @@ void Collision::edgeEdgeClose(std::vector<int>* edge_neighbor_edge, double* init
 		neighbor_edge = &(edge_neighbor_edge[i]);
 		current_position = compare_mesh->vertex_position.data();
 		initial_position = compare_mesh->vertex_for_render.data();
-		record_stiffness = (*cloth)[i].collision_stiffness_initial[SELF_EDGE_EDGE];
+		record_stiffness = (*cloth)[i].collision_stiffness[SELF_EDGE_EDGE];
 		for (int k = 0; k < neighbor_edge->size(); ++k) {
 			compare_edge_index_0 = compare_mesh->edge_vertices[(*neighbor_edge)[k] << 1];//   edges[(*neighbor_edge)[k]].vertex[0];
 			compare_edge_index_1 = compare_mesh->edge_vertices[((*neighbor_edge)[k] << 1) + 1];// edges[(*neighbor_edge)[k]].vertex[1];
@@ -4538,7 +4540,7 @@ void Collision::pointColliderTriangleClose(int* triangle_vertex_index, std::vect
 		vertex_b_sum = target_position->b_sum[i].data();
 		vertex_stiffness = target_position->stiffness[i].data();
 		vertex_need_update = target_position->need_update[i];
-		record_stiffness = (*cloth)[i].collision_stiffness_initial[BODY_POINT_TRIANGLE];
+		record_stiffness = (*cloth)[i].collision_stiffness[BODY_POINT_TRIANGLE];
 		energy = &target_position->collision_energy;
 		for (int k = 0; k < neighbor_vertex->size(); ++k) {
 			vertex_index = (*neighbor_vertex)[k];

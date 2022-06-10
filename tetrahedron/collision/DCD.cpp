@@ -287,7 +287,7 @@ void DCD::XPBDcalDistancePointTriangle(
         constraint -= tolerance;
     }
     else {
-        if (constraint > -tolerance) {
+        if (constraint < -tolerance) {
             return;
         }
         constraint += tolerance;
@@ -624,9 +624,9 @@ void DCD::XPBDedgeEdge(double* current_edge_vertex_0, double* current_edge_verte
     double distance2;
     if (checkEdgeEdgeCollision(current_edge_vertex_0, current_edge_vertex_1, initial_edge_vertex_0, initial_edge_vertex_1, current_compare_edge_vertex_0, current_compare_edge_vertex_1,
         initial_compare_edge_vertex_0, initial_compare_edge_vertex_1, barycentric, norm, distance2, tolerance)) {
-        if (distance2 > 0) {
-            return;
-        }
+        //if (distance2 > 0) {
+        //    return;
+        //}
         XPBDcalDistanceEdgeEdge(
             norm, distance2, barycentric, current_edge_vertex_0, current_edge_vertex_1, current_compare_edge_vertex_0, current_compare_edge_vertex_1,
             initial_edge_vertex_0, initial_edge_vertex_1,
@@ -1155,7 +1155,7 @@ bool DCD::PDFloor(double* target_position, double* current_position, unsigned in
         else {
             memcpy(target_position, current_position, 24);
             target_position[dimension] = floor_value + tolerance;
-            return true;           
+            return true;
         }
     }
     else {
@@ -1169,6 +1169,8 @@ bool DCD::PDFloor(double* target_position, double* current_position, unsigned in
         }
     }
 }
+
+
 
 
 

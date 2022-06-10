@@ -380,8 +380,9 @@ void Tetrahedron::recordInitialMesh(SingleTetrahedronInfo& single_tetrahedron_in
 	this->single_tetrahedron_info_ref = single_tetrahedron_info_ref;
 	memcpy(collision_stiffness, single_tetrahedron_info_ref.collision_stiffness, 32);
 	position_stiffness = single_tetrahedron_info_ref.position_stiffness;
-	volume_preserve_stiffness = single_tetrahedron_info_ref.volume_preserve_stiffness;
-	ARAP_stiffness = single_tetrahedron_info_ref.ARAP_stiffness;
+	volume_preserve_stiffness = single_tetrahedron_info_ref.volume_preserve_stiffness[0];
+	ARAP_stiffness = single_tetrahedron_info_ref.ARAP_stiffness[0];
+	damp_ARAP_stiffness = single_tetrahedron_info_ref.ARAP_stiffness[1];
 	memcpy(sigma_limit, single_tetrahedron_info_ref.sigma_limit, 16);
 	youngs_modulus = single_tetrahedron_info_ref.youngs_modulus;
 	poisson_ratio = single_tetrahedron_info_ref.poisson_ratio;
@@ -402,8 +403,9 @@ void Tetrahedron::initial()
 	mesh_struct.anchor_position.clear();
 	mesh_struct.getRenderNormal();
 	mesh_struct.getNormal();
-	ARAP_stiffness = single_tetrahedron_info_ref.ARAP_stiffness;
-	volume_preserve_stiffness = single_tetrahedron_info_ref.volume_preserve_stiffness;
+	ARAP_stiffness = single_tetrahedron_info_ref.ARAP_stiffness[0];
+	damp_ARAP_stiffness = single_tetrahedron_info_ref.ARAP_stiffness[1];
+	volume_preserve_stiffness = single_tetrahedron_info_ref.volume_preserve_stiffness[0];
 	position_stiffness = single_tetrahedron_info_ref.position_stiffness;
 	edge_length_stiffness = single_tetrahedron_info_ref.edge_length_stiffness;
 	std::array<double, 4> collision_stiff_indicator;

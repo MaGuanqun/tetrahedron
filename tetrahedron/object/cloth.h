@@ -15,14 +15,19 @@ public:
 	void recordInitialMesh(SingleClothInfo& single_cloth_info_ref);
 	SingleClothInfo single_cloth_info_ref;
 
-	std::vector<double>length_stiffness;
-	double bend_stiffness;
-	double collision_stiffness[4];
+	double length_stiffness; //add damp
+	double bend_stiffness; //add damp
+	double collision_stiffness[4]; //add damp
+
+	double damp_length_stiffness;
+	double damp_bend_stiffness;
+	double damp_collision_stiffness[4];
+
 	//std::vector<std::vector<double>>collision_stiffness_time_step_starts;
 	//std::vector<std::vector<double>>collision_stiffness_time_step_starts_indicator;
 	double collision_stiffness_update_indicator;
 	double position_stiffness;
-	double collision_stiffness_initial[4];
+	//double collision_stiffness_initial[4];
 
 	void initial();
 	void initialMouseChosenVertex();

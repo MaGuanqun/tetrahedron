@@ -491,7 +491,7 @@ void ProjectDynamic::updateTetrahedronAnchorVertices(int tetrahedron_index,Tetra
 }
 
 void ProjectDynamic::computeGlobalStepMatrixSingleCloth(TriangleMeshStruct& mesh_struct, std::vector<Triplet<double>>& global_mat_nnz,
-	std::vector<double>& lbo_weight, std::vector<VectorXd>& vertex_lbo, int sys_size, double bending_stiffness, std::vector<double>& length_stiffness,
+	std::vector<double>& lbo_weight, std::vector<VectorXd>& vertex_lbo, int sys_size, double bending_stiffness, double length_stiffness,
 	double position_stiffness, int vertex_index_start)
 {	
 	//bending
@@ -523,10 +523,10 @@ void ProjectDynamic::computeGlobalStepMatrixSingleCloth(TriangleMeshStruct& mesh
 	for (int i = 0; i < mesh_struct.edges.size(); ++i) {
 		id0 = mesh_struct.edge_vertices[i << 1] + vertex_index_start;
 		id1 = mesh_struct.edge_vertices[(i << 1) + 1] + vertex_index_start;
-		global_mat_nnz.push_back(Triplet<double>(id0, id0, length_stiffness[i]));
-		global_mat_nnz.push_back(Triplet<double>(id1, id1, length_stiffness[i]));
-		global_mat_nnz.push_back(Triplet<double>(id0, id1, -length_stiffness[i]));
-		global_mat_nnz.push_back(Triplet<double>(id1, id0, -length_stiffness[i]));
+		global_mat_nnz.push_back(Triplet<double>(id0, id0, length_stiffness));
+		global_mat_nnz.push_back(Triplet<double>(id1, id1, length_stiffness));
+		global_mat_nnz.push_back(Triplet<double>(id0, id1, -length_stiffness));
+		global_mat_nnz.push_back(Triplet<double>(id1, id0, -length_stiffness));
 	}
 
 	//position
@@ -2063,12 +2063,12 @@ void ProjectDynamic::localEdgeLengthProjectionPerThread(int thread_id, bool with
 		double* edges_length;
 		unsigned int* edge_vertices;
 		unsigned int* edge_index_begin_per_thread;
-		double* length_stiffness;
+		double length_stiffness;
 		for (unsigned int j = 0; j < total_cloth_num; ++j) {
 			vertex_index_start = vertex_begin_per_cloth[j];
 			edges_length = (*cloth)[j].mesh_struct.edge_length.data();
 			edge_index_begin_per_thread = (*cloth)[j].mesh_struct.edge_index_begin_per_thread.data();
-			length_stiffness = (*cloth)[j].length_stiffness.data();
+			length_stiffness = (*cloth)[j].length_stiffness;
 			edge_vertices = (*cloth)[j].mesh_struct.edge_vertices.data();
 			for (unsigned int i = edge_index_begin_per_thread[thread_id]; i < edge_index_begin_per_thread[thread_id + 1]; ++i) {
 				q0.data()[0] = u[0].data()[edge_vertices[i << 1] + vertex_index_start];
@@ -2079,8 +2079,8 @@ void ProjectDynamic::localEdgeLengthProjectionPerThread(int thread_id, bool with
 				q1.data()[2] = u[2].data()[edge_vertices[(i << 1) + 1] + vertex_index_start];
 				q01 = q0 - q1;
 				curLen = sqrt(dotProduct(q01.data(), q01.data()));
-				temEnergy[thread_id] += 0.5 * length_stiffness[i] * (curLen - edges_length[i]) * (curLen - edges_length[i]);
-				p_edge_length[j][i] = q01 * (length_stiffness[i] / curLen * edges_length[i]);
+				temEnergy[thread_id] += 0.5 * length_stiffness * (curLen - edges_length[i]) * (curLen - edges_length[i]);
+				p_edge_length[j][i] = q01 * (length_stiffness / curLen * edges_length[i]);
 			}
 		}
 	}
@@ -2089,13 +2089,13 @@ void ProjectDynamic::localEdgeLengthProjectionPerThread(int thread_id, bool with
 		double curLen;
 		double* edges_length;
 		unsigned int* edge_index_begin_per_thread;
-		double* length_stiffness;
+		double length_stiffness;
 		unsigned int* edge_vertices;
 		for (unsigned int j = 0; j < total_cloth_num; ++j) {
 			vertex_index_start = vertex_begin_per_cloth[j];
 			edges_length = (*cloth)[j].mesh_struct.edge_length.data();
 			edge_index_begin_per_thread = (*cloth)[j].mesh_struct.edge_index_begin_per_thread.data();
-			length_stiffness = (*cloth)[j].length_stiffness.data();
+			length_stiffness = (*cloth)[j].length_stiffness;
 			edge_vertices = (*cloth)[j].mesh_struct.edge_vertices.data();
 			for (unsigned int i = edge_index_begin_per_thread[thread_id]; i < edge_index_begin_per_thread[thread_id + 1]; ++i) {
 				q0.data()[0] = u[0].data()[edge_vertices[i << 1] + vertex_index_start];
@@ -2106,7 +2106,7 @@ void ProjectDynamic::localEdgeLengthProjectionPerThread(int thread_id, bool with
 				q1.data()[2] = u[2].data()[edge_vertices[(i << 1) + 1] + vertex_index_start];
 				q01 = q0 - q1;
 				curLen = sqrt(dotProduct(q01.data(), q01.data()));
-				p_edge_length[j][i] = q01 * (length_stiffness[i] / curLen * edges_length[i]);
+				p_edge_length[j][i] = q01 * (length_stiffness / curLen * edges_length[i]);
 			}
 		}
 	}

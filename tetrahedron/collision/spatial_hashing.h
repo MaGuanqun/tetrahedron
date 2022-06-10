@@ -268,5 +268,7 @@ private:
 
 	bool searchPairByCell = true;//this means we need to do spatial hashing for vertex, triangle and edge, and find all pairs in a cell, may have duplicate pairs
 
+
+
 };
 

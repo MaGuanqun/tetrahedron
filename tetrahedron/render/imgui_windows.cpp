@@ -708,8 +708,8 @@ void ImGuiWindows::helpMarker(const char* desc)
 
 
 
-void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_stiffness, std::vector<std::array<double, 3>>& tet_stiffness, double* simulation_parameters, std::vector<std::array<double, 4>>& cloth_collision_stiffness,
-	std::vector<std::array<double, 4>>& tet_collision_stiffness,
+void ImGuiWindows::operationWindow(std::vector<std::array<double, 6>>& cloth_stiffness, std::vector<std::array<double, 6>>& tet_stiffness, double* simulation_parameters, std::vector<std::array<double, 8>>& cloth_collision_stiffness,
+	std::vector<std::array<double, 8>>& tet_collision_stiffness,
 	bool* set_stiffness, double* temp_stiffness, UpdateObjStiffness& update_obj_stiffness, bool* set_anchor_point, bool tetrahedron_exist,
 	double* damp_stiffness, double* rayleigh_damp_stiffness)
 {
@@ -753,18 +753,27 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 			if (ImGui::TreeNode(tempString.c_str())) {
 				ImGui::Text("Stretch: %.2e", cloth_stiffness[i][0]);
 				ImGui::SameLine();
+				ImGui::Text("S Damp: %.2e", cloth_stiffness[i][3]);
 				ImGui::Text("Bending: %.2e", cloth_stiffness[i][1]);
+				ImGui::SameLine();
+				ImGui::Text("B Damp: %.2e", cloth_stiffness[i][4]);
 				ImGui::SameLine();
 				ImGui::Text("Position: %.2e", cloth_stiffness[i][2]);
 				ImGui::Text("Collision stiffness:(P point, E edge, T triangle)");
 				ImGui::Text("Self-collision:");
 				ImGui::Text("PT: %.2e", cloth_collision_stiffness[i][SELF_POINT_TRIANGLE]);
 				ImGui::SameLine();
+				ImGui::Text("PT Damp: %.2e", cloth_collision_stiffness[i][SELF_POINT_TRIANGLE + 4]);
 				ImGui::Text("EE: %.2e", cloth_collision_stiffness[i][SELF_EDGE_EDGE]);
 				ImGui::SameLine();
+				ImGui::Text("EE Damp: %.2e", cloth_collision_stiffness[i][SELF_EDGE_EDGE + 4]);
 				ImGui::Text("PP: %.2e", cloth_collision_stiffness[i][SELF_POINT_POINT]);
+				ImGui::SameLine();
+				ImGui::Text("PP Damp: %.2e", cloth_collision_stiffness[i][SELF_POINT_POINT + 4]);
 				ImGui::Text("body-cloth collision:");
 				ImGui::Text("PT: %.2e", cloth_collision_stiffness[i][BODY_POINT_TRIANGLE]);
+				ImGui::SameLine();
+				ImGui::Text("PTB Damp: %.2e", cloth_collision_stiffness[i][BODY_POINT_TRIANGLE + 4]);
 				ImGui::TreePop();
 			}
 		}
@@ -773,17 +782,26 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 			tempString = "Tet " + std::to_string(i) + "##stiffness";
 			if (ImGui::TreeNode(tempString.c_str())) {
 				ImGui::Text("ARAP: %.2e", tet_stiffness[i][0]);
+				ImGui::SameLine();
+				ImGui::Text("ARAP Damp: %.2e", tet_stiffness[i][3]);
 				ImGui::Text("Position: %.2e", tet_stiffness[i][1]);
+				ImGui::SameLine();
 				ImGui::Text("Edge Length: %.2e", tet_stiffness[i][2]);
 				ImGui::Text("Collision stiffness:(P point, E edge, T triangle)");
 				ImGui::Text("Self-collision:");
 				ImGui::Text("PT: %.2e", tet_collision_stiffness[i][SELF_POINT_TRIANGLE]);
 				ImGui::SameLine();
+				ImGui::Text("PT Damp: %.2e", tet_collision_stiffness[i][SELF_POINT_TRIANGLE + 4]);
 				ImGui::Text("EE: %.2e", tet_collision_stiffness[i][SELF_EDGE_EDGE]);
 				ImGui::SameLine();
+				ImGui::Text("EE Damp: %.2e", tet_collision_stiffness[i][SELF_EDGE_EDGE + 4]);
 				ImGui::Text("PP: %.2e", tet_collision_stiffness[i][SELF_POINT_POINT]);
+				ImGui::SameLine();
+				ImGui::Text("PP Damp: %.2e", tet_collision_stiffness[i][SELF_POINT_POINT + 4]);
 				ImGui::Text("body-cloth collision:");
 				ImGui::Text("PT: %.2e", tet_collision_stiffness[i][BODY_POINT_TRIANGLE]);
+				ImGui::SameLine();
+				ImGui::Text("PT Damp: %.2e", tet_collision_stiffness[i][BODY_POINT_TRIANGLE + 4]);
 				ImGui::TreePop();
 			}
 		}
@@ -830,7 +848,10 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 			ImGui::Text("Saved");
 		}
 		ImGui::Text("Length: ");
-		//ImGui::SameLine();
+		ImGui::SameLine();
+		if (ImGui::InputDouble("Damp##length", &temp_stiffness[DAMP_LENGTH], 0.0f, 0.0f, "%.2ef")) {
+			set_stiffness[EDIT_LENGTH] = false;
+		}
 		if (ImGui::InputDouble("##Length", &temp_stiffness[LENGTH], 0.0f, 0.0f, "%.2f")) {
 			set_stiffness[EDIT_LENGTH] = false;
 		}
@@ -838,7 +859,8 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 		if (!set_stiffness[EDIT_LENGTH]) {
 			if (ImGui::Button("Save##length", ImVec2(80, 25))) {
 				update_obj_stiffness.update_length = true;
-				update_obj_stiffness.length_stiffness = temp_stiffness[LENGTH];
+				update_obj_stiffness.length_stiffness[0] = temp_stiffness[LENGTH];
+				update_obj_stiffness.length_stiffness[1] = temp_stiffness[DAMP_LENGTH];
 				set_stiffness[EDIT_LENGTH] = true;
 			}
 		}
@@ -846,6 +868,10 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 			ImGui::Text("Saved");
 		}
 		ImGui::Text("Bending: ");
+		ImGui::SameLine();
+		if (ImGui::InputDouble("Damp##Bending", &temp_stiffness[DAMP_BENDING], 0.0f, 0.0f, "%.2ef")) {
+			set_stiffness[EDIT_BENDING] = false;
+		}
 		if (ImGui::InputDouble("##Bending", &temp_stiffness[BENDING], 0.0f, 0.0f, "%.2e")) {
 			set_stiffness[EDIT_BENDING] = false;
 		}
@@ -857,13 +883,18 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 			if (ImGui::Button("Save##bend", ImVec2(80, 25))) {
 				set_stiffness[EDIT_BENDING] = true;
 				update_obj_stiffness.update_bend = true;
-				update_obj_stiffness.bend_stiffness = temp_stiffness[BENDING];
+				update_obj_stiffness.bend_stiffness[0] = temp_stiffness[BENDING];
+				update_obj_stiffness.bend_stiffness[1] = temp_stiffness[DAMP_BENDING];
 			}
 		}
 		else {
 			ImGui::Text("Saved");
 		}
 		ImGui::Text("ARAP: ");
+		ImGui::SameLine();
+		if (ImGui::InputDouble("Damp##ARAP", &temp_stiffness[DAMP_ARAP], 0.0f, 0.0f, "%.2e")) {
+			set_stiffness[EDIT_ARAP] = false;
+		}
 		if (ImGui::InputDouble("##ARAP", &temp_stiffness[ARAP], 0.0f, 0.0f, "%.2e")) {
 			set_stiffness[EDIT_ARAP] = false;
 		}
@@ -875,7 +906,8 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 			if (ImGui::Button("Save##ARAP", ImVec2(80, 25))) {
 				set_stiffness[EDIT_ARAP] = true;
 				update_obj_stiffness.update_ARAP = true;
-				update_obj_stiffness.ARAP_stiffness = temp_stiffness[ARAP];
+				update_obj_stiffness.ARAP_stiffness[0] = temp_stiffness[ARAP];
+				update_obj_stiffness.ARAP_stiffness[1] = temp_stiffness[DAMP_ARAP];
 			}
 		}
 		else {
@@ -914,7 +946,11 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 		ImGui::Begin("Set Collision", set_stiffness + EDIT_COLLISION);
 		ImGui::PushItemWidth(ImGui::GetFontSize() * 7.0f);
 		ImGui::Text("Cloth point triangle collision: ");
-		if (ImGui::InputDouble("##CPTcollision", &temp_stiffness[SELF_POINT_TRIANGLE], 0.0f, 0.0f, "%.2f")) {
+		ImGui::SameLine();
+		if (ImGui::InputDouble("Damp##CPTcollision", &temp_stiffness[DAMP_SELF_POINT_TRIANGLE], 0.0f, 0.0f, "%.2e")) {
+			set_stiffness[EDIT_SELF_POINT_TRIANGLE] = false;
+		}
+		if (ImGui::InputDouble("##CPTcollision", &temp_stiffness[SELF_POINT_TRIANGLE], 0.0f, 0.0f, "%.2ef")) {
 			set_stiffness[EDIT_SELF_POINT_TRIANGLE] = false;
 		}
 		ImGui::SameLine();
@@ -923,13 +959,18 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 				set_stiffness[EDIT_SELF_POINT_TRIANGLE] = true;
 				update_obj_stiffness.update_collision[SELF_POINT_TRIANGLE] = true;
 				update_obj_stiffness.collision_stiffness[SELF_POINT_TRIANGLE] = temp_stiffness[SELF_POINT_TRIANGLE];
+				update_obj_stiffness.collision_stiffness[SELF_POINT_TRIANGLE+4] = temp_stiffness[DAMP_SELF_POINT_TRIANGLE];
 			}
 		}
 		else {
 			ImGui::Text("Saved");
 		}
 		ImGui::Text("Cloth Edge edge collision: ");
-		if (ImGui::InputDouble("##CEEcollision", &temp_stiffness[SELF_EDGE_EDGE], 0.0f, 0.0f, "%.2f")) {
+		ImGui::SameLine();
+		if (ImGui::InputDouble("Damp##CEEcollision", &temp_stiffness[DAMP_SELF_EDGE_EDGE], 0.0f, 0.0f, "%.2e")) {
+			set_stiffness[EDIT_SELF_EDGE_EDGE] = false;
+		}
+		if (ImGui::InputDouble("##CEEcollision", &temp_stiffness[SELF_EDGE_EDGE], 0.0f, 0.0f, "%.2e")) {
 			set_stiffness[EDIT_SELF_EDGE_EDGE] = false;
 		}
 		ImGui::SameLine();
@@ -938,13 +979,18 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 				set_stiffness[EDIT_SELF_EDGE_EDGE] = true;
 				update_obj_stiffness.update_collision[SELF_EDGE_EDGE] = true;
 				update_obj_stiffness.collision_stiffness[SELF_EDGE_EDGE] = temp_stiffness[SELF_EDGE_EDGE];
+				update_obj_stiffness.collision_stiffness[SELF_EDGE_EDGE+4] = temp_stiffness[DAMP_SELF_EDGE_EDGE];
 			}
 		}
 		else {
 			ImGui::Text("Saved");
 		}
 		ImGui::Text("Body point triangle collision: ");
-		if (ImGui::InputDouble("##BPTcollision", &temp_stiffness[BODY_POINT_TRIANGLE], 0.0f, 0.0f, "%.2f")) {
+		ImGui::SameLine();
+		if (ImGui::InputDouble("Damp##BPTcollision", &temp_stiffness[DAMP_BODY_POINT_TRIANGLE], 0.0f, 0.0f, "%.2e")) {
+			set_stiffness[EDIT_BODY_POINT_TRIANGLE] = false;
+		}
+		if (ImGui::InputDouble("##BPTcollision", &temp_stiffness[BODY_POINT_TRIANGLE], 0.0f, 0.0f, "%.2e")) {
 			set_stiffness[EDIT_BODY_POINT_TRIANGLE] = false;
 		}
 		ImGui::SameLine();
@@ -953,6 +999,7 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 3>>& cloth_sti
 				set_stiffness[EDIT_BODY_POINT_TRIANGLE] = true;
 				update_obj_stiffness.update_collision[BODY_POINT_TRIANGLE] = true;
 				update_obj_stiffness.collision_stiffness[BODY_POINT_TRIANGLE] = temp_stiffness[BODY_POINT_TRIANGLE];
+				update_obj_stiffness.collision_stiffness[BODY_POINT_TRIANGLE+4] = temp_stiffness[DAMP_BODY_POINT_TRIANGLE];
 			}
 		}
 		else {

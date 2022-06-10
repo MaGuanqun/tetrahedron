@@ -94,15 +94,15 @@ public:
 		//	}
 		//}
 
-		int col_num = 15;
-		int row_num = 15;
+		int col_num = 30;
+		int row_num = 30;
 		for (int j = 0; j < row_num; j++) {
 			for (int i = 0; i < col_num; i++) {
 				//mesh.vertices.push_back(std::array<double, 3>{ 0.7 * (double)j / (double)(row_num - 1) + 0.575, 0.35 * (double)i / (double)(col_num - 1),//+0.9
 				//mesh.vertices.push_back(std::array<double, 3>{0.7* (double)i / (double)(col_num - 1) - 0.35,  //+0.9
 				//	0.4 * (double)j / (double)(row_num - 1) - 0.285, 0.7 * (double)j / (double)(row_num - 1) - 0.35});//
 				mesh.vertices.push_back(std::array<double, 3>{0.7 * (double)i / (double)(col_num - 1) - 0.35,  //+0.9
-					0.7 * (double)j / (double)(row_num - 1) - 0.585, 0.0});//0.1 * (double)j / (double)(row_num - 1) - 0.1
+					0.7 * (double)j / (double)(row_num - 1) - 0.585, 0.1 * (double)j / (double)(row_num - 1) - 0.1});//
 			}
 		}
 

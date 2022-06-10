@@ -29,12 +29,14 @@ public:
 		double stiffness, double dt, Matrix<double, 3, 4>& A, int* vertex_index, double* inv_mass, double& lambda, const double damping_stiffness, double volume,
 		double youngs_modulus, double poisson_ratio);
 
+	double epsilon_for_bending;// set min value of ||Aq-Ap||. avoid  /0
+
 private:
 	void initialEdgeCotWeight(TriangleMeshStruct& mesh_struct, std::vector<double>& edge_cot_weight);
 	void computeLBOWeight(std::vector<double>& lbo_weight, TriangleMeshStruct& mesh_struct);
 	void computeVertexLBO(TriangleMeshStruct& mesh_struct, std::vector<VectorXd>& vertex_lbo, std::vector<double>& edge_cot_weight);
 	void restBendingMeanCurvature(TriangleMeshStruct& mesh_struct, std::vector<double>& rest_mean_curvature_norm,
-		std::vector<VectorXd>& vertex_lbo, std::vector<double>& lbo_weight); 
+		std::vector<VectorXd>& vertex_lbo, std::vector<double>& lbo_weight);
 
 	void computeGreenStrainAndPiolaStress(
 		double* v0, double* v1, double* v2, double* v3,

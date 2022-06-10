@@ -1625,7 +1625,7 @@ void NewtonMethod::reorganzieDataOfObjects()
 		unfixed_rest_length[i] = &cloth->data()[i].mesh_struct.unfixed_rest_edge_length;
 		fixed_one_vertices_rest_length[i] = &cloth->data()[i].mesh_struct.fixed_one_vertex_rest_edge_length;
 
-		edge_length_stiffness[i] = cloth->data()[i].length_stiffness.data();
+		edge_length_stiffness[i] = &cloth->data()[i].length_stiffness;
 		anchor_stiffness[i] = cloth->data()[i].position_stiffness;
 		//vertex_index_begin_per_thread[i] = cloth->data()[i].mesh_struct.vertex_index_begin_per_thread.data();
 		mass[i] = cloth->data()[i].mesh_struct.mass.data();
@@ -1640,7 +1640,7 @@ void NewtonMethod::reorganzieDataOfObjects()
 		total_vertex_num[i] = cloth->data()[i].mesh_struct.vertex_position.size();
 		real_index_to_unfixed_index[i] = cloth->data()[i].mesh_struct.real_index_to_unfixed_index.data();
 
-		previous_frame_edge_length_stiffness[i] = cloth->data()[i].length_stiffness[0];
+		previous_frame_edge_length_stiffness[i] = cloth->data()[i].length_stiffness;
 	}
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		vertex_position[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_position.data();

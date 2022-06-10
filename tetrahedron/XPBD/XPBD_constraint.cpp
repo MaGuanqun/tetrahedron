@@ -410,27 +410,57 @@ void XPBDconstraint::solveBendingConstraint(double* center_vertex, double vertex
 
 		inv_m[h] = inv_mass[index];
 	}
+
+
+
 	aq[0] = vertex_lbo.dot(q[0]);
 	aq[1] = vertex_lbo.dot(q[1]);
 	aq[2] = vertex_lbo.dot(q[2]);
 	double aq_norm = sqrt(DOT(aq, aq));
+	if (aq_norm == 0.0) {
+		return;
+	}
 	DEV_(aq, aq_norm);
 	double C = aq_norm - rest_curvature_norm;
-
 	//use q to store delta_C
 	for (unsigned int j = 0; j < 3; ++j) {
 		q_initial[j] = q[j] - q_initial[j];
 		q[j] = vertex_lbo * aq[j];
 	}
+
+	//aq[0] = vertex_lbo.dot(q[0])-rest_Aq[0];
+	//aq[1] = vertex_lbo.dot(q[1]) - rest_Aq[1];
+	//aq[2] = vertex_lbo.dot(q[2]) - rest_Aq[2];
+	//double aq_norm = sqrt(DOT(aq, aq));
+	//if (aq_norm < epsilon_for_bending) {
+	//	return;
+	//}
+	//DEV_(aq, aq_norm);
+	//double C = lbo_weight *aq_norm;
+
+	//double C = 0.5 * lbo_weight * aq_norm;
+	////use q to store delta_C
+	//for (unsigned int j = 0; j < 3; ++j) {
+	//	q_initial[j] = q[j] - q_initial[j];
+	//	q[j] = vertex_lbo * (lbo_weight *aq[j]);
+	//}
+	//double alpha_ = 1.0 / (stiffness * dt * dt);
+	//double gamma = damping_stiffness / (stiffness * dt);
+	//double delta_lambda = -(C + alpha_ * lambda + gamma * (q[0].dot(q_initial[0]) + q[1].dot(q_initial[1]) + q[2].dot(q_initial[2])))
+	//	/ ((1.0+gamma)*(q[0].dot(q[0].cwiseProduct(inv_m)) + q[1].dot(q[1].cwiseProduct(inv_m))
+	//		+ q[2].dot(q[2].cwiseProduct(inv_m))) + alpha_);	
+	//lambda += delta_lambda;
+	//inv_m *= delta_lambda;
+
 	double alpha_ = lbo_weight / (stiffness * dt * dt);
 	double gamma = lbo_weight * damping_stiffness / (stiffness * dt);
 	double delta_lambda = -lbo_weight * (C + alpha_ * lambda + gamma * (q[0].dot(q_initial[0]) + q[1].dot(q_initial[1]) + q[2].dot(q_initial[2])))
-		/ ((1.0+gamma)*(q[0].dot(q[0].cwiseProduct(inv_m)) + q[1].dot(q[1].cwiseProduct(inv_m))
+		/ ((1.0 + gamma) * (q[0].dot(q[0].cwiseProduct(inv_m)) + q[1].dot(q[1].cwiseProduct(inv_m))
 			+ q[2].dot(q[2].cwiseProduct(inv_m))) + lbo_weight * alpha_);
-	
 	lambda += delta_lambda;
+	inv_m *= (delta_lambda / lbo_weight);
 
-	inv_m *= (delta_lambda/lbo_weight);
+
 	center_vertex[0] += inv_m.data()[0] * q[0][0];
 	center_vertex[1] += inv_m.data()[0] * q[1][0];
 	center_vertex[2] += inv_m.data()[0] * q[2][0];
@@ -510,6 +540,11 @@ void XPBDconstraint::computeLBOWeight(std::vector<double>& lbo_weight, TriangleM
 		lbo_weight[mesh_struct.triangle_indices[i][1]] += m;
 		lbo_weight[mesh_struct.triangle_indices[i][2]] += m;
 	}
+
+	//for (unsigned int i = 0; i < lbo_weight.size(); ++i) {
+	//	lbo_weight[i] = 1.0 / sqrt(lbo_weight[i]);
+	//}
+
 }
 
 
@@ -538,10 +573,11 @@ void XPBDconstraint::restBendingMeanCurvature(TriangleMeshStruct& mesh_struct, s
 	std::vector<VectorXd>& vertex_lbo, std::vector<double>& lbo_weight)
 {
 	rest_mean_curvature_norm.resize(mesh_struct.vertex_position.size());
+	//rest_Aq.resize(mesh_struct.vertex_position.size());
 	VectorXd q;
 	unsigned int size;
-	double vertex_curvature[3];
 	unsigned int* neighbor_vertex;
+	double curvature[3];
 	for (unsigned int i = 0; i < rest_mean_curvature_norm.size(); ++i) {
 		size = vertex_lbo[i].size();
 		q.resize(size);
@@ -551,9 +587,9 @@ void XPBDconstraint::restBendingMeanCurvature(TriangleMeshStruct& mesh_struct, s
 			for (unsigned int h = 1; h < size; h++) {
 				q[h] = mesh_struct.vertex_position[neighbor_vertex[h - 1]][j];
 			}
-			vertex_curvature[j] = dotProductX_(vertex_lbo[i], q);
+			curvature[j] = dotProductX_(vertex_lbo[i], q);
 		}
-		rest_mean_curvature_norm[i] = sqrt(DOT(vertex_curvature, vertex_curvature));
+		rest_mean_curvature_norm[i] = sqrt(DOT(curvature, curvature));
 	}
 
 }

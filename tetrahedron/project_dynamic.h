@@ -116,7 +116,7 @@ private:
 	SimplicialLLT<SparseMatrix<double>> collision_free_llt;
 
 	void computeGlobalStepMatrixSingleCloth(TriangleMeshStruct& mesh_struct, std::vector<Triplet<double>>& global_mat_nnz,
-		std::vector<double>& lbo_weight, std::vector<VectorXd>& vertex_lbo, int sys_size, double bending_stiffness, std::vector<double>& length_stiffness,
+		std::vector<double>& lbo_weight, std::vector<VectorXd>& vertex_lbo, int sys_size, double bending_stiffness, double length_stiffness,
 		double position_stiffness, int vertex_index_start);
 	std::vector<std::vector<double>> rest_mean_curvature_norm;
 	std::vector<std::vector<Vector3d>> p_edge_length;

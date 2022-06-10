@@ -31,6 +31,7 @@ public:
 	void setPosPredictSubTimeStep(int thread_No);
 	void computeVelocity(int thread_No);
 	unsigned int iteration_number;
+	unsigned int inner_iteration_number;
 	unsigned int outer_iteration_number;
 	void initial();
 	void reset();
@@ -68,6 +69,9 @@ private:
 	std::vector<std::vector<double>> lbo_weight;
 	std::vector<std::vector<VectorXd>>vertex_lbo;
 	std::vector<std::vector<double>> rest_mean_curvature_norm;
+	//std::vector<std::vector<Vector3d>> rest_Aq;
+
+
 	std::vector<double> lambda;
 	
 	std::vector<double> lambda_collision;
@@ -91,7 +95,24 @@ private:
 	void updateNormal();
 	void updateRenderVertexNormal();
 
+	bool convergeCondition(unsigned int iteration_num);
+
+	std::vector<std::vector<std::array<double, 3>>> record_vertex_position;
+	void recordVertexPosition();
+
+	std::vector<std::vector<unsigned int>* >unfixed_vertex;
+	double max_move_standard;//the max displacement to stop iteration
 
 
+	double converge_condition_ratio;// converge_condition_ratio* edge length
+
+	double calEdgeLength();
+	void setConvergeCondition();
+
+	unsigned int max_itartion_number;
+
+	bool use_bending_based_on_vertex=true;
+
+	double velocity_damp;
 };
 

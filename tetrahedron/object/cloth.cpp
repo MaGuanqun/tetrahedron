@@ -154,12 +154,16 @@ void Cloth::recordInitialMesh(SingleClothInfo& single_cloth_info_ref)
 {
 	ori_vertices = mesh_struct.vertex_position;
 	this->single_cloth_info_ref = single_cloth_info_ref;
-	length_stiffness.resize(mesh_struct.edges.size());
+	//length_stiffness.resize(mesh_struct.edges.size());
 	memcpy(collision_stiffness, single_cloth_info_ref.collision_stiffness, 32);
-	memcpy(collision_stiffness_initial, single_cloth_info_ref.collision_stiffness, 32);
-	bend_stiffness = single_cloth_info_ref.bending_stiffness;
+	memcpy(damp_collision_stiffness, single_cloth_info_ref.collision_stiffness+4, 32);
+	//memcpy(collision_stiffness_initial, single_cloth_info_ref.collision_stiffness, 32);
+	bend_stiffness = single_cloth_info_ref.bending_stiffness[0];
+	damp_bend_stiffness = single_cloth_info_ref.bending_stiffness[1];
 	position_stiffness = single_cloth_info_ref.position_stiffness;
-	std::fill(length_stiffness.begin(), length_stiffness.end(), single_cloth_info_ref.length_stiffness);
+	length_stiffness = single_cloth_info_ref.length_stiffness[0];
+	damp_length_stiffness = single_cloth_info_ref.length_stiffness[1];
+	//std::fill(length_stiffness.begin(), length_stiffness.end(), single_cloth_info_ref.length_stiffness);
 	std::array<double, 4> collision_stiff_indicator;
 	for (int i = 0; i < 4; ++i) {
 		collision_stiff_indicator[i] = collision_stiffness_update_indicator * single_cloth_info_ref.collision_stiffness[i];
@@ -199,13 +203,17 @@ void Cloth::initial()
 	for (int i = 0; i < mesh_struct.anchor_vertex.size(); ++i) {
 		mesh_struct.anchor_position[i] = mesh_struct.vertex_position[mesh_struct.anchor_vertex[i]];
 	}
-	std::fill(length_stiffness.begin(), length_stiffness.end(), single_cloth_info_ref.length_stiffness);
-	bend_stiffness = single_cloth_info_ref.bending_stiffness;
-	std::array<double, 4> collision_stiff_indicator;
-	for (int i = 0; i < 4; ++i) {
-		collision_stiff_indicator[i] = collision_stiffness_update_indicator * single_cloth_info_ref.collision_stiffness[i];
-	}
-	memcpy(collision_stiffness, single_cloth_info_ref.collision_stiffness, 16);
+	length_stiffness = single_cloth_info_ref.length_stiffness[0];
+	damp_length_stiffness = single_cloth_info_ref.length_stiffness[1];
+	//std::fill(length_stiffness.begin(), length_stiffness.end(), single_cloth_info_ref.length_stiffness);
+	bend_stiffness = single_cloth_info_ref.bending_stiffness[0];
+	damp_bend_stiffness = single_cloth_info_ref.bending_stiffness[1];
+	//std::array<double, 4> collision_stiff_indicator;
+	//for (int i = 0; i < 4; ++i) {
+	//	collision_stiff_indicator[i] = collision_stiffness_update_indicator * single_cloth_info_ref.collision_stiffness[i];
+	//}
+	memcpy(collision_stiffness, single_cloth_info_ref.collision_stiffness, 32);
+	memcpy(damp_collision_stiffness, single_cloth_info_ref.collision_stiffness+4, 32);
 	obtainAABBMoveRadius();
 }
 
@@ -229,8 +237,11 @@ void Cloth::setAnchor()
 //	mesh_struct.anchor_vertex.push_back(0);
 	//mesh_struct.mass_inv[31*31-1] = 0.0;
 	//mesh_struct.mass_inv[31*30] = 0.0;
-	mesh_struct.anchor_vertex.push_back(15*15-1);
-	mesh_struct.anchor_vertex.push_back(15 * 14);
+	//mesh_struct.anchor_vertex.push_back(30*30-1);
+	//mesh_struct.anchor_vertex.push_back(30 * 29);
+
+	//mesh_struct.anchor_vertex.push_back(15 * 15 - 1);
+	//mesh_struct.anchor_vertex.push_back(15 * 14);
 
 	//mesh_struct.anchor_vertex.push_back(100);
 	//mesh_struct.anchor_vertex.push_back(0);

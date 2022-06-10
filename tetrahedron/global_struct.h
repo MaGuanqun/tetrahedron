@@ -59,22 +59,24 @@ struct OriMesh {
 
 struct SingleClothInfo {
 	double density;
-	double length_stiffness;			// stiffness of length constraint
+	double length_stiffness[2];			// stiffness of length constraint
 	double position_stiffness;			// stiffness of position constraint
-	double bending_stiffness;			// stiffness of bending constraint
-	double collision_stiffness[4];			// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point
+	double bending_stiffness[2];			// stiffness of bending constraint
+	double collision_stiffness[8];			// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point
 	double friction_stiffness_tangent;
 	double friction_stiffness_normal;
 	double virtual_length_stiffness;
 	SingleClothInfo() {};
 	SingleClothInfo(double density, double length_stiffness, double position_stiffness,
 		double bending_stiffness, double* collision_stiffness, double friction_stiffness_tangent,
-		double friction_stiffness_normal, double virtual_length_stiffness) {
+		double friction_stiffness_normal, double virtual_length_stiffness, double damp_length, double damp_bending) {
 		this->density = density;
-		this->length_stiffness = length_stiffness;
+		this->length_stiffness[0] = length_stiffness;
+		this->length_stiffness[1] = damp_length;
 		this->position_stiffness = position_stiffness;
-		this->bending_stiffness = bending_stiffness;
-		memcpy(this->collision_stiffness, collision_stiffness, 32);
+		this->bending_stiffness[0] = bending_stiffness;
+		this->bending_stiffness[1] = damp_bending;
+		memcpy(this->collision_stiffness, collision_stiffness, 64);
 		this->friction_stiffness_tangent = friction_stiffness_tangent;
 		this->friction_stiffness_normal = friction_stiffness_normal;
 		this->virtual_length_stiffness = virtual_length_stiffness;
@@ -82,10 +84,10 @@ struct SingleClothInfo {
 	SingleClothInfo& operator=(SingleClothInfo const& single_cloth_info)
 	{
 		this->density = single_cloth_info.density;
-		this->length_stiffness = single_cloth_info.length_stiffness;
+		memcpy(this->length_stiffness, single_cloth_info.length_stiffness,16);
 		this->position_stiffness = single_cloth_info.position_stiffness;
-		this->bending_stiffness = single_cloth_info.bending_stiffness;
-		memcpy(this->collision_stiffness, single_cloth_info.collision_stiffness, 32);
+		memcpy(this->bending_stiffness, single_cloth_info.bending_stiffness,16);
+		memcpy(this->collision_stiffness, single_cloth_info.collision_stiffness, 64);
 		this->friction_stiffness_tangent = single_cloth_info.friction_stiffness_tangent;
 		this->friction_stiffness_normal = single_cloth_info.friction_stiffness_normal;
 		this->virtual_length_stiffness = single_cloth_info.virtual_length_stiffness;
@@ -97,21 +99,24 @@ struct SingleTetrahedronInfo {
 	double density;
 	double edge_length_stiffness;
 	double position_stiffness;			// stiffness of position constraint
-	double ARAP_stiffness;
-	double volume_preserve_stiffness;
-	double collision_stiffness[4];			// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point
+	double ARAP_stiffness[2];
+	double volume_preserve_stiffness[2];
+	double collision_stiffness[8];			// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point
 	double sigma_limit[2];//max min sigma for volume preserve
 	double youngs_modulus;
 	double poisson_ratio;
 	SingleTetrahedronInfo() {};
 	SingleTetrahedronInfo(double density, double position_stiffness,
 		double ARAP_stiffness, double volume_preserve_stiffness, double* collision_stiffness, double* sigma_limit,
-		double youngs_modulus, double poisson_ratio, double edge_length_stiffness) {
+		double youngs_modulus, double poisson_ratio, double edge_length_stiffness,
+		double damp_ARAP, double damp_volume_preserve) {
 		this->density = density;
 		this->position_stiffness = position_stiffness;
-		this->volume_preserve_stiffness = volume_preserve_stiffness;
-		this->ARAP_stiffness = ARAP_stiffness;
-		memcpy(this->collision_stiffness, collision_stiffness, 32);
+		this->volume_preserve_stiffness[0] = volume_preserve_stiffness;
+		this->volume_preserve_stiffness[1] = damp_volume_preserve;
+		this->ARAP_stiffness[0] = ARAP_stiffness;
+		this->ARAP_stiffness[1] = damp_ARAP;
+		memcpy(this->collision_stiffness, collision_stiffness, 64);
 		memcpy(this->sigma_limit, sigma_limit, 16);
 		this->youngs_modulus = youngs_modulus;
 		this->poisson_ratio = poisson_ratio;
@@ -121,12 +126,12 @@ struct SingleTetrahedronInfo {
 	{
 		this->density = single_cloth_info.density;
 		this->position_stiffness = single_cloth_info.position_stiffness;
-		this->volume_preserve_stiffness = single_cloth_info.volume_preserve_stiffness;
-		this->ARAP_stiffness = single_cloth_info.ARAP_stiffness;
+		memcpy(this->volume_preserve_stiffness, single_cloth_info.volume_preserve_stiffness, 16);
+		memcpy(this->ARAP_stiffness, single_cloth_info.ARAP_stiffness,16);
 		this->youngs_modulus = youngs_modulus;
 		this->poisson_ratio = poisson_ratio;
 		this->edge_length_stiffness = edge_length_stiffness;
-		memcpy(this->collision_stiffness, single_cloth_info.collision_stiffness, 32);
+		memcpy(this->collision_stiffness, single_cloth_info.collision_stiffness, 64);
 		memcpy(this->sigma_limit, single_cloth_info.sigma_limit, 16);
 		return *this;
 	}
@@ -135,13 +140,13 @@ struct SingleTetrahedronInfo {
 struct UpdateObjStiffness
 {
 	bool update_length;
-	double length_stiffness;
+	double length_stiffness[2];
 	bool update_bend;
-	double bend_stiffness;
+	double bend_stiffness[2];
 	bool update_ARAP;
-	double ARAP_stiffness;
+	double ARAP_stiffness[2];
 	bool  update_collision[4];
-	double collision_stiffness[4];
+	double collision_stiffness[8];
 	bool update_tet_edge_length;
 	double tet_edge_length_stiffness;
 	UpdateObjStiffness() {

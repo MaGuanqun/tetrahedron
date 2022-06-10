@@ -530,13 +530,14 @@ private:
 
 	std::vector<double>* lambda;
 	std::vector<unsigned int>* collision_lambda_index_start;
-	double damp_stiffness;
+	//double damp_stiffness;
 	double dt;
 	void solveXPBDpointTriangleResponse(int thread_No);
 	void solveXPBDpointTriangleColliderResponse(int thread_No);
 	void solveXPBDedgeEdgeResponse(int thread_No);
 	Floor* floor;
 
+	std::vector<double*> damp_collision;
 
 	void XPBDfloorCollisionResponse();
 
