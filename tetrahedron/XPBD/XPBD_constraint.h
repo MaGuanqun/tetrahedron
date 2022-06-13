@@ -31,6 +31,12 @@ public:
 
 	double epsilon_for_bending;// set min value of ||Aq-Ap||. avoid  /0
 
+
+	void PBDsolveARAPConstraint(std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position,
+		double stiffness, double dt,
+		Matrix<double, 3, 4>& A, int* vertex_index, double* inv_mass, double volume, double iteration_num_inverse);
+
+
 private:
 	void initialEdgeCotWeight(TriangleMeshStruct& mesh_struct, std::vector<double>& edge_cot_weight);
 	void computeLBOWeight(std::vector<double>& lbo_weight, TriangleMeshStruct& mesh_struct);

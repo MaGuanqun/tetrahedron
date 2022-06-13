@@ -1,9 +1,9 @@
 #include"XPBD_constraint.h"
 
-void XPBDconstraint::solveARAPConstraint(std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position,
+
+void XPBDconstraint::PBDsolveARAPConstraint(std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position,
 	double stiffness, double dt,
-	Matrix<double,3,4>& A, int* vertex_index, double* inv_mass, double& lambda, const double damping_stiffness, double sigma_min,
-	double sigma_max, double volume)
+	Matrix<double,3,4>& A, int* vertex_index, double* inv_mass, double volume, double iteration_num_inverse)
 {
 	Vector3d eigen_value;
 	Matrix3d q_e;
@@ -11,6 +11,87 @@ void XPBDconstraint::solveARAPConstraint(std::array<double, 3>* vertex_position,
 	Vector3d position;
 	for (unsigned int i = 0; i < 3; ++i) {
 		memcpy(q_e.data() + 3 * i, vertex_position[vertex_index[i+1]].data(), 24);
+	}
+	//first use eigen value to store the position of first vertex
+	memcpy(eigen_value.data(), vertex_position[vertex_index[0]].data(), 24);
+	for (unsigned int i = 0; i < 3; ++i) {
+		q_e.col(i) -= eigen_value;
+	}
+	Matrix3d deformation_gradient;
+	Matrix3d P_inv;
+	memcpy(P_inv.data(), A.data() + 3, 72);
+	deformation_gradient = q_e * P_inv.transpose();
+
+	//for (unsigned int i = 0; i < 4; ++i) {
+	//	//if (vertex_index[i] == 0) {
+	//		//for (unsigned int i = 0; i < 4; ++i) {
+	//			std::cout << vertex_index[i]<<" "<< vertex_position[vertex_index[i]][0] << " ";
+	//		//}
+	//		//std::cout << q_e << std::endl;
+	//		//break;
+	//	//}
+	//}
+	//std::cout << std::endl;
+	JacobiSVD<Matrix3d> svd;
+	svd.compute(deformation_gradient, ComputeFullU | ComputeFullV);
+
+	eigen_value = svd.singularValues();
+	determinant = eigen_value[0] * eigen_value[1] * eigen_value[2];
+
+	q_e = svd.matrixU();
+	if (determinant < 0) {
+		q_e.col(2) *= -1.0;
+	}
+
+	//use P_inv to record transform
+	P_inv = q_e * svd.matrixV().transpose();
+
+
+	//get delta_c
+	Matrix<double, 3, 4> grad_C_transpose;
+
+
+	grad_C_transpose = volume * (deformation_gradient - P_inv) * A;
+
+	double C = 0.5 * volume * (deformation_gradient - P_inv).squaredNorm();
+
+	if (C < 1e-20) {
+		return;
+	}
+
+	Vector3d position_;
+
+	double delta_lambda_denominator = 0.0;
+	for (unsigned int k = 0; k < 4; ++k) {
+		delta_lambda_denominator += inv_mass[vertex_index[k]] * grad_C_transpose.col(k).squaredNorm();
+	}
+	
+	double s = (C / delta_lambda_denominator) * (1.0 - pow(1.0 - stiffness, iteration_num_inverse));
+
+	double coe;
+	for (unsigned int k = 0; k < 4; ++k) {
+		coe = inv_mass[vertex_index[k]] * s;
+		vertex_position[vertex_index[k]][0] -= coe * grad_C_transpose.data()[3 * k];
+		vertex_position[vertex_index[k]][1] -= coe * grad_C_transpose.data()[3 * k + 1];
+		vertex_position[vertex_index[k]][2] -= coe * grad_C_transpose.data()[3 * k + 2];
+	}
+
+	//std::cout << vertex_index[0]<<" "<< vertex_index[1]<<" "<< vertex_index[2]<<" "<< vertex_index[3]<<" "<<  coe << std::endl;
+	//std::cout << deformation_gradient << std::endl;
+}
+
+
+void XPBDconstraint::solveARAPConstraint(std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position,
+	double stiffness, double dt,
+	Matrix<double, 3, 4>& A, int* vertex_index, double* inv_mass, double& lambda, const double damping_stiffness, double sigma_min,
+	double sigma_max, double volume)
+{
+	Vector3d eigen_value;
+	Matrix3d q_e;
+	double determinant;
+	Vector3d position;
+	for (unsigned int i = 0; i < 3; ++i) {
+		memcpy(q_e.data() + 3 * i, vertex_position[vertex_index[i + 1]].data(), 24);
 	}
 	//first use eigen value to store the position of first vertex
 	memcpy(eigen_value.data(), vertex_position[vertex_index[0]].data(), 24);
@@ -78,18 +159,18 @@ void XPBDconstraint::solveARAPConstraint(std::array<double, 3>* vertex_position,
 
 
 
-	
+
 	double alpha_ = 1.0 / (stiffness * dt * dt);
 	double gamma = damping_stiffness / (stiffness * dt);
 
 	Vector3d position_;
-	
+
 	double delta_lambda_numerator = 0.0;
 	for (unsigned int k = 0; k < 4; ++k) {
 		SUB(position_, vertex_position[vertex_index[k]], initial_vertex_position[vertex_index[k]]);
 		delta_lambda_numerator += grad_C_transpose.col(k).dot(position_);
 	}
-	
+
 
 	double delta_lambda_denominator = 0.0;
 	for (unsigned int k = 0; k < 4; ++k) {
@@ -98,7 +179,7 @@ void XPBDconstraint::solveARAPConstraint(std::array<double, 3>* vertex_position,
 	double delta_lambda = -(C + alpha_ * lambda + gamma * delta_lambda_numerator)
 		/ ((1.0 + gamma) * delta_lambda_denominator + alpha_);
 	lambda += delta_lambda;
-	
+
 	double coe;
 	for (unsigned int k = 0; k < 4; ++k) {
 		coe = inv_mass[vertex_index[k]] * delta_lambda;

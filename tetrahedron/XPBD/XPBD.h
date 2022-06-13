@@ -111,8 +111,8 @@ private:
 	double calEdgeLength();
 	void setConvergeCondition();
 
-	unsigned int max_itartion_number;
-	unsigned int outer_max_itartion_number;
+	unsigned int max_iteration_number;
+	unsigned int outer_max_iteration_number;
 
 	bool use_bending_based_on_vertex=true;
 
@@ -120,6 +120,8 @@ private:
 
 	void recordOuterVertexPosition();
 	bool outerConvergeCondition(unsigned int iteration_num);
+
+	bool use_PBD = true;
 
 };
 

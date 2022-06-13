@@ -9,12 +9,11 @@ XPBD::XPBD()
 	sub_step_num =1;
 	iteration_number =100;
 
-	time_step = 1.0 / 100.0;
 	damping_coe = 0.0;
 
-	perform_collision = true;
-	max_itartion_number = 1000;
-	outer_max_itartion_number = 100;
+	perform_collision = false;
+	max_iteration_number = 100;
+	outer_max_iteration_number = 100;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
 	velocity_damp = 0.99;
@@ -258,45 +257,71 @@ void XPBD::PBD_IPCSolve()
 
 void XPBD::PBDsolve()
 {
-	
-	thread->assignTask(this, SET_POS_PREDICT);
-	
-	for (unsigned int sub_step = 0; sub_step < sub_step_num; ++sub_step) {
-		memset(lambda.data(), 0, 8 * lambda.size());
-		iteration_number = 0;
-		outer_iteration_number = 0;
-		if (sub_step_num > 1) {
-			thread->assignTask(this, SET_POS_PREDICT_SUB_TIME_STEP);
-		}
-		while (!outerConvergeCondition(outer_iteration_number))
-		{
+	if (use_PBD) {
+		thread->assignTask(this, SET_POS_PREDICT);
+
+		for (unsigned int sub_step = 0; sub_step < sub_step_num; ++sub_step) {
+			iteration_number = 0;
+			if (sub_step_num > 1) {
+				thread->assignTask(this, SET_POS_PREDICT_SUB_TIME_STEP);
+			}
 			if (perform_collision) {
 				collision.collisionCulling();
 				collision.getCollisionPair();
-				initialCollisionConstriantNum();
 			}
-			memset(lambda_collision.data(), 0, 8 * lambda_collision.size());
-			inner_iteration_number = 0;
-			recordOuterVertexPosition();
-			while (!convergeCondition(inner_iteration_number)) {
-				if (inner_iteration_number > 0) {
-					recordVertexPosition();
-				}
+			while (iteration_number<max_iteration_number) {
+				recordVertexPosition();
 				if (perform_collision) {
 					updateNormal();
 				}
 				solveConstraint();
-				inner_iteration_number++;
+				iteration_number++;
 			}
-			iteration_number += inner_iteration_number;
-			outer_iteration_number++;
+			thread->assignTask(this, XPBD_VELOCITY);
+			updatePosition();
+			updateRenderNormal();
 		}
-		thread->assignTask(this, XPBD_VELOCITY);
-		updatePosition();
-		updateRenderNormal();
+		updateRenderVertexNormal();
 	}
-	updateRenderVertexNormal();
-
+	else {
+	//thread->assignTask(this, SET_POS_PREDICT);
+	//
+	//for (unsigned int sub_step = 0; sub_step < sub_step_num; ++sub_step) {
+	//	memset(lambda.data(), 0, 8 * lambda.size());
+	//	iteration_number = 0;
+	//	outer_iteration_number = 0;
+	//	if (sub_step_num > 1) {
+	//		thread->assignTask(this, SET_POS_PREDICT_SUB_TIME_STEP);
+	//	}
+	//	while (!outerConvergeCondition(outer_iteration_number))
+	//	{
+	//		if (perform_collision) {
+	//			collision.collisionCulling();
+	//			collision.getCollisionPair();
+	//			initialCollisionConstriantNum();
+	//		}
+	//		memset(lambda_collision.data(), 0, 8 * lambda_collision.size());
+	//		inner_iteration_number = 0;
+	//		recordOuterVertexPosition();
+	//		while (!convergeCondition(inner_iteration_number)) {
+	//			if (inner_iteration_number > 0) {
+	//				recordVertexPosition();
+	//			}
+	//			if (perform_collision) {
+	//				updateNormal();
+	//			}
+	//			solveConstraint();
+	//			inner_iteration_number++;
+	//		}
+	//		iteration_number += inner_iteration_number;
+	//		outer_iteration_number++;
+	//	}
+	//	thread->assignTask(this, XPBD_VELOCITY);
+	//	updatePosition();
+	//	updateRenderNormal();
+	//}
+	//updateRenderVertexNormal();
+	}
 }
 
 
@@ -305,7 +330,7 @@ bool XPBD::outerConvergeCondition(unsigned int iteration_num)
 	if (iteration_num < 1) {
 		return false;
 	}
-	if (iteration_num > outer_max_itartion_number) {
+	if (iteration_num > outer_max_iteration_number) {
 		return true;
 	}
 	unsigned int* unfixed_vertex_index;
@@ -331,10 +356,10 @@ bool XPBD::outerConvergeCondition(unsigned int iteration_num)
 
 bool XPBD::convergeCondition(unsigned int iteration_num)
 {
-	if (iteration_num < 1) {
+	if (iteration_num < 100) {
 		return false;
 	}
-	if (iteration_num > max_itartion_number) {
+	if (iteration_num > max_iteration_number) {
 		return true;
 	}
 	unsigned int* unfixed_vertex_index;
@@ -343,12 +368,12 @@ bool XPBD::convergeCondition(unsigned int iteration_num)
 
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		unfixed_vertex_index = unfixed_vertex[i]->data();
-		if (iteration_num == 1) {
-			previous_pos = record_outer_vertex_position[i].data();
-		}
-		else {
+		//if (iteration_num == 1) {
+		//	previous_pos = record_outer_vertex_position[i].data();
+		//}
+		//else {
 			previous_pos = record_vertex_position[i].data();
-		}
+		//}
 		current_pos = vertex_position[i];
 		
 		for (unsigned int j = 0; j < unfixed_vertex[i]->size(); ++j) {
@@ -490,6 +515,9 @@ void XPBD::solveTetStrainConstraint()
 	double youngs_modulus, poisson_ratio;
 	std::array<double, 3>* original_vertex_pos;
 	double damp_stiffness;
+
+	double iteration_num_inverse = 1.0 /(double)(max_iteration_number + 1);
+
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		mesh_struct_ = mesh_struct[i+cloth->size()];
 		size =tetrahedron->data()[i].mesh_struct.indices.size();
@@ -504,12 +532,20 @@ void XPBD::solveTetStrainConstraint()
 		youngs_modulus = tetrahedron->data()[i].youngs_modulus;
 		poisson_ratio = tetrahedron->data()[i].poisson_ratio;
 		damp_stiffness = tetrahedron->data()[i].damp_ARAP_stiffness;
-		for (unsigned int j = 0; j < size; ++j) {
-			XPBD_constraint.solveARAPConstraint(vertex_pos, initial_vertex_pos, stiffness, sub_time_step, A[j], indices[j].data(), mass_inv,
-				*lambda_, damp_stiffness, sigma_limit[0], sigma_limit[1], volume[j]);
-			lambda_++;
+		if (use_PBD) {
+			for (unsigned int j = 0; j < size; ++j) {
+				XPBD_constraint.PBDsolveARAPConstraint(vertex_pos, initial_vertex_pos, stiffness, sub_time_step, A[j], indices[j].data(), mass_inv,
+					volume[j], iteration_num_inverse);
+				lambda_++;
+			}
 		}
-
+		else {
+			for (unsigned int j = 0; j < size; ++j) {
+				XPBD_constraint.solveARAPConstraint(vertex_pos, initial_vertex_pos, stiffness, sub_time_step, A[j], indices[j].data(), mass_inv,
+					*lambda_, damp_stiffness, sigma_limit[0], sigma_limit[1], volume[j]);
+				lambda_++;
+			}
+		}
 		//original_vertex_pos = tetrahedron->data()[i].ori_vertices.data();
 		//for (unsigned int j = 0; j < size; ++j) {
 		//	XPBD_constraint.solveARAPConstraint2(original_vertex_pos, vertex_pos, initial_vertex_pos, stiffness, sub_time_step, A[j], indices[j].data(), mass_inv,
@@ -610,12 +646,7 @@ void XPBD::setPosPredict(int thread_No)
 		f_ext_ = f_ext[i].data();
 		velocity_ = velocity[i].data();
 		for (unsigned int j = vertex_index_begin_per_thread[i][thread_No]; j < vertex_end; ++j) {
-			if (mass_inv[j] == 0) {
-				for (unsigned int k = 0; k < 3; ++k) {
-					vertex_pos[j][k] += delta_t * velocity_[j][k] + delta_t_2 * (mass_inv[j] * f_ext_[j][k]);
-				}
-			}
-			else {
+			if (mass_inv[j] != 0) {
 				for (unsigned int k = 0; k < 3; ++k) {
 					vertex_pos[j][k] += delta_t * velocity_[j][k] + delta_t_2 * (mass_inv[j] * f_ext_[j][k] + gravity__[k]);
 				}
@@ -647,16 +678,11 @@ void XPBD::setPosPredictSubTimeStep(int thread_No)
 		f_ext_ = f_ext[i].data();
 		velocity_ = velocity[i].data();
 		for (unsigned int j = vertex_index_begin_per_thread[i][thread_No]; j < vertex_end; ++j) {
-			if (mass_inv[j] == 0) {
-				for (unsigned int k = 0; k < 3; ++k) {
-					vertex_pos[j][k] = vertex_pos_initial[j][k] + delta_t * velocity_[j][k] + delta_t_2 * (mass_inv[j] * f_ext_[j][k]);
-				}
-			}
-			else {
+			if (mass_inv[j] != 0) {
 				for (unsigned int k = 0; k < 3; ++k) {
 					vertex_pos[j][k] = vertex_pos_initial[j][k] + delta_t * velocity_[j][k] + delta_t_2 * (mass_inv[j] * f_ext_[j][k] + gravity__[k]);
 				}
-			}		
+			}	
 		}
 	}
 }

@@ -153,6 +153,7 @@
     <ClCompile Include="basic\cursor.cpp" />
     <ClCompile Include="basic\draw_vertex.cpp" />
     <ClCompile Include="basic\floor.cpp" />
+    <ClCompile Include="basic\move_model.cpp" />
     <ClCompile Include="basic\move_object.cpp" />
     <ClCompile Include="basic\object_chosen_indicator.cpp" />
     <ClCompile Include="basic\opengl_input.cpp" />
@@ -217,6 +218,7 @@
     <ClInclude Include="basic\floor.h" />
     <ClInclude Include="basic\global.h" />
     <ClInclude Include="basic\intersection.h" />
+    <ClInclude Include="basic\move_model.h" />
     <ClInclude Include="basic\move_object.h" />
     <ClInclude Include="basic\object_chosen_indicator.h" />
     <ClInclude Include="basic\opengl_input.h" />
