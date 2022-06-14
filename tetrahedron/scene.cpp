@@ -114,7 +114,7 @@ void Scene::obtainConvergenceInfo(double* convergence_rate, int* iteration_num)
 			break;
 		case XPBD_:
 			iteration_num[LOCAL_GLOBAL] = xpbd.iteration_number;
-			iteration_num[OUTER] = xpbd.outer_iteration_number;
+			iteration_num[OUTER] = xpbd.sub_step_num;
 			break;
 		case NEWTON_:
 			iteration_num[LOCAL_GLOBAL] = newton_method.iteration_number;

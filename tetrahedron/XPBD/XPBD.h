@@ -31,8 +31,7 @@ public:
 	void setPosPredictSubTimeStep(int thread_No);
 	void computeVelocity(int thread_No);
 	unsigned int iteration_number;
-	unsigned int inner_iteration_number;
-	unsigned int outer_iteration_number;
+	//unsigned int inner_iteration_number;
 	void initial();
 	void reset();
 	void resetExternalForce();
@@ -98,7 +97,7 @@ private:
 	bool convergeCondition(unsigned int iteration_num);
 
 	std::vector<std::vector<std::array<double, 3>>> record_vertex_position;
-	std::vector<std::vector<std::array<double, 3>>> record_outer_vertex_position;
+	//std::vector<std::vector<std::array<double, 3>>> record_outer_vertex_position;
 	void recordVertexPosition();
 
 	std::vector<std::vector<unsigned int>* >unfixed_vertex;
@@ -118,10 +117,12 @@ private:
 
 	double velocity_damp;
 
-	void recordOuterVertexPosition();
-	bool outerConvergeCondition(unsigned int iteration_num);
+	//void recordOuterVertexPosition();
+	//bool outerConvergeCondition(unsigned int iteration_num);
 
-	bool use_PBD = true;
+	bool use_PBD = false;
+	void solveByPBD();
+	void solveByXPBD();
 
 };
 

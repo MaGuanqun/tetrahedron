@@ -374,6 +374,12 @@ job Thread::create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncS
     case ORI_TRIANGLE_HASHING:
         k = job([func, thread_id]() {func->oriTriangleHashing(thread_id); });
         break;
+    case COMBINE_HASH_TABLE:
+        k = job([func, thread_id]() {func->combineHashTable(thread_id); });
+        break;
+    case FIND_ALL_PAIRS_HASH_TABLE_BY_ELEMENT:
+        k = job([func, thread_id]() {func->findAllPairsByPrimitive(thread_id); });
+        break;
         //case SET_HASH_TOGETHER:
         //    k = job([func, thread_id]() {func->setHashTogether(thread_id); });
         //    break;

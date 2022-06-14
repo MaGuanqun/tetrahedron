@@ -23,9 +23,11 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	max_index_number_in_one_cell_collider = 400;
 	estimate_coeff_for_pair_num = 80;
 
-	
+	use_BVH = false;
 	//findPatchOfObjects();
-	//initialBVH(cloth, collider, tetrahedron, thread);
+	if (use_BVH) {
+		initialBVH(cloth, collider, tetrahedron, thread);
+	}
 	initialTargetPos(cloth, tetrahedron, thread);
 	initialSpatialHashing(cloth, collider, tetrahedron, thread, tolerance_ratio);
 
@@ -34,7 +36,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	//testPairEven();
 
 	initialPair();
-	//use_BVH = true;
+
 	initialNeighborPrimitive();
 	collision_time_thread.resize(thread->thread_num);
 
@@ -634,103 +636,101 @@ void Collision::testRepeatability()
 	std::cout << count_2_collider << " " << count_2_larger_collider << " " << count_edge.size() << std::endl;
 
 	std::cout << "total edge pair " << edge_pair.size() << std::endl;
-	//std::vector<std::vector<unsigned int>> prfix_sum_vertex(total_obj_num);
-	//std::vector<std::vector<unsigned int>> prfix_sum_edge(total_obj_num);	
+
+	std::vector<std::vector<unsigned int>> prfix_sum_vertex(total_obj_num);
+	std::vector<std::vector<unsigned int>> prfix_sum_edge(total_obj_num);	
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		if (i < cloth->size()) {
+			prfix_sum_vertex[i].resize(cloth->data()[i].mesh_struct.vertex_position.size() + 1, 0);
+			prfix_sum_edge[i].resize(cloth->data()[i].mesh_struct.edges.size() + 1, 0);
+		}
+		else {
+			prfix_sum_vertex[i].resize(tetrahedron->data()[i- cloth->size()].mesh_struct.vertex_position.size() + 1, 0);
+			prfix_sum_edge[i].resize(tetrahedron->data()[i- cloth->size()].mesh_struct.edges.size() + 1, 0);
+		}
+	}
+	for (unsigned int i = 0; i < triangle_pair.size(); ++i) {
+		prfix_sum_vertex[triangle_pair[i].index[1]][triangle_pair[i].index[0] + 1]++;
+	}
+	for (unsigned int i = 0; i < edge_pair.size(); ++i) {
+		prfix_sum_edge[edge_pair[i].index[1]][edge_pair[i].index[0] + 1]++;
+	}
 	//for (unsigned int i = 0; i < total_obj_num; ++i) {
-	//	if (i < cloth->size()) {
-	//		prfix_sum_vertex[i].resize(cloth->data()[i].mesh_struct.vertex_position.size() + 1, 0);
-	//		prfix_sum_edge[i].resize(cloth->data()[i].mesh_struct.edges.size() + 1, 0);
-	//	}
-	//	else {
-	//		prfix_sum_vertex[i].resize(tetrahedron->data()[i- cloth->size()].mesh_struct.vertex_position.size() + 1, 0);
-	//		prfix_sum_edge[i].resize(tetrahedron->data()[i- cloth->size()].mesh_struct.edges.size() + 1, 0);
-	//	}
+		for (unsigned int j = 1; j < prfix_sum_vertex[0].size() + 1; ++j) {
+			prfix_sum_vertex[0][j] += prfix_sum_vertex[0][j - 1];
+		}
+		for (unsigned int j = 1; j < prfix_sum_edge[0].size() + 1; ++j) {
+			prfix_sum_edge[0][j] += prfix_sum_edge[0][j - 1];
+		}
 	//}
-
-	//for (unsigned int i = 0; i < triangle_pair.size(); ++i) {
-	//	prfix_sum_vertex[triangle_pair[i].index[1]][triangle_pair[i].index[0] + 1]++;
-	//}
-
-	//for (unsigned int i = 0; i < edge_pair.size(); ++i) {
-	//	prfix_sum_edge[edge_pair[i].index[1]][edge_pair[i].index[0] + 1]++;
-	//}
-	////for (unsigned int i = 0; i < total_obj_num; ++i) {
-	//	for (unsigned int j = 1; j < prfix_sum_vertex[0].size() + 1; ++j) {
-	//		prfix_sum_vertex[0][j] += prfix_sum_vertex[0][j - 1];
-	//	}
-	//	for (unsigned int j = 1; j < prfix_sum_edge[0].size() + 1; ++j) {
-	//		prfix_sum_edge[0][j] += prfix_sum_edge[0][j - 1];
-	//	}
-	////}
-	//	for (unsigned int i = 1; i < total_obj_num; ++i) {
-	//		prfix_sum_vertex[i][0] = prfix_sum_vertex[i - 1].back();
-	//		prfix_sum_edge[i][0] = prfix_sum_edge[i - 1].back();
-
-	//		for (unsigned int j = 1; j < prfix_sum_vertex[i].size() + 1; ++j) {
-	//			prfix_sum_vertex[i][j] += prfix_sum_vertex[i][j - 1];
-	//		}
-	//		for (unsigned int j = 1; j < prfix_sum_edge[i].size() + 1; ++j) {
-	//			prfix_sum_edge[i][j] += prfix_sum_edge[i][j - 1];
-	//		}
-	//	}
+		for (unsigned int i = 1; i < total_obj_num; ++i) {
+			prfix_sum_vertex[i][0] = prfix_sum_vertex[i - 1].back();
+			prfix_sum_edge[i][0] = prfix_sum_edge[i - 1].back();
+			for (unsigned int j = 1; j < prfix_sum_vertex[i].size() + 1; ++j) {
+				prfix_sum_vertex[i][j] += prfix_sum_vertex[i][j - 1];
+			}
+			for (unsigned int j = 1; j < prfix_sum_edge[i].size() + 1; ++j) {
+				prfix_sum_edge[i][j] += prfix_sum_edge[i][j - 1];
+			}
+		}
 
 
 
-	//int surface_vertex_index_on_global;
-	//std::vector<std::vector<std::vector<int>>>* tri_obj_tri;
-	//std::vector<std::vector<std::vector<int>>>* edge_obj_edge;
-	//bool need_break;
-	//unsigned int tri_pair_num_ = 0;
-	//unsigned int edge_pair_num_ = 0;
-	//for (unsigned int m = cloth->size(); m < total_obj_num; ++m) { //obj 0
-	//	if (m < cloth->size()) {
-	//		tri_obj_tri = &cloth->data()[m].vertex_neighbor_obj_triangle;
-	//	}
-	//	else {
-	//		tri_obj_tri = &tetrahedron->data()[m-cloth->size()].surface_vertex_neighbor_obj_triangle;
-	//	}		
-	//	for (int i = 0; i < tri_obj_tri->size(); ++i) {		//vertex 0			
-	//		surface_vertex_index_on_global = tetrahedron->data()[m - cloth->size()].mesh_struct.vertex_index_on_sureface[i];
-	//		for (int j = 0; j < tri_obj_tri->data()[i].size(); ++j) {		//obj 1		
-	//			for (int k = 0; k < tri_obj_tri->data()[i][j].size(); ++k) {  // triangle 1
-	//				tri_pair_num_++;
-	//				//obj_index, i, j, tri_obj->data()[i][j][k]
-	//				//need_break = false;
-	//				//for (unsigned int l = prfix_sum_vertex[m][surface_vertex_index_on_global]; l < prfix_sum_vertex[m][surface_vertex_index_on_global + 1]; ++l) {
-	//				//	if (triangle_pair[l].index[3] == j && triangle_pair[l].index[2] == tri_obj_tri->data()[i][j][k]) {
-	//				//		need_break = true;
-	//				//		break;
-	//				//	}
-	//				//}
-	//				//if (!need_break) {
-	//				//	std::cout << "does not find VT pair: " << m << " " << surface_vertex_index_on_global << " " << j << " " << tri_obj_tri->data()[i][j][k] << std::endl;
-	//				//}
-	//			}
-	//		}
-	//	}
-	//	edge_obj_edge = &tetrahedron->data()[m - cloth->size()].edge_neighbor_obj_edge;
-	//	for (int i = 0; i < edge_obj_edge->size(); ++i) {		//edge 0			
-	//		for (int j = 0; j < edge_obj_edge->data()[i].size(); ++j) {		//obj 1		
-	//			for (int k = 0; k < edge_obj_edge->data()[i][j].size(); ++k) {  // edge 1
-	//				//obj_index, i, j, tri_obj->data()[i][j][k]
-	//				edge_pair_num_++;
-	//				//need_break = false;
-	//				//for (unsigned int l = prfix_sum_edge[m][i]; l < prfix_sum_edge[m][i + 1]; ++l) {
-	//				//	if (edge_pair[l].index[3] == j && edge_pair[l].index[2] == edge_obj_edge->data()[i][j][k]) {
-	//				//		need_break = true;
-	//				//		break;
-	//				//	}
-	//				//}
-	//				//if (!need_break) {
-	//				//	std::cout << "does not find EE pair: " << m << " " << i << " " << j << " " << edge_obj_edge->data()[i][j][k] << std::endl;
-	//				//}
-	//			}
-	//		}
-	//	}
-	//}
-	//std::cout << "edge pair num " << edge_pair_num_ << std::endl;
-	//std::cout << "triangle pair num " << tri_pair_num_ << std::endl;
-	//std::cout << "SH is correct " << std::endl;
+	int surface_vertex_index_on_global;
+	std::vector<std::vector<std::vector<int>>>* tri_obj_tri;
+	std::vector<std::vector<std::vector<int>>>* edge_obj_edge;
+	bool need_break;
+	unsigned int tri_pair_num_ = 0;
+	unsigned int edge_pair_num_ = 0;
+	for (unsigned int m = cloth->size(); m < total_obj_num; ++m) { //obj 0
+		if (m < cloth->size()) {
+			tri_obj_tri = &cloth->data()[m].vertex_neighbor_obj_triangle;
+		}
+		else {
+			tri_obj_tri = &tetrahedron->data()[m-cloth->size()].surface_vertex_neighbor_obj_triangle;
+		}		
+		for (int i = 0; i < tri_obj_tri->size(); ++i) {		//vertex 0			
+			surface_vertex_index_on_global = tetrahedron->data()[m - cloth->size()].mesh_struct.vertex_index_on_sureface[i];
+			for (int j = 0; j < tri_obj_tri->data()[i].size(); ++j) {		//obj 1		
+				for (int k = 0; k < tri_obj_tri->data()[i][j].size(); ++k) {  // triangle 1
+					tri_pair_num_++;
+					//obj_index, i, j, tri_obj->data()[i][j][k]
+					need_break = false;
+					for (unsigned int l = prfix_sum_vertex[m][surface_vertex_index_on_global]; l < prfix_sum_vertex[m][surface_vertex_index_on_global + 1]; ++l) {
+						if (triangle_pair[l].index[3] == j && triangle_pair[l].index[2] == tri_obj_tri->data()[i][j][k]) {
+							need_break = true;
+							break;
+						}
+					}
+					if (!need_break) {
+						std::cout << "does not find VT pair: " << m << " " << surface_vertex_index_on_global << " " << j << " " << tri_obj_tri->data()[i][j][k] << std::endl;
+					}
+				}
+			}
+		}
+		edge_obj_edge = &tetrahedron->data()[m - cloth->size()].edge_neighbor_obj_edge;
+		for (int i = 0; i < edge_obj_edge->size(); ++i) {		//edge 0			
+			for (int j = 0; j < edge_obj_edge->data()[i].size(); ++j) {		//obj 1		
+				for (int k = 0; k < edge_obj_edge->data()[i][j].size(); ++k) {  // edge 1
+					//obj_index, i, j, tri_obj->data()[i][j][k]
+					edge_pair_num_++;
+					need_break = false;
+					for (unsigned int l = prfix_sum_edge[m][i]; l < prfix_sum_edge[m][i + 1]; ++l) {
+						if (edge_pair[l].index[3] == j && edge_pair[l].index[2] == edge_obj_edge->data()[i][j][k]) {
+							need_break = true;
+							break;
+						}
+					}
+					if (!need_break) {
+						std::cout << "does not find EE pair: " << m << " " << i << " " << j << " " << edge_obj_edge->data()[i][j][k] << std::endl;
+					}
+				}
+			}
+		}
+	}
+	std::cout << "edge pair num " << edge_pair_num_ << std::endl;
+	std::cout << "triangle pair num " << tri_pair_num_ << std::endl;
+	std::cout << "SH is correct " << std::endl;
 
 	//for (unsigned int i = 0; i < thread_num; ++i) {
 	//	for (unsigned int j = 0; j < spatial_hashing.triangle_pair[i].size(); j+=4) {
@@ -813,14 +813,14 @@ void Collision::testIfSPRight()
 	unsigned int* vertex_tri_pair;
 	for (unsigned int i = 0; i < thread_num; ++i) {
 		vertex_tri_pair = spatial_hashing.vertex_triangle_pair[i] + 1;
-		for (unsigned int j = 0; j < vertex_tri_pair[0]; j += 4) {
+		for (unsigned int j = 0; j < spatial_hashing.vertex_triangle_pair[i][0]; j += 4) {
 			findVertexTriangleInBVH(vertex_tri_pair[j + 1], vertex_tri_pair[j], vertex_tri_pair[j + 3], vertex_tri_pair[j + 2]);
 		}
 	}
 	unsigned int* edge_edge_pair;
 	for (unsigned int i = 0; i < thread_num; ++i) {
 		edge_edge_pair = spatial_hashing.edge_edge_pair[i] + 1;
-		for (unsigned int j = 0; j < edge_edge_pair[0]; j += 4) {
+		for (unsigned int j = 0; j < spatial_hashing.edge_edge_pair[i][0]; j += 4) {
 			findEdgeEdgeInBVH(edge_edge_pair[j + 1], edge_edge_pair[j], edge_edge_pair[j + 3], edge_edge_pair[j + 2]);
 		}
 	}
@@ -836,9 +836,7 @@ void Collision::testIfSPRight()
 	//		findInBVH(tri_tri_pair_collider[i][j + 1], tri_tri_pair_collider[i][j], tri_tri_pair_collider[i][j + 3], tri_tri_pair_collider[i][j + 2], true);
 	//	}
 	//}
-
 	//std::cout << "find pair in BVH " << std::endl;
-
 	//std::vector<std::vector<std::vector<unsigned int>>>* tri_obj_tri;
 	//for (unsigned int i = 0; i < total_obj_num; ++i) {
 	//	if (i < cloth->size()) {
@@ -856,19 +854,19 @@ void Collision::testIfSPRight()
 	//	//}		
 	//	//findInSPCollider(tri_obj_tri, i);
 	//}
-	////for (unsigned int i = 0; i < thread_num; ++i) {
-	////	for (unsigned int j = 0; j < spatial_hashing.triangle_pair[i].size(); j+=4) {
-	////		if (spatial_hashing.triangle_pair[i][j] == 1 || spatial_hashing.triangle_pair[i][j+2]==1) {
-	////			std::cout <<i<<" "<< spatial_hashing.triangle_pair[i][j + 1] << " " << spatial_hashing.triangle_pair[i][j] << " "
-	////				<< spatial_hashing.triangle_pair[i][j + 3] << " " << spatial_hashing.triangle_pair[i][j + 2] << std::endl;
-	////		}
-	////	}
-	////}
-	////std::cout << cloth->data()[0].triangle_neighbor_obj_triangle[0][0].size() << std::endl;
-	////for (unsigned int i = 0; i < cloth->data()[0].triangle_neighbor_obj_triangle[0][0].size(); ++i) {
-	////	std::cout << cloth->data()[0].triangle_neighbor_obj_triangle[0][0][i]<<" " << std::endl;
-	////}
-	////std::cout <<(int) AABB::AABB_intersection(obj_tri_aabb[0][0].data(), obj_tri_aabb[0][6].data()) << std::endl;
+	//for (unsigned int i = 0; i < thread_num; ++i) {
+	//	for (unsigned int j = 0; j < spatial_hashing.triangle_pair[i].size(); j+=4) {
+	//		if (spatial_hashing.triangle_pair[i][j] == 1 || spatial_hashing.triangle_pair[i][j+2]==1) {
+	//			std::cout <<i<<" "<< spatial_hashing.triangle_pair[i][j + 1] << " " << spatial_hashing.triangle_pair[i][j] << " "
+	//				<< spatial_hashing.triangle_pair[i][j + 3] << " " << spatial_hashing.triangle_pair[i][j + 2] << std::endl;
+	//		}
+	//	}
+	//}
+	//std::cout << cloth->data()[0].triangle_neighbor_obj_triangle[0][0].size() << std::endl;
+	//for (unsigned int i = 0; i < cloth->data()[0].triangle_neighbor_obj_triangle[0][0].size(); ++i) {
+	//	std::cout << cloth->data()[0].triangle_neighbor_obj_triangle[0][0][i]<<" " << std::endl;
+	//}
+	//std::cout <<(int) AABB::AABB_intersection(obj_tri_aabb[0][0].data(), obj_tri_aabb[0][6].data()) << std::endl;
 	std::cout << "test is right" << std::endl;
 
 
@@ -1078,7 +1076,7 @@ void Collision::collisionCulling()
 //	}
 	//t1 = clock();
 	//std::cout << "AABB " << t1 - t << std::endl;
-	//buildBVH();
+	//
 	//std::cout <<"aabb "<< scene_aabb[0] << " " << scene_aabb[1] << " " << scene_aabb[2] << " " << scene_aabb[3] << " " << scene_aabb[4] << " " << scene_aabb[5] << std::endl;
 
 	spatial_hashing.buildSpatialHashing(scene_aabb);
@@ -1119,6 +1117,16 @@ void Collision::collisionCulling()
 
 	setPairIndexEveryThread();
 
+	if (use_BVH) {
+		buildBVH();
+		thread->assignTask(this, FIND_TRIANGLE_PAIRS);
+		thread->assignTask(this, FIND_PRIMITIVE_AROUND);
+		testIfSPRight();
+		testRepeatability();
+	}
+	
+
+
 	//t = clock();	
 	//for (unsigned int i = 0; i < 1000; ++i) {
 	//for (unsigned int j = 0; j < thread_num; ++j) {
@@ -1157,10 +1165,10 @@ void Collision::collisionCulling()
 
 
 
-	//thread->assignTask(this, FIND_TRIANGLE_PAIRS);
+	//
 	//t = clock();
 	//for (unsigned int i = 0; i < 10; ++i) {
-	//thread->assignTask(this, FIND_PRIMITIVE_AROUND);
+	//
 	//}
 	//t1 = clock();
 	//std::cout << "find primitive around multi thread" << t1 - t << std::endl;
@@ -1183,9 +1191,7 @@ void Collision::collisionCulling()
 	//	std::cout << "ave 5 AABB " << (double)t_0 / 5000.0 << std::endl;
 	//	std::cout << "ave 5 find primitive around " << (double)t_1 / 500.0 << std::endl;
 	//}
-	//testIfSPRight();
 
-	//testRepeatability();
 
 
 	//testCulling();

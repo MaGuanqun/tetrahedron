@@ -168,7 +168,7 @@ private:
 	PredictiveContact predictive_contact;
 
 
-	//bool use_BVH;
+	bool use_BVH;
 
 	std::vector<unsigned int> vertex_triangle_pair_index_start_per_thread;//thread_No, index, respectively
 	std::vector<unsigned int> vertex_obj_triangle_collider_pair_index_start_per_thread;//thread_No, index, respectively

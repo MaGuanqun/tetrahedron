@@ -11,13 +11,12 @@ XPBD::XPBD()
 
 	damping_coe = 0.0;
 
-	perform_collision = false;
+	perform_collision = true;
 	max_iteration_number = 100;
 	outer_max_iteration_number = 100;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
 	velocity_damp = 0.99;
-	inner_iteration_number = 20;
 }
 
 
@@ -40,7 +39,7 @@ void XPBD::reset()
 void XPBD::updateItrInfo(int* iteration_num)
 {
 	iteration_num[LOCAL_GLOBAL] = iteration_number;
-	outer_iteration_number = iteration_num[OUTER];
+	//outer_iteration_number = iteration_num[OUTER];
 	//sub_step_num = iteration_num[OUTER];
 	sub_time_step = time_step / (double)sub_step_num;
 }
@@ -165,7 +164,7 @@ void XPBD::reorganzieDataOfObjects()
 	mesh_struct.resize(total_obj_num);
 	vertex_index_begin_per_thread.resize(total_obj_num);
 	record_vertex_position.resize(total_obj_num);
-	record_outer_vertex_position.resize(total_obj_num);
+	//record_outer_vertex_position.resize(total_obj_num);
 	unfixed_vertex.resize(total_obj_num);
 
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
@@ -174,7 +173,7 @@ void XPBD::reorganzieDataOfObjects()
 		mesh_struct[i]= &cloth->data()[i].mesh_struct;
 		vertex_index_begin_per_thread[i]= cloth->data()[i].mesh_struct.vertex_index_begin_per_thread.data();
 		record_vertex_position[i].resize(cloth->data()[i].mesh_struct.vertex_position.size());
-		record_outer_vertex_position[i].resize(cloth->data()[i].mesh_struct.vertex_position.size());
+		//record_outer_vertex_position[i].resize(cloth->data()[i].mesh_struct.vertex_position.size());
 		unfixed_vertex[i] = &cloth->data()[i].mesh_struct.unfixed_point_index;
 	}
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
@@ -183,7 +182,7 @@ void XPBD::reorganzieDataOfObjects()
 		mesh_struct[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct;
 		vertex_index_begin_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_index_begin_per_thread.data();
 		record_vertex_position[i + cloth->size()].resize(tetrahedron->data()[i].mesh_struct.vertex_position.size());
-		record_outer_vertex_position[i + cloth->size()].resize(tetrahedron->data()[i].mesh_struct.vertex_position.size());
+		//record_outer_vertex_position[i + cloth->size()].resize(tetrahedron->data()[i].mesh_struct.vertex_position.size());
 		unfixed_vertex[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct.unfixed_point_index;
 	}
 	recordVertexPosition();
@@ -224,16 +223,16 @@ void XPBD::recordVertexPosition()
 }
 
 
-void XPBD::recordOuterVertexPosition()
-{
-	for (unsigned int i = 0; i < cloth->size(); ++i) {
-		memcpy(record_outer_vertex_position[i][0].data(), cloth->data()[i].mesh_struct.vertex_position[0].data(), 24 * record_outer_vertex_position[i].size());
-	}
-	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
-		memcpy(record_outer_vertex_position[i + cloth->size()][0].data(), tetrahedron->data()[i].mesh_struct.vertex_position[0].data(),
-			24 * record_outer_vertex_position[i + cloth->size()].size());
-	}
-}
+//void XPBD::recordOuterVertexPosition()
+//{
+//	for (unsigned int i = 0; i < cloth->size(); ++i) {
+//		memcpy(record_outer_vertex_position[i][0].data(), cloth->data()[i].mesh_struct.vertex_position[0].data(), 24 * record_outer_vertex_position[i].size());
+//	}
+//	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+//		memcpy(record_outer_vertex_position[i + cloth->size()][0].data(), tetrahedron->data()[i].mesh_struct.vertex_position[0].data(),
+//			24 * record_outer_vertex_position[i + cloth->size()].size());
+//	}
+//}
 
 
 void XPBD::initialCollisionConstriantNum()
@@ -255,108 +254,110 @@ void XPBD::PBD_IPCSolve()
 }
 
 
+void XPBD::solveByXPBD()
+{
+	thread->assignTask(this, SET_POS_PREDICT);
+
+	if (perform_collision) {
+		collision.collisionCulling();
+		collision.getCollisionPair();
+		initialCollisionConstriantNum();
+	}
+	for (unsigned int sub_step = 0; sub_step < sub_step_num; ++sub_step) {
+		memset(lambda.data(), 0, 8 * lambda.size());
+		iteration_number = 0;
+		if (sub_step_num > 1) {
+			thread->assignTask(this, SET_POS_PREDICT_SUB_TIME_STEP);
+		}
+		memset(lambda_collision.data(), 0, 8 * lambda_collision.size());
+		while (!convergeCondition(iteration_number)) {
+			recordVertexPosition();
+			if (perform_collision) {
+				updateNormal();
+			}
+			solveConstraint();
+			iteration_number++;
+		}
+		
+		thread->assignTask(this, XPBD_VELOCITY);
+		updatePosition();
+		updateRenderNormal();
+	}
+	updateRenderVertexNormal();
+}
+
+
+void XPBD::solveByPBD()
+{
+	thread->assignTask(this, SET_POS_PREDICT);
+
+	for (unsigned int sub_step = 0; sub_step < sub_step_num; ++sub_step) {
+		iteration_number = 0;
+		if (sub_step_num > 1) {
+			thread->assignTask(this, SET_POS_PREDICT_SUB_TIME_STEP);
+		}
+		if (perform_collision) {
+			collision.collisionCulling();
+			collision.getCollisionPair();
+		}
+		while (iteration_number < max_iteration_number) {
+			recordVertexPosition();
+			if (perform_collision) {
+				updateNormal();
+			}
+			solveConstraint();
+			iteration_number++;
+		}
+		thread->assignTask(this, XPBD_VELOCITY);
+		updatePosition();
+		updateRenderNormal();
+	}
+	updateRenderVertexNormal();
+}
+
 void XPBD::PBDsolve()
 {
 	if (use_PBD) {
-		thread->assignTask(this, SET_POS_PREDICT);
-
-		for (unsigned int sub_step = 0; sub_step < sub_step_num; ++sub_step) {
-			iteration_number = 0;
-			if (sub_step_num > 1) {
-				thread->assignTask(this, SET_POS_PREDICT_SUB_TIME_STEP);
-			}
-			if (perform_collision) {
-				collision.collisionCulling();
-				collision.getCollisionPair();
-			}
-			while (iteration_number<max_iteration_number) {
-				recordVertexPosition();
-				if (perform_collision) {
-					updateNormal();
-				}
-				solveConstraint();
-				iteration_number++;
-			}
-			thread->assignTask(this, XPBD_VELOCITY);
-			updatePosition();
-			updateRenderNormal();
-		}
-		updateRenderVertexNormal();
+		solveByPBD();
 	}
 	else {
-	//thread->assignTask(this, SET_POS_PREDICT);
-	//
-	//for (unsigned int sub_step = 0; sub_step < sub_step_num; ++sub_step) {
-	//	memset(lambda.data(), 0, 8 * lambda.size());
-	//	iteration_number = 0;
-	//	outer_iteration_number = 0;
-	//	if (sub_step_num > 1) {
-	//		thread->assignTask(this, SET_POS_PREDICT_SUB_TIME_STEP);
-	//	}
-	//	while (!outerConvergeCondition(outer_iteration_number))
-	//	{
-	//		if (perform_collision) {
-	//			collision.collisionCulling();
-	//			collision.getCollisionPair();
-	//			initialCollisionConstriantNum();
-	//		}
-	//		memset(lambda_collision.data(), 0, 8 * lambda_collision.size());
-	//		inner_iteration_number = 0;
-	//		recordOuterVertexPosition();
-	//		while (!convergeCondition(inner_iteration_number)) {
-	//			if (inner_iteration_number > 0) {
-	//				recordVertexPosition();
-	//			}
-	//			if (perform_collision) {
-	//				updateNormal();
-	//			}
-	//			solveConstraint();
-	//			inner_iteration_number++;
-	//		}
-	//		iteration_number += inner_iteration_number;
-	//		outer_iteration_number++;
-	//	}
-	//	thread->assignTask(this, XPBD_VELOCITY);
-	//	updatePosition();
-	//	updateRenderNormal();
-	//}
-	//updateRenderVertexNormal();
+		solveByXPBD();
 	}
 }
 
 
-bool XPBD::outerConvergeCondition(unsigned int iteration_num)
-{
-	if (iteration_num < 1) {
-		return false;
-	}
-	if (iteration_num > outer_max_iteration_number) {
-		return true;
-	}
-	unsigned int* unfixed_vertex_index;
-	std::array<double, 3>* current_pos;
-	std::array<double, 3>* previous_pos;
-
-	for (unsigned int i = 0; i < total_obj_num; ++i) {
-		unfixed_vertex_index = unfixed_vertex[i]->data();
-		previous_pos = record_outer_vertex_position[i].data();
-		current_pos = vertex_position[i];
-
-		for (unsigned int j = 0; j < unfixed_vertex[i]->size(); ++j) {
-			for (unsigned int k = 0; k < 3; ++k) {
-				if (abs(previous_pos[unfixed_vertex_index[j]][k] - current_pos[unfixed_vertex_index[j]][k]) > max_move_standard) {
-					return false;
-				}
-			}
-		}
-	}
-
-	return true;
-}
+//bool XPBD::outerConvergeCondition(unsigned int iteration_num)
+//{
+//	if (iteration_num < 1) {
+//		return false;
+//	}
+//	if (iteration_num > outer_max_iteration_number) {
+//		return true;
+//	}
+//	unsigned int* unfixed_vertex_index;
+//	std::array<double, 3>* current_pos;
+//	std::array<double, 3>* previous_pos;
+//
+//	for (unsigned int i = 0; i < total_obj_num; ++i) {
+//		unfixed_vertex_index = unfixed_vertex[i]->data();
+//		previous_pos = record_outer_vertex_position[i].data();
+//		current_pos = vertex_position[i];
+//
+//		for (unsigned int j = 0; j < unfixed_vertex[i]->size(); ++j) {
+//			for (unsigned int k = 0; k < 3; ++k) {
+//				if (abs(previous_pos[unfixed_vertex_index[j]][k] - current_pos[unfixed_vertex_index[j]][k]) > max_move_standard) {
+//					return false;
+//				}
+//			}
+//		}
+//	}
+//
+//	return true;
+//}
 
 bool XPBD::convergeCondition(unsigned int iteration_num)
 {
-	if (iteration_num < 100) {
+	if (iteration_num < 1) {
 		return false;
 	}
 	if (iteration_num > max_iteration_number) {
@@ -368,12 +369,7 @@ bool XPBD::convergeCondition(unsigned int iteration_num)
 
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		unfixed_vertex_index = unfixed_vertex[i]->data();
-		//if (iteration_num == 1) {
-		//	previous_pos = record_outer_vertex_position[i].data();
-		//}
-		//else {
-			previous_pos = record_vertex_position[i].data();
-		//}
+		previous_pos = record_vertex_position[i].data();
 		current_pos = vertex_position[i];
 		
 		for (unsigned int j = 0; j < unfixed_vertex[i]->size(); ++j) {

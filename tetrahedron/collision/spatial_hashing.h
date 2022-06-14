@@ -24,7 +24,7 @@ public:
 	std::vector<unsigned int> cell_begin_per_thread;
 
 
-
+	void findAllPairsByPrimitive(int thread_No);
 
 	void findAllPairsHashTable(int thread_No);
 
@@ -84,6 +84,8 @@ public:
 		std::vector<std::vector<unsigned int>>& vertex_index, std::vector<std::vector<unsigned int>>& triangle_index,
 		std::vector<std::vector<unsigned int>>& edge_index);
 
+	void combineHashTable(int thread_No);
+
 private:
 
 	void deleteArray();
@@ -141,6 +143,7 @@ private:
 
 
 	std::vector<unsigned int*> collider_vertex_index_begin_per_thread;
+	std::vector<unsigned int*> collider_edge_index_begin_per_thread;
 
 	std::vector<unsigned int*> tetrahedron_vertex_index_on_surface;
 
@@ -171,8 +174,9 @@ private:
 
 	void triangleHashValueWithoutRecord(double* aabb,
 		unsigned int* spatial_hashing_cell, unsigned int* triangle_index, double* scene_aabb, double cell_length, unsigned int hash_cell_count,
-		uint64_t P1, uint64_t P2, uint64_t P3, unsigned int* spatial_hashing_cell_triangle_size, unsigned int max_index_number_in_one_cell,
-		int test_type);
+		uint64_t P1, uint64_t P2, uint64_t P3, unsigned int* spatial_hashing_cell_triangle_size, unsigned int max_index_number_in_one_cell);
+
+
 
 	std::uint64_t P1, P2, P3;
 
@@ -266,9 +270,28 @@ private:
 	inline double frac0(double x);
 	inline double frac1(double x);
 
-	bool searchPairByCell = true;//this means we need to do spatial hashing for vertex, triangle and edge, and find all pairs in a cell, may have duplicate pairs
+	bool searchPairByCell = false;//this means we need to do spatial hashing for vertex, triangle and edge, and find all pairs in a cell, may have duplicate pairs
 
+	void findAllVertexTrianglePairsByPrimitive(int thread_No);
+	void findAllEdgeEdgePairsByPrimitive(int thread_No);
 
+	void findAllVertexTrianglePairsByPrimitiveSingleObj(int thread_No, int obj_No, unsigned int* &primitive_pair_,
+		unsigned int vertex_start, unsigned int vertex_end, std::array<double, 6>* vertex_aabb, 
+		unsigned int max_index_number_in_one_cell_triangle_, unsigned int* spatial_hashing_cell_triangle, unsigned int* spatial_hashing_cell_triangle_size,
+		std::vector<std::array<double, 6>*>& obj_tri_aabb, bool is_self, bool is_tet);
+	void triangleHashValue(double* aabb,
+		std::vector<unsigned int>* spatial_hashing_index, double* scene_aabb, double cell_length,
+		unsigned int hash_cell_count, uint64_t P1, uint64_t P2, uint64_t P3);
 
+	std::vector<unsigned int>hash_count_start_per_thread;
+	void findAllEdgeEdgePairsByPrimitiveSingleObj(int thread_No, int obj_No, unsigned int*& primitive_pair_,
+		std::vector<unsigned int*>& representative_edge_num, std::vector<unsigned int*>& face_edge, std::vector<std::array<double, 6>*>& obj_edge_aabb_,
+		unsigned int max_index_number_in_one_cell_triangle_, unsigned int* spatial_hashing_cell_triangle, unsigned int* spatial_hashing_cell_triangle_size,
+		bool is_self);
+
+	std::vector<unsigned int*>representative_edge_num;
+	std::vector<unsigned int*>representative_edge_num_collider;
+	std::vector<unsigned int*>face_edge;
+	std::vector<unsigned int*>face_edge_collider;
 };
 
