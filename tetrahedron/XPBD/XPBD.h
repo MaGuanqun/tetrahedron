@@ -105,6 +105,7 @@ private:
 	double outer_max_move_standard;//the max displacement to stop iteration
 		
 
+
 	double converge_condition_ratio;// converge_condition_ratio* edge length
 
 	double calEdgeLength();
@@ -123,6 +124,12 @@ private:
 	bool use_PBD = false;
 	void solveByPBD();
 	void solveByXPBD();
+
+	double energy=1e-15;
+	double previous_energy = 1e-15;
+	std::vector<double>energy_per_thread;
+
+	double energy_converge_ratio;
 
 };
 

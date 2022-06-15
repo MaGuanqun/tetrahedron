@@ -12,11 +12,12 @@ XPBD::XPBD()
 	damping_coe = 0.0;
 
 	perform_collision = true;
-	max_iteration_number = 100;
+	max_iteration_number = 1000;
 	outer_max_iteration_number = 100;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
 	velocity_damp = 0.99;
+	energy_converge_ratio = 1e-2;
 }
 
 
@@ -60,8 +61,9 @@ void XPBD::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetra
 	initialVariable();
 	initialClothBending();
 	setConstraintIndex();
-
+	energy_per_thread.resize(thread->thread_num,0.0);
 	if (perform_collision) {
+		collision.energy = energy_per_thread.data();
 		collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio);
 		collision.setParameter(&lambda_collision,lambda.data()+ constraint_index_start[3], collision_constraint_index_start.data(), damping_coe, sub_time_step);
 	}
@@ -357,7 +359,7 @@ void XPBD::PBDsolve()
 
 bool XPBD::convergeCondition(unsigned int iteration_num)
 {
-	if (iteration_num < 1) {
+	if (iteration_num < 10) {
 		return false;
 	}
 	if (iteration_num > max_iteration_number) {
@@ -367,21 +369,24 @@ bool XPBD::convergeCondition(unsigned int iteration_num)
 	std::array<double, 3>* current_pos;
 	std::array<double, 3>* previous_pos;
 
-	for (unsigned int i = 0; i < total_obj_num; ++i) {
-		unfixed_vertex_index = unfixed_vertex[i]->data();
-		previous_pos = record_vertex_position[i].data();
-		current_pos = vertex_position[i];
-		
-		for (unsigned int j = 0; j < unfixed_vertex[i]->size(); ++j) {
-			for(unsigned int k=0;k<3;++k){
-				if (abs(previous_pos[unfixed_vertex_index[j]][k] - current_pos[unfixed_vertex_index[j]][k])> max_move_standard) {
-					return false;
-				}
-			}
-		}
+	if (abs(energy - previous_energy) / previous_energy < energy_converge_ratio) {
+		return true;
 	}
+	//for (unsigned int i = 0; i < total_obj_num; ++i) {
+	//	unfixed_vertex_index = unfixed_vertex[i]->data();
+	//	previous_pos = record_vertex_position[i].data();
+	//	current_pos = vertex_position[i];
+	//	
+	//	for (unsigned int j = 0; j < unfixed_vertex[i]->size(); ++j) {
+	//		for(unsigned int k=0;k<3;++k){
+	//			if (abs(previous_pos[unfixed_vertex_index[j]][k] - current_pos[unfixed_vertex_index[j]][k])> max_move_standard) {
+	//				return false;
+	//			}
+	//		}
+	//	}
+	//}
 
-	return true;
+	return false;
 
 }
 
@@ -397,11 +402,17 @@ void XPBD::updatePosition()
 
 void XPBD::solveConstraint()
 {
+	previous_energy = energy;
+	energy = 0.0;
 	solveBendingConstraint();
 	solveEdgeLengthConstraint();
 	solveTetStrainConstraint();
 	if (perform_collision) {
+		memset(energy_per_thread.data(), 0, 8 * total_thread_num);
 		collision.XPBDsolveCollisionConstraint();
+		for (unsigned int i = 0; i < total_thread_num; ++i) {
+			energy += energy_per_thread[i];
+		}
 	}
 }
 
@@ -468,6 +479,9 @@ void XPBD::solveEdgeLengthConstraint()
 	//	std::cout << vertex_position[0][i].data()[0]<<" "<< vertex_position[0][i][0] << std::endl;
 	//}
 	double damp_stiffness;
+
+	double energy_;
+
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		mesh_struct_ = mesh_struct[i];
 		size = mesh_struct_->edge_length.size();
@@ -484,10 +498,12 @@ void XPBD::solveEdgeLengthConstraint()
 			XPBD_constraint.solveEdgeLengthConstraint(vertex_pos[edge_vertex_index[j << 1]].data(),
 				vertex_pos[edge_vertex_index[(j << 1) + 1]].data(), mesh_struct_->edge_length[j], stiffness, sub_time_step, mass_inv[edge_vertex_index[j << 1]],
 				mass_inv[edge_vertex_index[(j << 1) + 1]], *lambda_, damp_stiffness, initial_vertex_pos[edge_vertex_index[j << 1]].data(),
-				initial_vertex_pos[edge_vertex_index[(j << 1)+1]].data());
+				initial_vertex_pos[edge_vertex_index[(j << 1)+1]].data(), energy_);
 			//std::cout << *lambda_ << " " << vertex_position[i][edge_vertex_index[j << 1]].data()[0] << " " << vertex_position[i][edge_vertex_index[(j << 1) + 1]].data()[0] << std::endl;
 			//std::cout << vertex_pos[edge_vertex_index[j << 1]].data()[0]<<" "<< vertex_pos[edge_vertex_index[(j << 1) + 1]].data()[0]<<" "<< edge_vertex_index[j << 1] << " " << edge_vertex_index[(j << 1) + 1] << std::endl;		
 			lambda_++;
+
+			energy += energy_;
 			
 		}
 	}
@@ -513,7 +529,7 @@ void XPBD::solveTetStrainConstraint()
 	double damp_stiffness;
 
 	double iteration_num_inverse = 1.0 /(double)(max_iteration_number + 1);
-
+	double energy_;
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		mesh_struct_ = mesh_struct[i+cloth->size()];
 		size =tetrahedron->data()[i].mesh_struct.indices.size();
@@ -538,8 +554,10 @@ void XPBD::solveTetStrainConstraint()
 		else {
 			for (unsigned int j = 0; j < size; ++j) {
 				XPBD_constraint.solveARAPConstraint(vertex_pos, initial_vertex_pos, stiffness, sub_time_step, A[j], indices[j].data(), mass_inv,
-					*lambda_, damp_stiffness, sigma_limit[0], sigma_limit[1], volume[j]);
+					*lambda_, damp_stiffness, sigma_limit[0], sigma_limit[1], volume[j], energy_);
+
 				lambda_++;
+				energy += energy_;
 			}
 		}
 		//original_vertex_pos = tetrahedron->data()[i].ori_vertices.data();
@@ -573,6 +591,7 @@ void XPBD::solveBendingConstraint()
 	double damp_stiffness;
 	double* lambda_ = lambda.data();
 	//double delta_t = sub_time_step;
+	double energy_;
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		stiffness = cloth->data()[i].bend_stiffness;
 		if (stiffness > 0.0) {
@@ -588,8 +607,9 @@ void XPBD::solveBendingConstraint()
 			for (unsigned int j = 0; j < size; ++j) {
 				XPBD_constraint.solveBendingConstraint(vertex_pos[j].data(), mass_inv[j], vertex_pos, mesh_struct_->vertices[j].neighbor_vertex,
 					rest_mean_curvature_norm_[j], lbo_weight_[j], vertex_lbo_[j], stiffness, sub_time_step, mass_inv, *lambda_, damp_stiffness,
-					initial_vertex_pos[j].data(), initial_vertex_pos);
+					initial_vertex_pos[j].data(), initial_vertex_pos, energy_);
 				lambda_++;
+				energy += energy_;
 			}
 		}
 		else {

@@ -63,11 +63,11 @@ void simu_main(GLFWwindow* window, Input* input) {
 	std::vector<std::array<double, 8>> tetrahedron_collision_stiffness;
 	bool set_stiffness[13];
 	memset(set_stiffness, 0, 13);
-	double temp_stiffness[18] = { 1e2,2e2,2e2,2e2,1e2,2e-6,2e-1,1.0,0.0,0.0,0.0,
-	1e-3, 2e-3,2e-3,2e-3, 1e-4,2e-10,1e-2};
+	double temp_stiffness[18] = { 1e4,2e6,2e6,2e6,1e3,1e-6,2e-1,1.0,0.0,0.0,0.0,
+	1e-3, 2e-3,2e-3,2e-3, 1e-3,2e-11,1e-2};
 	//memset(temp_stiffness, 0, 64);
 	UpdateObjStiffness update_obj_stiffness;
-	double tolerance_ratio[7] = { 1e-1,1e-1,1e-1,1e-1, 1e-1, 1e-1, 1e-1 };
+	double tolerance_ratio[7] = { 2e-2,1e-1,1e-1,1e-1, 1e0, 1e0, 1e0 };
 
 	double damp_stiffness = temp_stiffness[DAMP_STIFFNESS];
 	double rayleigh_damp_stiffness[2] = { temp_stiffness[RAYLEIGH_DAMP_STIFFNESS_ALPHA], temp_stiffness[RAYLEIGH_DAMP_STIFFNESS_BETA] };

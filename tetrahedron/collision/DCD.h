@@ -67,22 +67,23 @@ public:
 		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
 		double* initial_triangle_normal, double* current_triangle_normal,
 		double tolerance, double mass_inv_point, double mass_inv_t0, double mass_inv_t1, double mass_inv_t2,
-		double triangle_normal_magnitude_reciprocal, double& lambda, double stiffness, double damping_stiffness, double dt);
+		double triangle_normal_magnitude_reciprocal, double& lambda, double stiffness, double damping_stiffness, double dt,
+		double& energy);
 	void XPBDedgeEdge(double* current_edge_vertex_0, double* current_edge_vertex_1,
 		double* initial_edge_vertex_0, double* initial_edge_vertex_1,
 		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0,
 		double* initial_compare_edge_vertex_1, double tolerance, double mas_inv_e_0_0, double mass_inv_e_0_1, double mass_inv_e_1_0, double mass_inv_e_1_1,
-		double& lambda, double stiffness, double damping_stiffness, double dt);
+		double& lambda, double stiffness, double damping_stiffness, double dt, double& energy);
 
 	void XPBDpointTriangleCollider(double* initial_position, double* current_position,
 		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
 		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
 		double* initial_triangle_normal, double* current_triangle_normal, double mass_inv_v,
-		double tolerance, double& lambda, double stiffness, double damping_stiffness, double dt);
+		double tolerance, double& lambda, double stiffness, double damping_stiffness, double dt, double& energy);
 
 	
 	void XPBDFloor(double* initial_position, double* current_position, unsigned int dimension, bool normal_direction, double mass_inv_v,
-		double tolerance, double& lambda, double stiffness, double damping_stiffness, double dt, double floor_value);
+		double tolerance, double& lambda, double stiffness, double damping_stiffness, double dt, double floor_value, double& energy);
 
 
 	bool accuratePointSelfTriangle(double* initial_position, double* current_position,
@@ -135,7 +136,8 @@ private:
 		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
 		double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
 		double* current_triangle_normal, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal,
-		double mass_inv_point, double mass_inv_t0, double mass_inv_t1, double mass_inv_t2, double& lambda, double stiffness, double damping_stiffness, double dt);
+		double mass_inv_point, double mass_inv_t0, double mass_inv_t1, double mass_inv_t2, double& lambda, double stiffness, double damping_stiffness, double dt,
+		double& energy);
 	void XPBDcalDistanceEdgeEdge(double* norm, double distance, double* alpha, double* current_edge_vertex_0, double* current_edge_vertex_1,
 		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1,
 		double* initial_edge_vertex_0, double* initial_edge_vertex_1,
@@ -145,7 +147,7 @@ private:
 	void XPBDcalDistancePointTriangleCollider(double* initial_position,
 		double* current_position, double mass_inv_vertex,
 		double* current_triangle_normal, double constraint, double tolerance,
-		double& lambda, double stiffness, double damping_stiffness, double dt);
+		double& lambda, double stiffness, double damping_stiffness, double dt, double& energy);
 	bool checkIfCollidePointTriangleCollider(double* initial_point_position, double* current_point_position,
 		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
 		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,

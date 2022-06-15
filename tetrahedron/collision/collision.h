@@ -132,6 +132,9 @@ public:
 
 	SpatialHashing spatial_hashing;
 	void buildSpatialHashingForOri();
+
+	double* energy;
+
 private:
 
 	
@@ -524,9 +527,12 @@ private:
 	void pointTriangleColliderPair(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
 		unsigned int end_pair_index);
 
-	void solveXPBDpointTriangleResponse(double*& lambda_, unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
-	void solveXPBDedgeEdgeResponse(double*& lambda_, unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
-	void solveXPBDpointTriangleColliderResponse(double*& lambda_, unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
+	void solveXPBDpointTriangleResponse(double*& lambda_, unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end,
+		double& energy);
+	void solveXPBDedgeEdgeResponse(double*& lambda_, unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end,
+		double& energy);
+	void solveXPBDpointTriangleColliderResponse(double*& lambda_, unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end,
+		double& energy);
 
 	std::vector<double>* lambda;
 	std::vector<unsigned int>* collision_lambda_index_start;
@@ -544,4 +550,6 @@ private:
 	std::vector<std::vector<unsigned int>> floor_collision_vertex;
 	void floorCollisionVertex(int thread_No);
 	void re_FloorCollisionVertex(int thread_No);
+
+
 };
