@@ -43,7 +43,7 @@ void DCD::XPBDpointSelfTriangle(double* initial_position, double* current_positi
             initial_triangle_position_2,
             current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
             current_triangle_normal, current_side, tolerance, should_be_front, triangle_normal_magnitude_reciprocal,
-            1.0,1.0,1.0,1.0,lambda, stiffness, damping_stiffness,dt, energy);//mass_inv_point, mass_inv_t0, mass_inv_t1, mass_inv_t2
+            mass_inv_point, mass_inv_t0, mass_inv_t1, mass_inv_t2,lambda, stiffness, damping_stiffness,dt, energy);//
     }
 }
 
@@ -641,8 +641,8 @@ void DCD::XPBDedgeEdge(double* current_edge_vertex_0, double* current_edge_verte
             norm, distance2, barycentric, current_edge_vertex_0, current_edge_vertex_1, current_compare_edge_vertex_0, current_compare_edge_vertex_1,
             initial_edge_vertex_0, initial_edge_vertex_1,
             initial_compare_edge_vertex_0, initial_compare_edge_vertex_1,
-            1.0,1.0,1.0,1.0,
-            //mass_inv_e_0_0, mass_inv_e_0_1, mass_inv_e_1_0, mass_inv_e_1_1,
+            //1.0,1.0,1.0,1.0,
+            mass_inv_e_0_0, mass_inv_e_0_1, mass_inv_e_1_0, mass_inv_e_1_1,
             lambda, stiffness, damping_stiffness, dt);
     }
 }
