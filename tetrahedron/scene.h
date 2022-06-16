@@ -15,6 +15,7 @@
 #include"collision/test_draw_collision.h"
 #include"basic/opengl_input.h"
 #include"newton_method.h"
+#include"basic/move_model.h"
 
 class Scene
 {
@@ -65,6 +66,7 @@ public:
 
 	Input* input;
 	void setDampStiffness(double* damp_stiffness, double* rayleigh_damp_stiffness);
+	double* time_per_frame;
 private:
 	unsigned int use_method;
 	bool only_test_collision;
@@ -146,4 +148,12 @@ private:
 
 	void setMove(Camera* camera, Input* input, bool* control_parameter);
 	void drawSpatialHashing(Camera* camera, Input* input, int& select_hash_cell);
+
+	MoveModel move_model;
+
+	unsigned int time_record_interval;
+	time_t time_accumulation;
+
+	unsigned int time_indicate_for_simu;
+
 };

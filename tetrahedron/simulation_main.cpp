@@ -25,8 +25,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool control_parameter[28];
 	memset(control_parameter, 0, 28);
 	control_parameter[ONLY_COLLISION_TEST] = false;
-	control_parameter[USE_XPBD] = true;
-	control_parameter[USE_PD_] = false;
+	control_parameter[USE_XPBD] = false;
+	control_parameter[USE_PD_] = true;
 	control_parameter[USE_NEWTON_] = false;
 	control_parameter[DRAW_VT] = true;
 
@@ -63,11 +63,11 @@ void simu_main(GLFWwindow* window, Input* input) {
 	std::vector<std::array<double, 8>> tetrahedron_collision_stiffness;
 	bool set_stiffness[13];
 	memset(set_stiffness, 0, 13);
-	double temp_stiffness[18] = { 1e4,2e6,2e6,2e6,1e3,1e-6,2e-1,1.0,0.0,0.0,0.0,
+	double temp_stiffness[18] = { 1e3,2e2,2e2,2e2,1e2,1e-4,2e-1,1.0,0.0,0.0,0.0,
 	1e-3, 2e-3,2e-3,2e-3, 1e-3,2e-11,1e-2};
 	//memset(temp_stiffness, 0, 64);
 	UpdateObjStiffness update_obj_stiffness;
-	double tolerance_ratio[7] = { 2e-2,1e-1,1e-1,1e-1, 1e0, 1e0, 1e0 };
+	double tolerance_ratio[7] = { 1e-1,1e-1,1e-1,1e-1, 1e-1, 1e-1, 1e-1 };
 
 	double damp_stiffness = temp_stiffness[DAMP_STIFFNESS];
 	double rayleigh_damp_stiffness[2] = { temp_stiffness[RAYLEIGH_DAMP_STIFFNESS_ALPHA], temp_stiffness[RAYLEIGH_DAMP_STIFFNESS_BETA] };
@@ -98,6 +98,9 @@ void simu_main(GLFWwindow* window, Input* input) {
 	scene.input = input;
 
 	int cell_index_chose = 0;
+
+	double time_per_frame = 0;
+	scene.time_per_frame = &time_per_frame;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -151,6 +154,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 			control_parameter[START_SIMULATION] = false;
 			scene.reset();
 			control_parameter[RESET_SIMULATION] = false;
+			control_parameter[START_TEST] = false;
 		}
 		if (control_parameter[INITIAL_SIMULATION]) {
 			for (int i = 3; i < 15; ++i) {
@@ -159,6 +163,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 			control_parameter[START_SIMULATION] = false;
 			scene.initial();
 			control_parameter[INITIAL_SIMULATION] = false;
+			control_parameter[START_TEST] = false;
 		}
 		if (scene.intersection.happened && control_parameter[STOP_AFTER_RELEASE_MOUSE] && input->mouse.leftButtonWasReleasedThisFrame()) {
 			control_parameter[START_SIMULATION] = false;
@@ -246,7 +251,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 		coordinateSystem.draw(&camera, cameraPos);
 		scene.drawSelectRange(set_anchor, input->mouse.left_press, input->mouse.prev_left_press);
 		time = (double)(clock() - start_time);
-		imgui_windows.infoWindow(cloth_info, cloth_mass, tetrahedron_info, tetrahedron_mass, time, iteration_number, set_iteration_num, convergence_rate, scene.time_stamp, edit_PD_conv_rate, control_parameter[START_SIMULATION]);
+		imgui_windows.infoWindow(cloth_info, cloth_mass, tetrahedron_info, tetrahedron_mass, time_per_frame, iteration_number, set_iteration_num, convergence_rate, scene.time_stamp, edit_PD_conv_rate, control_parameter[START_SIMULATION]);
 		if (!control_parameter[ONLY_COLLISION_TEST]) {
 			if (control_parameter[USE_PD_]) {
 				imgui_windows.iterationSolverInfoWindow(iteration_solver_iteration_num, use_itr_solver_method, itr_solver_items, itr_solver_item,

@@ -253,14 +253,14 @@ bool DCD::pointSelfTriangle(double* initial_position, double* current_position,
         current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
         initial_triangle_normal, current_triangle_normal, barycentric,
         tolerance, current_side, should_be_front)){
-        iterationToGetResult(vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2,
-            current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
-            current_triangle_normal, current_side, tolerance, should_be_front, triangle_normal_magnitude_reciprocal,
-            mass_point, mass_t0, mass_t1, mass_t2);
-        //calDistancePointTriangle(vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2,
+        //iterationToGetResult(vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2,
         //    current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
         //    current_triangle_normal, current_side, tolerance, should_be_front, triangle_normal_magnitude_reciprocal,
         //    mass_point, mass_t0, mass_t1, mass_t2);
+        calDistancePointTriangle(vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2,
+            current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
+            current_triangle_normal, current_side, tolerance, should_be_front, triangle_normal_magnitude_reciprocal,
+            mass_point, mass_t0, mass_t1, mass_t2);
         return true;
     }
     return false;
@@ -316,7 +316,6 @@ void DCD::XPBDcalDistancePointTriangle(
     // lambda
     double alpha_ = 1.0 / (stiffness * dt * dt);
     double gamma = damping_stiffness / (stiffness * dt);
-
     //use in_triangle[3] to store x_i-x_ori
     double lambda_numerator = 0.0;
     SUB(in_triangle, current_position, initial_position);
@@ -326,13 +325,15 @@ void DCD::XPBDcalDistancePointTriangle(
     SUB(in_triangle, current_triangle_position_1, initial_triangle_position_1);
     lambda_numerator += DOT(grad_c_vertex_1, in_triangle);
     SUB(in_triangle, current_triangle_position_2, initial_triangle_position_2);
-    lambda_numerator += DOT(grad_c_vertex_2, in_triangle);
-    
+    lambda_numerator += DOT(grad_c_vertex_2, in_triangle);    
     double delta_lambda = -(constraint + alpha_ * lambda + gamma * lambda_numerator)
         / ((1 + gamma) * (DOT(grad_c_vertex, grad_c_vertex) * mass_inv_point + DOT(grad_c_vertex_0, grad_c_vertex_0) * mass_inv_t0
             + DOT(grad_c_vertex_1, grad_c_vertex_1) * mass_inv_t1 + DOT(grad_c_vertex_2, grad_c_vertex_2) * mass_inv_t2)
             + alpha_);
     lambda += delta_lambda;
+
+    //double delta_lambda = -constraint / (DOT(grad_c_vertex, grad_c_vertex) * mass_inv_point + DOT(grad_c_vertex_0, grad_c_vertex_0) * mass_inv_t0
+    //    + DOT(grad_c_vertex_1, grad_c_vertex_1) * mass_inv_t1 + DOT(grad_c_vertex_2, grad_c_vertex_2) * mass_inv_t2);
 
     double coe = delta_lambda * mass_inv_point;
     ACCUMULATE_SUM_WITH_COE(current_position, coe, grad_c_vertex);
@@ -658,7 +659,7 @@ bool DCD::edgeEdge(double* edge_target_pos_0, double* edge_target_pos_1,
     double barycentric[4];
     if (CCD::internal::edgeEdgeDistanceType(initial_edge_vertex_0, initial_edge_vertex_1,
         initial_compare_edge_vertex_0, initial_compare_edge_vertex_1, barycentric) != 8) {
-        return false;
+       // return false;
     }
     double norm[3];
     double distance2;
@@ -728,6 +729,10 @@ void DCD::XPBDcalDistanceEdgeEdge(double* norm, double distance, double* alpha, 
         + mass_inv_e_0_1 * alpha[1] * alpha[1] + mass_inv_e_1_0 * alpha[2] * alpha[2] +
         mass_inv_e_1_1 * alpha[3] * alpha[3]) + alpha_);
     lambda += delta_lambda;
+
+    //double delta_lambda= -distance/(mass_inv_e_0_0 * alpha[0] * alpha[0]
+    //    + mass_inv_e_0_1 * alpha[1] * alpha[1] + mass_inv_e_1_0 * alpha[2] * alpha[2] +
+    //    mass_inv_e_1_1 * alpha[3] * alpha[3]);
 
     coe = -mass_inv_e_0_0 * delta_lambda * alpha[0];
     ACCUMULATE_SUM_WITH_COE(current_edge_vertex_0, coe, norm);
@@ -1118,45 +1123,55 @@ bool DCD::pointTriangleCollider(double* initial_position, double* current_positi
     double* initial_triangle_normal, double* current_triangle_normal, double* vertex_target_pos,
     double tolerance)
 {
-    double barycentric[2];
+    double barycentric[3];
     double c_p[3];
-    SUB(c_p, initial_position, initial_triangle_position_0);
-    double initial_side = DOT(c_p, initial_triangle_normal);
+
+    double current_side;
+    bool should_be_front;
+
     SUB(c_p, current_position, current_triangle_position_0);
-    double current_side = DOT(c_p, current_triangle_normal);
-  
+    current_side = DOT(c_p, current_triangle_normal);  
     if (current_side > tolerance) {
-    //if (abs(current_side) > tolerance && initial_side * current_side > 0) {
         return false;
     }
     else {
-        if (!pointProjectOnTriangle(initial_position, initial_triangle_position_0, initial_triangle_position_1,
-            initial_triangle_position_2, initial_triangle_normal, barycentric)) {
-            return false;
+        //if (!pointProjectOnTriangle(initial_position, initial_triangle_position_0, initial_triangle_position_1,
+        //    initial_triangle_position_2, initial_triangle_normal, barycentric)) {
+        //    return false;
+        //}
+        CCD::internal::pointTriangleNearestPoint(initial_position, initial_triangle_position_0, initial_triangle_position_1,
+            initial_triangle_position_2, initial_triangle_normal, barycentric);
+
+        if (checkIfCollidePointTriangleCollider(initial_position, current_position,
+            initial_triangle_position_0, initial_triangle_position_1, initial_triangle_position_2,
+            current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
+            initial_triangle_normal, barycentric, tolerance)) {
+
+            current_side -= tolerance;
+            vertex_target_pos[0] = current_position[0] - current_side * current_triangle_normal[0];
+            vertex_target_pos[1] = current_position[1] - current_side * current_triangle_normal[1];
+            vertex_target_pos[2] = current_position[2] - current_side * current_triangle_normal[2];
+
+            //double in_triangle[3], scale_norm[3];
+            //SUB(in_triangle, current_position, current_triangle_position_0);
+            //MULTI(scale_norm, current_triangle_normal, current_side);
+            //SUB_(in_triangle, scale_norm);
+            //if (should_be_front) {
+            //    current_side -= tolerance;
+            //}
+            //else {
+            //    current_side += tolerance;
+            //}
+            //vertex_target_pos[0] = current_position[0] - current_side * current_triangle_normal[0];
+            //vertex_target_pos[1] = current_position[1] - current_side * current_triangle_normal[1];
+            //vertex_target_pos[2] = current_position[2] - current_side * current_triangle_normal[2];
+
+
+            return true;
         }
     }
-
-
-    //if (initial_side * current_side < 0) {
-        //if (initial_side > 0) {
-        //    current_side += tolerance;
-        //}
-        //else {
-            current_side -= tolerance;
-        //}      
-    //}
-    //else {
-    //    if (current_side > 0) {
-    //        current_side -= tolerance;
-    //    }
-    //    else {
-    //        current_side += tolerance;
-    //    }
-    //}  
-    vertex_target_pos[0] = current_position[0] - current_side * current_triangle_normal[0];
-    vertex_target_pos[1] = current_position[1] - current_side * current_triangle_normal[1];
-    vertex_target_pos[2] = current_position[2] - current_side * current_triangle_normal[2];
-    return true;
+ 
+    return false;
 }
 
 

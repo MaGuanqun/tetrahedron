@@ -6,8 +6,8 @@ ProjectDynamic::ProjectDynamic()
 	gravity_ = 9.8;
 	total_thread_num = std::thread::hardware_concurrency();
 	temEnergy.resize(total_thread_num);
-	outer_itr_conv_rate = 1e-3;// 7.5e-2; 
-	local_global_conv_rate = 1.5e-3;
+	outer_itr_conv_rate = 7.5e-3;// 7.5e-2; 
+	local_global_conv_rate = 1e-2;
 	sub_step_num = 1;
 
 	use_dierct_solve_for_coarest_mesh = true;
@@ -1078,7 +1078,7 @@ void ProjectDynamic::PDsolve()
 	for (unsigned int i = 0; i < collider->size(); ++i) {
 		thread->assignTask(&(*collider)[i].mesh_struct, FACE_NORMAL_RENDER);
 	}
-//	std::cout << "===" << std::endl;
+	//std::cout << "===" << std::endl;
 	while (!PDConvergeCondition()) {	
 		//collision.globalCollision()
 		initialEnergyOuterInteration();

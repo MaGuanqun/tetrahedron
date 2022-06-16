@@ -55,16 +55,16 @@ void Preprocessing::getRegularizationInfo()
 			aabb_pos[j] = myMax(aabb_pos[j], simulation_model[i].aabb[j]);
 		}
 	}
-	//if (!collider_model.empty()) {
-	//	for (int i = 0; i < collider_model.size(); ++i) {
-	//		for (int j = 0; j < 3; ++j) {
-	//			aabb_pos[j] = myMin(aabb_pos[j], collider_model[i].aabb[j]);
-	//		}
-	//		for (int j = 3; j < 6; ++j) {
-	//			aabb_pos[j] = myMax(aabb_pos[j], collider_model[i].aabb[j]);
-	//		}
-	//	}
-	//}
+	if (!collider_model.empty()) {
+		for (int i = 0; i < collider_model.size(); ++i) {
+			for (int j = 0; j < 3; ++j) {
+				aabb_pos[j] = myMin(aabb_pos[j], collider_model[i].aabb[j]);
+			}
+			for (int j = 3; j < 6; ++j) {
+				aabb_pos[j] = myMax(aabb_pos[j], collider_model[i].aabb[j]);
+			}
+		}
+	}
 
 	for (int i = 0; i < 3; ++i) {
 		regularization_info.body_center[i] = 0.5 * (aabb_pos[i] + aabb_pos[i+3]);
@@ -74,7 +74,7 @@ void Preprocessing::getRegularizationInfo()
 	regularization_info.move_info[0] = 0.0;
 	regularization_info.move_info[1] = 0.0;
 	regularization_info.move_info[2] = 0.0;
-	regularization_info.max_dis_from_center = 1.2 * sqrt(3.0);
+	regularization_info.max_dis_from_center = 1.2 * sqrt(3.0* max_cen);
 }
 
 void Preprocessing::getPresetRegularizationInfo()

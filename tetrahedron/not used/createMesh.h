@@ -94,17 +94,17 @@ public:
 		//	}
 		//}
 
-		int col_num = 31;
-		int row_num = 31;
-		for (int j = 0; j < row_num; j++) {
-			for (int i = 0; i < col_num; i++) {
-				//mesh.vertices.push_back(std::array<double, 3>{ 0.7 * (double)j / (double)(row_num - 1) + 0.575, 0.35 * (double)i / (double)(col_num - 1),//+0.9
-				//mesh.vertices.push_back(std::array<double, 3>{0.7* (double)i / (double)(col_num - 1) - 0.35,  //+0.9
-				//	0.4 * (double)j / (double)(row_num - 1) - 0.285, 0.7 * (double)j / (double)(row_num - 1) - 0.35});//
-				mesh.vertices.push_back(std::array<double, 3>{0.7 * (double)i / (double)(col_num - 1) - 0.35,  //+0.9
-					0.7 * (double)j / (double)(row_num - 1) - 0.585, 0.05 * (double)j / (double)(row_num - 1) - 0.1});//
-			}
-		}
+		//int col_num = 31;
+		//int row_num = 31;
+		//for (int j = 0; j < row_num; j++) {
+		//	for (int i = 0; i < col_num; i++) {
+		//		//mesh.vertices.push_back(std::array<double, 3>{ 0.7 * (double)j / (double)(row_num - 1) + 0.575, 0.35 * (double)i / (double)(col_num - 1),//+0.9
+		//		//mesh.vertices.push_back(std::array<double, 3>{0.7* (double)i / (double)(col_num - 1) - 0.35,  //+0.9
+		//		//	0.4 * (double)j / (double)(row_num - 1) - 0.285, 0.7 * (double)j / (double)(row_num - 1) - 0.35});//
+		//		mesh.vertices.push_back(std::array<double, 3>{0.7 * (double)i / (double)(col_num - 1) - 0.35,  //+0.9
+		//			0.7 * (double)j / (double)(row_num - 1) - 0.585, 0.05 * (double)j / (double)(row_num - 1) - 0.1});//
+		//	}
+		//}
 
 		//int col_num = 100;
 		//int row_num = 100;
@@ -205,14 +205,14 @@ public:
 		//	}
 		//}
 		//band
-		//int col_num = 121;
-		//int row_num = 11;
-		//for (int j = 0; j < row_num; j++) {
-		//	for (int i = 0; i < col_num; i++) {
-		//		mesh.vertices.push_back(std::array<double, 3>{0.25 * (double)j / (double)(row_num - 1) -0.125,
-		//			0.5,2.9 * (double)i / (double)(col_num - 1) -1.45});
-		//	}
-		//}
+		int col_num = 121;
+		int row_num = 9;
+		for (int j = 0; j < row_num; j++) {
+			for (int i = 0; i < col_num; i++) {
+				mesh.vertices.push_back(std::array<double, 3>{0.25 * (double)j / (double)(row_num - 1) -0.125,
+					-0.2,2.9 * (double)i / (double)(col_num - 1) -1.45});
+			}
+		}
 		//int col_num = 91;
 		//int row_num = 3;
 		//for (int j = 0; j < row_num; j++) {
@@ -475,11 +475,11 @@ public:
 
 	void setCapsule(OriMesh& mesh)
 	{
-		int col_num = 40;
-		int row_num = 40;
+		int col_num = 34;
+		int row_num = 34;
 		double r = 0.12;
-		int globe_row = 11;
-		int globe_num_2 = 20;
+		int globe_row = 9;
+		int globe_num_2 = 17;
 
 		double half_capsule_length = 0.4;
 		double capsule_length = 2.0 * half_capsule_length;

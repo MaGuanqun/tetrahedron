@@ -3,17 +3,20 @@
 
 Scene::Scene()
 {
+	time_record_interval = 10;
+
 	light.ambient = glm::vec3(1.0, 1.0, 1.0);
 	light.diffuse = glm::vec3(0.9, 0.9, 0.9);
 	light.specular = glm::vec3(0.85, 0.85, 0.85);
 
-	time_step = 1.0 / 100.0;
+	time_step = 1.0 / 30.0;
 
 
 	max_force_magnitude = 2.0;
 
 	last_output_obj_stamp = -1;
 	time_stamp = 0;
+	time_indicate_for_simu = 0;
 	genShader();
 
 
@@ -220,22 +223,22 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 
 	move_object.initial(&cloth, &collider, &tetrahedron, &thread);
 
-		switch (use_method)
-		{
-		case PD_:
-			project_dynamic.setForPD(&cloth, &tetrahedron, &collider, &floor, &thread, tolerance_ratio);
-			break;
-		case XPBD_:
-			xpbd.setForXPBD(&cloth, &tetrahedron, &collider, &floor, &thread, tolerance_ratio);
-			break;
-		case NEWTON_:
-			newton_method.setForNewtonMethod(&cloth, &tetrahedron, &collider, &floor, &thread, tolerance_ratio);
-			break;
-		}
-		if (control_parameter[ONLY_COLLISION_TEST]) {
-			test_draw_collision.initial(&cloth, &collider, &tetrahedron, &thread, &floor, tolerance_ratio, &project_dynamic.collision,
-				&xpbd.collision, &newton_method.collision,use_method);
-		}
+	switch (use_method)
+	{
+	case PD_:
+		project_dynamic.setForPD(&cloth, &tetrahedron, &collider, &floor, &thread, tolerance_ratio);
+		break;
+	case XPBD_:
+		xpbd.setForXPBD(&cloth, &tetrahedron, &collider, &floor, &thread, tolerance_ratio);
+		break;
+	case NEWTON_:
+		newton_method.setForNewtonMethod(&cloth, &tetrahedron, &collider, &floor, &thread, tolerance_ratio);
+		break;
+	}
+	if (control_parameter[ONLY_COLLISION_TEST]) {
+		test_draw_collision.initial(&cloth, &collider, &tetrahedron, &thread, &floor, tolerance_ratio, &project_dynamic.collision,
+			&xpbd.collision, &newton_method.collision,use_method);
+	}
 
 	setAveEdgeLength();
 	cursor.createVertices(0.03, camera_center);
@@ -498,6 +501,7 @@ void Scene::initial()
 		collider[i].reset();
 	}
 	time_stamp = 0;
+	time_indicate_for_simu = 0;
 }
 
 void Scene::reset()
@@ -528,6 +532,7 @@ void Scene::reset()
 		collider[i].reset();
 	}
 	time_stamp = 0;
+	time_indicate_for_simu = 0;
 }
 
 void Scene::initialIntersection()
@@ -566,6 +571,13 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 			//std::cout << cursor_screen[0] << " " << cursor_screen[1] << " " << force_coe << std::end
 			setCursorForce(camera, cursor_screen, force_coe);
 		}
+		if (control_parameter[START_TEST]) {
+			time_indicate_for_simu++;
+			if (!collider.empty()) {
+				move_model.sceneRotateCapsule(time_indicate_for_simu, collider[0].mesh_struct.vertex_position, &cloth[0].mesh_struct, use_method == PD_);
+			}
+		}
+		time_t t0 = clock();
 
 		switch (use_method)
 		{
@@ -579,9 +591,26 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 			newton_method.solveNewtonMethod();
 			break;
 		}
+		if (control_parameter[START_TEST]) {
+			move_model.updateColliderPosition(collider);
+		}
+		time_t t1 = clock() - t0;
+		if (time_stamp % time_record_interval == 0) {
+			time_accumulation = t1;
+		}
+		else if (time_stamp % time_record_interval < (time_record_interval - 1)) {
+			time_accumulation += t1;
+		}
+		else {
+			time_accumulation += t1;
+			*time_per_frame = time_accumulation / (double)time_record_interval;
+		}
+
+
 		//project_dynamic.PD_IPC_solve(record_matrix);
 		//project_dynamic.update_ave_iteration_record(ave_iteration);
 		time_stamp++;
+
 		//std::cout << "main " << project_dynamic.collision.point_triangle_target_pos_index.data() << std::endl;
 		//std::cout << "main add" << &project_dynamic.collision.point_triangle_target_pos_index << std::endl;
 		//std::cout << "main " << project_dynamic.collision.point_triangle_target_pos_index[0][0] << std::endl;

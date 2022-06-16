@@ -21,11 +21,13 @@ void SetModel::load_getAABB(std::string& path, int& index, int obj_index)
 		//	create_mesh.setMaterial1(ori_mesh);
 		//}
 		if (name == "floor.obj") {
-		//	create_mesh.setCapsule(ori_mesh); 
 			create_mesh.setFloor(ori_mesh);
 		}
 		else if (name == "clothing.obj") {
 			create_mesh.setMaterial1(ori_mesh);
+		}
+		else if (name == "capsule.obj") {
+			create_mesh.setCapsule(ori_mesh);
 		}
 		else {
 			ReadObj read_obj;
