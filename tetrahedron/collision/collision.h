@@ -46,11 +46,13 @@ public:
 	void globalCollisionTime();
 	//void findAllPatchPairs(int thread_No);
 
-	std::vector<std::vector<double>> target_position_and_stiffness; //thus, the actual number is 4*target_position_index[0]
+	//std::vector<std::vector<double>> target_position_and_stiffness; //thus, the actual number is 4*target_position_index[0]
 	//std::vector<std::vector<unsigned int>>target_position_index; //the first element store the number of primitives. thus, the actual number from [1] is 2*[0]
 	std::vector<std::vector<unsigned int>>point_triangle_target_pos_index; 
 	std::vector<std::vector<unsigned int>>point_triangle_collider_target_pos_index;
 	std::vector<std::vector<unsigned int>>edge_edge_target_pos_index;
+	std::vector<std::vector<unsigned int>>edge_edge_collider_target_pos_index;
+
 
 	unsigned int ave_pair_num[5];//vertex_triangle_pair,edge_edge_pair,vertex_obj_triangle_collider_pair,vertex_collider_triangle_obj_pair,edge_edge_pair_collider.
 
@@ -189,6 +191,7 @@ private:
 	//std::vector<unsigned int> target_position_element_start_per_thread;
 	std::vector<unsigned int> point_triangle_target_position_element_start_per_thread;
 	std::vector<unsigned int> edge_edge_target_position_element_start_per_thread;
+	std::vector<unsigned int> edge_edge_collider_target_position_element_start_per_thread;
 	std::vector<unsigned int> point_triangle_collider_target_position_element_start_per_thread;
 	//std::vector<unsigned int> target_position_start_per_thread;
 
@@ -511,7 +514,12 @@ private:
 
 	void re_edgeEdgeResponse(unsigned int pair_thread_No, unsigned int start_pair_index,
 		unsigned int end_pair_index, TargetPosition* target_pos);
+	void re_edgeEdgeColliderResponse(unsigned int pair_thread_No, unsigned int start_pair_index,
+		unsigned int end_pair_index, TargetPosition* target_pos);
 	void re_edgeEdgeResponse(int thread_No, TargetPosition* target_pos);
+	void re_edgeEdgeColliderResponse(int thread_No, TargetPosition* target_pos);
+
+
 
 
 	void testNearestPoint();

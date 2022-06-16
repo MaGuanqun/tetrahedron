@@ -647,7 +647,30 @@ void DCD::XPBDedgeEdge(double* current_edge_vertex_0, double* current_edge_verte
             lambda, stiffness, damping_stiffness, dt);
     }
 }
+bool DCD::edgeEdgeCollider(double* edge_target_pos_0, double* edge_target_pos_1,
+    double* current_edge_vertex_0, double* current_edge_vertex_1,
+    double* initial_edge_vertex_0, double* initial_edge_vertex_1,
+    double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0,
+    double* initial_compare_edge_vertex_1,
+    double tolerance, double mass_e_0_0, double mass_e_0_1)
+{
+    double barycentric[4];
+    if (CCD::internal::edgeEdgeDistanceType(initial_edge_vertex_0, initial_edge_vertex_1,
+        initial_compare_edge_vertex_0, initial_compare_edge_vertex_1, barycentric) != 8) {
+        // return false;
+    }
 
+    double norm[3];
+    double distance2;
+    if (checkEdgeEdgeCollision(current_edge_vertex_0, current_edge_vertex_1, initial_edge_vertex_0, initial_edge_vertex_1, current_compare_edge_vertex_0, current_compare_edge_vertex_1,
+        initial_compare_edge_vertex_0, initial_compare_edge_vertex_1, barycentric, norm, distance2, tolerance)) {
+        calDistanceEdgeEdgeCollider(edge_target_pos_0, edge_target_pos_1,
+            norm, distance2, barycentric, current_edge_vertex_0, current_edge_vertex_1,
+            mass_e_0_0, mass_e_0_1);
+        return true;
+    }
+    return false;
+}
 
 
 bool DCD::edgeEdge(double* edge_target_pos_0, double* edge_target_pos_1,
@@ -688,6 +711,9 @@ bool DCD::checkEdgeEdge(double* current_edge_vertex_0, double* current_edge_vert
     }
     if (checkIfCollideEdgeEdge(current_edge_vertex_0, current_edge_vertex_1, initial_edge_vertex_0, initial_edge_vertex_1, current_compare_edge_vertex_0, current_compare_edge_vertex_1,
         initial_compare_edge_vertex_0, initial_compare_edge_vertex_1, barycentric, tolerance)) {
+
+
+
         return true;
     }
     return false;
@@ -743,6 +769,25 @@ void DCD::XPBDcalDistanceEdgeEdge(double* norm, double distance, double* alpha, 
     coe = mass_inv_e_1_1 * delta_lambda * alpha[3];
     ACCUMULATE_SUM_WITH_COE(current_compare_edge_vertex_1, coe, norm);
 
+
+}
+
+
+
+
+void DCD::calDistanceEdgeEdgeCollider(double* edge_target_pos_0, double* edge_target_pos_1,
+    double* norm, double distance, double* alpha, double* current_edge_vertex_0, double* current_edge_vertex_1,
+    double mass_e_0_0, double mass_e_0_1)
+{
+    double coe = alpha[0] * alpha[0] / mass_e_0_0 + alpha[1] * alpha[1] / mass_e_0_1;
+    double temp;
+    distance /= coe;
+
+    temp = distance * alpha[0] / mass_e_0_0;
+    MULTI_SUM2(edge_target_pos_0, temp, norm, current_edge_vertex_0);
+
+    temp = distance * alpha[1] / mass_e_0_1;
+    MULTI_SUM2(edge_target_pos_1, temp, norm, current_edge_vertex_1);
 
 }
 
