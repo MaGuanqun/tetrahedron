@@ -205,7 +205,7 @@ public:
 		//	}
 		//}
 		//band
-		int col_num = 121;
+		int col_num = 115;
 		int row_num = 9;
 		for (int j = 0; j < row_num; j++) {
 			for (int i = 0; i < col_num; i++) {

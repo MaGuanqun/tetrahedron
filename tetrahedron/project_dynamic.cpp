@@ -6,8 +6,8 @@ ProjectDynamic::ProjectDynamic()
 	gravity_ = 9.8;
 	total_thread_num = std::thread::hardware_concurrency();
 	temEnergy.resize(total_thread_num);
-	outer_itr_conv_rate = 7.5e-3;// 7.5e-2; 
-	local_global_conv_rate = 1e-2;
+	outer_itr_conv_rate = 4e-2;// 7.5e-2; 
+	local_global_conv_rate = 5e-2;
 	sub_step_num = 1;
 
 	use_dierct_solve_for_coarest_mesh = true;
@@ -1062,7 +1062,7 @@ void ProjectDynamic::computeEnergyIPCPD()
 void ProjectDynamic::PDsolve()
 {
 	PDsetPosPredict();
-	//collision.collisionCulling();
+	collision.collisionCulling();
 
 	int itr_num = 0;
 	outer_iteration_num = 0;
@@ -1075,8 +1075,11 @@ void ProjectDynamic::PDsolve()
 	//for (int i = 0; i < tetrahedron->size(); ++i) {
 	//	thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL_RENDER);
 	//}
+	//for (unsigned int i = 0; i < collider->size(); ++i) {
+	//	thread->assignTask(&(*collider)[i].mesh_struct, FACE_NORMAL_RENDER);
+	//}
 	for (unsigned int i = 0; i < collider->size(); ++i) {
-		thread->assignTask(&(*collider)[i].mesh_struct, FACE_NORMAL_RENDER);
+		thread->assignTask(&(*collider)[i].mesh_struct, FACE_NORMAL);
 	}
 	//std::cout << "===" << std::endl;
 	while (!PDConvergeCondition()) {	
@@ -1089,7 +1092,7 @@ void ProjectDynamic::PDsolve()
 			initialEnergyLocalGlobal();
 			if (perform_collision) {
 				if (local_global_itr_in_single_outer == 0) {
-					collision.collisionCulling();
+					//collision.collisionCulling();
 					collision.solveCollisionConstraintDCD();
 					PDupdateSystemMatrix();
 				}
@@ -1585,7 +1588,7 @@ bool ProjectDynamic::PDLocalGlobalConvergeCondition()
 	bool collision_energy = fabs(previous_collision_energy - current_collision_energy) / previous_collision_energy < local_global_conv_rate || current_collision_energy < 1e-14;
 	bool need_to_stop = fabs(current_PD_energy - previous_PD_energy) / previous_PD_energy < 5e-6 || local_global_iteration_num > max_it - 3;
 	bool energy_satisfied = system_energy && constraint_energy && collision_energy;
-	bool standard = (energy_satisfied || need_to_stop) && local_global_itr_in_single_outer > 2;
+	bool standard = (energy_satisfied || need_to_stop) && local_global_itr_in_single_outer > 1;
 
 	//if (local_global_itr_in_single_outer > 300) {
 	//	//std::cout<<"energy " << current_collision_energy<<" "<< abs(previous_collision_energy - current_collision_energy) / previous_collision_energy << std::endl;

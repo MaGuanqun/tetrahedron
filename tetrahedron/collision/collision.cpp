@@ -1651,9 +1651,6 @@ unsigned int Collision::collisionConstraintNumber(unsigned int* point_triangle_c
 
 void Collision::solveCollisionConstraintDCD()
 {
-	for (unsigned int i = 0; i < collider->size(); ++i) {
-		thread->assignTask(&(*collider)[i].mesh_struct, FACE_NORMAL);
-	}
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL);
 	}
@@ -1661,13 +1658,13 @@ void Collision::solveCollisionConstraintDCD()
 		thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL);
 	}
 
-	time_t t = clock();
+	//time_t t = clock();
 	//for (unsigned int i = 0; i < 10; ++i) {
 		thread->assignTask(this, COLLISION_CONSTRAINT);
 		sumTargetPosition();
 		setTargetPositionEven();
 	//}
-	time_t t1 = clock();
+	//time_t t1 = clock();
 	//std::cout << "DCD " << t1 - t << std::endl;
 	//for (unsigned int i = 0; i < thread_num; ++i) {
 	//	collisionConstraint(i);
@@ -1832,8 +1829,8 @@ void Collision::collisionConstraint(int thread_No)
 
 	if (has_collider) {
 		pointTriangleColliderResponse(thread_No, target_pos);
-		pointColliderTriangleResponse(thread_No, target_pos);	
-		edgeEdgeColliderResponse(thread_No, target_pos);
+		//pointColliderTriangleResponse(thread_No, target_pos);	
+		//edgeEdgeColliderResponse(thread_No, target_pos);
 	}
 	if (floor->exist) {
 		floorCollisionVertex(thread_No);
@@ -1852,8 +1849,8 @@ void Collision::re_collisionConstraint(int thread_No)
 	re_edgeEdgeResponse(thread_No, target_pos);	
 	if (has_collider) {
 		re_pointTriangleColliderResponse(thread_No, target_pos);
-		re_pointColliderTriangleResponse(thread_No, target_pos);
-		re_edgeEdgeColliderResponse(thread_No, target_pos);
+		//re_pointColliderTriangleResponse(thread_No, target_pos);
+		//re_edgeEdgeColliderResponse(thread_No, target_pos);
 	}
 	if (floor->exist) {
 		re_FloorCollisionVertex(thread_No);
