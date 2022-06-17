@@ -4,8 +4,7 @@
 ProjectDynamic::ProjectDynamic()
 {
 	gravity_ = 9.8;
-	total_thread_num = std::thread::hardware_concurrency();
-	temEnergy.resize(total_thread_num);
+	
 	outer_itr_conv_rate = 4e-2;// 7.5e-2; 
 	local_global_conv_rate = 5e-2;
 	sub_step_num = 1;
@@ -14,7 +13,7 @@ ProjectDynamic::ProjectDynamic()
 	super_jacobi_step_size = 3;
 	max_it = 100;
 	max_jacobi_itr_num = 50;
-	displacement_norm_thread.resize(total_thread_num);
+	
 
 
 	iteration_method.setConvergenceRate(1e-8, 100);
@@ -27,6 +26,9 @@ ProjectDynamic::ProjectDynamic()
 void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, Floor* floor,
 	Thread* thread,double* tolerance_ratio)
 {
+	total_thread_num = thread->thread_num;
+	temEnergy.resize(total_thread_num);
+	displacement_norm_thread.resize(total_thread_num);
 	this->cloth = cloth;
 	this->tetrahedron = tetrahedron;
 	sub_time_step = time_step / (double)sub_step_num;
@@ -1638,6 +1640,8 @@ void ProjectDynamic::localProjectionPerThread(int thread_id, bool with_energy)
 	localBendingProjectionPerThread(thread_id, with_energy);
 	//anchor
 	localPositionProjectionPerThread(thread_id, with_energy);
+
+
 	//ARAP
 	//localARAPProjectionPerThread(thread_id, with_energy);
 	//tet edge length

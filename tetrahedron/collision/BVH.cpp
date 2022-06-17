@@ -16,7 +16,7 @@ void BVH::init(int triangle_num, std::vector<unsigned int>& triangle_index_begin
 	//list.resize(triangle_num);
 	morton_list.resize(triangle_num);
 	this->triangle_index_begin_per_thread = triangle_index_begin_per_thread;
-	total_thread_num = std::thread::hardware_concurrency();
+	total_thread_num = thread->thread_num;
 	aabb_per_thread.resize(total_thread_num);
 	this->thread = thread;
 	new2old.resize(triangle_num);

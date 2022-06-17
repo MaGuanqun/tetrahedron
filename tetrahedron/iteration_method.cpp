@@ -916,8 +916,19 @@ void IterationMethod::setBasicInfo(int sys_size, Thread* thread, SparseMatrix<do
 	this->thread = thread;
 	this->global_mat = global_mat;
 	dimension_per_thread.resize(thread->thread_num + 1, 3);
-	for (int i = 0; i < 3; ++i) {
-		dimension_per_thread[i] = i;
+	if (dimension_per_thread.size() > 3) {
+		for (int i = 0; i < 3; ++i) {
+			dimension_per_thread[i] = i;
+		}
+	}
+	else if(dimension_per_thread.size() ==2 ) {
+		dimension_per_thread[0] = 0;
+		dimension_per_thread[1] = 3;
+	}
+	else {
+		dimension_per_thread[0] = 0;
+		dimension_per_thread[1] = 2;
+		dimension_per_thread[2] = 3;
 	}
 	b_global_inv.resize(3);
 	R_b_global_inv.resize(3);

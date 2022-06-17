@@ -110,6 +110,10 @@ public:
 	void getRenderFaceNormalPerThread(int thread_id);
 	void getFaceNormalPerThread(int thread_id);
 
+
+	void getFaceNormal();
+	void getRenderFaceNormal();
+
 	std::vector<std::array<int, 3>> surface_triangle_index_in_order;//this is for representative triangle
 
 	void updateAnchorPerThread(int total_thread_num);

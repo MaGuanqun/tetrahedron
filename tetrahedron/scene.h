@@ -156,4 +156,6 @@ private:
 
 	unsigned int time_indicate_for_simu;
 
+	bool use_single_thread = true;
+
 };

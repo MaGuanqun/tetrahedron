@@ -5,7 +5,7 @@
 NewtonMethod::NewtonMethod()
 {
 	gravity_ = 9.8;
-	total_thread_num = std::thread::hardware_concurrency();
+
 	iteration_number = 1000;
 
 	time_step = 1.0 / 100.0;
@@ -29,7 +29,7 @@ void NewtonMethod::setForNewtonMethod(std::vector<Cloth>* cloth, std::vector<Tet
 	this->collider = collider;
 	this->thread = thread;
 	total_obj_num = cloth->size() + tetrahedron->size();
-
+	total_thread_num =thread->thread_num;
 	reorganzieDataOfObjects();
 	energy_per_thread.resize(total_thread_num);
 	off_diagonal_hessian_nnz_index_begin_per_thread.resize(total_thread_num + 1);

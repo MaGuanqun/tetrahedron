@@ -3,7 +3,7 @@
 
 void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 {
-	total_thread_num = std::thread::hardware_concurrency();
+	total_thread_num = thread->thread_num;
 	obj_aabb_per_thread.resize(total_thread_num);
 	current_obj_pos_aabb_per_thread.resize(total_thread_num);
 	this->thread = thread;

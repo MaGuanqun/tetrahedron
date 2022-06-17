@@ -5,19 +5,18 @@
 XPBD::XPBD()
 {
 	gravity_ = 9.8;
-	total_thread_num = std::thread::hardware_concurrency();
 	sub_step_num =1;
 	iteration_number =100;
 
 	damping_coe = 0.0;
 
-	perform_collision = true;
+	perform_collision = false;
 	max_iteration_number = 1000;
 	outer_max_iteration_number = 100;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
 	velocity_damp = 0.99;
-	energy_converge_ratio = 1e-2;
+	energy_converge_ratio = 1e-3;
 }
 
 
@@ -54,7 +53,7 @@ void XPBD::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetra
 	this->collider = collider;
 	sub_time_step = time_step / (double)sub_step_num;
 	this->thread = thread;
-
+	total_thread_num =thread->thread_num;
 
 	total_obj_num = cloth->size() + tetrahedron->size();
 	reorganzieDataOfObjects();
@@ -86,10 +85,10 @@ void XPBD::initialClothBending()
 {
 	lbo_weight.resize(cloth->size());
 	vertex_lbo.resize(cloth->size());
-	rest_mean_curvature_norm.resize(cloth->size());
-	//rest_Aq.resize(cloth->size());
+	//rest_mean_curvature_norm.resize(cloth->size());
+	rest_Aq.resize(cloth->size());
 	for (unsigned int i = 0; i < cloth->size(); ++i){
-		XPBD_constraint.initial_LBO_EdgeCotWeight(cloth->data()[i].mesh_struct, lbo_weight[i], vertex_lbo[i], rest_mean_curvature_norm[i]);
+		XPBD_constraint.initial_LBO_EdgeCotWeight(cloth->data()[i].mesh_struct, lbo_weight[i], vertex_lbo[i], rest_Aq[i]);
 	}
 
 }
@@ -599,14 +598,15 @@ void XPBD::solveBendingConstraint()
 			mesh_struct_ = mesh_struct[i];
 			mass_inv = mesh_struct_->mass_inv.data();
 			size = mesh_struct_->vertex_position.size();
-			rest_mean_curvature_norm_ = rest_mean_curvature_norm[i].data();
+			//rest_mean_curvature_norm_ = rest_mean_curvature_norm[i].data();
+			rest_Aq_ = rest_Aq[i].data();
 			lbo_weight_ = lbo_weight[i].data();
 			vertex_lbo_ = vertex_lbo[i].data();
 			vertex_pos = vertex_position[i];
 			initial_vertex_pos = initial_vertex_position[i];
 			for (unsigned int j = 0; j < size; ++j) {
 				XPBD_constraint.solveBendingConstraint(vertex_pos[j].data(), mass_inv[j], vertex_pos, mesh_struct_->vertices[j].neighbor_vertex,
-					rest_mean_curvature_norm_[j], lbo_weight_[j], vertex_lbo_[j], stiffness, sub_time_step, mass_inv, *lambda_, damp_stiffness,
+					rest_Aq_[j], lbo_weight_[j], vertex_lbo_[j], stiffness, sub_time_step, mass_inv, *lambda_, damp_stiffness,
 					initial_vertex_pos[j].data(), initial_vertex_pos, energy_);
 				lambda_++;
 				energy += energy_;

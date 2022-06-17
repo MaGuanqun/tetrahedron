@@ -67,8 +67,8 @@ private:
 	XPBDconstraint XPBD_constraint;
 	std::vector<std::vector<double>> lbo_weight;
 	std::vector<std::vector<VectorXd>>vertex_lbo;
-	std::vector<std::vector<double>> rest_mean_curvature_norm;
-	//std::vector<std::vector<Vector3d>> rest_Aq;
+	//std::vector<std::vector<double>> rest_mean_curvature_norm;
+	std::vector<std::vector<Vector3d>> rest_Aq;
 
 
 	std::vector<double> lambda;
