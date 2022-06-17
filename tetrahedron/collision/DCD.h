@@ -38,6 +38,14 @@ public:
 		double tolerance, double mass_point, double mass_t0, double mass_t1, double mass_t2,
 		double triangle_normal_magnitude_reciprocal);
 
+	bool pointColliderTriangle(double* initial_position, double* current_position,
+		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
+		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+		double* initial_triangle_normal, double* current_triangle_normal,
+		double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
+		double tolerance, double mass_t0, double mass_t1, double mass_t2,
+		double triangle_normal_magnitude_reciprocal);
+
 
 	bool pointTriangleCollider(double* initial_position, double* current_position,
 		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
@@ -116,7 +124,7 @@ private:
 
 	bool checkEdgeEdgeCollision(double* current_edge_vertex_0, double* current_edge_vertex_1, double* initial_edge_vertex_0, double* initial_edge_vertex_1,
 		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0, double* initial_compare_edge_vertex_1,
-		double* alpha, double* norm, double& distance2, double tolerance);
+		double* alpha, double* norm, double& distance2, double tolerance, bool collider);
 	void calDistanceEdgeEdge(double* edge_target_pos_0, double* edge_target_pos_1,
 		double* compare_target_pos_0, double* compare_target_pos_1,
 		double* norm, double distance, double* alpha, double* current_edge_vertex_0, double* current_edge_vertex_1,
@@ -188,6 +196,11 @@ private:
 		double mass_point, double mass_t0, double mass_t1, double mass_t2, double constraint, double is_front,
 		double& L_);
 	void decideTolerance(double& tolerance, double ratio_tolerance, double ratio_max_move, double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2);
+	void calDistancePointColliderTriangle(double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
+		double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+		double* current_triangle_normal, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal,
+		double mass_t0, double mass_t1, double mass_t2);
+
 };
 
 

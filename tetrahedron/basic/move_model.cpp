@@ -9,7 +9,7 @@ MoveModel::MoveModel()
 void MoveModel::updateColliderPosition(std::vector<Collider>& collider)
 {
 	for (unsigned int i = 0; i < collider.size(); ++i) {
-		collider[i].mesh_struct.vertex_for_render = collider[i].mesh_struct.vertex_position;
+		memcpy(collider[i].mesh_struct.vertex_for_render[0].data(), collider[i].mesh_struct.vertex_position[0].data(), 24 * collider[i].mesh_struct.vertex_position.size());	
 	}
 }
 

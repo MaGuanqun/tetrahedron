@@ -50,6 +50,7 @@ public:
 	//std::vector<std::vector<unsigned int>>target_position_index; //the first element store the number of primitives. thus, the actual number from [1] is 2*[0]
 	std::vector<std::vector<unsigned int>>point_triangle_target_pos_index; 
 	std::vector<std::vector<unsigned int>>point_triangle_collider_target_pos_index;
+	std::vector<std::vector<unsigned int>>point_collider_triangle_target_pos_index;
 	std::vector<std::vector<unsigned int>>edge_edge_target_pos_index;
 	std::vector<std::vector<unsigned int>>edge_edge_collider_target_pos_index;
 
@@ -190,8 +191,10 @@ private:
 
 	//std::vector<unsigned int> target_position_element_start_per_thread;
 	std::vector<unsigned int> point_triangle_target_position_element_start_per_thread;
+	std::vector<unsigned int> point_collider_triangle_target_position_element_start_per_thread;
 	std::vector<unsigned int> edge_edge_target_position_element_start_per_thread;
 	std::vector<unsigned int> edge_edge_collider_target_position_element_start_per_thread;
+
 	std::vector<unsigned int> point_triangle_collider_target_position_element_start_per_thread;
 	//std::vector<unsigned int> target_position_start_per_thread;
 
@@ -501,6 +504,8 @@ private:
 
 	DCD dcd;
 
+	void re_pointColliderTriangleResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end, TargetPosition* target_pos);
+
 	void re_pointTriangleResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end, TargetPosition* target_pos);
 	void setIndexEveryThread(std::vector<unsigned int>* pair, std::vector<unsigned int>& pair_index_start_per_thread);
 	void re_pointTriangleColliderResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end, TargetPosition* target_pos);
@@ -509,6 +514,7 @@ private:
 
 	void re_pointTriangleResponse(int thread_No, TargetPosition* target_pos);
 	void re_pointTriangleColliderResponse(int thread_No, TargetPosition* target_pos);
+	void re_pointColliderTriangleResponse(int thread_No, TargetPosition* target_pos);
 
 	void testPairEven();
 

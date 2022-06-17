@@ -1575,6 +1575,11 @@ bool ProjectDynamic::PDConvergeCondition()
 
 bool ProjectDynamic::PDLocalGlobalConvergeCondition()
 {
+
+	//if (local_global_itr_in_single_outer > 0) {
+	//	return true;
+	//}
+
 	bool system_energy = fabs(current_PD_energy - previous_PD_energy) / previous_PD_energy < local_global_conv_rate;
 	bool constraint_energy = fabs(current_constraint_energy - previous_constraint_energy) / previous_constraint_energy < local_global_conv_rate || current_constraint_energy < 1e-14;
 	bool collision_energy = fabs(previous_collision_energy - current_collision_energy) / previous_collision_energy < local_global_conv_rate || current_collision_energy < 1e-14;

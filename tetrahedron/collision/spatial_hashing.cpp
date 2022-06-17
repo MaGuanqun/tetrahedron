@@ -387,8 +387,8 @@ void SpatialHashing::reorganzieDataOfObjects()
 		face_edge_collider.resize(collider->size());
 		for (unsigned int i = 0; i < collider->size(); ++i) {
 			collider_tri_aabb[i] = collider->data()[i].triangle_AABB.data();
-			collider_vertex_aabb[i] = collider->data()[i].triangle_AABB.data();
-			collider_edge_aabb[i] = collider->data()[i].triangle_AABB.data();
+			collider_vertex_aabb[i] = collider->data()[i].vertex_AABB.data();
+			collider_edge_aabb[i] = collider->data()[i].edge_AABB.data();
 			triangle_vertex_index_collider[i] = collider->data()[i].mesh_struct.triangle_indices.data();
 			edge_vertex_index_collider[i] = collider->data()[i].mesh_struct.edge_vertices.data();
 			collider_vertex_index_begin_per_thread[i] = collider->data()[i].mesh_struct.vertex_index_begin_per_thread.data();
@@ -986,7 +986,7 @@ void SpatialHashing::findAllEdgeEdgePairsByPrimitiveSingleObj(int thread_No, int
 	unsigned int* edge_vertex_index_;
 	unsigned int* face_edge_;
 	edge_vertex_index_ = edge_vertex_index[obj_No];
-	face_edge_ = face_edge[obj_No];
+	face_edge_ = this->face_edge[obj_No];
 
 
 	std::vector<unsigned int>* vertex_neighbor_triangle;
