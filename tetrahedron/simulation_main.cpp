@@ -25,8 +25,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool control_parameter[28];
 	memset(control_parameter, 0, 28);
 	control_parameter[ONLY_COLLISION_TEST] = false;
-	control_parameter[USE_XPBD] = false;
-	control_parameter[USE_PD_] = true;
+	control_parameter[USE_XPBD] = true;
+	control_parameter[USE_PD_] = false;
 	control_parameter[USE_NEWTON_] = false;
 	control_parameter[DRAW_VT] = true;
 
@@ -64,7 +64,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool set_stiffness[13];
 	memset(set_stiffness, 0, 13);
 	double temp_stiffness[18] = { 1e2,2e2,2e2,2e2,1e2,1e-4,2e-1,1.0,0.0,0.0,0.0,
-	1e-3, 2e-3,2e-3,2e-3, 1e-3,2e-11,1e-2};
+	//1e-3, 2e-3,2e-3,2e-3, 1e-3,2e-11,1e-2};
+	0.0, 0.0,0.0,0.0, 0.0,0.0,0.0 };
 	//memset(temp_stiffness, 0, 64);
 	UpdateObjStiffness update_obj_stiffness;
 	double tolerance_ratio[7] = { 1e-1,1e-1,1e-1,1e-1, 1e-1, 1e-1, 1e-1 };

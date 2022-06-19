@@ -1816,10 +1816,11 @@ void Collision::collisionConstraint(int thread_No)
 	//target_position_index[thread_No][0] = 0;
 	point_triangle_target_pos_index[thread_No][0] = 0;
 	point_collider_triangle_target_pos_index[thread_No][0] = 0;
-	point_triangle_collider_target_pos_index[thread_No][0] = 0;
-	edge_edge_target_pos_index[thread_No][0] = 0;
-	edge_edge_collider_target_pos_index[thread_No][0] = 0;
-
+	if (has_collider) {
+		point_triangle_collider_target_pos_index[thread_No][0] = 0;
+		edge_edge_target_pos_index[thread_No][0] = 0;
+		edge_edge_collider_target_pos_index[thread_No][0] = 0;
+	}
 
 	test_point_triangle_record_true_number[thread_No] = 0;
 	test_edge_edge_record_true_number[thread_No] = 0;

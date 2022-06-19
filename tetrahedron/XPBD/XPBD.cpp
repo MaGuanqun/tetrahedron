@@ -5,7 +5,7 @@
 XPBD::XPBD()
 {
 	gravity_ = 9.8;
-	sub_step_num =1;
+	sub_step_num =10;
 	iteration_number =100;
 
 	damping_coe = 0.0;
@@ -15,8 +15,8 @@ XPBD::XPBD()
 	outer_max_iteration_number = 100;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
-	velocity_damp = 0.99;
-	energy_converge_ratio = 1e-3;
+	velocity_damp = 0.98;
+	energy_converge_ratio = 1e-1;
 }
 
 
@@ -264,22 +264,23 @@ void XPBD::solveByXPBD()
 		collision.getCollisionPair();
 		initialCollisionConstriantNum();
 	}
+	iteration_number = 0;
 	for (unsigned int sub_step = 0; sub_step < sub_step_num; ++sub_step) {
 		memset(lambda.data(), 0, 8 * lambda.size());
-		iteration_number = 0;
+		inner_iteration_number = 0;
 		if (sub_step_num > 1) {
 			thread->assignTask(this, SET_POS_PREDICT_SUB_TIME_STEP);
 		}
 		memset(lambda_collision.data(), 0, 8 * lambda_collision.size());
-		while (!convergeCondition(iteration_number)) {
+		while (!convergeCondition(inner_iteration_number)) {
 			recordVertexPosition();
 			if (perform_collision) {
 				updateNormal();
 			}
 			solveConstraint();
-			iteration_number++;
+			inner_iteration_number++;
 		}
-		
+		iteration_number += inner_iteration_number;
 		thread->assignTask(this, XPBD_VELOCITY);
 		updatePosition();
 		updateRenderNormal();
@@ -358,7 +359,7 @@ void XPBD::PBDsolve()
 
 bool XPBD::convergeCondition(unsigned int iteration_num)
 {
-	if (iteration_num < 10) {
+	if (iteration_num < 1) {
 		return false;
 	}
 	if (iteration_num > max_iteration_number) {
@@ -403,7 +404,7 @@ void XPBD::solveConstraint()
 {
 	previous_energy = energy;
 	energy = 0.0;
-	solveBendingConstraint();
+	//solveBendingConstraint();
 	solveEdgeLengthConstraint();
 	solveTetStrainConstraint();
 	if (perform_collision) {

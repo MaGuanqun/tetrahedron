@@ -31,7 +31,7 @@ public:
 	void setPosPredictSubTimeStep(int thread_No);
 	void computeVelocity(int thread_No);
 	unsigned int iteration_number;
-	//unsigned int inner_iteration_number;
+	unsigned int inner_iteration_number;
 	void initial();
 	void reset();
 	void resetExternalForce();

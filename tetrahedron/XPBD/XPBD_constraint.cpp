@@ -505,12 +505,12 @@ void XPBDconstraint::solveBendingConstraint(double* center_vertex, double vertex
 	aq[1] = vertex_lbo.dot(q[1]) - Aq[1];
 	aq[2] = vertex_lbo.dot(q[2]) - Aq[2];
 
-	//double aq_norm = sqrt(DOT(aq, aq));
-	//if (aq_norm == 0.0) {
-	//	return;
-	//}
-	//DEV_(aq, aq_norm);
-	double C = 0.5* DOT(aq, aq);
+	double aq_norm = sqrt(DOT(aq, aq));
+	if (aq_norm < epsilon_for_bending) {
+		return;
+	}
+	DEV_(aq, aq_norm);
+	double C = aq_norm;
 	//use q to store delta_C
 	for (unsigned int j = 0; j < 3; ++j) {
 		q_initial[j] = q[j] - q_initial[j];

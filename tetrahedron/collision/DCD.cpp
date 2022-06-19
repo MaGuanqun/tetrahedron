@@ -1340,14 +1340,15 @@ void DCD::XPBDcalDistancePointTriangleCollider(double* initial_position,
     double& lambda, double stiffness, double damping_stiffness, double dt, double& energy)
 {
     constraint -= tolerance;
-    // lambda
-    double alpha_ = 1.0 / (stiffness * dt * dt);
-    double gamma = damping_stiffness / (stiffness * dt);
-
     double e[3];
+    // lambda
+    //double alpha_ = 1.0 / (stiffness * dt * dt);
+    //double gamma = damping_stiffness / (stiffness * dt);
+
     SUB(e, current_position, initial_position);
-    double delta_lambda = -(constraint + alpha_ * lambda + gamma * DOT(current_triangle_normal, e)) /
-        ((1 + gamma) * mass_inv_vertex + alpha_);
+    //double delta_lambda = -(constraint + alpha_ * lambda + gamma * DOT(current_triangle_normal, e)) /
+    //    ((1 + gamma) * mass_inv_vertex + alpha_);
+    double delta_lambda = -constraint / mass_inv_vertex;
     lambda += delta_lambda;
     double coe = mass_inv_vertex * delta_lambda;
     ACCUMULATE_SUM_WITH_COE(current_position, coe, current_triangle_normal);
