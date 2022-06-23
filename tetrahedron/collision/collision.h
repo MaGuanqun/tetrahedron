@@ -50,9 +50,9 @@ public:
 	//std::vector<std::vector<unsigned int>>target_position_index; //the first element store the number of primitives. thus, the actual number from [1] is 2*[0]
 	std::vector<std::vector<unsigned int>>point_triangle_target_pos_index; 
 	std::vector<std::vector<unsigned int>>point_triangle_collider_target_pos_index;
-	std::vector<std::vector<unsigned int>>point_collider_triangle_target_pos_index;
+	//std::vector<std::vector<unsigned int>>point_collider_triangle_target_pos_index;
 	std::vector<std::vector<unsigned int>>edge_edge_target_pos_index;
-	std::vector<std::vector<unsigned int>>edge_edge_collider_target_pos_index;
+	//std::vector<std::vector<unsigned int>>edge_edge_collider_target_pos_index;
 
 
 	unsigned int ave_pair_num[5];//vertex_triangle_pair,edge_edge_pair,vertex_obj_triangle_collider_pair,vertex_collider_triangle_obj_pair,edge_edge_pair_collider.

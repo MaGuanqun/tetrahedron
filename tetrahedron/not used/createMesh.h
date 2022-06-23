@@ -94,17 +94,29 @@ public:
 		//	}
 		//}
 
-		//int col_num = 31;
-		//int row_num = 31;
+		//int col_num = 50;
+		//int row_num = 50;
 		//for (int j = 0; j < row_num; j++) {
 		//	for (int i = 0; i < col_num; i++) {
 		//		//mesh.vertices.push_back(std::array<double, 3>{ 0.7 * (double)j / (double)(row_num - 1) + 0.575, 0.35 * (double)i / (double)(col_num - 1),//+0.9
 		//		//mesh.vertices.push_back(std::array<double, 3>{0.7* (double)i / (double)(col_num - 1) - 0.35,  //+0.9
 		//		//	0.4 * (double)j / (double)(row_num - 1) - 0.285, 0.7 * (double)j / (double)(row_num - 1) - 0.35});//
-		//		mesh.vertices.push_back(std::array<double, 3>{0.7 * (double)i / (double)(col_num - 1) - 0.35,  //+0.9
-		//			0.7 * (double)j / (double)(row_num - 1) - 0.585, 0.05 * (double)j / (double)(row_num - 1) - 0.1});//
+		//		mesh.vertices.push_back(std::array<double, 3>{1.0 * (double)i / (double)(col_num - 1),  // - 0.35+0.9
+		//			0.0,1.0 * (double)j / (double)(row_num - 1)}); //-0.585//0.05 * (double)j / (double)(row_num - 1) - 0.1
 		//	}
 		//}
+
+		int col_num = 75;
+		int row_num = 75;
+		for (int j = 0; j < row_num; j++) {
+			for (int i = 0; i < col_num; i++) {
+				//mesh.vertices.push_back(std::array<double, 3>{ 0.7 * (double)j / (double)(row_num - 1) + 0.575, 0.35 * (double)i / (double)(col_num - 1),//+0.9
+				//mesh.vertices.push_back(std::array<double, 3>{0.7* (double)i / (double)(col_num - 1) - 0.35,  //+0.9
+				//	0.4 * (double)j / (double)(row_num - 1) - 0.285, 0.7 * (double)j / (double)(row_num - 1) - 0.35});//
+				mesh.vertices.push_back(std::array<double, 3>{2.0 * (double)i / (double)(col_num - 1)-1.0,  // - 0.35+0.9
+					0.0 * (double)j / (double)(row_num - 1)+0.6,2.0 * (double)j / (double)(row_num - 1)-1.0}); //-0.585//0.05 * (double)j / (double)(row_num - 1) - 0.1
+			}
+		}
 
 		//int col_num = 100;
 		//int row_num = 100;
@@ -204,15 +216,15 @@ public:
 		//			0.7 * (double)i / (double)(col_num - 1)-0.7, -0.3 * (double)i / (double)(col_num - 1) + 0.15});
 		//	}
 		//}
-		//band
-		int col_num = 115;
-		int row_num = 9;
-		for (int j = 0; j < row_num; j++) {
-			for (int i = 0; i < col_num; i++) {
-				mesh.vertices.push_back(std::array<double, 3>{0.25 * (double)j / (double)(row_num - 1) -0.125,
-					-0.2,2.9 * (double)i / (double)(col_num - 1) -1.45});
-			}
-		}
+		////band
+		//int col_num = 115;
+		//int row_num = 9;
+		//for (int j = 0; j < row_num; j++) {
+		//	for (int i = 0; i < col_num; i++) {
+		//		mesh.vertices.push_back(std::array<double, 3>{0.25 * (double)j / (double)(row_num - 1) -0.125,
+		//			-0.2,2.9 * (double)i / (double)(col_num - 1) -1.45});
+		//	}
+		//}
 		//int col_num = 91;
 		//int row_num = 3;
 		//for (int j = 0; j < row_num; j++) {
@@ -268,7 +280,7 @@ public:
 		//	}
 		//}
 
-		//indices(mesh, col_num);
+		//indices(mesh, col_num, row_num);
 		meshIndices(mesh, col_num, row_num);
 
 		//mesh.vertices.push_back({ 0.0125,0.2,0.0125 });		
@@ -363,7 +375,7 @@ public:
 		//	}
 		//}
 
-		indices(mesh, col_num);
+		indices(mesh, col_num, row_num);
 		//setVirtualIndices(mesh, 2, col_num, row_num);
 		//indicesForTwoTriangle(mesh);
 		initialMaterial(mesh, 2);
@@ -450,7 +462,7 @@ public:
 		//	mesh.indices.push_back(i);
 		//}
 
-		indices(mesh, col_num);
+		indices(mesh, col_num, row_num);
 		floorMaterial(mesh);
 		//for (int i = 0; i < mesh.vertices.size(); ++i) {
 		//	mesh.vertices[i][1] -= 1.0;
@@ -526,9 +538,9 @@ public:
 
 	void setSphere(OriMesh& mesh)
 	{
-		int col_num = 150;
-		double r = 0.5;
-		int globe_num_2 = 75;
+		int col_num = 100;
+		double r = 0.4;
+		int globe_num_2 = 50;
 		//double radius = 0.3;		
 		for (int j = 1; j < globe_num_2; j++) {
 			for (int i = 0; i < col_num; i++) {
@@ -647,7 +659,7 @@ private:
 		//mesh.indices.push_back(4);
 	}
 
-	void indices(OriMesh& mesh, int col_num)
+	void indices(OriMesh& mesh, int col_num, int row_num)
 	{
 		int totalNum = mesh.vertices.size();
 		for (int i = 0; i < totalNum; i++) {
@@ -658,9 +670,9 @@ private:
 				mesh.indices.push_back(i);
 				mesh.indices.push_back(i + col_num);
 				mesh.indices.push_back(i + col_num + 1);
-
 			}
 		}
+		
 		//mesh.virtual_face_indices = mesh.indices;
 	}
 
@@ -941,46 +953,55 @@ private:
 
 	void meshIndices(OriMesh& mesh, int col_num, int row_num)
 	{
-		assert(col_num % 2 == 0);
-		assert(row_num % 2 == 0);
-		int totalNum = mesh.vertices.size();
-		int index;
-		for (int j = 0; j < row_num - 1; j += 2) {
-			for (int i = 0; i < col_num - 1; i += 2) {
-				index = col_num * j + i;
-				mesh.indices.push_back(index);
-				mesh.indices.push_back(index + col_num);
-				mesh.indices.push_back(index + 1);
-				mesh.indices.push_back(index + 1);
-				mesh.indices.push_back(index + col_num);
-				mesh.indices.push_back(index + col_num + 1);
 
-				mesh.indices.push_back(index + 1);
-				mesh.indices.push_back(index + col_num + 1);
-				mesh.indices.push_back(index + col_num + 2);
-
-				mesh.indices.push_back(index + col_num);
-				mesh.indices.push_back(index + 2 * col_num + 1);
-				mesh.indices.push_back(index + col_num + 1);
-
-				mesh.indices.push_back(index + col_num + 1);
-				mesh.indices.push_back(index + 2 * col_num + 1);
-				mesh.indices.push_back(index + col_num + 2);
-
-				mesh.indices.push_back(index + col_num);
-				mesh.indices.push_back(index + 2 * col_num);
-				mesh.indices.push_back(index + 2 * col_num + 1);
-
-
-				mesh.indices.push_back(index + col_num + 2);
-				mesh.indices.push_back(index + 2 * col_num + 1);
-				mesh.indices.push_back(index + 2 * col_num + 2);
-
-				mesh.indices.push_back(index + 1);
-				mesh.indices.push_back(index + col_num + 2);
-				mesh.indices.push_back(index + 2);
+		for (int i = 0; i < row_num - 1; i++)
+		{
+			for (int j = 0; j < col_num - 1; j++)
+			{
+				int helper = 0;
+				if (i % 2 == j % 2)
+					helper = 1;
+				mesh.indices.emplace_back(i * col_num + j);
+				mesh.indices.emplace_back(i * col_num + j + 1);
+				mesh.indices.emplace_back((i + 1) * col_num + j + helper);
+				mesh.indices.emplace_back((i + 1) * col_num + j + 1);
+				mesh.indices.emplace_back((i + 1) * col_num + j);
+				mesh.indices.emplace_back(i * col_num + j + 1 - helper);
 			}
 		}
+		//assert(col_num % 2 == 0);
+		//assert(row_num % 2 == 0);
+		//int totalNum = mesh.vertices.size();
+		//int index;
+		//for (int j = 0; j < row_num - 1; j += 2) {
+		//	for (int i = 0; i < col_num - 1; i += 2) {
+		//		index = col_num * j + i;
+		//		mesh.indices.push_back(index);
+		//		mesh.indices.push_back(index + col_num);
+		//		mesh.indices.push_back(index + 1);
+		//		mesh.indices.push_back(index + 1);
+		//		mesh.indices.push_back(index + col_num);
+		//		mesh.indices.push_back(index + col_num + 1);
+		//		mesh.indices.push_back(index + 1);
+		//		mesh.indices.push_back(index + col_num + 1);
+		//		mesh.indices.push_back(index + col_num + 2);
+		//		mesh.indices.push_back(index + col_num);
+		//		mesh.indices.push_back(index + 2 * col_num + 1);
+		//		mesh.indices.push_back(index + col_num + 1);
+		//		mesh.indices.push_back(index + col_num + 1);
+		//		mesh.indices.push_back(index + 2 * col_num + 1);
+		//		mesh.indices.push_back(index + col_num + 2);
+		//		mesh.indices.push_back(index + col_num);
+		//		mesh.indices.push_back(index + 2 * col_num);
+		//		mesh.indices.push_back(index + 2 * col_num + 1);
+		//		mesh.indices.push_back(index + col_num + 2);
+		//		mesh.indices.push_back(index + 2 * col_num + 1);
+		//		mesh.indices.push_back(index + 2 * col_num + 2);
+		//		mesh.indices.push_back(index + 1);
+		//		mesh.indices.push_back(index + col_num + 2);
+		//		mesh.indices.push_back(index + 2);
+		//	}
+		//}
 
 	}
 

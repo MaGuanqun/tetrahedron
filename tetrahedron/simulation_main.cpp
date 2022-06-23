@@ -63,8 +63,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 	std::vector<std::array<double, 8>> tetrahedron_collision_stiffness;
 	bool set_stiffness[13];
 	memset(set_stiffness, 0, 13);
-	double temp_stiffness[18] = { 1e2,2e2,2e2,2e2,1e2,1e-4,2e-1,1.0,0.0,0.0,0.0,
-	//1e-3, 2e-3,2e-3,2e-3, 1e-3,2e-11,1e-2};
+	double temp_stiffness[18] = { 1e2,2e2,2e2,2e2,1e2,1e-7,2e-1,1.0,0.0,0.0,0.0,
+	//1e-3, 2e-3,2e-3,2e-3, 1e-3,1e-9,1e-2};
 	0.0, 0.0,0.0,0.0, 0.0,0.0,0.0 };
 	//memset(temp_stiffness, 0, 64);
 	UpdateObjStiffness update_obj_stiffness;
@@ -103,9 +103,21 @@ void simu_main(GLFWwindow* window, Input* input) {
 	double time_per_frame = 0;
 	scene.time_per_frame = &time_per_frame;
 
+	int time_record_inverval = 10;
+
+	glfwSwapInterval(0);
+
+	
+	double t1, t2;
+
 	while (!glfwWindowShouldClose(window))
 	{
-		start_time = clock();
+
+		//if (scene.time_stamp%time_record_inverval == 0) 
+		//{
+		//	t1 = clock();
+		//}
+
 		glClearColor(1.0, 1.0, 1.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
@@ -184,6 +196,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 			}
 
 		}
+		start_time = clock();
 		if (control_parameter[USE_PD_] || control_parameter[USE_XPBD] || control_parameter[USE_NEWTON_]) {
 			imgui_windows.operationWindow(cloth_stiffness, tetrahedron_stiffness, simulation_parameter, cloth_collision_stiffness, tetrahedron_collision_stiffness, set_stiffness, temp_stiffness,
 				update_obj_stiffness, set_anchor, !scene.tetrahedron.empty(), &damp_stiffness, rayleigh_damp_stiffness);
@@ -231,25 +244,30 @@ void simu_main(GLFWwindow* window, Input* input) {
 			scene.setTolerance(tolerance_ratio);
 			scene.updateCloth(&camera, input, control_parameter, force_coe, record_matrix,
 				iteration_solver_iteration_num, cell_index_chose);
+			start_time = clock();
 			scene.drawScene(&camera, show_element, control_parameter);
+			//time_t t2 = clock() - start_time;
+			//std::cout <<"t2 "<< t2 << std::endl;
 			scene.selectAnchor(control_parameter, set_anchor, input->mouse.screen_pos, input->mouse.left_press, input->mouse.prev_left_press, &camera, show_element[TETRAHEDRON_]);
 			scene.obtainConvergenceInfo(convergence_rate, iteration_number);
 
 		}
-
 
 		if (control_parameter[ONE_FRAME]) {
 			control_parameter[ONE_FRAME] = false;
 		}
 
 		imgui_windows.floorInfo(floor_control[0], floor_control[1], floor_control[2], floor_dimension, &floor_value, floor_control[3]);
-
-
-
+	
 
 		imgui_windows.visualizationControlPanel(control_parameter[INITIAL_CAMERA], show_element, control_parameter[ONLY_COLLISION_TEST], control_parameter);
 
+		start_time = clock();
 		coordinateSystem.draw(&camera, cameraPos);
+
+		//time_t t3 = clock() - start_time;
+		//std::cout <<"t3 "<< t3 << std::endl;
+
 		scene.drawSelectRange(set_anchor, input->mouse.left_press, input->mouse.prev_left_press);
 		time = (double)(clock() - start_time);
 		imgui_windows.infoWindow(cloth_info, cloth_mass, tetrahedron_info, tetrahedron_mass, time_per_frame, iteration_number, set_iteration_num, convergence_rate, scene.time_stamp, edit_PD_conv_rate, control_parameter[START_SIMULATION]);
@@ -263,15 +281,14 @@ void simu_main(GLFWwindow* window, Input* input) {
 		if (control_parameter[ONLY_COLLISION_TEST]) {
 			switchObjMoveMode(input, control_parameter);
 		}
-
 		if (input->keyboard.keyIsPressed(GLFW_KEY_S)) {
 			control_parameter[ONE_FRAME] = true;
 		}
 
 
 
-
 		basic_imgui.imguiEndFrame();
+
 		glfwSwapBuffers(window);
 		input->beginFrame();
 		glfwPollEvents();
@@ -279,6 +296,15 @@ void simu_main(GLFWwindow* window, Input* input) {
 		if (control_parameter[OUTPUT_IMAGE]) {
 			save_image.outputImage(scene.time_stamp);
 		}
+
+
+		//if (scene.time_stamp > 0) {
+		//	if ((scene.time_stamp-1) % time_record_inverval == (time_record_inverval - 1)) {
+		//		t2 = (double)(clock() - t1) / (double)time_record_inverval;
+		//		std::cout << "interval " << t2 << std::endl;
+		//	}
+		//}
+
 	}
 	basic_imgui.imguiShutdown();
 }

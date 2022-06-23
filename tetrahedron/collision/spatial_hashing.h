@@ -30,10 +30,10 @@ public:
 
 	unsigned int** vertex_triangle_pair; //except collider, inner vector store vertex_1 index, obj_1_index, tri_2_index, obj_2_index
 	unsigned int** vertex_obj_triangle_collider_pair; //inner vector store vertex_1 index, obj_1_index, tri_2_index, obj_2_index
-	unsigned int** vertex_collider_triangle_obj_pair; //inner vector store vertex_1 index, obj_1_index, tri_2_index, obj_2_index
+	//unsigned int** vertex_collider_triangle_obj_pair; //inner vector store vertex_1 index, obj_1_index, tri_2_index, obj_2_index
 
 	unsigned int** edge_edge_pair;
-	unsigned int** edge_edge_pair_collider; //first obj, second collider
+	//unsigned int** edge_edge_pair_collider; //first obj, second collider
 
 
 

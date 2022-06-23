@@ -29,6 +29,9 @@ void SetModel::load_getAABB(std::string& path, int& index, int obj_index)
 		else if (name == "capsule.obj") {
 			create_mesh.setCapsule(ori_mesh);
 		}
+		else if (name == "sphere.obj") {
+			create_mesh.setSphere(ori_mesh);
+		}
 		else {
 			ReadObj read_obj;
 			read_obj.load(path.c_str(), ori_mesh);

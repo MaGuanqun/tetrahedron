@@ -11,9 +11,9 @@ class CoordinateSystem
 public:
     CoordinateSystem();
     void draw(Camera* camera, glm::vec3& lightPos);
-
-private:
     Shader* shader;
+private:
+ 
     unsigned int VAO0, VBO0[2], EBO0;
     unsigned int VAO1, VBO1[2], EBO1;
     unsigned int VAO2, VBO2[2], EBO2;

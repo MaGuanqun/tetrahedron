@@ -83,15 +83,6 @@ void MeshStruct::setEdge()
 		else {
 			addEdge(triangle_indices[i][0], triangle_indices[i][1], i, triangle_indices[i][2], 0);
 		}
-		if (isEdgeExist(triangle_indices[i][0], triangle_indices[i][2], edgeNo)) {
-			edges[edgeNo].face.push_back(i);
-			edges[edgeNo].opposite_vertex.push_back(triangle_indices[i][1]);
-			face_edges[3 * i + 1] = edgeNo;
-			//faces[i].edge.push_back(edgeNo);
-		}
-		else {
-			addEdge(triangle_indices[i][2], triangle_indices[i][0], i, triangle_indices[i][1], 1);
-		}
 		if (isEdgeExist(triangle_indices[i][1], triangle_indices[i][2], edgeNo)) {
 			edges[edgeNo].face.push_back(i);
 			edges[edgeNo].opposite_vertex.push_back(triangle_indices[i][0]);
@@ -100,6 +91,15 @@ void MeshStruct::setEdge()
 		}
 		else {
 			addEdge(triangle_indices[i][1], triangle_indices[i][2], i, triangle_indices[i][0], 2);
+		}
+		if (isEdgeExist(triangle_indices[i][2], triangle_indices[i][0], edgeNo)) {
+			edges[edgeNo].face.push_back(i);
+			edges[edgeNo].opposite_vertex.push_back(triangle_indices[i][1]);
+			face_edges[3 * i + 1] = edgeNo;
+			//faces[i].edge.push_back(edgeNo);
+		}
+		else {
+			addEdge(triangle_indices[i][2], triangle_indices[i][0], i, triangle_indices[i][1], 1);
 		}
 	}
 
@@ -211,26 +211,26 @@ void MeshStruct::addEdge(int v0, int v1, int face, int opposite_vertex, int edge
 }
 
 
-//void MeshStruct::addArounVertex()
-//{
-//	int vertex_index;
-//	std::vector<bool>point_is_used;
-//	point_is_used.resize(vertices.size(), true);
-//	for (int i = 0; i < vertices.size(); ++i) {
-//		if (!vertices[i].face.empty()) {
-//			std::fill(point_is_used.begin(), point_is_used.end(), false);
-//			vertices[i].around_vertex.reserve(3 * vertices[i].neighbor_vertex.size());
-//			for (int k = 0; k < vertices[i].neighbor_vertex.size(); ++k) {
-//				vertex_index = vertices[i].neighbor_vertex[k];
-//				for (int m = 0; m < vertices[vertex_index].neighbor_vertex.size(); ++m) {
-//					if (!point_is_used[vertices[vertex_index].neighbor_vertex[m]]) {
-//						vertices[i].around_vertex.push_back(vertices[vertex_index].neighbor_vertex[m]);
-//					}
-//				}
-//			}
-//		}
-//	}
-//}
+void MeshStruct::addArounVertex()
+{
+	int vertex_index;
+	std::vector<bool>point_is_used;
+	point_is_used.resize(vertices.size(), true);
+	for (int i = 0; i < vertices.size(); ++i) {
+		if (!vertices[i].face.empty()) {
+			std::fill(point_is_used.begin(), point_is_used.end(), false);
+			vertices[i].around_vertex.reserve(3 * vertices[i].neighbor_vertex.size());
+			for (int k = 0; k < vertices[i].neighbor_vertex.size(); ++k) {
+				vertex_index = vertices[i].neighbor_vertex[k];
+				for (int m = 0; m < vertices[vertex_index].neighbor_vertex.size(); ++m) {
+					if (!point_is_used[vertices[vertex_index].neighbor_vertex[m]]) {
+						vertices[i].around_vertex.push_back(vertices[vertex_index].neighbor_vertex[m]);
+					}
+				}
+			}
+		}
+	}
+}
 
 
 

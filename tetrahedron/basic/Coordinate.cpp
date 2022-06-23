@@ -27,13 +27,14 @@ void CoordinateSystem::draw(Camera* camera, glm::vec3& lightPos)
 {    
     glViewport(-SCR_WIDTH/3, -SCR_HEIGHT/5*2, SCR_WIDTH, SCR_HEIGHT);
     glClear(GL_DEPTH_BUFFER_BIT);
-    shader->use();
-    shader->setMat4("projection", camera->GetProjectMatrix());
-    shader->setMat4("view", glm::lookAt(2.0f * glm::normalize(camera->position-camera->center), glm::vec3(0.0f, 0.0f, 0.0f), camera->up));
-    shader->setMat4("model", glm::mat4(1.0));
+   shader->use();
+   shader->setFloat("transparence", 1.0);
+   shader->setMat4("projection", camera->GetProjectMatrix());
+   shader->setMat4("view", glm::lookAt(2.0f * glm::normalize(camera->position-camera->center), glm::vec3(0.0f, 0.0f, 0.0f), camera->up));
+   shader->setMat4("model", glm::mat4(1.0));
     shader->setVec3("viewPos", 2.0f*glm::normalize(camera->position-camera->center));
     shader->setVec3("lightPos", lightPos);
-    shader->setFloat("transparence", 1.0);
+
     shader->setVec3("light.specular", light.specular);
     shader->setVec3("light.diffuse", light.diffuse);
     shader->setVec3("light.ambient", light.ambient);

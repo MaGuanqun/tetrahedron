@@ -1071,6 +1071,8 @@ void ProjectDynamic::PDsolve()
 	initialEnergy();
 	local_global_iteration_num = 0;
 
+	std::cout << global_mat << std::endl;
+
 	//for (int i = 0; i < cloth->size(); ++i) {
 	//	thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL_RENDER);
 	//}

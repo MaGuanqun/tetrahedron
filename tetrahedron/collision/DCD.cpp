@@ -325,7 +325,7 @@ void DCD::XPBDcalDistancePointTriangle(
         constraint += tolerance;
     }
 
-    energy = 0.5 * stiffness * constraint * constraint;
+   energy = 0.5 * stiffness * constraint * constraint;
 
     memcpy(grad_c_vertex, current_triangle_normal, 24);
 
@@ -355,15 +355,16 @@ void DCD::XPBDcalDistancePointTriangle(
     lambda_numerator += DOT(grad_c_vertex_1, in_triangle);
     SUB(in_triangle, current_triangle_position_2, initial_triangle_position_2);
     lambda_numerator += DOT(grad_c_vertex_2, in_triangle);    
+
     double delta_lambda = -(constraint + alpha_ * lambda + gamma * lambda_numerator)
         / ((1 + gamma) * (DOT(grad_c_vertex, grad_c_vertex) * mass_inv_point + DOT(grad_c_vertex_0, grad_c_vertex_0) * mass_inv_t0
             + DOT(grad_c_vertex_1, grad_c_vertex_1) * mass_inv_t1 + DOT(grad_c_vertex_2, grad_c_vertex_2) * mass_inv_t2)
             + alpha_);
-    lambda += delta_lambda;
 
     //double delta_lambda = -constraint / (DOT(grad_c_vertex, grad_c_vertex) * mass_inv_point + DOT(grad_c_vertex_0, grad_c_vertex_0) * mass_inv_t0
     //    + DOT(grad_c_vertex_1, grad_c_vertex_1) * mass_inv_t1 + DOT(grad_c_vertex_2, grad_c_vertex_2) * mass_inv_t2);
 
+    lambda += delta_lambda;
     double coe = delta_lambda * mass_inv_point;
     ACCUMULATE_SUM_WITH_COE(current_position, coe, grad_c_vertex);
     coe = delta_lambda * mass_inv_t0;
@@ -711,7 +712,7 @@ void DCD::XPBDedgeEdge(double* current_edge_vertex_0, double* current_edge_verte
             return;
         }
 
-        energy = 0.5 * stiffness * distance2 * distance2;
+       energy = 0.5 * stiffness * distance2 * distance2;
 
         XPBDcalDistanceEdgeEdge(
             norm, distance2, barycentric, current_edge_vertex_0, current_edge_vertex_1, current_compare_edge_vertex_0, current_compare_edge_vertex_1,
@@ -829,11 +830,12 @@ void DCD::XPBDcalDistanceEdgeEdge(double* norm, double distance, double* alpha, 
     double delta_lambda = -(distance + alpha_ * lambda + gamma * lambda_numerator) / ((1 + gamma) * (mass_inv_e_0_0 * alpha[0] * alpha[0]
         + mass_inv_e_0_1 * alpha[1] * alpha[1] + mass_inv_e_1_0 * alpha[2] * alpha[2] +
         mass_inv_e_1_1 * alpha[3] * alpha[3]) + alpha_);
-    lambda += delta_lambda;
 
     //double delta_lambda= -distance/(mass_inv_e_0_0 * alpha[0] * alpha[0]
     //    + mass_inv_e_0_1 * alpha[1] * alpha[1] + mass_inv_e_1_0 * alpha[2] * alpha[2] +
     //    mass_inv_e_1_1 * alpha[3] * alpha[3]);
+
+    lambda += delta_lambda;
 
     coe = -mass_inv_e_0_0 * delta_lambda * alpha[0];
     ACCUMULATE_SUM_WITH_COE(current_edge_vertex_0, coe, norm);
@@ -1208,12 +1210,14 @@ void DCD::XPBDFloor(double* initial_position, double* current_position,unsigned 
 
     double e[3];
     SUB(e, current_position, initial_position);
-    double delta_lambda = -(constraint + alpha_ * lambda + gamma * e[dimension]* coe_for_direction) /
-        ((1 + gamma) * mass_inv_v + alpha_);
+    //double delta_lambda = -(constraint + alpha_ * lambda + gamma * e[dimension]* coe_for_direction) /
+    //    ((1 + gamma) * mass_inv_v + alpha_);
+    double delta_lambda = -constraint /mass_inv_v;
+
     lambda += delta_lambda;
     double coe = mass_inv_v * delta_lambda;
     current_position[dimension] += coe * coe_for_direction;
-    energy = 0.5 * stiffness * constraint * constraint;
+    //energy = 0.5 * stiffness * constraint * constraint;
 }
 
 
@@ -1233,8 +1237,13 @@ void DCD::XPBDpointTriangleCollider(double* initial_position, double* current_po
     if (current_side > tolerance) {
         return;
     }
+    //if (!pointProjectOnTriangle(current_position, current_triangle_position_0, current_triangle_position_1,
+    //    current_triangle_position_2, current_triangle_normal, barycentric)) {
+    //    return;
+    //}
     CCD::internal::pointTriangleNearestPoint(initial_position, initial_triangle_position_0, initial_triangle_position_1,
         initial_triangle_position_2, initial_triangle_normal, barycentric);
+
     if (checkIfCollidePointTriangleCollider(initial_position, current_position,
         initial_triangle_position_0, initial_triangle_position_1, initial_triangle_position_2,
         current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
@@ -1267,6 +1276,10 @@ bool DCD::pointTriangleCollider(double* initial_position, double* current_positi
     else {
         //if (!pointProjectOnTriangle(initial_position, initial_triangle_position_0, initial_triangle_position_1,
         //    initial_triangle_position_2, initial_triangle_normal, barycentric)) {
+        //    return false;
+        //}
+        //if (!pointProjectOnTriangle(current_position, current_triangle_position_0, current_triangle_position_1,
+        //    current_triangle_position_2, current_triangle_normal, barycentric)) {
         //    return false;
         //}
         CCD::internal::pointTriangleNearestPoint(initial_position, initial_triangle_position_0, initial_triangle_position_1,

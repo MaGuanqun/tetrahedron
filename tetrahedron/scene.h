@@ -67,6 +67,10 @@ public:
 	Input* input;
 	void setDampStiffness(double* damp_stiffness, double* rayleigh_damp_stiffness);
 	double* time_per_frame;
+
+	time_t time_accumulation=0;
+
+
 private:
 	unsigned int use_method;
 	bool only_test_collision;
@@ -152,7 +156,6 @@ private:
 	MoveModel move_model;
 
 	unsigned int time_record_interval;
-	time_t time_accumulation;
 
 	unsigned int time_indicate_for_simu;
 

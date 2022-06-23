@@ -9,7 +9,7 @@ Scene::Scene()
 	light.diffuse = glm::vec3(0.9, 0.9, 0.9);
 	light.specular = glm::vec3(0.85, 0.85, 0.85);
 
-	time_step = 1.0 / 30.0;
+	time_step = 1.0 / 60.0;
 
 
 	max_force_magnitude = 2.0;
@@ -185,7 +185,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	cloth.resize(cloth_num);
 	tetrahedron.resize(tetrahedron_num);
 	setTolerance(tolerance_ratio);
-	double cloth_density = 0.5;
+	double cloth_density = 0.1;
 	double tetrahedron_density = 0.1;
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].loadMesh(preprocessing.ori_simulation_mesh[cloth_index_in_object[i]], cloth_density, &thread);

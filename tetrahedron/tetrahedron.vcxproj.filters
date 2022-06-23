@@ -175,6 +175,9 @@
     <ClCompile Include="basic\move_model.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="mesh_struct\graph_color.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="basic\basic_imgui.h">
@@ -370,6 +373,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="basic\move_model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mesh_struct\graph_color.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

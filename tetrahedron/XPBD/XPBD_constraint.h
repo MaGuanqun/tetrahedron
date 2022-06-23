@@ -12,9 +12,9 @@ public:
 	void solveEdgeLengthConstraint(double* p0, double* p1, const double rest_length, const double stiffness, double dt,
 		double inv_mass0, double inv_mass1, double& lambda, const double damping_stiffness, double* initial_p0, double* inital_p1, double& energy);
 	void initial_LBO_EdgeCotWeight(TriangleMeshStruct& mesh_struct, std::vector<double>& lbo_weight, std::vector<VectorXd>& vertex_lbo,
-		std::vector<Vector3d>& rest_Aq);
+		std::vector<double>& rest_mean_curvature_norm);
 	void solveBendingConstraint(double* center_vertex, double vertex_inv_mass, std::array<double, 3>* vertex_position, std::vector<unsigned int>& neighbor_vertex,
-		Vector3d& Aq, double lbo_weight, VectorXd& vertex_lbo, double stiffness, double dt, double* inv_mass, double& lambda,
+		double rest_Aq_norm, double lbo_weight, VectorXd& vertex_lbo, double stiffness, double dt, double* inv_mass, double& lambda,
 		const double damping_stiffness, double* initial_center_vertex, std::array<double, 3>* inital_vertex_position, double& energy);
 	void solveARAPConstraint(std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position,
 		double stiffness, double dt,
@@ -41,7 +41,7 @@ private:
 	void initialEdgeCotWeight(TriangleMeshStruct& mesh_struct, std::vector<double>& edge_cot_weight);
 	void computeLBOWeight(std::vector<double>& lbo_weight, TriangleMeshStruct& mesh_struct);
 	void computeVertexLBO(TriangleMeshStruct& mesh_struct, std::vector<VectorXd>& vertex_lbo, std::vector<double>& edge_cot_weight);
-	void restBendingMeanCurvature(TriangleMeshStruct& mesh_struct, std::vector<Vector3d>& rest_Aq,
+	void restBendingMeanCurvature(TriangleMeshStruct& mesh_struct, std::vector<double>& rest_mean_curvature_norm,
 		std::vector<VectorXd>& vertex_lbo, std::vector<double>& lbo_weight);
 
 	void computeGreenStrainAndPiolaStress(

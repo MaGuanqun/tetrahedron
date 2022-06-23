@@ -20,7 +20,7 @@ public:
 		std::vector<unsigned int>edge;
 		std::vector<unsigned int>neighbor_vertex;
 		std::vector<unsigned int>around_face;
-		//std::vector<int>around_vertex;
+		std::vector<int>around_vertex;
 		bool on_border = false;
 		std::vector<int>tetrahedron; //only for surface vertex
 
@@ -50,7 +50,8 @@ public:
 	std::vector<double>edge_length;// edge length of every triangle
 	std::vector<unsigned int>edge_vertices;//vertex indices of every edge
 
-	
+	std::vector<std::vector<unsigned int>>unconnected_vertex_index; //for bending
+	std::vector<std::vector<unsigned int>>unconnected_edge_index; //for edge_length
 
 	std::vector<std::array<double, 3>> vertex_position;
 	std::vector<std::array<int, 3>> triangle_indices;//if for tetrahedron, store the surface triangle	
@@ -103,7 +104,7 @@ public:
 	void setVertex();
 	void setFace();
 	void setEdge();
-	//void addArounVertex();
+	void addArounVertex();
 
 	std::vector<unsigned int> vertex_index_begin_per_thread;
 
