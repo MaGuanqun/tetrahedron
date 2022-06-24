@@ -44,6 +44,9 @@ private:
 	std::vector<unsigned int> VAO_all_cell, VBO_all_cell, EBO_all_cell;
 	std::vector<unsigned int> VAO_in_a_cell, VBO_in_a_cell, EBO_in_a_cell;
 
+
+
+
 	void setBuffer();	
 	std::vector<int>indices;
 	int draw_vertex_num;

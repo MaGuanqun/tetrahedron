@@ -16,6 +16,8 @@
 #include"basic/opengl_input.h"
 #include"newton_method.h"
 #include"basic/move_model.h"
+#include"mesh_struct/graph_color.h"
+//#include"basic/drawEdge.h"
 
 class Scene
 {
@@ -160,5 +162,7 @@ private:
 	unsigned int time_indicate_for_simu;
 
 	bool use_single_thread = true;
-
+	GraphColor graph_color;
+	void setGroup();
+	//Draw_Edge draw_edge_;
 };

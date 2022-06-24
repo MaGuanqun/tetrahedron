@@ -9,7 +9,7 @@ Scene::Scene()
 	light.diffuse = glm::vec3(0.9, 0.9, 0.9);
 	light.specular = glm::vec3(0.85, 0.85, 0.85);
 
-	time_step = 1.0 / 60.0;
+	time_step = 1.0 / 30.0;
 
 
 	max_force_magnitude = 2.0;
@@ -212,7 +212,6 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].recordInitialMesh(single_cloth_info[i]);
 	}
-
 	//std::array<double, 4>tetrahedron_collision_stiffness_per = {1e1,1e1, 1e1,1e1 };
 	double sigma_limit[2] = { 0.99,1.01 };
 	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density, 5e4, initial_stiffness[ARAP], 0.0, initial_stiffness, sigma_limit,
@@ -220,6 +219,11 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	for (int i = 0; i < tetrahedron_num; ++i) {
 		tetrahedron[i].recordInitialMesh(single_tetrahedron_info);
 	}
+
+	if (use_method == XPBD_) {
+		setGroup();
+	}
+
 
 	move_object.initial(&cloth, &collider, &tetrahedron, &thread);
 
@@ -242,6 +246,15 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 
 	setAveEdgeLength();
 	cursor.createVertices(0.03, camera_center);
+}
+
+void Scene::setGroup()
+{
+	for (int i = 0; i < cloth_num; ++i) {
+		graph_color.graphColorEdgeLength(cloth[i].mesh_struct);
+		graph_color.graphColorBending(cloth[i].mesh_struct);
+	}
+
 }
 
 void Scene::setWireframwColor()
@@ -461,6 +474,8 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 	if (control_parameter[SAVE_OBJ]) {
 		saveObj();
 	}
+
+	//draw_edge_.drawEdge(camera, wireframe_shader, cloth[0].mesh_struct.vertex_position, cloth[0].mesh_struct.unconnected_edge_index[0], glm::vec3(1.0, 0.0, 0.0), cloth[0].mesh_struct.edge_vertices);
 }
 
 void Scene::saveObj()

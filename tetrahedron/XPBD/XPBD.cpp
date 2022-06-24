@@ -10,8 +10,8 @@ XPBD::XPBD()
 
 	damping_coe = 0.0;
 
-	perform_collision = true;
-	max_iteration_number = 400;
+	perform_collision = false;
+	max_iteration_number = 100;
 	outer_max_iteration_number = 100;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
@@ -502,19 +502,21 @@ void XPBD::solveEdgeLengthConstraint()
 		stiffness = cloth->data()[i].length_stiffness;
 		edge_vertex_index = mesh_struct_->edge_vertices.data();
 		mass_inv = mesh_struct_->mass_inv.data();
-		for (unsigned int j = 0; j < size; ++j) {			
-			//std::cout << edge_vertex_index[j << 1] << " " << edge_vertex_index[(j << 1) + 1] << std::endl;
-			//std::cout << *lambda_ << " " << vertex_position[i][edge_vertex_index[j << 1]].data()[0] << " " << vertex_position[i][edge_vertex_index[(j << 1) + 1]].data()[0] << std::endl;
-			XPBD_constraint.solveEdgeLengthConstraint(vertex_pos[edge_vertex_index[j << 1]].data(),
-				vertex_pos[edge_vertex_index[(j << 1) + 1]].data(), mesh_struct_->edge_length[j], stiffness, sub_time_step, mass_inv[edge_vertex_index[j << 1]],
-				mass_inv[edge_vertex_index[(j << 1) + 1]], *lambda_, damp_stiffness, initial_vertex_pos[edge_vertex_index[j << 1]].data(),
-				initial_vertex_pos[edge_vertex_index[(j << 1)+1]].data(), energy_);
-			//std::cout << *lambda_ << " " << vertex_position[i][edge_vertex_index[j << 1]].data()[0] << " " << vertex_position[i][edge_vertex_index[(j << 1) + 1]].data()[0] << std::endl;
-			//std::cout << vertex_pos[edge_vertex_index[j << 1]].data()[0]<<" "<< vertex_pos[edge_vertex_index[(j << 1) + 1]].data()[0]<<" "<< edge_vertex_index[j << 1] << " " << edge_vertex_index[(j << 1) + 1] << std::endl;		
-			lambda_++;
+		//for (unsigned int j = 0; j < size; ++j) {			
+		for (auto k = mesh_struct_->unconnected_edge_index.begin(); k < mesh_struct_->unconnected_edge_index.end(); ++k) {
+			for (auto j = k->begin(); j < k->end(); ++j) {
+				//std::cout << edge_vertex_index[j << 1] << " " << edge_vertex_index[(j << 1) + 1] << std::endl;
+				//std::cout << *lambda_ << " " << vertex_position[i][edge_vertex_index[j << 1]].data()[0] << " " << vertex_position[i][edge_vertex_index[(j << 1) + 1]].data()[0] << std::endl;
+				XPBD_constraint.solveEdgeLengthConstraint(vertex_pos[edge_vertex_index[(*j) << 1]].data(),
+					vertex_pos[edge_vertex_index[((*j) << 1) + 1]].data(), mesh_struct_->edge_length[*j], stiffness, sub_time_step, mass_inv[edge_vertex_index[(*j) << 1]],
+					mass_inv[edge_vertex_index[((*j) << 1) + 1]], *lambda_, damp_stiffness, initial_vertex_pos[edge_vertex_index[(*j) << 1]].data(),
+					initial_vertex_pos[edge_vertex_index[((*j) << 1) + 1]].data(), energy_);
+				//std::cout << *lambda_ << " " << vertex_position[i][edge_vertex_index[j << 1]].data()[0] << " " << vertex_position[i][edge_vertex_index[(j << 1) + 1]].data()[0] << std::endl;
+				//std::cout << vertex_pos[edge_vertex_index[j << 1]].data()[0]<<" "<< vertex_pos[edge_vertex_index[(j << 1) + 1]].data()[0]<<" "<< edge_vertex_index[j << 1] << " " << edge_vertex_index[(j << 1) + 1] << std::endl;		
+				lambda_++;
 
-			energy += energy_;
-			
+				energy += energy_;
+			}
 		}
 	}
 }
@@ -615,12 +617,15 @@ void XPBD::solveBendingConstraint()
 			vertex_lbo_ = vertex_lbo[i].data();
 			vertex_pos = vertex_position[i];
 			initial_vertex_pos = initial_vertex_position[i];
-			for (unsigned int j = 0; j < size; ++j) {
-				XPBD_constraint.solveBendingConstraint(vertex_pos[j].data(), mass_inv[j], vertex_pos, mesh_struct_->vertices[j].neighbor_vertex,
-					rest_mean_curvature_norm_[j], lbo_weight_[j], vertex_lbo_[j], stiffness, sub_time_step, mass_inv, *lambda_, damp_stiffness,
-					initial_vertex_pos[j].data(), initial_vertex_pos, energy_);
-				lambda_++;
-				energy += energy_;
+			//for (unsigned int j = 0; j < size; ++j) {
+			for(auto k= mesh_struct_->unconnected_vertex_index.begin();k<mesh_struct_->unconnected_vertex_index.end(); ++k) {
+				for (auto j = k->begin(); j < k->end(); ++j) {
+					XPBD_constraint.solveBendingConstraint(vertex_pos[*j].data(), mass_inv[*j], vertex_pos, mesh_struct_->vertices[*j].neighbor_vertex,
+						rest_mean_curvature_norm_[*j], lbo_weight_[*j], vertex_lbo_[*j], stiffness, sub_time_step, mass_inv, *lambda_, damp_stiffness,
+						initial_vertex_pos[*j].data(), initial_vertex_pos, energy_);
+					lambda_++;
+					energy += energy_;
+				}			
 			}
 		}
 		else {
