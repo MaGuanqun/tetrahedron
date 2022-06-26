@@ -5665,7 +5665,7 @@ void Collision::initialPair()
 	for (int i = 0; i < collider->size(); ++i) {
 		total_triangle_num += collider->data()[i].mesh_struct.triangle_indices.size();
 	}
-	unsigned int pair_num = 0;
+	
 	if (CCD_compare) {
 		vertex_edge_pair = new unsigned int* [thread_num];
 		vertex_obj_edge_collider_pair = new unsigned int* [thread_num];
@@ -5678,9 +5678,7 @@ void Collision::initialPair()
 			vertex_edge_pair[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 2];// 
 			memset(vertex_edge_pair[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 2));
 			vertex_vertex_pair[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 8];// 
-			memset(vertex_vertex_pair[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 8));
-
-			pair_num += estimate_coeff_for_pair_num * total_triangle_num / 4;
+			memset(vertex_vertex_pair[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 8));		
 
 			if (has_collider) {
 				vertex_obj_edge_collider_pair[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 2];
@@ -5692,13 +5690,20 @@ void Collision::initialPair()
 				vertex_vertex_pair_collider[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 8];
 				memset(vertex_vertex_pair_collider[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 8));
 
-				pair_num += estimate_coeff_for_pair_num * total_triangle_num / 8;
+				
 			}
 			else {
 				vertex_obj_edge_collider_pair[i] = new unsigned int[1];
 				vertex_collider_edge_obj_pair[i] = new unsigned int[1];
 				vertex_vertex_pair_collider[i] = new unsigned int[1];
 			}
+		}
+	}
+	unsigned int pair_num = 0;
+	for (unsigned int i = 0; i < thread_num; ++i) {
+		pair_num += estimate_coeff_for_pair_num * total_triangle_num / 4;
+		if (has_collider) {
+			pair_num += estimate_coeff_for_pair_num * total_triangle_num / 8;
 		}
 	}
 	//target_position_and_stiffness.resize(thread_num);
