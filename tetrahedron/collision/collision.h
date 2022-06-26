@@ -27,7 +27,7 @@ public:
 	double collision_time;
 
 	void initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread, Floor* floor,
-		double* tolerance_ratio);
+		double* tolerance_ratio, unsigned int use_method);
 	void initialDHatTolerance(double ave_edge_length);
 	void findAllTrianglePairs(int thread_No);
 	void globalCollision();
@@ -565,5 +565,6 @@ private:
 	void floorCollisionVertex(int thread_No);
 	void re_FloorCollisionVertex(int thread_No);
 
-
+	unsigned int use_method;
+	bool CCD_compare=false;
 };

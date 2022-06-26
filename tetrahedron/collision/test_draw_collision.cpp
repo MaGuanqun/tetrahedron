@@ -30,7 +30,7 @@ void TestDrawCollision::initial(std::vector<Cloth>* cloth, std::vector<Collider>
 		break;
 	default:
 		collision = new Collision();
-		collision->initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio);
+		collision->initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio,simulation_method);
 		collision->spatial_hashing.initialOriHashValue();
 		break;
 	}

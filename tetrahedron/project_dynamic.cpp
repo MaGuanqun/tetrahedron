@@ -36,7 +36,7 @@ void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron
 	tetrahedron_begin_obj_index = cloth->size();
 	//collision.draw_culling = draw_culling_;
 
-	collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio);
+	collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio, PD_);
 	total_collider_num = collider->size();
 	this->collider = collider;
 	

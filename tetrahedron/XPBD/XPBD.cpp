@@ -65,7 +65,7 @@ void XPBD::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetra
 	energy_per_thread.resize(thread->thread_num,0.0);
 	if (perform_collision) {
 		collision.energy = energy_per_thread.data();
-		collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio);
+		collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio, XPBD_);
 		collision.setParameter(&lambda_collision,lambda.data()+ constraint_index_start[3], collision_constraint_index_start.data(), damping_coe, sub_time_step);
 	}
 

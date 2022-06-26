@@ -1,9 +1,10 @@
 #include"collision.h"
 
 void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider,
-	std::vector<Tetrahedron>* tetrahedron, Thread* thread, Floor* floor,  double* tolerance_ratio)
+	std::vector<Tetrahedron>* tetrahedron, Thread* thread, Floor* floor,  double* tolerance_ratio, unsigned int use_method)
 {
 	//dcd.test();
+	this->use_method = use_method;
 
 	testNearestPoint();
 	conservative_rescaling = 0.9;
@@ -18,7 +19,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	this->tetrahedron = tetrahedron;
 	this->thread = thread;
 	this->floor = floor;
-
+	thread_num = thread->thread_num;
 	max_index_number_in_one_cell = 1200;
 	max_index_number_in_one_cell_collider = 400;
 	estimate_coeff_for_pair_num = 200;
@@ -28,7 +29,10 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	if (use_BVH) {
 		initialBVH(cloth, collider, tetrahedron, thread);
 	}
-	initialTargetPos(cloth, tetrahedron, thread);
+
+	if (use_method == PD_) {
+		initialTargetPos(cloth, tetrahedron, thread);
+	}
 	initialSpatialHashing(cloth, collider, tetrahedron, thread, tolerance_ratio);
 
 	this->tolerance_ratio = tolerance_ratio;
@@ -36,8 +40,9 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	//testPairEven();
 
 	initialPair();
-
-	initialNeighborPrimitive();
+	if (use_BVH) {
+		initialNeighborPrimitive();
+	}
 	collision_time_thread.resize(thread->thread_num);
 
 	initialCollidePairInfo();
@@ -85,23 +90,23 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 
 
 
+	if (CCD_compare) {
+		vertex_for_render_eigen.resize(total_obj_num);
+		vertex_position_eigen.resize(total_obj_num);
+		for (unsigned int i = 0; i < total_obj_num; ++i) {
+			if (i < cloth->size()) {
+				vertex_for_render_eigen[i].resize(cloth->data()[i].mesh_struct.vertex_for_render.size());
+				vertex_position_eigen[i].resize(cloth->data()[i].mesh_struct.vertex_for_render.size());
 
-	vertex_for_render_eigen.resize(total_obj_num);
-	vertex_position_eigen.resize(total_obj_num);
-	for (unsigned int i = 0; i < total_obj_num; ++i) {
-		if (i < cloth->size()) {
-			vertex_for_render_eigen[i].resize(cloth->data()[i].mesh_struct.vertex_for_render.size());
-			vertex_position_eigen[i].resize(cloth->data()[i].mesh_struct.vertex_for_render.size());
-		
+			}
+			else {
+				vertex_for_render_eigen[i].resize(tetrahedron->data()[i - cloth->size()].mesh_struct.vertex_for_render.size());
+				vertex_position_eigen[i].resize(tetrahedron->data()[i - cloth->size()].mesh_struct.vertex_for_render.size());
+
+			}
 		}
-		else {
-			vertex_for_render_eigen[i].resize(tetrahedron->data()[i- cloth->size()].mesh_struct.vertex_for_render.size());
-			vertex_position_eigen[i].resize(tetrahedron->data()[i- cloth->size()].mesh_struct.vertex_for_render.size());
-			
-		}
+		updateEigenPosition();
 	}
-	updateEigenPosition();
-
 
 	test_point_triangle_record_true_number.resize(thread_num, 0);
 	test_edge_edge_record_true_number.resize(thread_num, 0);
@@ -376,7 +381,7 @@ void Collision::initialNeighborPrimitive()
 
 void Collision::initialTargetPos(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, Thread* thread)
 {
-	thread_num = thread->thread_num;
+	
 	obj_target_pos_per_thread.resize(thread_num);
 	for (int i = 0; i < obj_target_pos_per_thread.size(); ++i) {
 		obj_target_pos_per_thread[i].initialSet(total_obj_num);
@@ -5660,52 +5665,49 @@ void Collision::initialPair()
 	for (int i = 0; i < collider->size(); ++i) {
 		total_triangle_num += collider->data()[i].mesh_struct.triangle_indices.size();
 	}
+	unsigned int pair_num = 0;
+	if (CCD_compare) {
+		vertex_edge_pair = new unsigned int* [thread_num];
+		vertex_obj_edge_collider_pair = new unsigned int* [thread_num];
+		vertex_collider_edge_obj_pair = new unsigned int* [thread_num];
 
-	vertex_edge_pair = new unsigned int* [thread_num];
-	vertex_obj_edge_collider_pair = new unsigned int* [thread_num];
-	vertex_collider_edge_obj_pair = new unsigned int* [thread_num];
+		vertex_vertex_pair = new unsigned int* [thread_num];
+		vertex_vertex_pair_collider = new unsigned int* [thread_num];
 
-	vertex_vertex_pair = new unsigned int* [thread_num];
-	vertex_vertex_pair_collider = new unsigned int* [thread_num];
+		for (unsigned int i = 0; i < thread_num; ++i) {
+			vertex_edge_pair[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 2];// 
+			memset(vertex_edge_pair[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 2));
+			vertex_vertex_pair[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 8];// 
+			memset(vertex_vertex_pair[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 8));
 
+			pair_num += estimate_coeff_for_pair_num * total_triangle_num / 4;
+
+			if (has_collider) {
+				vertex_obj_edge_collider_pair[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 2];
+				memset(vertex_obj_edge_collider_pair[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 2));
+
+				vertex_collider_edge_obj_pair[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 2];
+				memset(vertex_collider_edge_obj_pair[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 2));
+
+				vertex_vertex_pair_collider[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 8];
+				memset(vertex_vertex_pair_collider[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 8));
+
+				pair_num += estimate_coeff_for_pair_num * total_triangle_num / 8;
+			}
+			else {
+				vertex_obj_edge_collider_pair[i] = new unsigned int[1];
+				vertex_collider_edge_obj_pair[i] = new unsigned int[1];
+				vertex_vertex_pair_collider[i] = new unsigned int[1];
+			}
+		}
+	}
 	//target_position_and_stiffness.resize(thread_num);
-	//target_position_index.resize(thread_num);
+//target_position_index.resize(thread_num);
 	point_triangle_target_pos_index.resize(thread_num);
 	//point_collider_triangle_target_pos_index.resize(thread_num);
 	point_triangle_collider_target_pos_index.resize(thread_num);
 	edge_edge_target_pos_index.resize(thread_num);
 	//edge_edge_collider_target_pos_index.resize(thread_num);
-
-	unsigned int pair_num=0;
-
-	for (unsigned int i = 0; i < thread_num; ++i) {
-		vertex_edge_pair[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 2];// 
-		memset(vertex_edge_pair[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 2));
-		vertex_vertex_pair[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 8];// 
-		memset(vertex_vertex_pair[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 8));
-
-		pair_num += estimate_coeff_for_pair_num * total_triangle_num / 4;
-
-		if (has_collider) {
-			vertex_obj_edge_collider_pair[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 2];
-			memset(vertex_obj_edge_collider_pair[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 2));
-
-			vertex_collider_edge_obj_pair[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 2];
-			memset(vertex_collider_edge_obj_pair[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 2));
-
-			vertex_vertex_pair_collider[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 8];
-			memset(vertex_vertex_pair_collider[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 8));
-
-			pair_num += estimate_coeff_for_pair_num * total_triangle_num / 8;
-		}
-		else {
-			vertex_obj_edge_collider_pair[i] = new unsigned int[1];
-			vertex_collider_edge_obj_pair[i] = new unsigned int[1];
-			vertex_vertex_pair_collider[i] = new unsigned int[1];
-		}
-	}
-
-
 	for (unsigned int i = 0; i < thread_num; ++i) {
 		//target_position_and_stiffness[i].resize(pair_num * 4);
 		//target_position_index[i].resize(pair_num * 4 + 1);
