@@ -260,37 +260,41 @@ void XPBD::PBD_IPCSolve()
 void XPBD::solveByXPBD()
 {
 	//if (sub_step_num == 1) {
-		thread->assignTask(this, SET_POS_PREDICT);
-		if (perform_collision) {
-			collision.collisionCulling();
-			collision.getCollisionPair();
-			initialCollisionConstriantNum();
-		}
-
-		std::cout << "test1" << std::endl;
+		//thread->assignTask(this, SET_POS_PREDICT);
+		//if (perform_collision) {
+		//	collision.collisionCulling();
+		//	collision.getCollisionPair();
+		//	initialCollisionConstriantNum();
+		//}
 	//}
 	iteration_number = 0;
 	for (unsigned int sub_step = 0; sub_step < sub_step_num; ++sub_step) {
 		memset(lambda.data(), 0, 8 * lambda.size());
 		inner_iteration_number = 0;
 		if (sub_step_num > 1) {
-			if (control_parameter[START_TEST]) {
-				if (!collider->empty()) {
-					move_model->sceneRotateCapsule(*time_indicate_for_simu, collider->data()[0].mesh_struct.vertex_for_render, collider->data()[0].mesh_struct.vertex_position, mesh_struct[0], false, sub_step_num);
-				}
-			}
+
 			if (perform_collision) {
-				//if (sub_step % prediction_sub_step_size == 0) {
-				//	thread->assignTask(this, SET_POS_PREDICT_SUB_TIME_STEP_FOR_CULLING);
-				//	collision.collisionCulling();
-				//	collision.getCollisionPair();
-				//	initialCollisionConstriantNum();
-				//}
+				if (sub_step % prediction_sub_step_size == 0) {
+					if (control_parameter[START_TEST]) {
+						if (!collider->empty()) {
+							move_model->sceneRotateCapsule(*time_indicate_for_simu, collider->data()[0].mesh_struct.vertex_for_render, collider->data()[0].mesh_struct.vertex_position, mesh_struct[0], false, sub_step_num * prediction_sub_step_size);
+						}
+					}
+					thread->assignTask(this, SET_POS_PREDICT_SUB_TIME_STEP_FOR_CULLING);
+					collision.collisionCulling();
+					collision.getCollisionPair();
+					initialCollisionConstriantNum();
+				}
 				//memset(lambda_collision.data(), 0, 8 * lambda_collision.size());
 			}
 			if (prediction_sub_step_size >1) {
 				thread->assignTask(this, SET_POS_PREDICT_SUB_TIME_STEP);
-			}
+				if (control_parameter[START_TEST]) {
+					if (!collider->empty()) {
+						move_model->sceneRotateCapsule(*time_indicate_for_simu, collider->data()[0].mesh_struct.vertex_for_render, collider->data()[0].mesh_struct.vertex_position, mesh_struct[0], false, sub_step_num);
+					}
+				}
+			}			
 		}
 		//memset(lambda_collision.data(), 0, 8 * lambda_collision.size());
 		while (!convergeCondition(inner_iteration_number)) {
@@ -308,7 +312,6 @@ void XPBD::solveByXPBD()
 		updatePosition();
 		updateRenderNormal();
 	}
-	std::cout << "test2" << std::endl;
 	updateRenderVertexNormal();
 }
 
