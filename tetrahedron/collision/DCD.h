@@ -90,11 +90,11 @@ public:
 		double* initial_compare_edge_vertex_1, double tolerance, double mas_inv_e_0_0, double mass_inv_e_0_1, double mass_inv_e_1_0, double mass_inv_e_1_1,
 		double* delta_edge_0, double* delta_edge_1, double* delta_compare_edge_0, double* delta_compare_edge_1);
 
-	void XPBDpointTriangleCollider(double* initial_position, double* current_position,
+	bool XPBDpointTriangleCollider(double* initial_position, double* current_position,
 		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
 		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
 		double* initial_triangle_normal, double* current_triangle_normal, double mass_inv_v,
-		double tolerance, double& lambda, double stiffness, double damping_stiffness, double dt, double& energy);
+		double tolerance, double* delta_x);
 
 	
 	void XPBDFloor(double* initial_position, double* current_position, unsigned int dimension, bool normal_direction, double mass_inv_v,
@@ -165,7 +165,7 @@ private:
 	void XPBDcalDistancePointTriangleCollider(double* initial_position,
 		double* current_position, double mass_inv_vertex,
 		double* current_triangle_normal, double constraint, double tolerance,
-		double& lambda, double stiffness, double damping_stiffness, double dt, double& energy);
+		double* delta_x);
 	bool checkIfCollidePointTriangleCollider(double* initial_point_position, double* current_point_position,
 		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
 		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,

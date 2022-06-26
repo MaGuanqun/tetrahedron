@@ -1730,15 +1730,13 @@ void Collision::XPBDsolveCollisionConstraint(unsigned int sub_step_no)
 	if (floor->exist) {
 		XPBDfloorCollisionResponse();
 	}
+	resetDeltaX();
+
 	if (has_collider) {
 		for (unsigned int i = 0; i < thread_num; ++i) {
 			solveXPBDpointTriangleColliderResponse(i);
 		}
 	}
-
-
-	resetDeltaX();
-
 	if (sub_step_no % 2 == 0) {
 		for (unsigned int i = 0; i < thread_num; ++i) {
 			solveXPBDpointTriangleResponse(i);
@@ -2885,18 +2883,23 @@ void Collision::solveXPBDpointTriangleColliderResponse(double*& lambda_, unsigne
 		stiffness = stiffness_initial;
 		pair = target_pos_index_record_ + i;
 		indices = triangle_indices_collider[*(pair + 3)][*(pair + 2)].data();
-		dcd.XPBDpointTriangleCollider(vertex_for_render[*(pair + 1)][*pair].data(), vertex_position[*(pair + 1)][*pair].data(),
+		if(dcd.XPBDpointTriangleCollider(vertex_for_render[*(pair + 1)][*pair].data(), vertex_position[*(pair + 1)][*pair].data(),
 			vertex_for_render_collider[*(pair + 3)][indices[0]].data(), vertex_for_render_collider[*(pair + 3)][indices[1]].data(),
 			vertex_for_render_collider[*(pair + 3)][indices[2]].data(),
 			vertex_position_collider[*(pair + 3)][indices[0]].data(), vertex_position_collider[*(pair + 3)][indices[1]].data(),
 			vertex_position_collider[*(pair + 3)][indices[2]].data(),
 			triangle_normal_render_collider[*(pair + 3)][*(pair + 2)].data(),
 			triangle_normal_collider[*(pair + 3)][*(pair + 2)].data(),
-			mass_inv[*(pair + 1)][*pair],
+			mass_inv[*(pair + 1)][*pair], tolerance,
 			//1.0,
-			tolerance, *lambda_,stiffness, damp_collision[*(pair + 1)][SELF_POINT_TRIANGLE], dt_, energy_);
-		lambda_++;
-		energy += energy_;
+			delta_x[*(pair + 1)][*pair].data())) {
+
+			delta_x_num[*(pair + 1)][*pair]++;
+
+		}
+			//, *lambda_,stiffness, damp_collision[*(pair + 1)][SELF_POINT_TRIANGLE], dt_, energy_);
+		//lambda_++;
+		//energy += energy_;
 	}
 }
 

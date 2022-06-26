@@ -6,13 +6,13 @@ XPBD::XPBD()
 {
 	gravity_ = 9.81;
 	sub_step_num =20;
-	prediction_sub_step_size = 4;
+	prediction_sub_step_size = 2;
 	iteration_number =100;
 
 	damping_coe = 0.0;
 
 	perform_collision = true;
-	max_iteration_number = 2;
+	max_iteration_number = 3;
 	outer_max_iteration_number = 100;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
