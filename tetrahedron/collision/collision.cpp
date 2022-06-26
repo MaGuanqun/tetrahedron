@@ -1,7 +1,7 @@
 #include"collision.h"
 
 void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider,
-	std::vector<Tetrahedron>* tetrahedron, Thread* thread, Floor* floor,  double* tolerance_ratio, unsigned int use_method)
+	std::vector<Tetrahedron>* tetrahedron, Thread* thread, Floor* floor, double* tolerance_ratio, unsigned int use_method)
 {
 	//dcd.test();
 	this->use_method = use_method;
@@ -66,11 +66,11 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	edge_edge_count.resize(thread_num, 0);
 	vertex_triangle_count.resize(thread_num, 0);
 
-	vertex_triangle_pair_index_start_per_thread.resize(2 * (thread_num + 1),0);
-	vertex_obj_triangle_collider_pair_index_start_per_thread.resize(2 * (thread_num + 1),0);
-	vertex_collider_triangle_obj_pair_index_start_per_thread.resize(2 * (thread_num + 1),0);
-	edge_edge_pair_index_start_per_thread.resize(2 * (thread_num + 1),0);
-	edge_edge_pair_collider_index_start_per_thread.resize(2 * (thread_num + 1),0);
+	vertex_triangle_pair_index_start_per_thread.resize(2 * (thread_num + 1), 0);
+	vertex_obj_triangle_collider_pair_index_start_per_thread.resize(2 * (thread_num + 1), 0);
+	vertex_collider_triangle_obj_pair_index_start_per_thread.resize(2 * (thread_num + 1), 0);
+	edge_edge_pair_index_start_per_thread.resize(2 * (thread_num + 1), 0);
+	edge_edge_pair_collider_index_start_per_thread.resize(2 * (thread_num + 1), 0);
 
 	vertex_edge_pair_index_start_per_thread.resize(2 * (thread_num + 1), 0);
 	vertex_obj_edge_collider_pair_index_start_per_thread.resize(2 * (thread_num + 1), 0);
@@ -84,7 +84,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	edge_edge_target_position_element_start_per_thread.resize(2 * (thread_num + 1), 0);
 	point_triangle_collider_target_position_element_start_per_thread.resize(2 * (thread_num + 1), 0);
 	edge_edge_collider_target_position_element_start_per_thread.resize(2 * (thread_num + 1), 0);
-	
+
 
 	//target_position_start_per_thread.resize(2 * (thread_num + 1), 0);
 
@@ -118,8 +118,34 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 		memcpy(collision_stiffness, cloth->data()[0].collision_stiffness, 32);
 	}
 
-	
+	if (use_method == XPBD_) {
+		initialDeltaX_XPBD();
+		resetDeltaX();
+	}
 
+}
+
+
+void Collision::initialDeltaX_XPBD()
+{
+	delta_x.resize(total_obj_num);
+	delta_x_num.resize(total_obj_num);
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		delta_x[i].resize(cloth->data()[i].mesh_struct.vertex_position.size());
+		delta_x_num[i].resize(cloth->data()[i].mesh_struct.vertex_position.size());
+	}
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		delta_x[i + cloth->size()].resize(tetrahedron->data()[i].mesh_struct.vertex_position.size());
+		delta_x_num[i + cloth->size()].resize(tetrahedron->data()[i].mesh_struct.vertex_position.size());
+	}
+}
+
+void Collision::resetDeltaX()
+{
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		memset(delta_x[i][0].data(), 0, 24 * delta_x[i].size());
+		memset(delta_x_num[i].data(), 0, 4 * delta_x[i].size());
+	}
 }
 
 
@@ -1118,9 +1144,9 @@ void Collision::collisionCulling()
 	//}
 	//std::cout << "total e-e pair " << num << std::endl;
 	for (unsigned int j = 0; j < thread_num; ++j) {
-		//spatial_hashing.vertex_triangle_pair[j][0] = 0;
-		//spatial_hashing.edge_edge_pair[j][0] = 0;
-//		spatial_hashing.vertex_obj_triangle_collider_pair[j][0] = 0;
+		spatial_hashing.vertex_triangle_pair[j][0] = 0;
+		spatial_hashing.edge_edge_pair[j][0] = 0;
+		//spatial_hashing.vertex_obj_triangle_collider_pair[j][0] = 0;
 	}
 
 	setPairIndexEveryThread();
@@ -1709,6 +1735,10 @@ void Collision::XPBDsolveCollisionConstraint(unsigned int sub_step_no)
 			solveXPBDpointTriangleColliderResponse(i);
 		}
 	}
+
+
+	resetDeltaX();
+
 	if (sub_step_no % 2 == 0) {
 		for (unsigned int i = 0; i < thread_num; ++i) {
 			solveXPBDpointTriangleResponse(i);
@@ -1726,8 +1756,30 @@ void Collision::XPBDsolveCollisionConstraint(unsigned int sub_step_no)
 		}
 	}
 
+	addDeltaToPosition();
+
 }
 
+
+
+void Collision::addDeltaToPosition()
+{
+	unsigned int* delta_x_num_;
+	std::array<double, 3>* delta_x_;
+	int vertex_num;
+	std::array<double, 3>* vertex_pos;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		vertex_num = delta_x_num[i].size();
+		delta_x_num_ = delta_x_num[i].data();
+		vertex_pos = vertex_position[i];
+		delta_x_ = delta_x[i].data();
+		for (unsigned int j = 0; j < vertex_num; ++j) {
+			if (delta_x_num_[j]) {
+				ACCUMULATE_SUM_WITH_COE_DEV(vertex_pos[j], delta_x_num_[j], delta_x_[j]);
+			}
+		}
+	}
+}
 
 
 void Collision::XPBDfloorCollisionResponse()
@@ -2319,7 +2371,7 @@ void Collision::solveXPBDpointTriangleResponse(double*&lambda_, unsigned int pai
 		stiffness = stiffness_initial;
 		pair = target_pos_index_record_ + i;
 		indices = triangle_indices[*(pair + 3)][*(pair + 2)].data();
-		dcd.XPBDpointSelfTriangle(vertex_for_render[*(pair + 1)][*pair].data(), vertex_position[*(pair + 1)][*pair].data(),
+		if (dcd.XPBDpointSelfTriangle(vertex_for_render[*(pair + 1)][*pair].data(), vertex_position[*(pair + 1)][*pair].data(),
 			vertex_for_render[*(pair + 3)][indices[0]].data(), vertex_for_render[*(pair + 3)][indices[1]].data(),
 			vertex_for_render[*(pair + 3)][indices[2]].data(),
 			vertex_position[*(pair + 3)][indices[0]].data(), vertex_position[*(pair + 3)][indices[1]].data(),
@@ -2328,7 +2380,14 @@ void Collision::solveXPBDpointTriangleResponse(double*&lambda_, unsigned int pai
 			tolerance,
 			mass_inv[*(pair + 1)][*pair], mass_inv[*(pair + 3)][indices[0]], mass_inv[*(pair + 3)][indices[1]], mass_inv[*(pair + 3)][indices[2]],
 			//1.0, 1.0, 1.0, 1.0,
-			triangle_normal_magnitude_reciprocal[*(pair + 3)][*(pair + 2)], *lambda_,stiffness, damp_collision[*(pair + 1)][SELF_POINT_TRIANGLE], dt_, energy_);
+			triangle_normal_magnitude_reciprocal[*(pair + 3)][*(pair + 2)], delta_x[*(pair + 1)][*pair].data(),delta_x[*(pair + 3)][indices[0]].data(),
+			delta_x[*(pair + 3)][indices[1]].data(),delta_x[*(pair + 3)][indices[2]].data()))
+		{
+			delta_x_num[*(pair + 1)][*pair]++;
+			delta_x_num[*(pair + 3)][indices[0]]++;
+			delta_x_num[*(pair + 3)][indices[1]]++;
+			delta_x_num[*(pair + 3)][indices[2]]++;
+		}
 		lambda_++;
 		energy += energy_;
 	}
@@ -2446,14 +2505,20 @@ void Collision::solveXPBDedgeEdgeResponse(double*& lambda_, unsigned int pair_th
 		pair = target_pos_index_record_ + i;
 		indices = edge_vertices[*(pair + 1)] + ((*(pair)) << 1);
 		compare_indices = edge_vertices[*(pair + 3)] + ((*(pair + 2)) << 1);
-		dcd.XPBDedgeEdge(vertex_position[*(pair + 1)][*indices].data(), vertex_position[*(pair + 1)][*(indices + 1)].data(),
+		if (dcd.XPBDedgeEdge(vertex_position[*(pair + 1)][*indices].data(), vertex_position[*(pair + 1)][*(indices + 1)].data(),
 			vertex_for_render[*(pair + 1)][*indices].data(), vertex_for_render[*(pair + 1)][*(indices + 1)].data(),
 			vertex_position[*(pair + 3)][*compare_indices].data(), vertex_position[*(pair + 3)][*(compare_indices + 1)].data(),
 			vertex_for_render[*(pair + 3)][*compare_indices].data(), vertex_for_render[*(pair + 3)][*(compare_indices + 1)].data(),
 			tolerance,
 			//1.0, 1.0, 1.0, 1.0,
 			mass_inv[*(pair + 1)][*indices], mass_inv[*(pair + 1)][*(indices + 1)], mass_inv[*(pair + 3)][*compare_indices], mass_inv[*(pair + 3)][*(compare_indices + 1)],
-			*lambda_, stiffness, damp_collision[*(pair + 1)][SELF_EDGE_EDGE], dt_, energy_);
+			delta_x[*(pair + 1)][*indices].data(), delta_x[*(pair + 1)][*(indices+1)].data(), delta_x[*(pair + 3)][*compare_indices].data(),
+			delta_x[*(pair + 3)][*(compare_indices+1)].data())) {
+			delta_x_num[*(pair + 1)][*indices]++;
+			delta_x_num[*(pair + 1)][*(indices+1)]++;
+			delta_x_num[*(pair + 3)][*compare_indices]++;
+			delta_x_num[*(pair + 3)][*(compare_indices+1)]++;
+		}
 		energy += energy_;
 		lambda_ ++ ;
 	}

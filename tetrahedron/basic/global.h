@@ -191,6 +191,14 @@ dest[0] += coe* v0[0];\
 dest[1] += coe* v0[1];\
 dest[2] += coe* v0[2];
 
+
+#undef ACCUMULATE_SUM_WITH_COE_DEV
+#define ACCUMULATE_SUM_WITH_COE_DEV(dest,coe,v0)\
+dest[0] += v0[0]/coe;\
+dest[1] += v0[1]/coe;\
+dest[2] += v0[2]/coe;
+
+
 #undef SQUARED_LENGTH
 #define SQUARED_LENGTH(v0,v1) ((v0[0]-v1[0])*(v0[0]-v1[0])+ (v0[1]-v1[1])*(v0[1]-v1[1]) + (v0[2]-v1[2])*(v0[2]-v1[2]))
 

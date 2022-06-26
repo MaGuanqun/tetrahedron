@@ -567,4 +567,11 @@ private:
 
 	unsigned int use_method;
 	bool CCD_compare=false;
+
+	std::vector<std::vector<std::array<double, 3>>> delta_x;
+	std::vector<std::vector<unsigned int>> delta_x_num;
+	void initialDeltaX_XPBD();
+	void resetDeltaX();
+
+	void addDeltaToPosition();
 };
