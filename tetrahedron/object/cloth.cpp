@@ -234,15 +234,15 @@ void Cloth::initialMouseChosenVertex()
 
 void Cloth::setAnchor()
 {
-	//mesh_struct.anchor_vertex.push_back(0);
-	//mesh_struct.anchor_vertex.push_back(114);
-	//mesh_struct.anchor_vertex.push_back(8 * 115);
-	//mesh_struct.anchor_vertex.push_back(9 * 115-1);
+	mesh_struct.anchor_vertex.push_back(0);
+	mesh_struct.anchor_vertex.push_back(114);
+	mesh_struct.anchor_vertex.push_back(8 * 115);
+	mesh_struct.anchor_vertex.push_back(9 * 115-1);
 
 	//mesh_struct.anchor_vertex.push_back(50*50-1);
 	//mesh_struct.anchor_vertex.push_back(50 * 49);
-	mesh_struct.anchor_vertex.push_back(0);
-	mesh_struct.anchor_vertex.push_back(49);
+	//mesh_struct.anchor_vertex.push_back(0);
+	//mesh_struct.anchor_vertex.push_back(49);
 	// 
 //	mesh_struct.anchor_vertex.push_back(0);
 	//mesh_struct.mass_inv[31*31-1] = 0.0;

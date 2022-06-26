@@ -675,7 +675,10 @@ job Thread::create_task(XPBD* func, int thread_id, XPBDFunc function_type)
         k = job([func, thread_id]() {func->setPosPredict(thread_id); });
         break;
     case SET_POS_PREDICT_SUB_TIME_STEP:
-        k = job([func, thread_id]() {func->setPosPredictSubTimeStep(thread_id); });
+        k = job([func, thread_id]() {func->setPosPredictSubTimeStep(thread_id,false); });
+        break;
+    case SET_POS_PREDICT_SUB_TIME_STEP_FOR_CULLING:
+        k = job([func, thread_id]() {func->setPosPredictSubTimeStep(thread_id, true); });
         break;
     case XPBD_VELOCITY:
         k = job([func, thread_id]() {func->computeVelocity(thread_id); });

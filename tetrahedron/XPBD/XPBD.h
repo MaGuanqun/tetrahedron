@@ -11,7 +11,7 @@
 #include"../object/collider.h"
 #include"../collision/collision.h"
 #include"XPBD_constraint.h"
-
+#include"../basic/move_model.h"
 
 using namespace Eigen;
 using namespace denseOperation;
@@ -28,7 +28,7 @@ public:
 		Thread* thread, double* tolerance_ratio);
 	size_t* time_stamp;
 	void setPosPredict(int thread_No);
-	void setPosPredictSubTimeStep(int thread_No);
+	void setPosPredictSubTimeStep(int thread_No, bool predictLargerStep);
 	void computeVelocity(int thread_No);
 	unsigned int iteration_number;
 	unsigned int inner_iteration_number;
@@ -43,6 +43,10 @@ public:
 	void PBD_IPCSolve();
 	Collision collision;
 
+	unsigned int* time_indicate_for_simu;
+
+	MoveModel* move_model;
+	bool* control_parameter;
 private:
 	double gravity[3];
 
@@ -80,7 +84,7 @@ private:
 	void initialClothBending();
 	void solveBendingConstraint();
 	void solveEdgeLengthConstraint();
-	void solveConstraint();
+	void solveConstraint(unsigned int sub_step_no);
 	void setConstraintIndex();
 	void solveTetStrainConstraint();
 
@@ -130,6 +134,8 @@ private:
 	std::vector<double>energy_per_thread;
 
 	double energy_converge_ratio;
+
+	int prediction_sub_step_size;
 
 };
 

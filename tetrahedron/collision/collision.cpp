@@ -1694,22 +1694,33 @@ void Collision::reSolveCollisionConstraintDCD()
 }
 
 
-void Collision::XPBDsolveCollisionConstraint()
+void Collision::XPBDsolveCollisionConstraint(unsigned int sub_step_no)
 {
+	if (floor->exist) {
+		XPBDfloorCollisionResponse();
+	}
 	if (has_collider) {
 		for (unsigned int i = 0; i < thread_num; ++i) {
 			solveXPBDpointTriangleColliderResponse(i);
 		}
 	}
-	if (floor->exist) {
-		XPBDfloorCollisionResponse();
+	if (sub_step_no % 2 == 0) {
+		for (unsigned int i = 0; i < thread_num; ++i) {
+			solveXPBDpointTriangleResponse(i);
+		}
+		for (unsigned int i = 0; i < thread_num; ++i) {
+			solveXPBDedgeEdgeResponse(i);
+		}
 	}
-	for (unsigned int i = 0; i < thread_num; ++i) {
-		solveXPBDpointTriangleResponse(i);
+	else {
+		for (int i = thread_num-1; i >= 0; --i) {
+			solveXPBDpointTriangleResponse(i);
+		}
+		for (int i = thread_num - 1; i >= 0; --i) {
+			solveXPBDedgeEdgeResponse(i);
+		}
 	}
-	for (unsigned int i = 0; i < thread_num; ++i) {
-		solveXPBDedgeEdgeResponse(i);
-	}
+
 }
 
 

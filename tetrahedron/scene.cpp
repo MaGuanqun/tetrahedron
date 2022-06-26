@@ -17,6 +17,10 @@ Scene::Scene()
 	last_output_obj_stamp = -1;
 	time_stamp = 0;
 	time_indicate_for_simu = 0;
+
+	xpbd.time_indicate_for_simu = &time_indicate_for_simu;
+	xpbd.move_model = &move_model;
+	
 	genShader();
 
 
@@ -148,6 +152,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 {
 	use_method =10;
 	this->control_parameter = control_parameter;
+	xpbd.control_parameter = control_parameter;
 	if (control_parameter[USE_XPBD]) {
 		use_method = XPBD_;
 	}
@@ -250,11 +255,21 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 
 void Scene::setGroup()
 {
-	for (int i = 0; i < cloth_num; ++i) {
-		graph_color.graphColorEdgeLength(cloth[i].mesh_struct);
-		graph_color.graphColorBending(cloth[i].mesh_struct);
-	}
-
+	//time_t t = clock();
+	//for (unsigned int k = 0; k < 10; ++k) {
+		for (int i = 0; i < cloth_num; ++i) {
+			for (unsigned int j = 0; j < cloth[i].mesh_struct.unconnected_edge_index.size(); j++) {
+				cloth[i].mesh_struct.unconnected_edge_index[j].clear();
+			}
+			for (unsigned int j = 0; j < cloth[i].mesh_struct.unconnected_vertex_index.size(); j++) {
+				cloth[i].mesh_struct.unconnected_vertex_index.clear();
+			}
+			graph_color.graphColorEdgeLength(cloth[i].mesh_struct);
+			graph_color.graphColorBending(cloth[i].mesh_struct);
+		}
+	//}
+	//time_t t2 = clock() - t;
+	//std::cout << "time " << t2 << std::endl;
 }
 
 void Scene::setWireframwColor()
@@ -588,8 +603,9 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 		}
 		if (control_parameter[START_TEST]) {
 			time_indicate_for_simu++;
+
 			if (!collider.empty()) {
-				move_model.sceneRotateCapsule(time_indicate_for_simu, collider[0].mesh_struct.vertex_position, &cloth[0].mesh_struct, use_method == PD_);
+				move_model.sceneRotateCapsule(time_indicate_for_simu, collider[0].mesh_struct.vertex_for_render, collider[0].mesh_struct.vertex_position, &cloth[0].mesh_struct, use_method == PD_,1.0);
 			}
 		}
 		time_t t0 = clock();

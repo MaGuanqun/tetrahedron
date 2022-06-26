@@ -94,17 +94,17 @@ public:
 		//	}
 		//}
 
-		int col_num = 50;
-		int row_num = 50;
-		for (int j = 0; j < row_num; j++) {
-			for (int i = 0; i < col_num; i++) {
-				//mesh.vertices.push_back(std::array<double, 3>{ 0.7 * (double)j / (double)(row_num - 1) + 0.575, 0.35 * (double)i / (double)(col_num - 1),//+0.9
-				//mesh.vertices.push_back(std::array<double, 3>{0.7* (double)i / (double)(col_num - 1) - 0.35,  //+0.9
-				//	0.4 * (double)j / (double)(row_num - 1) - 0.285, 0.7 * (double)j / (double)(row_num - 1) - 0.35});//
-				mesh.vertices.push_back(std::array<double, 3>{1.0 * (double)i / (double)(col_num - 1),  // - 0.35+0.9
-					0.0,1.0 * (double)j / (double)(row_num - 1)}); //-0.585//0.05 * (double)j / (double)(row_num - 1) - 0.1
-			}
-		}
+		//int col_num = 50;
+		//int row_num = 50;
+		//for (int j = 0; j < row_num; j++) {
+		//	for (int i = 0; i < col_num; i++) {
+		//		//mesh.vertices.push_back(std::array<double, 3>{ 0.7 * (double)j / (double)(row_num - 1) + 0.575, 0.35 * (double)i / (double)(col_num - 1),//+0.9
+		//		//mesh.vertices.push_back(std::array<double, 3>{0.7* (double)i / (double)(col_num - 1) - 0.35,  //+0.9
+		//		//	0.4 * (double)j / (double)(row_num - 1) - 0.285, 0.7 * (double)j / (double)(row_num - 1) - 0.35});//
+		//		mesh.vertices.push_back(std::array<double, 3>{1.0 * (double)i / (double)(col_num - 1),  // - 0.35+0.9
+		//			0.0,1.0 * (double)j / (double)(row_num - 1)}); //-0.585//0.05 * (double)j / (double)(row_num - 1) - 0.1
+		//	}
+		//}
 
 		//int col_num = 75;
 		//int row_num = 75;
@@ -217,14 +217,14 @@ public:
 		//	}
 		//}
 		////band
-		//int col_num = 115;
-		//int row_num = 9;
-		//for (int j = 0; j < row_num; j++) {
-		//	for (int i = 0; i < col_num; i++) {
-		//		mesh.vertices.push_back(std::array<double, 3>{0.25 * (double)j / (double)(row_num - 1) -0.125,
-		//			-0.2,2.9 * (double)i / (double)(col_num - 1) -1.45});
-		//	}
-		//}
+		int col_num = 115;
+		int row_num = 9;
+		for (int j = 0; j < row_num; j++) {
+			for (int i = 0; i < col_num; i++) {
+				mesh.vertices.push_back(std::array<double, 3>{0.25 * (double)j / (double)(row_num - 1) -0.125,
+					-0.2,2.9 * (double)i / (double)(col_num - 1) -1.45});
+			}
+		}
 		//int col_num = 91;
 		//int row_num = 3;
 		//for (int j = 0; j < row_num; j++) {

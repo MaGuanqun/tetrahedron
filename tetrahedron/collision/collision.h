@@ -126,7 +126,7 @@ public:
 
 	unsigned int collisionConstraintNumber(unsigned int* point_triangle_collider_constraint, unsigned int* point_triangle_constraint, unsigned int* edge_edge_constraint);
 
-	void XPBDsolveCollisionConstraint();
+	void XPBDsolveCollisionConstraint(unsigned int sub_step_no);
 
 
 	void setParameter(std::vector<double>* lambda, double* floor_lambda, std::vector<unsigned int>* collision_lambda_index_start, double damp_stiffness,double dt);
