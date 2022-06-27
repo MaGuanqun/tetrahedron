@@ -1009,12 +1009,12 @@ void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 //	//std::cout << cloth_v[0][1] << std::endl;
 //	//std::cout << "========" << std::endl;
 
-		std::cout << tetrahedron->data()[0].mesh_struct.vertex_for_render[0][0] << " " <<
-			tetrahedron->data()[0].mesh_struct.vertex_for_render[0][1] << " " <<
-			tetrahedron->data()[0].mesh_struct.vertex_for_render[0][2] << std::endl;
-		std::cout << tetrahedron->data()[0].mesh_struct.vertex_position[0][0] << " " <<
-			tetrahedron->data()[0].mesh_struct.vertex_position[0][1] << " " <<
-			tetrahedron->data()[0].mesh_struct.vertex_position[0][2] << std::endl;
+		//std::cout << tetrahedron->data()[0].mesh_struct.vertex_for_render[0][0] << " " <<
+		//	tetrahedron->data()[0].mesh_struct.vertex_for_render[0][1] << " " <<
+		//	tetrahedron->data()[0].mesh_struct.vertex_for_render[0][2] << std::endl;
+		//std::cout << tetrahedron->data()[0].mesh_struct.vertex_position[0][0] << " " <<
+		//	tetrahedron->data()[0].mesh_struct.vertex_position[0][1] << " " <<
+		//	tetrahedron->data()[0].mesh_struct.vertex_position[0][2] << std::endl;
 }
 
 
@@ -1071,7 +1071,7 @@ void ProjectDynamic::PDsolve()
 	initialEnergy();
 	local_global_iteration_num = 0;
 
-	std::cout << global_mat << std::endl;
+	//std::cout << global_mat << std::endl;
 
 	//for (int i = 0; i < cloth->size(); ++i) {
 	//	thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL_RENDER);

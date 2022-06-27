@@ -343,9 +343,9 @@ void DCD::XPBDcalDistancePointTriangle(
     
 
     // lambda
-    //double alpha_ = 1.0 / (stiffness * dt * dt);
+    double alpha_ = 0.0;// 1.0 / (stiffness * dt * dt);
     //double gamma = damping_stiffness / (stiffness * dt);
-    //use in_triangle[3] to store x_i-x_ori
+    ////use in_triangle[3] to store x_i-x_ori
     //double lambda_numerator = 0.0;
     //SUB(in_triangle, current_position, initial_position);
     //lambda_numerator += DOT(grad_c_vertex, in_triangle);
@@ -361,10 +361,10 @@ void DCD::XPBDcalDistancePointTriangle(
     //        + DOT(grad_c_vertex_1, grad_c_vertex_1) * mass_inv_t1 + DOT(grad_c_vertex_2, grad_c_vertex_2) * mass_inv_t2)
     //        + alpha_);
 
-    double delta_lambda = -constraint / (DOT(grad_c_vertex, grad_c_vertex) * mass_inv_point + DOT(grad_c_vertex_0, grad_c_vertex_0) * mass_inv_t0
-        + DOT(grad_c_vertex_1, grad_c_vertex_1) * mass_inv_t1 + DOT(grad_c_vertex_2, grad_c_vertex_2) * mass_inv_t2);
+    double delta_lambda = -(constraint+alpha_*lambda) / (DOT(grad_c_vertex, grad_c_vertex) * mass_inv_point + DOT(grad_c_vertex_0, grad_c_vertex_0) * mass_inv_t0
+        + DOT(grad_c_vertex_1, grad_c_vertex_1) * mass_inv_t1 + DOT(grad_c_vertex_2, grad_c_vertex_2) * mass_inv_t2 +alpha_);
 
-  //  lambda += delta_lambda;
+    lambda += delta_lambda;
     double coe = delta_lambda * mass_inv_point;
     ACCUMULATE_SUM_WITH_COE(current_position, coe, grad_c_vertex);
     coe = delta_lambda * mass_inv_t0;
@@ -825,17 +825,17 @@ void DCD::XPBDcalDistanceEdgeEdge(double* norm, double distance, double* alpha, 
     //lambda_numerator += alpha[3] * DOT(e, norm);
 
     // lambda
-    //double alpha_ = 1.0 / (stiffness * dt * dt);
+    double alpha_ = 0.0;// 1.0 / (stiffness * dt * dt);
     //double gamma = damping_stiffness / (stiffness * dt);
     //double delta_lambda = -(distance + alpha_ * lambda + gamma * lambda_numerator) / ((1 + gamma) * (mass_inv_e_0_0 * alpha[0] * alpha[0]
     //    + mass_inv_e_0_1 * alpha[1] * alpha[1] + mass_inv_e_1_0 * alpha[2] * alpha[2] +
     //    mass_inv_e_1_1 * alpha[3] * alpha[3]) + alpha_);
 
-    double delta_lambda= -distance/(mass_inv_e_0_0 * alpha[0] * alpha[0]
+    double delta_lambda= -(distance+alpha_*lambda)/(mass_inv_e_0_0 * alpha[0] * alpha[0]
         + mass_inv_e_0_1 * alpha[1] * alpha[1] + mass_inv_e_1_0 * alpha[2] * alpha[2] +
-        mass_inv_e_1_1 * alpha[3] * alpha[3]);
+        mass_inv_e_1_1 * alpha[3] * alpha[3] + alpha_);
 
-   // lambda += delta_lambda;
+    lambda += delta_lambda;
 
     coe = -mass_inv_e_0_0 * delta_lambda * alpha[0];
     ACCUMULATE_SUM_WITH_COE(current_edge_vertex_0, coe, norm);
@@ -1355,13 +1355,13 @@ void DCD::XPBDcalDistancePointTriangleCollider(double* initial_position,
     constraint -= tolerance;
     //double e[3];
     // lambda
-    //double alpha_ = 1.0 / (stiffness * dt * dt);
-    //double gamma = damping_stiffness / (stiffness * dt);
+    double alpha_ = 0.0;// 1.0 / (stiffness * dt * dt);
+  //  double gamma = damping_stiffness / (stiffness * dt);
 
     //SUB(e, current_position, initial_position);
     //double delta_lambda = -(constraint + alpha_ * lambda + gamma * DOT(current_triangle_normal, e)) /
     //    ((1 + gamma) * mass_inv_vertex + alpha_);
-    double delta_lambda = -constraint / mass_inv_vertex;
+    double delta_lambda = -(constraint+alpha_*lambda) / (mass_inv_vertex+alpha_);
     lambda += delta_lambda;
     double coe = mass_inv_vertex * delta_lambda;
     ACCUMULATE_SUM_WITH_COE(current_position, coe, current_triangle_normal);

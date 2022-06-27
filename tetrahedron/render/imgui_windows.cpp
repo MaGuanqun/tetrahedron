@@ -947,7 +947,7 @@ void ImGuiWindows::operationWindow(std::vector<std::array<double, 6>>& cloth_sti
 		ImGui::PushItemWidth(ImGui::GetFontSize() * 7.0f);
 		ImGui::Text("Cloth point triangle collision: ");
 		ImGui::SameLine();
-		if (ImGui::InputDouble("##CPTcollision", &temp_stiffness[SELF_POINT_TRIANGLE], 0.0f, 0.0f, "%.2ef")) {
+		if (ImGui::InputDouble("##CPTcollision", &temp_stiffness[SELF_POINT_TRIANGLE], 0.0f, 0.0f, "%.2e")) {
 			set_stiffness[EDIT_SELF_POINT_TRIANGLE] = false;
 		}
 		if (ImGui::InputDouble("Damp##CPTcollision", &temp_stiffness[DAMP_SELF_POINT_TRIANGLE], 0.0f, 0.0f, "%.2e")) {

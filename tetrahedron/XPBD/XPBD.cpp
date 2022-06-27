@@ -6,7 +6,7 @@ XPBD::XPBD()
 {
 	gravity_ = 9.81;
 	sub_step_num =20;
-	prediction_sub_step_size = 2;
+	prediction_sub_step_size = 1;
 	iteration_number =100;
 
 	damping_coe = 0.0;
@@ -283,7 +283,6 @@ void XPBD::solveByXPBD()
 				collision.getCollisionPair();
 				initialCollisionConstriantNum();
 			}
-			//memset(lambda_collision.data(), 0, 8 * lambda_collision.size());
 		}
 		if (prediction_sub_step_size >1) {
 			thread->assignTask(this, SET_POS_PREDICT_SUB_TIME_STEP);
@@ -293,14 +292,15 @@ void XPBD::solveByXPBD()
 				}
 			}
 		}	
-		
-		//memset(lambda_collision.data(), 0, 8 * lambda_collision.size());
+		if (perform_collision) {
+			memset(lambda_collision.data(), 0, 8 * lambda_collision.size());
+		}
 		while (!convergeCondition(inner_iteration_number)) {
 			//recordVertexPosition();
 			if (perform_collision) {
 				updateNormal();
 			}
-			solveConstraint(sub_step% prediction_sub_step_size);
+			solveConstraint(0);//sub_step % prediction_sub_step_size
 			inner_iteration_number++;
 		}
 		iteration_number += inner_iteration_number;
