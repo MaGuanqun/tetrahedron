@@ -5,8 +5,8 @@
 XPBD::XPBD()
 {
 	gravity_ = 9.81;
-	sub_step_num =20;
-	prediction_sub_step_size = 1;
+	sub_step_num =6;
+	prediction_sub_step_size = 6;
 	iteration_number =100;
 
 	damping_coe = 0.0;
@@ -635,6 +635,7 @@ void XPBD::solveBendingConstraint()
 			vertex_lbo_ = vertex_lbo[i].data();
 			vertex_pos = vertex_position[i];
 			initial_vertex_pos = initial_vertex_position[i];
+
 			//for (unsigned int j = 0; j < size; ++j) {
 			for(auto k= mesh_struct_->unconnected_vertex_index.begin();k<mesh_struct_->unconnected_vertex_index.end(); ++k) {
 				for (auto j = k->begin(); j < k->end(); ++j) {

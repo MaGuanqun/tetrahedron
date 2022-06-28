@@ -1197,8 +1197,8 @@ void DCD::XPBDFloor(double* initial_position, double* current_position,unsigned 
         }
     }
     // lambda
-    double alpha_ = 1.0 / (stiffness * dt * dt);
-    double gamma = damping_stiffness / (stiffness * dt);
+    //double alpha_ = 1.0 / (stiffness * dt * dt);
+    //double gamma = damping_stiffness / (stiffness * dt);
     double coe_for_direction;
 
     if (normal_direction) {
