@@ -129,7 +129,7 @@ public:
 	void XPBDsolveCollisionConstraint(unsigned int sub_step_no);
 
 
-	void setParameter(std::vector<double>* lambda, double* floor_lambda, std::vector<unsigned int>* collision_lambda_index_start, double damp_stiffness,double dt);
+	//void setParameter(std::vector<double>* lambda, double* floor_lambda, std::vector<unsigned int>* collision_lambda_index_start, double damp_stiffness,double dt);
 
 
 
@@ -142,7 +142,7 @@ private:
 
 	
 
-	double* floor_lambda;
+	//double* floor_lambda;
 
 	unsigned int** vertex_edge_pair;
 	unsigned int** vertex_obj_edge_collider_pair;
@@ -541,20 +541,24 @@ private:
 	void pointTriangleColliderPair(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
 		unsigned int end_pair_index);
 
-	void solveXPBDpointTriangleResponse(double*& lambda_, unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end,
-		double& energy);
-	void solveXPBDedgeEdgeResponse(double*& lambda_, unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end,
-		double& energy);
-	void solveXPBDpointTriangleColliderResponse(double*& lambda_, unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end,
-		double& energy);
+	void solveXPBDpointTriangleResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
+	void solveXPBDedgeEdgeResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
+	void solveXPBDpointTriangleColliderResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
 
-	std::vector<double>* lambda;
-	std::vector<unsigned int>* collision_lambda_index_start;
+
+	void re_solveXPBDedgeEdgeResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
+	void re_solveXPBDpointTriangleResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
+	void re_solveXPBDpointTriangleColliderResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
+	//std::vector<double>* lambda;
+	//std::vector<unsigned int>* collision_lambda_index_start;
 	//double damp_stiffness;
-	double dt;
+	//double dt;
 	void solveXPBDpointTriangleResponse(int thread_No);
 	void solveXPBDpointTriangleColliderResponse(int thread_No);
 	void solveXPBDedgeEdgeResponse(int thread_No);
+	void re_solveXPBDedgeEdgeResponse(int thread_No);
+	void re_solveXPBDpointTriangleResponse(int thread_No);
+	void re_solveXPBDpointTriangleColliderResponse(int thread_No);
 	Floor* floor;
 
 	std::vector<double*> damp_collision;

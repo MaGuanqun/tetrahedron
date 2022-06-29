@@ -65,7 +65,7 @@ void XPBD::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetra
 	if (perform_collision) {
 		collision.energy = energy_per_thread.data();
 		collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio, XPBD_);
-		collision.setParameter(&lambda_collision,lambda.data()+ constraint_index_start[3], collision_constraint_index_start.data(), damping_coe, sub_time_step);
+		//collision.setParameter(&lambda_collision,lambda.data()+ constraint_index_start[3], collision_constraint_index_start.data(), damping_coe, sub_time_step);
 	}
 
 	setConvergeCondition();
@@ -263,7 +263,7 @@ void XPBD::solveByXPBD()
 		thread->assignTask(this, SET_POS_PREDICT);
 		if (perform_collision) {
 			collision.collisionCulling();
-			initialCollisionConstriantNum();
+			//initialCollisionConstriantNum();
 		}
 	}
 	//}
@@ -279,9 +279,9 @@ void XPBD::solveByXPBD()
 				}
 			}
 		}	
-		if (perform_collision) {
-			memset(lambda_collision.data(), 0, 8 * lambda_collision.size());
-		}
+		//if (perform_collision) {
+		//	memset(lambda_collision.data(), 0, 8 * lambda_collision.size());
+		//}
 		while (!convergeCondition(inner_iteration_number)) {
 			//recordVertexPosition();
 			if (perform_collision) {
