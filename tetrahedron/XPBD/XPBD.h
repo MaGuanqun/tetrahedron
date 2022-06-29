@@ -84,7 +84,7 @@ private:
 	void initialClothBending();
 	void solveBendingConstraint();
 	void solveEdgeLengthConstraint();
-	void solveConstraint();
+	void solveConstraint(bool need_detection);
 	void setConstraintIndex();
 	void solveTetStrainConstraint();
 

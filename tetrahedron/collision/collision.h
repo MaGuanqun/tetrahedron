@@ -128,6 +128,8 @@ public:
 
 	void XPBDsolveCollisionConstraint();
 
+	void re_XPBDsolveCollisionConstraint();
+
 
 	//void setParameter(std::vector<double>* lambda, double* floor_lambda, std::vector<unsigned int>* collision_lambda_index_start, double damp_stiffness,double dt);
 
@@ -541,9 +543,9 @@ private:
 	void pointTriangleColliderPair(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
 		unsigned int end_pair_index);
 
-	void solveXPBDpointTriangleResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
-	void solveXPBDedgeEdgeResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
-	void solveXPBDpointTriangleColliderResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
+	void solveXPBDpointTriangleResponse(unsigned int thread_No, unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
+	void solveXPBDedgeEdgeResponse(unsigned int thread_No, unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
+	void solveXPBDpointTriangleColliderResponse(unsigned int thread_No, unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
 
 
 	void re_solveXPBDedgeEdgeResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);

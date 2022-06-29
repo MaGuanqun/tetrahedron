@@ -5,13 +5,13 @@
 XPBD::XPBD()
 {
 	gravity_ = 9.81;
-	sub_step_num =16;
+	sub_step_num =10;
 	iteration_number =100;
 
 	damping_coe = 0.0;
 
 	perform_collision = true;
-	max_iteration_number = 2;
+	max_iteration_number = 3;
 	outer_max_iteration_number = 100;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
@@ -281,7 +281,7 @@ void XPBD::solveByXPBD()
 			if (perform_collision) {
 				updateNormal();
 			}
-			solveConstraint();//sub_step % prediction_sub_step_size
+			solveConstraint(inner_iteration_number==0 && sub_step%2==0);//sub_step % prediction_sub_step_size
 			inner_iteration_number++;
 		}
 		iteration_number += inner_iteration_number;
@@ -311,7 +311,7 @@ void XPBD::solveByPBD()
 			if (perform_collision) {
 				updateNormal();
 			}
-			solveConstraint();
+			solveConstraint(iteration_number==0);
 			iteration_number++;
 		}
 		thread->assignTask(this, XPBD_VELOCITY);
@@ -408,19 +408,18 @@ void XPBD::updatePosition()
 	}
 }
 
-void XPBD::solveConstraint()
+void XPBD::solveConstraint(bool need_detection)
 {
 	previous_energy = energy;
 	energy = 0.0;
 	solveBendingConstraint();
 	solveEdgeLengthConstraint();
 	solveTetStrainConstraint();
-	if (perform_collision) {
-		memset(energy_per_thread.data(), 0, 8 * total_thread_num);
+	if (need_detection) {
 		collision.XPBDsolveCollisionConstraint();
-		for (unsigned int i = 0; i < total_thread_num; ++i) {
-			energy += energy_per_thread[i];
-		}
+	}
+	else {
+		collision.re_XPBDsolveCollisionConstraint();
 	}
 }
 
