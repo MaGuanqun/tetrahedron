@@ -84,7 +84,7 @@ private:
 	void initialClothBending();
 	void solveBendingConstraint();
 	void solveEdgeLengthConstraint();
-	void solveConstraint(unsigned int sub_step_no);
+	void solveConstraint();
 	void setConstraintIndex();
 	void solveTetStrainConstraint();
 

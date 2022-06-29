@@ -261,10 +261,7 @@ void XPBD::solveByXPBD()
 	//if (sub_step_num == 1) {
 	if (perform_collision) {
 		thread->assignTask(this, SET_POS_PREDICT);
-		if (perform_collision) {
-			collision.collisionCulling();
-			//initialCollisionConstriantNum();
-		}
+		collision.collisionCulling();
 	}
 	//}
 	iteration_number = 0;
@@ -279,15 +276,12 @@ void XPBD::solveByXPBD()
 				}
 			}
 		}	
-		//if (perform_collision) {
-		//	memset(lambda_collision.data(), 0, 8 * lambda_collision.size());
-		//}
 		while (!convergeCondition(inner_iteration_number)) {
 			//recordVertexPosition();
 			if (perform_collision) {
 				updateNormal();
 			}
-			solveConstraint(0);//sub_step % prediction_sub_step_size
+			solveConstraint();//sub_step % prediction_sub_step_size
 			inner_iteration_number++;
 		}
 		iteration_number += inner_iteration_number;
@@ -317,7 +311,7 @@ void XPBD::solveByPBD()
 			if (perform_collision) {
 				updateNormal();
 			}
-			solveConstraint(iteration_number);
+			solveConstraint();
 			iteration_number++;
 		}
 		thread->assignTask(this, XPBD_VELOCITY);
@@ -414,7 +408,7 @@ void XPBD::updatePosition()
 	}
 }
 
-void XPBD::solveConstraint(unsigned int sub_step_no)
+void XPBD::solveConstraint()
 {
 	previous_energy = energy;
 	energy = 0.0;
@@ -423,7 +417,7 @@ void XPBD::solveConstraint(unsigned int sub_step_no)
 	solveTetStrainConstraint();
 	if (perform_collision) {
 		memset(energy_per_thread.data(), 0, 8 * total_thread_num);
-		collision.XPBDsolveCollisionConstraint(sub_step_no);
+		collision.XPBDsolveCollisionConstraint();
 		for (unsigned int i = 0; i < total_thread_num; ++i) {
 			energy += energy_per_thread[i];
 		}
