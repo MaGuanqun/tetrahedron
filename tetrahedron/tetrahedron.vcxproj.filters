@@ -181,6 +181,9 @@
     <ClCompile Include="basic\drawEdge.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="basic\save_scene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="basic\basic_imgui.h">
@@ -382,6 +385,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="basic\drawEdge.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="basic\save_scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

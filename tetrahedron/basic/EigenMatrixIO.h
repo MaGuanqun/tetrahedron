@@ -1,5 +1,4 @@
 #pragma once
-#pragma once
 #define outputprecision 64
 #include <fstream>
 #include <iostream>

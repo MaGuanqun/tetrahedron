@@ -19,7 +19,7 @@ bool DCD::checkPointTriangle(double* initial_position, double* current_position,
 }
 
 
-void DCD::XPBDpointSelfTriangle(double* initial_position, double* current_position,
+bool DCD::XPBDpointSelfTriangle(double* initial_position, double* current_position,
     double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
     double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
     double* initial_triangle_normal, double* current_triangle_normal, 
@@ -39,12 +39,14 @@ void DCD::XPBDpointSelfTriangle(double* initial_position, double* current_positi
         current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
         initial_triangle_normal, current_triangle_normal, barycentric,
         tolerance, current_side, should_be_front)) {
-        XPBDcalDistancePointTriangle(initial_position, initial_triangle_position_0, initial_triangle_position_1,
+        return XPBDcalDistancePointTriangle(initial_position, initial_triangle_position_0, initial_triangle_position_1,
             initial_triangle_position_2,
             current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
             current_triangle_normal, current_side, tolerance, should_be_front, triangle_normal_magnitude_reciprocal,
             mass_inv_point, mass_inv_t0, mass_inv_t1, mass_inv_t2,lambda, stiffness, damping_stiffness,dt, energy);//
     }
+
+    return false;
 }
 
 
@@ -295,7 +297,7 @@ bool DCD::pointColliderTriangle(double* initial_position, double* current_positi
     return false;
 }
 
-void DCD::XPBDcalDistancePointTriangle(
+bool DCD::XPBDcalDistancePointTriangle(
     double* initial_position,
     double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
     double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
@@ -314,13 +316,13 @@ void DCD::XPBDcalDistancePointTriangle(
     SUB_(in_triangle, scale_norm);
     if (is_front) {
         if (constraint > tolerance) {
-            return;
+            return false;
         }
         constraint -= tolerance;
     }
     else {
         if (constraint < -tolerance) {
-            return;
+            return false;
         }
         constraint += tolerance;
     }
@@ -343,7 +345,7 @@ void DCD::XPBDcalDistancePointTriangle(
     
 
     // lambda
-    double alpha_ = 0.0;// 1.0 / (stiffness * dt * dt);
+    double alpha_ = 0.0;//  1.0 / (stiffness * dt * dt);
     //double gamma = damping_stiffness / (stiffness * dt);
     ////use in_triangle[3] to store x_i-x_ori
     //double lambda_numerator = 0.0;
@@ -364,6 +366,8 @@ void DCD::XPBDcalDistancePointTriangle(
     double delta_lambda = -(constraint+alpha_*lambda) / (DOT(grad_c_vertex, grad_c_vertex) * mass_inv_point + DOT(grad_c_vertex_0, grad_c_vertex_0) * mass_inv_t0
         + DOT(grad_c_vertex_1, grad_c_vertex_1) * mass_inv_t1 + DOT(grad_c_vertex_2, grad_c_vertex_2) * mass_inv_t2 +alpha_);
 
+   // delta_lambda *= 0.5;
+
     lambda += delta_lambda;
     double coe = delta_lambda * mass_inv_point;
     ACCUMULATE_SUM_WITH_COE(current_position, coe, grad_c_vertex);
@@ -374,7 +378,7 @@ void DCD::XPBDcalDistancePointTriangle(
     coe = delta_lambda * mass_inv_t2;
     ACCUMULATE_SUM_WITH_COE(current_triangle_position_2, coe, grad_c_vertex_2);
 
-
+    return true;
 }
 
 
@@ -690,7 +694,7 @@ void DCD::calDistancePointTriangle(double* vertex_target_pos, double* triangle_t
 
 
 
-void DCD::XPBDedgeEdge(double* current_edge_vertex_0, double* current_edge_vertex_1,
+bool DCD::XPBDedgeEdge(double* current_edge_vertex_0, double* current_edge_vertex_1,
     double* initial_edge_vertex_0, double* initial_edge_vertex_1,
     double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0,
     double* initial_compare_edge_vertex_1, double tolerance, double mass_inv_e_0_0, double mass_inv_e_0_1, double mass_inv_e_1_0, double mass_inv_e_1_1,
@@ -709,7 +713,7 @@ void DCD::XPBDedgeEdge(double* current_edge_vertex_0, double* current_edge_verte
     if (checkEdgeEdgeCollision(current_edge_vertex_0, current_edge_vertex_1, initial_edge_vertex_0, initial_edge_vertex_1, current_compare_edge_vertex_0, current_compare_edge_vertex_1,
         initial_compare_edge_vertex_0, initial_compare_edge_vertex_1, barycentric, norm, distance2, tolerance,false)) {
         if (distance2 > 0) {
-            return;
+            return false;
         }
 
       // energy = 0.5 * stiffness * distance2 * distance2;
@@ -721,7 +725,10 @@ void DCD::XPBDedgeEdge(double* current_edge_vertex_0, double* current_edge_verte
             //1.0,1.0,1.0,1.0,
             mass_inv_e_0_0, mass_inv_e_0_1, mass_inv_e_1_0, mass_inv_e_1_1,
             lambda, stiffness, damping_stiffness, dt);
+        return true;
     }
+
+    return false;
 }
 bool DCD::edgeEdgeCollider(double* edge_target_pos_0, double* edge_target_pos_1,
     double* current_edge_vertex_0, double* current_edge_vertex_1,
@@ -825,7 +832,7 @@ void DCD::XPBDcalDistanceEdgeEdge(double* norm, double distance, double* alpha, 
     //lambda_numerator += alpha[3] * DOT(e, norm);
 
     // lambda
-    double alpha_ = 0.0;// 1.0 / (stiffness * dt * dt);
+    double alpha_ = 0.0;//  1.0 / (stiffness * dt * dt);
     //double gamma = damping_stiffness / (stiffness * dt);
     //double delta_lambda = -(distance + alpha_ * lambda + gamma * lambda_numerator) / ((1 + gamma) * (mass_inv_e_0_0 * alpha[0] * alpha[0]
     //    + mass_inv_e_0_1 * alpha[1] * alpha[1] + mass_inv_e_1_0 * alpha[2] * alpha[2] +
@@ -834,6 +841,8 @@ void DCD::XPBDcalDistanceEdgeEdge(double* norm, double distance, double* alpha, 
     double delta_lambda= -(distance+alpha_*lambda)/(mass_inv_e_0_0 * alpha[0] * alpha[0]
         + mass_inv_e_0_1 * alpha[1] * alpha[1] + mass_inv_e_1_0 * alpha[2] * alpha[2] +
         mass_inv_e_1_1 * alpha[3] * alpha[3] + alpha_);
+
+    //delta_lambda *= 0.5;
 
     lambda += delta_lambda;
 
@@ -1221,7 +1230,7 @@ void DCD::XPBDFloor(double* initial_position, double* current_position,unsigned 
 }
 
 
-void DCD::XPBDpointTriangleCollider(double* initial_position, double* current_position,
+bool DCD::XPBDpointTriangleCollider(double* initial_position, double* current_position,
     double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
     double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
     double* initial_triangle_normal, double* current_triangle_normal, double mass_inv_v,
@@ -1235,7 +1244,7 @@ void DCD::XPBDpointTriangleCollider(double* initial_position, double* current_po
     SUB(c_p, current_position, current_triangle_position_0);
     current_side = DOT(c_p, current_triangle_normal);
     if (current_side > tolerance) {
-        return;
+        return false;
     }
     //if (!pointProjectOnTriangle(current_position, current_triangle_position_0, current_triangle_position_1,
     //    current_triangle_position_2, current_triangle_normal, barycentric)) {
@@ -1252,7 +1261,10 @@ void DCD::XPBDpointTriangleCollider(double* initial_position, double* current_po
         XPBDcalDistancePointTriangleCollider(initial_position,
             current_position, mass_inv_v,
             current_triangle_normal, current_side, tolerance, lambda,stiffness,damping_stiffness,dt, energy);
+        return true;
     }
+
+    return false;
 }
 
 
@@ -1362,6 +1374,7 @@ void DCD::XPBDcalDistancePointTriangleCollider(double* initial_position,
     //double delta_lambda = -(constraint + alpha_ * lambda + gamma * DOT(current_triangle_normal, e)) /
     //    ((1 + gamma) * mass_inv_vertex + alpha_);
     double delta_lambda = -(constraint+alpha_*lambda) / (mass_inv_vertex+alpha_);
+
     lambda += delta_lambda;
     double coe = mass_inv_vertex * delta_lambda;
     ACCUMULATE_SUM_WITH_COE(current_position, coe, current_triangle_normal);

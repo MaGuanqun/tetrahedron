@@ -106,6 +106,22 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 				control_parameter[SAVE_OBJ] = true;
 			}
 		}
+		if (control_parameter[SAVE_SIMULATION_DATA]) {
+			ImGui::TextWrapped("Press end to stop saving simulation data.");
+			if (ImGui::Button("End##save_simulation_data", ImVec2(160, 25)))
+			{
+				control_parameter[SAVE_SIMULATION_DATA] = false;
+			}
+		}
+		else {
+			ImGui::TextWrapped("Press start to start saving simulation data.");
+			if (ImGui::Button("Start##save_simulation_data", ImVec2(160, 25)))
+			{
+				control_parameter[SAVE_SIMULATION_DATA] = true;
+			}
+		}
+
+
 		ImGui::TreePop();
 	}
 		ImGui::SetNextItemOpen(true);

@@ -135,7 +135,6 @@ private:
 
 	double energy_converge_ratio;
 
-	int prediction_sub_step_size;
 
 };
 
