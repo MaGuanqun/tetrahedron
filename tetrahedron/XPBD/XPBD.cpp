@@ -5,13 +5,13 @@
 XPBD::XPBD()
 {
 	gravity_ = 9.81;
-	sub_step_num =10;
+	sub_step_num =14;
 	iteration_number =100;
 
 	damping_coe = 0.0;
 
 	perform_collision = true;
-	max_iteration_number = 3;
+	max_iteration_number = 2;
 	outer_max_iteration_number = 100;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
@@ -281,7 +281,7 @@ void XPBD::solveByXPBD()
 			if (perform_collision) {
 				updateNormal();
 			}
-			solveConstraint(inner_iteration_number==0 && sub_step%2==0);//sub_step % prediction_sub_step_size
+			solveConstraint(inner_iteration_number==0 && sub_step%3==0);//sub_step % prediction_sub_step_size
 			inner_iteration_number++;
 		}
 		iteration_number += inner_iteration_number;
