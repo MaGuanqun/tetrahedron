@@ -136,11 +136,11 @@ private:
 	void solveByPBD();
 	void solveByXPBD();
 
-	double energy=1e-15;
-	double previous_energy = 1e-15;
-	std::vector<double>energy_per_thread;
+	//double energy=1e-15;
+	//double previous_energy = 1e-15;
+	//std::vector<double>energy_per_thread;
 
-	double energy_converge_ratio;
+	//double energy_converge_ratio;
 
 	SaveScene save_scene;
 };

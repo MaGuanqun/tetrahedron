@@ -160,6 +160,7 @@
     <ClCompile Include="basic\opengl_input.cpp" />
     <ClCompile Include="basic\pick_triangle.cpp" />
     <ClCompile Include="basic\save_scene.cpp" />
+    <ClCompile Include="basic\save_simulate_parameter.cpp" />
     <ClCompile Include="basic\set_tetrahedron_anchor.cpp" />
     <ClCompile Include="collision\ApproxCCD.cpp" />
     <ClCompile Include="collision\BVH.cpp" />
@@ -228,6 +229,7 @@
     <ClInclude Include="basic\opengl_input.h" />
     <ClInclude Include="basic\pick_triangle.h" />
     <ClInclude Include="basic\save_scene.h" />
+    <ClInclude Include="basic\save_simulate_parameter.h" />
     <ClInclude Include="basic\set_tetrahedron_anchor.h" />
     <ClInclude Include="basic\write_txt.h" />
     <ClInclude Include="collision\ApproxCCD.h" />

@@ -431,7 +431,7 @@ void XPBDconstraint::computeGreenStrainAndPiolaStress(
 
 
 void XPBDconstraint::solveEdgeLengthConstraint(double* p0, double* p1, const double rest_length, const double stiffness, double dt,
-	double inv_mass0, double inv_mass1, double& lambda, const double damping_stiffness, double* initial_p0, double* inital_p1, double& energy)
+	double inv_mass0, double inv_mass1, double& lambda, const double damping_stiffness, double* initial_p0, double* inital_p1)
 {	
 	//double gamma = damping_stiffness / (stiffness*dt);
 	dt = dt * dt;
@@ -450,16 +450,16 @@ void XPBDconstraint::solveEdgeLengthConstraint(double* p0, double* p1, const dou
 	inv_mass1 *= -1.0;
 	ACCUMULATE_SUM_WITH_COE(p1, inv_mass1, n);
 
-	energy = 0.5 * stiffness * C * C;
+	//energy = 0.5 * stiffness * C * C;
 }
 
 
 
 void XPBDconstraint::solveBendingConstraint(double* center_vertex, double vertex_inv_mass,  std::array<double,3>* vertex_position, std::vector<unsigned int>& neighbor_vertex,
 	double rest_Aq_norm, double lbo_weight, VectorXd& vertex_lbo,  double stiffness, double dt, double* inv_mass, double &lambda,
-	const double damping_stiffness, double* initial_center_vertex, std::array<double, 3>* inital_vertex_position, double& energy)
+	const double damping_stiffness, double* initial_center_vertex, std::array<double, 3>* inital_vertex_position)
 {
-	energy = 0.0;
+//	energy = 0.0;
 	std::vector<VectorXd>q(3);
 	//std::vector<VectorXd>q_initial(3);
 	double aq[3];
@@ -537,8 +537,8 @@ void XPBDconstraint::solveBendingConstraint(double* center_vertex, double vertex
 	double alpha_ = lbo_weight / (stiffness * dt * dt);
 	//double gamma = lbo_weight * damping_stiffness / (stiffness * dt);
 	double delta_lambda = -(C + alpha_ * lambda )//+ gamma * (q[0].dot(q_initial[0]) + q[1].dot(q_initial[1]) + q[2].dot(q_initial[2]))
-		/ ((q[0].dot(q[0].cwiseProduct(inv_m)) + q[1].dot(q[1].cwiseProduct(inv_m))//(1.0 + gamma) * (q[0].dot(q[0].cwiseProduct(inv_m))
-			+ q[2].dot(q[2].cwiseProduct(inv_m))) + alpha_);
+		/ (((q[0].cwiseProduct(inv_m)).dot(q[0]) + (q[1].cwiseProduct(inv_m)).dot(q[1])//(1.0 + gamma) * (q[0].dot(q[0].cwiseProduct(inv_m))
+			+ (q[2].cwiseProduct(inv_m)).dot(q[2])) + alpha_);
 	lambda += delta_lambda;
 	inv_m *= delta_lambda;
 
@@ -553,7 +553,7 @@ void XPBDconstraint::solveBendingConstraint(double* center_vertex, double vertex
 		vertex_position[neighbor_vertex[h - 1]][2] += inv_m.data()[h] * q[2][h];
 	}
 
-	energy = 0.5 * stiffness * C * C/ lbo_weight;
+	//energy = 0.5 * stiffness * C * C/ lbo_weight;
 }
 
 void XPBDconstraint::initial_LBO_EdgeCotWeight(TriangleMeshStruct& mesh_struct, std::vector<double>& lbo_weight, std::vector<VectorXd>& vertex_lbo,
