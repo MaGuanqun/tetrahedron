@@ -1,7 +1,7 @@
 #pragma once
 #include"basic/global.h"
-#include"../external/Eigen/Dense"
-#include"../basic/eigenDenseOperation.h"
+#include"external/Eigen/Dense"
+#include"basic/eigenDenseOperation.h"
 #include<array>
 #include <iostream>
 

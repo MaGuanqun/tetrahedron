@@ -1,14 +1,14 @@
 #pragma once
-#include"../external/Eigen/Dense"
-#include"../basic/eigenDenseOperation.h"
-#include"../external/Eigen/Sparse"
-#include"../external/Eigen/SparseCholesky"
-#include"../thread.h"
-#include"../basic/global.h"
-#include"../object/cloth.h"
-#include"../object/tetrahedron.h"
-#include"../object/collider.h"
-#include"../collision/collision.h"
+#include"external/Eigen/Dense"
+#include"basic/eigenDenseOperation.h"
+#include"external/Eigen/Sparse"
+#include"external/Eigen/SparseCholesky"
+#include"thread.h"
+#include"basic/global.h"
+#include"object/cloth.h"
+#include"object/tetrahedron.h"
+#include"object/collider.h"
+#include"collision/collision.h"
 
 using namespace Eigen;
 using namespace denseOperation;

@@ -1,6 +1,6 @@
 #pragma once
-#include"../external/Eigen/Dense"
-#include"../basic/eigenDenseOperation.h"
+#include"external/Eigen/Dense"
+#include"basic/eigenDenseOperation.h"
 #include<iostream>
 namespace test {
 	void compute_f(Vector3d& x, Vector3d& x0, Vector3d& f)
