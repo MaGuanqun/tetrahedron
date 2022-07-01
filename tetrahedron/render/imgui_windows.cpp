@@ -572,8 +572,8 @@ bool ImGuiWindows::loadScene(std::string& path)
 	bool finished_loading = false;
 	ImGui::SetNextWindowPos(ImVec2(SCR_WIDTH - 270, 0));
 	ImGui::SetNextWindowSize(ImVec2(270, 70));
-	ImGui::Begin("Load Models");
-	if (ImGui::Button("Load Model", ImVec2(160, 25))) {
+	ImGui::Begin("Load Scene");
+	if (ImGui::Button("Load Scene", ImVec2(160, 25))) {
 		m_file_dialog_info.SetTypeFilters({ ".dat" });
 		m_file_dialog_info.SetTitle("Load Scene Data");
 		m_file_dialog_info.Open();
