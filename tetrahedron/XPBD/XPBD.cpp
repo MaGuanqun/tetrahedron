@@ -1,11 +1,12 @@
 #include"XPBD.h"
 
+#define SUB_STEP_SIZE_DETECTION 3
 
 
 XPBD::XPBD()
 {
 	gravity_ = 9.81;
-	sub_step_num =14;
+	sub_step_num =13;
 	iteration_number =100;
 
 	damping_coe = 0.0;
@@ -168,7 +169,7 @@ void XPBD::reorganzieDataOfObjects()
 	record_vertex_position.resize(total_obj_num);
 	//record_outer_vertex_position.resize(total_obj_num);
 	unfixed_vertex.resize(total_obj_num);
-
+	
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		vertex_position[i]= cloth->data()[i].mesh_struct.vertex_position.data();
 		initial_vertex_position[i]= cloth->data()[i].mesh_struct.vertex_for_render.data();
@@ -188,7 +189,34 @@ void XPBD::reorganzieDataOfObjects()
 		unfixed_vertex[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct.unfixed_point_index;
 	}
 	recordVertexPosition();
+
+	collider_mesh_struct.resize(collider->size());
+	for (unsigned int i = 0; i < collider->size(); ++i) {
+		collider_mesh_struct[i] = &collider->data()[i].mesh_struct;
+	}
+
 }
+
+
+void XPBD::saveScene()
+{
+	save_scene.save_scene_XPBD(*time_stamp, *time_indicate_for_simu, mesh_struct, &velocity, collider_mesh_struct);
+}
+
+void XPBD::readScene(const char* file_name)
+{
+	save_scene.read_scene_XPBD(file_name, time_stamp, time_indicate_for_simu, mesh_struct, &velocity, collider_mesh_struct);
+	for (unsigned int i = 0; i < mesh_struct.size(); ++i) {
+		memcpy(mesh_struct[i]->vertex_for_render[0].data(), mesh_struct[i]->vertex_position[0].data(), 24 * mesh_struct[i]->vertex_position.size());
+	}
+	for (unsigned int i = 0; i < collider_mesh_struct.size(); ++i) {
+		memcpy(collider_mesh_struct[i]->vertex_for_render[0].data(), collider_mesh_struct[i]->vertex_position[0].data(), 24 * collider_mesh_struct[i]->vertex_position.size());
+	}
+	updateRenderNormal();
+	updateNormal();
+	updateRenderVertexNormal();
+}
+
 
 
 double XPBD::calEdgeLength()
@@ -281,7 +309,7 @@ void XPBD::solveByXPBD()
 			if (perform_collision) {
 				updateNormal();
 			}
-			solveConstraint(inner_iteration_number==0 && sub_step%3==0);//sub_step % prediction_sub_step_size
+			solveConstraint(inner_iteration_number==0 && sub_step% SUB_STEP_SIZE_DETECTION ==0);//sub_step % prediction_sub_step_size
 			inner_iteration_number++;
 		}
 		iteration_number += inner_iteration_number;
@@ -441,17 +469,13 @@ void XPBD::updateNormal()
 void XPBD::updateRenderVertexNormal()
 {
 	for (unsigned int i = 0; i < collider->size(); ++i) {
-		thread->assignTask(&(*collider)[i].mesh_struct, VERTEX_NORMAL_RENDER);
-		(*collider)[i].mesh_struct.vertex_normal = (*collider)[i].mesh_struct.vertex_normal_for_render;
+		thread->assignTask(&(*collider)[i].mesh_struct, VERTEX_NORMAL_FROM_RENDER);
 	}
-
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
-		thread->assignTask(&(*cloth)[i].mesh_struct, VERTEX_NORMAL_RENDER);
-		(*cloth)[i].mesh_struct.vertex_normal = (*cloth)[i].mesh_struct.vertex_normal_for_render;
+		thread->assignTask(&(*cloth)[i].mesh_struct, VERTEX_NORMAL_FROM_RENDER);
 	}
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
-		thread->assignTask(&(*tetrahedron)[i].mesh_struct, VERTEX_NORMAL_RENDER);
-		(*tetrahedron)[i].mesh_struct.vertex_normal = (*tetrahedron)[i].mesh_struct.vertex_normal_for_render;
+		thread->assignTask(&(*tetrahedron)[i].mesh_struct, VERTEX_NORMAL_FROM_RENDER);
 	}
 }
 

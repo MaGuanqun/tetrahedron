@@ -12,6 +12,8 @@
 #include"../collision/collision.h"
 #include"XPBD_constraint.h"
 #include"../basic/move_model.h"
+#include"../basic/save_scene.h"
+
 
 using namespace Eigen;
 using namespace denseOperation;
@@ -47,6 +49,10 @@ public:
 
 	MoveModel* move_model;
 	bool* control_parameter;
+
+	void saveScene();
+	void readScene(const char* file_name);
+
 private:
 	double gravity[3];
 
@@ -64,6 +70,7 @@ private:
 	std::vector<std::array<double, 3>*> vertex_position;
 	std::vector<std::array<double, 3>*> initial_vertex_position;
 	std::vector<MeshStruct*> mesh_struct;
+	std::vector<MeshStruct*> collider_mesh_struct;
 	std::vector<unsigned int*> vertex_index_begin_per_thread;
 	void reorganzieDataOfObjects();
 	unsigned int total_obj_num;
@@ -135,6 +142,6 @@ private:
 
 	double energy_converge_ratio;
 
-
+	SaveScene save_scene;
 };
 

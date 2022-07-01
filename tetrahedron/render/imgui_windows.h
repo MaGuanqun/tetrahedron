@@ -23,10 +23,16 @@ public:
 		char** itr_solver_items, char*& itr_solver_item, int item_num, double* conv_rate, bool& record_matrix);
 
 	bool open_load_model;
+
 	void helpMarker(const char* desc);
 	ImGui::FileBrowser m_file_dialog_info;
 	bool load_collider_is_open = false;
+	bool load_scene_is_open = false;
 
 	void floorInfo(bool& exist, bool& show, bool& normal_direction, unsigned int& dimension, double* value, bool& eidit);
+
+	bool loadScene(std::string& path);
+
+
 };
 

@@ -72,6 +72,8 @@ public:
 
 	time_t time_accumulation=0;
 
+	void readScene(std::string& path);
+	void saveScene();
 
 private:
 	unsigned int use_method;

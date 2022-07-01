@@ -567,6 +567,35 @@ void ImGuiWindows::visualizationControlPanel(bool& reset_camera, std::vector<std
 	ImGui::End();
 }
 
+bool ImGuiWindows::loadScene(std::string& path)
+{
+	bool finished_loading = false;
+	ImGui::SetNextWindowPos(ImVec2(SCR_WIDTH - 270, 0));
+	ImGui::SetNextWindowSize(ImVec2(270, 70));
+	ImGui::Begin("Load Models");
+	if (ImGui::Button("Load Model", ImVec2(160, 25))) {
+		m_file_dialog_info.SetTypeFilters({ ".dat" });
+		m_file_dialog_info.SetTitle("Load Scene Data");
+		m_file_dialog_info.Open();
+		load_scene_is_open = true;
+	}
+	if (load_scene_is_open) {
+		m_file_dialog_info.Display();
+		if (m_file_dialog_info.HasSelected()) {
+			path=m_file_dialog_info.GetSelected().string();
+			m_file_dialog_info.ClearSelected();
+			load_scene_is_open = false;
+			finished_loading = true;
+		}
+	}
+	ImGui::End();
+	if (finished_loading) {
+		return true;
+	}
+	return false;
+}
+
+
 
 bool ImGuiWindows::loadModel(std::vector<std::string>& collider_path, std::vector<std::string>& object_path)
 {

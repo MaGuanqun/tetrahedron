@@ -14,7 +14,8 @@ public:
 	
 	void initialInfo();
 	
-	
+	void getVertexNormalFromRenderPerThread(int thread_id);
+
 	void getVertexNormalPerThread(int thread_id);
 	void getRenderVertexNormalPerThread(int thread_id);
 	//void getVertexNormal();

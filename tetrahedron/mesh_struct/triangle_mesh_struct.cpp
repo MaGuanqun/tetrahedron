@@ -38,6 +38,34 @@ double TriangleMeshStruct::setMass(double density)
 }
 
 
+
+//VERTEX_NORMAL_FROM_RENDER
+void TriangleMeshStruct::getVertexNormalFromRenderPerThread(int thread_id)
+{
+	std::vector<unsigned int>* face_vertex;
+	double* current_vertex_normal;
+	double dot;
+	for (int i = vertex_index_begin_per_thread[thread_id]; i < vertex_index_begin_per_thread[thread_id + 1]; ++i) {
+		face_vertex = &vertices[i].face;
+		if (!face_vertex->empty()) {
+			current_vertex_normal = vertex_normal[i].data();
+			memcpy(current_vertex_normal, ori_face_normal_for_render[(*face_vertex)[0]].data(), 24);
+			for (int k = 1; k < face_vertex->size(); ++k) {
+				SUM_(current_vertex_normal,
+					ori_face_normal_for_render[(*face_vertex)[k]]);
+			}
+			dot = DOT(current_vertex_normal, current_vertex_normal);
+			if (dot < 1e-20) {
+				memcpy(current_vertex_normal, ori_face_normal_for_render[(*face_vertex)[0]].data(), 24);
+			}
+			else {
+				dot = sqrt(dot);
+				DEV_(current_vertex_normal, dot);
+			}
+		}
+	}
+}
+
 //VERTEX_NORMAL
 void TriangleMeshStruct::getVertexNormalPerThread(int thread_id)
 {

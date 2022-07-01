@@ -41,6 +41,15 @@ public:
 
 	void outputImage(int num)
 	{
+		if (record_stamp == num) {
+			return;
+		}
+		record_stamp = num;
+
+		std::string prefix = "./screen_record/";
+		if (_access(prefix.c_str(), 0) == -1)
+			_mkdir(prefix.c_str());
+
 		glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
 		//glReadPixels(0, 0, SCR_WIDTH, SCR_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, pixels);
@@ -61,6 +70,8 @@ public:
 	}
 private:
 	
+	int record_stamp = -1;
+
 	BYTE* pixels;
 
 	unsigned char header[54];

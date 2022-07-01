@@ -107,7 +107,9 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 	glfwSwapInterval(0);
 
-	
+	std::string load_scene_path;
+
+
 	double t1, t2;
 
 	while (!glfwWindowShouldClose(window))
@@ -234,7 +236,6 @@ void simu_main(GLFWwindow* window, Input* input) {
 			//	record_matrix = true;
 			//	control_parameter[SAVE_OBJ] = true;
 			//}
-
 			//if (scene.time_stamp == 100) {
 			//	record_matrix = false;
 			//	control_parameter[SAVE_OBJ] = false;
@@ -246,10 +247,17 @@ void simu_main(GLFWwindow* window, Input* input) {
 				iteration_solver_iteration_num, cell_index_chose);
 			start_time = clock();
 			scene.drawScene(&camera, show_element, control_parameter);
-			//time_t t2 = clock() - start_time;
-			//std::cout <<"t2 "<< t2 << std::endl;
 			scene.selectAnchor(control_parameter, set_anchor, input->mouse.screen_pos, input->mouse.left_press, input->mouse.prev_left_press, &camera, show_element[TETRAHEDRON_]);
 			scene.obtainConvergenceInfo(convergence_rate, iteration_number);
+
+
+			if (imgui_windows.loadScene(load_scene_path)) {
+				scene.readScene(load_scene_path);
+			}
+
+			if (control_parameter[SAVE_SIMULATION_DATA]) {
+				scene.saveScene();
+			}
 
 		}
 
@@ -265,8 +273,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 		start_time = clock();
 		coordinateSystem.draw(&camera, cameraPos);
 
-		//time_t t3 = clock() - start_time;
-		//std::cout <<"t3 "<< t3 << std::endl;
+
 
 		scene.drawSelectRange(set_anchor, input->mouse.left_press, input->mouse.prev_left_press);
 		time = (double)(clock() - start_time);

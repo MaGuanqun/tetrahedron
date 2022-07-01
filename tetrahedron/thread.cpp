@@ -142,6 +142,9 @@ job Thread::create_task(TriangleMeshStruct* func, int thread_id, MeshStructFuncS
     case VERTEX_NORMAL:
         k = job([func, thread_id]() {func->getVertexNormalPerThread(thread_id); });
         break;
+    case VERTEX_NORMAL_FROM_RENDER:
+        k = job([func, thread_id]() {func->getVertexNormalFromRenderPerThread(thread_id); });
+        break;
     }
     return k;
 }
@@ -178,6 +181,9 @@ job Thread::create_task(TetrahedronMeshStruct* func, int thread_id, MeshStructFu
         break;
     case SET_VOLUME:
         k = job([func, thread_id]() {func->setVolume(thread_id); });
+        break;
+    case VERTEX_NORMAL_FROM_RENDER:
+        k = job([func, thread_id]() {func->getVertexNormalFromRenderPerThread(thread_id); });
         break;
     }
     return k;

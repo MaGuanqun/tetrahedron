@@ -497,6 +497,36 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 	//draw_edge_.drawEdge(camera, wireframe_shader, cloth[0].mesh_struct.vertex_position, cloth[0].mesh_struct.unconnected_edge_index[0], glm::vec3(1.0, 0.0, 0.0), cloth[0].mesh_struct.edge_vertices);
 }
 
+void Scene::saveScene()
+{
+	switch (use_method)
+	{
+	case PD_:
+		break;
+	case XPBD_:
+		xpbd.saveScene();
+		break;
+	case NEWTON_:
+
+		break;
+	}
+}
+
+
+void Scene::readScene(std::string& path)
+{
+	switch (use_method)
+	{
+	case PD_:
+		break;
+	case XPBD_:
+		xpbd.readScene(path.c_str());
+		break;
+	case NEWTON_:
+
+		break;
+	}
+}
 
 
 void Scene::saveObj()
