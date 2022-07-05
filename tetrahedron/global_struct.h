@@ -2,6 +2,7 @@
 #include<cstring>
 #include<string>
 #include"basic/global.h"
+#include"basic/enum_setting.h"
 
 struct MeshMaterial {
 	std::string material_name;
@@ -76,7 +77,8 @@ struct SingleClothInfo {
 		this->position_stiffness = position_stiffness;
 		this->bending_stiffness[0] = bending_stiffness;
 		this->bending_stiffness[1] = damp_bending;
-		memcpy(this->collision_stiffness, collision_stiffness, 64);
+		memcpy(this->collision_stiffness, collision_stiffness, 32);
+		memcpy(this->collision_stiffness+4, collision_stiffness+ DAMP_BODY_POINT_TRIANGLE, 32);
 		this->friction_stiffness_tangent = friction_stiffness_tangent;
 		this->friction_stiffness_normal = friction_stiffness_normal;
 		this->virtual_length_stiffness = virtual_length_stiffness;
@@ -116,7 +118,8 @@ struct SingleTetrahedronInfo {
 		this->volume_preserve_stiffness[1] = damp_volume_preserve;
 		this->ARAP_stiffness[0] = ARAP_stiffness;
 		this->ARAP_stiffness[1] = damp_ARAP;
-		memcpy(this->collision_stiffness, collision_stiffness, 64);
+		memcpy(this->collision_stiffness, collision_stiffness, 32);
+		memcpy(this->collision_stiffness + 4, collision_stiffness + DAMP_BODY_POINT_TRIANGLE, 32);
 		memcpy(this->sigma_limit, sigma_limit, 16);
 		this->youngs_modulus = youngs_modulus;
 		this->poisson_ratio = poisson_ratio;

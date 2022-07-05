@@ -120,7 +120,13 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 				control_parameter[SAVE_SIMULATION_DATA] = true;
 			}
 		}
-
+		if (!control_parameter[SAVE_SCENE_DATA]) {
+			ImGui::TextWrapped("Press end to save basic data of the scene.");
+			if (ImGui::Button("Record##save_scene_data", ImVec2(160, 25)))
+			{
+				control_parameter[SAVE_SCENE_DATA] = true;
+			}
+		}
 
 		ImGui::TreePop();
 	}
@@ -572,19 +578,19 @@ bool ImGuiWindows::loadScene(std::string& path)
 	bool finished_loading = false;
 	ImGui::SetNextWindowPos(ImVec2(SCR_WIDTH - 270, 0));
 	ImGui::SetNextWindowSize(ImVec2(270, 70));
-	ImGui::Begin("Load Scene");
-	if (ImGui::Button("Load Scene", ImVec2(160, 25))) {
+	ImGui::Begin("Load Simulation");
+	if (ImGui::Button("Load Simulation", ImVec2(160, 25))) {
 		m_file_dialog_info.SetTypeFilters({ ".dat" });
-		m_file_dialog_info.SetTitle("Load Scene Data");
+		m_file_dialog_info.SetTitle("Load Simulation Data");
 		m_file_dialog_info.Open();
-		load_scene_is_open = true;
+		load_simulation_is_open = true;
 	}
-	if (load_scene_is_open) {
+	if (load_simulation_is_open) {
 		m_file_dialog_info.Display();
 		if (m_file_dialog_info.HasSelected()) {
 			path=m_file_dialog_info.GetSelected().string();
 			m_file_dialog_info.ClearSelected();
-			load_scene_is_open = false;
+			load_simulation_is_open = false;
 			finished_loading = true;
 		}
 	}
@@ -597,7 +603,7 @@ bool ImGuiWindows::loadScene(std::string& path)
 
 
 
-bool ImGuiWindows::loadModel(std::vector<std::string>& collider_path, std::vector<std::string>& object_path)
+bool ImGuiWindows::loadModel(std::string& scene_path, std::vector<std::string>& collider_path, std::vector<std::string>& object_path)
 {
 	bool finished_loading = false;
 	ImGui::SetNextWindowPos(ImVec2(SCR_WIDTH - 270, 0));
@@ -608,35 +614,38 @@ bool ImGuiWindows::loadModel(std::vector<std::string>& collider_path, std::vecto
 	}
 	ImGui::End();
 	if (open_load_model) {
-		ImGui::SetNextWindowSize(ImVec2(700, 160));
+		ImGui::SetNextWindowSize(ImVec2(700, 250));
 		ImGui::Begin("Load Model", &open_load_model);
 		ImGui::TextWrapped("Load colliders and objects.");
-		if (ImGui::Button("Load Collider", ImVec2(160, 25))) {
-			m_file_dialog_info.SetTypeFilters({ ".obj" });
-			m_file_dialog_info.SetTitle("Load Collider");
+		if (ImGui::Button("Load Scene", ImVec2(160, 25))) {
+			m_file_dialog_info.SetTypeFilters({ ".scene" });
+			m_file_dialog_info.SetTitle("Load scene");
 			m_file_dialog_info.Open();
-			load_collider_is_open = true;
+			load_collider_is_open = -1;
 		}
-		if (load_collider_is_open) {
+		if (load_collider_is_open==-1) {
 			m_file_dialog_info.Display();
 			if (m_file_dialog_info.HasSelected()) {
-				collider_path.push_back(m_file_dialog_info.GetSelected().string());
+				//if (!object_path.empty() && object_path[object_path.size() - 1] == m_file_dialog_info.GetSelected().string()) {
+				//	ImGui::TextWrapped("Error, Need to add different path");
+				//}
+				//else {
+				scene_path=m_file_dialog_info.GetSelected().string();
 				m_file_dialog_info.ClearSelected();
+				load_collider_is_open = -2;
+				//}		
 			}
 		}
-		if (!collider_path.empty()) {
-			ImGui::TextWrapped("Collider path:");
-			for (int i = 0; i < collider_path.size(); ++i) {
-				ImGui::TextWrapped(collider_path[i].c_str());
-			}
+		if (!scene_path.empty()) {
+			ImGui::TextWrapped(scene_path.c_str());
 		}
 		if (ImGui::Button("Load object", ImVec2(160, 25))) {
 			m_file_dialog_info.SetTypeFilters({ ".obj",".ele" });
 			m_file_dialog_info.SetTitle("Load object");
 			m_file_dialog_info.Open();
-			load_collider_is_open = false;
+			load_collider_is_open = 1;
 		}
-		if (!load_collider_is_open) {
+		if (load_collider_is_open==1) {
 			m_file_dialog_info.Display();
 			if (m_file_dialog_info.HasSelected()) {
 				//if (!object_path.empty() && object_path[object_path.size() - 1] == m_file_dialog_info.GetSelected().string()) {
@@ -645,6 +654,7 @@ bool ImGuiWindows::loadModel(std::vector<std::string>& collider_path, std::vecto
 				//else {
 				object_path.push_back(m_file_dialog_info.GetSelected().string());
 				m_file_dialog_info.ClearSelected();
+				load_collider_is_open = -2;
 				//}		
 			}
 		}
@@ -652,6 +662,26 @@ bool ImGuiWindows::loadModel(std::vector<std::string>& collider_path, std::vecto
 			ImGui::TextWrapped("object path:");
 			for (int i = 0; i < object_path.size(); ++i) {
 				ImGui::TextWrapped(object_path[i].c_str());
+			}
+		}
+		if (ImGui::Button("Load Collider", ImVec2(160, 25))) {
+			m_file_dialog_info.SetTypeFilters({ ".obj" });
+			m_file_dialog_info.SetTitle("Load Collider");
+			m_file_dialog_info.Open();
+			load_collider_is_open = 0;
+		}
+		if (load_collider_is_open==0) {
+			m_file_dialog_info.Display();
+			if (m_file_dialog_info.HasSelected()) {
+				collider_path.push_back(m_file_dialog_info.GetSelected().string());
+				m_file_dialog_info.ClearSelected();
+				load_collider_is_open = -2;
+			}
+		}
+		if (!collider_path.empty()) {
+			ImGui::TextWrapped("Collider path:");
+			for (int i = 0; i < collider_path.size(); ++i) {
+				ImGui::TextWrapped(collider_path[i].c_str());
 			}
 		}
 		if (ImGui::Button("Cancel", ImVec2(160, 25))) {

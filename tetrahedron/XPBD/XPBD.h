@@ -52,7 +52,8 @@ public:
 
 	void saveScene();
 	void readScene(const char* file_name);
-
+	unsigned int max_iteration_number;
+	double velocity_damp;
 private:
 	double gravity[3];
 
@@ -122,12 +123,12 @@ private:
 	double calEdgeLength();
 	void setConvergeCondition();
 
-	unsigned int max_iteration_number;
+
 	unsigned int outer_max_iteration_number;
 
 	bool use_bending_based_on_vertex=true;
 
-	double velocity_damp;
+
 
 	//void recordOuterVertexPosition();
 	//bool outerConvergeCondition(unsigned int iteration_num);

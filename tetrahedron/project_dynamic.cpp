@@ -20,7 +20,7 @@ ProjectDynamic::ProjectDynamic()
 	max_inner_iteration_num = 20;
 
 	perform_collision = true;
-
+	velocity_damp = 0.98;
 }
 
 void ProjectDynamic::setForPD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, Floor* floor,
@@ -1168,13 +1168,16 @@ void ProjectDynamic::updateUVPerThread(int thread_id)
 	VectorXd* this_u_;
 	VectorXd* this_v_;
 	VectorXd* this_acceleration;
+
+	double velocity_damp_ = velocity_damp;
+
 	for (unsigned int j = 0; j < 3; ++j)
 	{
 		this_v = &v[j]; this_u = &u[j]; this_u_ = &u_[j]; this_v_ = &v_[j];
 		this_acceleration = &acceleration[j];
 		for (unsigned int i = system_vertex_index_per_thread[thread_id]; i < system_vertex_index_per_thread[thread_id + 1]; ++i) {
 			this_v->data()[i] = (this_u->data()[i] - this_u_->data()[i]) / sub_time_step;
-			this_v->data()[i] *= 0.98;
+			this_v->data()[i] *= velocity_damp_;
 			this_acceleration->data()[i] = (this_v->data()[i] - this_v_->data()[i]) / sub_time_step;
 		}
 		memcpy(this_u_->data() + system_vertex_index_per_thread[thread_id], this_u->data() + system_vertex_index_per_thread[thread_id],

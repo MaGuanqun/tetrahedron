@@ -22,8 +22,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 	Camera camera(cameraPos, normalize(glm::vec3(0.0f, 1.0f, 0.0f)));
 	float zoom_value = 1.0;
 	CoordinateSystem coordinateSystem;
-	bool control_parameter[29];
-	memset(control_parameter, 0, 29);
+	bool control_parameter[30];
+	memset(control_parameter, 0, 30);
 	control_parameter[ONLY_COLLISION_TEST] = false;
 	control_parameter[USE_XPBD] = true;
 	control_parameter[USE_PD_] = false;
@@ -40,6 +40,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	//std::vector<std::vector<bool>> show_collision_element(3);
 	std::vector<std::string> collider_path;
 	std::vector<std::string> object_path;
+	std::string scene_path;
 	bool already_load_model = false;
 	Scene scene;
 	scene.control_parameter = control_parameter;
@@ -63,9 +64,11 @@ void simu_main(GLFWwindow* window, Input* input) {
 	std::vector<std::array<double, 8>> tetrahedron_collision_stiffness;
 	bool set_stiffness[13];
 	memset(set_stiffness, 0, 13);
-	double temp_stiffness[18] = { 1e2,2e2,2e2,2e2,1e2,1e-4,2e-1,1.0,0.0,0.0,0.0,
+	std::vector<double> temp_stiffness(18);
+	double temp_data[18] = {1e2,2e2,2e2,2e2,1e2,1e-4,2e-1,1.0,0.0,0.0,0.0,
 	//1e-3, 2e-3,2e-3,2e-3, 1e-3,1e-9,1e-2};
 	0.0, 0.0,0.0,0.0, 0.0,0.0,0.0 };
+	memcpy(temp_stiffness.data(), temp_data, 18 * 8);
 	//memset(temp_stiffness, 0, 64);
 	UpdateObjStiffness update_obj_stiffness;
 	double tolerance_ratio[7] = { 1e-1,1e-1,1e-1,1e-1, 1e-1, 1e-1, 1e-1 };
@@ -200,16 +203,16 @@ void simu_main(GLFWwindow* window, Input* input) {
 		}
 		start_time = clock();
 		if (control_parameter[USE_PD_] || control_parameter[USE_XPBD] || control_parameter[USE_NEWTON_]) {
-			imgui_windows.operationWindow(cloth_stiffness, tetrahedron_stiffness, simulation_parameter, cloth_collision_stiffness, tetrahedron_collision_stiffness, set_stiffness, temp_stiffness,
+			imgui_windows.operationWindow(cloth_stiffness, tetrahedron_stiffness, simulation_parameter, cloth_collision_stiffness, tetrahedron_collision_stiffness, set_stiffness, temp_stiffness.data(),
 				update_obj_stiffness, set_anchor, !scene.tetrahedron.empty(), &damp_stiffness, rayleigh_damp_stiffness);
 			if (update_obj_stiffness.update_length) {
 				control_parameter[RESET_SIMULATION] = true;
 			}
 		}
 		if (!already_load_model) {
-			if (imgui_windows.loadModel(collider_path, object_path)) {
+			if (imgui_windows.loadModel(scene_path, collider_path, object_path)) {
 				already_load_model = true;
-				scene.loadMesh(collider_path, object_path, tolerance_ratio, control_parameter,temp_stiffness);
+				scene.loadMesh(scene_path, collider_path, object_path, tolerance_ratio, control_parameter,temp_stiffness.data());
 				//glm::vec3 camera_pos = glm::vec3(0.6 * scene.shadow.camera_from_origin + scene.camera_center[0], scene.camera_center[1], -0.8 * scene.shadow.camera_from_origin + scene.camera_center[2]);
 				glm::vec3 camera_pos = glm::vec3(scene.camera_center[0], scene.camera_center[1], -scene.shadow.camera_from_origin + scene.camera_center[2]);
 				camera.updateCamera(camera_pos, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(scene.camera_center[0], scene.camera_center[1], scene.camera_center[2]));
@@ -258,6 +261,13 @@ void simu_main(GLFWwindow* window, Input* input) {
 			if (control_parameter[SAVE_SIMULATION_DATA]) {
 				scene.saveScene();
 			}
+
+			if (control_parameter[SAVE_SCENE_DATA]) {
+				scene.saveParameter(object_path, collider_path,&cloth_stiffness,&tetrahedron_stiffness,&cloth_collision_stiffness,&tetrahedron_collision_stiffness,
+					tolerance_ratio);
+				control_parameter[SAVE_SCENE_DATA] = false;
+			}
+
 
 		}
 

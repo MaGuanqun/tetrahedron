@@ -7,7 +7,7 @@ void SaveScene::save_scene_XPBD(size_t time_stamp, unsigned int simulate_scene_i
 	}
 	record_time_stamp = time_stamp;
 
-	std::string prefix = "./record_scene_data/";
+	std::string prefix = "./record_simulation_data/";
 	if (_access(prefix.c_str(), 0) == -1)
 		_mkdir(prefix.c_str());
 	std::string file_name = prefix + "XPBD_obj_";
@@ -34,6 +34,10 @@ void SaveScene::save_scene_XPBD(size_t time_stamp, unsigned int simulate_scene_i
 	input_file.close();
 
 }
+
+
+
+
 
 
 bool SaveScene::read_scene_XPBD(const char* file_name, size_t* time_stamp, unsigned int* simulate_scene_indicator, std::vector<MeshStruct*>& obj_mesh_struct,

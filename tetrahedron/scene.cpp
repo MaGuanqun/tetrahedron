@@ -1,4 +1,5 @@
 #include"scene.h"
+#include"basic/save_simulate_parameter.h"
 #include<bitset>
 
 Scene::Scene()
@@ -74,6 +75,39 @@ Scene::Scene()
 }
 
 
+void Scene::reorganizeData()
+{
+	anchor_vertex.resize(cloth.size() + tetrahedron.size());
+	for (unsigned int i = 0; i < cloth.size(); ++i) {
+		anchor_vertex[i] = &cloth[i].mesh_struct.anchor_vertex;
+	}
+	for (unsigned int i = 0; i < tetrahedron.size(); ++i) {
+		anchor_vertex[i] = &tetrahedron[i].mesh_struct.anchor_vertex;
+	}
+}
+
+
+void Scene::saveParameter(std::vector<std::string>& path, std::vector<std::string>& collider_path, std::vector<std::array<double, 6>>* cloth_stiffness, std::vector<std::array<double, 6>>* tet_stiffness,
+	std::vector<std::array<double, 8>>* cloth_collision_stiffness, std::vector<std::array<double, 8>>* tet_collision_stiffness, double* tolerance_ratio)
+{
+	double velocity_damp;
+	switch (use_method)
+	{
+	case PD_:
+		velocity_damp = project_dynamic.velocity_damp;
+		break;
+	case XPBD_:
+		velocity_damp = xpbd.velocity_damp;
+		break;
+	case NEWTON_:
+		velocity_damp = 1.0;
+		break;
+	}
+	SaveParameter::writeParameter(path, collider_path, cloth_stiffness, tet_stiffness, cloth_collision_stiffness, tet_collision_stiffness, use_method,
+		anchor_vertex, time_step, tolerance_ratio[OUTER], tolerance_ratio[LOCAL_GLOBAL], xpbd.sub_step_num, xpbd.max_iteration_number,cloth_density,tetrahedron_density,
+		velocity_damp);
+}
+
 void Scene::compareArray()
 {
 	for (unsigned int i = 0; i < thread.thread_num; ++i) {
@@ -147,9 +181,10 @@ void Scene::updateConvRate(double* convergence_rate)
 	// }
 }
 
-void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio, bool* control_parameter,
+void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio, bool* control_parameter,
 	double* initial_stiffness)
 {
+
 	use_method =10;
 	this->control_parameter = control_parameter;
 	xpbd.control_parameter = control_parameter;
@@ -163,6 +198,21 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 		use_method = NEWTON_;
 	}
 	only_test_collision = control_parameter[ONLY_COLLISION_TEST];
+	cloth_density = 0.1;
+	tetrahedron_density = 0.1;
+
+	std::vector<std::vector<double>>obj_stiffness,collide_stiffness;
+	std::vector<std::vector<int>>anchor_vertex;
+	bool load_by_scene_file=false;
+	if (!scene_path.empty()) {
+		load_by_scene_file = true;
+	}
+	double velocity_damp = 1.0;
+	if (load_by_scene_file) {
+		SaveParameter::readFile(scene_path, object_path, collider_path, obj_stiffness, collide_stiffness, anchor_vertex, time_step, use_method, xpbd.sub_step_num, xpbd.max_iteration_number,
+			project_dynamic.local_global_conv_rate, project_dynamic.outer_itr_conv_rate,cloth_density,tetrahedron_density, velocity_damp);
+	}
+
 	Preprocessing preprocessing;
 	preprocessing.load_all_model(collider_path, object_path);
 
@@ -190,8 +240,7 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 	cloth.resize(cloth_num);
 	tetrahedron.resize(tetrahedron_num);
 	setTolerance(tolerance_ratio);
-	double cloth_density = 0.1;
-	double tetrahedron_density = 0.1;
+
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].loadMesh(preprocessing.ori_simulation_mesh[cloth_index_in_object[i]], cloth_density, &thread);
 		if (use_method==NEWTON_ || use_method ==XPBD_)
@@ -207,11 +256,66 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 		}
 	}
 	setWireframwColor();
+
+
+	double cloth_position_stiffness = 1e4;
+	double tet_position_stiffness = 1e4;
+
+	if (load_by_scene_file) {
+		switch (use_method)
+		{
+		case XPBD_:
+			xpbd.velocity_damp = velocity_damp;
+			break;
+		case PD_:
+			project_dynamic.velocity_damp = velocity_damp;
+			break;
+		}
+		if (!cloth.empty()) {
+			initial_stiffness[LENGTH] = obj_stiffness[0][0];
+			initial_stiffness[BENDING]= obj_stiffness[0][1];
+			cloth_position_stiffness = obj_stiffness[0][2];
+			initial_stiffness[DAMP_LENGTH] = obj_stiffness[0][3];
+			initial_stiffness[DAMP_BENDING] = obj_stiffness[0][4];
+			memcpy(initial_stiffness, collide_stiffness[0].data(), 32);
+			memcpy(initial_stiffness+ DAMP_BODY_POINT_TRIANGLE, collide_stiffness[0].data()+4, 32);			
+			for (unsigned int i = 0; i < cloth.size(); ++i) {
+				if (!anchor_vertex[i].empty()) {
+					cloth[i].mesh_struct.anchor_vertex = anchor_vertex[i];
+					cloth[i].mesh_struct.setAnchorPosition();
+				}
+				else {
+					cloth[i].mesh_struct.anchor_vertex.clear();
+					cloth[i].mesh_struct.anchor_position.clear();
+				}
+			}
+		}
+		if (!tetrahedron.empty()) {
+			initial_stiffness[ARAP]= obj_stiffness[cloth.size()][0];
+			tet_position_stiffness = obj_stiffness[cloth.size()][1];
+			initial_stiffness[TET_EDGE_LENGTH] = obj_stiffness[cloth.size()][2];
+			initial_stiffness[DAMP_ARAP] = obj_stiffness[cloth.size()][3];
+			memcpy(initial_stiffness, collide_stiffness[cloth.size()].data(), 32);
+			memcpy(initial_stiffness + DAMP_BODY_POINT_TRIANGLE, collide_stiffness[0].data() + 4, 32);
+			for (unsigned int i = 0; i < tetrahedron.size(); ++i) {
+				if (!anchor_vertex[i+cloth.size()].empty()) {
+					tetrahedron[i].mesh_struct.anchor_vertex = anchor_vertex[i + cloth.size()];
+					tetrahedron[i].mesh_struct.setAnchorPosition();
+				}
+				else {
+					tetrahedron[i].mesh_struct.anchor_vertex.clear();
+					tetrahedron[i].mesh_struct.anchor_position.clear();
+				}
+			}
+		}
+	}
+
+
 	std::vector<SingleClothInfo> single_cloth_info;
 	//std::array<double, 4>collision_stiffness_per = { 2e5,2e5,2e5, 2e5 };// stiffness of collision constraint //=0 body point triangle, =1 point-triangle =2 edge-edge =3 point-point,
 	//std::vector<std::array<double, 4>>collision_stiffness(cloth_num, collision_stiffness_per);
 	for (int i = 0; i < cloth_num; ++i) {
-		single_cloth_info.push_back(SingleClothInfo(cloth_density, initial_stiffness[LENGTH], 1e4, initial_stiffness[BENDING], initial_stiffness, 0.5, 0.4, initial_stiffness[LENGTH],
+		single_cloth_info.push_back(SingleClothInfo(cloth_density, initial_stiffness[LENGTH], cloth_position_stiffness, initial_stiffness[BENDING], initial_stiffness, 0.5, 0.4, initial_stiffness[LENGTH],
 			initial_stiffness[DAMP_LENGTH], initial_stiffness[DAMP_BENDING]));
 	}
 	for (int i = 0; i < cloth_num; ++i) {
@@ -251,6 +355,8 @@ void Scene::loadMesh(std::vector<std::string>& collider_path, std::vector<std::s
 
 	setAveEdgeLength();
 	cursor.createVertices(0.03, camera_center);
+
+	reorganizeData();
 }
 
 void Scene::setGroup()
@@ -1403,6 +1509,12 @@ void Scene::setDampStiffness(double* damp_stiffness, double* rayleigh_damp_stiff
 {
 	newton_method.damp_stiffness = damp_stiffness;
 	newton_method.rayleigh_damp_stiffness = rayleigh_damp_stiffness;
+}
+
+
+void Scene::readScene()
+{
+
 }
 
 //void Scene::getCurrentAABB()

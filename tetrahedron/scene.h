@@ -17,6 +17,7 @@
 #include"newton_method.h"
 #include"basic/move_model.h"
 #include"mesh_struct/graph_color.h"
+
 //#include"basic/drawEdge.h"
 
 class Scene
@@ -33,7 +34,7 @@ public:
 	bool* control_parameter;
 	void initial();
 	void reset();
-	void loadMesh(std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio,
+	void loadMesh(std::string& scene_path, std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio,
 		bool* control_parameter, double* initial_stiffness);
 	void drawScene(Camera* camera, std::vector<std::vector<bool>>& show_element,
 		bool* control_parameter);
@@ -74,8 +75,12 @@ public:
 
 	void readScene(std::string& path);
 	void saveScene();
+	void saveParameter(std::vector<std::string>& path, std::vector<std::string>& collider_path, std::vector<std::array<double, 6>>* cloth_stiffness, std::vector<std::array<double, 6>>* tet_stiffness,
+		std::vector<std::array<double, 8>>* cloth_collision_stiffness, std::vector<std::array<double, 8>>* tet_collision_stiffness, double* tolerance_ratio);
 
 private:
+	double cloth_density;
+	double tetrahedron_density;
 	unsigned int use_method;
 	bool only_test_collision;
 	Light light;
@@ -166,5 +171,13 @@ private:
 	bool use_single_thread = true;
 	GraphColor graph_color;
 	void setGroup();
+
+	std::vector<std::vector<int>*>anchor_vertex;
+
+	void reorganizeData();
+
+
+	void readScene();
+
 	//Draw_Edge draw_edge_;
 };

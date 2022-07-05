@@ -60,7 +60,7 @@ public:
 	Collision collision;
 
 	void updateSystemPos();
-
+	double velocity_damp;
 private:
 	unsigned int tetrahedron_begin_obj_index;
 	int local_global_itr_in_single_outer;

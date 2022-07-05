@@ -5,7 +5,7 @@
 
 XPBD::XPBD()
 {
-	gravity_ = 9.81;
+	gravity_ = 9.8;
 	sub_step_num =14;
 	iteration_number =100;
 

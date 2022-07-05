@@ -1,0 +1,25 @@
+object
+1
+C:\Users\guanq\OneDrive - Clemson University\LearnOpenGL\tetrahedron\tetrahedron\model\clothing.obj
+collider
+1
+C:\Users\guanq\OneDrive - Clemson University\LearnOpenGL\tetrahedron\tetrahedron\model\capsule.obj
+stiffness
+100 0.0001 10000 0 0 0 
+100 200 200 200 0 0 0 0 
+anchor_vertex
+0
+4 0 114 920 1034 
+time_step
+0.0333333
+cloth_density
+0.1
+tet_density
+0.1
+velocity_damp
+0.98
+XPBD
+substep_num
+14
+iteration_num
+2
