@@ -638,8 +638,14 @@ void Scene::readScene(std::string& path)
 void Scene::saveObj()
 {
 	if (time_stamp != last_output_obj_stamp) {
-		for (int i = 0; i < tetrahedron.size(); ++i) {
-			save_obj.write(tetrahedron[i].mesh_struct.vertex_position, tetrahedron[i].mesh_struct.triangle_indices, 10, time_stamp, i);
+		for (unsigned int i = 0; i < cloth.size(); ++i) {
+			save_obj.write(cloth[i].mesh_struct.vertex_position, cloth[i].mesh_struct.triangle_indices, 10, time_stamp, i,"object",cloth[i].material.front_material);
+		}
+		for (unsigned int i = 0; i < tetrahedron.size(); ++i) {
+			save_obj.write(tetrahedron[i].mesh_struct.vertex_position, tetrahedron[i].mesh_struct.triangle_indices, 10, time_stamp, i+cloth.size(), "object",tetrahedron[i].material);
+		}
+		for (unsigned int i = 0; i < collider.size(); ++i) {
+			save_obj.write(collider[i].mesh_struct.vertex_position, collider[i].mesh_struct.triangle_indices, 10, time_stamp, i, "collider",collider[i].material.front_material);
 		}
 		last_output_obj_stamp = time_stamp;
 	}
