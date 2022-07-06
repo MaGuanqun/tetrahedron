@@ -270,7 +270,7 @@ private:
 	inline double frac0(double x);
 	inline double frac1(double x);
 
-	bool searchPairByCell = true;//this means we need to do spatial hashing for vertex, triangle and edge, and find all pairs in a cell, may have duplicate pairs
+	bool searchPairByCell = false;//this means we need to do spatial hashing for vertex, triangle and edge, and find all pairs in a cell, may have duplicate pairs
 
 	void findAllVertexTrianglePairsByPrimitive(int thread_No);
 	void findAllEdgeEdgePairsByPrimitive(int thread_No);
@@ -285,8 +285,8 @@ private:
 
 	std::vector<unsigned int>hash_count_start_per_thread;
 	void findAllEdgeEdgePairsByPrimitiveSingleObj(int thread_No, int obj_No, unsigned int*& primitive_pair_,
-		std::vector<unsigned int*>& representative_edge_num, std::vector<unsigned int*>& face_edge, std::vector<std::array<double, 6>*>& obj_edge_aabb_,
-		unsigned int max_index_number_in_one_cell_triangle_, unsigned int* spatial_hashing_cell_triangle, unsigned int* spatial_hashing_cell_triangle_size,
+		std::vector<std::array<double, 6>*>& obj_edge_aabb_,
+		unsigned int max_index_number_in_one_cell_edge_, unsigned int* spatial_hashing_cell_edge, unsigned int* spatial_hashing_cell_edge_size,
 		bool is_self);
 
 	std::vector<unsigned int*>representative_edge_num;
