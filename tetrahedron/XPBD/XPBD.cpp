@@ -290,9 +290,9 @@ void XPBD::solveByXPBD()
 	if (perform_collision) {
 		thread->assignTask(this, SET_POS_PREDICT);
 		time_t t1 = clock();
-		for (unsigned int j = 0; j < 10; ++j) {
+		//for (unsigned int j = 0; j < 10; ++j) {
 			collision.collisionCulling();
-		}
+		//}
 		time_t t2 = clock() - t1;
 		std::cout << "t2 " << t2 << std::endl;
 		unsigned int vt_pair_num = 0;
