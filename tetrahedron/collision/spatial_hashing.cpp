@@ -1375,22 +1375,22 @@ void SpatialHashing::triangleHashingSmallerHashTable(int thread_No)
 			}
 		}
 		if (searchPairByCell) {
-		if (has_collider_) {
-			spatial_hashing_cell_collider_ = spatial_hashing_cell_collider_edge[thread_No];
-			spatial_hashing_cell_collider_size_ = spatial_hashing_cell_collider_edge_size[thread_No];
-			memset(spatial_hashing_cell_collider_size_, 0, hash_cell_count_ << 2);
-			for (unsigned int i = 0; i < collider_size; ++i) {
-				aabb = (*collider)[i].edge_AABB.data();
-				primitive_begin = (*collider)[i].mesh_struct.edge_index_begin_per_thread[thread_No];
-				primitive_end = (*collider)[i].mesh_struct.edge_index_begin_per_thread[thread_No + 1];
-				primitive_index[1] = i;
-				for (unsigned int j = primitive_begin; j < primitive_end; ++j) {
-					primitive_index[0] = j;
-					triangleHashValueWithoutRecord(aabb[j].data(), spatial_hashing_cell_collider_, primitive_index, scene_aabb_,
-						hash_cell_length, hash_cell_count_, p1, p2, p3, spatial_hashing_cell_collider_size_, max_index_number_in_one_cell_collider_);
-				}
-			}
-		}
+		//if (has_collider_) {
+		//	spatial_hashing_cell_collider_ = spatial_hashing_cell_collider_edge[thread_No];
+		//	spatial_hashing_cell_collider_size_ = spatial_hashing_cell_collider_edge_size[thread_No];
+		//	memset(spatial_hashing_cell_collider_size_, 0, hash_cell_count_ << 2);
+		//	for (unsigned int i = 0; i < collider_size; ++i) {
+		//		aabb = (*collider)[i].edge_AABB.data();
+		//		primitive_begin = (*collider)[i].mesh_struct.edge_index_begin_per_thread[thread_No];
+		//		primitive_end = (*collider)[i].mesh_struct.edge_index_begin_per_thread[thread_No + 1];
+		//		primitive_index[1] = i;
+		//		for (unsigned int j = primitive_begin; j < primitive_end; ++j) {
+		//			primitive_index[0] = j;
+		//			triangleHashValueWithoutRecord(aabb[j].data(), spatial_hashing_cell_collider_, primitive_index, scene_aabb_,
+		//				hash_cell_length, hash_cell_count_, p1, p2, p3, spatial_hashing_cell_collider_size_, max_index_number_in_one_cell_collider_);
+		//		}
+		//	}
+		//}
 
 
 		memset(spatial_hashing_cell_vertex_size[thread_No], 0, hash_cell_count_ << 2);
@@ -1430,23 +1430,23 @@ void SpatialHashing::triangleHashingSmallerHashTable(int thread_No)
 				}
 			}
 		}
-		if (has_collider_) {
-			spatial_hashing_cell_collider_ = spatial_hashing_cell_collider_vertex[thread_No];
-			spatial_hashing_cell_collider_size_ = spatial_hashing_cell_collider_vertex_size[thread_No];
-			memset(spatial_hashing_cell_collider_size_, 0, hash_cell_count_ << 2);
-			for (unsigned int i = 0; i < collider_size; ++i) {
-				aabb = (*collider)[i].vertex_AABB.data();
-				primitive_begin = (*collider)[i].mesh_struct.vertex_index_begin_per_thread[thread_No];
-				primitive_end = (*collider)[i].mesh_struct.vertex_index_begin_per_thread[thread_No + 1];
-				primitive_index[1] = i;
-				for (unsigned int j = primitive_begin; j < primitive_end; ++j) {
-					primitive_index[0] = j;
-					triangleHashValueWithRecord(aabb[j].data(), spatial_hashing_cell_collider_, primitive_index, scene_aabb_,
-						hash_cell_length, hash_cell_count_, p1, p2, p3, spatial_hashing_cell_collider_size_, collider_vertex_hash[i] + j * max_vertex_cell_size,
-						max_index_number_in_one_cell_collider_);
-				}
-			}
-		}
+		//if (has_collider_) {
+		//	spatial_hashing_cell_collider_ = spatial_hashing_cell_collider_vertex[thread_No];
+		//	spatial_hashing_cell_collider_size_ = spatial_hashing_cell_collider_vertex_size[thread_No];
+		//	memset(spatial_hashing_cell_collider_size_, 0, hash_cell_count_ << 2);
+		//	for (unsigned int i = 0; i < collider_size; ++i) {
+		//		aabb = (*collider)[i].vertex_AABB.data();
+		//		primitive_begin = (*collider)[i].mesh_struct.vertex_index_begin_per_thread[thread_No];
+		//		primitive_end = (*collider)[i].mesh_struct.vertex_index_begin_per_thread[thread_No + 1];
+		//		primitive_index[1] = i;
+		//		for (unsigned int j = primitive_begin; j < primitive_end; ++j) {
+		//			primitive_index[0] = j;
+		//			triangleHashValueWithRecord(aabb[j].data(), spatial_hashing_cell_collider_, primitive_index, scene_aabb_,
+		//				hash_cell_length, hash_cell_count_, p1, p2, p3, spatial_hashing_cell_collider_size_, collider_vertex_hash[i] + j * max_vertex_cell_size,
+		//				max_index_number_in_one_cell_collider_);
+		//		}
+		//	}
+		//}
 	}
 }
 
