@@ -1,9 +1,9 @@
 object
 1
-C:\Users\guanq\OneDrive - Clemson University\LearnOpenGL\tetrahedron\tetrahedron\model\clothing.obj
+.\model\band_cap.obj
 collider
 1
-C:\Users\guanq\OneDrive - Clemson University\LearnOpenGL\tetrahedron\tetrahedron\model\capsule.obj
+.\model\capsule_cap.obj
 stiffness
 100 0.0001 10000 0 0 0 
 100 200 200 200 0 0 0 0 

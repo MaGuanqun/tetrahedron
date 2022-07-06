@@ -847,6 +847,7 @@ void SpatialHashing::findAllVertexTrianglePairs(int thread_No)
 			}
 		}
 		if (has_collider_) {
+			//std::cout << "--" << std::endl;
 			hash_cell_element_size_collider = spatial_hashing_cell_collider_triangle_size[0][cell_index];
 			cell_collider_triangle_index = spatial_hashing_cell_collider_triangle[0]+cell_index* max_index_number_in_one_cell_collider_triangle_;
 
@@ -1858,7 +1859,14 @@ void SpatialHashing::recordNonEmptyCell()
 	thread->assignTask(this, SET_HASH_CELL_PAIR_NUM_PREFIX_SUM_TOGETHER);
 
 
-	thread->assignTask(this, SET_PAIR_AVE);
+	if (thread_num > 1) {
+		thread->assignTask(this, SET_PAIR_AVE);
+	}
+	else {
+		for (unsigned int i = 0; i < 2; ++i) {
+			setPairAveInThread(i);
+		}
+	}
 
 }
 

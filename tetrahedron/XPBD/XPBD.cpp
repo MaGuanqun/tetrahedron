@@ -289,10 +289,28 @@ void XPBD::solveByXPBD()
 	//if (sub_step_num == 1) {
 	if (perform_collision) {
 		thread->assignTask(this, SET_POS_PREDICT);
-		collision.collisionCulling();
+		time_t t1 = clock();
+		for (unsigned int j = 0; j < 10; ++j) {
+			collision.collisionCulling();
+		}
+		time_t t2 = clock() - t1;
+		std::cout << "t2 " << t2 << std::endl;
+		unsigned int vt_pair_num = 0;
+		unsigned int ee_pair_num = 0;
+		unsigned int vt_c_pair_num=0;
+		for (unsigned int j = 0; j < total_thread_num; ++j) {
+			vt_pair_num += collision.spatial_hashing.vertex_triangle_pair[j][0];
+			ee_pair_num += collision.spatial_hashing.edge_edge_pair[j][0];
+			vt_c_pair_num += collision.spatial_hashing.vertex_obj_triangle_collider_pair[j][0];
+			//spatial_hashing.vertex_triangle_pair[j][0] = 0;
+			//spatial_hashing.edge_edge_pair[j][0] = 0;
+	//		spatial_hashing.vertex_obj_triangle_collider_pair[j][0] = 0;
+		}
+		std::cout << "vt " << vt_pair_num << " ee " << ee_pair_num << " vt_c " << vt_c_pair_num << std::endl;
 	}
 	//}
 	iteration_number = 0;
+	time_t t3 = clock();
 	for (unsigned int sub_step = 0; sub_step < sub_step_num; ++sub_step) {
 		memset(lambda.data(), 0, 8 * lambda.size());
 		inner_iteration_number = 0;
@@ -317,6 +335,8 @@ void XPBD::solveByXPBD()
 		updatePosition();
 		updateRenderNormal();
 	}
+	time_t t4 = clock() - t3;
+	std::cout << "t4 " << t4 << std::endl;
 	updateRenderVertexNormal();
 }
 
