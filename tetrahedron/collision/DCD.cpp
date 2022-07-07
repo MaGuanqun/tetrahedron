@@ -721,6 +721,7 @@ void DCD::re_XPBDedgeEdge(double* current_edge_vertex_0, double* current_edge_ve
     double barycentric[4];
     double distance2;
     double norm[3];
+
     CCD::internal::edgeEdgeDistanceType(initial_edge_vertex_0, initial_edge_vertex_1,
         initial_compare_edge_vertex_0, initial_compare_edge_vertex_1, barycentric);
     if (re_checkEdgeEdgeCollision(current_edge_vertex_0, current_edge_vertex_1, initial_edge_vertex_0, initial_edge_vertex_1, current_compare_edge_vertex_0, current_compare_edge_vertex_1,
@@ -738,12 +739,12 @@ bool DCD::XPBDedgeEdge(double* current_edge_vertex_0, double* current_edge_verte
     double* initial_compare_edge_vertex_1, double tolerance, double mass_inv_e_0_0, double mass_inv_e_0_1, double mass_inv_e_1_0, double mass_inv_e_1_1)
 {
     double barycentric[4];
-    CCD::internal::edgeEdgeDistanceType(initial_edge_vertex_0, initial_edge_vertex_1,
-        initial_compare_edge_vertex_0, initial_compare_edge_vertex_1, barycentric);
-    //if (CCD::internal::edgeEdgeDistanceType(initial_edge_vertex_0, initial_edge_vertex_1,
-    //    initial_compare_edge_vertex_0, initial_compare_edge_vertex_1, barycentric) != 8) {
-    //    return;
-    //}
+    //CCD::internal::edgeEdgeDistanceType(initial_edge_vertex_0, initial_edge_vertex_1,
+    //    initial_compare_edge_vertex_0, initial_compare_edge_vertex_1, barycentric);
+    if (!CCD::internal::edgeEdgeNearestPointOnEdge(initial_edge_vertex_0, initial_edge_vertex_1,
+        initial_compare_edge_vertex_0, initial_compare_edge_vertex_1, barycentric)) {
+        return false;
+    }
     double norm[3];
     double distance2;
     if (checkEdgeEdgeCollision(current_edge_vertex_0, current_edge_vertex_1, initial_edge_vertex_0, initial_edge_vertex_1, current_compare_edge_vertex_0, current_compare_edge_vertex_1,
@@ -843,12 +844,10 @@ void DCD::XPBDcalDistanceEdgeEdge(double* norm, double distance, double* alpha, 
 {
     double coe;
     // = alpha[0] * alpha[0] * mass_inv_e_0_0 + alpha[1] * alpha[1] * mass_inv_e_0_1 + alpha[2] * alpha[2] * mass_inv_e_1_0
-        //+ alpha[3] * alpha[3] * mass_inv_e_1_1;
-    
+        //+ alpha[3] * alpha[3] * mass_inv_e_1_1;    
     //distance is C
     //grad_c
     //grad_c_p0 = (+-) alpha * norm and so on
-
     //double e[3];
     //use e[3] to store x_i-x_ori
     //double lambda_numerator = 0.0;
@@ -860,7 +859,6 @@ void DCD::XPBDcalDistanceEdgeEdge(double* norm, double distance, double* alpha, 
     //lambda_numerator += alpha[2] * DOT(e, norm);
     //SUB(e, current_compare_edge_vertex_1, initial_compare_edge_vertex_1);
     //lambda_numerator += alpha[3] * DOT(e, norm);
-
     // lambda
     //double alpha_ = 0.0;//  1.0 / (stiffness * dt * dt);
     //double gamma = damping_stiffness / (stiffness * dt);
@@ -872,9 +870,6 @@ void DCD::XPBDcalDistanceEdgeEdge(double* norm, double distance, double* alpha, 
         + mass_inv_e_0_1 * alpha[1] * alpha[1] + mass_inv_e_1_0 * alpha[2] * alpha[2] +
         mass_inv_e_1_1 * alpha[3] * alpha[3]);
 
-    //delta_lambda *= 0.5;
-
-    //lambda += delta_lambda;
 
     coe = -mass_inv_e_0_0 * delta_lambda * alpha[0];
     ACCUMULATE_SUM_WITH_COE(current_edge_vertex_0, coe, norm);
@@ -1198,11 +1193,11 @@ bool DCD::checkEdgeEdgeCollision(double* current_edge_vertex_0, double* current_
     double e1[3];
     POINT_ON_EDGE(e0, alpha[0], alpha[1], initial_edge_vertex_0, initial_edge_vertex_1);
     POINT_ON_EDGE(e1, alpha[2], alpha[3], initial_compare_edge_vertex_0, initial_compare_edge_vertex_1);
-    SUB(norm, e1, e0);
-    double distance = sqrt(DOT(norm, norm));
+    SUB_(e1, e0);
+    double distance = sqrt(DOT(e1, e1));
 
     if (distance > NORM_NEAR_ZERO) {
-        DEV_(norm, distance);
+        DEV(norm,e1, distance);
     }
     else {
         double edge0[3], edge1[3];
@@ -1223,20 +1218,25 @@ bool DCD::checkEdgeEdgeCollision(double* current_edge_vertex_0, double* current_
         }
     }
 
-    POINT_ON_EDGE(e0, alpha[0], alpha[1], current_edge_vertex_0, current_edge_vertex_1);
-    POINT_ON_EDGE(e1, alpha[2], alpha[3], current_compare_edge_vertex_0, current_compare_edge_vertex_1);
-    SUB(e0, e1, e0);
-    distance2 = DOT(norm, e0)-tolerance;
 
-    double displacement0[3], displacement1[3];
-    SUB(displacement0, current_edge_vertex_0, initial_edge_vertex_0);
-    SUB(displacement1, current_edge_vertex_1, initial_edge_vertex_1);
-    POINT_ON_EDGE(e0, alpha[0], alpha[1], displacement0, displacement1);
-    SUB(displacement0, current_compare_edge_vertex_0, initial_compare_edge_vertex_0);
-    SUB(displacement1, current_compare_edge_vertex_1, initial_compare_edge_vertex_1);
-    POINT_ON_EDGE(e1, alpha[2], alpha[3], displacement0, displacement1);
-    SUB_(e0, e1);
-    double dp_dc_project = DOT(norm, e0);
+    double e2[3], e3[3];
+    POINT_ON_EDGE(e2, alpha[0], alpha[1], current_edge_vertex_0, current_edge_vertex_1);
+    POINT_ON_EDGE(e3, alpha[2], alpha[3], current_compare_edge_vertex_0, current_compare_edge_vertex_1);
+    SUB_(e3, e2);
+    distance2 = DOT(norm, e3)-tolerance;
+
+    //double displacement0[3], displacement1[3];
+    //SUB(displacement0, current_edge_vertex_0, initial_edge_vertex_0);
+    //SUB(displacement1, current_edge_vertex_1, initial_edge_vertex_1);
+    //POINT_ON_EDGE(e0, alpha[0], alpha[1], displacement0, displacement1);
+    //SUB(displacement0, current_compare_edge_vertex_0, initial_compare_edge_vertex_0);
+    //SUB(displacement1, current_compare_edge_vertex_1, initial_compare_edge_vertex_1);
+    //POINT_ON_EDGE(e1, alpha[2], alpha[3], displacement0, displacement1);
+    //SUB_(e0, e1);
+
+    SUB_(e1, e3);
+
+    double dp_dc_project = DOT(norm, e1);
 
 
     //if (collider) {

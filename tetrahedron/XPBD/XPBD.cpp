@@ -1,6 +1,6 @@
 #include"XPBD.h"
 
-#define SUB_STEP_SIZE_DETECTION 3
+#define SUB_STEP_SIZE_DETECTION 4
 
 
 XPBD::XPBD()
@@ -289,28 +289,28 @@ void XPBD::solveByXPBD()
 	//if (sub_step_num == 1) {
 	if (perform_collision) {
 		thread->assignTask(this, SET_POS_PREDICT);
-		time_t t1 = clock();
+		//time_t t1 = clock();
 		//for (unsigned int j = 0; j < 10; ++j) {
 			collision.collisionCulling();
 		//}
-		time_t t2 = clock() - t1;
-		std::cout << "t2 " << t2 << std::endl;
-		unsigned int vt_pair_num = 0;
-		unsigned int ee_pair_num = 0;
-		unsigned int vt_c_pair_num=0;
-		for (unsigned int j = 0; j < total_thread_num; ++j) {
-			vt_pair_num += collision.spatial_hashing.vertex_triangle_pair[j][0];
-			ee_pair_num += collision.spatial_hashing.edge_edge_pair[j][0];
-			vt_c_pair_num += collision.spatial_hashing.vertex_obj_triangle_collider_pair[j][0];
-			//spatial_hashing.vertex_triangle_pair[j][0] = 0;
-			//spatial_hashing.edge_edge_pair[j][0] = 0;
-	//		spatial_hashing.vertex_obj_triangle_collider_pair[j][0] = 0;
-		}
-		std::cout << "vt " << vt_pair_num << " ee " << ee_pair_num << " vt_c " << vt_c_pair_num << std::endl;
+	//	time_t t2 = clock() - t1;
+	//	std::cout << "t2 " << t2 << std::endl;
+	//	unsigned int vt_pair_num = 0;
+	//	unsigned int ee_pair_num = 0;
+	//	unsigned int vt_c_pair_num=0;
+	//	for (unsigned int j = 0; j < total_thread_num; ++j) {
+	//		vt_pair_num += collision.spatial_hashing.vertex_triangle_pair[j][0];
+	//		ee_pair_num += collision.spatial_hashing.edge_edge_pair[j][0];
+	//		vt_c_pair_num += collision.spatial_hashing.vertex_obj_triangle_collider_pair[j][0];
+	//		//spatial_hashing.vertex_triangle_pair[j][0] = 0;
+	//		//spatial_hashing.edge_edge_pair[j][0] = 0;
+	////		spatial_hashing.vertex_obj_triangle_collider_pair[j][0] = 0;
+	//	}
+	//	std::cout << "vt " << vt_pair_num << " ee " << ee_pair_num << " vt_c " << vt_c_pair_num << std::endl;
 	}
 	//}
 	iteration_number = 0;
-	time_t t3 = clock();
+	//time_t t3 = clock();
 	for (unsigned int sub_step = 0; sub_step < sub_step_num; ++sub_step) {
 		memset(lambda.data(), 0, 8 * lambda.size());
 		inner_iteration_number = 0;
@@ -335,8 +335,8 @@ void XPBD::solveByXPBD()
 		updatePosition();
 		updateRenderNormal();
 	}
-	time_t t4 = clock() - t3;
-	std::cout << "t4 " << t4 << std::endl;
+	//time_t t4 = clock() - t3;
+	//std::cout << "t4 " << t4 << std::endl;
 	updateRenderVertexNormal();
 }
 
@@ -665,9 +665,8 @@ void XPBD::solveBendingConstraint()
 			//for (unsigned int j = 0; j < size; ++j) {
 			for(auto k= mesh_struct_->unconnected_vertex_index.begin();k<mesh_struct_->unconnected_vertex_index.end(); ++k) {
 				for (auto j = k->begin(); j < k->end(); ++j) {
-					XPBD_constraint.solveBendingConstraint(vertex_pos[*j].data(), mass_inv[*j], vertex_pos, mesh_struct_->vertices[*j].neighbor_vertex,
-						rest_mean_curvature_norm_[*j], lbo_weight_[*j], vertex_lbo_[*j], stiffness, sub_time_step, mass_inv, *lambda_, damp_stiffness,
-						initial_vertex_pos[*j].data(), initial_vertex_pos);
+					XPBD_constraint.solveBendingConstraint(vertex_pos[*j].data(), mass_inv[*j], vertex_pos, mesh_struct_->vertices[*j].neighbor_vertex.data(), mesh_struct_->vertices[*j].neighbor_vertex.size(),
+						rest_mean_curvature_norm_[*j], lbo_weight_[*j], vertex_lbo_[*j], stiffness, sub_time_step, mass_inv, *lambda_);//, damp_stiffness,				initial_vertex_pos[*j].data(), initial_vertex_pos
 					lambda_++;
 					//energy += energy_;
 				}			

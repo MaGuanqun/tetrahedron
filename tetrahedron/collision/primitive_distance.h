@@ -164,6 +164,44 @@ namespace CCD {
         }
 
         template <class T>
+        bool edgeEdgeNearestPointOnEdge(
+            const T* ea0,
+            const T* ea1,
+            const T* eb0,
+            const T* eb1,
+            T* barycentric)
+        {
+            T u[3], v[3], w[3];
+            SUB(u, ea1, ea0);
+            SUB(v, eb1, eb0);
+            SUB(w, ea0, eb0);
+            T a = DOT(u, u); // always >= 0
+            T b = DOT(u, v);
+            T c = DOT(v, v); // always >= 0
+            T d = DOT(u, w);
+            T e = DOT(v, w);
+            T D = a * c - b * b; // always >= 0
+            T sN, tN;
+            // compute the line parameters of the two closest points
+            sN = (b * e - c * d);
+            if (sN < 0.0 || sN > D) { // sc < 0 => the s=0 edge is visible
+                return false;
+            }
+            tN = (a * e - b * d);
+            if (tN < 0.0 || tN > D) {
+                return false;
+            }
+            barycentric[0] = 1.0 - sN / D;
+            barycentric[1] = sN / D;
+            barycentric[2] = 1.0 - tN / D;
+            barycentric[3] = tN / D;
+            return true;         
+        }
+
+
+
+
+        template <class T>
         int edgeEdgeDistanceType(
             const T* ea0,
             const T* ea1,

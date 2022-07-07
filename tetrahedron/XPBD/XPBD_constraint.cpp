@@ -455,15 +455,15 @@ void XPBDconstraint::solveEdgeLengthConstraint(double* p0, double* p1, const dou
 
 
 
-void XPBDconstraint::solveBendingConstraint(double* center_vertex, double vertex_inv_mass,  std::array<double,3>* vertex_position, std::vector<unsigned int>& neighbor_vertex,
-	double rest_Aq_norm, double lbo_weight, VectorXd& vertex_lbo,  double stiffness, double dt, double* inv_mass, double &lambda,
-	const double damping_stiffness, double* initial_center_vertex, std::array<double, 3>* inital_vertex_position)
+void XPBDconstraint::solveBendingConstraint(double* center_vertex, double vertex_inv_mass,  std::array<double,3>* vertex_position, unsigned int* neighbor_vertex, unsigned int neighbor_vertex_size,
+	double rest_Aq_norm, double lbo_weight, VectorXd& vertex_lbo,  double stiffness, double dt, double* inv_mass, double &lambda)
+	//,	const double damping_stiffness, double* initial_center_vertex, std::array<double, 3>* inital_vertex_position
 {
 //	energy = 0.0;
 	std::vector<VectorXd>q(3);
 	//std::vector<VectorXd>q_initial(3);
 	double aq[3];
-	unsigned int size = neighbor_vertex.size() + 1;
+	unsigned int size = neighbor_vertex_size + 1;
 	VectorXd inv_m(size);
 	for (unsigned int j = 0; j < 3; ++j) {
 		q[j].resize(size);
@@ -479,20 +479,20 @@ void XPBDconstraint::solveBendingConstraint(double* center_vertex, double vertex
 
 	inv_m[0] = vertex_inv_mass;
 
-	unsigned int index;
+
 	for (unsigned int h = 1; h < size; h++) {
-		index = neighbor_vertex[h - 1];
-		q[0][h] = vertex_position[index][0];
-		q[1][h] = vertex_position[index][1];
-		q[2][h] = vertex_position[index][2];
+		q[0][h] = vertex_position[*neighbor_vertex][0];
+		q[1][h] = vertex_position[*neighbor_vertex][1];
+		q[2][h] = vertex_position[*neighbor_vertex][2];
 
 		//q_initial[0][h] = inital_vertex_position[index][0];
 		//q_initial[1][h] = inital_vertex_position[index][1];
 		//q_initial[2][h] = inital_vertex_position[index][2];
 
-		inv_m[h] = inv_mass[index];
+		inv_m[h] = inv_mass[*neighbor_vertex];
+		neighbor_vertex++;
 	}
-
+	neighbor_vertex -= neighbor_vertex_size;
 
 
 	aq[0] = vertex_lbo.dot(q[0]);
@@ -540,17 +540,18 @@ void XPBDconstraint::solveBendingConstraint(double* center_vertex, double vertex
 		/ (((q[0].cwiseProduct(inv_m)).dot(q[0]) + (q[1].cwiseProduct(inv_m)).dot(q[1])//(1.0 + gamma) * (q[0].dot(q[0].cwiseProduct(inv_m))
 			+ (q[2].cwiseProduct(inv_m)).dot(q[2])) + alpha_);
 	lambda += delta_lambda;
+
+
 	inv_m *= delta_lambda;
-
-
 	center_vertex[0] += inv_m.data()[0] * q[0][0];
 	center_vertex[1] += inv_m.data()[0] * q[1][0];
 	center_vertex[2] += inv_m.data()[0] * q[2][0];
 
 	for (unsigned int h = 1; h < size; h++) {
-		vertex_position[neighbor_vertex[h - 1]][0] += inv_m.data()[h] * q[0][h];
-		vertex_position[neighbor_vertex[h - 1]][1] += inv_m.data()[h] * q[1][h];
-		vertex_position[neighbor_vertex[h - 1]][2] += inv_m.data()[h] * q[2][h];
+		vertex_position[*neighbor_vertex][0] += inv_m.data()[h] * q[0][h];
+		vertex_position[*neighbor_vertex][1] += inv_m.data()[h] * q[1][h];
+		vertex_position[*neighbor_vertex][2] += inv_m.data()[h] * q[2][h];
+		neighbor_vertex++;
 	}
 
 	//energy = 0.5 * stiffness * C * C/ lbo_weight;

@@ -1117,11 +1117,11 @@ void Collision::collisionCulling()
 	//	num += spatial_hashing.edge_edge_pair[j][0] / 4;
 	//}
 	//std::cout << "total e-e pair " << num << std::endl;
-	for (unsigned int j = 0; j < thread_num; ++j) {
+	//for (unsigned int j = 0; j < thread_num; ++j) {
 		//spatial_hashing.vertex_triangle_pair[j][0] = 0;
 		//spatial_hashing.edge_edge_pair[j][0] = 0;
 //		spatial_hashing.vertex_obj_triangle_collider_pair[j][0] = 0;
-	}
+	//}
 
 	setPairIndexEveryThread();
 
@@ -1728,6 +1728,14 @@ void Collision::XPBDsolveCollisionConstraint()
 	}
 
 	setTargetPositionEven();
+
+	//unsigned int j = 0;
+	//unsigned int k = 0;
+	//for (unsigned int i = 0; i < thread_num; ++i) {
+	//	j += point_triangle_target_pos_index[i][0];
+	//	k += edge_edge_target_pos_index[i][0];
+	//}
+	//std::cout << "vt " << j / 4 << " ee " << k / 4 << std::endl;
 }
 
 void Collision::re_XPBDsolveCollisionConstraint()
