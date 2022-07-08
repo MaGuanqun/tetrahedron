@@ -62,6 +62,7 @@ public:
 	void updateSystemPos();
 	double velocity_damp;
 private:
+
 	unsigned int tetrahedron_begin_obj_index;
 	int local_global_itr_in_single_outer;
 	unsigned int total_thread_num;
@@ -71,6 +72,8 @@ private:
 	int super_jacobi_step_size;
 	int max_it;
 	int max_jacobi_itr_num;
+	unsigned int max_single_inner_iter_num;
+
 	unsigned int total_cloth_num, total_tetrahedron_num, total_collider_num;
 	std::vector<unsigned int>cloth_sys_size, tetrahedron_sys_size;
 	unsigned int sys_size;

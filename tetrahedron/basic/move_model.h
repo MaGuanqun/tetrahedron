@@ -12,7 +12,7 @@ public:
 	void sceneRotateCapsule(int t, std::vector<std::array<double, 3>>& ori_capsule_vertices, std::vector<std::array<double, 3>>& capsule_vertices, 
 		MeshStruct* band_mesh_struct, bool use_PD, double sub_step_size);
 	void updateColliderPosition(std::vector<Collider>& collider);
-
+	void moveSkirt(int t, std::vector<MeshStruct*>& mesh_struct, bool use_PD, double sub_step_size);
 private:
 	//Matrix3d band_rotate;
 	//Matrix3d band_rotate_reverse;

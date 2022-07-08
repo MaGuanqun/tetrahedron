@@ -84,6 +84,14 @@ void Scene::reorganizeData()
 	for (unsigned int i = 0; i < tetrahedron.size(); ++i) {
 		anchor_vertex[i] = &tetrahedron[i].mesh_struct.anchor_vertex;
 	}
+
+	mesh_struct.resize(cloth.size() + tetrahedron.size());
+	for (unsigned int i = 0; i < cloth.size(); ++i) {
+		mesh_struct[i] = &cloth[i].mesh_struct;
+	}
+	for (unsigned int i = 0; i < tetrahedron.size(); ++i) {
+		mesh_struct[i] = &tetrahedron[i].mesh_struct;
+	}
 }
 
 
@@ -104,8 +112,7 @@ void Scene::saveParameter(std::vector<std::string>& path, std::vector<std::strin
 		break;
 	}
 	SaveParameter::writeParameter(path, collider_path, cloth_stiffness, tet_stiffness, cloth_collision_stiffness, tet_collision_stiffness, use_method,
-		anchor_vertex, time_step, tolerance_ratio[OUTER], tolerance_ratio[LOCAL_GLOBAL], xpbd.sub_step_num, xpbd.max_iteration_number,cloth_density,tetrahedron_density,
-		velocity_damp);
+		anchor_vertex, time_step,project_dynamic.outer_itr_conv_rate, project_dynamic.local_global_conv_rate, xpbd.sub_step_num, xpbd.max_iteration_number,cloth_density,tetrahedron_density,		velocity_damp);
 }
 
 void Scene::compareArray()
@@ -752,11 +759,14 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 		if (control_parameter[START_TEST]) {
 			time_indicate_for_simu++;
 
-			if (!collider.empty()) {
-				move_model.sceneRotateCapsule(time_indicate_for_simu, collider[0].mesh_struct.vertex_for_render, collider[0].mesh_struct.vertex_position, &cloth[0].mesh_struct, use_method == PD_,1.0);
-			}
+			move_model.moveSkirt(time_indicate_for_simu, mesh_struct, use_method == PD_, 1.0);
+
+			//rorate band capsule
+			//if (!collider.empty()) {
+			//	move_model.sceneRotateCapsule(time_indicate_for_simu, collider[0].mesh_struct.vertex_for_render, collider[0].mesh_struct.vertex_position, &cloth[0].mesh_struct, use_method == PD_,1.0);
+			//}
 		}
-		time_t t0 = clock();
+		auto t0 = std::chrono::system_clock::now();
 
 		switch (use_method)
 		{
@@ -773,16 +783,16 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 		if (control_parameter[START_TEST]) {
 			move_model.updateColliderPosition(collider);
 		}
-		time_t t1 = clock() - t0;
+		auto t1 = std::chrono::system_clock::now();
 		if (time_stamp % time_record_interval == 0) {
-			time_accumulation = t1;
+			time_accumulation = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0);
 		}
 		else if (time_stamp % time_record_interval < (time_record_interval - 1)) {
-			time_accumulation += t1;
+			time_accumulation += std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0);;
 		}
 		else {
-			time_accumulation += t1;
-			*time_per_frame = time_accumulation / (double)time_record_interval;
+			time_accumulation += std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0);
+			*time_per_frame =double(time_accumulation.count())* std::chrono::microseconds::period::num/ std::chrono::microseconds::period::den*1000.0 / (double)time_record_interval;
 		}
 
 

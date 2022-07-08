@@ -32,6 +32,12 @@ void SetModel::load_getAABB(std::string& path, int& index, int obj_index)
 		else if (name == "sphere.obj") {
 			create_mesh.setSphere(ori_mesh);
 		}
+		else if (name == "skirt_outer.obj") {
+			create_mesh.setCylinder(ori_mesh, 0.18, 0.36, 20, 7, 1);
+		}
+		else if (name == "skirt_inner.obj") {
+			create_mesh.setCylinder(ori_mesh, 0.15, 0.42, 20, 8, 2);
+		}
 		else {
 			ReadObj read_obj;
 			read_obj.load(path.c_str(), ori_mesh);

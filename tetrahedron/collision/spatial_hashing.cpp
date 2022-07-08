@@ -103,10 +103,10 @@ void SpatialHashing::initialHashCell(unsigned int total_triangle_num, unsigned i
 		spatial_hashing_cell_triangle[i] = new unsigned int[hash_cell_count * max_index_number_in_one_cell];
 		memset(spatial_hashing_cell_triangle[i], 0, 4 * max_index_number_in_one_cell * hash_cell_count);
 
-		if (has_collider) {
-			spatial_hashing_cell_edge[i] = new unsigned int[hash_cell_count * max_index_number_in_one_cell_edge];
-			memset(spatial_hashing_cell_edge[i], 0, 4 * max_index_number_in_one_cell_edge * hash_cell_count);
+		spatial_hashing_cell_edge[i] = new unsigned int[hash_cell_count * max_index_number_in_one_cell_edge];
+		memset(spatial_hashing_cell_edge[i], 0, 4 * max_index_number_in_one_cell_edge * hash_cell_count);
 
+		if (has_collider) {
 			//edge_edge_pair_collider[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num];
 			//memset(edge_edge_pair_collider[i], 0, 4 * estimate_coeff_for_pair_num * total_triangle_num);
 

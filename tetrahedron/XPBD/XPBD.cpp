@@ -1,22 +1,22 @@
 #include"XPBD.h"
 
-#define SUB_STEP_SIZE_DETECTION 3
+#define SUB_STEP_SIZE_DETECTION 1
 
 
 XPBD::XPBD()
 {
 	gravity_ = 9.8;
-	sub_step_num =14;
+	sub_step_num =1;
 	iteration_number =100;
 
 	damping_coe = 0.0;
 
 	perform_collision = true;
-	max_iteration_number = 2;
+	max_iteration_number = 4;
 	outer_max_iteration_number = 100;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
-	velocity_damp = 0.98;
+	velocity_damp = 0.995;
 	//energy_converge_ratio = 5e-3;
 	
 }
@@ -317,9 +317,12 @@ void XPBD::solveByXPBD()
 		if (sub_step_num >1) {
 			thread->assignTask(this, SET_POS_PREDICT_SUB_TIME_STEP);
 			if (control_parameter[START_TEST]) {
-				if (!collider->empty()) {
-					move_model->sceneRotateCapsule(*time_indicate_for_simu, collider->data()[0].mesh_struct.vertex_for_render, collider->data()[0].mesh_struct.vertex_position, mesh_struct[0], false, sub_step_num);
-				}
+
+				move_model->moveSkirt(*time_indicate_for_simu, mesh_struct, false, sub_step_num);
+				//rorate band capsule
+				//if (!collider->empty()) {
+				//	move_model->sceneRotateCapsule(*time_indicate_for_simu, collider->data()[0].mesh_struct.vertex_for_render, collider->data()[0].mesh_struct.vertex_position, mesh_struct[0], false, sub_step_num);
+				//}
 			}
 		}	
 		while (!convergeCondition(inner_iteration_number)) {

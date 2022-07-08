@@ -10,6 +10,58 @@ void MoveModel::updateColliderPosition(std::vector<Collider>& collider)
 }
 
 
+void MoveModel::moveSkirt(int t, std::vector<MeshStruct*>& mesh_struct, bool use_PD, double sub_step_size)
+{
+	double move_dis = 0.025;
+	double move_dis2 = 0.003;
+
+	double move_dis3 = move_dis/sub_step_size;
+	double move_dis4 = move_dis2/sub_step_size;
+
+	if (t < 500) {
+		if (use_PD) {
+			for (unsigned int j = 0; j < mesh_struct.size(); ++j) {
+				for (int i = 0; i < mesh_struct[j]->anchor_position.size(); ++i) {
+					if (t % 100 < 50) {
+						mesh_struct[j]->anchor_position[i][0] += move_dis3;
+					}
+					else {
+						mesh_struct[j]->anchor_position[i][0] -= move_dis3;
+					}
+					if (t % 80 < 40) {
+						mesh_struct[j]->anchor_position[i][1] += move_dis4;
+					}
+					else {
+						mesh_struct[j]->anchor_position[i][1] -= move_dis4;
+					}
+				}
+			}
+		}
+		else {
+			for (unsigned int j = 0; j < mesh_struct.size(); ++j) {
+				for (int i = 0; i < mesh_struct[j]->anchor_vertex.size(); ++i) {
+					if (t % 100 < 50) {
+						mesh_struct[j]->vertex_position[mesh_struct[j]->anchor_vertex[i]][0] += move_dis3;
+					}
+					else {
+						mesh_struct[j]->vertex_position[mesh_struct[j]->anchor_vertex[i]][0] -= move_dis3;
+					}
+					if (t % 80 < 40) {
+						mesh_struct[j]->vertex_position[mesh_struct[j]->anchor_vertex[i]][1] += move_dis4;
+					}
+					else {
+						mesh_struct[j]->vertex_position[mesh_struct[j]->anchor_vertex[i]][1] -= move_dis4;
+					}
+				}
+			}
+		}
+
+
+	}
+	
+}
+
+
 void MoveModel::sceneRotateCapsule(int t, std::vector<std::array<double, 3>>& ori_capsule_vertices, 
 	std::vector<std::array<double, 3>>& capsule_vertices, MeshStruct* band_mesh_struct, bool use_PD, double sub_step_size)
 {

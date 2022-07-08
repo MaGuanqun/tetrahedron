@@ -1,4 +1,5 @@
 #pragma once
+#include<chrono>
 #include"basic/camera.h"
 #include"load_mesh/preprocessing.h"
 #include"render/shadow.h"
@@ -17,7 +18,7 @@
 #include"newton_method.h"
 #include"basic/move_model.h"
 #include"mesh_struct/graph_color.h"
-
+//#include<windows.h>
 //#include"basic/drawEdge.h"
 
 class Scene
@@ -71,7 +72,7 @@ public:
 	void setDampStiffness(double* damp_stiffness, double* rayleigh_damp_stiffness);
 	double* time_per_frame;
 
-	time_t time_accumulation=0;
+	std::chrono::microseconds time_accumulation;
 
 	void readScene(std::string& path);
 	void saveScene();
@@ -173,6 +174,7 @@ private:
 	void setGroup();
 
 	std::vector<std::vector<int>*>anchor_vertex;
+	std::vector<MeshStruct*> mesh_struct;
 
 	void reorganizeData();
 
