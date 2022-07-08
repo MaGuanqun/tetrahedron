@@ -1,6 +1,6 @@
 #include"XPBD.h"
 
-#define SUB_STEP_SIZE_DETECTION 4
+#define SUB_STEP_SIZE_DETECTION 3
 
 
 XPBD::XPBD()
