@@ -22,6 +22,8 @@ tet_density
 0.1
 velocity_damp
 0.995
+friction_coe
+0.8
 PD
 convergence_rate
 0.15

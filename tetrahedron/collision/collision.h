@@ -140,6 +140,8 @@ public:
 
 	double* energy;
 
+	double* friction_coe;
+
 private:
 
 	

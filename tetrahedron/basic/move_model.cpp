@@ -62,12 +62,39 @@ void MoveModel::moveSkirt(int t, std::vector<MeshStruct*>& mesh_struct, bool use
 }
 
 
+void MoveModel::moveSphere(int t, std::vector<std::array<double, 3>>& ori_capsule_vertices, std::vector<std::array<double, 3>>& capsule_vertices, 
+	double sub_step_size)
+{
+	if (t<200) {
+		Matrix3d rotate;
+		setRotate(0.01 / sub_step_size, rotate);
+		Vector3d body_pos;	
+		double body_center[3];
+		computerModelCenter(body_center, ori_capsule_vertices);
+		for (int i = 0; i < ori_capsule_vertices.size(); ++i) {
+			SUB(body_pos, ori_capsule_vertices[i], body_center);
+			body_pos = rotate * body_pos;
+			SUM(capsule_vertices[i], body_pos, body_center);
+			
+		}
+	}
+	else if (t < 350) {
+		double move_dis = 0.003 / sub_step_size;
+		for (int i = 0; i < ori_capsule_vertices.size(); ++i) {
+			capsule_vertices[i][1] = ori_capsule_vertices[i][1] + move_dis;
+		}
+	}
+}
+
+
+
 void MoveModel::sceneRotateCapsule(int t, std::vector<std::array<double, 3>>& ori_capsule_vertices, 
 	std::vector<std::array<double, 3>>& capsule_vertices, MeshStruct* band_mesh_struct, bool use_PD, double sub_step_size)
 {
 	Matrix3d capsule_rotate;
 	Matrix3d capsule_rotate_reverse;
-	setBandRotate(0.01/sub_step_size, capsule_rotate, capsule_rotate_reverse);
+	setRotate(0.01 / sub_step_size, capsule_rotate);
+	setRotate(-0.01 / sub_step_size, capsule_rotate_reverse);
 	double body_center[3];
 	moveCapsule(t, ori_capsule_vertices, capsule_vertices,0.014 / sub_step_size);
 	if (t > 100) {
@@ -167,7 +194,7 @@ void MoveModel::moveBand(int t, MeshStruct* mesh_struct, bool use_PD, double mov
 
 
 
-void MoveModel::setBandRotate(double step_size, Matrix3d& capsule_rotate, Matrix3d& capsule_rotate_reverse)
+void MoveModel::setRotate(double step_size, Matrix3d& capsule_rotate)
 {
 	Vector3d rotate_axe(0.0, 1.0, 0.0);
 	Matrix3d ux;
@@ -181,6 +208,6 @@ void MoveModel::setBandRotate(double step_size, Matrix3d& capsule_rotate, Matrix
 		rotate_axe[0] * rotate_axe[2], rotate_axe[1] * rotate_axe[2], rotate_axe[2] * rotate_axe[2];
 	angle = step_size * M_PI;
 	capsule_rotate = cos(angle) * Matrix3d::Identity() + sin(angle) * ux + (1 - cos(angle)) * uxu;
-	angle = -angle;
-	capsule_rotate_reverse = cos(angle) * Matrix3d::Identity() + sin(angle) * ux + (1 - cos(angle)) * uxu;
+	//angle = -angle;
+	//capsule_rotate_reverse = cos(angle) * Matrix3d::Identity() + sin(angle) * ux + (1 - cos(angle)) * uxu;
 }

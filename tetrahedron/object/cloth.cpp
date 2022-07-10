@@ -109,6 +109,7 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	setArea();	
 	setAnchor();
 	mass = mesh_struct.setMass(density);
+	std::cout << "mass " << mass<<" "<<density << std::endl;
 	mesh_struct.setAnchorPosition();
 
 
@@ -239,9 +240,9 @@ void Cloth::setAnchor()
 	//mesh_struct.anchor_vertex.push_back(8 * 115);
 	//mesh_struct.anchor_vertex.push_back(9 * 115-1);
 
-	for (unsigned int i = 0; i < 20; ++i) {
-		mesh_struct.anchor_vertex.push_back(mesh_struct.vertex_position.size()-1-i);
-	}
+	//for (unsigned int i = 0; i < 20; ++i) {
+	//	mesh_struct.anchor_vertex.push_back(mesh_struct.vertex_position.size()-1-i);
+	//}
 
 
 	//mesh_struct.anchor_vertex.push_back(0);

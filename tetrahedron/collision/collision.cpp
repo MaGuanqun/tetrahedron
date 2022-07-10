@@ -1780,7 +1780,7 @@ void Collision::XPBDfloorCollisionResponse()
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		size = cloth->data()[i].mesh_struct.vertex_for_render.size();
 		for (unsigned int j = 0; j < size; ++j) {
-			dcd.XPBDFloor(vertex_for_render[i][j].data(), vertex_position[i][j].data(), dimension, normal_direction, tolerance,floor_value);
+			dcd.XPBDFloor(vertex_for_render[i][j].data(), vertex_position[i][j].data(), dimension, normal_direction, tolerance,floor_value, *friction_coe);
 		}	
 	}
 	unsigned int* index;
@@ -1791,7 +1791,7 @@ void Collision::XPBDfloorCollisionResponse()
 		obj_index = i + cloth->size();
 		for (unsigned int j = 0; j < size; ++j) {
 			dcd.XPBDFloor(vertex_for_render[obj_index][index[j]].data(), vertex_position[obj_index][index[j]].data(), dimension, normal_direction,
-				tolerance, floor_value);
+				tolerance, floor_value, *friction_coe);
 		}
 	}
 
@@ -2391,7 +2391,7 @@ void Collision::re_solveXPBDpointTriangleResponse(unsigned int pair_thread_No, u
 			tolerance,
 			mass_inv[*(pair + 1)][*pair], mass_inv[*(pair + 3)][indices[0]], mass_inv[*(pair + 3)][indices[1]], mass_inv[*(pair + 3)][indices[2]],
 			//1.0, 1.0, 1.0, 1.0,
-			triangle_normal_magnitude_reciprocal[*(pair + 3)][*(pair + 2)]);
+			triangle_normal_magnitude_reciprocal[*(pair + 3)][*(pair + 2)], *friction_coe);
 	}
 }
 void Collision::solveXPBDpointTriangleResponse(unsigned int thread_No, unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end)
@@ -2415,7 +2415,7 @@ void Collision::solveXPBDpointTriangleResponse(unsigned int thread_No, unsigned 
 			tolerance,
 			mass_inv[*(pair + 1)][*pair], mass_inv[*(pair + 3)][indices[0]], mass_inv[*(pair + 3)][indices[1]], mass_inv[*(pair + 3)][indices[2]],
 			//1.0, 1.0, 1.0, 1.0,
-			triangle_normal_magnitude_reciprocal[*(pair + 3)][*(pair + 2)])) {
+			triangle_normal_magnitude_reciprocal[*(pair + 3)][*(pair + 2)], *friction_coe)) {
 			memcpy(target_pos_index_, pair, 16);
 			target_pos_index_ += 4;
 
@@ -2534,7 +2534,7 @@ void Collision::re_solveXPBDedgeEdgeResponse(unsigned int pair_thread_No, unsign
 			vertex_position[*(pair + 3)][*compare_indices].data(), vertex_position[*(pair + 3)][*(compare_indices + 1)].data(),
 			vertex_for_render[*(pair + 3)][*compare_indices].data(), vertex_for_render[*(pair + 3)][*(compare_indices + 1)].data(),
 			tolerance,
-			mass_inv[*(pair + 1)][*indices], mass_inv[*(pair + 1)][*(indices + 1)], mass_inv[*(pair + 3)][*compare_indices], mass_inv[*(pair + 3)][*(compare_indices + 1)]);
+			mass_inv[*(pair + 1)][*indices], mass_inv[*(pair + 1)][*(indices + 1)], mass_inv[*(pair + 3)][*compare_indices], mass_inv[*(pair + 3)][*(compare_indices + 1)], *friction_coe);
 	}
 }
 
@@ -2560,7 +2560,7 @@ void Collision::solveXPBDedgeEdgeResponse(unsigned int thread_No, unsigned int p
 			vertex_position[*(pair + 3)][*compare_indices].data(), vertex_position[*(pair + 3)][*(compare_indices + 1)].data(),
 			vertex_for_render[*(pair + 3)][*compare_indices].data(), vertex_for_render[*(pair + 3)][*(compare_indices + 1)].data(),
 			tolerance,
-			mass_inv[*(pair + 1)][*indices], mass_inv[*(pair + 1)][*(indices + 1)], mass_inv[*(pair + 3)][*compare_indices], mass_inv[*(pair + 3)][*(compare_indices + 1)]))
+			mass_inv[*(pair + 1)][*indices], mass_inv[*(pair + 1)][*(indices + 1)], mass_inv[*(pair + 3)][*compare_indices], mass_inv[*(pair + 3)][*(compare_indices + 1)], *friction_coe))
 		{
 			memcpy(target_pos_index_, pair, 16);
 			target_pos_index_ += 4;
@@ -2927,7 +2927,7 @@ void Collision::re_solveXPBDpointTriangleColliderResponse(unsigned int pair_thre
 			vertex_position_collider[*(pair + 3)][indices[0]].data(), vertex_position_collider[*(pair + 3)][indices[1]].data(),
 			vertex_position_collider[*(pair + 3)][indices[2]].data(),
 			triangle_normal_render_collider[*(pair + 3)][*(pair + 2)].data(),
-			triangle_normal_collider[*(pair + 3)][*(pair + 2)].data(), tolerance);
+			triangle_normal_collider[*(pair + 3)][*(pair + 2)].data(), tolerance, *friction_coe);
 	}
 }
 
@@ -2953,7 +2953,7 @@ void Collision::solveXPBDpointTriangleColliderResponse(unsigned int thread_No, u
 			vertex_position_collider[*(pair + 3)][indices[0]].data(), vertex_position_collider[*(pair + 3)][indices[1]].data(),
 			vertex_position_collider[*(pair + 3)][indices[2]].data(),
 			triangle_normal_render_collider[*(pair + 3)][*(pair + 2)].data(),
-			triangle_normal_collider[*(pair + 3)][*(pair + 2)].data(), tolerance)) {
+			triangle_normal_collider[*(pair + 3)][*(pair + 2)].data(), tolerance, *friction_coe)) {
 			memcpy(target_pos_index_, pair, 16);
 			target_pos_index_ += 4;
 		}

@@ -143,15 +143,15 @@ public:
 		//}
 
 
-
-		//int col_num = 121;
-		//int row_num = 121;
-		//for (int j = 0; j < row_num; j++) {
-		//	for (int i = 0; i < col_num; i++) {		
-		//		mesh.vertices.push_back(std::array<double, 3>{2.0 * (double)i / (double)(col_num - 1) - 1.0,  //+0.9
-		//			1.2 * (double)j / (double)(row_num - 1) - 0.2, 1.6 * (double)j / (double)(row_num - 1) - 0.5});//
-		//	}
-		//}
+		//this is for sphere rotating
+		int col_num = 120;
+		int row_num = 120;
+		for (int j = 0; j < row_num; j++) {
+			for (int i = 0; i < col_num; i++) {		
+				mesh.vertices.push_back(std::array<double, 3>{1.77 * (double)i / (double)(col_num - 1) - 1.0,  //+0.9
+					0.25, 1.77* (double)j / (double)(row_num - 1) - 0.5});//
+			}
+		}
 
 		//int col_num = 10;
 		//int row_num = 10;
@@ -216,15 +216,17 @@ public:
 		//			0.7 * (double)i / (double)(col_num - 1)-0.7, -0.3 * (double)i / (double)(col_num - 1) + 0.15});
 		//	}
 		//}
-		////band
-		int col_num = 115;
-		int row_num = 9;
-		for (int j = 0; j < row_num; j++) {
-			for (int i = 0; i < col_num; i++) {
-				mesh.vertices.push_back(std::array<double, 3>{0.25 * (double)j / (double)(row_num - 1) -0.125,
-					-0.2,2.9 * (double)i / (double)(col_num - 1) -1.45});
-			}
-		}
+		//////band
+		//int col_num = 115;
+		//int row_num = 9;
+		//for (int j = 0; j < row_num; j++) {
+		//	for (int i = 0; i < col_num; i++) {
+		//		mesh.vertices.push_back(std::array<double, 3>{0.25 * (double)j / (double)(row_num - 1) -0.125,
+		//			-0.2,2.9 * (double)i / (double)(col_num - 1) -1.45});
+		//	}
+		//}
+		// 
+		// 
 		//int col_num = 91;
 		//int row_num = 3;
 		//for (int j = 0; j < row_num; j++) {
@@ -330,14 +332,14 @@ public:
 		//indicesForTwoTriangle(mesh);
 		//
 		//cloth falls on other cloth
-		int col_num = 30;
-		int row_num = 30;
-		for (int j = 0; j < col_num; j++) {
+		int col_num = 6;
+		int row_num = 11;
+		for (int j = 0; j < row_num; j++) {
 			for (int i = 0; i < col_num; i++) {
 				//mesh.vertices.push_back(std::array<double, 3>{ 0.7 * (double)j / (double)(col_num - 1) -0.35, 0.2,// 0.5 * (double)i / (double)(col_num - 1) + 0.6,
 				//	0.7 * (double)i / (double)(col_num - 1) -0.35});// +  //, 1.35 - 0.2 * (double)i / (double)(col_num - 1)
-				mesh.vertices.push_back(std::array<double, 3>{0.7 * (double)i / (double)(col_num - 1) - 0.35,  //+0.9
-					0.4 * (double)j / (double)(row_num - 1) - 0.285, 0.7 * (double)j / (double)(row_num - 1) - 0.8});//
+				mesh.vertices.push_back(std::array<double, 3>{0.4 * (double)i / (double)(col_num - 1) - 0.2,  //+0.9
+					0.7 * (double)j / (double)(row_num - 1) - 0.35,0.0});// 0. * (double)j / (double)(col_num - 1) - 0.8
 			}
 		}
 
@@ -539,7 +541,7 @@ public:
 	void setSphere(OriMesh& mesh)
 	{
 		int col_num = 100;
-		double r = 0.4;
+		double r = 0.2;
 		int globe_num_2 = 50;
 		//double radius = 0.3;		
 		for (int j = 1; j < globe_num_2; j++) {

@@ -36,7 +36,7 @@ public:
 	void initial();
 	void reset();
 	void loadMesh(std::string& scene_path, std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio,
-		bool* control_parameter, double* initial_stiffness);
+		bool* control_parameter, double* initial_stiffness, double* friction_coe);
 	void drawScene(Camera* camera, std::vector<std::vector<bool>>& show_element,
 		bool* control_parameter);
 	void getClothInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 6>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 8>>& collision_stiffness);
@@ -77,7 +77,10 @@ public:
 	void readScene(std::string& path);
 	void saveScene();
 	void saveParameter(std::vector<std::string>& path, std::vector<std::string>& collider_path, std::vector<std::array<double, 6>>* cloth_stiffness, std::vector<std::array<double, 6>>* tet_stiffness,
-		std::vector<std::array<double, 8>>* cloth_collision_stiffness, std::vector<std::array<double, 8>>* tet_collision_stiffness, double* tolerance_ratio);
+		std::vector<std::array<double, 8>>* cloth_collision_stiffness, std::vector<std::array<double, 8>>* tet_collision_stiffness, double* tolerance_ratio,
+		double friction_coe);
+
+
 
 private:
 	double cloth_density;

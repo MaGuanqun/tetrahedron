@@ -10,7 +10,7 @@ Scene::Scene()
 	light.diffuse = glm::vec3(0.9, 0.9, 0.9);
 	light.specular = glm::vec3(0.85, 0.85, 0.85);
 
-	time_step = 1.0 / 30.0;
+	time_step = 1.0 / 60.0;
 
 
 	max_force_magnitude = 2.0;
@@ -96,7 +96,7 @@ void Scene::reorganizeData()
 
 
 void Scene::saveParameter(std::vector<std::string>& path, std::vector<std::string>& collider_path, std::vector<std::array<double, 6>>* cloth_stiffness, std::vector<std::array<double, 6>>* tet_stiffness,
-	std::vector<std::array<double, 8>>* cloth_collision_stiffness, std::vector<std::array<double, 8>>* tet_collision_stiffness, double* tolerance_ratio)
+	std::vector<std::array<double, 8>>* cloth_collision_stiffness, std::vector<std::array<double, 8>>* tet_collision_stiffness, double* tolerance_ratio, double friction_coe)
 {
 	double velocity_damp;
 	switch (use_method)
@@ -112,7 +112,8 @@ void Scene::saveParameter(std::vector<std::string>& path, std::vector<std::strin
 		break;
 	}
 	SaveParameter::writeParameter(path, collider_path, cloth_stiffness, tet_stiffness, cloth_collision_stiffness, tet_collision_stiffness, use_method,
-		anchor_vertex, time_step,project_dynamic.outer_itr_conv_rate, project_dynamic.local_global_conv_rate, xpbd.sub_step_num, xpbd.max_iteration_number,cloth_density,tetrahedron_density,		velocity_damp);
+		anchor_vertex, time_step,project_dynamic.outer_itr_conv_rate, project_dynamic.local_global_conv_rate, xpbd.sub_step_num, xpbd.max_iteration_number,cloth_density,tetrahedron_density,velocity_damp,
+		friction_coe);
 }
 
 void Scene::compareArray()
@@ -189,7 +190,7 @@ void Scene::updateConvRate(double* convergence_rate)
 }
 
 void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio, bool* control_parameter,
-	double* initial_stiffness)
+	double* initial_stiffness, double* friction_coe)
 {
 
 	use_method =10;
@@ -217,8 +218,19 @@ void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 	double velocity_damp = 1.0;
 	if (load_by_scene_file) {
 		SaveParameter::readFile(scene_path, object_path, collider_path, obj_stiffness, collide_stiffness, anchor_vertex, time_step, use_method, xpbd.sub_step_num, xpbd.max_iteration_number,
-			project_dynamic.local_global_conv_rate, project_dynamic.outer_itr_conv_rate,cloth_density,tetrahedron_density, velocity_damp);
+			project_dynamic.local_global_conv_rate, project_dynamic.outer_itr_conv_rate,cloth_density,tetrahedron_density, velocity_damp,*friction_coe);
 	}
+
+
+	if (use_method== XPBD_) {
+		xpbd.collision.friction_coe = friction_coe;
+		//std::cout << xpbd.collision.friction_coe << " " << &xpbd.collision.friction_coe << std::endl;
+	}
+	else if (use_method == PD_) {
+		project_dynamic.collision.friction_coe = friction_coe;
+	}
+
+	//std::cout << xpbd.collision.friction_coe << " " << &xpbd.collision.friction_coe << std::endl;
 
 	Preprocessing preprocessing;
 	preprocessing.load_all_model(collider_path, object_path);
@@ -290,10 +302,12 @@ void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 				if (!anchor_vertex[i].empty()) {
 					cloth[i].mesh_struct.anchor_vertex = anchor_vertex[i];
 					cloth[i].mesh_struct.setAnchorPosition();
+					cloth[i].mesh_struct.resetMassInv();
 				}
 				else {
 					cloth[i].mesh_struct.anchor_vertex.clear();
 					cloth[i].mesh_struct.anchor_position.clear();
+					cloth[i].mesh_struct.resetMassInv();
 				}
 			}
 		}
@@ -308,10 +322,12 @@ void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 				if (!anchor_vertex[i+cloth.size()].empty()) {
 					tetrahedron[i].mesh_struct.anchor_vertex = anchor_vertex[i + cloth.size()];
 					tetrahedron[i].mesh_struct.setAnchorPosition();
+					tetrahedron[i].mesh_struct.resetMassInv();
 				}
 				else {
 					tetrahedron[i].mesh_struct.anchor_vertex.clear();
 					tetrahedron[i].mesh_struct.anchor_position.clear();
+					tetrahedron[i].mesh_struct.resetMassInv();
 				}
 			}
 		}
@@ -758,8 +774,10 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 		}
 		if (control_parameter[START_TEST]) {
 			time_indicate_for_simu++;
-
-			move_model.moveSkirt(time_indicate_for_simu, mesh_struct, use_method == PD_, 1.0);
+			if (!collider.empty()) {
+				move_model.moveSphere(time_indicate_for_simu, collider[0].mesh_struct.vertex_for_render, collider[0].mesh_struct.vertex_position, 1.0);
+			}
+			//move_model.moveSkirt(time_indicate_for_simu, mesh_struct, use_method == PD_, 1.0);
 
 			//rorate band capsule
 			//if (!collider.empty()) {

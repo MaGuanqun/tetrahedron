@@ -25,8 +25,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool control_parameter[30];
 	memset(control_parameter, 0, 30);
 	control_parameter[ONLY_COLLISION_TEST] = false;
-	control_parameter[USE_XPBD] = false;
-	control_parameter[USE_PD_] = true;
+	control_parameter[USE_XPBD] = true;
+	control_parameter[USE_PD_] = false;
 	control_parameter[USE_NEWTON_] = false;
 	control_parameter[DRAW_VT] = true;
 
@@ -65,7 +65,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool set_stiffness[13];
 	memset(set_stiffness, 0, 13);
 	std::vector<double> temp_stiffness(18);
-	double temp_data[18] = {5e0,1e1,1e1,1e1,5e0,1e-5,2e-1,1.0,0.0,0.0,0.0,
+	double temp_data[18] = {1e2,2e2,2e2,2e2,1e2,5e-5,2e-1,1.0,0.0,0.0,0.0,
 	//1e-3, 2e-3,2e-3,2e-3, 1e-3,1e-9,1e-2};
 	0.0, 0.0,0.0,0.0, 0.0,0.0,0.0 };
 	memcpy(temp_stiffness.data(), temp_data, 18 * 8);
@@ -114,6 +114,9 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 
 	double t1, t2;
+
+
+	double friction_coe = 0.7;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -212,7 +215,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 		if (!already_load_model) {
 			if (imgui_windows.loadModel(scene_path, collider_path, object_path)) {
 				already_load_model = true;
-				scene.loadMesh(scene_path, collider_path, object_path, tolerance_ratio, control_parameter,temp_stiffness.data());
+				scene.loadMesh(scene_path, collider_path, object_path, tolerance_ratio, control_parameter,temp_stiffness.data(),&friction_coe);
 				//glm::vec3 camera_pos = glm::vec3(0.6 * scene.shadow.camera_from_origin + scene.camera_center[0], scene.camera_center[1], -0.8 * scene.shadow.camera_from_origin + scene.camera_center[2]);
 				glm::vec3 camera_pos = glm::vec3(scene.camera_center[0], scene.camera_center[1], -scene.shadow.camera_from_origin + scene.camera_center[2]);
 				camera.updateCamera(camera_pos, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(scene.camera_center[0], scene.camera_center[1], scene.camera_center[2]));
@@ -264,7 +267,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 			if (control_parameter[SAVE_SCENE_DATA]) {
 				scene.saveParameter(object_path, collider_path,&cloth_stiffness,&tetrahedron_stiffness,&cloth_collision_stiffness,&tetrahedron_collision_stiffness,
-					tolerance_ratio);
+					tolerance_ratio,friction_coe);
 				control_parameter[SAVE_SCENE_DATA] = false;
 			}
 

@@ -13,17 +13,17 @@ double TriangleMeshStruct::setMass(double density)
 	double mass_ = 0.0;
 	double m;
 	if (!faces.empty()) {
-		for (unsigned int i = 0; i < vertices.size(); ++i) {
-			mass[i] = 2e-4;
-			mass_ += 2e-4;
-		}
-		//for (int i = 0; i < faces.size(); ++i) {
-		//	m= faces[i].area * density /3.0;
-		//	mass[triangle_indices[i][0]] += m;
-		//	mass[triangle_indices[i][1]] += m;
-		//	mass[triangle_indices[i][2]] += m;
-		//	mass_ += faces[i].area * density;
+		//for (unsigned int i = 0; i < vertices.size(); ++i) {
+		//	mass[i] = 2e-4;
+		//	mass_ += 2e-4;
 		//}
+		for (int i = 0; i < faces.size(); ++i) {
+			m= faces[i].area * density /3.0;
+			mass[triangle_indices[i][0]] += m;
+			mass[triangle_indices[i][1]] += m;
+			mass[triangle_indices[i][2]] += m;
+			mass_ += faces[i].area * density;
+		}
 		//std::cout << mesh_struct.faces[0].area + mesh_struct.faces[1].area << std::endl;
 	}
 	else {

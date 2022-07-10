@@ -18,6 +18,8 @@ tet_density
 0.1
 velocity_damp
 0.98
+friction_coe
+0.8
 XPBD
 substep_num
 14

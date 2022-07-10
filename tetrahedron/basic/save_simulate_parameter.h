@@ -53,7 +53,7 @@ namespace SaveParameter{
 	inline void readFile(std::string& scene_path, std::vector<std::string>& obj_path, std::vector<std::string>& collider_path,
 		std::vector<std::vector<double>>& obj_stiffness, std::vector<std::vector<double>>& collide_stiffness,
 		std::vector<std::vector<int>>& anchor_vertex, double& time_step, unsigned int& use_method, unsigned int& sub_step_num, unsigned int& iteration_num,
-		double& local_conv_rate, double& outer_conv_rate, double& cloth_density, double& tet_density, double& velocity_damp)
+		double& local_conv_rate, double& outer_conv_rate, double& cloth_density, double& tet_density, double& velocity_damp, double& friction_coe)
 	{
 
 		std::string line;
@@ -159,6 +159,13 @@ namespace SaveParameter{
 		std::getline(in, line);
 		velocity_damp = std::stod(line);
 		std::getline(in, line);
+		if (line != "friction_coe") {
+			std::cout << "error read friction coe" << std::endl;
+			return;
+		}
+		std::getline(in, line);
+		friction_coe= std::stod(line);
+		std::getline(in, line);
 		if (line == "XPBD") {
 			use_method = XPBD_;
 		}
@@ -215,7 +222,7 @@ namespace SaveParameter{
 		unsigned int use_method, std::vector<std::vector<int>*>& anchor_veretx, double time_step,
 		std::vector<std::array<double, 6>>* cloth_stiffness, std::vector<std::array<double, 6>>* tet_stiffness,
 		std::vector<std::array<double, 8>>* cloth_collision_stiffness, std::vector<std::array<double, 8>>* tet_collision_stiffness, double cloth_density, double tet_density,
-		double velocity_damp)
+		double velocity_damp, double friction_coe)
 	{
 		//input_file.precision(64);
 		input_file << "object" << "\n";
@@ -270,6 +277,8 @@ namespace SaveParameter{
 		input_file << tet_density << "\n";
 		input_file << "velocity_damp" << "\n";
 		input_file << velocity_damp << "\n";
+		input_file << "friction_coe" << "\n";
+		input_file << friction_coe << "\n";
 	}
 
 
@@ -277,7 +286,8 @@ namespace SaveParameter{
 		std::vector<std::array<double, 6>>* tet_stiffness, std::vector<std::array<double, 8>>* cloth_collision_stiffness, std::vector<std::array<double, 8>>* tet_collision_stiffness,
 		unsigned int use_method, std::vector<std::vector<int>*>&anchor_veretx, double time_step, double outer_convergence_rate,
 		double local_convergence_rate,
-		unsigned int sub_step_num, unsigned int iteration_num, double cloth_density, double tet_density, double velocity_damp)
+		unsigned int sub_step_num, unsigned int iteration_num, double cloth_density, double tet_density, double velocity_damp,
+		double friction_coe)
 	{
 		std::string prefix = "./record_scene_data/";
 		if (_access(prefix.c_str(), 0) == -1)
@@ -287,7 +297,7 @@ namespace SaveParameter{
 		std::string obj_name = prefix + "scene.scene";
 		input_file.open(obj_name.c_str(), std::ios::trunc);
 		writeBasicPara(input_file, path, collider_path, use_method, anchor_veretx, time_step,cloth_stiffness,tet_stiffness, cloth_collision_stiffness, 
-			tet_collision_stiffness,cloth_density,tet_density,velocity_damp);
+			tet_collision_stiffness,cloth_density,tet_density,velocity_damp,friction_coe);
 		switch (use_method)
 		{
 		case XPBD_:
