@@ -36,7 +36,7 @@ public:
 	void initial();
 	void reset();
 	void loadMesh(std::string& scene_path, std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio,
-		bool* control_parameter, double* initial_stiffness, double* friction_coe);
+		bool* control_parameter, double* initial_stiffness, double* friction_coe, unsigned int* sub_step_per_detection, bool* floor_indicator, unsigned int& floor_dimension, double& floor_value);
 	void drawScene(Camera* camera, std::vector<std::vector<bool>>& show_element,
 		bool* control_parameter);
 	void getClothInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 6>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 8>>& collision_stiffness);

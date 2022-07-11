@@ -1,15 +1,15 @@
 object
 1
-.\model\band_cap.obj
+.\model\cloth_rotate_sphere.obj
 collider
 1
-.\model\capsule_cap.obj
+.\model\sphere_rotate_sphere.obj
 stiffness
-100 0.0001 10000 0 0 0 
+100 3e-05 10000 0 0 0 
 100 200 200 200 0 0 0 0 
 anchor_vertex
 0
-4 0 114 920 1034 
+0 
 time_step
 0.0333333
 cloth_density
@@ -17,15 +17,17 @@ cloth_density
 tet_density
 0.1
 velocity_damp
-0.98
+0.995
 friction_coe
 0.8
 floor_dimension
-4
+2
 floor_value
 -0.35
 XPBD
 substep_num
-14
+18
 iteration_num
-2
+3
+sub_step_per_detection
+1

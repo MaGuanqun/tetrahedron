@@ -25,13 +25,13 @@ public:
 		name += "_";
 		name += std::to_string(time_stamp);
 		std::string mtl_name = name_ + std::to_string(cloth_index) +"_"+ std::to_string(time_stamp);
-		writeToFile(mtl_name,position, vertex_indices, name, precision, material);
+		writeToFile(prefix,mtl_name,position, vertex_indices, name, precision, material);
 		
 	}
 
 private:
 	template <class T>
-	void writeToFile(std::string& mtl_name,  std::vector<std::array<T,3>>& position, std::vector<std::array<int, 3>>& vertex_indices,  std::string& name, int precision, MeshMaterial& material)
+	void writeToFile(std::string& path, std::string& mtl_name,  std::vector<std::array<T,3>>& position, std::vector<std::array<int, 3>>& vertex_indices,  std::string& name, int precision, MeshMaterial& material)
 	{
 		std::ofstream input_file;
 		input_file.precision(precision);
@@ -53,6 +53,7 @@ private:
 			}
 		//}
 		input_file.close();
+		material_name = path + material_name;
 		input_file.open(material_name.c_str(), std::ios::trunc);
 		//for (int i = 0; i < model.face_groups.size(); ++i) {
 		input_file << "newmtl front_material" << "\n";

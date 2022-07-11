@@ -113,7 +113,7 @@ void Scene::saveParameter(std::vector<std::string>& path, std::vector<std::strin
 	}
 	SaveParameter::writeParameter(path, collider_path, cloth_stiffness, tet_stiffness, cloth_collision_stiffness, tet_collision_stiffness, use_method,
 		anchor_vertex, time_step,project_dynamic.outer_itr_conv_rate, project_dynamic.local_global_conv_rate, xpbd.sub_step_num, xpbd.max_iteration_number,cloth_density,tetrahedron_density,velocity_damp,
-		friction_coe);
+		friction_coe,*xpbd.sub_step_per_detection,floor.exist,floor.dimension,floor.normal_direction,floor.value);
 }
 
 void Scene::compareArray()
@@ -190,7 +190,7 @@ void Scene::updateConvRate(double* convergence_rate)
 }
 
 void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio, bool* control_parameter,
-	double* initial_stiffness, double* friction_coe)
+	double* initial_stiffness, double* friction_coe, unsigned int* sub_step_per_detection, bool* floor_indicator, unsigned int& floor_dimension, double& floor_value)
 {
 
 	use_method =10;
@@ -218,12 +218,17 @@ void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 	double velocity_damp = 1.0;
 	if (load_by_scene_file) {
 		SaveParameter::readFile(scene_path, object_path, collider_path, obj_stiffness, collide_stiffness, anchor_vertex, time_step, use_method, xpbd.sub_step_num, xpbd.max_iteration_number,
-			project_dynamic.local_global_conv_rate, project_dynamic.outer_itr_conv_rate,cloth_density,tetrahedron_density, velocity_damp,*friction_coe);
+			project_dynamic.local_global_conv_rate, project_dynamic.outer_itr_conv_rate,cloth_density,tetrahedron_density, velocity_damp,*friction_coe,
+			*sub_step_per_detection, floor_indicator[0], floor_dimension, floor_indicator[2], floor_value);
+		if (floor_indicator[0]) {
+			floor_indicator[1] = true;
+		}
 	}
 
 
 	if (use_method== XPBD_) {
 		xpbd.collision.friction_coe = friction_coe;
+		xpbd.sub_step_per_detection = sub_step_per_detection;
 		//std::cout << xpbd.collision.friction_coe << " " << &xpbd.collision.friction_coe << std::endl;
 	}
 	else if (use_method == PD_) {

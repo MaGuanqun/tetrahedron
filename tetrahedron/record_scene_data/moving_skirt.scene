@@ -24,6 +24,10 @@ velocity_damp
 0.995
 friction_coe
 0.95
+floor_dimension
+4
+floor_value
+-0.35
 XPBD
 substep_num
 1

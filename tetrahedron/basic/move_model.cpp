@@ -65,9 +65,9 @@ void MoveModel::moveSkirt(int t, std::vector<MeshStruct*>& mesh_struct, bool use
 void MoveModel::moveSphere(int t, std::vector<std::array<double, 3>>& ori_capsule_vertices, std::vector<std::array<double, 3>>& capsule_vertices, 
 	double sub_step_size)
 {
-	if (t<200) {
+	if (t<100) {
 		Matrix3d rotate;
-		setRotate(0.01 / sub_step_size, rotate);
+		setRotate(0.02 / sub_step_size, rotate);
 		Vector3d body_pos;	
 		double body_center[3];
 		computerModelCenter(body_center, ori_capsule_vertices);
@@ -78,8 +78,8 @@ void MoveModel::moveSphere(int t, std::vector<std::array<double, 3>>& ori_capsul
 			
 		}
 	}
-	else if (t < 350) {
-		double move_dis = 0.003 / sub_step_size;
+	else if (t < 175) {
+		double move_dis = 0.006 / sub_step_size;
 		for (int i = 0; i < ori_capsule_vertices.size(); ++i) {
 			capsule_vertices[i][1] = ori_capsule_vertices[i][1] + move_dis;
 		}

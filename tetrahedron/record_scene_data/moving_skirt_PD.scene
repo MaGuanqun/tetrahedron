@@ -24,6 +24,10 @@ velocity_damp
 0.995
 friction_coe
 0.8
+floor_dimension
+4
+floor_value
+-0.35
 PD
 convergence_rate
 0.15

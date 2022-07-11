@@ -54,6 +54,7 @@ public:
 	void readScene(const char* file_name);
 	unsigned int max_iteration_number;
 	double velocity_damp;
+	unsigned int* sub_step_per_detection;
 private:
 	double gravity[3];
 

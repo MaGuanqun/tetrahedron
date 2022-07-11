@@ -1,18 +1,16 @@
 #include"XPBD.h"
 
-#define SUB_STEP_SIZE_DETECTION 1
-
 
 XPBD::XPBD()
 {
 	gravity_ = 9.8;
-	sub_step_num =16;
+	sub_step_num =18;
 	iteration_number =100;
 
 	damping_coe = 0.0;
 
 	perform_collision = true;
-	max_iteration_number = 4;
+	max_iteration_number = 3;
 	outer_max_iteration_number = 100;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
@@ -332,7 +330,7 @@ void XPBD::solveByXPBD()
 			if (perform_collision) {
 				updateNormal();
 			}
-			solveConstraint((inner_iteration_number==0 ) && sub_step% SUB_STEP_SIZE_DETECTION ==0);//sub_step % prediction_sub_step_size//|| inner_iteration_number== (max_iteration_number/2+1)
+			solveConstraint((inner_iteration_number==0 ) && sub_step% *sub_step_per_detection ==0);//sub_step % prediction_sub_step_size//|| inner_iteration_number== (max_iteration_number/2+1)
 			inner_iteration_number++;
 		}
 		iteration_number += inner_iteration_number;
