@@ -176,7 +176,8 @@ private:
 	void calDistancePointTriangle(double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
 		double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
 		double* current_triangle_normal, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal,
-		double mass_point, double mass_t0, double mass_t1, double mass_t2);
+		double mass_point, double mass_t0, double mass_t1, double mass_t2, double friction_coe,
+		double* initial_position, double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2);
 	bool checkIfCollideEdgeEdge(double* current_edge_vertex_0, double* current_edge_vertex_1, double* initial_edge_vertex_0, double* initial_edge_vertex_1,
 		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0, double* initial_compare_edge_vertex_1,
 		double* alpha, double tolerance);

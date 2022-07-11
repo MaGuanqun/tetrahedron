@@ -286,7 +286,7 @@ bool DCD::pointSelfTriangle(double* initial_position, double* current_position,
         calDistancePointTriangle(vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2,
             current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
             current_triangle_normal, current_side, tolerance, should_be_front, triangle_normal_magnitude_reciprocal,
-            mass_point, mass_t0, mass_t1, mass_t2);
+            mass_point, mass_t0, mass_t1, mass_t2,1.0, initial_position, initial_triangle_position_0, initial_triangle_position_1, initial_triangle_position_2);
         return true;
     }
     return false;
@@ -709,7 +709,8 @@ void DCD::calDistancePointColliderTriangle(double* triangle_target_pos_0, double
 void DCD::calDistancePointTriangle(double* vertex_target_pos, double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
     double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
     double* current_triangle_normal, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal,
-    double mass_point, double mass_t0, double mass_t1, double mass_t2)
+    double mass_point, double mass_t0, double mass_t1, double mass_t2, double friction_coe,
+    double* initial_position, double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2)
 {
     double in_triangle[3], scale_norm[3];
     SUB(in_triangle, current_position, current_triangle_position_0);
@@ -748,6 +749,9 @@ void DCD::calDistancePointTriangle(double* vertex_target_pos, double* triangle_t
     MULTI_SUM(triangle_target_pos_1, tem_value, current_triangle_position_1);
     tem_value = s / mass_t2;
     MULTI_SUM(triangle_target_pos_2, tem_value, current_triangle_position_2);
+
+
+
 }
 
 

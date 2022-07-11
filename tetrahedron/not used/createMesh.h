@@ -142,16 +142,27 @@ public:
 		//	}
 		//}
 
-
-		//this is for sphere rotating
-		int col_num = 120;
-		int row_num = 120;
+		//band falling
+		int col_num = 71;
+		int row_num = 3;
 		for (int j = 0; j < row_num; j++) {
 			for (int i = 0; i < col_num; i++) {		
-				mesh.vertices.push_back(std::array<double, 3>{1.77 * (double)i / (double)(col_num - 1) - 1.0,  //+0.9
-					0.25, 1.77* (double)j / (double)(row_num - 1) - 0.5});//
+				mesh.vertices.push_back(std::array<double, 3>{0.05* (double)i / (double)(col_num - 1)-0.025,  //+0.9
+					1.4 * (double)i / (double)(col_num - 1) - 1.0, 0.04* (double)j / (double)(row_num - 1) - 0.07});//
 			}
 		}
+
+
+
+		//this is for sphere rotating
+		//int col_num = 120;
+		//int row_num = 120;
+		//for (int j = 0; j < row_num; j++) {
+		//	for (int i = 0; i < col_num; i++) {		
+		//		mesh.vertices.push_back(std::array<double, 3>{1.77 * (double)i / (double)(col_num - 1) - 1.0,  //+0.9
+		//			0.25, 1.77* (double)j / (double)(row_num - 1) - 0.5});//
+		//	}
+		//}
 
 		//int col_num = 10;
 		//int row_num = 10;

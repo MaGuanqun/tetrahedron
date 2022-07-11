@@ -24,7 +24,7 @@ public:
 		name = basic_name + std::to_string(cloth_index);
 		name += "_";
 		name += std::to_string(time_stamp);
-		std::string mtl_name = prefix + name_ + std::to_string(cloth_index) +"_"+ std::to_string(time_stamp);
+		std::string mtl_name = name_ + std::to_string(cloth_index) +"_"+ std::to_string(time_stamp);
 		writeToFile(mtl_name,position, vertex_indices, name, precision, material);
 		
 	}
