@@ -140,7 +140,8 @@ public:
 
 	double* energy;
 
-	double* friction_coe;
+	double* friction_coe;//self, collider, floor
+
 
 private:
 

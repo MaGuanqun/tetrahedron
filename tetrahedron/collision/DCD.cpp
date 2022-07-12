@@ -403,6 +403,9 @@ bool DCD::XPBDcalDistancePointTriangle(
     double velocity[3];
     double velocity_perpendicular[3];
 
+
+    //friction_coe = 1.0;
+
     SUB(velocity, current_position, initial_position);  
     //use delta_lambda to temporarily store
     delta_lambda = DOT(velocity, current_triangle_normal);
@@ -933,6 +936,9 @@ void DCD::XPBDcalDistanceEdgeEdge(double* norm, double distance, double* alpha, 
     double velocity[3];
     double velocity_perpendicular[3];
 
+    //friction_coe = 1.0;
+
+
     SUB(velocity, current_edge_vertex_0, initial_edge_vertex_0); 
     //use delta_lambda to temporarily store
     delta_lambda = DOT(velocity, norm);
@@ -1380,6 +1386,8 @@ void DCD::XPBDFloor(double* initial_position, double* current_position,unsigned 
 
     unsigned int dimension0 = (dimension + 1) % 3;
     unsigned int dimension1 = (dimension + 2) % 3;
+
+    //friction_coe = 1.0;
 
 
     current_position[dimension0] = friction_coe * (current_position[dimension0] - initial_position[dimension0]) + initial_position[dimension0];

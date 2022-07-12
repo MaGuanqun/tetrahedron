@@ -53,7 +53,7 @@ namespace SaveParameter{
 	inline void readFile(std::string& scene_path, std::vector<std::string>& obj_path, std::vector<std::string>& collider_path,
 		std::vector<std::vector<double>>& obj_stiffness, std::vector<std::vector<double>>& collide_stiffness,
 		std::vector<std::vector<int>>& anchor_vertex, double& time_step, unsigned int& use_method, unsigned int& sub_step_num, unsigned int& iteration_num,
-		double& local_conv_rate, double& outer_conv_rate, double& cloth_density, double& tet_density, double& velocity_damp, double& friction_coe,
+		double& local_conv_rate, double& outer_conv_rate, double& cloth_density, double& tet_density, double& velocity_damp, double* friction_coe,
 		unsigned int& sub_step_per_detection, bool& floor_exist, unsigned int& floor_dimension, bool& floor_normal_direction, double& floor_value)
 	{
 
@@ -88,7 +88,7 @@ namespace SaveParameter{
 			for (unsigned int i = 0; i < collider_path.size(); ++i) {
 				std::getline(in, line);
 				collider_path[i] = line;
-			}			
+			}
 		}
 		std::getline(in, line);
 		if (line != "stiffness") {
@@ -120,7 +120,7 @@ namespace SaveParameter{
 			std::getline(in, line);
 			std::getline(in, line);
 			split(line, " ", vec);
-			if (std::stoi(vec[0]) > 0) {			
+			if (std::stoi(vec[0]) > 0) {
 				if (std::stoi(vec[0]) != vec.size() - 1) {
 					std::cout << "the anchor vertex number is not equal to the record number" << std::endl;
 					return;
@@ -165,7 +165,10 @@ namespace SaveParameter{
 			return;
 		}
 		std::getline(in, line);
-		friction_coe= std::stod(line);
+		split(line, " ", vec);
+		for (unsigned int i = 0; i < vec.size(); ++i) {
+			friction_coe[i] = std::stod(vec[i]);
+		}		
 		std::getline(in, line);
 		if (line != "floor_dimension") {
 			std::cout << "error read floor dimension" << std::endl;
@@ -256,7 +259,7 @@ namespace SaveParameter{
 		unsigned int use_method, std::vector<std::vector<int>*>& anchor_veretx, double time_step,
 		std::vector<std::array<double, 6>>* cloth_stiffness, std::vector<std::array<double, 6>>* tet_stiffness,
 		std::vector<std::array<double, 8>>* cloth_collision_stiffness, std::vector<std::array<double, 8>>* tet_collision_stiffness, double cloth_density, double tet_density,
-		double velocity_damp, double friction_coe, bool floor_exist, int floor_dimension, bool floor_normal_direction, double floor_value)
+		double velocity_damp, double* friction_coe, bool floor_exist, int floor_dimension, bool floor_normal_direction, double floor_value)
 	{
 		//input_file.precision(64);
 		input_file << "object" << "\n";
@@ -312,7 +315,7 @@ namespace SaveParameter{
 		input_file << "velocity_damp" << "\n";
 		input_file << velocity_damp << "\n";
 		input_file << "friction_coe" << "\n";
-		input_file << friction_coe << "\n";
+		input_file << friction_coe[0]<<" "<<friction_coe[1]<<" "<< friction_coe[2] << "\n";
 		input_file << "floor_dimension" << "\n";
 		if (!floor_exist) {
 			input_file << 4 << "\n";
@@ -335,7 +338,7 @@ namespace SaveParameter{
 		unsigned int use_method, std::vector<std::vector<int>*>&anchor_veretx, double time_step, double outer_convergence_rate,
 		double local_convergence_rate,
 		unsigned int sub_step_num, unsigned int iteration_num, double cloth_density, double tet_density, double velocity_damp,
-		double friction_coe, unsigned int sub_step_per_detection, bool floor_exist, int floor_dimension, bool floor_normal_direction, double floor_value)
+		double* friction_coe, unsigned int sub_step_per_detection, bool floor_exist, int floor_dimension, bool floor_normal_direction, double floor_value)
 	{
 		std::string prefix = "./record_scene_data/";
 		if (_access(prefix.c_str(), 0) == -1)

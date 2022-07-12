@@ -23,7 +23,7 @@ tet_density
 velocity_damp
 0.995
 friction_coe
-0.8
+0.9 0.9 0.9
 floor_dimension
 4
 floor_value
