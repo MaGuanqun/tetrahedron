@@ -185,7 +185,7 @@ private:
 		double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
 		double* current_triangle_normal, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal,
 		double mass_inv_point, double mass_inv_t0, double mass_inv_t1, double mass_inv_t2, double friction_coe,
-		double* initial_position, double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2);
+		double* initial_position, double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2, double* barycentric);
 	void XPBDcalDistanceEdgeEdge(double* norm, double distance, double* alpha, double* current_edge_vertex_0, double* current_edge_vertex_1,
 		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1,
 		double mass_inv_e_0_0, double mass_inv_e_0_1, double mass_inv_e_1_0, double mass_inv_e_1_1, double friction_coe, double* initial_edge_vertex_0, double* initial_edge_vertex_1, double* initial_compare_edge_vertex_0,
@@ -229,7 +229,8 @@ private:
 		double mass_t0, double mass_t1, double mass_t2);
 	void nearestPointVelocity(
 		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
-		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2, double* velocity, double* alpha);
+		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2, double* velocity, 
+		double* alpha, double* initial_position, double* current_position);
 };
 
 
