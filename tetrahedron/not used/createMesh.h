@@ -155,26 +155,27 @@ public:
 
 
 		//this is for sphere rotating
-		int col_num = 120;
-		int row_num = 120;
-		for (int j = 0; j < row_num; j++) {
-			for (int i = 0; i < col_num; i++) {		
-				mesh.vertices.push_back(std::array<double, 3>{1.77 * (double)i / (double)(col_num - 1) - 1.0,  //+0.9
-					0.25, 1.77* (double)j / (double)(row_num - 1) - 0.5});//
-			}
-		}
-
-		//int col_num = 10;
-		//int row_num = 10;
+		//int col_num = 120;
+		//int row_num = 120;
 		//for (int j = 0; j < row_num; j++) {
-		//	for (int i = 0; i < col_num; i++) {
-		//		//mesh.vertices.push_back(std::array<double, 3>{ 0.7 * (double)j / (double)(row_num - 1) + 0.575, 0.35 * (double)i / (double)(col_num - 1),//+0.9
-		//		//mesh.vertices.push_back(std::array<double, 3>{0.7* (double)i / (double)(col_num - 1) - 0.35,  //+0.9
-		//		//	0.4 * (double)j / (double)(row_num - 1) - 0.285, 0.7 * (double)j / (double)(row_num - 1) - 0.35});//
-		//		mesh.vertices.push_back(std::array<double, 3>{0.7 * (double)i / (double)(col_num - 1) - 0.35,  //+0.9
-		//			0.7 * (double)j / (double)(row_num - 1) - 0.585, 0.1 * (double)j / (double)(row_num - 1) - 0.1});//
+		//	for (int i = 0; i < col_num; i++) {		
+		//		mesh.vertices.push_back(std::array<double, 3>{1.77 * (double)i / (double)(col_num - 1) - 1.0,  //+0.9
+		//			0.25, 1.77* (double)j / (double)(row_num - 1) - 0.5});//
 		//	}
-		//}		
+		//}
+
+		int col_num = 10;
+		int row_num = 10;
+		for (int j = 0; j < row_num; j++) {
+			for (int i = 0; i < col_num; i++) {
+				//mesh.vertices.push_back(std::array<double, 3>{ 0.7 * (double)j / (double)(row_num - 1) + 0.575, 0.35 * (double)i / (double)(col_num - 1),//+0.9
+				//mesh.vertices.push_back(std::array<double, 3>{0.7* (double)i / (double)(col_num - 1) - 0.35,  //+0.9
+				//	0.4 * (double)j / (double)(row_num - 1) - 0.285, 0.7 * (double)j / (double)(row_num - 1) - 0.35});//
+				mesh.vertices.push_back(std::array<double, 3>{0.7 * (double)i / (double)(col_num - 1) - 0.35,  //+0.9
+					0.7 * (double)j / (double)(row_num - 1) - 0.585, 0.1 * (double)j / (double)(row_num - 1) - 0.1});//
+			}
+		}		
+
 		//int col_num = 70;
 		//int row_num = 70;
 		//for (int j = 0; j < row_num; j++) {

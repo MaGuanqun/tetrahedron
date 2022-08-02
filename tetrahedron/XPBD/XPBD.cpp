@@ -338,6 +338,9 @@ void XPBD::solveByXPBD()
 		updatePosition();
 		updateRenderNormal();
 	}
+
+	second_order_constraint.test(*(mesh_struct[0]), lbo_weight[0], vertex_lbo[0], rest_mean_curvature_norm[0]);
+
 	//time_t t4 = clock() - t3;
 	//std::cout << "t4 " << t4 << std::endl;
 	updateRenderVertexNormal();

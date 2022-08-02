@@ -83,6 +83,12 @@ bool DCD::XPBDpointSelfTriangle(double* initial_position, double* current_positi
 }
 
 
+
+
+
+
+
+
 void DCD::test()
 {
     double info_p[3], info_v0[3], info_v1[3], info_v2[3];
@@ -328,6 +334,225 @@ bool DCD::pointColliderTriangle(double* initial_position, double* current_positi
         return true;
     }
     return false;
+}
+
+bool DCD::firstOrderPointTriangle(double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+    double* current_triangle_normal, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal)
+{
+    double grad_c_vertex[3];
+    double grad_c_vertex_0[3];
+    double grad_c_vertex_1[3];
+    double grad_c_vertex_2[3];
+    //C, grac_C
+    double in_triangle[3], scale_norm[3];
+    SUB(in_triangle, current_position, current_triangle_position_0);
+    MULTI(scale_norm, current_triangle_normal, constraint);
+    SUB_(in_triangle, scale_norm);
+    if (is_front) {
+        if (constraint > tolerance) {
+            return false;
+        }
+        constraint -= tolerance;
+    }
+    else {
+        if (constraint < -tolerance) {
+            return false;
+        }
+        constraint += tolerance;
+    }
+    memcpy(grad_c_vertex, current_triangle_normal, 24);
+
+    double temp_vec[3];
+    SUB(temp_vec, current_triangle_position_1, current_triangle_position_2);
+    MAGNITUDE_CROSS(grad_c_vertex_0, temp_vec, in_triangle, triangle_normal_magnitude_reciprocal);
+    SUB_(grad_c_vertex_0, grad_c_vertex);
+
+    SUB(temp_vec, current_triangle_position_2, current_triangle_position_0);
+    MAGNITUDE_CROSS(grad_c_vertex_1, temp_vec, in_triangle, triangle_normal_magnitude_reciprocal);
+
+    SUB(temp_vec, current_triangle_position_0, current_triangle_position_1);
+    MAGNITUDE_CROSS(grad_c_vertex_2, temp_vec, in_triangle, triangle_normal_magnitude_reciprocal);
+
+    //double C = 0.5 * constraint * constraint;
+    double delta_lambda = -0.5*constraint/ (DOT(grad_c_vertex, grad_c_vertex) + DOT(grad_c_vertex_0, grad_c_vertex_0)
+        + DOT(grad_c_vertex_1, grad_c_vertex_1) + DOT(grad_c_vertex_2, grad_c_vertex_2));
+
+    // delta_lambda *= 0.5;
+
+    // lambda += delta_lambda;
+    double cu_v[3];
+    double cu_p0[3];
+    double cu_p1[3];
+    double cu_p2[3];
+
+    for (unsigned int i = 0; i < 3; ++i) {
+        cu_v[i] = current_position[i] + delta_lambda * grad_c_vertex[i];
+        cu_p0[i] = current_triangle_position_0[i] + delta_lambda * grad_c_vertex_0[i];
+        cu_p1[i] = current_triangle_position_1[i] + delta_lambda * grad_c_vertex_1[i];
+        cu_p2[i] = current_triangle_position_2[i] + delta_lambda * grad_c_vertex_2[i];
+    }
+}
+
+bool DCD::secondOrderPointTriangle(double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+    double* current_triangle_normal, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal)
+{
+    if (is_front) {
+        if (constraint > tolerance) {
+            return false;
+        }
+        constraint -= tolerance;
+    }
+    else {
+        if (constraint < -tolerance) {
+            return false;
+        }
+        constraint += tolerance;
+    }
+
+    Vector3d p0, p1, p2, p3,  hat_n;
+    memcpy(p0.data(), current_position, 24);
+    memcpy(p1.data(), current_triangle_position_0, 24);
+    memcpy(p2.data(), current_triangle_position_1, 24);
+    memcpy(p3.data(), current_triangle_position_2, 24);
+    memcpy(hat_n.data(), current_triangle_normal, 24);
+
+
+    double n_p0_p1 = hat_n.dot(p0 - p1);
+    Vector3d e = p0 - p1 - n_p0_p1 * hat_n;
+
+    Vector3d partial_K_p1 = triangle_normal_magnitude_reciprocal * (p2 - p3).cross(e) - hat_n;
+    Vector3d partial_K_p2= triangle_normal_magnitude_reciprocal * (p3 - p1).cross(e);
+    Vector3d partial_K_p3 = triangle_normal_magnitude_reciprocal * (p1 - p2).cross(e);
+
+    
+
+    // partial hat_n/ partial p1
+    Matrix3d partial_n_p1 = triangle_normal_magnitude_reciprocal * (skewSymmetricMatrix(p3 - p2) - hat_n * (hat_n.cross(p3 - p2)).transpose());
+    Matrix3d partial_n_p2 = triangle_normal_magnitude_reciprocal * (skewSymmetricMatrix(p1 - p3) - hat_n * (hat_n.cross(p1 - p3)).transpose());
+    Matrix3d partial_n_p3 = triangle_normal_magnitude_reciprocal * (skewSymmetricMatrix(p2 - p1) - hat_n * (hat_n.cross(p2 - p1)).transpose());
+
+    // partial 1/||n|| / partial p11
+    Vector3d partial_n_norm_p1 = -triangle_normal_magnitude_reciprocal * triangle_normal_magnitude_reciprocal * hat_n.cross(p3 - p2);
+    Vector3d partial_n_norm_p2 = -triangle_normal_magnitude_reciprocal * triangle_normal_magnitude_reciprocal * hat_n.cross(p1 - p3);
+    Vector3d partial_n_norm_p3 = -triangle_normal_magnitude_reciprocal * triangle_normal_magnitude_reciprocal * hat_n.cross(p2 - p1);
+
+
+
+    //
+    //H.block<3, 3>(3, 0) = partial_n_p1;
+    //H.block<3, 3>(6, 0) = partial_n_p2;
+    //H.block<3, 3>(9, 0) = partial_n_p3;
+
+    //H.block<3, 3>(0, 3) = partial_n_p1.transpose();
+    //H.block<3, 3>(0, 6) = partial_n_p2.transpose();
+    //H.block<3, 3>(0, 9) = partial_n_p3.transpose();
+
+
+    Matrix3d partial_e_p1 = (-n_p0_p1) * partial_n_p1 - hat_n * ((p0 - p1).transpose() * partial_n_p1) + hat_n * hat_n.transpose();
+    partial_e_p1.data()[0] -= 1.0;
+    partial_e_p1.data()[4] -= 1.0;
+    partial_e_p1.data()[8] -= 1.0;
+
+    Matrix3d partial_e_p2 = (-n_p0_p1) * partial_n_p2 - hat_n * ((p0 - p1).transpose() * partial_n_p2);
+    Matrix3d partial_e_p3 = (-n_p0_p1) * partial_n_p3 - hat_n * ((p0 - p1).transpose() * partial_n_p3);
+
+    Matrix3d partial_K_p1_2 = (p2 - p3).cross(e) * partial_n_norm_p1.transpose() + skewSymmetricMatrix(triangle_normal_magnitude_reciprocal * (p2 - p3)) * partial_e_p1
+        - partial_n_p1;
+    Matrix<double, 1, 3> g = n_p0_p1 * partial_n_norm_p1.transpose() + triangle_normal_magnitude_reciprocal * ((p0 - p1).transpose() * partial_n_p1 - hat_n.transpose());
+    Matrix3d partial_p1_n_p1 = (p2 - p1) * p3.transpose() + (2.0 * (p3 - p2)) * p1.transpose() + (p1 - p3) * p2.transpose();
+    double temp = (p3 - p2).dot(p1);
+    partial_p1_n_p1.data()[0] -= temp;
+    partial_p1_n_p1.data()[4] -= temp;
+    partial_p1_n_p1.data()[8] -= temp;
+
+    Vector3d h = (p3 - p1).cross(e);
+    Matrix3d partial_h_p1_norm_n = triangle_normal_magnitude_reciprocal * (skewSymmetricMatrix(p3) * partial_e_p1 + skewSymmetricMatrix(p0) + (triangle_normal_magnitude_reciprocal * n_p0_p1) * partial_p1_n_p1) + p1.cross(hat_n) * g;
+    
+
+    Matrix3d partial_K_p1_p2 = partial_h_p1_norm_n+h* partial_n_norm_p1.transpose();
+
+    Vector3d m = (p1 - p2).cross(e);
+    Matrix3d partial_m_p1_norm_n = (-triangle_normal_magnitude_reciprocal) * (skewSymmetricMatrix(p2) * partial_e_p1 + skewSymmetricMatrix(p0)
+        + (triangle_normal_magnitude_reciprocal * n_p0_p1) * partial_p1_n_p1) - p1.cross(hat_n) * g;
+    Matrix3d partial_K_p1_p3= partial_m_p1_norm_n + m * partial_n_norm_p1.transpose();
+
+    Matrix3d partial_K_p2_2 = (p3 - p1).cross(e) * partial_n_norm_p2.transpose() + skewSymmetricMatrix(triangle_normal_magnitude_reciprocal * (p3 - p2)) * partial_e_p2;
+
+
+
+    Vector3d s = (p1 - p2).cross(e);
+    Matrix3d partial_p2_n_p2 = (p2 - p1) * (p3-p1).transpose() -(p3 - p1) * (p2+p2-p1).transpose();
+    temp = (p3 - p1).dot(p2);
+    partial_p2_n_p2.data()[0] -= temp;
+    partial_p2_n_p2.data()[4] -= temp;
+    partial_p2_n_p2.data()[8] -= temp;
+    Matrix<double, 1, 3> t = n_p0_p1 * partial_n_norm_p2.transpose() + (triangle_normal_magnitude_reciprocal * (p0 - p1).transpose()) * partial_n_p2;
+    Matrix3d partial_s_p2_norm_n = triangle_normal_magnitude_reciprocal * (skewSymmetricMatrix(p1) * partial_e_p2 + skewSymmetricMatrix(p0 - p1) +
+        (triangle_normal_magnitude_reciprocal * n_p0_p1) * partial_p2_n_p2) + p2.cross(hat_n) * t;
+    Matrix3d partial_K_p2_p3 = partial_s_p2_norm_n + s * partial_n_norm_p2.transpose();
+
+
+    Matrix3d partial_K_p3_2 = (p1 - p2).cross(e) * partial_n_norm_p3.transpose() + skewSymmetricMatrix(triangle_normal_magnitude_reciprocal * (p1 - p2)) * partial_e_p3;
+
+    Matrix<double, 12, 1> grad_neg;
+    grad_neg.segment(0, 3) = (- constraint) * hat_n;
+    grad_neg.segment(3, 3) = (-constraint) * partial_K_p1;
+    grad_neg.segment(6, 3) = (-constraint )* partial_K_p2;
+    grad_neg.segment(9, 3) = (-constraint) * partial_K_p3;
+    Matrix<double, 12, 12>H;
+    H.block<3, 3>(0, 0) = hat_n * hat_n.transpose();
+    H.block<3, 3>(3, 3) = partial_K_p1 * partial_K_p1.transpose() + constraint * partial_K_p1_2;
+    H.block<3, 3>(6, 6) = partial_K_p2 * partial_K_p2.transpose() + constraint * partial_K_p2_2;
+    H.block<3, 3>(9, 9) = partial_K_p3 * partial_K_p3.transpose() + constraint * partial_K_p3_2;
+    H.block<3, 3>(0, 3) = hat_n * partial_K_p1.transpose() + constraint * partial_n_p1;
+    H.block<3, 3>(0, 6) = hat_n * partial_K_p2.transpose() + constraint * partial_n_p2;
+    H.block<3, 3>(0, 9) = hat_n * partial_K_p3.transpose() + constraint * partial_n_p3;
+    H.block<3, 3>(3, 0) = H.block<3, 3>(0, 3).transpose();
+    H.block<3, 3>(6, 0) = H.block<3, 3>(0, 6).transpose();
+    H.block<3, 3>(9, 0) = H.block<3, 3>(0, 9).transpose();
+
+    H.block<3, 3>(6, 3) = partial_K_p2 * partial_K_p1.transpose() + constraint * partial_K_p1_p2;
+    H.block<3, 3>(3, 6) = H.block<3, 3>(6, 3).transpose();
+
+    H.block<3, 3>(9, 3) = partial_K_p3 * partial_K_p1.transpose() + constraint * partial_K_p1_p3;
+    H.block<3, 3>(9, 6) = partial_K_p3 * partial_K_p2.transpose() + constraint * partial_K_p2_p3;
+    H.block<3, 3>(3, 9) = H.block<3, 3>(9, 3).transpose();
+    H.block<3, 3>(6, 9) = H.block<3, 3>(9, 6).transpose();
+
+    ColPivHouseholderQR <MatrixXd> linear(H);
+    VectorXd delta_x = linear.solve(grad_neg);
+
+    p0 += delta_x.segment(0, 3);
+    p1 += delta_x.segment(3, 3);
+    p2 += delta_x.segment(6, 3);
+    p3 += delta_x.segment(9, 3);
+
+    double new_constraint = ((p2 - p1).cross(p3 - p1)).normalized().dot(p0 - p1);
+    if (is_front) {
+        new_constraint -= tolerance;
+    }
+    else {
+        new_constraint += tolerance;
+    }
+    new_constraint = 0.5 * new_constraint * new_constraint;
+}
+
+
+
+
+Matrix3d DCD::skewSymmetricMatrix(Vector3d v)
+{
+    Matrix3d matrix;
+    matrix.data()[0] = 0;
+    matrix.data()[1] = -v[2];
+    matrix.data()[2] = v[1];
+    matrix.data()[3] = v[0];
+    matrix.data()[4] = 0;
+    matrix.data()[5] = -v[0];
+    matrix.data()[6] = -v[1];
+    matrix.data()[7] = v[0];
+    matrix.data()[8] = 0;
+    return matrix;
 }
 
 bool DCD::XPBDcalDistancePointTriangle(

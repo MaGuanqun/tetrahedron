@@ -14,6 +14,7 @@
 #include"../basic/move_model.h"
 #include"../basic/save_scene.h"
 
+#include"second_order.h"
 
 using namespace Eigen;
 using namespace denseOperation;
@@ -145,5 +146,8 @@ private:
 	//double energy_converge_ratio;
 
 	SaveScene save_scene;
+
+	SecondOrderConstraint second_order_constraint;
+
 };
 

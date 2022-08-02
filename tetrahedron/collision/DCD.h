@@ -134,6 +134,11 @@ public:
 
 	void test();
 
+	bool secondOrderPointTriangle(double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+		double* current_triangle_normal, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal);
+	bool firstOrderPointTriangle(double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+		double* current_triangle_normal, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal);
+
 private:
 	bool pointProjectOnTriangle(
 		const double* p,
@@ -231,6 +236,8 @@ private:
 		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
 		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2, double* velocity, 
 		double* alpha, double* initial_position, double* current_position);
+
+	Matrix3d skewSymmetricMatrix(Vector3d v);
 };
 
 

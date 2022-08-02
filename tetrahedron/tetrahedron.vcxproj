@@ -210,6 +210,7 @@
     <ClCompile Include="scene.cpp" />
     <ClCompile Include="simulation_main.cpp" />
     <ClCompile Include="thread.cpp" />
+    <ClCompile Include="XPBD\second_order.cpp" />
     <ClCompile Include="XPBD\XPBD.cpp" />
     <ClCompile Include="XPBD\XPBD_constraint.cpp" />
   </ItemGroup>
@@ -281,6 +282,7 @@
     <ClInclude Include="test_assemble_matrix_newton.h" />
     <ClInclude Include="test_simu.h" />
     <ClInclude Include="thread.h" />
+    <ClInclude Include="XPBD\second_order.h" />
     <ClInclude Include="XPBD\XPBD.h" />
     <ClInclude Include="XPBD\XPBD_constraint.h" />
   </ItemGroup>
