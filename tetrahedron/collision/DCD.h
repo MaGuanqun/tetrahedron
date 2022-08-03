@@ -135,9 +135,9 @@ public:
 	void test();
 
 	bool secondOrderPointTriangle(double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
-		double* current_triangle_normal, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal);
+		double* current_triangle_normal, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal, double& new_constraint);
 	bool firstOrderPointTriangle(double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
-		double* current_triangle_normal, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal);
+		double* current_triangle_normal, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal, double& new_constraint);
 
 private:
 	bool pointProjectOnTriangle(
