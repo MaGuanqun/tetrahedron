@@ -73,31 +73,41 @@ bool DCD::XPBDpointSelfTriangle(double* initial_position, double* current_positi
         initial_triangle_normal, current_triangle_normal, barycentric,
         tolerance, current_side, should_be_front)) {
 
-            bool constriant_satisfied = XPBDcalDistancePointTriangle(
+
+ /*           double constraint_1, constraint_2;
+            if (firstOrderPointTriangle(current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
+                current_triangle_normal, current_side, tolerance, should_be_front, triangle_normal_magnitude_reciprocal,
+                constraint_1)) {
+
+                if (secondOrderPointTriangle(current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
+                    current_triangle_normal, current_side, tolerance, should_be_front, triangle_normal_magnitude_reciprocal,
+                    constraint_2)) {
+                    double ori_constraint;
+                    if (should_be_front) {
+                        ori_constraint = current_side - tolerance;
+                    }
+                    else {
+                        ori_constraint = current_side + tolerance;
+                    }
+                    ori_constraint = 0.5 * ori_constraint * ori_constraint;
+                    if (constraint_2 < constraint_1) {
+                        std::cout << "true ";
+                    }
+                    else {
+                        std::cout << "false ";
+                    }
+                    std::cout << ori_constraint<<" "<< constraint_2 << " " << constraint_1 << std::endl;
+                }
+                else{
+                    std::cout << "false" << std::endl;
+                }
+             
+            }*/
+            return XPBDcalDistancePointTriangle(
             current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
             current_triangle_normal, current_side, tolerance, should_be_front, triangle_normal_magnitude_reciprocal,
             mass_inv_point, mass_inv_t0, mass_inv_t1, mass_inv_t2, friction_coe, initial_position, initial_triangle_position_0, initial_triangle_position_1, 
             initial_triangle_position_2, barycentric);//
-
-            if (constriant_satisfied) {
-                double constraint_1, constraint_2;
-                firstOrderPointTriangle(current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
-                    current_triangle_normal, current_side, tolerance, should_be_front, triangle_normal_magnitude_reciprocal,
-                    constraint_1);
-                secondOrderPointTriangle(current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2,
-                    current_triangle_normal, current_side, tolerance, should_be_front, triangle_normal_magnitude_reciprocal,
-                    constraint_2);
-                if (constraint_2 < constraint_1) {
-                    std::cout << "true ";
-                }
-                else {
-                    std::cout << "false ";
-                }
-                std::cout << constraint_2 << " " << constraint_1 << std::endl;
-
-            }
-
-            return constriant_satisfied;
     }
 
     return false;
@@ -112,27 +122,40 @@ bool DCD::XPBDpointSelfTriangle(double* initial_position, double* current_positi
 
 void DCD::test()
 {
-    double info_p[3], info_v0[3], info_v1[3], info_v2[3];
-    for (unsigned int k = 0; k < 100; ++k) {
-        info_p[0] = ((double)rand() / (double)RAND_MAX - 0.5) * M_PI;
-        info_p[1]= ((double)rand() / (double)RAND_MAX)*2.0 * M_PI;
-        info_p[2] = 1.0;
+ //   double info_p[3], info_v0[3], info_v1[3], info_v2[3];
+ //   for (unsigned int k = 0; k < 100; ++k) {
+ //       info_p[0] = ((double)rand() / (double)RAND_MAX - 0.5) * M_PI;
+ //       info_p[1]= ((double)rand() / (double)RAND_MAX)*2.0 * M_PI;
+ //       info_p[2] = 1.0;
 
-        info_v0[0] = ((double)rand() / (double)RAND_MAX - 0.5) * M_PI;
-        info_v0[1] = ((double)rand() / (double)RAND_MAX) * 2.0 * M_PI;
-        info_v0[2] = 1.0;
+ //       info_v0[0] = ((double)rand() / (double)RAND_MAX - 0.5) * M_PI;
+ //       info_v0[1] = ((double)rand() / (double)RAND_MAX) * 2.0 * M_PI;
+ //       info_v0[2] = 1.0;
 
-        info_v1[0] = ((double)rand() / (double)RAND_MAX - 0.5) * M_PI;
-        info_v1[1] = ((double)rand() / (double)RAND_MAX) * 2.0 * M_PI;
-        info_v1[2] = 1.0;
+ //       info_v1[0] = ((double)rand() / (double)RAND_MAX - 0.5) * M_PI;
+ //       info_v1[1] = ((double)rand() / (double)RAND_MAX) * 2.0 * M_PI;
+ //       info_v1[2] = 1.0;
 
-        info_v2[0] = ((double)rand() / (double)RAND_MAX - 0.5) * M_PI;
-        info_v2[1] = ((double)rand() / (double)RAND_MAX) * 2.0 * M_PI;
-        info_v2[2] = 1.0;
+ //       info_v2[0] = ((double)rand() / (double)RAND_MAX - 0.5) * M_PI;
+ //       info_v2[1] = ((double)rand() / (double)RAND_MAX) * 2.0 * M_PI;
+ //       info_v2[2] = 1.0;
 
-        test(info_p, info_v0, info_v1, info_v2);
+ //       test(info_p, info_v0, info_v1, info_v2);
+	//}
+    Vector3d current_position = Vector3d(0.121904, -0.150605,-0.0381831 );
+    Vector3d current_triangle_position_0 = Vector3d(0.168903, -0.13272,-0.0500603);
+    Vector3d current_triangle_position_1= Vector3d (0.158582, -0.210298,-0.0497997);
+    Vector3d current_triangle_position_2 = Vector3d(0.0990045, -0.123995,-0.0156256);
+    Vector3d current_normal=(current_triangle_position_1- current_triangle_position_0).cross(current_triangle_position_2- current_triangle_position_0);
+    double triangle_normal_magnitude_reciprocal = 1.0 / current_normal.norm();
+    current_normal.normalize();
+    double constraint = (current_position - current_triangle_position_0).dot(current_normal);
+    double tolerance = 0.0088222;
+    double new_constraint;
+    secondOrderPointTriangle(current_position.data(), current_triangle_position_0.data(), current_triangle_position_1.data(), current_triangle_position_2.data(),
+        current_normal.data(), constraint, tolerance, true, triangle_normal_magnitude_reciprocal, new_constraint);
+    
 
-	}
 }
 
 
@@ -395,7 +418,7 @@ bool DCD::firstOrderPointTriangle(double* current_position, double* current_tria
     MAGNITUDE_CROSS(grad_c_vertex_2, temp_vec, in_triangle, triangle_normal_magnitude_reciprocal);
 
     //double C = 0.5 * constraint * constraint;
-    double delta_lambda = -0.5*constraint/ (DOT(grad_c_vertex, grad_c_vertex) + DOT(grad_c_vertex_0, grad_c_vertex_0)
+    double delta_lambda = -constraint/ (DOT(grad_c_vertex, grad_c_vertex) + DOT(grad_c_vertex_0, grad_c_vertex_0)
         + DOT(grad_c_vertex_1, grad_c_vertex_1) + DOT(grad_c_vertex_2, grad_c_vertex_2));
 
     // delta_lambda *= 0.5;
@@ -422,6 +445,8 @@ bool DCD::firstOrderPointTriangle(double* current_position, double* current_tria
     }
     new_constraint = 0.5 * new_constraint * new_constraint;
 }
+
+
 
 bool DCD::secondOrderPointTriangle(double* current_position, double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
     double* current_triangle_normal, double constraint, double tolerance, bool is_front, double triangle_normal_magnitude_reciprocal, double& new_constraint)
@@ -515,16 +540,9 @@ bool DCD::secondOrderPointTriangle(double* current_position, double* current_tri
     partial_p2_n_p2.data()[4] += temp;
     partial_p2_n_p2.data()[8] += temp;
 
-    Matrix3d partial_p3_n_p3 = (p2 - p1) * (p3+ p3 - p1).transpose() - (p3 - p1) * (p2 - p1).transpose();
-    temp = (p2 - p1).dot(p3);
-    partial_p2_n_p2.data()[0] -= temp;
-    partial_p2_n_p2.data()[4] -= temp;
-    partial_p2_n_p2.data()[8] -= temp;
+
 
     Matrix<double, 1, 3> partial_t_p2 = n_p0_p1 * partial_n_norm_p2.transpose() + (triangle_normal_magnitude_reciprocal * (p0 - p1).transpose()) * partial_n_p2;
-
-    Matrix<double, 1, 3> partial_t_p3 = n_p0_p1 * partial_n_norm_p3.transpose() + (triangle_normal_magnitude_reciprocal * (p0 - p1).transpose()) * partial_n_p3;
-
 
 
     Matrix3d partial_m_p2_norm_n = triangle_normal_magnitude_reciprocal * (skewSymmetricMatrix(p1) * partial_e_p2 + skewSymmetricMatrix(p0 - p1) +
@@ -533,28 +551,7 @@ bool DCD::secondOrderPointTriangle(double* current_position, double* current_tri
 
     Matrix3d partial_K_p3_p2 = partial_m_p2_norm_n + m * partial_n_norm_p2.transpose();
 
-
-
-    Vector3d q = (p2 - p3).cross(e);
-    Matrix3d partial_q_p2_norm_n = -triangle_normal_magnitude_reciprocal * (skewSymmetricMatrix(p3) * partial_e_p2 +
-        skewSymmetricMatrix(p0 - p1) + (triangle_normal_magnitude_reciprocal * n_p0_p1) * partial_p2_n_p2) - (p2.cross(hat_n) * partial_t_p2);
-
-    Matrix3d partial_q_p3_norm_n = triangle_normal_magnitude_reciprocal * (skewSymmetricMatrix(p2) * partial_e_p3 +
-        skewSymmetricMatrix(p0 - p1) + (triangle_normal_magnitude_reciprocal * n_p0_p1) * partial_p3_n_p3) + (p3.cross(hat_n) * partial_t_p3);
-
-    Matrix3d partial_K_p1_p2 = partial_q_p2_norm_n + q * partial_n_norm_p2.transpose()- partial_n_p2;
-    Matrix3d partial_K_p1_p3= partial_q_p3_norm_n + q * partial_n_norm_p3.transpose()- partial_n_p3;
-
-
-
-
     Matrix3d partial_K_p3_2 = (p1 - p2).cross(e) * partial_n_norm_p3.transpose() + skewSymmetricMatrix(triangle_normal_magnitude_reciprocal * (p1 - p2)) * partial_e_p3;
-
-
-    Matrix3d partial_h_p3_norm_n = -triangle_normal_magnitude_reciprocal * (skewSymmetricMatrix(p1) * partial_e_p3 + skewSymmetricMatrix(p0-p1)
-        + (triangle_normal_magnitude_reciprocal * n_p0_p1) * partial_p3_n_p3) - p3.cross(hat_n) * partial_t_p3;
-
-    Matrix3d partial_K_p2_p3 = partial_h_p3_norm_n + h * partial_n_norm_p3.transpose();
 
     Matrix<double, 12, 1> grad_neg;
     grad_neg.segment(0, 3) = (- constraint) * hat_n;
@@ -575,17 +572,22 @@ bool DCD::secondOrderPointTriangle(double* current_position, double* current_tri
     H.block<3, 3>(9, 0) = H.block<3, 3>(0, 9).transpose();
 
     H.block<3, 3>(6, 3) = partial_K_p2 * partial_K_p1.transpose() + constraint * partial_K_p2_p1;
-    H.block<3, 3>(3, 6) = partial_K_p1 * partial_K_p2.transpose() + constraint * partial_K_p1_p2;
+    H.block<3, 3>(3, 6) = H.block<3, 3>(6, 3).transpose();
 
     H.block<3, 3>(9, 3) = partial_K_p3 * partial_K_p1.transpose() + constraint * partial_K_p3_p1;
     H.block<3, 3>(9, 6) = partial_K_p3 * partial_K_p2.transpose() + constraint * partial_K_p3_p2;
-    H.block<3, 3>(3, 9) = partial_K_p1 * partial_K_p3.transpose() + constraint * partial_K_p1_p3;
-    H.block<3, 3>(6, 9) = partial_K_p2 * partial_K_p3.transpose() + constraint * partial_K_p2_p3;
+    H.block<3, 3>(3, 9) = H.block<3, 3>(9, 3).transpose();
+    H.block<3, 3>(6, 9) = H.block<3, 3>(9, 6).transpose();
 
     ColPivHouseholderQR <MatrixXd> linear(H);
     VectorXd delta_x = linear.solve(grad_neg);
 
-
+    //std::cout << p0 << std::endl;
+    //std::cout << p1<< std::endl;
+    //std::cout << p2 << std::endl;
+    //std::cout << p3 << std::endl;
+    //std::cout <<"tolerance "<< tolerance << std::endl;
+    //std::cout <<"front "<< is_front << std::endl;
 
     p0 += delta_x.segment(0, 3);
     p1 += delta_x.segment(3, 3);
@@ -600,6 +602,9 @@ bool DCD::secondOrderPointTriangle(double* current_position, double* current_tri
         new_constraint += tolerance;
     }
     new_constraint = 0.5 * new_constraint * new_constraint;
+
+
+
 }
 
 

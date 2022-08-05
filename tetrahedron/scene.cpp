@@ -779,15 +779,15 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 		}
 		if (control_parameter[START_TEST]) {
 			time_indicate_for_simu++;
-			if (!collider.empty()) {
-				move_model.moveSphere(time_indicate_for_simu, collider[0].mesh_struct.vertex_for_render, collider[0].mesh_struct.vertex_position, 1.0);
-			}
+			//if (!collider.empty()) {
+			//	move_model.moveSphere(time_indicate_for_simu, collider[0].mesh_struct.vertex_for_render, collider[0].mesh_struct.vertex_position, 1.0);
+			//}
 			//move_model.moveSkirt(time_indicate_for_simu, mesh_struct, use_method == PD_, 1.0);
 
 			//rorate band capsule
-			//if (!collider.empty()) {
-			//	move_model.sceneRotateCapsule(time_indicate_for_simu, collider[0].mesh_struct.vertex_for_render, collider[0].mesh_struct.vertex_position, &cloth[0].mesh_struct, use_method == PD_,1.0);
-			//}
+			if (!collider.empty()) {
+				move_model.sceneRotateCapsule(time_indicate_for_simu, collider[0].mesh_struct.vertex_for_render, collider[0].mesh_struct.vertex_position, &cloth[0].mesh_struct, use_method == PD_,1.0);
+			}
 		}
 		auto t0 = std::chrono::system_clock::now();
 

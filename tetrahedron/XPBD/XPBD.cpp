@@ -315,14 +315,14 @@ void XPBD::solveByXPBD()
 		if (sub_step_num >1) {
 			thread->assignTask(this, SET_POS_PREDICT_SUB_TIME_STEP);
 			if (control_parameter[START_TEST]) {
-				if (!collider->empty()) {
-					move_model->moveSphere(*time_indicate_for_simu, collider->data()[0].mesh_struct.vertex_for_render, collider->data()[0].mesh_struct.vertex_position, sub_step_num);
-				}
+				//if (!collider->empty()) {
+				//	move_model->moveSphere(*time_indicate_for_simu, collider->data()[0].mesh_struct.vertex_for_render, collider->data()[0].mesh_struct.vertex_position, sub_step_num);
+				//}
 				//move_model->moveSkirt(*time_indicate_for_simu, mesh_struct, false, sub_step_num);
 				//rorate band capsule
-				//if (!collider->empty()) {
-				//	move_model->sceneRotateCapsule(*time_indicate_for_simu, collider->data()[0].mesh_struct.vertex_for_render, collider->data()[0].mesh_struct.vertex_position, mesh_struct[0], false, sub_step_num);
-				//}
+				if (!collider->empty()) {
+					move_model->sceneRotateCapsule(*time_indicate_for_simu, collider->data()[0].mesh_struct.vertex_for_render, collider->data()[0].mesh_struct.vertex_position, mesh_struct[0], false, sub_step_num);
+				}
 			}
 		}	
 		while (!convergeCondition(inner_iteration_number)) {
