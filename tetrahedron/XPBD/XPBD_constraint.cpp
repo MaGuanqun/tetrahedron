@@ -1,6 +1,7 @@
 #include"XPBD_constraint.h"
 
 
+
 void XPBDconstraint::PBDsolveARAPConstraint(std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position,
 	double stiffness, double dt,
 	Matrix<double,3,4>& A, int* vertex_index, double* inv_mass, double volume, double iteration_num_inverse)
@@ -79,6 +80,10 @@ void XPBDconstraint::PBDsolveARAPConstraint(std::array<double, 3>* vertex_positi
 	//std::cout << vertex_index[0]<<" "<< vertex_index[1]<<" "<< vertex_index[2]<<" "<< vertex_index[3]<<" "<<  coe << std::endl;
 	//std::cout << deformation_gradient << std::endl;
 }
+
+
+
+
 
 
 void XPBDconstraint::solveARAPConstraint(std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position,
@@ -315,6 +320,9 @@ void XPBDconstraint::solveARAPConstraint2(std::array<double, 3>* original_vertex
 }
 
 
+
+
+
 void XPBDconstraint::solveTetStrainConstraint(std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position,
 	double stiffness, double dt, Matrix<double, 3, 4>& A, int* vertex_index, double* inv_mass, double& lambda, const double damping_stiffness, double volume,
 	double youngs_modulus, double poisson_ratio)
@@ -355,7 +363,259 @@ void XPBDconstraint::solveTetStrainConstraint(std::array<double, 3>* vertex_posi
 }
 
 
+void XPBDconstraint::scondOrderStrainConstraint(std::array<double, 3>* vertex_position,
+	double stiffness, double dt, Matrix<double, 3, 4>& A, int* vertex_index, double* inv_mass, double volume, double youngs_modulus, double poisson_ratio)
+{
+	Matrix<double, 12, 1> grad_C;
+	double C;
+	double mu = youngs_modulus / (2.0 * (1.0 + poisson_ratio));
+	Matrix<double, 12, 12>Hessian;
+	double lambda_ = youngs_modulus * poisson_ratio / ((1.0 + poisson_ratio) * (1.0 - 2.0 * poisson_ratio));
+	computeGreenStrainAndPiolaStressHessian(vertex_position[vertex_index[0]].data(), vertex_position[vertex_index[1]].data(),
+		vertex_position[vertex_index[2]].data(), vertex_position[vertex_index[3]].data(), A, volume, mu, lambda_, grad_C, C, Hessian,stiffness);
+	double inverse_mass;
+	for (unsigned int i = 0; i < 12; i+=3) {
+		inverse_mass = inv_mass[i/3];
+		for (unsigned int j = 0; j < 81; j += 9) {
+			Hessian.data()[j + i] *= inverse_mass;
+			Hessian.data()[j + i + 1] *= inverse_mass;
+			Hessian.data()[j + i + 2] *= inverse_mass;
+		}
+		grad_C.data()[i] *= inverse_mass;
+		grad_C.data()[i+1] *= inverse_mass;
+		grad_C.data()[i+2] *= inverse_mass;
+	}
+	double inv_t = 1.0 / (dt * dt);
+	for (unsigned int j = 0; j < 81; j += 10) {
+		Hessian.data()[j] += inv_t;
+	}
+	here need sn
 
+}
+
+
+void XPBDconstraint::test()
+{
+	double v0[3] = { 0.121904, -0.150605,-0.0381831 };
+	double v1[3] = { 0.168903, -0.13272,-0.0500603 };
+	double v2[3] = { 0.158582, -0.210298,-0.0497997 };
+	double v3[3] = { 0.0990045, -0.123995,-0.0156256 };
+	double k[9] = { 0.124,1.0254,0.1241,0.145,2.32,4.154,3.156,4.412,0.454 };
+	Matrix3d p;
+	memcpy(p.data(), k, 72);
+	Matrix<double, 3, 4> A;
+	for (unsigned int i = 0; i < 3; ++i) {
+		A.data()[i] = -p.col(i).sum();
+		A.data()[3 + i] = p.data()[3 * i];
+		A.data()[6 + i] = p.data()[3 * i + 1];
+		A.data()[9 + i] = p.data()[3 * i + 2];
+	}
+	std::cout << p << std::endl;
+	std::cout << A << std::endl;
+	Matrix<double, 12, 1> grad_C;
+	Matrix<double, 12, 12> Hessian;;
+	double C;
+	computeGreenStrainAndPiolaStressHessian(v0, v1, v2, v3, A, 1.0, 3.0, 3.0, grad_C, C,  Hessian,1.0);
+
+}
+
+void XPBDconstraint::computeGreenStrainAndPiolaStressHessian(double* v0, double* v1, double* v2, double* v3,
+	Matrix<double, 3, 4>& inv_rest_pos,
+	double rest_volume,
+	double mu, double lambda, Matrix<double, 12, 1>& grad_C, double& C, Matrix<double,12,12>& Hessian, double stiffness)
+{
+	Matrix3d F;
+	Matrix3d P;
+	SUB(P.data(), v1, v0);
+	SUB((P.data() + 3), v2, v0);
+	SUB((P.data() + 6), v3, v0);
+	//first use eigen value to store the position of first vertex
+	Matrix3d P_inv_transpose;
+	memcpy(P_inv_transpose.data(), inv_rest_pos.data() + 3, 72);
+	F = P * P_inv_transpose.transpose();
+
+	if (F.determinant() < 0.58) {
+		JacobiSVD<Matrix3d> svd;
+		svd.compute(F, ComputeFullU | ComputeFullV);
+		Vector3d new_singular_value = svd.singularValues();
+		double min_s_value = 0.58;
+		//once a critical compression
+		//threshold is reached( 58 % of undeformed dimensions, when compression occurs
+		//	along a single axis) the strength of the restorative force reaches a maximum.
+		//Further compression will be met with decreasing resistance
+		for (unsigned char j = 0; j < 3; j++) {
+			if (new_singular_value[j] < min_s_value)
+				new_singular_value[j] = min_s_value;
+		}
+		F = svd.matrixU() * new_singular_value.asDiagonal() * svd.matrixV().transpose();
+	}
+
+	Matrix3d E;
+
+	//E= 0.5* (F^T F - I)
+	E.data()[0] = 0.5 * (F.data()[0] * F.data()[0] + F.data()[1] * F.data()[1] + F.data()[2] * F.data()[2] - 1.0);		// xx
+	E.data()[4] = 0.5 * (F.data()[3] * F.data()[3] + F.data()[4] * F.data()[4] + F.data()[5] * F.data()[5] - 1.0);		// yy
+	E.data()[8] = 0.5 * (F.data()[6] * F.data()[6] + F.data()[7] * F.data()[7] + F.data()[8] * F.data()[8] - 1.0);		// zz
+	E.data()[3] = 0.5 * (F.data()[0] * F.data()[3] + F.data()[1] * F.data()[4] + F.data()[2] * F.data()[5]);			// xy
+	E.data()[6] = 0.5 * (F.data()[0] * F.data()[6] + F.data()[1] * F.data()[7] + F.data()[2] * F.data()[8]);			// xz
+	E.data()[7] = 0.5 * (F.data()[3] * F.data()[6] + F.data()[4] * F.data()[7] + F.data()[5] * F.data()[8]);			// yz
+	E.data()[1] = E.data()[3];
+	E.data()[2] = E.data()[6];
+	E.data()[5] = E.data()[7];
+
+	//P(F)=F(2muE +lambda tr(E)I) 
+	double trace = E.data()[0] + E.data()[4] + E.data()[8];
+	double lambda_trace = lambda * trace;
+	P = (mu + mu) * E;
+	P.data()[0] += lambda_trace;
+	P.data()[4] += lambda_trace;
+	P.data()[8] += lambda_trace;
+	P = F * P;
+	//st. venant-kirchhoff model
+	// psi= mu E:E + lambda/2 * tr(E)^2
+	double psi = mu * E.squaredNorm() + 0.5 * lambda * trace * trace;
+	C = rest_volume * psi;
+
+	Matrix<double, 3, 4> grad = (rest_volume*stiffness) * P * inv_rest_pos;
+	memcpy(grad_C.data(), grad.data(), 96);//12*8
+
+
+	mu *= rest_volume* stiffness;
+	lambda *= rest_volume* stiffness;
+	lambda_trace *= rest_volume* stiffness;
+
+	//first compute second derivative of mu 2FE
+	Matrix<double, 9, 9>Hessian_2FE;
+	Hessian_2FE.data()[0] = mu * (3.0 * F.data()[0] * F.data()[0] + F.data()[1] * F.data()[1] + F.data()[2] * F.data()[2] - 1.0 + F.data()[3] * F.data()[3] + F.data()[6] * F.data()[6]);
+	std::cout << Hessian_2FE.data()[0] << std::endl;
+	Hessian_2FE.data()[1] = mu * (2.0 * F.data()[0] * F.data()[1] + F.data()[3] * F.data()[4] + F.data()[6] * F.data()[7]);
+	Hessian_2FE.data()[2] = mu * (2.0 * F.data()[0] * F.data()[2] + F.data()[3] * F.data()[5] + F.data()[6] * F.data()[8]);
+	Hessian_2FE.data()[3] = mu * (2.0 * F.data()[0] * F.data()[3] + F.data()[1] * F.data()[4] + F.data()[2] * F.data()[5]);
+	Hessian_2FE.data()[4] = mu *(F.data()[3] * F.data()[1]);
+	Hessian_2FE.data()[5] = mu *(F.data()[3] * F.data()[2]);
+	Hessian_2FE.data()[6] = mu * (2.0 * F.data()[6] * F.data()[0] + F.data()[1] * F.data()[7] + F.data()[2] * F.data()[8]);
+	Hessian_2FE.data()[7] = mu *(F.data()[6] * F.data()[1]);
+	Hessian_2FE.data()[8] = mu *(F.data()[6] * F.data()[2]);
+	///
+	Hessian_2FE.data()[10] = mu *(F.data()[0] * F.data()[0] + 3.0*F.data()[1] * F.data()[1] + F.data()[2] * F.data()[2] - 1.0 + F.data()[4] * F.data()[4] + F.data()[7] * F.data()[7]);
+	Hessian_2FE.data()[11] = mu * (2.0 * F.data()[1] * F.data()[2] + F.data()[5] * F.data()[4] + F.data()[8] * F.data()[7]);
+	Hessian_2FE.data()[12] = mu *(F.data()[4] * F.data()[0]);
+	Hessian_2FE.data()[13] = mu * (2.0 * F.data()[1] * F.data()[4] + F.data()[0] * F.data()[3] + F.data()[2] * F.data()[5]);
+	Hessian_2FE.data()[14] = mu *(F.data()[4] * F.data()[2]);
+	Hessian_2FE.data()[15] = mu *(F.data()[7] * F.data()[0]);
+	Hessian_2FE.data()[16] = mu * (2.0 * F.data()[1] * F.data()[7] + F.data()[0] * F.data()[6]  + F.data()[2] * F.data()[8]);
+	Hessian_2FE.data()[17] = mu *(F.data()[7] * F.data()[2]);
+	///
+	Hessian_2FE.data()[20] = mu *(F.data()[0] * F.data()[0] + F.data()[1] * F.data()[1] + 3.0*F.data()[2] * F.data()[2] - 1.0 + F.data()[5] * F.data()[5] + F.data()[8] * F.data()[8]);
+	Hessian_2FE.data()[21] = mu *(F.data()[5] * F.data()[0]);
+	Hessian_2FE.data()[22] = mu *(F.data()[5] * F.data()[1]);
+	Hessian_2FE.data()[23] = mu * (2.0 * F.data()[2] * F.data()[5] + F.data()[0] * F.data()[3] + F.data()[1] * F.data()[4]);
+	Hessian_2FE.data()[24] = mu *(F.data()[8] * F.data()[0]);
+	Hessian_2FE.data()[25] = mu *(F.data()[8] * F.data()[1]);
+	Hessian_2FE.data()[26] = mu * (2.0 * F.data()[2] * F.data()[8] + F.data()[0] * F.data()[6] + F.data()[1] * F.data()[7]);
+	///
+	Hessian_2FE.data()[30] = mu *(F.data()[0] * F.data()[0] + 3.0* F.data()[3] * F.data()[3] + F.data()[4] * F.data()[4] - 1.0 + F.data()[5] * F.data()[5] + F.data()[6] * F.data()[6]);
+	Hessian_2FE.data()[31] = mu * (2.0 * F.data()[3] * F.data()[4] + F.data()[0] * F.data()[1] + F.data()[6] * F.data()[7]);
+	Hessian_2FE.data()[32] = mu * (2.0 * F.data()[3] * F.data()[5] + F.data()[0] * F.data()[2] + F.data()[6] * F.data()[8]);
+	Hessian_2FE.data()[33] = mu * (2.0 * F.data()[3] * F.data()[6] + F.data()[4] * F.data()[7] + F.data()[5] * F.data()[8]);
+	Hessian_2FE.data()[34] = mu *(F.data()[6] * F.data()[4]);
+	Hessian_2FE.data()[35] = mu *(F.data()[6] * F.data()[5]);
+	///
+	Hessian_2FE.data()[40] = mu *(F.data()[1] * F.data()[1] + F.data()[3] * F.data()[3] + 3.0*F.data()[4] * F.data()[4] - 1.0 + F.data()[5] * F.data()[5] + F.data()[7] * F.data()[7]);
+	Hessian_2FE.data()[41] = mu * (2.0 * F.data()[4] * F.data()[5] + F.data()[1] * F.data()[2] + F.data()[7] * F.data()[8]);
+	Hessian_2FE.data()[42] = mu *(F.data()[7] * F.data()[3]);
+	Hessian_2FE.data()[43] = mu * (2.0 * F.data()[4] * F.data()[7] + F.data()[3] * F.data()[6] + F.data()[5] * F.data()[8]);
+	Hessian_2FE.data()[44] = mu *(F.data()[7] * F.data()[5]);
+	///
+	Hessian_2FE.data()[50] = mu *(F.data()[2] * F.data()[2] + F.data()[3] * F.data()[3] + F.data()[4] * F.data()[4] - 1.0 + 3.0*F.data()[5] * F.data()[5] + F.data()[8] * F.data()[8]);
+	Hessian_2FE.data()[51] = mu *(F.data()[8] * F.data()[3]);
+	Hessian_2FE.data()[52] = mu *(F.data()[8] * F.data()[4]);
+	Hessian_2FE.data()[53] = mu * (2.0 * F.data()[5] * F.data()[8] + F.data()[3] * F.data()[6] + F.data()[4] * F.data()[7]);
+	///
+	Hessian_2FE.data()[60] = mu *(F.data()[0] * F.data()[0] + F.data()[3] * F.data()[3] + 3.0 * F.data()[6] * F.data()[6] - 1.0 + F.data()[7] * F.data()[7] + F.data()[8] * F.data()[8]);
+	Hessian_2FE.data()[61] = mu * (2.0 * F.data()[6] * F.data()[7] + F.data()[0] * F.data()[1] + F.data()[4] * F.data()[3]);
+	Hessian_2FE.data()[62] = mu * (2.0 * F.data()[6] * F.data()[8] + F.data()[0] * F.data()[2] + F.data()[5] * F.data()[3]);
+	///
+	Hessian_2FE.data()[70] = mu *(F.data()[1] * F.data()[1] + F.data()[4] * F.data()[4] + F.data()[6] * F.data()[6] - 1.0 + 3.0 * F.data()[7] * F.data()[7] + F.data()[8] * F.data()[8]);
+	Hessian_2FE.data()[71] = mu * (2.0 * F.data()[8] * F.data()[7] + F.data()[2] * F.data()[1] + F.data()[4] * F.data()[5]);
+	//
+	Hessian_2FE.data()[80] = mu *(F.data()[2] * F.data()[2] + F.data()[5] * F.data()[5] + F.data()[6] * F.data()[6] - 1.0 + F.data()[7] * F.data()[7] + 3.0 * F.data()[8] * F.data()[8]);
+
+	// add  first derivative of lambda*tr(E)F
+	unsigned int k = 0;
+	for (unsigned int i = 0; i < 9; ++i) {
+		Hessian_2FE.data()[k] += lambda_trace;
+		k += 10;
+	}
+
+
+	for (unsigned int i = 0; i < 9; ++i) {//col
+		k = 9 * i;
+		for (unsigned int j = i; j <9; ++j) {//row
+			Hessian_2FE.data()[k+j] += lambda * F.data()[i] * F.data()[j];
+		}
+	}
+
+
+	Hessian_2FE.data()[9] = Hessian_2FE.data()[1];
+	Hessian_2FE.data()[18] = Hessian_2FE.data()[2];
+	Hessian_2FE.data()[27] = Hessian_2FE.data()[3];
+	Hessian_2FE.data()[36] = Hessian_2FE.data()[4];
+	Hessian_2FE.data()[45] = Hessian_2FE.data()[5];
+	Hessian_2FE.data()[54] = Hessian_2FE.data()[6];
+	Hessian_2FE.data()[63] = Hessian_2FE.data()[7];
+	Hessian_2FE.data()[72] = Hessian_2FE.data()[8];
+	///
+	Hessian_2FE.data()[19] = Hessian_2FE.data()[11];
+	Hessian_2FE.data()[28] = Hessian_2FE.data()[12];
+	Hessian_2FE.data()[37] = Hessian_2FE.data()[13];
+	Hessian_2FE.data()[46] = Hessian_2FE.data()[14];
+	Hessian_2FE.data()[55] = Hessian_2FE.data()[15];
+	Hessian_2FE.data()[64] = Hessian_2FE.data()[16];
+	Hessian_2FE.data()[73] = Hessian_2FE.data()[17];
+	///
+	Hessian_2FE.data()[29] = Hessian_2FE.data()[21];
+	Hessian_2FE.data()[38] = Hessian_2FE.data()[22];
+	Hessian_2FE.data()[47] = Hessian_2FE.data()[23];
+	Hessian_2FE.data()[56] = Hessian_2FE.data()[24];
+	Hessian_2FE.data()[65] = Hessian_2FE.data()[25];
+	Hessian_2FE.data()[74] = Hessian_2FE.data()[26];
+	///
+	Hessian_2FE.data()[39] = Hessian_2FE.data()[31];
+	Hessian_2FE.data()[48] = Hessian_2FE.data()[32];
+	Hessian_2FE.data()[57] = Hessian_2FE.data()[33];
+	Hessian_2FE.data()[66] = Hessian_2FE.data()[34];
+	Hessian_2FE.data()[75] = Hessian_2FE.data()[35];
+	///
+	Hessian_2FE.data()[49] = Hessian_2FE.data()[41];
+	Hessian_2FE.data()[58] = Hessian_2FE.data()[42];
+	Hessian_2FE.data()[67] = Hessian_2FE.data()[43];
+	Hessian_2FE.data()[76] = Hessian_2FE.data()[44];
+	///
+	Hessian_2FE.data()[59] = Hessian_2FE.data()[51];
+	Hessian_2FE.data()[68] = Hessian_2FE.data()[52];
+	Hessian_2FE.data()[77] = Hessian_2FE.data()[53];
+	///
+	Hessian_2FE.data()[69] = Hessian_2FE.data()[61];
+	Hessian_2FE.data()[78] = Hessian_2FE.data()[62];
+	///
+	Hessian_2FE.data()[79] = Hessian_2FE.data()[71];
+
+
+	Matrix<double, 9, 12> A;
+	A.setZero();
+	for (unsigned int i = 0; i < 12; i+=3) {//col
+		for (unsigned int j = 0; j < 3; ++j) {
+			A.data()[9*i +3* j] = inv_rest_pos.data()[i + j];
+			A.data()[9 * i +3* j + 10] = inv_rest_pos.data()[i + j];
+			A.data()[9 * i + 3*j + 20] = inv_rest_pos.data()[i + j];
+		}
+	}
+
+	Hessian = A.transpose() * Hessian_2FE* A;
+
+
+}
 
 
 

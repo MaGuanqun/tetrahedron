@@ -37,6 +37,10 @@ public:
 		Matrix<double, 3, 4>& A, int* vertex_index, double* inv_mass, double volume, double iteration_num_inverse);
 
 
+	void scondOrderStrainConstraint(std::array<double, 3>* vertex_position,
+		double stiffness, double dt, Matrix<double, 3, 4>& A, int* vertex_index, double* inv_mass, double volume, double youngs_modulus, double poisson_ratio);
+	void test();
+
 private:
 	void initialEdgeCotWeight(TriangleMeshStruct& mesh_struct, std::vector<double>& edge_cot_weight);
 	void computeLBOWeight(std::vector<double>& lbo_weight, TriangleMeshStruct& mesh_struct);
@@ -49,5 +53,8 @@ private:
 		Matrix<double, 3, 4>& inv_rest_pos,
 		double rest_volume,
 		double mu, double lambda, Matrix<double, 3, 4>& grad_C, double& C);
-
+	void computeGreenStrainAndPiolaStressHessian(double* v0, double* v1, double* v2, double* v3,
+		Matrix<double, 3, 4>& inv_rest_pos,
+		double rest_volume,
+		double mu, double lambda, Matrix<double, 12, 1>& grad_C, double& C, Matrix<double, 12, 12>& Hessian, double stiffness);
 };

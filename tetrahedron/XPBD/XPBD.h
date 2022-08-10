@@ -68,6 +68,9 @@ private:
 	double sub_time_step;
 	std::vector<std::vector<std::array<double, 3>>> f_ext;
 	std::vector<std::vector<std::array<double, 3>>> velocity;
+
+	std::vector<std::vector<std::array<double, 3>>> sn;
+
 	//std::vector<std::vector<std::array<double, 3>>> total_gravity;
 
 	std::vector<std::array<double, 3>*> vertex_position;

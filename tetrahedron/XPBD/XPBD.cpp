@@ -16,7 +16,11 @@ XPBD::XPBD()
 
 	velocity_damp = 0.995;
 	//energy_converge_ratio = 5e-3;
-	
+	XPBD_constraint.test();
+
+
+
+
 }
 
 
@@ -148,14 +152,22 @@ void XPBD::initialVariable()
 	gravity[0] = 0;
 	gravity[1] = -gravity_;
 	gravity[2] = 0;
+
+	sn.resize(total_obj_num);
+
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		f_ext[i].resize(mesh_struct[i]->vertex_position.size());
 		velocity[i].resize(mesh_struct[i]->vertex_position.size());
+		sn[i].resize(mesh_struct[i]->vertex_position.size());
 	}
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		memset(velocity[i][0].data(), 0, 24 * velocity[i].size());
 		memset(f_ext[i][0].data(), 0, 24 * f_ext[i].size());
+		memset(sn[i][0].data(), 0, 24 * sn[i].size());
 	}
+
+	
+
 }
 
 void XPBD::reorganzieDataOfObjects()
@@ -721,12 +733,15 @@ void XPBD::setPosPredict(int thread_No)
 	double gravity__[3];
 	memcpy(gravity__, gravity, 24);
 
+	std::array<double, 3>* sn_;
+
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		vertex_pos = vertex_position[i];
 		vertex_end = vertex_index_begin_per_thread[i][thread_No + 1];
 		mass_inv = mesh_struct[i]->mass_inv.data();
 		f_ext_ = f_ext[i].data();
 		velocity_ = velocity[i].data();
+		sn_ = sn[i].data();
 		for (unsigned int j = vertex_index_begin_per_thread[i][thread_No]; j < vertex_end; ++j) {
 			if (mass_inv[j] != 0) {
 				for (unsigned int k = 0; k < 3; ++k) {
@@ -734,6 +749,8 @@ void XPBD::setPosPredict(int thread_No)
 				}
 			}
 		}
+		memcpy(sn_[vertex_index_begin_per_thread[i][thread_No]].data(), vertex_pos[vertex_index_begin_per_thread[i][thread_No]].data(),
+			(vertex_end - vertex_index_begin_per_thread[i][thread_No]) * 24);
 	}
 
 
