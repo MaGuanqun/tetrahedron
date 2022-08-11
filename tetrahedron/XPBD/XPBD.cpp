@@ -4,13 +4,13 @@
 XPBD::XPBD()
 {
 	gravity_ = 9.8;
-	sub_step_num =18;
+	sub_step_num =1;
 	iteration_number =100;
 
 	damping_coe = 0.0;
 
-	perform_collision = true;
-	max_iteration_number = 3;
+	perform_collision = false;
+	max_iteration_number =1;
 	outer_max_iteration_number = 100;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
@@ -293,30 +293,54 @@ void XPBD::PBD_IPCSolve()
 
 }
 
+void XPBD::solveBySecondOrderXPBD()
+{
+	thread->assignTask(this, SET_POS_PREDICT);
+	updateSn();
+	if (perform_collision) {
+		collision.collisionCulling();
+	}
+	iteration_number = 0;
+	for (unsigned int sub_step = 0; sub_step < sub_step_num; ++sub_step) {
+		inner_iteration_number = 0;
+		if (sub_step_num > 1) {
+			thread->assignTask(this, SET_POS_PREDICT_SUB_TIME_STEP);
+			if (control_parameter[START_TEST]) {
+				//if (!collider->empty()) {
+				//	move_model->moveSphere(*time_indicate_for_simu, collider->data()[0].mesh_struct.vertex_for_render, collider->data()[0].mesh_struct.vertex_position, sub_step_num);
+				//}
+				//move_model->moveSkirt(*time_indicate_for_simu, mesh_struct, false, sub_step_num);
+				//rorate band capsule
+				//if (!collider->empty()) {
+				//	move_model->sceneRotateCapsule(*time_indicate_for_simu, collider->data()[0].mesh_struct.vertex_for_render, collider->data()[0].mesh_struct.vertex_position, mesh_struct[0], false, sub_step_num);
+				//}
+			}
+		}
+		while (!convergeCondition(inner_iteration_number)) {
+			if (perform_collision) {
+				updateNormal();
+			}
+			solveSecondOrderConstraint((inner_iteration_number == 0) && sub_step % *sub_step_per_detection == 0);//sub_step % prediction_sub_step_size//|| inner_iteration_number== (max_iteration_number/2+1)
+			inner_iteration_number++;
+			thread->assignTask(this, XPBD_VELOCITY);
+			updatePosition();
+			updateRenderNormal();
+		}
+		iteration_number += inner_iteration_number;
+	}
+	updateRenderVertexNormal();
+}
+
 
 void XPBD::solveByXPBD()
 {
 	//if (sub_step_num == 1) {
-	if (perform_collision) {
-		thread->assignTask(this, SET_POS_PREDICT);
+	thread->assignTask(this, SET_POS_PREDICT);
+	if (perform_collision) {		
 		//time_t t1 = clock();
 		//for (unsigned int j = 0; j < 10; ++j) {
 			collision.collisionCulling();
 		//}
-	//	time_t t2 = clock() - t1;
-	//	std::cout << "t2 " << t2 << std::endl;
-	//	unsigned int vt_pair_num = 0;
-	//	unsigned int ee_pair_num = 0;
-	//	unsigned int vt_c_pair_num=0;
-	//	for (unsigned int j = 0; j < total_thread_num; ++j) {
-	//		vt_pair_num += collision.spatial_hashing.vertex_triangle_pair[j][0];
-	//		ee_pair_num += collision.spatial_hashing.edge_edge_pair[j][0];
-	//		vt_c_pair_num += collision.spatial_hashing.vertex_obj_triangle_collider_pair[j][0];
-	//		//spatial_hashing.vertex_triangle_pair[j][0] = 0;
-	//		//spatial_hashing.edge_edge_pair[j][0] = 0;
-	////		spatial_hashing.vertex_obj_triangle_collider_pair[j][0] = 0;
-	//	}
-	//	std::cout << "vt " << vt_pair_num << " ee " << ee_pair_num << " vt_c " << vt_c_pair_num << std::endl;
 	}
 	//}
 	iteration_number = 0;
@@ -393,7 +417,8 @@ void XPBD::PBDsolve()
 		solveByPBD();
 	}
 	else {
-		solveByXPBD();
+		//solveByXPBD();
+		solveBySecondOrderXPBD();
 	}
 }
 
@@ -476,6 +501,11 @@ void XPBD::updatePosition()
 	}
 }
 
+void XPBD::solveSecondOrderConstraint(bool need_detection)
+{
+	solveTetStrainConstraintSecondOrder();
+}
+
 void XPBD::solveConstraint(bool need_detection)
 {
 	//previous_energy = energy;
@@ -483,11 +513,13 @@ void XPBD::solveConstraint(bool need_detection)
 	solveBendingConstraint();
 	solveEdgeLengthConstraint();
 	solveTetStrainConstraint();
-	if (need_detection) {
-		collision.XPBDsolveCollisionConstraint();
-	}
-	else {
-		collision.re_XPBDsolveCollisionConstraint();
+	if (perform_collision) {
+		if (need_detection) {
+			collision.XPBDsolveCollisionConstraint();
+		}
+		else {
+			collision.re_XPBDsolveCollisionConstraint();
+		}
 	}
 }
 
@@ -584,6 +616,44 @@ void XPBD::solveEdgeLengthConstraint()
 }
 
 
+void XPBD::solveTetStrainConstraintSecondOrder()
+{
+	unsigned int size;
+	std::array<int, 4>* indices;
+	MeshStruct* mesh_struct_;
+	double* volume;
+	std::array<double, 3>* vertex_pos;
+	std::array<double, 3>* sn_;
+	double* mass_inv;
+	double stiffness;
+	Matrix<double, 3, 4>* A;
+	double* sigma_limit;
+	double youngs_modulus, poisson_ratio;
+	std::array<double, 3>* original_vertex_pos;
+	double damp_stiffness;
+
+	double iteration_num_inverse = 1.0 / (double)(max_iteration_number + 1);
+	double energy_;
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		mesh_struct_ = mesh_struct[i + cloth->size()];
+		size = tetrahedron->data()[i].mesh_struct.indices.size();
+		indices = tetrahedron->data()[i].mesh_struct.indices.data();
+		volume = tetrahedron->data()[i].mesh_struct.volume.data();
+		vertex_pos = vertex_position[i + cloth->size()];
+		stiffness = tetrahedron->data()[i].ARAP_stiffness;
+		A = tetrahedron->data()[i].mesh_struct.A.data();
+		mass_inv = mesh_struct_->mass_inv.data();
+		youngs_modulus = tetrahedron->data()[i].youngs_modulus;
+		poisson_ratio = tetrahedron->data()[i].poisson_ratio;
+		sn_ = sn[i + cloth->size()].data();
+
+		for (unsigned int j = 0; j < size; ++j) {
+			XPBD_constraint.scondOrderStrainConstraint(vertex_pos, stiffness, sub_time_step, A[j], indices[j].data(), mass_inv,
+				volume[j], youngs_modulus, poisson_ratio,sn_);
+		}
+	}
+}
+
 
 void XPBD::solveTetStrainConstraint()
 {
@@ -618,22 +688,22 @@ void XPBD::solveTetStrainConstraint()
 		youngs_modulus = tetrahedron->data()[i].youngs_modulus;
 		poisson_ratio = tetrahedron->data()[i].poisson_ratio;
 		damp_stiffness = tetrahedron->data()[i].damp_ARAP_stiffness;
-		if (use_PBD) {
-			for (unsigned int j = 0; j < size; ++j) {
-				XPBD_constraint.PBDsolveARAPConstraint(vertex_pos, initial_vertex_pos, stiffness, sub_time_step, A[j], indices[j].data(), mass_inv,
-					volume[j], iteration_num_inverse);
-				lambda_++;
-			}
-		}
-		else {
-			for (unsigned int j = 0; j < size; ++j) {
-				XPBD_constraint.solveARAPConstraint(vertex_pos, initial_vertex_pos, stiffness, sub_time_step, A[j], indices[j].data(), mass_inv,
-					*lambda_, damp_stiffness, sigma_limit[0], sigma_limit[1], volume[j], energy_);
+		//if (use_PBD) {
+		//	for (unsigned int j = 0; j < size; ++j) {
+		//		XPBD_constraint.PBDsolveARAPConstraint(vertex_pos, initial_vertex_pos, stiffness, sub_time_step, A[j], indices[j].data(), mass_inv,
+		//			volume[j], iteration_num_inverse);
+		//		lambda_++;
+		//	}
+		//}
+		//else {
+		//	for (unsigned int j = 0; j < size; ++j) {
+		//		XPBD_constraint.solveARAPConstraint(vertex_pos, initial_vertex_pos, stiffness, sub_time_step, A[j], indices[j].data(), mass_inv,
+		//			*lambda_, damp_stiffness, sigma_limit[0], sigma_limit[1], volume[j], energy_);
 
-				lambda_++;
-				//energy += energy_;
-			}
-		}
+		//		lambda_++;
+		//		//energy += energy_;
+		//	}
+		//}
 		//original_vertex_pos = tetrahedron->data()[i].ori_vertices.data();
 		//for (unsigned int j = 0; j < size; ++j) {
 		//	XPBD_constraint.solveARAPConstraint2(original_vertex_pos, vertex_pos, initial_vertex_pos, stiffness, sub_time_step, A[j], indices[j].data(), mass_inv,
@@ -641,11 +711,11 @@ void XPBD::solveTetStrainConstraint()
 		//	lambda_++;
 		//}
 
-		//for (unsigned int j = 0; j < size; ++j) {
-		//	XPBD_constraint.solveTetStrainConstraint(vertex_pos, initial_vertex_pos, stiffness, sub_time_step, A[j], indices[j].data(), mass_inv,
-		//		*lambda_, damping_coe, volume[j], youngs_modulus, poisson_ratio);
-		//	lambda_ ++;
-		//}
+		for (unsigned int j = 0; j < size; ++j) {
+			XPBD_constraint.solveTetStrainConstraint(vertex_pos, initial_vertex_pos, stiffness, sub_time_step, A[j], indices[j].data(), mass_inv,
+				*lambda_, damping_coe, volume[j], youngs_modulus, poisson_ratio);
+			lambda_ ++;
+		}
 	}
 }
 
@@ -719,6 +789,13 @@ void XPBD::computeVelocity(int thread_No)
 }
 
 
+void XPBD::updateSn()
+{
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		memcpy(sn[i][0].data(), vertex_position[i][0].data(),sn[i].size() * 24);
+	}
+}
+
 //SET_POS_PREDICT
 void XPBD::setPosPredict(int thread_No)
 {
@@ -749,8 +826,7 @@ void XPBD::setPosPredict(int thread_No)
 				}
 			}
 		}
-		memcpy(sn_[vertex_index_begin_per_thread[i][thread_No]].data(), vertex_pos[vertex_index_begin_per_thread[i][thread_No]].data(),
-			(vertex_end - vertex_index_begin_per_thread[i][thread_No]) * 24);
+	
 	}
 
 

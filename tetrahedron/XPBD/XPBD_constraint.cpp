@@ -364,7 +364,8 @@ void XPBDconstraint::solveTetStrainConstraint(std::array<double, 3>* vertex_posi
 
 
 void XPBDconstraint::scondOrderStrainConstraint(std::array<double, 3>* vertex_position,
-	double stiffness, double dt, Matrix<double, 3, 4>& A, int* vertex_index, double* inv_mass, double volume, double youngs_modulus, double poisson_ratio)
+	double stiffness, double dt, Matrix<double, 3, 4>& A, int* vertex_index, double* inv_mass, double volume, double youngs_modulus, double poisson_ratio,
+	std::array<double, 3>* sn)
 {
 	Matrix<double, 12, 1> grad_C;
 	double C;
@@ -375,21 +376,37 @@ void XPBDconstraint::scondOrderStrainConstraint(std::array<double, 3>* vertex_po
 		vertex_position[vertex_index[2]].data(), vertex_position[vertex_index[3]].data(), A, volume, mu, lambda_, grad_C, C, Hessian,stiffness);
 	double inverse_mass;
 	for (unsigned int i = 0; i < 12; i+=3) {
-		inverse_mass = inv_mass[i/3];
-		for (unsigned int j = 0; j < 81; j += 9) {
+		inverse_mass = inv_mass[vertex_index[i/3]];
+		for (unsigned int j = 0; j < 144; j += 12) {
 			Hessian.data()[j + i] *= inverse_mass;
 			Hessian.data()[j + i + 1] *= inverse_mass;
 			Hessian.data()[j + i + 2] *= inverse_mass;
 		}
 		grad_C.data()[i] *= inverse_mass;
-		grad_C.data()[i+1] *= inverse_mass;
-		grad_C.data()[i+2] *= inverse_mass;
+		grad_C.data()[i + 1] *= inverse_mass;
+		grad_C.data()[i + 2] *= inverse_mass;
 	}
 	double inv_t = 1.0 / (dt * dt);
-	for (unsigned int j = 0; j < 81; j += 10) {
+	for (unsigned int j = 0; j < 144; j += 13) {
 		Hessian.data()[j] += inv_t;
 	}
-	here need sn
+	for (unsigned int i = 0; i < 4; ++i) {
+		grad_C.data()[3 * i] += inv_t *(vertex_position[vertex_index[i]][0] - sn[vertex_index[i]][0]);
+		grad_C.data()[3 * i + 1] += inv_t * (vertex_position[vertex_index[i]][1] - sn[vertex_index[i]][1]);
+		grad_C.data()[3 * i + 2] += inv_t * (vertex_position[vertex_index[i]][2] - sn[vertex_index[i]][2]);
+	}
+
+	ColPivHouseholderQR <MatrixXd> linear(Hessian);
+	VectorXd delta_x = linear.solve(grad_C);
+
+	for (unsigned int i = 0; i < 4; ++i) {
+		//if (inv_mass[vertex_index[i]] != 0) {
+			vertex_position[vertex_index[i]][0] -= delta_x.data()[3 * i];
+			vertex_position[vertex_index[i]][1] -= delta_x.data()[3 * i + 1];
+			vertex_position[vertex_index[i]][2] -= delta_x.data()[3 * i + 2];
+		//}
+	}
+
 
 }
 
@@ -410,8 +427,6 @@ void XPBDconstraint::test()
 		A.data()[6 + i] = p.data()[3 * i + 1];
 		A.data()[9 + i] = p.data()[3 * i + 2];
 	}
-	std::cout << p << std::endl;
-	std::cout << A << std::endl;
 	Matrix<double, 12, 1> grad_C;
 	Matrix<double, 12, 12> Hessian;;
 	double C;
@@ -474,7 +489,7 @@ void XPBDconstraint::computeGreenStrainAndPiolaStressHessian(double* v0, double*
 	//st. venant-kirchhoff model
 	// psi= mu E:E + lambda/2 * tr(E)^2
 	double psi = mu * E.squaredNorm() + 0.5 * lambda * trace * trace;
-	C = rest_volume * psi;
+	C = rest_volume*stiffness * psi;
 
 	Matrix<double, 3, 4> grad = (rest_volume*stiffness) * P * inv_rest_pos;
 	memcpy(grad_C.data(), grad.data(), 96);//12*8
@@ -487,7 +502,6 @@ void XPBDconstraint::computeGreenStrainAndPiolaStressHessian(double* v0, double*
 	//first compute second derivative of mu 2FE
 	Matrix<double, 9, 9>Hessian_2FE;
 	Hessian_2FE.data()[0] = mu * (3.0 * F.data()[0] * F.data()[0] + F.data()[1] * F.data()[1] + F.data()[2] * F.data()[2] - 1.0 + F.data()[3] * F.data()[3] + F.data()[6] * F.data()[6]);
-	std::cout << Hessian_2FE.data()[0] << std::endl;
 	Hessian_2FE.data()[1] = mu * (2.0 * F.data()[0] * F.data()[1] + F.data()[3] * F.data()[4] + F.data()[6] * F.data()[7]);
 	Hessian_2FE.data()[2] = mu * (2.0 * F.data()[0] * F.data()[2] + F.data()[3] * F.data()[5] + F.data()[6] * F.data()[8]);
 	Hessian_2FE.data()[3] = mu * (2.0 * F.data()[0] * F.data()[3] + F.data()[1] * F.data()[4] + F.data()[2] * F.data()[5]);

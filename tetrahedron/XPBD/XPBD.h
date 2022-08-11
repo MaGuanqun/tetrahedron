@@ -142,6 +142,7 @@ private:
 	void solveByPBD();
 	void solveByXPBD();
 
+
 	//double energy=1e-15;
 	//double previous_energy = 1e-15;
 	//std::vector<double>energy_per_thread;
@@ -151,6 +152,9 @@ private:
 	SaveScene save_scene;
 
 	SecondOrderConstraint second_order_constraint;
-
+	void updateSn();
+	void solveBySecondOrderXPBD();
+	void solveSecondOrderConstraint(bool need_detection);
+	void solveTetStrainConstraintSecondOrder();
 };
 
