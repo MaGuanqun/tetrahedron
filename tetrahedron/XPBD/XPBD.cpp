@@ -503,6 +503,7 @@ void XPBD::updatePosition()
 
 void XPBD::solveSecondOrderConstraint(bool need_detection)
 {
+	solveEdgeLengthSecondOrder();
 	solveTetStrainConstraintSecondOrder();
 }
 
@@ -610,6 +611,46 @@ void XPBD::solveEdgeLengthConstraint()
 				lambda_++;
 
 				//energy += energy_;
+			}
+		}
+	}
+}
+
+void XPBD::solveEdgeLengthSecondOrder()
+{
+	unsigned int size;
+	MeshStruct* mesh_struct_;
+	std::array<double, 3>* vertex_pos;
+	std::array<double, 3>* sn_;
+	double stiffness;
+	unsigned int* edge_vertex_index;
+	double* mass_inv;
+	double damp_stiffness;
+	double* mass;
+	//double energy_;
+
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		mesh_struct_ = mesh_struct[i];
+		size = mesh_struct_->edge_length.size();
+		vertex_pos = vertex_position[i];
+		sn_ = sn[i].data();
+
+		//std::cout << vertex_position[i] << " " << vertex_pos << std::endl;
+		damp_stiffness = cloth->data()[i].damp_length_stiffness;
+		stiffness = cloth->data()[i].length_stiffness;
+		edge_vertex_index = mesh_struct_->edge_vertices.data();
+		mass_inv = mesh_struct_->mass_inv.data();
+		mass = mesh_struct_->mass.data();
+		//for (unsigned int j = 0; j < size; ++j) {			
+		for (auto k = mesh_struct_->unconnected_edge_index.begin(); k < mesh_struct_->unconnected_edge_index.end(); ++k) {
+			for (auto j = k->begin(); j < k->end(); ++j) {
+				//std::cout << edge_vertex_index[j << 1] << " " << edge_vertex_index[(j << 1) + 1] << std::endl;
+				//std::cout << *lambda_ << " " << vertex_position[i][edge_vertex_index[j << 1]].data()[0] << " " << vertex_position[i][edge_vertex_index[(j << 1) + 1]].data()[0] << std::endl;
+				second_order_constraint.solveEdgeLengthConstraint(vertex_pos[edge_vertex_index[(*j) << 1]].data(),
+					vertex_pos[edge_vertex_index[((*j) << 1) + 1]].data(), mesh_struct_->edge_length[*j], stiffness, mass[edge_vertex_index[(*j) << 1]],
+					mass[edge_vertex_index[((*j) << 1) + 1]], sub_time_step, sn_[edge_vertex_index[(*j) << 1]].data(), sn_[edge_vertex_index[((*j) << 1) + 1]].data(),
+					mass_inv[edge_vertex_index[(*j) << 1]] == 0.0, mass_inv[edge_vertex_index[((*j) << 1) + 1]] == 0.0);
+				//std::cout << vertex_pos[edge_vertex_index[j << 1]].data()[0]<<" "<< vertex_pos[edge_vertex_index[(j << 1) + 1]].data()[0]<<" "<< edge_vertex_index[j << 1] << " " << edge_vertex_index[(j << 1) + 1] << std::endl;		
 			}
 		}
 	}

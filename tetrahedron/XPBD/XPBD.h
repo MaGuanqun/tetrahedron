@@ -156,5 +156,6 @@ private:
 	void solveBySecondOrderXPBD();
 	void solveSecondOrderConstraint(bool need_detection);
 	void solveTetStrainConstraintSecondOrder();
+	void solveEdgeLengthSecondOrder();
 };
 

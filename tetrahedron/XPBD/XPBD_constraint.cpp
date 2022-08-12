@@ -363,6 +363,9 @@ void XPBDconstraint::solveTetStrainConstraint(std::array<double, 3>* vertex_posi
 }
 
 
+
+
+
 void XPBDconstraint::scondOrderStrainConstraint(std::array<double, 3>* vertex_position,
 	double stiffness, double dt, Matrix<double, 3, 4>& A, int* vertex_index, double* inv_mass, double volume, double youngs_modulus, double poisson_ratio,
 	std::array<double, 3>* sn)
