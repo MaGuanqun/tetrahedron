@@ -143,7 +143,7 @@ private:
 	void solveByXPBD();
 
 
-	//double energy=1e-15;
+	double energy;
 	//double previous_energy = 1e-15;
 	//std::vector<double>energy_per_thread;
 
@@ -157,5 +157,8 @@ private:
 	void solveSecondOrderConstraint(bool need_detection);
 	void solveTetStrainConstraintSecondOrder();
 	void solveEdgeLengthSecondOrder();
+	void computeCurrentEnergy();
+	double computeCurrentEnergyEdgeLength();
+	double computeInertialEnergy();
 };
 

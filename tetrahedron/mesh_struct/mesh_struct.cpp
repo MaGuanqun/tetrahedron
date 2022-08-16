@@ -65,8 +65,32 @@ void MeshStruct::setFace()
 	//}
 }
 
+void MeshStruct::setEdgeForSpring()
+{
+	if (vertex_position.size() == 2) {
+		edges.resize(1);
+		edge_vertices.resize(2);
+		edge_vertices[0] = 0;
+		edge_vertices[1] = 1;
+		double v[3];
+		SUB(v, vertex_position[0], vertex_position[1]);
+		edge_length.emplace_back(sqrt(DOT(v,  v)));
+		vertices[0].edge.emplace_back(0);
+		vertices[1].edge.emplace_back(0);
+		addNeighborVertex();
+		vertices[0].neighbor_vertex.emplace_back(1);
+		vertices[1].neighbor_vertex.emplace_back(0);
+		vertices[0].around_vertex.emplace_back(1);
+		vertices[1].around_vertex.emplace_back(0);
+	}
+}
+
+
 void MeshStruct::setEdge()
 {
+	if (triangle_indices.empty()) {
+		return;
+	}
 	unsigned int face_num = triangle_indices.size();
 	edges.reserve(face_num * 3 / 2);
 	edge_length.reserve(face_num * 3 / 2);

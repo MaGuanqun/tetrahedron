@@ -28,7 +28,7 @@ double TriangleMeshStruct::setMass(double density)
 	}
 	else {
 		for (int i = 0; i < vertices.size(); ++i) {
-			mass[i] = 1.25;
+			mass[i] = 0.125;
 			mass_ += mass[i];
 		}
 	}

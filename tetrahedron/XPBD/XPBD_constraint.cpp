@@ -837,6 +837,9 @@ void XPBDconstraint::solveBendingConstraint(double* center_vertex, double vertex
 void XPBDconstraint::initial_LBO_EdgeCotWeight(TriangleMeshStruct& mesh_struct, std::vector<double>& lbo_weight, std::vector<VectorXd>& vertex_lbo,
 	std::vector<double>& rest_mean_curvature_norm)
 {
+	if (mesh_struct.vertex_position.size() < 3) {
+		return;
+	}
 	std::vector<double> edge_cot_weight;
 	initialEdgeCotWeight(mesh_struct, edge_cot_weight);
 	computeLBOWeight(lbo_weight, mesh_struct);

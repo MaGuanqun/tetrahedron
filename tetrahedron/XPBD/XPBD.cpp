@@ -10,7 +10,7 @@ XPBD::XPBD()
 	damping_coe = 0.0;
 
 	perform_collision = false;
-	max_iteration_number =1;
+	max_iteration_number =200;
 	outer_max_iteration_number = 100;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
@@ -296,15 +296,21 @@ void XPBD::PBD_IPCSolve()
 void XPBD::solveBySecondOrderXPBD()
 {
 	thread->assignTask(this, SET_POS_PREDICT);
-	updateSn();
+	if (sub_step_num == 1) {
+		updateSn();
+	}
 	if (perform_collision) {
 		collision.collisionCulling();
 	}
 	iteration_number = 0;
+	//std::cout << "/////" << std::endl;
+	computeCurrentEnergy();
+
 	for (unsigned int sub_step = 0; sub_step < sub_step_num; ++sub_step) {
 		inner_iteration_number = 0;
 		if (sub_step_num > 1) {
 			thread->assignTask(this, SET_POS_PREDICT_SUB_TIME_STEP);
+			updateSn();
 			if (control_parameter[START_TEST]) {
 				//if (!collider->empty()) {
 				//	move_model->moveSphere(*time_indicate_for_simu, collider->data()[0].mesh_struct.vertex_for_render, collider->data()[0].mesh_struct.vertex_position, sub_step_num);
@@ -321,12 +327,13 @@ void XPBD::solveBySecondOrderXPBD()
 				updateNormal();
 			}
 			solveSecondOrderConstraint((inner_iteration_number == 0) && sub_step % *sub_step_per_detection == 0);//sub_step % prediction_sub_step_size//|| inner_iteration_number== (max_iteration_number/2+1)
-			inner_iteration_number++;
-			thread->assignTask(this, XPBD_VELOCITY);
-			updatePosition();
-			updateRenderNormal();
+			inner_iteration_number++;		
+			computeCurrentEnergy();
 		}
 		iteration_number += inner_iteration_number;
+		thread->assignTask(this, XPBD_VELOCITY);
+		updatePosition();
+		updateRenderNormal();
 	}
 	updateRenderVertexNormal();
 }
@@ -373,6 +380,9 @@ void XPBD::solveByXPBD()
 		thread->assignTask(this, XPBD_VELOCITY);
 		updatePosition();
 		updateRenderNormal();
+
+		
+
 	}
 
 	//second_order_constraint.test(*(mesh_struct[0]), lbo_weight[0], vertex_lbo[0], rest_mean_curvature_norm[0]);
@@ -501,8 +511,21 @@ void XPBD::updatePosition()
 	}
 }
 
+
+void XPBD::computeCurrentEnergy()
+{
+	//std::cout << "///" << std::endl;
+	energy = 0.0;
+	energy += 0.5 * computeInertialEnergy();
+	//std::cout << energy << std::endl;
+	energy += 0.5*computeCurrentEnergyEdgeLength();
+	//std::cout << energy << std::endl;
+
+}
+
 void XPBD::solveSecondOrderConstraint(bool need_detection)
 {
+	//std::cout << "/////" << std::endl;
 	solveEdgeLengthSecondOrder();
 	solveTetStrainConstraintSecondOrder();
 }
@@ -616,6 +639,37 @@ void XPBD::solveEdgeLengthConstraint()
 	}
 }
 
+
+
+double XPBD::computeCurrentEnergyEdgeLength()
+{
+	double energy = 0.0;
+	unsigned int size;
+	MeshStruct* mesh_struct_;
+	std::array<double, 3>* vertex_pos;
+	double stiffness;
+	unsigned int* edge_vertex_index;
+
+	double length_dis;
+	double* edge_length;
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		mesh_struct_ = mesh_struct[i];
+		size = mesh_struct_->edge_length.size();
+		vertex_pos = vertex_position[i];
+		stiffness = cloth->data()[i].length_stiffness;
+		edge_vertex_index = mesh_struct_->edge_vertices.data();
+		edge_length = mesh_struct_->edge_length.data();
+		for (auto k = mesh_struct_->unconnected_edge_index.begin(); k < mesh_struct_->unconnected_edge_index.end(); ++k) {
+			for (auto j = k->begin(); j < k->end(); ++j) {
+				length_dis = sqrt(EDGE_LENGTH(vertex_pos[edge_vertex_index[(*j) << 1]].data(), vertex_pos[edge_vertex_index[((*j) << 1) + 1]].data()))- edge_length[*j];
+				energy += stiffness * length_dis * length_dis;
+			}
+		}
+	}
+	return energy;
+}
+
+
 void XPBD::solveEdgeLengthSecondOrder()
 {
 	unsigned int size;
@@ -649,7 +703,7 @@ void XPBD::solveEdgeLengthSecondOrder()
 				second_order_constraint.solveEdgeLengthConstraint(vertex_pos[edge_vertex_index[(*j) << 1]].data(),
 					vertex_pos[edge_vertex_index[((*j) << 1) + 1]].data(), mesh_struct_->edge_length[*j], stiffness, mass[edge_vertex_index[(*j) << 1]],
 					mass[edge_vertex_index[((*j) << 1) + 1]], sub_time_step, sn_[edge_vertex_index[(*j) << 1]].data(), sn_[edge_vertex_index[((*j) << 1) + 1]].data(),
-					mass_inv[edge_vertex_index[(*j) << 1]] == 0.0, mass_inv[edge_vertex_index[((*j) << 1) + 1]] == 0.0);
+					mass_inv[edge_vertex_index[(*j) << 1]] == 0.0, mass_inv[edge_vertex_index[((*j) << 1) + 1]] == 0.0, *j);
 				//std::cout << vertex_pos[edge_vertex_index[j << 1]].data()[0]<<" "<< vertex_pos[edge_vertex_index[(j << 1) + 1]].data()[0]<<" "<< edge_vertex_index[j << 1] << " " << edge_vertex_index[(j << 1) + 1] << std::endl;		
 			}
 		}
@@ -778,6 +832,11 @@ void XPBD::solveBendingConstraint()
 	//double delta_t = sub_time_step;
 	//double energy_;
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		if (mesh_struct[i]->vertex_position.size() < 3) {
+			lambda_ += mesh_struct[i]->vertex_position.size();
+			continue;
+		}
+
 		stiffness = cloth->data()[i].bend_stiffness;
 		if (stiffness > 0.0) {
 			damp_stiffness = cloth->data()[i].damp_bend_stiffness;
@@ -837,6 +896,28 @@ void XPBD::updateSn()
 	}
 }
 
+
+
+double XPBD::computeInertialEnergy()
+{
+	double energy = 0.0;
+	std::array<double, 3>* vertex_pos;
+	std::array<double, 3>* sn_;
+	unsigned int vertex_end;
+	double* mass;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		vertex_pos = vertex_position[i];
+		sn_ = sn[i].data();
+		vertex_end = vertex_index_begin_per_thread[i][total_thread_num];
+		mass = mesh_struct[i]->mass.data();
+		for (unsigned int j = 0; j < vertex_end; ++j) {
+			energy += mass[j]/(sub_time_step*sub_time_step) * sqrt(EDGE_LENGTH(vertex_pos[j], sn_[j]));
+		}
+	}
+	return energy;
+}
+
+
 //SET_POS_PREDICT
 void XPBD::setPosPredict(int thread_No)
 {
@@ -850,9 +931,7 @@ void XPBD::setPosPredict(int thread_No)
 	std::array<double, 3>* velocity_;
 	double gravity__[3];
 	memcpy(gravity__, gravity, 24);
-
 	std::array<double, 3>* sn_;
-
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		vertex_pos = vertex_position[i];
 		vertex_end = vertex_index_begin_per_thread[i][thread_No + 1];

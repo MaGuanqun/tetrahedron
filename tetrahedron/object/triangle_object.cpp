@@ -6,17 +6,25 @@
 void TriangleObject::drawWireframe(Camera* camera, Shader* wireframe_shader)
 {
 	//setBuffer(cloth_index);
-	if (!mesh_struct.triangle_indices.empty()) {
-		wireframe_shader->use();
-		wireframe_shader->setMat4("projection", camera->GetProjectMatrix());
-		wireframe_shader->setMat4("view", camera->GetViewMatrix());
-		wireframe_shader->setMat4("model", glm::mat4(1.0));
-		wireframe_shader->setVec3("color", wireframe_color);
-		wireframe_shader->setFloat("transparent", 1.0f);
+	wireframe_shader->use();
+	wireframe_shader->setMat4("projection", camera->GetProjectMatrix());
+	wireframe_shader->setMat4("view", camera->GetViewMatrix());
+	wireframe_shader->setMat4("model", glm::mat4(1.0));
+	wireframe_shader->setVec3("color", wireframe_color);
+	wireframe_shader->setFloat("transparent", 1.0f);
+	if (!mesh_struct.triangle_indices.empty()) {		
 		glBindVertexArray(VAO);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glDrawElements(GL_TRIANGLES, 3 * mesh_struct.triangle_indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
+	}
+	else {
+		glLineWidth(3.0);
+		glBindVertexArray(VAO);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glDrawElements(GL_LINES, mesh_struct.edge_vertices.size(), GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+		glLineWidth(1.0);
 	}
 }
 
@@ -60,6 +68,9 @@ void TriangleObject::setBufferOriPos()
 
 void TriangleObject::setBuffer()
 {
+	//std::cout << mesh_struct.vertex_position[0][0] << " " << mesh_struct.vertex_position[0][1] << " " << mesh_struct.vertex_position[0][2]<<std::endl;
+	//std::cout << mesh_struct.vertex_position[1][0] << " " << mesh_struct.vertex_position[1][1] << " " << mesh_struct.vertex_position[1][2]<<std::endl;
+	//std::cout << mesh_struct.edge_vertices[0] << " " << mesh_struct.edge_vertices[1] << std::endl;
 	if (!mesh_struct.triangle_indices.empty())
 	{
 		glBindVertexArray(VAO);
@@ -75,23 +86,34 @@ void TriangleObject::setBuffer()
 		glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
 		glBindVertexArray(0);
 	}
-
+	else {
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
+		glBufferData(GL_ARRAY_BUFFER, mesh_struct.vertex_position.size() * sizeof(std::array<double, 3>), mesh_struct.vertex_position[0].data(), GL_STATIC_DRAW);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh_struct.edge_vertices.size() * sizeof(unsigned int), mesh_struct.edge_vertices.data(), GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
+		glBindVertexArray(0);
+	}
 }
 
 void TriangleObject::setRepresentativePrimitve()
 {
-	representative_vertex_num.resize(mesh_struct.faces.size(), 0);
-	representative_edge_num.resize(mesh_struct.faces.size(), 0);
-	setRepresentativeVertex(mesh_struct.surface_triangle_index_in_order, mesh_struct.vertices);
-	setRepresentativeEdge(mesh_struct.face_edges.data(), mesh_struct.face_edges.size() / 3, mesh_struct.edges.size());
-	vertex_from_rep_triangle_index.resize(mesh_struct.vertex_position.size(), -1);
-	edge_from_rep_triangle_index.resize(mesh_struct.edges.size(), -1);
-	for (int i = 0; i < mesh_struct.faces.size(); ++i) {
-		for (int j = 0; j < representative_vertex_num[i]; ++j) {
-			vertex_from_rep_triangle_index[mesh_struct.surface_triangle_index_in_order[i][j]] = i;
-		}
-		for (int j = 0; j < representative_edge_num[i]; ++j) {
-			edge_from_rep_triangle_index[mesh_struct.face_edges[3 * i + j]] = i;
+	if (!mesh_struct.faces.empty()) {
+		representative_vertex_num.resize(mesh_struct.faces.size(), 0);
+		representative_edge_num.resize(mesh_struct.faces.size(), 0);
+		setRepresentativeVertex(mesh_struct.surface_triangle_index_in_order, mesh_struct.vertices);
+		setRepresentativeEdge(mesh_struct.face_edges.data(), mesh_struct.face_edges.size() / 3, mesh_struct.edges.size());
+		vertex_from_rep_triangle_index.resize(mesh_struct.vertex_position.size(), -1);
+		edge_from_rep_triangle_index.resize(mesh_struct.edges.size(), -1);
+		for (int i = 0; i < mesh_struct.faces.size(); ++i) {
+			for (int j = 0; j < representative_vertex_num[i]; ++j) {
+				vertex_from_rep_triangle_index[mesh_struct.surface_triangle_index_in_order[i][j]] = i;
+			}
+			for (int j = 0; j < representative_edge_num[i]; ++j) {
+				edge_from_rep_triangle_index[mesh_struct.face_edges[3 * i + j]] = i;
+			}
 		}
 	}
 }

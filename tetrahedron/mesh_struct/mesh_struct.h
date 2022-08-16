@@ -104,6 +104,7 @@ public:
 	void setVertex();
 	void setFace();
 	void setEdge();
+	void setEdgeForSpring();
 	void addArounVertex();
 
 	std::vector<unsigned int> vertex_index_begin_per_thread;

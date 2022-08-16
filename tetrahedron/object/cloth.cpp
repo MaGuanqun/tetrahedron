@@ -98,12 +98,15 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mesh_struct.initialNormalSize();
 	mesh_struct.setVertex();
 	mesh_struct.setFace();
+	mesh_struct.setEdgeForSpring();
 	mesh_struct.setEdge();
 	mesh_struct.addArounVertex();
 	mesh_struct.setThreadIndex(total_thread_num);
 	mesh_struct.vertex_for_render = mesh_struct.vertex_position;
-	mesh_struct.getRenderNormal();
-	mesh_struct.getNormal();
+	if (!mesh_struct.triangle_indices.empty()) {
+		mesh_struct.getRenderNormal();
+		mesh_struct.getNormal();
+	}
 	genBuffer();
 	setBuffer();
 	setArea();	
@@ -237,8 +240,9 @@ void Cloth::setAnchor()
 {
 	//mesh_struct.anchor_vertex.push_back(0);
 	//mesh_struct.anchor_vertex.push_back(114);
-	mesh_struct.anchor_vertex.push_back(10 * 10-1);
-	mesh_struct.anchor_vertex.push_back(9 * 10);
+	//mesh_struct.anchor_vertex.push_back(10 * 10-1);
+	//mesh_struct.anchor_vertex.push_back(9 * 10);
+	mesh_struct.anchor_vertex.push_back(0);
 
 	//for (unsigned int i = 0; i < 20; ++i) {
 	//	mesh_struct.anchor_vertex.push_back(mesh_struct.vertex_position.size()-1-i);

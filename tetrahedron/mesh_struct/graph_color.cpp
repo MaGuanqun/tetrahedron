@@ -64,7 +64,6 @@ void GraphColor::graphColorEdgeLength(MeshStruct& mesh_struct)
 	std::vector<int> record_index;
 	record_index.reserve(edge_number / 2);
 
-	MeshStruct::Edge* edges = mesh_struct.edges.data();
 	MeshStruct::Vertex* vertex = mesh_struct.vertices.data();	
 	unsigned int* edge_vertex = mesh_struct.edge_vertices.data();
 

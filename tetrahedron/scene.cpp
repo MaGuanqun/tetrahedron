@@ -399,7 +399,10 @@ void Scene::setGroup()
 				cloth[i].mesh_struct.unconnected_vertex_index.clear();
 			}
 			graph_color.graphColorEdgeLength(cloth[i].mesh_struct);
-			graph_color.graphColorBending(cloth[i].mesh_struct);
+
+			if (cloth[i].mesh_struct.vertex_position.size() > 2) {
+				graph_color.graphColorBending(cloth[i].mesh_struct);;
+			}			
 		}
 	//}
 	//time_t t2 = clock() - t;
@@ -552,8 +555,13 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 
 	for (int j = 0; j < cloth_num; ++j) {
 		if (!show_element[CLOTH_][j]) {
-			cloth[j].setSceneShader(light, camera, shadow.far_plane, object_shader_front);
-			cloth[j].draw(camera, object_shader_front);
+			if (!cloth[j].mesh_struct.triangle_indices.empty()) {
+				cloth[j].setSceneShader(light, camera, shadow.far_plane, object_shader_front);
+				cloth[j].draw(camera, object_shader_front);
+			}
+			else {
+				cloth[j].drawWireframe(camera, wireframe_shader);
+			}
 		}
 	}
 	glDisable(GL_CULL_FACE);

@@ -1,18 +1,17 @@
 #include"second_order.h"
 
 void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, const double rest_length, double stiffness, double mass_0,
-	double mass_1, double time_step, double* sn_0, double* sn_1, bool v0_fixed, bool v1_fixed)
+	double mass_1, double time_step, double* sn_0, double* sn_1, bool v0_fixed, bool v1_fixed, unsigned int edge_index)
 {
 	Vector3d n;
 	SUB(n.data(), p0, p1);
 	double n_norm = sqrt(DOT(n, n));
 	double coe =stiffness * (1.0 - rest_length / n_norm);
 	Vector3d grad_ = coe * n;
-	Matrix3d He = ((rest_length / (n_norm * n_norm * n_norm)) * n) * n.transpose();
+	Matrix3d He = ((rest_length*stiffness / (n_norm * n_norm * n_norm)) * n) * n.transpose();
 	He.data()[0] += coe;
 	He.data()[4] += coe;
 	He.data()[8] += coe;
-	He *= stiffness;
 
 	if (v0_fixed) {
 		if (v1_fixed) {
@@ -62,7 +61,7 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 	H.block<3,3>(3, 0) = He;
 	H.block<3,3>(0, 3) = He;	
 
-	coe = mass_0 / (time_step * time_step);;
+	coe = mass_0 / (time_step * time_step);
 	H.data()[0] += coe;
 	H.data()[7] += coe;
 	H.data()[14] += coe;
@@ -89,14 +88,19 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 
 	JacobiSVD<MatrixXd> svd;
 	svd.compute(H);
-	 //	std::cout << svd.singularValues() << std::endl;
+	// 	std::cout << svd.singularValues() << std::endl;
 	//std::cout << H.determinant() << std::endl;
 	//std::cout << H << std::endl;
+
+
+	double constraint_0 = 1.0 / (2.0 * time_step * time_step) * (mass_0 * EDGE_LENGTH(p0, sn_0) + mass_1 * EDGE_LENGTH(p1, sn_1)) + 0.5 *stiffness* (n_norm - rest_length) * (n_norm - rest_length);
+
 
 	SUM_(p0, delta_x);
 	p1[0] += delta_x[3];
 	p1[1] += delta_x[4];
 	p1[2] += delta_x[5];
+
 
 
 	//Vector3d p0_current;
@@ -109,7 +113,32 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 
 	//double constraint =(p0_current - p1_current).norm() - rest_length;
 	//constraint = 0.5 * constraint * constraint;
+	n_norm = sqrt(EDGE_LENGTH(p0, p1));
+	double constraint_1  = 1.0 / (2.0 * time_step * time_step) * (mass_0 * EDGE_LENGTH(p0, sn_0) + mass_1 * EDGE_LENGTH(p1, sn_1)) + 0.5 * stiffness * (n_norm - rest_length) * (n_norm - rest_length);
 
+
+	if (edge_index == 68) {
+		//std::cout << delta_x.transpose() << std::endl;
+		//std::cout << sn_0[0] << " " << sn_0[1] << " " << sn_0[2] << std::endl;
+	}
+
+	if (constraint_0 >= constraint_1) {
+		//std::cout << "true " << std::endl;
+	}
+	else {
+		//std::cout << "false "<<constraint_0<<" "<<constraint_1 << std::endl;
+		//std::cout << delta_x.transpose() << std::endl;
+		//std::cout << p0[0] - delta_x[0] << " " << p0[1] - delta_x[1] << " " << p0[2] - delta_x[2] << std::endl;
+		//std::cout << p0[0] << " " << p0[1] << " " << p0[2] << std::endl;
+		//std::cout << std::endl;
+		//std::cout << p1[0] - delta_x[3] << " " << p1[1] - delta_x[4] << " " << p1[2] - delta_x[5] << std::endl;
+		//std::cout << p1[0] << " " << p1[1] << " " << p1[2] << std::endl;
+		//std::cout << edge_index << std::endl;
+		//JacobiSVD<MatrixXd> svd;
+		//svd.compute(H);
+		//std::cout << H.determinant() << std::endl;
+
+	}
 }
 
 
