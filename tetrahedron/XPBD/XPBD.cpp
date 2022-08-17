@@ -10,7 +10,7 @@ XPBD::XPBD()
 	damping_coe = 0.0;
 
 	perform_collision = false;
-	max_iteration_number =50;
+	max_iteration_number =100;
 	outer_max_iteration_number = 100;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
@@ -350,8 +350,12 @@ void XPBD::solveByXPBD()
 			collision.collisionCulling();
 		//}
 	}
+	if (sub_step_num == 1) {
+		updateSn();
+	}
 	//}
 	iteration_number = 0;
+	computeCurrentEnergy();
 	//time_t t3 = clock();
 	for (unsigned int sub_step = 0; sub_step < sub_step_num; ++sub_step) {
 		memset(lambda.data(), 0, 8 * lambda.size());
@@ -376,6 +380,7 @@ void XPBD::solveByXPBD()
 			}
 			solveConstraint((inner_iteration_number==0 ) && sub_step% *sub_step_per_detection ==0);//sub_step % prediction_sub_step_size//|| inner_iteration_number== (max_iteration_number/2+1)
 			inner_iteration_number++;
+			computeCurrentEnergy();
 		}
 		iteration_number += inner_iteration_number;
 		thread->assignTask(this, XPBD_VELOCITY);
@@ -520,7 +525,7 @@ void XPBD::computeCurrentEnergy()
 	energy += 0.5 * computeInertialEnergy();
 	//std::cout << energy << std::endl;
 	energy += 0.5*computeCurrentEnergyEdgeLength();
-	//std::cout << energy << std::endl;
+	std::cout << energy << std::endl;
 
 }
 
@@ -535,7 +540,7 @@ void XPBD::solveConstraint(bool need_detection)
 {
 	//previous_energy = energy;
 	//energy = 0.0;
-	solveBendingConstraint();
+	//solveBendingConstraint();
 	solveEdgeLengthConstraint();
 	solveTetStrainConstraint();
 	if (perform_collision) {
@@ -608,6 +613,8 @@ void XPBD::solveEdgeLengthConstraint()
 	//}
 	double damp_stiffness;
 
+	std::array<double, 3>* sn_;
+
 	//double energy_;
 
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
@@ -621,21 +628,23 @@ void XPBD::solveEdgeLengthConstraint()
 		stiffness = cloth->data()[i].length_stiffness;
 		edge_vertex_index = mesh_struct_->edge_vertices.data();
 		mass_inv = mesh_struct_->mass_inv.data();
-		//for (unsigned int j = 0; j < size; ++j) {			
-		for (auto k = mesh_struct_->unconnected_edge_index.begin(); k < mesh_struct_->unconnected_edge_index.end(); ++k) {
-			for (auto j = k->begin(); j < k->end(); ++j) {
+
+		sn_ = sn[i].data();
+		for (unsigned int j = 0; j < size; ++j) {			
+		//for (auto k = mesh_struct_->unconnected_edge_index.begin(); k < mesh_struct_->unconnected_edge_index.end(); ++k) {
+			//for (auto j = k->begin(); j < k->end(); ++j) {
 				//std::cout << edge_vertex_index[j << 1] << " " << edge_vertex_index[(j << 1) + 1] << std::endl;
 				//std::cout << *lambda_ << " " << vertex_position[i][edge_vertex_index[j << 1]].data()[0] << " " << vertex_position[i][edge_vertex_index[(j << 1) + 1]].data()[0] << std::endl;
-				XPBD_constraint.solveEdgeLengthConstraint(vertex_pos[edge_vertex_index[(*j) << 1]].data(),
-					vertex_pos[edge_vertex_index[((*j) << 1) + 1]].data(), mesh_struct_->edge_length[*j], stiffness, sub_time_step, mass_inv[edge_vertex_index[(*j) << 1]],
-					mass_inv[edge_vertex_index[((*j) << 1) + 1]], *lambda_, damp_stiffness, initial_vertex_pos[edge_vertex_index[(*j) << 1]].data(),
-					initial_vertex_pos[edge_vertex_index[((*j) << 1) + 1]].data());
+				XPBD_constraint.solveEdgeLengthConstraint(vertex_pos[edge_vertex_index[(j) << 1]].data(),
+					vertex_pos[edge_vertex_index[((j) << 1) + 1]].data(), mesh_struct_->edge_length[j], stiffness, sub_time_step, mass_inv[edge_vertex_index[(j) << 1]],
+					mass_inv[edge_vertex_index[((j) << 1) + 1]], *lambda_, damp_stiffness, initial_vertex_pos[edge_vertex_index[(j) << 1]].data(),
+					initial_vertex_pos[edge_vertex_index[((j) << 1) + 1]].data(), sn_[edge_vertex_index[(j) << 1]].data(), sn_[edge_vertex_index[((j) << 1) + 1]].data());
 				//std::cout << *lambda_ << " " << vertex_position[i][edge_vertex_index[j << 1]].data()[0] << " " << vertex_position[i][edge_vertex_index[(j << 1) + 1]].data()[0] << std::endl;
 				//std::cout << vertex_pos[edge_vertex_index[j << 1]].data()[0]<<" "<< vertex_pos[edge_vertex_index[(j << 1) + 1]].data()[0]<<" "<< edge_vertex_index[j << 1] << " " << edge_vertex_index[(j << 1) + 1] << std::endl;		
 				lambda_++;
 
 				//energy += energy_;
-			}
+			//}
 		}
 	}
 }
@@ -696,18 +705,18 @@ void XPBD::solveEdgeLengthSecondOrder()
 		edge_vertex_index = mesh_struct_->edge_vertices.data();
 		mass_inv = mesh_struct_->mass_inv.data();
 		mass = mesh_struct_->mass.data();
-		//for (unsigned int j = 0; j < size; ++j) {			
-		for (auto k = mesh_struct_->unconnected_edge_index.begin(); k < mesh_struct_->unconnected_edge_index.end(); ++k) {
-			for (auto j = k->begin(); j < k->end(); ++j) {
+		for (unsigned int j = 0; j < size; ++j) {			
+		//for (auto k = mesh_struct_->unconnected_edge_index.begin(); k < mesh_struct_->unconnected_edge_index.end(); ++k) {
+		//	for (auto j = k->begin(); j < k->end(); ++j) {
 				//std::cout << edge_vertex_index[j << 1] << " " << edge_vertex_index[(j << 1) + 1] << std::endl;
 				//std::cout << *lambda_ << " " << vertex_position[i][edge_vertex_index[j << 1]].data()[0] << " " << vertex_position[i][edge_vertex_index[(j << 1) + 1]].data()[0] << std::endl;
-				second_order_constraint.solveEdgeLengthConstraint(vertex_pos[edge_vertex_index[(*j) << 1]].data(),
-					vertex_pos[edge_vertex_index[((*j) << 1) + 1]].data(), mesh_struct_->edge_length[*j], stiffness, mass[edge_vertex_index[(*j) << 1]],
-					mass[edge_vertex_index[((*j) << 1) + 1]], sub_time_step, sn_[edge_vertex_index[(*j) << 1]].data(), sn_[edge_vertex_index[((*j) << 1) + 1]].data(),
-					mass_inv[edge_vertex_index[(*j) << 1]] == 0.0, mass_inv[edge_vertex_index[((*j) << 1) + 1]] == 0.0, *j, *lambda_);
+				second_order_constraint.solveEdgeLengthConstraint(vertex_pos[edge_vertex_index[(j) << 1]].data(),
+					vertex_pos[edge_vertex_index[((j) << 1) + 1]].data(), mesh_struct_->edge_length[j], stiffness, mass[edge_vertex_index[(j) << 1]],
+					mass[edge_vertex_index[((j) << 1) + 1]], sub_time_step, sn_[edge_vertex_index[(j) << 1]].data(), sn_[edge_vertex_index[((j) << 1) + 1]].data(),
+					mass_inv[edge_vertex_index[(j) << 1]] == 0.0, mass_inv[edge_vertex_index[((j) << 1) + 1]] == 0.0, j, *lambda_);
 				//std::cout << vertex_pos[edge_vertex_index[j << 1]].data()[0]<<" "<< vertex_pos[edge_vertex_index[(j << 1) + 1]].data()[0]<<" "<< edge_vertex_index[j << 1] << " " << edge_vertex_index[(j << 1) + 1] << std::endl;		
 				lambda_++;
-			}
+			//}
 		}
 	}
 }
@@ -913,7 +922,7 @@ double XPBD::computeInertialEnergy()
 		vertex_end = vertex_index_begin_per_thread[i][total_thread_num];
 		mass = mesh_struct[i]->mass.data();
 		for (unsigned int j = 0; j < vertex_end; ++j) {
-			energy += mass[j]/(sub_time_step*sub_time_step) * sqrt(EDGE_LENGTH(vertex_pos[j], sn_[j]));
+			energy += mass[j]/(sub_time_step*sub_time_step) * (EDGE_LENGTH(vertex_pos[j], sn_[j]));
 		}
 	}
 	return energy;

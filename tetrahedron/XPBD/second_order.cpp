@@ -11,7 +11,7 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 	SUB(n.data(), p0, p1);
 	double n_norm = sqrt(DOT(n, n));
 	Vector3d grad_ = n/n_norm;
-	double alpha_inv= time_step * time_step * stiffness;
+	double alpha= 1.0/ (time_step * time_step * stiffness);
 
 	Matrix3d He = ((- lambda / (n_norm * n_norm * n_norm)) * n) * n.transpose();
 	double coe = lambda / n_norm;
@@ -21,45 +21,54 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 
 		if (v0_fixed) {
 			Matrix<double, 3, 3> sys_matrix;
-			sys_matrix= (alpha_inv * grad_) * grad_.transpose() - He;
+			sys_matrix.setZero();
+			sys_matrix -= He;
 			sys_matrix.data()[0] += mass_1;
 			sys_matrix.data()[4] += mass_1;
 			sys_matrix.data()[8] += mass_1;
-			Vector3d g;
-			g.data()[0] = mass_1 * (sn_1[0] - p1[0]);
-			g.data()[1] = mass_1 * (sn_1[1] - p1[1]);
-			g.data()[2] = mass_1 * (sn_1[2] - p1[2]);
-			g += alpha_inv * (n_norm - rest_length) * grad_;
-			ColPivHouseholderQR <Matrix3d> linear(sys_matrix);
-			Vector3d delta_x = linear.solve(g);
-			double h = n_norm - rest_length + lambda / alpha_inv;
-			double delta_lamda = -alpha_inv * (h - grad_.dot(delta_x));
+			//Vector3d g;
+			//g.data()[0] = mass_1 * (p1[0] - sn_1[0]);
+			//g.data()[1] = mass_1 * (p1[1] - sn_1[1]);
+			//g.data()[2] = mass_1 * (p1[2] - sn_1[2]);
+			//g += lambda * grad_;
+			double h = n_norm - rest_length + alpha * lambda;
+			//ColPivHouseholderQR <Matrix3d> linear(sys_matrix);
+			LDLT <Matrix3d> linear(sys_matrix);
+			coe = linear.solve(grad_).dot(grad_) + alpha;
+			double delta_lambda =( - h )/coe;//- linear.solve(g).dot(grad_)
+			Vector3d delta_x = linear.solve((- delta_lambda) * grad_ );//-g
+
 			p1[0] += delta_x[0];
 			p1[1] += delta_x[1];
 			p1[2] += delta_x[2];
-			lambda += delta_lamda;
+			lambda += delta_lambda;
 			return;
 		}
 		
 		if (v1_fixed) {
 			Matrix<double, 3, 3> sys_matrix;
-			sys_matrix = (alpha_inv * grad_) * grad_.transpose() - He;
+			sys_matrix.setZero();
+			sys_matrix -= He;
 			sys_matrix.data()[0] += mass_0;
 			sys_matrix.data()[4] += mass_0;
 			sys_matrix.data()[8] += mass_0;
-			Vector3d g;
-			g.data()[0] = mass_0 * (sn_0[0] - p0[0]);
-			g.data()[1] = mass_0 * (sn_0[1] - p0[1]);
-			g.data()[2] = mass_0 * (sn_0[2] - p0[2]);
-			g -= alpha_inv * (n_norm - rest_length) * grad_;
-			ColPivHouseholderQR <Matrix3d> linear(sys_matrix);
-			Vector3d delta_x = linear.solve(g);
-			double h = n_norm - rest_length + lambda / alpha_inv;
-			double delta_lamda = -alpha_inv * (h + grad_.dot(delta_x));
+			//Vector3d g;
+			//g.data()[0] = mass_0 * (p0[0] - sn_0[0]);
+			//g.data()[1] = mass_0 * (p0[1] - sn_0[1]);
+			//g.data()[2] = mass_0 * (p0[2] - sn_0[2]);
+			//g -= lambda * grad_;
+
+			double h = n_norm - rest_length + alpha * lambda;
+			LDLT <Matrix3d> linear(sys_matrix);
+
+			coe = linear.solve(grad_).dot(grad_) + alpha;
+			double delta_lambda = (-h ) / coe;//+ linear.solve(g).dot(grad_)
+			Vector3d delta_x = linear.solve(delta_lambda * grad_);//- g
+
 			p0[0] += delta_x[0];
 			p0[1] += delta_x[1];
 			p0[2] += delta_x[2];
-			lambda += delta_lamda;
+			lambda += delta_lambda;
 			return;
 		}
 
@@ -67,35 +76,41 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 		gradient.segment(0, 3) = grad_;
 		gradient.segment(3, 3) = -grad_;
 		Matrix<double, 6, 6> sys_matrix;
-		sys_matrix = (alpha_inv *gradient) * gradient.transpose();
+		sys_matrix.setZero();
+		sys_matrix.block<3, 3>(0, 0) -= He;
+		sys_matrix.block<3, 3>(3, 3) -= He;
+		sys_matrix.block<3, 3>(3, 0) += He;
+		sys_matrix.block<3, 3>(0, 3) += He;
 		for (unsigned int i = 0; i < 18; i+=7) {
 			sys_matrix.data()[i] += mass_0;
 		}
 		for (unsigned int i = 21; i < 36; i+=7) {
 			sys_matrix.data()[i] += mass_1;
 		}
+		//ColPivHouseholderQR <Matrix<double, 6, 6>> linear(sys_matrix);
+		LDLT <Matrix<double, 6, 6>> linear(sys_matrix);
+		double h = n_norm - rest_length + alpha*lambda;
+		//Matrix<double, 6, 1>g;
+		//g.data()[0] =mass_0 *(p0[0] - sn_0[0]);
+		//g.data()[1] =mass_0 *(p0[1] - sn_0[1]);
+		//g.data()[2] =mass_0 *(p0[2] - sn_0[2]);
+		//g.data()[3] = mass_1 * (p1[0] - sn_1[0]);
+		//g.data()[4] = mass_1 * (p1[1] - sn_1[1]);
+		//g.data()[5] = mass_1 * (p1[2] - sn_1[2]);
+		//g -= lambda*gradient;
+
+		coe = linear.solve(gradient).dot(gradient) + alpha;
+		double delta_lambda = (- h ) / coe;//++ linear.solve(g).dot(gradient)
+
+
+		//if (edge_index == 0) {
+		////	std::cout << g << std::endl;
+		//std::cout << linear.solve(g) << std::endl;
+		//}
+
+		Matrix<double, 6, 1> delta_x = linear.solve(delta_lambda * gradient);//-g
 		
-		sys_matrix.block<3, 3>(0, 0) -= He;
-		sys_matrix.block<3, 3>(3, 3) -= He;
-		sys_matrix.block<3, 3>(3, 0) += He;
-		sys_matrix.block<3, 3>(0, 3) += He;
-
-		Matrix<double, 6, 1>g;
-		g.data()[0] =mass_0 *(sn_0[0] - p0[0]);
-		g.data()[1] =mass_0 *(sn_0[1] - p0[1]);
-		g.data()[2] =mass_0 *(sn_0[2] - p0[2]);
-		g.data()[3] = mass_1 * (sn_1[0] - p1[0]);
-		g.data()[4] = mass_1 * (sn_1[1] - p1[1]);
-		g.data()[5] = mass_1 * (sn_1[2] - p1[2]);
-		g -= alpha_inv * (n_norm - rest_length) * gradient;
-
-		ColPivHouseholderQR <Matrix<double, 6, 6>> linear(sys_matrix);
-		Matrix<double, 6, 1> delta_x = linear.solve(g);
-
-		double h = n_norm - rest_length + lambda / alpha_inv;
-
-		double delta_lamda = -alpha_inv * (h + gradient.dot(delta_x));
-
+	
 		p0[0] += delta_x[0];
 		p0[1] += delta_x[1];
 		p0[2] += delta_x[2];
@@ -103,7 +118,7 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 		p1[0] += delta_x[3];
 		p1[1] += delta_x[4];
 		p1[2] += delta_x[5];		
-		lambda += delta_lamda;
+		lambda += delta_lambda;
 
 	//Vector3d p0_current;
 	//Vector3d p1_current;
@@ -141,9 +156,7 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 		//std::cout << H.determinant() << std::endl;
 	//}
 
-		if (edge_index == 0) {
-			std::cout << lambda <<  std::endl;
-		}
+
 }
 
 

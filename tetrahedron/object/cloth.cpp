@@ -240,8 +240,8 @@ void Cloth::setAnchor()
 {
 	//mesh_struct.anchor_vertex.push_back(0);
 	//mesh_struct.anchor_vertex.push_back(114);
-	mesh_struct.anchor_vertex.push_back(10 * 10-1);
-	mesh_struct.anchor_vertex.push_back(9 * 10);
+	mesh_struct.anchor_vertex.push_back(50 * 50-1);
+	mesh_struct.anchor_vertex.push_back(49 * 50);
 	//mesh_struct.anchor_vertex.push_back(0);
 
 	//for (unsigned int i = 0; i < 20; ++i) {

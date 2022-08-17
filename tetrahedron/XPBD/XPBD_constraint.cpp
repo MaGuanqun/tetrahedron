@@ -708,7 +708,7 @@ void XPBDconstraint::computeGreenStrainAndPiolaStress(
 
 
 void XPBDconstraint::solveEdgeLengthConstraint(double* p0, double* p1, const double rest_length, const double stiffness, double dt,
-	double inv_mass0, double inv_mass1, double& lambda, const double damping_stiffness, double* initial_p0, double* inital_p1)
+	double inv_mass0, double inv_mass1, double& lambda, const double damping_stiffness, double* initial_p0, double* inital_p1, double* sn_0, double* sn_1)
 {	
 	//double gamma = damping_stiffness / (stiffness*dt);
 	dt = dt * dt;
@@ -718,7 +718,14 @@ void XPBDconstraint::solveEdgeLengthConstraint(double* p0, double* p1, const dou
 	double n_norm = sqrt(DOT(n, n));
 	DEV_(n, n_norm);
 
-	double delta_lambda = -(C + lambda / (stiffness * dt))// + (gamma * n[0]*(p0[0] - initial_p0[0] - p1[0] + inital_p1[0] )+ gamma * n[1] * (p0[1] - initial_p0[1] - p1[1] + inital_p1[1])+ gamma * n[2] * (p0[2] - initial_p0[2] - p1[2] + inital_p1[2])))
+	//double g0[3]; double g1[3];
+	//for (unsigned int i = 0; i < 3; ++i) {
+	//	g0[i] = (p0[i] - sn_0[i]);
+	//	g1[i] = (p1[i] - sn_1[i]);
+	//}
+	//double t = DOT(n, g0) - DOT(n, g1)-(inv_mass0+inv_mass1)*lambda;
+
+	double delta_lambda = (- (C + lambda / (stiffness * dt)))// + (gamma * n[0]*(p0[0] - initial_p0[0] - p1[0] + inital_p1[0] )+ gamma * n[1] * (p0[1] - initial_p0[1] - p1[1] + inital_p1[1])+ gamma * n[2] * (p0[2] - initial_p0[2] - p1[2] + inital_p1[2])))
 		/ ((inv_mass0 + inv_mass1) + 1.0 / (stiffness * dt));//(1.0+gamma)*(inv_mass0 + inv_mass1) 
 	lambda += delta_lambda;
 
@@ -726,6 +733,11 @@ void XPBDconstraint::solveEdgeLengthConstraint(double* p0, double* p1, const dou
 	ACCUMULATE_SUM_WITH_COE(p0, inv_mass0, n);
 	inv_mass1 *= -1.0;
 	ACCUMULATE_SUM_WITH_COE(p1, inv_mass1, n);
+
+	//for (unsigned int i = 0; i < 3; ++i) {
+	//	p0[i] += inv_mass0 * delta_lambda * n[i] - g0[i]-inv_mass0*n[i]*lambda;
+	//	p1[i] +=- inv_mass1 * delta_lambda * n[i] - g1[i] + inv_mass1 * n[i] * lambda;
+	//}
 
 	//energy = 0.5 * stiffness * C * C;
 }

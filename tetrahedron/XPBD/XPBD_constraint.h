@@ -10,7 +10,7 @@ class XPBDconstraint
 {
 public:
 	void solveEdgeLengthConstraint(double* p0, double* p1, const double rest_length, const double stiffness, double dt,
-		double inv_mass0, double inv_mass1, double& lambda, const double damping_stiffness, double* initial_p0, double* inital_p1);
+		double inv_mass0, double inv_mass1, double& lambda, const double damping_stiffness, double* initial_p0, double* inital_p1, double* sn_0, double* sn_1);
 	void initial_LBO_EdgeCotWeight(TriangleMeshStruct& mesh_struct, std::vector<double>& lbo_weight, std::vector<VectorXd>& vertex_lbo,
 		std::vector<double>& rest_mean_curvature_norm);
 	void solveBendingConstraint(double* center_vertex, double vertex_inv_mass, std::array<double, 3>* vertex_position, unsigned int* neighbor_vertex, unsigned int neighbor_vertex_size,
