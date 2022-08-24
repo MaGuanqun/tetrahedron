@@ -10,7 +10,7 @@ Scene::Scene()
 	light.diffuse = glm::vec3(0.9, 0.9, 0.9);
 	light.specular = glm::vec3(0.85, 0.85, 0.85);
 
-	time_step = 1.0 / 30.0;
+	time_step = 1.0 / 200.0;
 
 
 	max_force_magnitude = 2.0;
@@ -206,7 +206,7 @@ void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 		use_method = NEWTON_;
 	}
 	only_test_collision = control_parameter[ONLY_COLLISION_TEST];
-	cloth_density = 0.1;
+	cloth_density = 1;
 	tetrahedron_density = 0.1;
 
 	std::vector<std::vector<double>>obj_stiffness,collide_stiffness;
@@ -358,7 +358,7 @@ void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 	}
 
 	if (use_method == XPBD_) {
-		setGroup();
+		//setGroup();
 	}
 
 
@@ -385,6 +385,17 @@ void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 	cursor.createVertices(0.03, camera_center);
 
 	reorganizeData();
+
+	//unsigned int  k = cloth[0].mesh_struct.vertices[49 * 50].edge[0];
+	//unsigned int v;
+	//if (cloth[0].mesh_struct.edge_vertices[k << 1] == 49 * 50) {
+	//	v = cloth[0].mesh_struct.edge_vertices[(k << 1) + 1];
+	//}
+	//else {
+	//	v = cloth[0].mesh_struct.edge_vertices[(k << 1)];
+	//}
+	//std::cout << v << std::endl;
+	
 }
 
 void Scene::setGroup()
@@ -398,10 +409,17 @@ void Scene::setGroup()
 			for (unsigned int j = 0; j < cloth[i].mesh_struct.unconnected_vertex_index.size(); j++) {
 				cloth[i].mesh_struct.unconnected_vertex_index.clear();
 			}
-			graph_color.graphColorEdgeLength(cloth[i].mesh_struct);
-
-			if (cloth[i].mesh_struct.vertex_position.size() > 2) {
-				graph_color.graphColorBending(cloth[i].mesh_struct);;
+			if (cloth[i].mesh_struct.edge_length.size() > 3) {
+				graph_color.graphColorEdgeLength(cloth[i].mesh_struct);
+				if (cloth[i].mesh_struct.vertex_position.size() > 2) {
+					graph_color.graphColorBending(cloth[i].mesh_struct);;
+				}
+			}
+			else {
+				cloth[i].mesh_struct.unconnected_edge_index.resize(cloth[i].mesh_struct.edge_length.size());
+				for (unsigned int j = 0; j < cloth[i].mesh_struct.unconnected_edge_index.size(); ++j) {
+					cloth[i].mesh_struct.unconnected_edge_index[j].emplace_back(j);
+				}
 			}			
 		}
 	//}

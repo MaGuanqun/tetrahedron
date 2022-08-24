@@ -119,7 +119,6 @@ void XPBDconstraint::solveARAPConstraint(std::array<double, 3>* vertex_position,
 		q_e.col(2) *= -1.0;
 	}
 
-
 	//if (determinant < 0) {
 	//	eigen_value[2] = -eigen_value[2];
 	//}
@@ -141,7 +140,7 @@ void XPBDconstraint::solveARAPConstraint(std::array<double, 3>* vertex_position,
 	//		}
 	//	}
 	//}
-	////use q_e as a temp vector
+	//use q_e as a temp vector
 	//for (unsigned int j = 0; j < 3; ++j) {
 	//	for (unsigned int k = 0; k < 3; ++k) {
 	//		q_e.data()[3 * j + k] = eigen_value[j] * svd.matrixU().data()[3 * j + k];
@@ -150,6 +149,11 @@ void XPBDconstraint::solveARAPConstraint(std::array<double, 3>* vertex_position,
 
 	//use P_inv to record transform
 	P_inv = q_e * svd.matrixV().transpose();
+	double norm_value = (deformation_gradient - P_inv).norm();
+
+	if (norm_value < 1e-8) {
+		return;
+	}
 
 	//if((deformation_gradient-P_inv).squaredNorm)
 
@@ -157,33 +161,26 @@ void XPBDconstraint::solveARAPConstraint(std::array<double, 3>* vertex_position,
 	Matrix<double, 3, 4> grad_C_transpose;
 
 
-	grad_C_transpose = volume * (deformation_gradient - P_inv) * A;
-
-	double C = 0.5 * volume * (deformation_gradient - P_inv).squaredNorm();
-
-
-
-
-
-
+	double C = volume * norm_value;
+	grad_C_transpose = (volume / norm_value) * (deformation_gradient - P_inv) * A;
 	double alpha_ = 1.0 / (stiffness * dt * dt);
-	double gamma = damping_stiffness / (stiffness * dt);
+	//	double gamma = damping_stiffness / (stiffness * dt);
 
-	Vector3d position_;
+		//Vector3d position_;
 
-	double delta_lambda_numerator = 0.0;
-	for (unsigned int k = 0; k < 4; ++k) {
-		SUB(position_, vertex_position[vertex_index[k]], initial_vertex_position[vertex_index[k]]);
-		delta_lambda_numerator += grad_C_transpose.col(k).dot(position_);
-	}
+		//double delta_lambda_numerator = 0.0;
+		//for (unsigned int k = 0; k < 4; ++k) {
+		//	SUB(position_, vertex_position[vertex_index[k]], initial_vertex_position[vertex_index[k]]);
+		//	delta_lambda_numerator += grad_C_transpose.col(k).dot(position_);
+		//}
 
 
 	double delta_lambda_denominator = 0.0;
 	for (unsigned int k = 0; k < 4; ++k) {
 		delta_lambda_denominator += inv_mass[vertex_index[k]] * grad_C_transpose.col(k).squaredNorm();
 	}
-	double delta_lambda = -(C + alpha_ * lambda + gamma * delta_lambda_numerator)
-		/ ((1.0 + gamma) * delta_lambda_denominator + alpha_);
+	double delta_lambda = -(C + alpha_ * lambda)//+ gamma * delta_lambda_numerator
+		/ (delta_lambda_denominator + alpha_);//(1.0 + gamma) * 
 	lambda += delta_lambda;
 
 	double coe;
