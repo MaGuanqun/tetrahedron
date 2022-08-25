@@ -27,6 +27,8 @@ public:
 		Matrix<double, 3, 4>& A, int* vertex_index, double* inv_mass, double& lambda, const double damping_stiffness, double sigma_min,
 		double sigma_max, double volume, double& energy, double* mass);
 
+	void computeForce(double* vertex_0, double* vertex_1, double stiffness,
+		double* potential_0, double* potential_1, double rest_length);
 
 private:
 	double epsilon_for_bending= 1e-10;

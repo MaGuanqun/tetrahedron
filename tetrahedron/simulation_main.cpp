@@ -65,7 +65,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool set_stiffness[13];
 	memset(set_stiffness, 0, 13);
 	std::vector<double> temp_stiffness(18);
-	double temp_data[18] = {1e2,2e2,2e2,2e2,1e5,3e-5,1e8,1.0,0.0,0.0,0.0,
+	double temp_data[18] = {1e2,2e2,2e2,2e2,1e2,3e-5,1e8,1.0,0.0,0.0,0.0,
 	//1e-3, 2e-3,2e-3,2e-3, 1e-3,1e-9,1e-2};
 	0.0, 0.0,0.0,0.0, 0.0,0.0,0.0 };
 	memcpy(temp_stiffness.data(), temp_data, 18 * 8);
@@ -143,7 +143,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 					if (zoom_value > 0.025) {
 						zoom_value -= 0.025 * input->mouse.scroll;
 						zoom_value = myMax(zoom_value, 0.026);
-						zoom_value = myMin(zoom_value, 3.0);
+						zoom_value = myMin(zoom_value, 30.0);
 					}
 					camera.zoomInOut((float)zoom_value * camera_from_origin);
 				}

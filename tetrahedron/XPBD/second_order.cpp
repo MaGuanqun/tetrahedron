@@ -1,5 +1,21 @@
 #include"second_order.h"
 
+
+void SecondOrderConstraint::computeForce(double* vertex_0, double* vertex_1, double stiffness, 
+	double* potential_0, double* potential_1, double rest_length)
+{
+	double C = sqrt(EDGE_LENGTH(vertex_0, vertex_1));
+	double grad[3];
+	grad[0] = (vertex_0[0] - vertex_1[0]) / C;
+	grad[1] = (vertex_0[1] - vertex_1[1]) / C;
+	grad[2] = (vertex_0[2] - vertex_1[2]) / C;
+	C -= rest_length;
+	double coe = C * stiffness;
+	MULTI(potential_0, grad, coe);
+	coe *= -1.0;
+	MULTI(potential_1, grad, coe);
+}
+
 void SecondOrderConstraint::solveARAPConstraint(std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position,
 	double stiffness, double dt,
 	Matrix<double, 3, 4>& A, int* vertex_index, double* inv_mass, double& lambda, const double damping_stiffness, double sigma_min,
@@ -90,7 +106,7 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(Vector3f& p1, Vector3f& p2
 	if (w2 > 0)
 		g.segment(3, 3) = (p2 - ori_p2) / w2;
 
-	std::cout <<"==="<< g.transpose() << std::endl;
+	//std::cout <<"==="<< g.transpose() << std::endl;
 
 	Matrix<float, 6, 1> M_1;
 	M_1 << w1, w1, w1, w2, w2, w2;
@@ -127,23 +143,23 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 	}
 
 
-	std::cout << edge_index << " " << mass_0 << " " << mass_1 << " " << rest_length<<" "<< sn_0[0] << " " << sn_0[1] << " " << sn_0[2] << std::endl;
+	//std::cout << edge_index << " " << mass_0 << " " << mass_1 << " " << rest_length<<" "<< sn_0[0] << " " << sn_0[1] << " " << sn_0[2] << std::endl;
 
 
-	Vector3f p_1, p_2,ori_1,ori_2;
-	for (unsigned int i = 0; i < 3; ++i) {
-		p_1[i] = p0[i];
-		p_2[i] = p1[i];
-		ori_1[i] = sn_0[i];
-		ori_2[i] = sn_1[i];
-	}
+	//Vector3f p_1, p_2,ori_1,ori_2;
+	//for (unsigned int i = 0; i < 3; ++i) {
+	//	p_1[i] = p0[i];
+	//	p_2[i] = p1[i];
+	//	ori_1[i] = sn_0[i];
+	//	ori_2[i] = sn_1[i];
+	//}
 
 	//if (edge_index == 3) {
 	//	std::cout << lambda << std::endl;
 
 	//}
 
-	solveEdgeLengthConstraint(p_1, p_2, rest_length, 1.0, 1.0, ori_1, ori_2, v0_fixed, v1_fixed, lambda);
+	//solveEdgeLengthConstraint(p_1, p_2, rest_length, mass_0, mass_1, ori_1, ori_2, v0_fixed, v1_fixed, lambda);
 
 	//if (edge_index == 3) {
 	//	std::cout << lambda << std::endl;
@@ -152,38 +168,29 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 	//}
 
 
-	p0[0] = p_1[0];
-	p0[1] = p_1[1];
-	p0[2] = p_1[2];
+	//p0[0] = p_1[0];
+	//p0[1] = p_1[1];
+	//p0[2] = p_1[2];
+	//p1[0] = p_2[0];
+	//p1[1] = p_2[1];
+	//p1[2] = p_2[2];
 
-	p1[0] = p_2[0];
-	p1[1] = p_2[1];
-	p1[2] = p_2[2];
-
-
-	/*
 	Vector3d n;
 	SUB(n.data(), p0, p1);
 	double n_norm = sqrt(DOT(n, n));
-
-
-	//if (abs(n_norm - rest_length) < 1e-8) {
-	//	return;
-	//}
-
-
-	Vector3d grad_ = n/n_norm;
-	double alpha = 0.0;// 1.0 / (time_step * time_step * stiffness);
-
+	if (abs(n_norm - rest_length) < 1e-8) {
+		return;
+	}
+	Vector3d grad_ = n / n_norm;
+	double alpha =  1.0 / (time_step * time_step * stiffness);
 	Matrix3d He = (1.0 / n_norm) * (Matrix3d::Identity() - grad_ * grad_.transpose());
 
+	//Matrix<double, 6, 6>Hessian;
+	//Hessian.block<3, 3>(0, 0) = He;
+	//Hessian.block<3, 3>(3, 3) = He;
+	//Hessian.block<3, 3>(3, 0) = -He;
+	//Hessian.block<3, 3>(0, 3) = -He;
 
-	Matrix<double, 6, 6>Hessian;
-	Hessian.block<3, 3>(0, 0) = He;
-	Hessian.block<3, 3>(3, 3) = He;
-	Hessian.block<3, 3>(3, 0) = -He;
-	Hessian.block<3, 3>(0, 3) =-He;
-	
 	VectorXd mass_inv(6);
 	mass_inv[0] = mass_inv[1] = mass_inv[2] = 1.0 / mass_0;
 	mass_inv[3] = mass_inv[4] = mass_inv[5] = 1.0 / mass_1;
@@ -193,9 +200,18 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 	if (v1_fixed) {
 		mass_inv[3] = mass_inv[4] = mass_inv[5] = 0;
 	}
-	Matrix<double, 6, 1> gradient;
-	gradient.segment(0, 3) = grad_;
-	gradient.segment(3, 3) = -grad_;
+	//Matrix<double, 6, 1> gradient;
+	//gradient.segment(0, 3) = grad_;
+	//gradient.segment(3, 3) = -grad_;
+
+	/*
+
+
+
+
+
+
+
 
 
 	Matrix<double, 6, 6>sys_matrix = Matrix<double, 6, 6>::Identity() + lambda * mass_inv.asDiagonal() * Hessian;
@@ -236,10 +252,10 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 	//He.data()[0] += coe;
 	//He.data()[4] += coe;
 	//He.data()[8] += coe;
-/*
+	double coe;
 		if (v0_fixed) {
 			Matrix<double, 3, 3> sys_matrix;
-			sys_matrix = mass_1 * Matrix3d::Identity() - lambda * He;
+			sys_matrix = mass_1 * Matrix3d::Identity()-lambda * He;
 			//sys_matrix.setZero();
 			//sys_matrix -= He;
 			//sys_matrix.data()[0] += mass_1;
@@ -255,7 +271,7 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 			//LDLT <Matrix3d> linear(sys_matrix);
 			coe = (linear.solve(grad_)).dot(grad_) + alpha;
 			double delta_lambda =( - h - (linear.solve(g)).dot(grad_))/coe;//
-			Vector3d delta_x = linear.solve((- delta_lambda) * grad_-g );//-g
+			Vector3d delta_x = linear.solve((- delta_lambda) * grad_-g);//-g
 
 			p1[0] += delta_x[0];
 			p1[1] += delta_x[1];
@@ -266,7 +282,7 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 		
 		if (v1_fixed) {
 			Matrix<double, 3, 3> sys_matrix;
-			sys_matrix = mass_0 * Matrix3d::Identity() - lambda * He;
+			sys_matrix = mass_0 * Matrix3d::Identity() -lambda * He;
 			//sys_matrix.setZero();
 			//sys_matrix -= He;
 			//sys_matrix.data()[0] += mass_0;
@@ -353,12 +369,17 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 		check.block<1, 6>(6, 0) = gradient.transpose();
 		check.data()[7 * 7 - 1] = alpha;
 		Matrix<double, 7, 1> vector;
+		//vector.setZero();
 		memcpy(vector.data(), g.data(), 48);
 		vector.data()[6] = h;		
 		Matrix<double, 7, 1> result;
 		ColPivHouseholderQR <Matrix<double, 7, 7>> linear_(check);
 	   result =-1.0* linear_.solve(vector);
 
+	   //double k = check.determinant();
+	  // if (k < 1e-7) {
+		//   std::cout << edge_index << " " << k << std::endl;
+	   //}
 
 		//memcpy(result.data(), delta_x.data(), 48);
 		//result.data()[6] = delta_lambda;
@@ -366,13 +387,13 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 		//if (error > 1e-10) {
 		//	std::cout << "error " << error << std::endl;
 		//	
-			std::cout << check << std::endl;
-			std::cout << lambda << std::endl;
-			std::cout << check.determinant() << std::endl;;
-			std::cout << g.transpose() << std::endl;;
-			std::cout << vector.transpose() << std::endl;;
-			std::cout <<  std::endl;
-			std::cout << result.transpose() << std::endl;;
+			//std::cout << check << std::endl;
+			//std::cout << lambda << std::endl;
+			//std::cout << check.determinant() << std::endl;;
+			//std::cout << g.transpose() << std::endl;;
+			//std::cout << vector.transpose() << std::endl;;
+			//std::cout <<  std::endl;
+			//std::cout << result.transpose() << std::endl;;
 		//}
 		//}
 		//else {
@@ -435,7 +456,7 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 		//svd.compute(H);
 		//std::cout << H.determinant() << std::endl;
 	//}
-	*/
+	
 
 }
 

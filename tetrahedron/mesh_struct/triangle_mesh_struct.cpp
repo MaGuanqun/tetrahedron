@@ -12,6 +12,14 @@ double TriangleMeshStruct::setMass(double density)
 {
 	double mass_ = 0.0;
 	double m;
+
+	//double temp[25] = { 6.25,12.5, 12.5, 12.5, 6.25, 12.5,   25,   25,   25, 12.5, 12.5 ,  25,   25,   25, 12.5, 12.5,   25,   25,   25, 12.5, 6.25, 12.5, 12.5, 12.5, 6.25 };
+	//memcpy(mass.data(), temp, 25 * 8);
+	//for (unsigned int i = 0; i << mass.size(); ++i) {
+	//	mass_ += mass[i];
+	//}
+	
+
 	if (!faces.empty()) {
 		//for (unsigned int i = 0; i < vertices.size(); ++i) {
 		//	mass[i] = 2e-4;

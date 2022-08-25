@@ -160,5 +160,10 @@ private:
 	void computeCurrentEnergy();
 	double computeCurrentEnergyEdgeLength();
 	double computeInertialEnergy();
+
+	std::vector<std::array<double, 3>>residual;
+
+	void computeResidual();
+
 };
 

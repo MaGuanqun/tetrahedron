@@ -107,6 +107,10 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 		mesh_struct.getRenderNormal();
 		mesh_struct.getNormal();
 	}
+
+
+
+
 	genBuffer();
 	setBuffer();
 	setArea();	
@@ -115,7 +119,12 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	std::cout << "mass " << mass<<" "<<density << std::endl;
 	mesh_struct.setAnchorPosition();
 
-
+	//for (unsigned int i = 0; i < mesh_struct.mass.size(); i++) {
+	//	std::cout << mesh_struct.mass[i] << std::endl;
+	//}
+	//for (unsigned int i = 0; i < mesh_struct.edge_vertices.size(); i += 2) {
+	//	std::cout << mesh_struct.edge_vertices[i] << " " << mesh_struct.edge_vertices[i + 1] << std::endl;
+	//}
 
 	update_stiffness_iteration_number.resize(mesh_struct.vertices.size());
 	initialHashAABB();
@@ -240,8 +249,10 @@ void Cloth::setAnchor()
 {
 	//mesh_struct.anchor_vertex.push_back(0);
 	//mesh_struct.anchor_vertex.push_back(114);
-	mesh_struct.anchor_vertex.push_back(3 *3-1);
-	mesh_struct.anchor_vertex.push_back(3* 2);
+	//mesh_struct.anchor_vertex.push_back(0);
+	//mesh_struct.anchor_vertex.push_back(4);
+	mesh_struct.anchor_vertex.push_back(3*3-1);
+	mesh_struct.anchor_vertex.push_back(3*2);
 	//mesh_struct.anchor_vertex.push_back(50 * 50-1);
 	//mesh_struct.anchor_vertex.push_back(49 * 50);
 	//mesh_struct.anchor_vertex.push_back(0);
