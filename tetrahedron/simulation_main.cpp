@@ -24,10 +24,10 @@ void simu_main(GLFWwindow* window, Input* input) {
 	CoordinateSystem coordinateSystem;
 	bool control_parameter[30];
 	memset(control_parameter, 0, 30);
-	control_parameter[ONLY_COLLISION_TEST] = false;
-	control_parameter[USE_XPBD] = true;
+	control_parameter[ONLY_COLLISION_TEST] =false;
+	control_parameter[USE_XPBD] = false;
 	control_parameter[USE_PD_] = false;
-	control_parameter[USE_NEWTON_] = false;
+	control_parameter[USE_NEWTON_] = true;
 	control_parameter[DRAW_VT] = true;
 
 

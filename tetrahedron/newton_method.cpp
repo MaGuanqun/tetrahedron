@@ -8,7 +8,7 @@ NewtonMethod::NewtonMethod()
 
 	iteration_number = 1000;
 
-	time_step = 1.0 / 100.0;
+	time_step = 1.0 / 30.0;
 	perform_collision = false;
 	time_step_square = time_step * time_step;
 	conv_rate = time_step * 1e-5;
@@ -190,7 +190,7 @@ void NewtonMethod::setK()
 	thread->assignTask(this, UPDATE_DIAGONAL_HESSIAN_FIXED_STRUCTURE_INITIAL_STIFFNESS);
 	store_ori_value.resize(Hessian.nonZeros());
 	memcpy(store_ori_value.data(), Hessian.valuePtr(), 8 * Hessian.nonZeros());
-
+	
 	if (is_newmark) {
 		ori_stiffness_matrix_record = rayleigh_damp_stiffness[1] * Hessian;
 	}
@@ -238,6 +238,7 @@ bool NewtonMethod::edgeLengthStiffnessHasChanged()
 
 void NewtonMethod::updateHessianFixedStructure()
 {
+
 	thread->assignTask(this, UPDATE_HESSIAN_FIXED_STRUCTURE);
 	thread->assignTask(this, UPDATE_DIAGONAL_HESSIAN_FIXED_STRUCTURE);
 
