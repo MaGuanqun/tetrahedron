@@ -164,8 +164,8 @@ public:
 		//	}
 		//}
 
-		int col_num = 3;
-		int row_num = 3;
+		int col_num = 10;
+		int row_num = 10;
 		for (int j = 0; j < row_num; j++) {
 			for (int i = 0; i < col_num; i++) {
 				//mesh.vertices.push_back(std::array<double, 3>{ 0.7 * (double)j / (double)(row_num - 1) + 0.575, 0.35 * (double)i / (double)(col_num - 1),//+0.9

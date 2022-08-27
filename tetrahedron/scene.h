@@ -18,6 +18,8 @@
 #include"newton_method.h"
 #include"basic/move_model.h"
 #include"mesh_struct/graph_color.h"
+#include"XPBD_large_system.h"
+
 //#include<windows.h>
 //#include"basic/drawEdge.h"
 
@@ -104,6 +106,7 @@ private:
 	XPBD xpbd;
 
 	NewtonMethod newton_method;
+	SecondOrderLargeSystem second_order_xpbd_large;
 
 	double ave_edge_length;
 

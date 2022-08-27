@@ -1,0 +1,1495 @@
+#include"XPBD_large_system.h"
+#include"basic/write_txt.h"
+
+SecondOrderLargeSystem::SecondOrderLargeSystem()
+{
+	gravity_ = 9.8;
+
+	iteration_number = 10;
+
+	time_step = 1.0 / 30.0;
+	perform_collision = false;
+	time_step_square = time_step * time_step;
+	conv_rate = time_step * 1e-5;
+
+	max_itr_num = 10;
+	//damp_coe = 0.99;
+	beta = 0.25;
+	gamma = 0.5;
+}
+
+
+
+void SecondOrderLargeSystem::setForNewtonMethod(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, Floor* floor,
+	Thread* thread, double* tolerance_ratio)
+{
+	this->cloth = cloth;
+	this->tetrahedron = tetrahedron;
+	this->collider = collider;
+	this->thread = thread;
+	total_obj_num = cloth->size() + tetrahedron->size();
+	total_thread_num = thread->thread_num;
+	reorganzieDataOfObjects();
+	energy_per_thread.resize(total_thread_num);
+	off_diagonal_hessian_nnz_index_begin_per_thread.resize(total_thread_num + 1);
+	unfixed_gradC_hessian_index_begin_per_thread.resize(total_thread_num + 1);
+	fixed_gradC_hessian_index_begin_per_thread.resize(total_thread_num + 1);
+	unfixed_constraint_start_per_thread_in_system.resize(total_thread_num + 1);
+	fixed_vertex_constraint_start_per_thread_in_system.resize(total_thread_num + 1);
+	hessian_coeff_diagonal.resize(total_thread_num);
+	initialHessianNnz();
+	computeGravity();
+	initialLambda();
+	setHessian();
+
+	if (perform_collision) {
+		collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio, NEWTON_);
+	}
+}
+
+
+
+
+
+void SecondOrderLargeSystem::initialHessianNnz()
+{
+	unsigned int edge_num = 0;
+	off_diagonal_hessian_nnz_index_begin_per_thread[0] = 9 * vertex_begin_per_obj[total_obj_num];
+
+	for (unsigned int i = 0; i < total_thread_num; ++i) {
+		edge_num = 0;
+		for (unsigned int j = 0; j < total_obj_num; ++j) {
+			edge_num += edge_index_begin_per_thread_for_mass_spring[j][i + 1] - edge_index_begin_per_thread_for_mass_spring[j][i];
+		}
+		off_diagonal_hessian_nnz_index_begin_per_thread[i + 1] = off_diagonal_hessian_nnz_index_begin_per_thread[i] + 18 * edge_num;
+	}
+
+	unfixed_gradC_hessian_index_begin_per_thread[0] = off_diagonal_hessian_nnz_index_begin_per_thread[total_thread_num];
+	unfixed_constraint_start_per_thread_in_system[0] = 3 * vertex_begin_per_obj[total_obj_num];
+	for (unsigned int i = 0; i < total_thread_num; ++i) {
+		edge_num = 0;
+		for (unsigned int j = 0; j < total_obj_num; ++j) {
+			edge_num += edge_index_begin_per_thread_for_mass_spring[j][i + 1] - edge_index_begin_per_thread_for_mass_spring[j][i];
+		}
+		unfixed_gradC_hessian_index_begin_per_thread[i + 1] = unfixed_gradC_hessian_index_begin_per_thread[i] + 13 * edge_num;
+		unfixed_constraint_start_per_thread_in_system[i + 1] = unfixed_constraint_start_per_thread_in_system[i] + edge_num;
+	}
+
+	fixed_gradC_hessian_index_begin_per_thread[0] = unfixed_gradC_hessian_index_begin_per_thread[total_thread_num];
+	fixed_vertex_constraint_start_per_thread_in_system[0] = unfixed_constraint_start_per_thread_in_system[total_thread_num];
+	for (unsigned int i = 0; i < total_thread_num; ++i) {
+		edge_num = 0;
+		for (unsigned int j = 0; j < total_obj_num; ++j) {
+			edge_num += only_one_vertex_fixed_edge_index_begin_per_thread[j][i + 1] - only_one_vertex_fixed_edge_index_begin_per_thread[j][i];
+		}
+		fixed_gradC_hessian_index_begin_per_thread[i + 1] = fixed_gradC_hessian_index_begin_per_thread[i] + 7 * edge_num;
+		fixed_vertex_constraint_start_per_thread_in_system[i + 1] = fixed_vertex_constraint_start_per_thread_in_system[i] + edge_num;	
+	}
+
+	for (unsigned int i = 0; i < total_thread_num; ++i) {
+		hessian_coeff_diagonal[i].resize(9 * vertex_begin_per_obj[total_obj_num]);
+	}
+	hessian_nnz.resize(fixed_gradC_hessian_index_begin_per_thread[total_thread_num]);
+
+
+
+	edge_num = 0;
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		edge_num += cloth->data()[i].mesh_struct.unfixed_edge_index_begin_per_thread[total_thread_num];
+	}
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		edge_num += cloth->data()[i].mesh_struct.only_one_vertex_fixed_edge_index_begin_per_thread[total_thread_num];
+	}
+
+	sys_total_size = 3 * vertex_begin_per_obj[total_obj_num] + edge_num;
+	sys_total_size_index = sys_total_size - 1;
+	Hessian.resize(sys_total_size, sys_total_size);
+	Sn.resize(3 * vertex_begin_per_obj[total_obj_num]);
+	f_ext.resize(3 * vertex_begin_per_obj[total_obj_num]);
+	velocity.resize(3 * vertex_begin_per_obj[total_obj_num]);
+	velocity.setZero();
+
+	b_thread.resize(total_thread_num);
+	for (unsigned int i = 0; i < total_thread_num; ++i) {
+		b_thread[i].resize(sys_total_size);
+	}
+
+}
+
+
+void SecondOrderLargeSystem::computeGravity()
+{
+	gravity.resize(3 * vertex_begin_per_obj[total_obj_num]);
+	//double gravity_accerlation[3] = { 0,0.0,gravity_};
+	//double gravity_accerlation[3] = { gravity_, 0,0.0};
+	double gravity_accerlation[3] = { 0.0, -gravity_, 0.0 };
+	double* mass_;
+	unsigned int vertex_index_start;
+
+	unsigned int* unfixed_index_to_normal_index;
+
+	//set cloth
+	unsigned int size;
+	for (unsigned int j = 0; j < total_obj_num; ++j) {
+		mass_ = mass[j];
+		vertex_index_start = vertex_begin_per_obj[j];
+		size = vertex_begin_per_obj[j + 1] - vertex_index_start;
+		unfixed_index_to_normal_index = unfixed_vertex[j]->data();
+		for (unsigned int k = 0; k < size; ++k) {
+			gravity[3 * (vertex_index_start + k)] = gravity_accerlation[0] * mass_[unfixed_index_to_normal_index[k]];
+			gravity[3 * (vertex_index_start + k) + 1] = gravity_accerlation[1] * mass_[unfixed_index_to_normal_index[k]];
+			gravity[3 * (vertex_index_start + k) + 2] = gravity_accerlation[2] * mass_[unfixed_index_to_normal_index[k]];
+		}
+	}
+	//Sn = gravity;
+}
+
+void SecondOrderLargeSystem::initial()
+{
+	velocity.setZero();
+
+}
+
+
+//void SecondOrderLargeSystem::recordEdgeHessian()
+//{
+//	hessian_coeff_off_diagonal.resize(total_thread_num);
+//	hessian_coeff_diagonal.resize(total_thread_num);
+//	unsigned int edge_num = 0;
+//	unsigned int vertex_num = 0;
+//	for (unsigned int i = 0; i < total_thread_num; ++i) {
+//		edge_num = 0;
+//		for (unsigned int j = 0; j < cloth->size(); ++j) {
+//			edge_num += cloth->data()[j].mesh_struct.edge_index_begin_per_thread[i + 1] - cloth->data()[j].mesh_struct.edge_index_begin_per_thread[i];
+//		}
+//		for (unsigned int j = 0; j < tetrahedron->size(); ++j) {
+//			edge_num += tetrahedron->data()[j].mesh_struct.tet_edge_index_begin_per_thread[i + 1] - tetrahedron->data()[j].mesh_struct.tet_edge_index_begin_per_thread[i];
+//		}
+//		hessian_coeff_off_diagonal[i].resize(edge_num);
+//		hessian_coeff_diagonal[i].resize(vertex_begin_per_obj[total_obj_num],0.0);
+//	}
+//}
+
+////INITIAL_HESSIAN_COEFF
+//void SecondOrderLargeSystem::initial_hessian_coeff(int thread_No)
+//{
+//	unsigned int vertex_begin;
+//	unsigned int vertex_end;
+//	unsigned int* edge_vertex;
+//	std::array<double, 3>* vertex_pos;
+//
+//	HessianCoeff* hessian_coeff_off_diagonal_ = hessian_coeff_off_diagonal[thread_No].data();
+//
+//	unsigned int j = 0;
+//	for (unsigned int obj_No = 0; obj_No < total_obj_num; ++obj_No) {
+//		vertex_pos = vertex_position[obj_No];
+//		edge_vertex = edge_vertices_mass_spring[obj_No];
+//		vertex_begin = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No] << 1;
+//		vertex_end = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No + 1] << 1;
+//		for (unsigned int i = vertex_begin; i < vertex_end; i += 2) {
+//			hessian_coeff_off_diagonal_[j].row = edge_vertex[i] + vertex_begin_per_obj[obj_No];
+//			hessian_coeff_off_diagonal_[j].col = edge_vertex[i+1] + vertex_begin_per_obj[obj_No];
+//			j ++;
+//		}
+//	}
+//}
+
+
+void SecondOrderLargeSystem::setHessian()
+{
+	thread->assignTask(this, SET_MASS_SPRING);
+	thread->assignTask(this, SET_HESSIAN_DIAGONAL);
+
+	Hessian.setFromTriplets(hessian_nnz.begin(), hessian_nnz.end());
+
+	Hessian_coeff_address.resize(Hessian.nonZeros());
+	if (Hessian_coeff_address.size() != hessian_nnz.size()) {
+		std::cout << "error, nonzeros of hessian does not equal to hessian_nnz size " << std::endl;
+	}
+
+	//std::cout << Hessian << std::endl;
+
+	thread->assignTask(this, GET_COEFF_ADDRESS);
+	//std::cout << "k2" << std::endl;
+	global_llt.analyzePattern(Hessian);
+	//std::cout << "k3" << std::endl;
+	//setK();
+}
+
+//void SecondOrderLargeSystem::setK()
+//{
+//	thread->assignTask(this, UPDATE_HESSIAN_FIXED_STRUCTURE);
+//	thread->assignTask(this, UPDATE_DIAGONAL_HESSIAN_FIXED_STRUCTURE_INITIAL_STIFFNESS);
+//
+//	memcpy(store_ori_value.data(), Hessian.valuePtr(), 8 * Hessian.nonZeros());
+//
+//	//std::cout << ori_stiffness_matrix_record << std::endl;
+//}
+
+
+
+bool SecondOrderLargeSystem::edgeLengthStiffnessHasChanged()
+{
+	for (unsigned int i = 0; i < previous_frame_edge_length_stiffness.size(); ++i) {
+		if (previous_frame_edge_length_stiffness[i] != *edge_length_stiffness[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+void SecondOrderLargeSystem::updateHessianFixedStructure()
+{
+
+	thread->assignTask(this, UPDATE_HESSIAN_FIXED_STRUCTURE);
+	thread->assignTask(this, UPDATE_DIAGONAL_HESSIAN_FIXED_STRUCTURE);
+
+
+	for (unsigned int i = 0; i < total_thread_num; ++i) {
+		b_thread[i].setZero();
+	}
+
+	thread->assignTask(this, UPDATE_INTERNAL_FORCE);
+	thread->assignTask(this, SUM_B);
+
+
+	//std::cout << Hessian << std::endl;
+	//std::cout << b << std::endl;
+
+
+
+	//thread->assignTask(this, UPDATE_DAMP);
+	//thread->assignTask(this, UPDATE_ANCHOR_POINT_HESSIAN);
+}
+
+
+
+void SecondOrderLargeSystem::addExternalForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int obj_No)
+{
+	if (!coe.empty()) {
+		unsigned int vertex_start = vertex_begin_per_obj[obj_No];
+		unsigned int* real_index_to_unfixed_index_ = real_index_to_unfixed_index[obj_No];
+		unsigned int size = total_vertex_num[obj_No];
+		unsigned int index;
+		for (unsigned int i = 0; i < coe.size(); ++i) {
+			if (real_index_to_unfixed_index_[neighbor_vertex[i]] < size) {
+				index = 3 * (vertex_start + real_index_to_unfixed_index_[neighbor_vertex[i]]);
+				for (unsigned int j = 0; j < 3; ++j) {
+					f_ext[index + j] += coe[i] * neighbor_vertex_force_direction[j];
+				}
+			}
+		}
+	}
+}
+
+
+
+
+
+
+void SecondOrderLargeSystem::resetExternalForce()
+{
+	f_ext = gravity;
+}
+
+
+void  SecondOrderLargeSystem::solveNewtonMethod()
+{
+	solveNewtonMethod_();
+}
+
+
+void SecondOrderLargeSystem::resetLambda()
+{
+	for (unsigned int i = 0; i < lambda_unfixed.size(); ++i) {
+		memset(lambda_unfixed[i].data(), 0, 8 * lambda_unfixed[i].size());
+	}
+	for (unsigned int i = 0; i < lambda_fixed_one_vertex.size(); ++i) {
+		memset(lambda_fixed_one_vertex[i].data(), 0, 8 * lambda_fixed_one_vertex[i].size());
+	}
+}
+
+
+void SecondOrderLargeSystem::solveNewtonMethod_()
+{
+	//storeInitialPosition();
+	thread->assignTask(this, SET_S_N);
+	updatePositionFromSn();
+	//if (iteration_number > 1000) {
+	//	system("pause");
+	//}
+	resetLambda();
+
+	iteration_number = 0;
+
+	//std::cout << "====" << std::endl;
+//	computeEnergy();
+	//std::cout << "energy " << total_energy << std::endl;
+	previous_energy = total_energy;
+	store_residual.clear();
+	while (convergenceCondition())
+	{
+		updateHessianFixedStructure();
+		//compareTwoMatrix(Hessian, vertex_position, edge_vertices_mass_spring, only_one_vertex_fix_edge_vertices,
+		//	edge_length_stiffness[0][0], unfixed_rest_length, fixed_one_vertices_rest_length, unfixed_vertex, mass, time_step);
+		//compareTwoForce(Sn, b, vertex_position, edge_vertices_mass_spring, only_one_vertex_fix_edge_vertices,
+		//	edge_length_stiffness[0][0], unfixed_rest_length, fixed_one_vertices_rest_length, unfixed_vertex, mass, time_step);
+		global_llt.factorize(Hessian);
+		delta_x = global_llt.solve(b_thread[0]);
+
+		displacement_coe = 1.0;
+		thread->assignTask(this, UPDATE_POSITION_NEWTON);
+		//thread->assignTask(this, VELOCITY_NEWTON);
+		//computeEnergy();
+		//std::cout << "energy0 " << total_energy << std::endl;
+
+		//if (total_energy > previous_energy) {
+		//	updateRenderPosition();
+		//	displacement_coe *= 0.5;
+		//	change_direction = false;
+		//	while (total_energy > previous_energy)
+		//	{				
+		//		thread->assignTask(this, UPDATE_POSITION_NEWTON_FROM_ORI);
+		//		computeEnergy();
+		//		if (abs(displacement_coe) < 1e-4) {
+		//			//std::cout << "displacement_coe too small " << displacement_coe << std::endl;
+		//			//if (!change_direction) {
+		//			//	displacement_coe = -1.0;
+		//			//	change_direction = true;
+		//			//}
+		//			//else {
+		//				break;
+		//			//}
+		//		}
+		//		displacement_coe *= 0.5;
+		//	}
+		//}
+
+		//residual = sqrt(b.dot(b));
+		//store_residual.emplace_back(residual);
+		iteration_number++;
+		previous_energy = total_energy;
+		//std::cout << "residual " << residual << std::endl;
+	}
+	thread->assignTask(this, VELOCITY_NEWTON);
+	updateNormal();
+	updateRenderPosition();
+	//thread->assignTask(this, VELOCITY_NEWTON_2);
+	//log_store_residual.resize(store_residual.size());
+	//if (iteration_number > 10000) {
+		//std::cout << iteration_number << std::endl;
+		//system("pause");
+		//std::string txt_file_name = "residual result " + std::to_string(iteration_number);
+		//WriteTxt::writeTxt(store_residual, txt_file_name);
+		//for (unsigned int i = 0; i < store_residual.size(); ++i) {
+		//	log_store_residual[i] = log10(store_residual[i]);
+		//}
+		//txt_file_name = "residual result log" + std::to_string(iteration_number);
+		//WriteTxt::writeTxt(log_store_residual, txt_file_name);
+	//}
+
+
+}
+
+void SecondOrderLargeSystem::updateNormal()
+{
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL);
+	}
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		thread->assignTask(&(*cloth)[i].mesh_struct, VERTEX_NORMAL);
+	}
+}
+
+
+void SecondOrderLargeSystem::initialDHatTolerance(double ave_edge_length)
+{
+	if (perform_collision) {
+		collision.initialDHatTolerance(ave_edge_length);
+	}
+}
+
+
+bool SecondOrderLargeSystem::convergenceCondition()
+{
+	if (iteration_number < 2) {
+		return true;
+	}
+
+	if (iteration_number > max_itr_num) {
+		return false;
+	}
+
+	//double a = 0.0;
+	//double b = 0.0;
+	//for (unsigned int i = 0; i < delta_x.size(); i++) {
+	//	if (a < abs(delta_x.data()[i])) {
+	//		a = abs(delta_x.data()[i]);
+	//		//b = delta_x.data()[i];
+	//	}
+	//}
+
+	////std::cout << b << std::endl;
+
+	//if (a > conv_rate) {
+	//	return true;
+	//}
+	//return false;
+}
+
+void SecondOrderLargeSystem::updateRenderPosition()
+{
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		memcpy(render_position[i][0].data(), vertex_position[i][0].data(), 24 * total_vertex_num[i]);
+	}
+}
+
+
+
+
+//UPDATE_INTERNAL_FORCE
+void SecondOrderLargeSystem::updateInternalForce(int thread_No)
+{
+
+	unsigned int vertex_begin;
+	unsigned int vertex_end;
+	unsigned int* edge_vertex;
+	std::array<double, 3>* vertex_pos;
+
+	double* rest_length_;
+
+	unsigned int* unfixed_vertex_index;
+
+	unsigned int index_start;
+
+	double* f_ = b_thread[thread_No].data();
+
+	double* h = b_thread[0].data() + unfixed_constraint_start_per_thread_in_system[thread_No];
+	double* h_fixed_one_vertex = b_thread[0].data() + fixed_vertex_constraint_start_per_thread_in_system[thread_No];
+
+	double alpha;
+	double* lambda;
+
+
+
+	for (unsigned int obj_No = 0; obj_No < total_obj_num; ++obj_No) {
+		vertex_pos = vertex_position[obj_No];
+		edge_vertex = edge_vertices_mass_spring[obj_No]->data();
+		vertex_begin = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No] << 1;
+		vertex_end = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No + 1] << 1;
+		rest_length_ = unfixed_rest_length[obj_No]->data();
+
+		unfixed_vertex_index = unfixed_vertex[obj_No]->data();
+		index_start = vertex_begin_per_obj[obj_No];
+		alpha = 1.0 / (*edge_length_stiffness[obj_No] * time_step_square);
+		lambda = lambda_unfixed[obj_No].data();
+		for (unsigned int i = vertex_begin; i < vertex_end; i += 2) {
+			updateInternalForce(vertex_pos[unfixed_vertex_index[edge_vertex[i]]].data(), vertex_pos[unfixed_vertex_index[edge_vertex[i + 1]]].data(),
+				f_ + 3 * (edge_vertex[i] + index_start), f_ + 3 * (edge_vertex[i + 1] + index_start),
+				rest_length_[i >> 1], h, lambda[i>>1], alpha);
+			h++;
+		}
+		//only one vertex fixed in the edge
+		edge_vertex = only_one_vertex_fix_edge_vertices[obj_No]->data();
+		vertex_begin = only_one_vertex_fixed_edge_index_begin_per_thread[obj_No][thread_No] << 1;
+		vertex_end = only_one_vertex_fixed_edge_index_begin_per_thread[obj_No][thread_No + 1] << 1;
+		rest_length_ = fixed_one_vertices_rest_length[obj_No]->data();
+		lambda = lambda_fixed_one_vertex[obj_No].data();
+		for (unsigned int i = vertex_begin; i < vertex_end; i += 2) {
+			updateInternalForceOnlyOneEdgeFixed(vertex_pos[unfixed_vertex_index[edge_vertex[i]]].data(), vertex_pos[edge_vertex[i + 1]].data(),
+				f_ + 3 * (edge_vertex[i]+ index_start),
+				alpha, rest_length_[i >> 1], h_fixed_one_vertex, lambda[i >> 1]);
+			h_fixed_one_vertex++;
+		}
+	}
+}
+
+
+//void SecondOrderLargeSystem::updateEnergy
+
+
+
+void SecondOrderLargeSystem::computeMassSpringEnergy(int thread_No)
+{
+	unsigned int vertex_begin;
+	unsigned int vertex_end;
+	unsigned int* edge_vertex;
+	std::array<double, 3>* vertex_pos;
+
+	double* rest_length_;
+	double edge_length_stiffness_;
+
+	unsigned int* unfixed_vertex_index;
+	unsigned int index_start;
+	double energy = 0;
+	for (unsigned int obj_No = 0; obj_No < total_obj_num; ++obj_No) {
+		vertex_pos = vertex_position[obj_No];
+		edge_vertex = edge_vertices_mass_spring[obj_No]->data();
+		vertex_begin = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No] << 1;
+		vertex_end = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No + 1] << 1;
+		rest_length_ = unfixed_rest_length[obj_No]->data();
+		edge_length_stiffness_ = *edge_length_stiffness[obj_No];
+		unfixed_vertex_index = unfixed_vertex[obj_No]->data();
+		index_start = vertex_begin_per_obj[obj_No];
+		for (unsigned int i = vertex_begin; i < vertex_end; i += 2) {
+			energy += computeMassSpringEnergy(vertex_pos[unfixed_vertex_index[edge_vertex[i]]].data(), vertex_pos[unfixed_vertex_index[edge_vertex[i + 1]]].data(),
+				rest_length_[i >> 1], edge_length_stiffness_);
+		}
+	}
+	energy_per_thread[thread_No] += energy;
+}
+
+
+double SecondOrderLargeSystem::computeMassSpringEnergy(double* position_0, double* position_1, double rest_length, double stiffness)
+{
+	double current_length;
+	current_length = sqrt((position_0[0] - position_1[0]) * (position_0[0] - position_1[0])
+		+ (position_0[1] - position_1[1]) * (position_0[1] - position_1[1])
+		+ (position_0[2] - position_1[2]) * (position_0[2] - position_1[2]));
+	current_length -= rest_length;
+	return 0.5 * stiffness * current_length * current_length;
+}
+
+
+//UPDATE_HESSIAN_FIXED_STRUCTURE
+void SecondOrderLargeSystem::updateHessianFixedStructure(int thread_No)
+{
+	unsigned int vertex_begin;
+	unsigned int vertex_end;
+	unsigned int* edge_vertex;
+	std::array<double, 3>* vertex_pos;
+
+	memset(hessian_coeff_diagonal[thread_No].data(), 0, 8 * hessian_coeff_diagonal[thread_No].size());
+	double* hessian_coeff_diag = hessian_coeff_diagonal[thread_No].data();
+
+	double** hessian_nnz_ = Hessian_coeff_address.data() + off_diagonal_hessian_nnz_index_begin_per_thread[thread_No];
+	unsigned int edge_no = 0;
+	unsigned int edge_no_fixed_one_vertex = 0;
+
+	double time_step_square_ = time_step_square;
+	unsigned int vertex_begin_in_obj;
+	unsigned int* unfixed_index_to_normal_index;
+	double alpha;
+
+	double** address_for_grad_c = Hessian_coeff_address.data() + unfixed_gradC_hessian_index_begin_per_thread[thread_No];
+	double** address_for_fixed_vertex_grad_C = Hessian_coeff_address.data() + fixed_gradC_hessian_index_begin_per_thread[thread_No];
+
+	double* lambda_;
+
+	for (unsigned int obj_No = 0; obj_No < total_obj_num; ++obj_No) {
+		alpha = 1.0 / (*edge_length_stiffness[obj_No] * time_step_square_);
+		vertex_begin_in_obj = vertex_begin_per_obj[obj_No];
+		vertex_pos = vertex_position[obj_No];
+		edge_vertex = edge_vertices_mass_spring[obj_No]->data();
+		vertex_begin = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No] << 1;
+		vertex_end = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No + 1] << 1;
+		lambda_ = lambda_unfixed[obj_No].data();
+		unfixed_index_to_normal_index = unfixed_vertex[obj_No]->data();
+		for (unsigned int i = vertex_begin; i < vertex_end; i += 2) {
+			computeHessianFixedStructure(vertex_pos[unfixed_index_to_normal_index[edge_vertex[i]]].data(),
+				vertex_pos[unfixed_index_to_normal_index[edge_vertex[i + 1]]].data(),
+				hessian_coeff_diag + 9 * (edge_vertex[i] + vertex_begin_in_obj), hessian_coeff_diag + 9 * (edge_vertex[i + 1] + vertex_begin_in_obj),
+				hessian_nnz_ + 18 * edge_no, alpha, address_for_grad_c +13*edge_no, lambda_[i>>1]);
+			edge_no++;
+		}
+		//only one vertex fixed in the edge
+		vertex_begin = only_one_vertex_fixed_edge_index_begin_per_thread[obj_No][thread_No] << 1;
+		vertex_end = only_one_vertex_fixed_edge_index_begin_per_thread[obj_No][thread_No + 1] << 1;
+		edge_vertex = only_one_vertex_fix_edge_vertices[obj_No]->data();
+		lambda_ = lambda_fixed_one_vertex[obj_No].data();
+		for (unsigned int i = vertex_begin; i < vertex_end; i += 2) {
+			computeHessianOnlyOneVertexFixedEdge(vertex_pos[unfixed_index_to_normal_index[edge_vertex[i]]].data(),
+				vertex_pos[edge_vertex[i + 1]].data(),
+				hessian_coeff_diag + 9 * (edge_vertex[i] + vertex_begin_in_obj),
+				alpha, address_for_fixed_vertex_grad_C+7* edge_no_fixed_one_vertex,
+				lambda_[i>>1]);
+			edge_no_fixed_one_vertex++;
+		}
+	}
+
+
+}
+
+void SecondOrderLargeSystem::initialLambda()
+{
+	lambda_unfixed.resize(cloth->size());
+	lambda_fixed_one_vertex.resize(cloth->size());
+	unsigned int constraint_number = 0;
+	unsigned int constraint_number1 = 0;
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+
+		lambda_unfixed[i].resize(cloth->data()[i].mesh_struct.unfixed_rest_edge_length.size());
+		lambda_fixed_one_vertex[i].resize( cloth->data()[i].mesh_struct.fixed_one_vertex_rest_edge_length.size());
+	}
+}
+
+//GET_COEFF_ADDRESS
+void SecondOrderLargeSystem::hessianCoeffAddress(int thread_No)
+{
+	unsigned int vertex_begin;
+	unsigned int vertex_end;
+	unsigned int* edge_vertex;
+
+
+
+	double** address = Hessian_coeff_address.data() + off_diagonal_hessian_nnz_index_begin_per_thread[thread_No];
+	double** address_for_grad_c = Hessian_coeff_address.data() + unfixed_gradC_hessian_index_begin_per_thread[thread_No];
+	double** address_for_fixed_vertex_grad_C = Hessian_coeff_address.data() + fixed_gradC_hessian_index_begin_per_thread[thread_No];
+
+	unsigned int unfixed_constraint_start = unfixed_constraint_start_per_thread_in_system[thread_No];
+	unsigned int fixed_vertex_constraint_start = fixed_vertex_constraint_start_per_thread_in_system[thread_No];
+
+	unsigned int edge_no = 0;
+	unsigned int fixed_edge_no = 0;
+	unsigned int vertex_index_begin_in_system;
+
+	//off diagonal
+	for (unsigned int obj_No = 0; obj_No < total_obj_num; ++obj_No) {
+		edge_vertex = edge_vertices_mass_spring[obj_No]->data();
+		vertex_begin = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No] << 1;
+		vertex_end = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No + 1] << 1;
+		vertex_index_begin_in_system = vertex_begin_per_obj[obj_No];
+		for (unsigned int i = vertex_begin; i < vertex_end; i += 2) {
+			getHessianCoeffAddress(address + 18 * edge_no, 3 * (vertex_index_begin_in_system + edge_vertex[i]),
+				3 * (vertex_index_begin_in_system + edge_vertex[i + 1]), address_for_grad_c+13*edge_no, unfixed_constraint_start);
+			edge_no++;
+			unfixed_constraint_start++;
+		}
+
+		vertex_begin = only_one_vertex_fixed_edge_index_begin_per_thread[obj_No][thread_No] << 1;
+		vertex_end = only_one_vertex_fixed_edge_index_begin_per_thread[obj_No][thread_No + 1] << 1;
+		edge_vertex = only_one_vertex_fix_edge_vertices[obj_No]->data();
+		for (unsigned int i = vertex_begin; i < vertex_end; i += 2) {
+			getHessianCoeffAddressFixedOneAddress(3 * (vertex_index_begin_in_system + edge_vertex[i]), address_for_fixed_vertex_grad_C + 7 * fixed_edge_no, fixed_vertex_constraint_start);
+			fixed_edge_no++;
+			fixed_vertex_constraint_start++;
+		}
+	}
+	//diagonal
+	unsigned int index_end;
+	unsigned int hessian_index_start;
+	unsigned int global_matrix_row_start;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		index_end = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No + 1];
+		for (unsigned int j = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No]; j < index_end; ++j) {
+			hessian_index_start = 9 * j;
+			global_matrix_row_start = 3 * j;
+			for (unsigned int k = 0; k < 3; ++k) {
+				Hessian_coeff_address[hessian_index_start] = &Hessian.coeffRef(global_matrix_row_start, global_matrix_row_start + k);
+				Hessian_coeff_address[hessian_index_start + 1] = Hessian_coeff_address[hessian_index_start] + 1;
+				Hessian_coeff_address[hessian_index_start + 2] = Hessian_coeff_address[hessian_index_start] + 2;
+				hessian_index_start += 3;
+			}
+		}
+	}
+
+}
+
+// SET_MASS_SPRING
+void SecondOrderLargeSystem::massSpring(int thread_No)
+{
+	unsigned int edge_begin;
+	unsigned int edge_end;
+	unsigned int* edge_vertex;
+	std::array<double, 3>* vertex_pos;
+
+	memset(hessian_coeff_diagonal[thread_No].data(), 0, 8 * hessian_coeff_diagonal[thread_No].size());
+	double* hessian_coeff_diag = hessian_coeff_diagonal[thread_No].data();
+
+	Triplet<double>* hessian_nnz_ = hessian_nnz.data() + off_diagonal_hessian_nnz_index_begin_per_thread[thread_No];
+	Triplet<double>* hessian_nnz_grad_c = hessian_nnz.data() + unfixed_gradC_hessian_index_begin_per_thread[thread_No];
+	Triplet<double>* hessian_nnz_grad_c_fixed = hessian_nnz.data() + fixed_gradC_hessian_index_begin_per_thread[thread_No];
+
+	unsigned int edge_no = 0;
+	unsigned int fixed_one_edge = 0;
+	double time_step_square_ = time_step_square;
+
+	double* rest_length_;
+
+	double alpha;
+	unsigned int vertex_index_begin_in_system;
+
+	unsigned int* unfixed_index_to_normal_index;
+
+	double* lambda;
+	unsigned int sys_start_for_constraint;
+
+	unsigned int unfixed_constraint_start = unfixed_constraint_start_per_thread_in_system[thread_No];
+	unsigned int fixed_vertex_constraint_start = fixed_vertex_constraint_start_per_thread_in_system[thread_No];
+
+
+	for (unsigned int obj_No = 0; obj_No < total_obj_num; ++obj_No) {
+		vertex_pos = vertex_position[obj_No];
+		edge_vertex = edge_vertices_mass_spring[obj_No]->data();
+		edge_begin = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No] << 1;
+		edge_end = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No + 1] << 1;
+		rest_length_ = unfixed_rest_length[obj_No]->data();
+		alpha = 1.0 /(*edge_length_stiffness[obj_No]* time_step_square_);
+		vertex_index_begin_in_system = vertex_begin_per_obj[obj_No];
+		unfixed_index_to_normal_index = unfixed_vertex[obj_No]->data();
+		lambda = lambda_unfixed[obj_No].data();
+		for (unsigned int i = edge_begin; i < edge_end; i += 2) {
+			computeHessian(vertex_pos[unfixed_index_to_normal_index[edge_vertex[i]]].data(), vertex_pos[unfixed_index_to_normal_index[edge_vertex[i + 1]]].data(),
+				hessian_coeff_diag + 9 * (edge_vertex[i] + vertex_index_begin_in_system), hessian_coeff_diag + 9 * (edge_vertex[i + 1] + vertex_index_begin_in_system),
+				hessian_nnz_ + 18 * edge_no, alpha, rest_length_[i >> 1], 3 * (vertex_index_begin_in_system + edge_vertex[i]),
+				3 * (vertex_index_begin_in_system + edge_vertex[i + 1]), hessian_nnz_grad_c + 13 * edge_no, lambda[i>>1], 
+				unfixed_constraint_start);
+			unfixed_constraint_start++;
+			edge_no++;
+		}
+		//only one vertex fixed in the edge
+		edge_begin = only_one_vertex_fixed_edge_index_begin_per_thread[obj_No][thread_No] << 1;
+		edge_end = only_one_vertex_fixed_edge_index_begin_per_thread[obj_No][thread_No + 1] << 1;
+		edge_vertex = only_one_vertex_fix_edge_vertices[obj_No]->data();
+		rest_length_ = fixed_one_vertices_rest_length[obj_No]->data();
+		lambda = lambda_fixed_one_vertex[obj_No].data();
+		for (unsigned int i = edge_begin; i < edge_end; i += 2) {
+			computeHessianFixedOneVertex(vertex_pos[unfixed_index_to_normal_index[edge_vertex[i]]].data(),
+				vertex_pos[edge_vertex[i + 1]].data(),
+				hessian_coeff_diag + 9 * (edge_vertex[i] + vertex_index_begin_in_system),
+				alpha, rest_length_[i >> 1],
+				3 * (edge_vertex[i] + vertex_index_begin_in_system), hessian_nnz_grad_c_fixed + 7 * fixed_one_edge, lambda[i>>1],
+				fixed_vertex_constraint_start);
+				fixed_one_edge++;
+				fixed_vertex_constraint_start++;
+		}
+	}
+}
+
+
+void SecondOrderLargeSystem::updatePositionFromSn()
+{
+	unsigned int index_end;
+	unsigned int index_start;
+
+	double* vertex_pos;
+
+	unsigned int vertex_start;
+	unsigned int* unfixed_index_to_normal_index;
+	unsigned int j;
+
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		vertex_start = vertex_begin_per_obj[i];
+		vertex_pos = vertex_position[i][0].data();		
+		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
+		index_end = unfixed_vertex[i]->size();
+		for (unsigned int l = 0; l < index_end; ++l) {
+			memcpy(vertex_pos + 3 * unfixed_index_to_normal_index[l], Sn.data() + 3 * (l + vertex_start), 24);
+		}
+	}
+}
+
+//SET_S_N
+void SecondOrderLargeSystem::setSn(int thread_No)
+{
+	unsigned int index_end;
+	unsigned int index_start;
+	double time_step_ = time_step;
+	double time_step_square_ = time_step_square;
+	double* vertex_pos;
+	double* mass_;
+
+	unsigned int vertex_start;
+	unsigned int* unfixed_index_to_normal_index;
+
+	unsigned int j;
+
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		mass_ = mass[i];
+		vertex_start = vertex_begin_per_obj[i];
+		vertex_pos = vertex_position[i][0].data();
+		index_end = vertex_start + unfixed_vertex_begin_per_thread[i][thread_No + 1];
+		index_start = vertex_start + unfixed_vertex_begin_per_thread[i][thread_No];
+
+		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
+
+		for (unsigned int l = index_start; l < index_end; ++l) {
+			j = 3 * l;
+			for (unsigned int k = 0; k < 3; ++k) {
+				Sn.data()[j + k] =
+					(vertex_pos[3 * unfixed_index_to_normal_index[l - vertex_start] + k]
+						+ time_step_ * velocity.data()[j + k]) + time_step_square_ * f_ext.data()[j + k] / mass_[unfixed_index_to_normal_index[l - vertex_start]];
+			}
+		}
+	}
+}
+
+
+void SecondOrderLargeSystem::computeEnergy()
+{
+	thread->assignTask(this, NEWTON_METHOD_ENERGY);
+	total_energy = 0;
+	for (unsigned int i = 0; i < total_thread_num; ++i) {
+		total_energy += energy_per_thread[i];
+	}
+}
+
+//NEWTON_METHOD_ENERGY
+void SecondOrderLargeSystem::computeEnergy(int thread_No)
+{
+	energy_per_thread[thread_No] = 0;
+	computeMassSpringEnergy(thread_No);
+	computeInertial(thread_No);
+}
+
+
+void SecondOrderLargeSystem::computeInertial(int thread_No)
+{
+	unsigned int index_end;
+	unsigned int index_start;
+	double* vertex_pos;
+	double* mass_;
+
+	unsigned int vertex_start;
+	unsigned int* unfixed_index_to_normal_index;
+
+	unsigned int j;
+
+	double energy = 0;
+	unsigned int start;
+
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		mass_ = mass[i];
+		vertex_start = vertex_begin_per_obj[i];
+		vertex_pos = vertex_position[i][0].data();
+		index_end = vertex_start + unfixed_vertex_begin_per_thread[i][thread_No + 1];
+		index_start = vertex_start + unfixed_vertex_begin_per_thread[i][thread_No];
+
+		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
+
+		for (unsigned int l = index_start; l < index_end; ++l) {
+			j = 3 * l;
+			start = 3 * unfixed_index_to_normal_index[l - vertex_start];
+			energy += mass_[unfixed_index_to_normal_index[l - vertex_start]] *
+				((vertex_pos[start] - Sn.data()[j]) * (vertex_pos[start] - Sn.data()[j]) +
+					(vertex_pos[start + 1] - Sn.data()[j + 1]) * (vertex_pos[start + 1] - Sn.data()[j + 1]) +
+					(vertex_pos[start + 2] - Sn.data()[j + 2]) * (vertex_pos[start + 2] - Sn.data()[j + 2]));
+		}
+	}
+	energy /= (2.0 * time_step_square);
+	energy_per_thread[thread_No] += energy;
+}
+
+
+
+
+
+//UPDATE_POSITION_NEWTON
+void SecondOrderLargeSystem::updatePosition(int thread_No)
+{
+	unsigned int index_end;
+	unsigned int index_start;
+	double* vertex_pos;
+	unsigned int index;
+
+	unsigned int* unfixed_index_to_normal_index;
+
+	unsigned int vertex_start;
+	unsigned int initial_start= unfixed_constraint_start_per_thread_in_system[thread_No];
+	unsigned int initial_start_fixed_vertex= fixed_vertex_constraint_start_per_thread_in_system[thread_No];
+
+	double* lambda;
+	unsigned int edge_No = 0;
+	unsigned int edge_No_fixed_one_edge = 0;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		vertex_pos = vertex_position[i][0].data();
+		index = unfixed_vertex_begin_per_thread[i][thread_No];
+		index_end = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No + 1];
+		index_start = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No];
+		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
+		for (unsigned int j = index_start; j < index_end; ++j) {
+			vertex_start = 3 * unfixed_index_to_normal_index[index];
+			vertex_pos[vertex_start] += delta_x[3 * j];
+			vertex_pos[vertex_start + 1] += delta_x[3 * j + 1];
+			vertex_pos[vertex_start + 2] += delta_x[3 * j + 2];
+			index++;
+		}
+
+
+		index_start = edge_index_begin_per_thread_for_mass_spring[i][thread_No];
+		index_end = edge_index_begin_per_thread_for_mass_spring[i][thread_No+1];
+		lambda = lambda_unfixed[i].data();
+
+		for (unsigned int j = index_start; j < index_end; ++j) {
+			lambda[j] += delta_x[initial_start + edge_No];
+			edge_No++;
+		}
+
+		index_start = only_one_vertex_fixed_edge_index_begin_per_thread[i][thread_No];
+		index_end = only_one_vertex_fixed_edge_index_begin_per_thread[i][thread_No + 1];
+		lambda = lambda_fixed_one_vertex[i].data();
+		for (unsigned int j = index_start; j < index_end; ++j) {
+			lambda[j] += delta_x[initial_start_fixed_vertex + edge_No_fixed_one_edge];
+			edge_No_fixed_one_edge++;
+		}
+
+	}
+
+	
+}
+
+
+
+//UPDATE_POSITION_NEWTON_FROM_ORI
+void SecondOrderLargeSystem::updatePositionFromOri(int thread_No)
+{
+	unsigned int index_end;
+	unsigned int index_start;
+	double* vertex_pos;
+	double* ori_vertex_pos;
+	unsigned int index;
+
+	unsigned int* unfixed_index_to_normal_index;
+
+	unsigned int vertex_start;
+
+	double coe = displacement_coe;
+
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		vertex_pos = vertex_position[i][0].data();
+		ori_vertex_pos = render_position[i][0].data();
+		index = unfixed_vertex_begin_per_thread[i][thread_No];
+		index_end = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No + 1];
+		index_start = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No];
+		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
+		for (unsigned int j = index_start; j < index_end; ++j) {
+			vertex_start = 3 * unfixed_index_to_normal_index[index];
+			for (unsigned int k = 0; k < 3; ++k) {
+				vertex_pos[vertex_start + k] = ori_vertex_pos[vertex_start + k] + coe * delta_x[3 * j + k];
+			}
+			index++;
+		}
+	}
+}
+
+
+
+
+//VELOCITY_NEWTON
+void SecondOrderLargeSystem::updateVelocity(int thread_No)
+{
+	unsigned int index_end;
+	unsigned int index_start;
+	double* vertex_pos;
+	unsigned int index;
+
+	unsigned int* unfixed_index_to_normal_index;
+	unsigned int vertex_start;
+
+	double time_step_ = time_step;
+	double* vertex_render_pos;
+
+
+
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		vertex_pos = vertex_position[i][0].data();
+		vertex_render_pos = render_position[i][0].data();
+		index = unfixed_vertex_begin_per_thread[i][thread_No];
+		index_end = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No + 1];
+		index_start = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No];
+		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
+		for (unsigned int j = index_start; j < index_end; ++j) {
+			vertex_start = 3 * unfixed_index_to_normal_index[index];
+			velocity.data()[3 * j] = (vertex_pos[vertex_start] - vertex_render_pos[vertex_start]) / time_step_;
+			velocity.data()[3 * j+1] = (vertex_pos[vertex_start+1] - vertex_render_pos[vertex_start+1]) / time_step_;
+			velocity.data()[3 * j+2] = (vertex_pos[vertex_start+2] - vertex_render_pos[vertex_start+2]) / time_step_;
+			index++;
+		}
+	}
+}
+
+
+
+void SecondOrderLargeSystem::computeResidual()
+{
+
+}
+
+
+
+//SUM_B
+void SecondOrderLargeSystem::sumB(int thread_No)
+{
+	unsigned int index_end;
+	unsigned int index_start;
+	unsigned int total_thread_num_ = total_thread_num;
+	double* vertex_pos;
+	double* mass_;
+
+	unsigned int index;
+	unsigned int* unfixed_index_to_normal_vertex;
+	unsigned int j;
+
+
+
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		mass_ = mass[i];
+		vertex_pos = vertex_position[i][0].data();
+		index_end = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No + 1];
+		index_start = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No];
+		unfixed_index_to_normal_vertex = unfixed_vertex[i]->data();
+
+		for (unsigned int l = index_start; l < index_end; ++l) {
+			index = unfixed_index_to_normal_vertex[l - vertex_begin_per_obj[i]];
+			j = 3 * l;
+			for (unsigned int m = 0; m < 3; ++m) {
+				for (unsigned int k = 1; k < total_thread_num_; ++k) {
+					b_thread[0][j + m] += b_thread[k][j + m];
+				}
+				b_thread[0][j + m] += mass_[index] * (Sn.data()[j + m] - vertex_pos[3 * index + m]);
+			}
+		}
+	}
+	
+}
+
+//UPDATE_DIAGONAL_HESSIAN_FIXED_STRUCTURE_INITIAL_STIFFNESS
+void SecondOrderLargeSystem::setHessianDiagonalFixedStructureInitialStiffness(int thread_No)
+{
+	unsigned int index_end;
+	unsigned int vertex_start;
+
+	double* hessian_coeff_diagonal_0 = hessian_coeff_diagonal[0].data();
+	unsigned int total_thread_num_ = total_thread_num;
+
+	unsigned int* unfixed_index_to_normal_index;
+
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		index_end = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No + 1];
+		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
+		for (unsigned int j = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No]; j < index_end; ++j) {
+			vertex_start = 9 * j;
+			for (unsigned int m = 0; m < 9; ++m) {
+				for (unsigned int k = 1; k < total_thread_num_; ++k) {
+					hessian_coeff_diagonal_0[vertex_start + m] += hessian_coeff_diagonal[k][vertex_start + m];
+				}
+			}
+			for (unsigned int k = 0; k < 9; ++k) {
+				*Hessian_coeff_address[vertex_start + k] = hessian_coeff_diagonal_0[vertex_start + k];
+			}
+		}
+	}
+}
+
+//UPDATE_DIAGONAL_HESSIAN_FIXED_STRUCTURE
+void SecondOrderLargeSystem::setHessianDiagonalFixedStructure(int thread_No)
+{
+	unsigned int index_end;
+	unsigned int vertex_start;
+
+	double* hessian_coeff_diagonal_0 = hessian_coeff_diagonal[0].data();
+	unsigned int total_thread_num_ = total_thread_num;
+
+	unsigned int* unfixed_index_to_normal_index;
+
+	double mass_;
+
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		index_end = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No + 1];
+		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
+		for (unsigned int j = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No]; j < index_end; ++j) {
+			vertex_start = 9 * j;
+			for (unsigned int m = 0; m < 9; ++m) {
+				for (unsigned int k = 1; k < total_thread_num_; ++k) {
+					hessian_coeff_diagonal_0[vertex_start + m] += hessian_coeff_diagonal[k][vertex_start + m];
+				}
+			}
+			mass_ =mass[i][unfixed_index_to_normal_index[j - vertex_begin_per_obj[i]]];
+
+			hessian_coeff_diagonal_0[vertex_start] += mass_;
+			hessian_coeff_diagonal_0[vertex_start + 4] += mass_;
+			hessian_coeff_diagonal_0[vertex_start + 8] += mass_;
+
+			for (unsigned int k = 0; k < 9; ++k) {
+				*Hessian_coeff_address[vertex_start + k] = hessian_coeff_diagonal_0[vertex_start + k];
+			}
+
+		}
+	}
+}
+
+
+//SET_HESSIAN_DIAGONAL
+void SecondOrderLargeSystem::setHessianDiagonal(int thread_No)
+{
+	unsigned int index_end;
+	unsigned int vertex_start;
+	unsigned int hessian_index_start;
+
+	double* hessian_coeff_diagonal_0 = hessian_coeff_diagonal[0].data();
+	unsigned int* unfixed_index_to_normal_index;
+	unsigned int global_matrix_row_start;
+	double mass_;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
+		index_end = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No + 1];
+		for (unsigned int j = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No]; j < index_end; ++j) {
+			vertex_start = 9 * j;
+			for (unsigned int m = 0; m < 9; ++m) {
+				for (unsigned int k = 1; k < total_thread_num; ++k) {
+					hessian_coeff_diagonal_0[vertex_start + m] += hessian_coeff_diagonal[k][vertex_start + m];
+				}
+			}
+			mass_ = mass[i][unfixed_index_to_normal_index[j - vertex_begin_per_obj[i]]];
+			hessian_coeff_diagonal_0[vertex_start] += mass_;
+			hessian_coeff_diagonal_0[vertex_start + 4] += mass_;
+			hessian_coeff_diagonal_0[vertex_start + 8] += mass_;
+			hessian_index_start = 9 * j;
+			global_matrix_row_start = 3 * j;
+			for (unsigned int col = 0; col < 3; ++col) {
+				for (unsigned int row = 0; row < 3; ++row) {
+					hessian_nnz[hessian_index_start++] = Triplet<double>(global_matrix_row_start + row, global_matrix_row_start + col, hessian_coeff_diagonal_0[vertex_start++]);
+				}
+			}
+		}
+	}
+}
+
+void SecondOrderLargeSystem::getHessianCoeffAddressFixedOneAddress(unsigned int start_index_in_system_0, double** grad_C_address,
+	unsigned int constraint_start_index_0)
+{
+	grad_C_address[0] = &Hessian.coeffRef(start_index_in_system_0, constraint_start_index_0);
+	grad_C_address[1] = grad_C_address[0] + 1;
+	grad_C_address[2] = grad_C_address[1] + 1;
+
+	grad_C_address[3] = &Hessian.coeffRef(constraint_start_index_0, start_index_in_system_0);
+	grad_C_address[4] = &Hessian.coeffRef(constraint_start_index_0, start_index_in_system_0 + 1);
+	grad_C_address[5] = &Hessian.coeffRef(constraint_start_index_0, start_index_in_system_0 + 2);
+
+	grad_C_address[6] = &Hessian.coeffRef(constraint_start_index_0, constraint_start_index_0);
+}
+
+void SecondOrderLargeSystem::getHessianCoeffAddress(double** address, unsigned int start_index_in_system_0, unsigned int start_index_in_system_1, double** grad_C_address,
+	unsigned int constraint_start_index_0)
+{
+	unsigned int k = 0;
+	for (unsigned int j = start_index_in_system_1; j < start_index_in_system_1 + 3; ++j) {
+		address[k] = &Hessian.coeffRef(start_index_in_system_0, j);
+		address[k + 1] = address[k] + 1;
+		address[k + 2] = address[k] + 2;
+		k += 3;
+	}
+	for (unsigned int j = start_index_in_system_0; j < start_index_in_system_0 + 3; ++j) {
+		address[k] = &Hessian.coeffRef(start_index_in_system_1, j);
+		address[k + 1] = address[k] + 1;
+		address[k + 2] = address[k] + 2;
+		k += 3;
+	}
+
+	grad_C_address[0] = &Hessian.coeffRef(start_index_in_system_0, constraint_start_index_0);
+	grad_C_address[1] = grad_C_address[0]+1;
+	grad_C_address[2] = grad_C_address[1]+1;
+
+	grad_C_address[3]= &Hessian.coeffRef(start_index_in_system_1, constraint_start_index_0);
+	grad_C_address[4] = grad_C_address[3] + 1;
+	grad_C_address[5] = grad_C_address[4] + 1;
+
+	grad_C_address[6] = &Hessian.coeffRef(constraint_start_index_0,start_index_in_system_0);
+	grad_C_address[7] = &Hessian.coeffRef(constraint_start_index_0, start_index_in_system_0+1);
+	grad_C_address[8] = &Hessian.coeffRef(constraint_start_index_0, start_index_in_system_0 + 2);
+
+	grad_C_address[9] = &Hessian.coeffRef(constraint_start_index_0, start_index_in_system_1);
+	grad_C_address[10] = &Hessian.coeffRef(constraint_start_index_0, start_index_in_system_1+1);
+	grad_C_address[11] = &Hessian.coeffRef(constraint_start_index_0, start_index_in_system_1+2);
+
+	grad_C_address[12] = &Hessian.coeffRef(constraint_start_index_0, constraint_start_index_0);
+}
+
+
+
+void SecondOrderLargeSystem::updateInternalForce(double* vertex_position_0, double* vertex_position_1, double* force_0,
+	double* force_1,  double rest_length, double* h, double lambda, double alpha)
+{
+	double Ax[3];
+	SUB(Ax, vertex_position_0, vertex_position_1);
+	double coe = sqrt(DOT(Ax, Ax));
+	double C = coe - rest_length;
+	coe = lambda / coe;
+	MULTI_(Ax, coe);
+
+	SUM_(force_0, Ax);
+	SUB_(force_1, Ax);
+
+
+	*h = -C - lambda * alpha;
+
+}
+
+void SecondOrderLargeSystem::updateInternalForceOnlyOneEdgeFixed(double* vertex_position_0, double* vertex_position_1, double* force_0,
+	double alpha, double rest_length, double* h, double lambda)
+{
+
+	double Ax[3];
+	SUB(Ax, vertex_position_0, vertex_position_1);
+	double coe = sqrt(DOT(Ax, Ax));
+	double C = coe - rest_length;
+	coe = lambda / coe;
+	MULTI_(Ax, coe);
+
+	SUM_(force_0, Ax);
+	*h = -C - lambda * alpha;
+
+
+}
+
+void SecondOrderLargeSystem::computeHessianFixedOneVertex(double* vertex_position_0, double* vertex_position_1, double* diagonal_coeff_0,
+	double alpha, double rest_length, unsigned int start_index_in_system_0,
+	Triplet<double>* hessian_nnz_grad_C, double lambda, unsigned int constraint_start_in_sys)
+{
+	double Ax[3];
+	SUB(Ax, vertex_position_0, vertex_position_1);
+	double length = sqrt(DOT(Ax, Ax));
+	DEV_(Ax, length);
+
+	double coe = lambda / length;
+
+	//matrix store in row_major
+	double matrix[9] = { coe * (1.0 - Ax[0] * Ax[0]), 	-coe * Ax[0] * Ax[1], 	-coe * (Ax[2] * Ax[0]),
+		-coe * Ax[1] * Ax[0], coe * (1.0 - Ax[1] * Ax[1]), 	-coe * Ax[2] * Ax[1],
+		-coe * Ax[2] * Ax[0], -coe * Ax[2] * Ax[1], coe * (1.0 - Ax[2] * Ax[2]) };
+
+	for (unsigned int i = 0; i < 9; ++i) {
+		diagonal_coeff_0[i] -= matrix[i];
+	}
+
+	for (unsigned int i = 0; i < 3; ++i) {
+		hessian_nnz_grad_C[i] = Triplet<double>(start_index_in_system_0 + i, constraint_start_in_sys, -Ax[i]);
+		hessian_nnz_grad_C[i + 3] = Triplet<double>(constraint_start_in_sys, start_index_in_system_0 + i, Ax[i]);
+	}
+	hessian_nnz_grad_C[6] = Triplet<double>(constraint_start_in_sys, constraint_start_in_sys, alpha);
+}
+
+void SecondOrderLargeSystem::computeHessianOnlyOneVertexFixedEdge(double* vertex_position_0, double* vertex_position_1, double* diagonal_coeff_0,
+	double alpha, double** grad_C_address, double lambda)
+{
+	double Ax[3];
+	SUB(Ax, vertex_position_0, vertex_position_1);
+	double length = sqrt(DOT(Ax, Ax));
+	DEV_(Ax, length);
+
+	double coe = lambda / length;
+
+	double matrix[9] = { coe * (1.0 - Ax[0] * Ax[0]), 	-coe * Ax[0] * Ax[1], 	-coe * (Ax[2] * Ax[0]),
+		-coe * Ax[1] * Ax[0], coe * (1.0 - Ax[1] * Ax[1]), 	-coe * Ax[2] * Ax[1],
+		-coe * Ax[2] * Ax[0], -coe * Ax[2] * Ax[1], coe * (1.0 - Ax[2] * Ax[2]) };
+
+	for (unsigned int i = 0; i < 9; ++i) {
+		diagonal_coeff_0[i] -= matrix[i];// +damp_derivative[i];
+	}
+
+	for (unsigned int i = 0; i < 3; ++i) {
+		*(grad_C_address[i]) = -Ax[i];
+		*(grad_C_address[i + 3]) = Ax[i];
+	}
+	*(grad_C_address[6]) = alpha;
+}
+
+
+
+
+void SecondOrderLargeSystem::computeHessianFixedStructure(double* vertex_position_0, double* vertex_position_1, double* diagonal_coeff_0,
+	double* diagonal_coeff_1, double** hessian_coeff_address, double alpha, double** grad_C_address,
+	 double lambda)
+{
+	double Ax[3];
+	SUB(Ax, vertex_position_0, vertex_position_1);
+	double length = sqrt(DOT(Ax, Ax));
+	DEV_(Ax, length);
+
+	double coe = lambda / length;
+
+	//matrix store in row_major
+	double matrix[9] = { coe * (1.0 - Ax[0] * Ax[0]), 	-coe * Ax[0] * Ax[1], 	-coe * (Ax[2] * Ax[0]),
+		-coe * Ax[1] * Ax[0], coe * (1.0 - Ax[1] * Ax[1]), 	-coe * Ax[2] * Ax[1],
+		-coe * Ax[2] * Ax[0], -coe * Ax[2] * Ax[1], coe * (1.0 - Ax[2] * Ax[2]) };
+
+	for (unsigned int i = 0; i < 9; ++i) {
+		*hessian_coeff_address[i] = matrix[i];// +damp_derivative[i]);
+		*hessian_coeff_address[i + 9] = matrix[i];// +damp_derivative[i]);
+	}
+	for (unsigned int i = 0; i < 9; ++i) {
+		diagonal_coeff_0[i] -= matrix[i];// +damp_derivative[i];
+		diagonal_coeff_1[i] -= matrix[i];// +damp_derivative[i];
+	}
+
+	for (unsigned int i = 0; i < 3; ++i) {
+		*grad_C_address[i] = -Ax[i];
+		*grad_C_address[i+3] = Ax[i];
+		*grad_C_address[i+6] = Ax[i];
+		*grad_C_address[i+9] = -Ax[i];
+	}
+	*grad_C_address[12] = alpha;
+}
+
+
+
+void SecondOrderLargeSystem::computeHessian(double* vertex_position_0, double* vertex_position_1, double* diagonal_coeff_0,
+	double* diagonal_coeff_1, Triplet<double>* hessian_nnz, double alpha, double rest_length, unsigned int start_index_in_system_0,
+	unsigned int start_index_in_system_1, Triplet<double>* hessian_nnz_grad_C, double lambda, unsigned int constraint_start_in_sys)
+{
+	double Ax[3];
+	SUB(Ax, vertex_position_0, vertex_position_1);
+	double length = sqrt(DOT(Ax, Ax));
+	DEV_(Ax, length);
+
+	double coe = lambda / length;
+
+	//matrix store in row_major
+	double matrix[9] = {coe * (1.0- Ax[0] * Ax[0]), 	-coe*Ax[0]*Ax[1], 	-coe * ( Ax[2] * Ax[0]),
+		-coe* Ax[1] * Ax[0], coe * (1.0- Ax[1] * Ax[1]), 	-coe * Ax[2] * Ax[1],
+		-coe * Ax[2] * Ax[0], -coe *  Ax[2] * Ax[1], coe * (1.0- Ax[2] * Ax[2]) };
+
+	hessian_nnz[0] = Triplet<double>(start_index_in_system_0, start_index_in_system_1, matrix[0]);
+	hessian_nnz[1] = Triplet<double>(start_index_in_system_0 + 1, start_index_in_system_1, matrix[1]);
+	hessian_nnz[2] = Triplet<double>(start_index_in_system_0 + 2, start_index_in_system_1, matrix[2]);
+	hessian_nnz[3] = Triplet<double>(start_index_in_system_0, start_index_in_system_1 + 1, matrix[3]);
+	hessian_nnz[4] = Triplet<double>(start_index_in_system_0 + 1, start_index_in_system_1 + 1, matrix[4]);
+	hessian_nnz[5] = Triplet<double>(start_index_in_system_0 + 2, start_index_in_system_1 + 1, matrix[5]);
+	hessian_nnz[6] = Triplet<double>(start_index_in_system_0, start_index_in_system_1 + 2, matrix[6]);
+	hessian_nnz[7] = Triplet<double>(start_index_in_system_0 + 1, start_index_in_system_1 + 2, matrix[7]);
+	hessian_nnz[8] = Triplet<double>(start_index_in_system_0 + 2, start_index_in_system_1 + 2, matrix[8]);
+
+	hessian_nnz[9] = Triplet<double>(start_index_in_system_1, start_index_in_system_0, matrix[0]);
+	hessian_nnz[10] = Triplet<double>(start_index_in_system_1 + 1, start_index_in_system_0, matrix[1]);
+	hessian_nnz[11] = Triplet<double>(start_index_in_system_1 + 2, start_index_in_system_0, matrix[2]);
+	hessian_nnz[12] = Triplet<double>(start_index_in_system_1, start_index_in_system_0 + 1, matrix[3]);
+	hessian_nnz[13] = Triplet<double>(start_index_in_system_1 + 1, start_index_in_system_0 + 1, matrix[4]);
+	hessian_nnz[14] = Triplet<double>(start_index_in_system_1 + 2, start_index_in_system_0 + 1, matrix[5]);
+	hessian_nnz[15] = Triplet<double>(start_index_in_system_1, start_index_in_system_0 + 2, matrix[6]);
+	hessian_nnz[16] = Triplet<double>(start_index_in_system_1 + 1, start_index_in_system_0 + 2, matrix[7]);
+	hessian_nnz[17] = Triplet<double>(start_index_in_system_1 + 2, start_index_in_system_0 + 2, matrix[8]);
+
+	for (unsigned int i = 0; i < 9; ++i) {
+		diagonal_coeff_0[i] -= matrix[i];
+		diagonal_coeff_1[i] -= matrix[i];
+	}
+	for (unsigned int i = 0; i < 3; ++i) {
+		hessian_nnz_grad_C[i]= Triplet<double>(start_index_in_system_0 +i, constraint_start_in_sys, -Ax[i]);
+		hessian_nnz_grad_C[i+3]= Triplet<double>(start_index_in_system_1 +i, constraint_start_in_sys, Ax[i]);
+		hessian_nnz_grad_C[i +6] = Triplet<double>(constraint_start_in_sys, start_index_in_system_0 + i, Ax[i]);
+		hessian_nnz_grad_C[i +9] = Triplet<double>(constraint_start_in_sys, start_index_in_system_1 + i, -Ax[i]);
+	}
+	hessian_nnz_grad_C[12]= Triplet<double>(constraint_start_in_sys, constraint_start_in_sys,alpha);
+
+}
+
+void SecondOrderLargeSystem::updateIndexBeginPerObj()
+{
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		vertex_begin_per_obj[i + 1] = vertex_begin_per_obj[i] + cloth->data()[i].mesh_struct.unfixed_point_index.size();
+		//edge_begin_per_obj[i + 1] = edge_begin_per_obj[i] + (cloth->data()[i].mesh_struct.unfixed_edge_vertex_index.size() >> 1);
+	}
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		vertex_begin_per_obj[i + 1 + cloth->size()] = vertex_begin_per_obj[i + cloth->size()] + tetrahedron->data()[i].mesh_struct.unfixed_point_index.size();
+		//edge_begin_per_obj[i + 1 + cloth->size()] = edge_begin_per_obj[i + cloth->size()] + (tetrahedron->data()[i].mesh_struct.unfixed_edge_vertex_index.size() >> 1);
+	}
+	initialHessianNnz();
+	computeGravity();
+	setHessian();
+}
+
+void SecondOrderLargeSystem::reorganzieDataOfObjects()
+{
+	vertex_position.resize(total_obj_num);
+	render_position.resize(total_obj_num);
+	edge_index_begin_per_thread_for_mass_spring.resize(total_obj_num);
+	only_one_vertex_fixed_edge_index_begin_per_thread.resize(total_obj_num);
+	vertex_begin_per_obj.resize(total_obj_num + 1, 0);
+	//edge_begin_per_obj.resize(total_obj_num+1,0);
+	edge_vertices_mass_spring.resize(total_obj_num);
+	only_one_vertex_fix_edge_vertices.resize(total_obj_num);
+	unfixed_rest_length.resize(total_obj_num);
+	fixed_one_vertices_rest_length.resize(total_obj_num);
+	edge_length_stiffness.resize(total_obj_num);
+	//vertex_index_begin_per_thread.resize(total_obj_num);
+	mass.resize(total_obj_num);
+	anchor_vertex_begin_per_thread.resize(total_obj_num);
+	unfixed_vertex_begin_per_thread.resize(total_obj_num);
+	unfixed_vertex.resize(total_obj_num);
+	total_vertex_num.resize(total_obj_num);
+	real_index_to_unfixed_index.resize(total_obj_num);
+
+
+	anchor_vertex.resize(total_obj_num);
+	anchor_stiffness.resize(total_obj_num);
+	anchor_position.resize(total_obj_num);
+
+
+	previous_frame_edge_length_stiffness.resize(total_obj_num);
+
+	//vertex_pos_max_step.resize(total_obj_num);
+	//for (unsigned int i = 0; i < cloth->size(); ++i) {
+	//	vertex_pos_max_step[i]= cloth->data()[i].mesh_struct.vertex_position
+	//}
+
+
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		vertex_position[i] = cloth->data()[i].mesh_struct.vertex_position.data();
+		render_position[i] = cloth->data()[i].mesh_struct.vertex_for_render.data();
+		edge_index_begin_per_thread_for_mass_spring[i] = cloth->data()[i].mesh_struct.unfixed_edge_index_begin_per_thread.data();
+		only_one_vertex_fixed_edge_index_begin_per_thread[i] = cloth->data()[i].mesh_struct.only_one_vertex_fixed_edge_index_begin_per_thread.data();
+		edge_vertices_mass_spring[i] = &cloth->data()[i].mesh_struct.unfixed_edge_vertex_index;
+		only_one_vertex_fix_edge_vertices[i] = &cloth->data()[i].mesh_struct.only_one_vertex_fix_edge;
+		unfixed_rest_length[i] = &cloth->data()[i].mesh_struct.unfixed_rest_edge_length;
+		fixed_one_vertices_rest_length[i] = &cloth->data()[i].mesh_struct.fixed_one_vertex_rest_edge_length;
+
+		edge_length_stiffness[i] = &cloth->data()[i].length_stiffness;
+		anchor_stiffness[i] = cloth->data()[i].position_stiffness;
+		//vertex_index_begin_per_thread[i] = cloth->data()[i].mesh_struct.vertex_index_begin_per_thread.data();
+		mass[i] = cloth->data()[i].mesh_struct.mass.data();
+		anchor_vertex_begin_per_thread[i] = cloth->data()[i].mesh_struct.anchor_index_begin_per_thread.data();
+		unfixed_vertex_begin_per_thread[i] = cloth->data()[i].mesh_struct.unfixed_vertex_index_begin_per_thread.data();
+
+		anchor_vertex[i] = &cloth->data()[i].mesh_struct.anchor_vertex;
+		anchor_position[i] = &cloth->data()[i].mesh_struct.anchor_position;
+		unfixed_vertex[i] = &cloth->data()[i].mesh_struct.unfixed_point_index;
+		vertex_begin_per_obj[i + 1] = vertex_begin_per_obj[i] + cloth->data()[i].mesh_struct.unfixed_point_index.size();
+		//edge_begin_per_obj[i+1] = edge_begin_per_obj[i]+ (cloth->data()[i].mesh_struct.edge_vertices.size()>>1);
+		total_vertex_num[i] = cloth->data()[i].mesh_struct.vertex_position.size();
+		real_index_to_unfixed_index[i] = cloth->data()[i].mesh_struct.real_index_to_unfixed_index.data();
+
+		previous_frame_edge_length_stiffness[i] = cloth->data()[i].length_stiffness;
+	}
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		vertex_position[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_position.data();
+		render_position[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_for_render.data();
+		edge_length_stiffness[i + cloth->size()] = &tetrahedron->data()[i].edge_length_stiffness;
+		anchor_stiffness[i + cloth->size()] = tetrahedron->data()[i].position_stiffness;
+		edge_index_begin_per_thread_for_mass_spring[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.unfixed_edge_index_begin_per_thread.data();
+		only_one_vertex_fixed_edge_index_begin_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.only_one_vertex_fixed_edge_index_begin_per_thread.data();
+		edge_vertices_mass_spring[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct.unfixed_edge_vertex_index;
+		only_one_vertex_fix_edge_vertices[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct.only_one_vertex_fix_edge;
+		unfixed_rest_length[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct.unfixed_rest_edge_length;
+		fixed_one_vertices_rest_length[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct.fixed_one_vertex_rest_edge_length;
+		//vertex_index_begin_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_index_begin_per_thread.data();
+		mass[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.mass.data();
+		anchor_vertex_begin_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.anchor_index_begin_per_thread.data();
+		unfixed_vertex_begin_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.unfixed_vertex_index_begin_per_thread.data();
+		anchor_vertex[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct.anchor_vertex;
+		anchor_position[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct.anchor_position;
+		unfixed_vertex[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct.unfixed_point_index;
+		vertex_begin_per_obj[i + 1 + cloth->size()] = vertex_begin_per_obj[i + cloth->size()] + tetrahedron->data()[i].mesh_struct.unfixed_point_index.size();
+		//edge_begin_per_obj[i + 1 + cloth->size()] = edge_begin_per_obj[i + cloth->size()] + (tetrahedron->data()[i].mesh_struct.tet_edge_vertices.size()>>1);
+		total_vertex_num[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_position.size();
+		real_index_to_unfixed_index[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.real_index_to_unfixed_index.data();
+
+		previous_frame_edge_length_stiffness[i] = tetrahedron->data()[i].edge_length_stiffness;
+	}
+
+	//std::cout << edge_vertices_mass_spring[0]->size() << " " << only_one_vertex_fix_edge_vertices[0]->size() << " " <<
+	//	unfixed_rest_length[0]->size() << " " << fixed_one_vertices_rest_length[0]->size() << " " << unfixed_vertex[0]->size() << std::endl;
+
+	//for (unsigned int i = 0; i < unfixed_vertex[0]->size(); ++i) {
+	//	std::cout << unfixed_vertex[0]->data()[i] << std::endl;
+	//}
+
+
+
+	//for (unsigned int i = 0; i < total_thread_num+1; ++i) {
+	//	std::cout << edge_index_begin_per_thread_for_mass_spring[0][i] << " " << only_one_vertex_fixed_edge_index_begin_per_thread[0][i] <<
+	//		" " << unfixed_vertex_begin_per_thread[0][i] << std::endl;
+	//}
+}
+
+
+
