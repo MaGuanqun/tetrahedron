@@ -165,5 +165,7 @@ private:
 
 	void computeResidual();
 
+	void secondOrderSolveTetStrainConstraint();
+
 };
 

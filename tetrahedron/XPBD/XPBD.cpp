@@ -4,13 +4,13 @@
 XPBD::XPBD()
 {
 	gravity_ = 9.8;
-	sub_step_num =8;
+	sub_step_num =1;
 	iteration_number =100;
 
 	damping_coe = 0.0;
 
-	perform_collision = true;
-	max_iteration_number =10;
+	perform_collision = false;
+	max_iteration_number =30;
 	outer_max_iteration_number =4;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
@@ -342,7 +342,7 @@ void XPBD::solveBySecondOrderXPBD()
 
 	//last_pos = mesh_struct[0]->vertex_position;
 
-	computeResidual();
+	//computeResidual();
 
 	for (unsigned int sub_step = 0; sub_step < sub_step_num; ++sub_step) {
 		memset(lambda.data(), 0, 8 * lambda.size());
@@ -372,7 +372,7 @@ void XPBD::solveBySecondOrderXPBD()
 			solveSecondOrderConstraint((inner_iteration_number == 0) && sub_step % *sub_step_per_detection == 0);//sub_step % prediction_sub_step_size//|| inner_iteration_number== (max_iteration_number/2+1)
 			inner_iteration_number++;		
 			computeCurrentEnergy();
-			computeResidual();
+			//computeResidual();
 			//double rest=0.0;
 			//double norm=0.0;
 			//for (unsigned int i = 0; i < mesh_struct[0]->vertex_position.size(); ++i) {
@@ -489,8 +489,8 @@ void XPBD::PBDsolve()
 		solveByPBD();
 	}
 	else {
-		solveByXPBD();
-		//solveBySecondOrderXPBD();
+		//solveByXPBD();
+		solveBySecondOrderXPBD();
 	}
 }
 
@@ -589,6 +589,7 @@ void XPBD::solveSecondOrderConstraint(bool need_detection)
 {
 	//std::cout << "/////" << std::endl;
 	solveEdgeLengthSecondOrder();
+	secondOrderSolveTetStrainConstraint();
 	//solveTetStrainConstraintSecondOrder();
 }
 
@@ -813,6 +814,62 @@ void XPBD::solveTetStrainConstraintSecondOrder()
 		for (unsigned int j = 0; j < size; ++j) {
 			XPBD_constraint.scondOrderStrainConstraint(vertex_pos, stiffness, sub_time_step, A[j], indices[j].data(), mass_inv,
 				volume[j], youngs_modulus, poisson_ratio,sn_);
+		}
+	}
+}
+
+
+
+void XPBD::secondOrderSolveTetStrainConstraint()
+{
+	unsigned int size;
+	std::array<int, 4>* indices;
+	MeshStruct* mesh_struct_;
+	double* volume;
+	std::array<double, 3>* vertex_pos;
+	std::array<double, 3>* initial_vertex_pos;
+	double* mass_inv;
+	double stiffness;
+	Matrix<double, 3, 4>* A;
+	double* lambda_ = lambda.data() + constraint_index_start[2];
+	double* sigma_limit;
+	double youngs_modulus, poisson_ratio;
+	std::array<double, 3>* original_vertex_pos;
+	double damp_stiffness;
+
+	double iteration_num_inverse = 1.0 / (double)(max_iteration_number + 1);
+	double energy_;
+
+	double mass_inv_tet[4];
+
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		mesh_struct_ = mesh_struct[i + cloth->size()];
+		size = tetrahedron->data()[i].mesh_struct.indices.size();
+		indices = tetrahedron->data()[i].mesh_struct.indices.data();
+		volume = tetrahedron->data()[i].mesh_struct.volume.data();
+		vertex_pos = vertex_position[i + cloth->size()];
+		initial_vertex_pos = initial_vertex_position[i + cloth->size()];
+		stiffness = tetrahedron->data()[i].ARAP_stiffness;
+		A = tetrahedron->data()[i].mesh_struct.A.data();
+		sigma_limit = (*tetrahedron)[i].sigma_limit;
+		mass_inv = mesh_struct_->mass_inv.data();
+		youngs_modulus = tetrahedron->data()[i].youngs_modulus;
+		poisson_ratio = tetrahedron->data()[i].poisson_ratio;
+		damp_stiffness = tetrahedron->data()[i].damp_ARAP_stiffness;
+
+		for (unsigned int j = 0; j < size; ++j) {
+
+			mass_inv_tet[0] = mass_inv[indices[j][0]]; 	mass_inv_tet[1] = mass_inv[indices[j][1]]; 
+			mass_inv_tet[2] = mass_inv[indices[j][2]];	mass_inv_tet[3] = mass_inv[indices[j][3]];
+
+			second_order_constraint.solveARAPConstraint(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
+				vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(),
+				stiffness, sub_time_step, A[j], mass_inv_tet,
+				*lambda_, damp_stiffness, sigma_limit[0], sigma_limit[1], volume[j]);
+			lambda_++;
+			//energy += energy_;
+
+
 		}
 	}
 }

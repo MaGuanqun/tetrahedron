@@ -16,20 +16,20 @@ void SecondOrderConstraint::computeForce(double* vertex_0, double* vertex_1, dou
 	MULTI(potential_1, grad, coe);
 }
 
-void SecondOrderConstraint::solveARAPConstraint(std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position,
+void SecondOrderConstraint::solveARAPConstraint(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
 	double stiffness, double dt,
-	Matrix<double, 3, 4>& A, int* vertex_index, double* inv_mass, double& lambda, const double damping_stiffness, double sigma_min,
-	double sigma_max, double volume, double& energy, double* mass)
+	Matrix<double, 3, 4>& A, double* inv_mass, double& lambda, const double damping_stiffness, double sigma_min,
+	double sigma_max, double volume)
 {
 	Vector3d eigen_value;
 	Matrix3d q_e;
 	double determinant;
 	Vector3d position;
-	for (unsigned int i = 0; i < 3; ++i) {
-		memcpy(q_e.data() + 3 * i, vertex_position[vertex_index[i + 1]].data(), 24);
-	}
+	memcpy(q_e.data(), vertex_position_1, 24);
+	memcpy(q_e.data()+3, vertex_position_2, 24);
+	memcpy(q_e.data()+6, vertex_position_3, 24);
 	//first use eigen value to store the position of first vertex
-	memcpy(eigen_value.data(), vertex_position[vertex_index[0]].data(), 24);
+	memcpy(eigen_value.data(), vertex_position_0, 24);
 	for (unsigned int i = 0; i < 3; ++i) {
 		q_e.col(i) -= eigen_value;
 	}
@@ -70,12 +70,6 @@ void SecondOrderConstraint::solveARAPConstraint(std::array<double, 3>* vertex_po
 	Matrix<double, 12, 1> grad;
 	memcpy(grad.data(), grad_C_transpose.data(), 96);
 
-
-	// grad=grad_C_transpose^T
-	//grad.data()[0] = grad_C_transpose.data()[0]; 	grad.data()[1] = grad_C_transpose.data()[3];	grad.data()[2] = grad_C_transpose.data()[6];	grad.data()[3] = grad_C_transpose.data()[9];
-	//grad.data()[4] = grad_C_transpose.data()[1]; 	grad.data()[5] = grad_C_transpose.data()[4];	grad.data()[6] = grad_C_transpose.data()[7];	grad.data()[7] = grad_C_transpose.data()[10];
-	//grad.data()[8] = grad_C_transpose.data()[2]; 	grad.data()[9] = grad_C_transpose.data()[5];	grad.data()[10] = grad_C_transpose.data()[8];	grad.data()[11] = grad_C_transpose.data()[11];
-
 	Matrix<double, 9, 9> dPdF;
 
 	getdPdF(U, V, eigen_value, dPdF);
@@ -83,11 +77,12 @@ void SecondOrderConstraint::solveARAPConstraint(std::array<double, 3>* vertex_po
 	Matrix<double, 12, 12> Hessian;
 	backpropagateElementHessian(Hessian, dPdF, A);
 	Hessian *= (0.5 / C);
-	Hessian -= ((0.25 / (C * C * C)) * grad) * grad.transpose();
+	Hessian -= ((1.0 / C) * grad) * grad.transpose();
 
 	Matrix<double, 12, 1> inv_mass_sys;
 	inv_mass_sys << inv_mass[0], inv_mass[0], inv_mass[0], inv_mass[1], inv_mass[1], inv_mass[1], inv_mass[2], inv_mass[2], inv_mass[2],
 		inv_mass[3], inv_mass[3], inv_mass[3];
+	//how to improve this
 	for (unsigned int j = 0; j < 12; ++j) {
 		for (unsigned int i = 0; i < 4; ++i) {
 			Hessian(i + i + i, j) *= inv_mass[i];
@@ -99,14 +94,28 @@ void SecondOrderConstraint::solveARAPConstraint(std::array<double, 3>* vertex_po
 	for (unsigned int i = 0; i < 144; i += 13) {
 		Hessian.data()[i] += 1.0;
 	}
-	ColPivHouseholderQR <Matrix3d> linear(Hessian);
-	double h
-	double coe = grad.dot(linear.solve(inv_mass_sys.cwiseProduct(grad)))+alpha_;
-	double delta_lambda=
+	ColPivHouseholderQR <Matrix<double,12,12>> linear(Hessian);
+	double h = C + alpha_ * lambda;
+	double delta_lambda = -h / (grad.dot(linear.solve(inv_mass_sys.cwiseProduct(grad))) + alpha_);
+	Matrix<double, 12, 1> delta_x = linear.solve(delta_lambda * (inv_mass_sys.cwiseProduct(grad)));
 
-	
+	vertex_position_0[0] += delta_x[0];
+	vertex_position_0[1] += delta_x[1];
+	vertex_position_0[2] += delta_x[2];
 
+	vertex_position_1[0] += delta_x[3];
+	vertex_position_1[1] += delta_x[4];
+	vertex_position_1[2] += delta_x[5];
 	
+	vertex_position_2[0] += delta_x[6];
+	vertex_position_2[1] += delta_x[7];
+	vertex_position_2[2] += delta_x[8];
+
+	vertex_position_3[0] += delta_x[9];
+	vertex_position_3[1] += delta_x[10];
+	vertex_position_3[2] += delta_x[11];
+	 
+	lambda += delta_lambda;
 
 }
 
@@ -159,21 +168,21 @@ void SecondOrderConstraint::getdPdF(Matrix3d& U, Matrix3d& V, Vector3d& eigen_va
 
 	
 	Matrix<double, 2, 2> B0;
-	double coe = 1;
+	double coe = 1.0;
 	if (eigen_value[0] + eigen_value[1] < 1e-6) {
 		coe = (eigen_value[0] + eigen_value[1]) / 1e-6;
 	}
 	B0 << 1.0 + coe, 1.0 - coe, 1.0 - coe, 1.0 + coe;
 
 	Matrix<double, 2, 2> B1;
-	coe = 1;
+	coe = 1.0;
 	if (eigen_value[1] + eigen_value[2] < 1e-6) {
 		coe = (eigen_value[1] + eigen_value[2]) / 1e-6;
 	}
 	B1 << 1.0 + coe, 1.0 - coe, 1.0 - coe, 1.0 + coe;
 
 	Matrix<double, 2, 2> B2;
-	double coe = 1;
+	coe = 1.0;
 	if (eigen_value[0] + eigen_value[2] < 1e-6) {
 		coe = (eigen_value[0] + eigen_value[2]) / 1e-6;
 	}

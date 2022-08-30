@@ -22,10 +22,10 @@ public:
 	void test(MeshStruct& mesh_struct, std::vector<double>& lbo_weight, std::vector<VectorXd>& vertex_lbo,
 		std::vector<double>& rest_mean_curvature_norm);
 
-	void solveARAPConstraint(std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position,
+	void solveARAPConstraint(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
 		double stiffness, double dt,
-		Matrix<double, 3, 4>& A, int* vertex_index, double* inv_mass, double& lambda, const double damping_stiffness, double sigma_min,
-		double sigma_max, double volume, double& energy, double* mass);
+		Matrix<double, 3, 4>& A, double* inv_mass, double& lambda, const double damping_stiffness, double sigma_min,
+		double sigma_max, double volume);
 
 	void computeForce(double* vertex_0, double* vertex_1, double stiffness,
 		double* potential_0, double* potential_1, double rest_length);
