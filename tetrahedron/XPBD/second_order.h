@@ -36,6 +36,7 @@ private:
 
 	void solveEdgeLengthConstraint(Vector3f& p1, Vector3f& p2, const double d, double mass_0,
 		double mass_1, Vector3f& ori_p1, Vector3f& ori_p2, bool v0_fixed, bool v1_fixed, double& lambda);
+	void backpropagateElementHessian(Matrix<double, 12,  12>& Hessian, Matrix<double, 9, 9>& dPdF, Matrix<double, 3, 4>& A);
 
 
 };

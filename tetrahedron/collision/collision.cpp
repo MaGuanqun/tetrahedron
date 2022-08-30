@@ -22,7 +22,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	thread_num = thread->thread_num;
 	max_index_number_in_one_cell = 1200;
 	max_index_number_in_one_cell_collider = 400;
-	estimate_coeff_for_pair_num = 400;
+	estimate_coeff_for_pair_num = 800;
 
 	use_BVH = false;
 	//findPatchOfObjects();

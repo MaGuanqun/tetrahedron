@@ -68,13 +68,41 @@ void SecondOrderConstraint::solveARAPConstraint(std::array<double, 3>* vertex_po
 
 	
 	Matrix<double, 12, 1> grad;
+	memcpy(grad.data(), grad_C_transpose.data(), 96);
+
+
 	// grad=grad_C_transpose^T
-	grad.data()[0] = grad_C_transpose.data()[0]; 	grad.data()[1] = grad_C_transpose.data()[3];	grad.data()[2] = grad_C_transpose.data()[6];	grad.data()[3] = grad_C_transpose.data()[9];
-	grad.data()[4] = grad_C_transpose.data()[1]; 	grad.data()[5] = grad_C_transpose.data()[4];	grad.data()[6] = grad_C_transpose.data()[7];	grad.data()[7] = grad_C_transpose.data()[10];
-	grad.data()[8] = grad_C_transpose.data()[2]; 	grad.data()[9] = grad_C_transpose.data()[5];	grad.data()[10] = grad_C_transpose.data()[8];	grad.data()[11] = grad_C_transpose.data()[11];
+	//grad.data()[0] = grad_C_transpose.data()[0]; 	grad.data()[1] = grad_C_transpose.data()[3];	grad.data()[2] = grad_C_transpose.data()[6];	grad.data()[3] = grad_C_transpose.data()[9];
+	//grad.data()[4] = grad_C_transpose.data()[1]; 	grad.data()[5] = grad_C_transpose.data()[4];	grad.data()[6] = grad_C_transpose.data()[7];	grad.data()[7] = grad_C_transpose.data()[10];
+	//grad.data()[8] = grad_C_transpose.data()[2]; 	grad.data()[9] = grad_C_transpose.data()[5];	grad.data()[10] = grad_C_transpose.data()[8];	grad.data()[11] = grad_C_transpose.data()[11];
 
+	Matrix<double, 9, 9> dPdF;
 
-	//	ColPivHouseholderQR <Matrix3d> linear(sys_matrix);
+	getdPdF(U, V, eigen_value, dPdF);
+
+	Matrix<double, 12, 12> Hessian;
+	backpropagateElementHessian(Hessian, dPdF, A);
+	Hessian *= (0.5 / C);
+	Hessian -= ((0.25 / (C * C * C)) * grad) * grad.transpose();
+
+	Matrix<double, 12, 1> inv_mass_sys;
+	inv_mass_sys << inv_mass[0], inv_mass[0], inv_mass[0], inv_mass[1], inv_mass[1], inv_mass[1], inv_mass[2], inv_mass[2], inv_mass[2],
+		inv_mass[3], inv_mass[3], inv_mass[3];
+	for (unsigned int j = 0; j < 12; ++j) {
+		for (unsigned int i = 0; i < 4; ++i) {
+			Hessian(i + i + i, j) *= inv_mass[i];
+			Hessian(i + i + i+1, j) *= inv_mass[i];
+			Hessian(i + i + i+2, j) *= inv_mass[i];
+		}
+	}
+	Hessian *= -lambda;
+	for (unsigned int i = 0; i < 144; i += 13) {
+		Hessian.data()[i] += 1.0;
+	}
+	ColPivHouseholderQR <Matrix3d> linear(Hessian);
+	double h
+	double coe = grad.dot(linear.solve(inv_mass_sys.cwiseProduct(grad)))+alpha_;
+	double delta_lambda=
 
 	
 
@@ -82,8 +110,138 @@ void SecondOrderConstraint::solveARAPConstraint(std::array<double, 3>* vertex_po
 
 }
 
+//the target is to solve A^T *dPdF* A
+void SecondOrderConstraint::backpropagateElementHessian(Matrix<double, 12,12>& Hessian, Matrix<double,9,9>& dPdF, Matrix<double,3,4>&A)
+{
+	Matrix<double, 12, 9> temp;//temp = A^T dPdF
+	for (unsigned int i = 0; i < 9; ++i) {
+		temp(3, i) = A(0, 1) * dPdF(0, i) + A(1, 1) * dPdF(3, i) + A(2, 1) * dPdF(6, i);
+		temp(4, i) = A(0, 1) * dPdF(1, i) + A(1, 1) * dPdF(4, i) + A(2, 1) * dPdF(7, i);
+		temp(5, i) = A(0, 1) * dPdF(2, i) + A(1, 1) * dPdF(5, i) + A(2, 1) * dPdF(8, i);
+
+		temp(6, i) = A(0, 2) * dPdF(0, i) + A(1, 2) * dPdF(3, i) + A(2, 2) * dPdF(6, i);
+		temp(7, i) = A(0, 2) * dPdF(1, i) + A(1, 2) * dPdF(4, i) + A(2, 2) * dPdF(7, i);
+		temp(8, i) = A(0, 2) * dPdF(2, i) + A(1, 2) * dPdF(5, i) + A(2, 2) * dPdF(8, i);
+
+		temp(9, i) = A(0, 3) * dPdF(0, i) + A(1, 3) * dPdF(3, i) + A(2, 3) * dPdF(6, i);
+		temp(10, i) = A(0, 3) * dPdF(1, i) + A(1, 3) * dPdF(4, i) + A(2, 3) * dPdF(7, i);
+		temp(11, i) = A(0, 3) * dPdF(2, i) + A(1, 3) * dPdF(5, i) + A(2, 3) * dPdF(8, i);
+
+		temp(0, i) = -temp(3, i) - temp(6, i) - temp(9, i);
+		temp(1, i) = -temp(4, i) - temp(7, i) - temp(10, i);
+		temp(2, i) = -temp(5, i) - temp(8, i) - temp(11, i);
+	}
+
+	//temp*A
+	for (int i = 0; i < 12; ++i) {
+		Hessian(i, 3) = temp(i, 0) * A(0, 1) + temp(i, 3) * A(1, 1) + temp(i, 6) * A(2, 1);
+		Hessian(i, 4) = temp(i, 1) * A(0, 1) + temp(i, 4) * A(1, 1) + temp(i, 7) * A(2, 1);
+		Hessian(i, 5) = temp(i, 2) * A(0, 1) + temp(i, 5) * A(1, 1) + temp(i, 8) * A(2, 1);
+
+		Hessian(i, 6) = temp(i, 0) * A(0, 2) + temp(i, 3) * A(1, 2) + temp(i, 6) * A(2, 2);
+		Hessian(i, 7) = temp(i, 1) * A(0, 2) + temp(i, 4) * A(1, 2) + temp(i, 7) * A(2, 2);
+		Hessian(i, 8) = temp(i, 2) * A(0, 2) + temp(i, 5) * A(1, 2) + temp(i, 8) * A(2, 2);
+
+		Hessian(i, 9) = temp(i, 0) * A(0, 3) + temp(i, 3) * A(1, 3) + temp(i, 6) * A(2, 3);
+		Hessian(i, 10) = temp(i, 1) * A(0, 3) + temp(i, 4) * A(1, 3) + temp(i, 7) * A(2, 3);
+		Hessian(i, 11) = temp(i, 2) * A(0, 3) + temp(i, 5) * A(1, 3) + temp(i, 8) * A(2, 3);
+
+		Hessian(i, 0) = -Hessian(i, 3) - Hessian(i, 6) - Hessian(i, 9);
+		Hessian(i, 1) = -Hessian(i, 4) - Hessian(i, 7) - Hessian(i, 10);
+		Hessian(i, 2) = -Hessian(i, 5) - Hessian(i, 8) - Hessian(i, 11);
+	}
+
+}
+
+
 void SecondOrderConstraint::getdPdF(Matrix3d& U, Matrix3d& V, Vector3d& eigen_value, Matrix<double,9,9>& dPdF)
 {
+
+	
+	Matrix<double, 2, 2> B0;
+	double coe = 1;
+	if (eigen_value[0] + eigen_value[1] < 1e-6) {
+		coe = (eigen_value[0] + eigen_value[1]) / 1e-6;
+	}
+	B0 << 1.0 + coe, 1.0 - coe, 1.0 - coe, 1.0 + coe;
+
+	Matrix<double, 2, 2> B1;
+	coe = 1;
+	if (eigen_value[1] + eigen_value[2] < 1e-6) {
+		coe = (eigen_value[1] + eigen_value[2]) / 1e-6;
+	}
+	B1 << 1.0 + coe, 1.0 - coe, 1.0 - coe, 1.0 + coe;
+
+	Matrix<double, 2, 2> B2;
+	double coe = 1;
+	if (eigen_value[0] + eigen_value[2] < 1e-6) {
+		coe = (eigen_value[0] + eigen_value[2]) / 1e-6;
+	}
+	B2 << 1.0 + coe, 1.0 - coe, 1.0 - coe, 1.0 + coe;
+
+
+	Matrix<double, 9, 9> M;
+	M.setZero();
+	M(0, 0) = eigen_value[0] + eigen_value[0];
+	M(4, 4) = eigen_value[1] + eigen_value[1];
+	M(8, 8) = eigen_value[2] + eigen_value[2];
+	M(1, 1) = B0(0, 0);
+	M(1, 3) = B0(0, 1);
+	M(3, 1) = B0(1, 0);
+	M(3, 3) = B0(1, 1);
+	M(5, 5) = B1(0, 0);
+	M(5, 7) = B1(0, 1);
+	M(7, 5) = B1(1, 0);
+	M(7, 7) = B1(1, 1);
+	M(2, 2) = B2(1, 1);
+	M(2, 6) = B2(1, 0);
+	M(6, 2) = B2(0, 1);
+	M(6, 6) = B2(0, 0);
+
+	for (int j = 0; j < 3; ++j)
+		for (int i = 0; i < 3; ++i)
+			for (int s = 0; s < 3; ++s)
+				for (int r = 0; r < 3; ++r) {
+					int ij = j * 3 + i;
+					int rs = s * 3 + r;
+					dPdF(ij, rs) = M(0, 0) * U(i, 0) * V(j, 0) * U(r, 0) * V(s, 0)
+						+ M(4, 4) * U(i, 1) * V(j, 1) * U(r, 1) * V(s, 1)
+						+ M(8, 8) * U(i, 2) * V(j, 2) * U(r, 2) * V(s, 2)
+						+ M(1, 1) * U(i, 0) * V(j, 1) * U(r, 0) * V(s, 1)
+						+ M(1, 3) * U(i, 0) * V(j, 1) * U(r, 1) * V(s, 0)
+						+ M(3, 1) * U(i, 1) * V(j, 0) * U(r, 0) * V(s, 1)
+						+ M(3, 3) * U(i, 1) * V(j, 0) * U(r, 1) * V(s, 0)
+						+ M(5, 5) * U(i, 1) * V(j, 2) * U(r, 1) * V(s, 2)
+						+ M(5, 7) * U(i, 1) * V(j, 2) * U(r, 2) * V(s, 1)
+						+ M(7, 5) * U(i, 2) * V(j, 1) * U(r, 1) * V(s, 2)
+						+ M(7, 7) * U(i, 2) * V(j, 1) * U(r, 2) * V(s, 1)
+						+ M(2, 2) * U(i, 0) * V(j, 2) * U(r, 0) * V(s, 2)
+						+ M(2, 6) * U(i, 0) * V(j, 2) * U(r, 2) * V(s, 0)
+						+ M(6, 2) * U(i, 2) * V(j, 0) * U(r, 0) * V(s, 2)
+						+ M(6, 6) * U(i, 2) * V(j, 0) * U(r, 2) * V(s, 0);
+					//dPdF(ij, rs) = M(0, 0) * U(i, 0) * V(j, 0) * U(r, 0) * V(s, 0)
+					//	+ M(0, 4) * U(i, 0) * V(j, 0) * U(r, 1) * V(s, 1)
+					//	+ M(0, 8) * U(i, 0) * V(j, 0) * U(r, 2) * V(s, 2)
+					//	+ M(4, 0) * U(i, 1) * V(j, 1) * U(r, 0) * V(s, 0)
+					//	+ M(4, 4) * U(i, 1) * V(j, 1) * U(r, 1) * V(s, 1)
+					//	+ M(4, 8) * U(i, 1) * V(j, 1) * U(r, 2) * V(s, 2)
+					//	+ M(8, 0) * U(i, 2) * V(j, 2) * U(r, 0) * V(s, 0)
+					//	+ M(8, 4) * U(i, 2) * V(j, 2) * U(r, 1) * V(s, 1)
+					//	+ M(8, 8) * U(i, 2) * V(j, 2) * U(r, 2) * V(s, 2)
+					//	+ M(1, 1) * U(i, 0) * V(j, 1) * U(r, 0) * V(s, 1)
+					//	+ M(1, 3) * U(i, 0) * V(j, 1) * U(r, 1) * V(s, 0)
+					//	+ M(3, 1) * U(i, 1) * V(j, 0) * U(r, 0) * V(s, 1)
+					//	+ M(3, 3) * U(i, 1) * V(j, 0) * U(r, 1) * V(s, 0)
+					//	+ M(5, 5) * U(i, 1) * V(j, 2) * U(r, 1) * V(s, 2)
+					//	+ M(5, 7) * U(i, 1) * V(j, 2) * U(r, 2) * V(s, 1)
+					//	+ M(7, 5) * U(i, 2) * V(j, 1) * U(r, 1) * V(s, 2)
+					//	+ M(7, 7) * U(i, 2) * V(j, 1) * U(r, 2) * V(s, 1)
+					//	+ M(2, 2) * U(i, 0) * V(j, 2) * U(r, 0) * V(s, 2)
+					//	+ M(2, 6) * U(i, 0) * V(j, 2) * U(r, 2) * V(s, 0)
+					//	+ M(6, 2) * U(i, 2) * V(j, 0) * U(r, 0) * V(s, 2)
+					//	+ M(6, 6) * U(i, 2) * V(j, 0) * U(r, 2) * V(s, 0);
+				}
+
 
 }
 
@@ -142,7 +300,7 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 		return;
 	}
 
-
+	//std::cout << "true " << std::endl;
 	//std::cout << edge_index << " " << mass_0 << " " << mass_1 << " " << rest_length<<" "<< sn_0[0] << " " << sn_0[1] << " " << sn_0[2] << std::endl;
 
 
@@ -174,7 +332,6 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 	//p1[0] = p_2[0];
 	//p1[1] = p_2[1];
 	//p1[2] = p_2[2];
-
 	Vector3d n;
 	SUB(n.data(), p0, p1);
 	double n_norm = sqrt(DOT(n, n));
@@ -184,13 +341,11 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 	Vector3d grad_ = n / n_norm;
 	double alpha =  1.0 / (time_step * time_step * stiffness);
 	Matrix3d He = (1.0 / n_norm) * (Matrix3d::Identity() - grad_ * grad_.transpose());
-
 	//Matrix<double, 6, 6>Hessian;
 	//Hessian.block<3, 3>(0, 0) = He;
 	//Hessian.block<3, 3>(3, 3) = He;
 	//Hessian.block<3, 3>(3, 0) = -He;
 	//Hessian.block<3, 3>(0, 3) = -He;
-
 	VectorXd mass_inv(6);
 	mass_inv[0] = mass_inv[1] = mass_inv[2] = 1.0 / mass_0;
 	mass_inv[3] = mass_inv[4] = mass_inv[5] = 1.0 / mass_1;
@@ -203,17 +358,7 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 	//Matrix<double, 6, 1> gradient;
 	//gradient.segment(0, 3) = grad_;
 	//gradient.segment(3, 3) = -grad_;
-
 	/*
-
-
-
-
-
-
-
-
-
 	Matrix<double, 6, 6>sys_matrix = Matrix<double, 6, 6>::Identity() + lambda * mass_inv.asDiagonal() * Hessian;
 
 	//ColPivHouseholderQR <Matrix<double, 6, 6>> linear(sys_matrix);
@@ -245,8 +390,6 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 	p1[2] += delta_x[5];		
 	lambda += delta_lambda;
 	*/
-
-
 	//Matrix3d He = (((- lambda) /n_norm) * grad_) * grad_.transpose();
 	//double coe = lambda / n_norm;
 	//He.data()[0] += coe;
@@ -254,6 +397,22 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 	//He.data()[8] += coe;
 	double coe;
 		if (v0_fixed) {
+			/*
+			Matrix<double, 3, 3> sys_matrix;
+			sys_matrix = mass_1/(time_step*time_step) * Matrix3d::Identity() + stiffness * grad_*grad_.transpose() + (stiffness*(n_norm - rest_length)) * He;
+			Vector3d g;
+			//g.data()[0] = mass_1 * (p1[0] - sn_1[0]);
+			//g.data()[1] = mass_1 * (p1[1] - sn_1[1]);
+			//g.data()[2] = mass_1 * (p1[2] - sn_1[2]);
+			g.setZero();
+			g -= (stiffness*(n_norm - rest_length))*grad_;
+			ColPivHouseholderQR <Matrix3d> linear(sys_matrix);
+			Vector3d delta_x = -linear.solve(g);
+			p1[0] += delta_x[0];
+			p1[1] += delta_x[1];
+			p1[2] += delta_x[2];
+			*/
+			
 			Matrix<double, 3, 3> sys_matrix;
 			sys_matrix = mass_1 * Matrix3d::Identity()-lambda * He;
 			//sys_matrix.setZero();
@@ -262,9 +421,10 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 			//sys_matrix.data()[4] += mass_1;
 			//sys_matrix.data()[8] += mass_1;
 			Vector3d g;
-			g.data()[0] = mass_1 * (p1[0] - sn_1[0]);
-			g.data()[1] = mass_1 * (p1[1] - sn_1[1]);
-			g.data()[2] = mass_1 * (p1[2] - sn_1[2]);
+			g.setZero();
+			//g.data()[0] = mass_1 * (p1[0] - sn_1[0]);
+			//g.data()[1] = mass_1 * (p1[1] - sn_1[1]);
+			//g.data()[2] = mass_1 * (p1[2] - sn_1[2]);
 			g += lambda * grad_;
 			double h = n_norm - rest_length + alpha * lambda;
 			ColPivHouseholderQR <Matrix3d> linear(sys_matrix);
@@ -272,15 +432,30 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 			coe = (linear.solve(grad_)).dot(grad_) + alpha;
 			double delta_lambda =( - h - (linear.solve(g)).dot(grad_))/coe;//
 			Vector3d delta_x = linear.solve((- delta_lambda) * grad_-g);//-g
-
 			p1[0] += delta_x[0];
 			p1[1] += delta_x[1];
 			p1[2] += delta_x[2];
 			lambda += delta_lambda;
+			
 			return;
-		}
-		
+		}		
 		if (v1_fixed) {
+			/*
+			Matrix<double, 3, 3> sys_matrix;
+			sys_matrix = mass_0 / (time_step * time_step) * Matrix3d::Identity() + stiffness * grad_ * grad_.transpose() + (stiffness * (n_norm - rest_length)) * He;
+			Vector3d g;
+			//g.data()[0] = mass_0 * (p0[0] - sn_0[0]);
+			//g.data()[1] = mass_0 * (p0[1] - sn_0[1]);
+			//g.data()[2] = mass_0 * (p0[2] - sn_0[2]);
+			g.setZero();
+			g += (stiffness * (n_norm - rest_length)) * grad_;
+			ColPivHouseholderQR <Matrix3d> linear(sys_matrix);
+			Vector3d delta_x = -linear.solve(g);
+			p0[0] += delta_x[0];
+			p0[1] += delta_x[1];
+			p0[2] += delta_x[2];
+			*/
+			
 			Matrix<double, 3, 3> sys_matrix;
 			sys_matrix = mass_0 * Matrix3d::Identity() -lambda * He;
 			//sys_matrix.setZero();
@@ -289,9 +464,10 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 			//sys_matrix.data()[4] += mass_0;
 			//sys_matrix.data()[8] += mass_0;
 			Vector3d g;
-			g.data()[0] = mass_0 * (p0[0] - sn_0[0]);
-			g.data()[1] = mass_0 * (p0[1] - sn_0[1]);
-			g.data()[2] = mass_0 * (p0[2] - sn_0[2]);
+			g.setZero();
+			//g.data()[0] = mass_0 * (p0[0] - sn_0[0]);
+			//g.data()[1] = mass_0 * (p0[1] - sn_0[1]);
+			//g.data()[2] = mass_0 * (p0[2] - sn_0[2]);
 			g -= lambda * grad_;
 
 			double h = n_norm - rest_length + alpha * lambda;
@@ -300,14 +476,55 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 			coe = linear.solve(grad_).dot(grad_) + alpha;
 			double delta_lambda = (-h + linear.solve(g).dot(grad_)) / coe;//
 			Vector3d delta_x = linear.solve(delta_lambda * grad_-g);//- g
-
 			p0[0] += delta_x[0];
 			p0[1] += delta_x[1];
 			p0[2] += delta_x[2];
 			lambda += delta_lambda;
+			
 			return;
 		}
 
+		/*
+		///test
+		Matrix<double, 6, 1> gradient;
+		gradient.segment(0, 3) = grad_;
+		gradient.segment(3, 3) = -grad_;
+		Matrix<double, 6, 6> sys_matrix;
+		sys_matrix.setZero();
+		sys_matrix.block<3, 3>(0, 0) = -He;
+		sys_matrix.block<3, 3>(3, 3) = -He;
+		sys_matrix.block<3, 3>(3, 0) = He;
+		sys_matrix.block<3, 3>(0, 3) = He;
+		sys_matrix *= (n_norm - rest_length) * stiffness;
+		sys_matrix += stiffness * gradient * gradient.transpose();
+		for (unsigned int i = 0; i < 18; i += 7) {
+			sys_matrix.data()[i] += mass_0 / (time_step * time_step);
+		}
+		for (unsigned int i = 21; i < 36; i += 7) {
+			sys_matrix.data()[i] += mass_1 / (time_step * time_step);
+		}
+		Matrix<double, 6, 1>g;
+		g.setZero();
+		//g.data()[0] = mass_0 / (time_step * time_step) * (p0[0] - sn_0[0]);
+		//g.data()[1] = mass_0 / (time_step * time_step) * (p0[1] - sn_0[1]);
+		//g.data()[2] = mass_0 / (time_step * time_step) * (p0[2] - sn_0[2]);
+		//g.data()[3] = mass_1 / (time_step * time_step) * (p1[0] - sn_1[0]);
+		//g.data()[4] = mass_1 / (time_step * time_step) * (p1[1] - sn_1[1]);
+		//g.data()[5] = mass_1 / (time_step * time_step) * (p1[2] - sn_1[2]);
+		g += (n_norm - rest_length) * stiffness * gradient;
+		Matrix<double, 6, 1> result;
+		ColPivHouseholderQR <Matrix<double, 6, 6>> linear_(sys_matrix);
+		result = -1.0 * linear_.solve(g);
+		p0[0] += result[0];
+		p0[1] += result[1];
+		p0[2] += result[2];
+		p1[0] += result[3];
+		p1[1] += result[4];
+		p1[2] += result[5];
+
+		////
+		*/
+		
 		Matrix<double, 6, 1> gradient;
 		gradient.segment(0, 3) = grad_;
 		gradient.segment(3, 3) = -grad_;
@@ -324,8 +541,6 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 		for (unsigned int i = 21; i < 36; i+=7) {
 			sys_matrix.data()[i] += mass_1;
 		}
-
-
 		//double det = sys_matrix.determinant();
 		//if (det < 1e-8) {
 		//	std::cout << det << std::endl;
@@ -334,35 +549,27 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 		//LDLT <Matrix<double, 6, 6>> linear(sys_matrix);
 		double h = n_norm - rest_length + alpha*lambda;
 		Matrix<double, 6, 1>g;
-		g.data()[0] =mass_0 *(p0[0] - sn_0[0]);
-		g.data()[1] =mass_0 *(p0[1] - sn_0[1]);
-		g.data()[2] =mass_0 *(p0[2] - sn_0[2]);
-		g.data()[3] = mass_1 * (p1[0] - sn_1[0]);
-		g.data()[4] = mass_1 * (p1[1] - sn_1[1]);
-		g.data()[5] = mass_1 * (p1[2] - sn_1[2]);
+		g.setZero();
+		//g.data()[0] =mass_0 *(p0[0] - sn_0[0]);
+		//g.data()[1] =mass_0 *(p0[1] - sn_0[1]);
+		//g.data()[2] =mass_0 *(p0[2] - sn_0[2]);
+		//g.data()[3] = mass_1 * (p1[0] - sn_1[0]);
+		//g.data()[4] = mass_1 * (p1[1] - sn_1[1]);
+		//g.data()[5] = mass_1 * (p1[2] - sn_1[2]);
 		g -= lambda*gradient;
-
 	//	coe = linear.solve(gradient).dot(gradient) + alpha;
 		double delta_lambda;
 	//	delta_lambda = (-h + linear.solve(g).dot(gradient)) / coe;//+
-
-
 		//if (edge_index == 0) {
 		////	std::cout << g << std::endl;
 		//std::cout << linear.solve(g) << std::endl;
 		//}
-
 		Matrix<double, 6, 1> delta_x; 
 		// delta_x = linear.solve(delta_lambda * gradient - g);//		-g
-
 		//if (vertex_0_index == 2451 || vertex_1_index == 2451) {
 		//	std::cout << delta_lambda<<" "<<edge_index << std::endl;
 		//	std::cout << delta_x.segment(0, 3).norm() << " " << delta_x.segment(3, 3).norm() << std::endl;
 		//}
-
-
-
-		//////check:
 		Matrix<double, 7, 7> check;
 		check.block<6, 6>(0, 0) = sys_matrix;
 		check.block<6, 1>(0, 6) = -gradient;
@@ -400,6 +607,8 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 		//	//std::cout << error << std::endl;
 		//}
 
+	  
+
 
 		p0[0] += result[0];
 		p0[1] += result[1];
@@ -418,7 +627,7 @@ void SecondOrderConstraint::solveEdgeLengthConstraint(double* p0, double* p1, co
 		//lambda += delta_lambda;
 
 
-
+ 
 
 
 	//Vector3d p0_current;

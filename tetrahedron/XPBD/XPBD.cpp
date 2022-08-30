@@ -4,12 +4,12 @@
 XPBD::XPBD()
 {
 	gravity_ = 9.8;
-	sub_step_num =1;
+	sub_step_num =8;
 	iteration_number =100;
 
 	damping_coe = 0.0;
 
-	perform_collision = false;
+	perform_collision = true;
 	max_iteration_number =10;
 	outer_max_iteration_number =4;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
@@ -324,7 +324,7 @@ void XPBD::computeResidual()
 		residual_norm += DOT(residual[j], residual[j]);
 	}
 	residual_norm = sqrt(residual_norm);
-	std::cout << "residual " << residual_norm << std::endl;
+	//std::cout << "residual " << residual_norm << std::endl;
 }
 
 void XPBD::solveBySecondOrderXPBD()
@@ -337,7 +337,7 @@ void XPBD::solveBySecondOrderXPBD()
 		collision.collisionCulling();
 	}
 	iteration_number = 0;
-	std::cout << "/////" << std::endl;
+	//std::cout << "/////" << std::endl;
 	computeCurrentEnergy();
 
 	//last_pos = mesh_struct[0]->vertex_position;
@@ -489,8 +489,8 @@ void XPBD::PBDsolve()
 		solveByPBD();
 	}
 	else {
-		//solveByXPBD();
-		solveBySecondOrderXPBD();
+		solveByXPBD();
+		//solveBySecondOrderXPBD();
 	}
 }
 

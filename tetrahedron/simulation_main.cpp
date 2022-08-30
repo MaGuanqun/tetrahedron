@@ -25,10 +25,10 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool control_parameter[31];
 	memset(control_parameter, 0, 31);
 	control_parameter[ONLY_COLLISION_TEST] =false;
-	control_parameter[USE_XPBD] = false;
+	control_parameter[USE_XPBD] = true;
 	control_parameter[USE_PD_] = false;
 	control_parameter[USE_NEWTON_] = false;
-	control_parameter[USE_XPBD_LARGE] = true;
+	control_parameter[USE_XPBD_LARGE] = false;
 	control_parameter[DRAW_VT] = true;
 
 
@@ -72,7 +72,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	memcpy(temp_stiffness.data(), temp_data, 18 * 8);
 	//memset(temp_stiffness, 0, 64);
 	UpdateObjStiffness update_obj_stiffness;
-	double tolerance_ratio[7] = { 1e-1,1e-1,1e-1,1e-1, 1e-1, 1e-1, 1e-1 };
+	double tolerance_ratio[7] = { 5e-2,5e-2,5e-2,5e-2, 5e-2, 5e-2,5e-2 };
 
 	double damp_stiffness = temp_stiffness[DAMP_STIFFNESS];
 	double rayleigh_damp_stiffness[2] = { temp_stiffness[RAYLEIGH_DAMP_STIFFNESS_ALPHA], temp_stiffness[RAYLEIGH_DAMP_STIFFNESS_BETA] };

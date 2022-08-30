@@ -70,7 +70,7 @@ void Preprocessing::getRegularizationInfo()
 		regularization_info.body_center[i] = 0.5 * (aabb_pos[i] + aabb_pos[i+3]);
 	}
 	double max_cen = myMax(myMax((aabb_pos[3] - aabb_pos[0]), (aabb_pos[4] - aabb_pos[1])), (aabb_pos[5] - aabb_pos[2]));
-	regularization_info.scaler = 1.0;
+	regularization_info.scaler = 1.0/max_cen;
 	regularization_info.move_info[0] = 0.0;
 	regularization_info.move_info[1] = 0.0;
 	regularization_info.move_info[2] = 0.0;
