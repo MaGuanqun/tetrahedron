@@ -1,7 +1,7 @@
 #include"second_order.h"
 
 
-void SecondOrderConstraint::computeForce(double* vertex_0, double* vertex_1, double stiffness, 
+void SecondOrderConstraint::computeEdgeLengthForce(double* vertex_0, double* vertex_1, double stiffness,
 	double* potential_0, double* potential_1, double rest_length)
 {
 	double C = sqrt(EDGE_LENGTH(vertex_0, vertex_1));
@@ -15,6 +15,45 @@ void SecondOrderConstraint::computeForce(double* vertex_0, double* vertex_1, dou
 	coe *= -1.0;
 	MULTI(potential_1, grad, coe);
 }
+
+
+
+void SecondOrderConstraint::computeARAPForce(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
+	double stiffness, Matrix<double, 3, 4>& A, double volume, Matrix<double,3,4>& force)
+{
+	Vector3d eigen_value;
+	Matrix3d q_e;
+	double determinant;
+	Vector3d position;
+	memcpy(q_e.data(), vertex_position_1, 24);
+	memcpy(q_e.data() + 3, vertex_position_2, 24);
+	memcpy(q_e.data() + 6, vertex_position_3, 24);
+	//first use eigen value to store the position of first vertex
+	memcpy(eigen_value.data(), vertex_position_0, 24);
+	for (unsigned int i = 0; i < 3; ++i) {
+		q_e.col(i) -= eigen_value;
+	}
+	Matrix3d deformation_gradient;
+	Matrix3d P_inv;
+	memcpy(P_inv.data(), A.data() + 3, 72);
+	deformation_gradient = q_e * P_inv.transpose();
+	JacobiSVD<Matrix3d> svd;
+	svd.compute(deformation_gradient, ComputeFullU | ComputeFullV);
+
+	eigen_value = svd.singularValues();
+	determinant = eigen_value[0] * eigen_value[1] * eigen_value[2];
+
+	Matrix3d V = svd.matrixV();
+	if (determinant < 0) {
+		V.col(2) *= -1.0;
+	}
+
+	P_inv = svd.matrixU() * V.transpose();
+
+	force = (stiffness*volume)* (deformation_gradient - P_inv) * A;
+
+}
+
 
 void SecondOrderConstraint::solveARAPConstraint(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
 	double stiffness, double dt,
@@ -62,9 +101,6 @@ void SecondOrderConstraint::solveARAPConstraint(double* vertex_position_0, doubl
 
 	grad_C_transpose = (1.0 / C) * (deformation_gradient - P_inv) * A;
 	double alpha_ = 1.0 / (stiffness*volume * dt * dt);
-
-
-	Matrix4d ATA_c = A.transpose() * (A*(lambda/C));
 
 	
 	Matrix<double, 12, 1> grad;

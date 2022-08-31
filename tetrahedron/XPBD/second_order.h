@@ -27,8 +27,10 @@ public:
 		Matrix<double, 3, 4>& A, double* inv_mass, double& lambda, const double damping_stiffness, double sigma_min,
 		double sigma_max, double volume);
 
-	void computeForce(double* vertex_0, double* vertex_1, double stiffness,
+	void computeEdgeLengthForce(double* vertex_0, double* vertex_1, double stiffness,
 		double* potential_0, double* potential_1, double rest_length);
+	void computeARAPForce(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
+		double stiffness, Matrix<double, 3, 4>& A, double volume, Matrix<double, 3, 4>& force);
 
 private:
 	double epsilon_for_bending= 1e-10;

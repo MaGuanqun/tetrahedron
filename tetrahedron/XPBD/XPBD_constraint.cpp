@@ -149,9 +149,9 @@ void XPBDconstraint::solveARAPConstraint(std::array<double, 3>* vertex_position,
 
 	//use P_inv to record transform
 	P_inv = q_e * svd.matrixV().transpose();
-	double norm_value = (deformation_gradient - P_inv).norm();
+	double C = (deformation_gradient - P_inv).norm();
 
-	if (norm_value < 1e-8) {
+	if (C < 1e-8) {
 		return;
 	}
 
@@ -161,9 +161,8 @@ void XPBDconstraint::solveARAPConstraint(std::array<double, 3>* vertex_position,
 	Matrix<double, 3, 4> grad_C_transpose;
 
 
-	double C = volume * norm_value;
-	grad_C_transpose = (volume / norm_value) * (deformation_gradient - P_inv) * A;
-	double alpha_ = 1.0 / (stiffness * dt * dt);
+	grad_C_transpose = (1.0 / C) * (deformation_gradient - P_inv) * A;
+	double alpha_ = 1.0 / (stiffness*volume * dt * dt);
 	//	double gamma = damping_stiffness / (stiffness * dt);
 
 		//Vector3d position_;
@@ -181,6 +180,10 @@ void XPBDconstraint::solveARAPConstraint(std::array<double, 3>* vertex_position,
 	}
 	double delta_lambda = -(C + alpha_ * lambda)//+ gamma * delta_lambda_numerator
 		/ (delta_lambda_denominator + alpha_);//(1.0 + gamma) * 
+
+
+	//std::cout<< C + alpha_ * lambda <<" " <<
+
 	lambda += delta_lambda;
 
 	double coe;
@@ -190,6 +193,7 @@ void XPBDconstraint::solveARAPConstraint(std::array<double, 3>* vertex_position,
 		vertex_position[vertex_index[k]][1] += coe * grad_C_transpose.data()[3 * k + 1];
 		vertex_position[vertex_index[k]][2] += coe * grad_C_transpose.data()[3 * k + 2];
 	}
+
 
 
 	energy = 0.5 * stiffness * C * C;

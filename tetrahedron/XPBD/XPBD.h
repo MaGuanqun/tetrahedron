@@ -161,11 +161,14 @@ private:
 	double computeCurrentEnergyEdgeLength();
 	double computeInertialEnergy();
 
-	std::vector<std::array<double, 3>>residual;
+	std::vector<std::vector<Vector3d>>residual;
 
 	void computeResidual();
 
 	void secondOrderSolveTetStrainConstraint();
+
+	void computeEdgeLenthResidual();
+	void computeARAPResidual();
 
 };
 
