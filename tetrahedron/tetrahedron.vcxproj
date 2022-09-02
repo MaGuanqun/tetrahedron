@@ -284,6 +284,7 @@
     <ClInclude Include="test_simu.h" />
     <ClInclude Include="thread.h" />
     <ClInclude Include="XPBD\second_order.h" />
+    <ClInclude Include="XPBD\FEM_relate.h" />
     <ClInclude Include="XPBD\XPBD.h" />
     <ClInclude Include="XPBD\XPBD_constraint.h" />
     <ClInclude Include="XPBD_large_system.h" />

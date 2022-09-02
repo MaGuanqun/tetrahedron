@@ -405,6 +405,9 @@
     <ClInclude Include="XPBD_large_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="XPBD\FEM_relate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

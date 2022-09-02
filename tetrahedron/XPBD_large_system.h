@@ -102,10 +102,6 @@ private:
 
 	//std::vector<unsigned int*> vertex_index_begin_per_thread;
 
-	std::vector<std::vector<std::array<double, 3>>*> anchor_position;
-
-	std::vector<unsigned int*> anchor_vertex_begin_per_thread;
-	std::vector<std::vector<int>*> anchor_vertex;
 
 	std::vector<unsigned int*> unfixed_vertex_begin_per_thread;
 	std::vector<std::vector<unsigned int>*> unfixed_vertex;
@@ -135,7 +131,7 @@ private:
 	std::vector<unsigned int> unfixed_gradC_hessian_index_begin_per_thread;
 
 	std::vector<unsigned int>fixed_gradC_hessian_index_begin_per_thread;
-
+	std::vector<std::array<int,4>*> tet_indices;
 
 	//std::vector<unsigned int> edge_begin_per_obj;
 
@@ -153,6 +149,7 @@ private:
 	std::vector<unsigned int> fixed_vertex_constraint_start_per_thread_in_system;
 
 	std::vector<double*> mass;
+	std::vector<double*> inv_mass;
 
 	void computeHessian(double* vertex_position_0, double* vertex_position_1, double* diagonal_coeff_0,
 		double* diagonal_coeff_1, Triplet<double>* hessian_nnz, double alpha, double rest_length, unsigned int start_index_in_system_0,
@@ -231,9 +228,36 @@ private:
 	std::vector<std::vector<double>> lambda_unfixed;
 	std::vector<std::vector<double>> lambda_fixed_one_vertex;
 
+	std::vector<std::vector<double>>tet_lambda;
+
 	void initialLambda();
 
 	void resetLambda();
 	void updateNormal();
 	void updatePositionFromSn();
+	void setARAP();
+	void initialCoeffDiagonal();
+
+	unsigned int tet_hessian_index[2];
+	std::vector<unsigned int> ARAP_constrant_in_system;
+
+
+	void computeARAPHessian(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
+		double* diagonal_coeff_0, double* diagonal_coeff_1, double* diagonal_coeff_2, double* diagonal_coeff_3, std::vector < Triplet<double >>* hessian_nnz,
+		int* vertex_index, unsigned int constraint_start_in_sys,
+		double alpha, Matrix<double, 3, 4>& A, bool* is_unfixed, double* lambda);
+
+	std::vector<TetrahedronMeshStruct*> tet_mesh_struct;
+	void getARAPCoeffAddress();
+	void getARAPHessianCoeffAddress(int* start_index_in_system, std::vector<double*>* address,
+		unsigned int constraint_start_index, bool* is_unfixed);
+
+	void setSizeOfSys();
+
+	void updateARAPHessianFixedStructure();
+	void computeARAPHessianFixedStructure(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
+		double* diagonal_coeff_0, double* diagonal_coeff_1, double* diagonal_coeff_2, double* diagonal_coeff_3, double**& address,
+		double alpha, Matrix<double, 3, 4>& A, bool* is_unfixed, double* lambda, double* h, double* g_0, double* g_1,  double* g_2, double* g_3);
+
+	void updateARAPLambda();
 };
