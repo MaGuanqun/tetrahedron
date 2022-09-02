@@ -66,7 +66,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool set_stiffness[13];
 	memset(set_stiffness, 0, 13);
 	std::vector<double> temp_stiffness(18);
-	double temp_data[18] = {1e2,2e2,2e2,2e2,1e2,3e-5,1e2,1.0,0.0,0.0,0.0,
+	double temp_data[18] = {1e2,2e2,2e2,2e2,1e2,3e-5,3e1,1.0,0.0,0.0,0.0,
 	//1e-3, 2e-3,2e-3,2e-3, 1e-3,1e-9,1e-2};
 	0.0, 0.0,0.0,0.0, 0.0,0.0,0.0 };
 	memcpy(temp_stiffness.data(), temp_data, 18 * 8);

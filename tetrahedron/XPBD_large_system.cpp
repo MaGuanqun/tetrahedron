@@ -286,7 +286,7 @@ void SecondOrderLargeSystem::updateHessianFixedStructure()
 
 
 	thread->assignTask(this, UPDATE_INTERNAL_FORCE);
-	thread->assignTask(this, SUM_B);
+	//thread->assignTask(this, SUM_B);
 
 	//checkIfSampleRight();
 
@@ -1332,7 +1332,7 @@ void SecondOrderLargeSystem::sumB(int thread_No)
 				for (unsigned int k = 1; k < total_thread_num_; ++k) {
 					b_thread[0][j + m] += b_thread[k][j + m];
 				}
-				b_thread[0][j + m] += mass_[index] * (Sn.data()[j + m] - vertex_pos[3 * index + m]);
+				//b_thread[0][j + m] += mass_[index] * (Sn.data()[j + m] - vertex_pos[3 * index + m]);
 			}
 		}
 	}
@@ -1573,8 +1573,8 @@ void SecondOrderLargeSystem::updateInternalForce(double* vertex_position_0, doub
 	coe = lambda / coe;
 	MULTI_(Ax, coe);
 
-	SUM_(force_0, Ax);
-	SUB_(force_1, Ax);
+	//SUM_(force_0, Ax);
+	//SUB_(force_1, Ax);
 
 
 	*h = -C - lambda * alpha;
@@ -1592,7 +1592,7 @@ void SecondOrderLargeSystem::updateInternalForceOnlyOneEdgeFixed(double* vertex_
 	coe = lambda / coe;
 	MULTI_(Ax, coe);
 
-	SUM_(force_0, Ax);
+	//SUM_(force_0, Ax);
 	*h = -C - lambda * alpha;
 
 
@@ -1639,9 +1639,9 @@ void SecondOrderLargeSystem::computeHessianOnlyOneVertexFixedEdge(double* vertex
 		-coe * Ax[1] * Ax[0], coe * (1.0 - Ax[1] * Ax[1]), 	-coe * Ax[2] * Ax[1],
 		-coe * Ax[2] * Ax[0], -coe * Ax[2] * Ax[1], coe * (1.0 - Ax[2] * Ax[2]) };
 
-	for (unsigned int i = 0; i < 9; ++i) {
-		diagonal_coeff_0[i] -= matrix[i];// +damp_derivative[i];
-	}
+	//for (unsigned int i = 0; i < 9; ++i) {
+	//	diagonal_coeff_0[i] -= matrix[i];// +damp_derivative[i];
+	//}
 
 	for (unsigned int i = 0; i < 3; ++i) {
 		*(grad_C_address[i]) = -Ax[i];
@@ -1669,14 +1669,14 @@ void SecondOrderLargeSystem::computeHessianFixedStructure(double* vertex_positio
 		-coe * Ax[1] * Ax[0], coe * (1.0 - Ax[1] * Ax[1]), 	-coe * Ax[2] * Ax[1],
 		-coe * Ax[2] * Ax[0], -coe * Ax[2] * Ax[1], coe * (1.0 - Ax[2] * Ax[2]) };
 
-	for (unsigned int i = 0; i < 9; ++i) {
-		*hessian_coeff_address[i] = matrix[i];// +damp_derivative[i]);
-		*hessian_coeff_address[i + 9] = matrix[i];// +damp_derivative[i]);
-	}
-	for (unsigned int i = 0; i < 9; ++i) {
-		diagonal_coeff_0[i] -= matrix[i];// +damp_derivative[i];
-		diagonal_coeff_1[i] -= matrix[i];// +damp_derivative[i];
-	}
+	//for (unsigned int i = 0; i < 9; ++i) {
+	//	*hessian_coeff_address[i] = matrix[i];// +damp_derivative[i]);
+	//	*hessian_coeff_address[i + 9] = matrix[i];// +damp_derivative[i]);
+	//}
+	//for (unsigned int i = 0; i < 9; ++i) {
+	//	diagonal_coeff_0[i] -= matrix[i];// +damp_derivative[i];
+	//	diagonal_coeff_1[i] -= matrix[i];// +damp_derivative[i];
+	//}
 
 	for (unsigned int i = 0; i < 3; ++i) {
 		*grad_C_address[i] = -Ax[i];
@@ -1835,12 +1835,12 @@ void SecondOrderLargeSystem::computeARAPHessianFixedStructure(double* vertex_pos
 		}
 	}
 
-	for (unsigned int i = 0; i < 3; ++i) {
-		g_0[i] += *lambda * grad.data()[i];
-		g_1[i] += *lambda * grad.data()[i+3];
-		g_2[i] += *lambda * grad.data()[i+6];
-		g_3[i] += *lambda * grad.data()[i+9];
-	}
+	//for (unsigned int i = 0; i < 3; ++i) {
+	//	g_0[i] += *lambda * grad.data()[i];
+	//	g_1[i] += *lambda * grad.data()[i+3];
+	//	g_2[i] += *lambda * grad.data()[i+6];
+	//	g_3[i] += *lambda * grad.data()[i+9];
+	//}
 
 
 }
