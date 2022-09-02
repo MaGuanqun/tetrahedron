@@ -564,8 +564,8 @@ void XPBD::PBDsolve()
 		solveByPBD();
 	}
 	else {
-		//solveByXPBD();
-		solveBySecondOrderXPBD();
+		solveByXPBD();
+		//solveBySecondOrderXPBD();
 	}
 }
 

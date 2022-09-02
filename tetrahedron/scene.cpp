@@ -378,6 +378,7 @@ void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 		//setGroup();
 	}
 
+	std::cout << "kk" << std::endl;
 
 	move_object.initial(&cloth, &collider, &tetrahedron, &thread);
 
@@ -396,6 +397,7 @@ void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 		second_order_xpbd_large.setForNewtonMethod(&cloth, &tetrahedron, &collider, &floor, &thread, tolerance_ratio);
 		break;
 	}
+	std::cout << "kk2" << std::endl;
 	if (control_parameter[ONLY_COLLISION_TEST]) {
 		test_draw_collision.initial(&cloth, &collider, &tetrahedron, &thread, &floor, tolerance_ratio, &project_dynamic.collision,
 			&xpbd.collision, &newton_method.collision,use_method);
@@ -1171,6 +1173,7 @@ void Scene::selectAnchor(bool* control_parameter, bool* select_anchor, double* s
 				tetrahedron[i].mesh_struct.setAnchorPosition();
 				tetrahedron[i].mesh_struct.updateAnchorPerThread(thread.thread_num);
 				tetrahedron[i].mesh_struct.updateUnfixedPointData();
+				tetrahedron[i].mesh_struct.resetMassInv();
 				second_order_xpbd_large.updateIndexBeginPerObj();
 			}
 			break;

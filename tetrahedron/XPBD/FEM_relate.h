@@ -161,7 +161,7 @@ namespace FEM {
 		U = svd.matrixU();
 		V = svd.matrixV();
 		if (determinant < 0) {
-			V.col(2) *= -1.0;
+			U.col(2) *= -1.0;
 			eigen_value[2] *= -1.0;
 		}
 		rotation = U * V.transpose();

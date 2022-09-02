@@ -26,6 +26,7 @@ void MeshStruct::setAnchorPosition()
 
 void MeshStruct::resetMassInv()
 {
+	std::cout <<"///"<< anchor_vertex.size() << std::endl;
 	for (unsigned int i = 0; i < mass_inv.size(); ++i) {
 		mass_inv[i] = 1.0 / mass[i];
 	}

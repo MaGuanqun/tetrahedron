@@ -1,5 +1,5 @@
 #include"XPBD_constraint.h"
-
+#include"FEM_relate.h"
 
 
 void XPBDconstraint::PBDsolveARAPConstraint(std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position,
@@ -96,60 +96,17 @@ void XPBDconstraint::solveARAPConstraint(std::array<double, 3>* vertex_position,
 	Matrix3d q_e;
 	double determinant;
 	Vector3d position;
-	for (unsigned int i = 0; i < 3; ++i) {
-		memcpy(q_e.data() + 3 * i, vertex_position[vertex_index[i + 1]].data(), 24);
-	}
-	//first use eigen value to store the position of first vertex
-	memcpy(eigen_value.data(), vertex_position[vertex_index[0]].data(), 24);
-	for (unsigned int i = 0; i < 3; ++i) {
-		q_e.col(i) -= eigen_value;
-	}
 	Matrix3d deformation_gradient;
-	Matrix3d P_inv;
-	memcpy(P_inv.data(), A.data() + 3, 72);
-	deformation_gradient = q_e * P_inv.transpose();
-	JacobiSVD<Matrix3d> svd;
-	svd.compute(deformation_gradient, ComputeFullU | ComputeFullV);
 
-	eigen_value = svd.singularValues();
-	determinant = eigen_value[0] * eigen_value[1] * eigen_value[2];
+	Matrix3d U, V, rotation;
 
-	q_e = svd.matrixU();
-	if (determinant < 0) {
-		q_e.col(2) *= -1.0;
-	}
+	FEM::getDeformationGradient(vertex_position[vertex_index[0]].data(), vertex_position[vertex_index[1]].data(),
+		vertex_position[vertex_index[2]].data(), vertex_position[vertex_index[3]].data(), A, deformation_gradient);
 
-	//if (determinant < 0) {
-	//	eigen_value[2] = -eigen_value[2];
-	//}
-	//for (unsigned int j = 0; j < 3; ++j) {
-	//	if (eigen_value[j] > 0) {
-	//		if (eigen_value[j] < sigma_min) {
-	//			eigen_value[j] = sigma_min;
-	//		}
-	//		else if (eigen_value[j] > sigma_max) {
-	//			eigen_value[j] = sigma_max;
-	//		}
-	//	}
-	//	else {
-	//		if (eigen_value[j] > -sigma_min) {
-	//			eigen_value[j] = -sigma_min;
-	//		}
-	//		else if (eigen_value[j] < -sigma_max) {
-	//			eigen_value[j] = -sigma_max;
-	//		}
-	//	}
-	//}
-	//use q_e as a temp vector
-	//for (unsigned int j = 0; j < 3; ++j) {
-	//	for (unsigned int k = 0; k < 3; ++k) {
-	//		q_e.data()[3 * j + k] = eigen_value[j] * svd.matrixU().data()[3 * j + k];
-	//	}
-	//}
+	FEM::extractRotation(deformation_gradient, eigen_value, U, V, rotation);
 
-	//use P_inv to record transform
-	P_inv = q_e * svd.matrixV().transpose();
-	double C = (deformation_gradient - P_inv).norm();
+
+	double C = (deformation_gradient - rotation).norm();
 
 	if (C < 1e-8) {
 		return;
@@ -161,7 +118,7 @@ void XPBDconstraint::solveARAPConstraint(std::array<double, 3>* vertex_position,
 	Matrix<double, 3, 4> grad_C_transpose;
 
 
-	grad_C_transpose = (1.0 / C) * (deformation_gradient - P_inv) * A;
+	grad_C_transpose = (1.0 / C) * (deformation_gradient - rotation) * A;
 	double alpha_ = 1.0 / (stiffness*volume * dt * dt);
 	//	double gamma = damping_stiffness / (stiffness * dt);
 

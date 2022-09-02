@@ -182,6 +182,7 @@ private:
 	//SparseLU<SparseMatrix<double>, COLAMDOrdering<int> >global_llt;
 	SparseLU<SparseMatrix<double>, COLAMDOrdering<int>> global_llt;
 
+
 	void updateRenderPosition();
 	bool convergenceCondition();
 
@@ -260,4 +261,9 @@ private:
 		double alpha, Matrix<double, 3, 4>& A, bool* is_unfixed, double* lambda, double* h, double* g_0, double* g_1,  double* g_2, double* g_3);
 
 	void updateARAPLambda();
+
+	void checkIfSampleRight();
+	void checkIfSampleRight(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
+		int* vertex_index, unsigned int constraint_start_in_sys,
+		double alpha, Matrix<double, 3, 4>& A, bool* is_unfixed, double* lambda);
 };

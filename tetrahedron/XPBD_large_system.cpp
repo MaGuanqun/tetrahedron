@@ -13,7 +13,7 @@ SecondOrderLargeSystem::SecondOrderLargeSystem()
 	time_step_square = time_step * time_step;
 	conv_rate = time_step * 1e-5;
 
-	max_itr_num = 10;
+	max_itr_num = 50;
 	//damp_coe = 0.99;
 	beta = 0.25;
 	gamma = 0.5;
@@ -90,6 +90,10 @@ void SecondOrderLargeSystem::initialHessianNnz()
 	ARAP_constrant_in_system.resize(tetrahedron->size()+1);
 
 	ARAP_constrant_in_system[0] = fixed_vertex_constraint_start_per_thread_in_system[total_thread_num];
+
+
+	std::cout << "ARAP_constrant_in_system[0] " << ARAP_constrant_in_system[0] << std::endl;
+
 	
 	for (unsigned int i = 0; i < total_thread_num; ++i) {
 		hessian_coeff_diagonal[i].resize(9 * vertex_begin_per_obj[total_obj_num]);
@@ -116,7 +120,7 @@ void SecondOrderLargeSystem::initialHessianNnz()
 
 void SecondOrderLargeSystem::setSizeOfSys()
 {
-	sys_total_size = ARAP_constrant_in_system[1];
+	sys_total_size = ARAP_constrant_in_system[tetrahedron->size()];
 	sys_total_size_index = sys_total_size - 1;
 	Hessian.resize(sys_total_size, sys_total_size);
 	Sn.resize(3 * vertex_begin_per_obj[total_obj_num]);
@@ -208,6 +212,10 @@ void SecondOrderLargeSystem::initial()
 //}
 
 
+
+
+
+
 void SecondOrderLargeSystem::setHessian()
 {
 	initialCoeffDiagonal();
@@ -226,7 +234,6 @@ void SecondOrderLargeSystem::setHessian()
 	//	std::cout << "error, nonzeros of hessian does not equal to hessian_nnz size " << std::endl;
 	//}
 
-	//std::cout << Hessian << std::endl;
 
 	thread->assignTask(this, GET_COEFF_ADDRESS);
 	getARAPCoeffAddress();
@@ -234,6 +241,8 @@ void SecondOrderLargeSystem::setHessian()
 	global_llt.analyzePattern(Hessian);
 	//std::cout << "k3" << std::endl;
 	//setK();
+	//std::cout << Hessian.block(111, 111, Hessian.rows() - 111, Hessian.rows() - 111) << std::endl;
+	//std::cout << Hessian.rows() << " " << Hessian.cols() << std::endl;
 }
 
 //void SecondOrderLargeSystem::setK()
@@ -266,7 +275,11 @@ void SecondOrderLargeSystem::updateHessianFixedStructure()
 		b_thread[i].setZero();
 	}
 	thread->assignTask(this, UPDATE_HESSIAN_FIXED_STRUCTURE);
+
 	updateARAPHessianFixedStructure();
+
+	//std::cout << Hessian.block(111, 111, Hessian.rows() - 111, Hessian.rows() - 111) << std::endl;
+	//std::cout << Hessian.rows() << " " << Hessian.cols() << std::endl;
 
 	thread->assignTask(this, UPDATE_DIAGONAL_HESSIAN_FIXED_STRUCTURE);
 
@@ -275,11 +288,9 @@ void SecondOrderLargeSystem::updateHessianFixedStructure()
 	thread->assignTask(this, UPDATE_INTERNAL_FORCE);
 	thread->assignTask(this, SUM_B);
 
+	//checkIfSampleRight();
 
-	//std::cout << Hessian << std::endl;
-	//std::cout << b << std::endl;
-
-
+	//
 
 	//thread->assignTask(this, UPDATE_DAMP);
 	//thread->assignTask(this, UPDATE_ANCHOR_POINT_HESSIAN);
@@ -357,11 +368,14 @@ void SecondOrderLargeSystem::solveNewtonMethod_()
 	while (convergenceCondition())
 	{
 		updateHessianFixedStructure();
+
 		//compareTwoMatrix(Hessian, vertex_position, edge_vertices_mass_spring, only_one_vertex_fix_edge_vertices,
 		//	edge_length_stiffness[0][0], unfixed_rest_length, fixed_one_vertices_rest_length, unfixed_vertex, mass, time_step);
 		//compareTwoForce(Sn, b, vertex_position, edge_vertices_mass_spring, only_one_vertex_fix_edge_vertices,
 		//	edge_length_stiffness[0][0], unfixed_rest_length, fixed_one_vertices_rest_length, unfixed_vertex, mass, time_step);
+
 		global_llt.factorize(Hessian);
+
 		delta_x = global_llt.solve(b_thread[0]);
 
 		displacement_coe = 1.0;
@@ -500,7 +514,7 @@ void SecondOrderLargeSystem::updateInternalForce(int thread_No)
 
 
 
-	for (unsigned int obj_No = 0; obj_No < total_obj_num; ++obj_No) {
+	for (unsigned int obj_No = 0; obj_No < cloth->size(); ++obj_No) {
 		vertex_pos = vertex_position[obj_No];
 		edge_vertex = edge_vertices_mass_spring[obj_No]->data();
 		vertex_begin = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No] << 1;
@@ -550,7 +564,7 @@ void SecondOrderLargeSystem::computeMassSpringEnergy(int thread_No)
 	unsigned int* unfixed_vertex_index;
 	unsigned int index_start;
 	double energy = 0;
-	for (unsigned int obj_No = 0; obj_No < total_obj_num; ++obj_No) {
+	for (unsigned int obj_No = 0; obj_No < cloth->size(); ++obj_No) {
 		vertex_pos = vertex_position[obj_No];
 		edge_vertex = edge_vertices_mass_spring[obj_No]->data();
 		vertex_begin = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No] << 1;
@@ -741,6 +755,7 @@ void SecondOrderLargeSystem::getARAPCoeffAddress()
 	unsigned int* real_index_to_system_index;
 	unsigned int constraint_index_in_system_ = ARAP_constrant_in_system[0];
 
+	unsigned int record_size = 0;
 	for (unsigned int obj_No = 0; obj_No < tetrahedron->size(); ++obj_No) {
 		size = tet_mesh_struct[obj_No]->indices.size();
 		inv_mass_ = inv_mass[cloth->size() + obj_No];
@@ -753,12 +768,19 @@ void SecondOrderLargeSystem::getARAPCoeffAddress()
 				is_unfixed[j] = (inv_mass_[indices[i][j]] != 0.0);
 				vertex_position_in_system[j] = 3 * (vertex_index_start + real_index_to_system_index[indices[i][j]]);				
 			}
+
 			if (is_unfixed[0] || is_unfixed[1] || is_unfixed[2] || is_unfixed[3]) {
+
+				record_size = Hessian_coeff_address.size();
+
 				getARAPHessianCoeffAddress(vertex_position_in_system, &Hessian_coeff_address, constraint_index_in_system_, is_unfixed);
+
 				constraint_index_in_system_++;
 			}
 		}
 	}
+
+	//std::cout << Hessian_coeff_address.size() << std::endl;;
 }
 
 
@@ -788,11 +810,74 @@ void SecondOrderLargeSystem::updateARAPHessianFixedStructure()
 	double* volume;
 	Matrix<double, 3, 4>* A;
 
-	double** address = Hessian_coeff_address.data()+ fixed_gradC_hessian_index_begin_per_thread[total_thread_num];
+	double** address = Hessian_coeff_address.data() +3* ARAP_constrant_in_system[0];
 
 	double* g_ = b_thread[0].data();
 	double* h = b_thread[0].data() + ARAP_constrant_in_system[0];
 
+
+	for (unsigned int obj_No = 0; obj_No < tetrahedron->size(); ++obj_No) {
+		vertex_pos = vertex_position[obj_No + cloth->size()];
+		alpha = 1.0 / (tetrahedron->data()[obj_No].ARAP_stiffness * time_step_square);
+		size = tet_mesh_struct[obj_No]->indices.size();
+		lambda = tet_lambda[obj_No].data();
+		inv_mass_ = inv_mass[cloth->size() + obj_No];
+		indices = tet_indices[obj_No];
+		vertex_index_start = vertex_begin_per_obj[cloth->size() + obj_No];
+		real_index_to_system_index = real_index_to_unfixed_index[cloth->size() + obj_No];
+		volume = tet_mesh_struct[obj_No]->volume.data();
+		A = tet_mesh_struct[obj_No]->A.data();
+
+
+
+		for (unsigned int i = 0; i < size; ++i) {
+			for (unsigned int j = 0; j < 4; ++j) {
+				is_unfixed[j] = (inv_mass_[indices[i][j]] != 0.0);
+				vertex_position_in_system[j] = 3 * (vertex_index_start + real_index_to_system_index[indices[i][j]]);
+				if (is_unfixed[j]) {
+					diagonal_coeff[j] = hessian_coeff_diag + 3 * vertex_position_in_system[j];
+					g_tet[j] = g_+vertex_position_in_system[j];
+				}
+				else {
+					diagonal_coeff[j] = use_for_temp;
+					g_tet[j] = use_for_temp;
+				}
+			}
+			if (is_unfixed[0] || is_unfixed[1] || is_unfixed[2] || is_unfixed[3]) {
+
+				computeARAPHessianFixedStructure(vertex_pos[indices[i][0]].data(), vertex_pos[indices[i][1]].data(), vertex_pos[indices[i][2]].data(), vertex_pos[indices[i][3]].data(),
+					diagonal_coeff[0], diagonal_coeff[1], diagonal_coeff[2], diagonal_coeff[3], address, alpha / volume[i], A[i], is_unfixed,
+					lambda, h, g_tet[0], g_tet[1], g_tet[2], g_tet[3]);
+
+				h++;
+				lambda++;
+			}
+		}
+	}
+
+
+}
+
+
+void SecondOrderLargeSystem::checkIfSampleRight()
+{
+	std::array<double, 3>* vertex_pos;
+	std::vector<Triplet<double>>* hessian_nnz_ = &hessian_nnz;
+	double alpha;
+	unsigned int size;
+	double* lambda;
+	double* inv_mass_;
+
+	bool is_unfixed[4];
+	std::array<int, 4>* indices;
+	unsigned int vertex_index_start;
+
+	int vertex_position_in_system[4];
+	unsigned int* real_index_to_system_index;
+
+	unsigned int constraint_index_in_system_ = ARAP_constrant_in_system[0];
+	double* volume;
+	Matrix<double, 3, 4>* A;
 	for (unsigned int obj_No = 0; obj_No < tetrahedron->size(); ++obj_No) {
 		vertex_pos = vertex_position[obj_No + cloth->size()];
 		alpha = 1.0 / (tetrahedron->data()[obj_No].ARAP_stiffness * time_step_square);
@@ -809,26 +894,16 @@ void SecondOrderLargeSystem::updateARAPHessianFixedStructure()
 			for (unsigned int j = 0; j < 4; ++j) {
 				is_unfixed[j] = (inv_mass_[indices[i][j]] != 0.0);
 				vertex_position_in_system[j] = 3 * (vertex_index_start + real_index_to_system_index[indices[i][j]]);
-				if (is_unfixed[j]) {
-					diagonal_coeff[j] = hessian_coeff_diag + 3 * vertex_position_in_system[j];
-					g_tet[j] = g_+vertex_position_in_system[j];
-				}
-				else {
-					diagonal_coeff[j] = use_for_temp;
-					g_tet[j] = use_for_temp;
-				}
 			}
 			if (is_unfixed[0] || is_unfixed[1] || is_unfixed[2] || is_unfixed[3]) {
-				computeARAPHessianFixedStructure(vertex_pos[indices[i][0]].data(), vertex_pos[indices[i][1]].data(), vertex_pos[indices[i][2]].data(), vertex_pos[indices[i][3]].data(),
-					diagonal_coeff[0], diagonal_coeff[1], diagonal_coeff[2], diagonal_coeff[3], address, alpha / volume[i], A[i], is_unfixed,
-					lambda, h, g_tet[0], g_tet[1], g_tet[2], g_tet[3]);
-				h++;
+				checkIfSampleRight(vertex_pos[indices[i][0]].data(), vertex_pos[indices[i][1]].data(), vertex_pos[indices[i][2]].data(), vertex_pos[indices[i][3]].data(),
+					vertex_position_in_system,
+					constraint_index_in_system_, alpha / volume[i], A[i], is_unfixed, lambda);
+				constraint_index_in_system_++;
 				lambda++;
 			}
 		}
 	}
-
-
 }
 
 
@@ -1630,6 +1705,7 @@ void SecondOrderLargeSystem::computeARAPHessianFixedStructure(double* vertex_pos
 	if (C < 1e-8) {
 		Hessian.setZero();
 		grad.setZero();
+		*h =0;
 	}
 	else {
 		Matrix<double, 3, 4> grad_C_transpose;
@@ -1637,15 +1713,15 @@ void SecondOrderLargeSystem::computeARAPHessianFixedStructure(double* vertex_pos
 
 		memcpy(grad.data(), grad_C_transpose.data(), 96);
 
-		Matrix<double, 9, 9> dPdF;
-
-		FEM::getdPdF(U, V, eigen_value, dPdF);
-
-
-		FEM::backpropagateElementHessian(Hessian, dPdF, A);
-		Hessian *= (0.5 / C);
-		Hessian -= ((1.0 / C) * grad) * grad.transpose();
-		Hessian *= -*lambda;
+		//Matrix<double, 9, 9> dPdF;
+		//FEM::getdPdF(U, V, eigen_value, dPdF);
+		//FEM::backpropagateElementHessian(Hessian, dPdF, A);
+		//Hessian *= (0.5 / C);
+		//Hessian -= ((1.0 / C) * grad) * grad.transpose();
+		//Hessian *= -*lambda;
+		
+		Hessian.setZero();
+		*h = -C - alpha * (*lambda);
 	}
 
 	//record hessian
@@ -1653,17 +1729,24 @@ void SecondOrderLargeSystem::computeARAPHessianFixedStructure(double* vertex_pos
 		if (is_unfixed[i]) {
 			for (unsigned int j = 0; j < i - 1; ++j) {
 				if (is_unfixed[j]) {
-					**(address++) += Hessian(3 * j, 3 * i);
-					**(address++) += Hessian(3 * j+1, 3 * i);
-					**(address++) += Hessian(3 * j+2, 3 * i);
-
-					**(address++) += Hessian(3 * j, 3 * i+1);
-					**(address++) += Hessian(3 * j+1, 3 * i+1);
-					**(address++) += Hessian(3 * j+2, 3 * i+1);
-
-					**(address++) += Hessian(3 * j, 3 * i + 2);
-					**(address++) += Hessian(3 * j+1, 3 * i + 2);
-					**(address++) += Hessian(3 * j+2, 3 * i + 2);
+					**address += Hessian(3 * j, 3 * i);
+					address++;
+					**address += Hessian(3 * j+1, 3 * i);
+					address++;
+					**address += Hessian(3 * j+2, 3 * i);
+					address++;
+					**address += Hessian(3 * j, 3 * i+1);
+					address++;
+					**address += Hessian(3 * j+1, 3 * i+1);
+					address++;
+					**address += Hessian(3 * j+2, 3 * i+1);
+					address++;
+					**address += Hessian(3 * j, 3 * i + 2);
+					address++;
+					**address += Hessian(3 * j+1, 3 * i + 2);
+					address++;
+					**address += Hessian(3 * j+2, 3 * i + 2);
+					address++;
 				}
 			}
 		}
@@ -1673,17 +1756,24 @@ void SecondOrderLargeSystem::computeARAPHessianFixedStructure(double* vertex_pos
 		if (is_unfixed[i]) {
 			for (unsigned int j = i + 1; j < 4; ++j) {
 				if (is_unfixed[j]) {
-					**(address++) += Hessian(3 * j, 3 * i);
-					**(address++) += Hessian(3 * j + 1, 3 * i);
-					**(address++) += Hessian(3 * j + 2, 3 * i);
-
-					**(address++) += Hessian(3 * j, 3 * i + 1);
-					**(address++) += Hessian(3 * j + 1, 3 * i + 1);
-					**(address++) += Hessian(3 * j + 2, 3 * i + 1);
-
-					**(address++) += Hessian(3 * j, 3 * i + 2);
-					**(address++) += Hessian(3 * j + 1, 3 * i + 2);
-					**(address++) += Hessian(3 * j + 2, 3 * i + 2);
+					**address += Hessian(3 * j, 3 * i);
+					address++;
+					**address += Hessian(3 * j + 1, 3 * i);
+					address++;
+					**address += Hessian(3 * j + 2, 3 * i);
+					address++;
+					**address += Hessian(3 * j, 3 * i + 1);
+					address++;
+					**address += Hessian(3 * j + 1, 3 * i + 1);
+					address++;
+					**address += Hessian(3 * j + 2, 3 * i + 1);
+					address++;
+					**address += Hessian(3 * j, 3 * i + 2);
+					address++;
+					**address += Hessian(3 * j + 1, 3 * i + 2);
+					address++;
+					**address += Hessian(3 * j + 2, 3 * i + 2);
+					address++;
 				}
 			}
 		}
@@ -1691,20 +1781,27 @@ void SecondOrderLargeSystem::computeARAPHessianFixedStructure(double* vertex_pos
 	//record grad_c
 	for (unsigned int i = 0; i < 4; ++i) {
 		if (is_unfixed[i]) {
-			**(address++) = -grad.data()[3 * i];
-			**(address++) = -grad.data()[3 * i+1];
-			**(address++) = -grad.data()[3 * i+2];
+			**address = -grad.data()[3 * i];
+			address++;
+			**address = -grad.data()[3 * i+1];
+			address++;
+			**address = -grad.data()[3 * i+2];
+			address++;
 		}
 	}
 
 	for (unsigned int i = 0; i < 4; ++i) {
 		if (is_unfixed[i]) {
-			**(address++) = grad.data()[3 * i];
-			**(address++) = grad.data()[3 * i+1];
-			**(address++) = grad.data()[3 * i+2];
+			**address = grad.data()[3 * i];
+			address++;
+			**address = grad.data()[3 * i+1];
+			address++;
+			**address = grad.data()[3 * i+2];
+			address++;
 		}
 	}
-	**(address++) = alpha;
+	**address = alpha;
+	address++;
 
 	if (is_unfixed[0]) {
 		for (unsigned int i = 0; i < 3; ++i) {//column
@@ -1745,8 +1842,85 @@ void SecondOrderLargeSystem::computeARAPHessianFixedStructure(double* vertex_pos
 		g_3[i] += *lambda * grad.data()[i+9];
 	}
 
-	*h = -C - alpha * (*lambda);
+
 }
+
+void SecondOrderLargeSystem::checkIfSampleRight(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
+	int* vertex_index, unsigned int constraint_start_in_sys,
+	double alpha, Matrix<double, 3, 4>& A, bool* is_unfixed, double* lambda)
+{
+	Vector3d eigen_value;
+	Vector3d position;
+	Matrix3d deformation_gradient;
+	Matrix3d U, V, rotation;
+	Matrix<double, 12, 12> Hessian_;
+	FEM::getDeformationGradient(vertex_position_0, vertex_position_1, vertex_position_2, vertex_position_3, A, deformation_gradient);
+
+	FEM::extractRotation(deformation_gradient, eigen_value, U, V, rotation);
+	double C = (deformation_gradient - rotation).norm();
+	Matrix<double, 12, 1> grad;
+	double h;
+
+	if (C < 1e-8) {
+		Hessian_.setZero();
+		grad.setZero();
+		h = 0;
+	}
+	else {
+		Matrix<double, 3, 4> grad_C_transpose;
+		grad_C_transpose = (1.0 / C) * (deformation_gradient - rotation) * A;
+
+		memcpy(grad.data(), grad_C_transpose.data(), 96);
+
+		//Matrix<double, 9, 9> dPdF;
+		//FEM::getdPdF(U, V, eigen_value, dPdF);
+		//FEM::backpropagateElementHessian_(Hessian_, dPdF, A);
+		//Hessian_ *= (0.5 / C);
+		//Hessian_ -= ((1.0 / C) * grad) * grad.transpose();
+		//Hessian_ *= -*lambda;
+
+		Hessian_.setZero();
+		h=  -C - alpha * (*lambda);
+	}
+
+	//record grad_c
+	for (unsigned int i = 0; i < 4; ++i) {
+		if (is_unfixed[i]) {
+			if (Hessian.coeff(vertex_index[i], constraint_start_in_sys) != -grad.data()[3 * i]) {
+				std::cout << "error " << Hessian.coeff(vertex_index[i], constraint_start_in_sys) + grad.data()[3 * i] << std::endl;
+			}
+			if (Hessian.coeff(vertex_index[i]+1, constraint_start_in_sys) != -grad.data()[3 * i+1]) {
+				std::cout << "error " << Hessian.coeff(vertex_index[i]+1, constraint_start_in_sys) + grad.data()[3 * i+1] << std::endl;
+			}
+			if (Hessian.coeff(vertex_index[i] + 2, constraint_start_in_sys) != -grad.data()[3 * i + 2]) {
+				std::cout << "error " << Hessian.coeff(vertex_index[i] + 2, constraint_start_in_sys) + grad.data()[3 * i + 2] << std::endl;
+			}
+		}
+	}
+
+	for (unsigned int i = 0; i < 4; ++i) {
+		if (is_unfixed[i]) {
+			if (Hessian.coeff(constraint_start_in_sys, vertex_index[i]) != grad.data()[3 * i]) {
+				std::cout << "error " << Hessian.coeff(constraint_start_in_sys,vertex_index[i]) - grad.data()[3 * i] << std::endl;
+			}
+			if (Hessian.coeff(constraint_start_in_sys, vertex_index[i]+1) != grad.data()[3 * i+1]) {
+				std::cout << "error " << Hessian.coeff(constraint_start_in_sys, vertex_index[i]+1) - grad.data()[3 * i+1] << std::endl;
+			}
+			if (Hessian.coeff(constraint_start_in_sys, vertex_index[i] + 2) != grad.data()[3 * i + 2]) {
+				std::cout << "error " << Hessian.coeff(constraint_start_in_sys, vertex_index[i] + 2) - grad.data()[3 * i + 2] << std::endl;
+			}
+		}
+	}
+
+	if (Hessian.coeff(constraint_start_in_sys, constraint_start_in_sys) != alpha) {
+		std::cout << "error " << Hessian.coeff(constraint_start_in_sys, constraint_start_in_sys) - alpha<< std::endl;
+	}
+
+	if (b_thread[0][constraint_start_in_sys] != h) {
+		std::cout << "error " << std::endl;
+	}
+}
+
 
 //vertex_index already times 3
 void SecondOrderLargeSystem::computeARAPHessian(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
@@ -2020,7 +2194,7 @@ void SecondOrderLargeSystem::reorganzieDataOfObjects()
 		fixed_one_vertices_rest_length[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct.fixed_one_vertex_rest_edge_length;
 		//vertex_index_begin_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_index_begin_per_thread.data();
 		inv_mass[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.mass_inv.data();
-
+		mass[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.mass.data();
 		unfixed_vertex_begin_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.unfixed_vertex_index_begin_per_thread.data();
 
 		unfixed_vertex[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct.unfixed_point_index;
