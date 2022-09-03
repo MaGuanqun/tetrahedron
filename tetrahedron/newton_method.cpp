@@ -746,19 +746,19 @@ void NewtonMethod::computeARAPHessianFixedStructure(double* vertex_position_0, d
 	Matrix<double, 3, 4> grad_C_transpose;
 	grad_C_transpose =(2.0*stiffness) * (deformation_gradient - rotation) * A;
 
-	//Matrix<double, 9, 9> dPdF;
-	//FEM::getdPdF(U, V, eigen_value, dPdF);
-	//FEM::backpropagateElementHessian(Hessian, dPdF, A);
+	Matrix<double, 9, 9> dPdF;
+	FEM::getdPdF(U, V, eigen_value, dPdF);
+	FEM::backpropagateElementHessian(Hessian, dPdF, A);
 
-	Matrix4d result = 2.0 * A.transpose() * A;
-	Hessian.setZero();
-	for (unsigned int i = 0; i < 4; ++i) {
-		for (unsigned int j = 0; j < 4; ++j) {
-			Hessian(3 * i, 3 * j) = result(i, j);
-			Hessian(3 * i+1, 3 * j+1) = result(i, j);
-			Hessian(3 * i+2, 3 * j+2) = result(i, j);
-		}
-	}
+	//Matrix4d result = 2.0 * A.transpose() * A;
+	//Hessian.setZero();
+	//for (unsigned int i = 0; i < 4; ++i) {
+	//	for (unsigned int j = 0; j < 4; ++j) {
+	//		Hessian(3 * i, 3 * j) = result(i, j);
+	//		Hessian(3 * i+1, 3 * j+1) = result(i, j);
+	//		Hessian(3 * i+2, 3 * j+2) = result(i, j);
+	//	}
+	//}
 	Hessian *=stiffness;
 
 	//record hessian
