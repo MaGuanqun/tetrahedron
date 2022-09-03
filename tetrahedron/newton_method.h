@@ -19,6 +19,7 @@ public:
 	NewtonMethod();
 
 	double time_step;
+	double time_step_square;
 	double gravity_;
 
 	unsigned int iteration_number;
@@ -177,7 +178,7 @@ private:
 
 	void setHessian();
 
-	double time_step_square;
+
 
 	void getHessianCoeffAddress(double** address, unsigned int start_index_in_system_0, unsigned int start_index_in_system_1);
 
@@ -246,4 +247,40 @@ private:
 	double previous_frame_rayleigh_damp_stiffness_beta;
 	std::vector<double>previous_frame_edge_length_stiffness;
 	bool edgeLengthStiffnessHasChanged();
+
+
+
+	unsigned int tet_hessian_index[2];
+	void initialCoeffDiagonal();
+	void setARAP();
+
+	std::vector<std::array<int, 4>*> tet_indices;
+	std::vector<TetrahedronMeshStruct*> tet_mesh_struct;
+	std::vector<double*> inv_mass;
+
+
+	void computeARAPHessian(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
+		double* diagonal_coeff_0, double* diagonal_coeff_1, double* diagonal_coeff_2, double* diagonal_coeff_3, std::vector<Triplet<double>>* hessian_nnz,
+		int* vertex_index, double stiffness, Matrix<double, 3, 4>& A, bool* is_unfixed);
+
+	void getARAPCoeffAddress();
+
+	void getARAPHessianCoeffAddress(int* start_index_in_system, std::vector<double*>* address, bool* is_unfixed);
+	void updateARAPHessianFixedStructure();
+
+	void computeARAPHessianFixedStructure(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
+		double* diagonal_coeff_0, double* diagonal_coeff_1, double* diagonal_coeff_2, double* diagonal_coeff_3, double**& address,
+		double stiffness, Matrix<double, 3, 4>& A, bool* is_unfixed, double* g_0, double* g_1, double* g_2, double* g_3);
+
+	/*void testSetHessian();
+	VectorXd b_for_test;
+	void setARAPHessianForTest(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3, int* vertex_index,
+		std::vector<Triplet<double>>* hessian_nnz, double stiffness, Matrix<double, 3, 4>& A, bool* is_unfixed, double* g_0, double* g_1, double* g_2, double* g_3);
+	std::vector<Triplet<double>>test_nnz;
+	SparseMatrix<double> Matrix_test;
+	SparseMatrix<double> only_constraint;
+	void updateTest();
+	void construct_b_Test();
+	*/
+
 };

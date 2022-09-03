@@ -1,6 +1,7 @@
 #include"newton_method.h"
 #include"./basic/write_txt.h"
 #include"test_assemble_matrix_newton.h"
+#include"XPBD/FEM_relate.h"
 
 NewtonMethod::NewtonMethod()
 {
@@ -13,7 +14,7 @@ NewtonMethod::NewtonMethod()
 	time_step_square = time_step * time_step;
 	conv_rate = time_step * 1e-5;
 
-	max_itr_num = 5e4;
+	max_itr_num = 20;
 	//damp_coe = 0.99;
 	beta = 0.25;
 	gamma = 0.5;
@@ -56,16 +57,30 @@ void NewtonMethod::initialHessianNnz()
 
 	for (unsigned int i = 0; i < total_thread_num; ++i) {
 		edge_num = 0;
-		for (unsigned int j = 0; j < total_obj_num; ++j) {
+		for (unsigned int j = 0; j < cloth->size(); ++j) {
 			edge_num += edge_index_begin_per_thread_for_mass_spring[j][i + 1] - edge_index_begin_per_thread_for_mass_spring[j][i];
 		}
 		off_diagonal_hessian_nnz_index_begin_per_thread[i + 1] = off_diagonal_hessian_nnz_index_begin_per_thread[i] + 18 * edge_num;
 	}
-	hessian_nnz.resize(off_diagonal_hessian_nnz_index_begin_per_thread[total_thread_num]);
+
+	tet_hessian_index[0] = off_diagonal_hessian_nnz_index_begin_per_thread[total_thread_num];
+
+
+	unsigned int total_tet_num = 0;
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		total_tet_num += tetrahedron->data()[i].mesh_struct.indices.size();
+	}
+
+	tet_hessian_index[1] = off_diagonal_hessian_nnz_index_begin_per_thread[total_thread_num] + 108 * total_tet_num;
+	hessian_nnz.reserve(tet_hessian_index[1]);
+	hessian_nnz.resize(tet_hessian_index[0]);
+
 
 	for (unsigned int i = 0; i < total_thread_num; ++i) {
 		hessian_coeff_diagonal[i].resize(9 * vertex_begin_per_obj[total_obj_num]);
 	}
+
+
 
 	Hessian.resize(3 * vertex_begin_per_obj[total_obj_num], 3 * vertex_begin_per_obj[total_obj_num]);
 	b.resize(3 * vertex_begin_per_obj[total_obj_num]);
@@ -86,8 +101,10 @@ void NewtonMethod::initialHessianNnz()
 		b_thread[i].resize(3 * vertex_begin_per_obj[total_obj_num]);
 	}
 
+	//b_for_test.resize(3 * vertex_begin_per_obj[total_obj_num]);
+	//Matrix_test.resize(3 * vertex_begin_per_obj[total_obj_num], 3 * vertex_begin_per_obj[total_obj_num]);
+	//only_constraint.resize(3 * vertex_begin_per_obj[total_obj_num], 3 * vertex_begin_per_obj[total_obj_num]);
 }
-
 
 void NewtonMethod::computeGravity()
 {
@@ -167,26 +184,205 @@ void NewtonMethod::initial()
 //	}
 //}
 
+void NewtonMethod::initialCoeffDiagonal()
+{
+	for (unsigned int i = 0; i < total_thread_num; ++i) {
+		memset(hessian_coeff_diagonal[i].data(), 0, 8 * hessian_coeff_diagonal[i].size());
+	}
+}
+
+
 
 void NewtonMethod::setHessian()
 {
+	initialCoeffDiagonal();
 	thread->assignTask(this, SET_MASS_SPRING);
+	setARAP();
 	thread->assignTask(this, SET_HESSIAN_DIAGONAL);
 	Hessian.setFromTriplets(hessian_nnz.begin(), hessian_nnz.end());
 
-	Hessian_coeff_address.resize(Hessian.nonZeros());
-	if (Hessian_coeff_address.size() != hessian_nnz.size()) {
-		std::cout << "error, nonzeros of hessian does not equal to hessian_nnz size " << std::endl;
-	}
+	Hessian_coeff_address.reserve(hessian_nnz.size());
+	Hessian_coeff_address.resize(tet_hessian_index[0]);
+	//if (Hessian_coeff_address.size() != hessian_nnz.size()) {
+	//	std::cout << "error, nonzeros of hessian does not equal to hessian_nnz size " << std::endl;
+	//}
 	thread->assignTask(this, GET_COEFF_ADDRESS);
-
+	getARAPCoeffAddress();
 	global_llt.analyzePattern(Hessian);
 	setK();
 }
 
+
+
+void NewtonMethod::setARAP()
+{
+	std::array<double, 3>* vertex_pos;
+	double* hessian_coeff_diag = hessian_coeff_diagonal[0].data();
+	std::vector<Triplet<double>>* hessian_nnz_ = &hessian_nnz;
+	double stiffness;
+	unsigned int size;
+	double* inv_mass_;
+
+	bool is_unfixed[4];
+	std::array<int, 4>* indices;
+	unsigned int vertex_index_start;
+
+	int vertex_position_in_system[4];
+	unsigned int* real_index_to_system_index;
+
+	double use_for_temp[9];
+	double* diagonal_coeff[4];
+
+	double* volume;
+	Matrix<double, 3, 4>* A;
+	for (unsigned int obj_No = 0; obj_No < tetrahedron->size(); ++obj_No) {
+		vertex_pos = vertex_position[obj_No + cloth->size()];
+		stiffness = tetrahedron->data()[obj_No].ARAP_stiffness;
+		size = tet_mesh_struct[obj_No]->indices.size();
+		inv_mass_ = inv_mass[cloth->size() + obj_No];
+		indices = tet_indices[obj_No];
+		vertex_index_start = vertex_begin_per_obj[cloth->size() + obj_No];
+		real_index_to_system_index = real_index_to_unfixed_index[cloth->size() + obj_No];
+		volume = tet_mesh_struct[obj_No]->volume.data();
+		A = tet_mesh_struct[obj_No]->A.data();
+
+		for (unsigned int i = 0; i < size; ++i) {
+			for (unsigned int j = 0; j < 4; ++j) {
+				is_unfixed[j] = (inv_mass_[indices[i][j]] != 0.0);
+				vertex_position_in_system[j] = 3 * (vertex_index_start + real_index_to_system_index[indices[i][j]]);
+				if (is_unfixed[j]) {
+					diagonal_coeff[j] = hessian_coeff_diag + 3 * vertex_position_in_system[j];
+				}
+				else {
+					diagonal_coeff[j] = use_for_temp;
+				}
+			}
+			if (is_unfixed[0] || is_unfixed[1] || is_unfixed[2] || is_unfixed[3]) {
+				computeARAPHessian(vertex_pos[indices[i][0]].data(), vertex_pos[indices[i][1]].data(), vertex_pos[indices[i][2]].data(), vertex_pos[indices[i][3]].data(),
+					diagonal_coeff[0], diagonal_coeff[1], diagonal_coeff[2], diagonal_coeff[3], hessian_nnz_, vertex_position_in_system,
+					stiffness* volume[i], A[i], is_unfixed);
+			}
+		}
+	}
+
+
+}
+
+
+void NewtonMethod::computeARAPHessian(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
+	double* diagonal_coeff_0, double* diagonal_coeff_1, double* diagonal_coeff_2, double* diagonal_coeff_3, std::vector<Triplet<double>>* hessian_nnz,
+	int* vertex_index, 	double stiffness, Matrix<double, 3, 4>& A, bool* is_unfixed)
+{
+	Vector3d eigen_value;
+	Matrix3d deformation_gradient;
+	Matrix3d U, V, rotation;
+	Matrix<double, 12, 12> Hessian;
+	Matrix<double, 12, 1> grad;
+
+	FEM::getDeformationGradient(vertex_position_0, vertex_position_1, vertex_position_2, vertex_position_3, A, deformation_gradient);
+	FEM::extractRotation(deformation_gradient, eigen_value, U, V, rotation);
+	
+
+	Matrix<double, 3, 4> grad_C_transpose;
+	grad_C_transpose =(2.0* stiffness) * (deformation_gradient - rotation) * A;
+	memcpy(grad.data(), grad_C_transpose.data(), 96);
+
+	Matrix<double, 9, 9> dPdF;
+	FEM::getdPdF(U, V, eigen_value, dPdF);
+	FEM::backpropagateElementHessian(Hessian, dPdF, A);
+
+	//Matrix4d result = 2.0 * A.transpose() * A;
+	//Hessian.setZero();
+	//for (unsigned int i = 0; i < 4; ++i) {
+	//	for (unsigned int j = 0; j < 4; ++j) {
+	//		Hessian(3 * i, 3 * j) = result(i, j);
+	//		Hessian(3 * i+1, 3 * j+1) = result(i, j);
+	//		Hessian(3 * i+2, 3 * j+2) = result(i, j);
+	//	}
+	//}
+
+	Hessian *= stiffness;
+
+
+	for (unsigned int i = 1; i < 4; ++i) {
+		if (is_unfixed[i]) {
+			for (int j = 0; j < i; ++j) {
+				if (is_unfixed[j]) {
+					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j], vertex_index[i], Hessian(3 * j, 3 * i)));
+					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j] + 1, vertex_index[i], Hessian(3 * j + 1, 3 * i)));
+					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j] + 2, vertex_index[i], Hessian(3 * j + 2, 3 * i)));
+
+					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j], vertex_index[i] + 1, Hessian(3 * j, 3 * i + 1)));
+					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j] + 1, vertex_index[i] + 1, Hessian(3 * j + 1, 3 * i + 1)));
+					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j] + 2, vertex_index[i] + 1, Hessian(3 * j + 2, 3 * i + 1)));
+
+					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j], vertex_index[i] + 2, Hessian(3 * j, 3 * i + 2)));
+					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j] + 1, vertex_index[i] + 2, Hessian(3 * j + 1, 3 * i + 2)));
+					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j] + 2, vertex_index[i] + 2, Hessian(3 * j + 2, 3 * i + 2)));
+				}
+			}
+		}
+	}
+
+	for (unsigned int i = 0; i < 3; ++i) {
+		if (is_unfixed[i]) {
+			for (unsigned int j = i + 1; j < 4; ++j) {
+				if (is_unfixed[j]) {
+					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j], vertex_index[i], Hessian(3 * j, 3 * i)));
+					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j] + 1, vertex_index[i], Hessian(3 * j + 1, 3 * i)));
+					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j] + 2, vertex_index[i], Hessian(3 * j + 2, 3 * i)));
+
+					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j], vertex_index[i] + 1, Hessian(3 * j, 3 * i + 1)));
+					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j] + 1, vertex_index[i] + 1, Hessian(3 * j + 1, 3 * i + 1)));
+					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j] + 2, vertex_index[i] + 1, Hessian(3 * j + 2, 3 * i + 1)));
+
+					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j], vertex_index[i] + 2, Hessian(3 * j, 3 * i + 2)));
+					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j] + 1, vertex_index[i] + 2, Hessian(3 * j + 1, 3 * i + 2)));
+					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j] + 2, vertex_index[i] + 2, Hessian(3 * j + 2, 3 * i + 2)));
+				}
+			}
+		}
+	}
+	
+	if (is_unfixed[0]) {
+		for (unsigned int i = 0; i < 3; ++i) {//column
+			for (unsigned int j = 0; j < 3; ++j) {//row
+				diagonal_coeff_0[3 * i + j] += Hessian(j, i);
+			}
+		}
+	}
+
+	if (is_unfixed[1]) {
+		for (unsigned int i = 0; i < 3; ++i) {//column
+			for (unsigned int j = 0; j < 3; ++j) {//row
+				diagonal_coeff_1[3 * i + j] += Hessian(3 + j, 3 + i);
+			}
+		}
+	}
+
+	if (is_unfixed[2]) {
+		for (unsigned int i = 0; i < 3; ++i) {//column
+			for (unsigned int j = 0; j < 3; ++j) {//row
+				diagonal_coeff_2[3 * i + j] += Hessian(6 + j, 6 + i);
+			}
+		}
+	}
+
+	if (is_unfixed[3]) {
+		for (unsigned int i = 0; i < 3; ++i) {//column
+			for (unsigned int j = 0; j < 3; ++j) {//row
+				diagonal_coeff_3[3 * i + j] += Hessian(9 + j, 9 + i);
+			}
+		}
+	}
+
+}
+
 void NewtonMethod::setK()
 {
+	memset(Hessian.valuePtr(), 0, 8 * Hessian.nonZeros());
 	thread->assignTask(this, UPDATE_HESSIAN_FIXED_STRUCTURE);
+	updateARAPHessianFixedStructure();
 	thread->assignTask(this, UPDATE_DIAGONAL_HESSIAN_FIXED_STRUCTURE_INITIAL_STIFFNESS);
 	store_ori_value.resize(Hessian.nonZeros());
 	memcpy(store_ori_value.data(), Hessian.valuePtr(), 8 * Hessian.nonZeros());
@@ -236,12 +432,40 @@ bool NewtonMethod::edgeLengthStiffnessHasChanged()
 	return true;
 }
 
+
+
+
+
+
 void NewtonMethod::updateHessianFixedStructure()
 {
 
+	memset(Hessian.valuePtr(), 0, 8 * Hessian.nonZeros());
+	for (unsigned int i = 0; i < total_thread_num; ++i) {
+		b_thread[i].setZero();
+	}
+
+
 	thread->assignTask(this, UPDATE_HESSIAN_FIXED_STRUCTURE);
+
+	updateARAPHessianFixedStructure();
+
+
+
 	thread->assignTask(this, UPDATE_DIAGONAL_HESSIAN_FIXED_STRUCTURE);
 
+	//std::cout << only_constraint << std::endl;
+	//std::cout << "/////" << std::endl;
+	//std::cout << Hessian << std::endl;
+	//std::cout << "error " << (only_constraint - Hessian).squaredNorm() << std::endl;
+	//for (unsigned int i = 0; i < Hessian.nonZeros(); ++i) {
+	//	if (Hessian.valuePtr()[i] != only_constraint.valuePtr()[i]) {
+	//		std::cout << i << " " << Hessian.innerIndexPtr()[i] << " " << Hessian.valuePtr()[i] << " " << only_constraint.valuePtr()[i] << std::endl;
+	//	}
+	//}
+
+
+	///temp comment damp
 	if (is_newmark) {
 		double coe = gamma / (beta * time_step);
 		for (unsigned int i = 0; i < Hessian.nonZeros(); ++i) {
@@ -252,14 +476,20 @@ void NewtonMethod::updateHessianFixedStructure()
 		for (unsigned int i = 0; i < Hessian.nonZeros(); ++i) {
 			Hessian.valuePtr()[i] += ori_stiffness_matrix_record.valuePtr()[i];
 		}
-	}
+	}	
+	////////////
 
 	thread->assignTask(this, UPDATE_INTERNAL_FORCE);
 	thread->assignTask(this, SUM_B);
+
+	//temp comment damp
 	if (!is_newmark) {
 		b += ori_stiffness_matrix_record * pos_dis;
 	}
+	////////////
 
+	//std::cout << Hessian << std::endl;
+	//std::cout << "/////" << std::endl;
 	//std::cout << Hessian << std::endl;
 	//std::cout << b << std::endl;
 
@@ -289,6 +519,344 @@ void NewtonMethod::addExternalForce(double* neighbor_vertex_force_direction, std
 	}
 }
 
+
+
+
+
+//void NewtonMethod::construct_b_Test()
+//{
+//	double* mass_;
+//	unsigned int vertex_position_in_system;
+//	unsigned int read_index;
+//	std::array<double, 3>* vetex_pos;
+//	unsigned int* unfixed;
+//	for (unsigned int obj_No = 0; obj_No < tetrahedron->size(); ++obj_No) {
+//		mass_ = mass[obj_No];
+//		unfixed = tetrahedron->data()[obj_No].mesh_struct.unfixed_point_index.data();
+//		vetex_pos = vertex_position[obj_No + cloth->size()];
+//		for (unsigned int i = 0; i < tetrahedron->data()[obj_No].mesh_struct.unfixed_point_index.size(); ++i) {
+//			vertex_position_in_system = 3 * (vertex_begin_per_obj[cloth->size() + obj_No] + i);
+//			read_index = unfixed[i];
+//			b_for_test.data()[vertex_position_in_system] -= mass_[read_index] / time_step_square * (vetex_pos[read_index][0] - Sn.data()[vertex_position_in_system]);
+//			b_for_test.data()[vertex_position_in_system+1] -= mass_[read_index] / time_step_square * (vetex_pos[read_index][1] - Sn.data()[vertex_position_in_system+1]);
+//			b_for_test.data()[vertex_position_in_system+2] -= mass_[read_index] / time_step_square * (vetex_pos[read_index][2] - Sn.data()[vertex_position_in_system+2]);
+//		}
+//	}
+//}
+
+
+//void NewtonMethod::testSetHessian()
+//{
+//	std::array<double, 3>* vertex_pos;
+//	double stiffness;
+//	unsigned int size;
+//	double* inv_mass_;
+//
+//	bool is_unfixed[4];
+//
+//	std::array<int, 4>* indices;
+//	unsigned int vertex_index_start;
+//
+//	int vertex_position_in_system[4];
+//	unsigned int* real_index_to_system_index;
+//
+//	double use_for_temp[9];
+//	double* diagonal_coeff[4];
+//	double* g_tet[4];
+//	double* volume;
+//	Matrix<double, 3, 4>* A;
+//	double* g_;
+//	test_nnz.clear();
+//	double* mass_;
+//	for (unsigned int obj_No = 0; obj_No < tetrahedron->size(); ++obj_No) {
+//		vertex_pos = vertex_position[obj_No + cloth->size()];
+//		stiffness = tetrahedron->data()[obj_No].ARAP_stiffness;
+//		size = tet_mesh_struct[obj_No]->indices.size();
+//		inv_mass_ = inv_mass[cloth->size() + obj_No];
+//		indices = tet_indices[obj_No];
+//		vertex_index_start = vertex_begin_per_obj[cloth->size() + obj_No];
+//		real_index_to_system_index = real_index_to_unfixed_index[cloth->size() + obj_No];
+//		volume = tet_mesh_struct[obj_No]->volume.data();
+//		A = tet_mesh_struct[obj_No]->A.data();
+//		g_ = b_for_test.data();
+//		for (unsigned int i = 0; i < size; ++i) {
+//			for (unsigned int j = 0; j < 4; ++j) {
+//				is_unfixed[j] = (inv_mass_[indices[i][j]] != 0.0);
+//				vertex_position_in_system[j] = 3 * (vertex_index_start + real_index_to_system_index[indices[i][j]]);
+//				if (is_unfixed[j]) {
+//					g_tet[j] = g_ + vertex_position_in_system[j];
+//				}
+//				else {
+//					g_tet[j] = use_for_temp;
+//				}
+//			}
+//			if (is_unfixed[0] || is_unfixed[1] || is_unfixed[2] || is_unfixed[3]) {
+//				setARAPHessianForTest(vertex_pos[indices[i][0]].data(), vertex_pos[indices[i][1]].data(), vertex_pos[indices[i][2]].data(),
+//					vertex_pos[indices[i][3]].data(), vertex_position_in_system,
+//					&test_nnz, stiffness * volume[i], A[i], is_unfixed,
+//					g_tet[0], g_tet[1], g_tet[2], g_tet[3]);
+//			}
+//		}
+//		only_constraint.setFromTriplets(test_nnz.begin(), test_nnz.end());
+//		only_constraint *= time_step_square;
+//		mass_ = mass[obj_No];
+//		unsigned int* unfixed = tetrahedron->data()[obj_No].mesh_struct.unfixed_point_index.data();
+//		for (unsigned int i = 0; i < tetrahedron->data()[obj_No].mesh_struct.unfixed_point_index.size(); ++i) {
+//			test_nnz.emplace_back(Triplet<double>(3 * (vertex_index_start + i), 3 * (vertex_index_start + i), mass_[unfixed[i]]/time_step_square));
+//			test_nnz.emplace_back(Triplet<double>(3 * (vertex_index_start + i)+1, 3 * (vertex_index_start + i)+1, mass_[unfixed[i]] / time_step_square));
+//			test_nnz.emplace_back(Triplet<double>(3 * (vertex_index_start + i)+2, 3 * (vertex_index_start + i)+2, mass_[unfixed[i]] / time_step_square));
+//		}
+//	}
+//}
+
+
+
+
+
+
+void NewtonMethod::updateARAPHessianFixedStructure()
+{
+	std::array<double, 3>* vertex_pos;
+	double* hessian_coeff_diag = hessian_coeff_diagonal[0].data();
+	double stiffness;
+	unsigned int size;
+	double* inv_mass_;
+
+	bool is_unfixed[4];
+
+	std::array<int, 4>* indices;
+	unsigned int vertex_index_start;
+
+	int vertex_position_in_system[4];
+	unsigned int* real_index_to_system_index;
+
+	double use_for_temp[9];
+	double* diagonal_coeff[4];
+	double* g_tet[4];
+	double* volume;
+	Matrix<double, 3, 4>* A;
+
+	double** address = Hessian_coeff_address.data() + tet_hessian_index[0];
+
+	double* g_ = b_thread[0].data();
+
+
+	for (unsigned int obj_No = 0; obj_No < tetrahedron->size(); ++obj_No) {
+		vertex_pos = vertex_position[obj_No + cloth->size()];
+		stiffness = tetrahedron->data()[obj_No].ARAP_stiffness* time_step_square;
+		size = tet_mesh_struct[obj_No]->indices.size();
+		inv_mass_ = inv_mass[cloth->size() + obj_No];
+		indices = tet_indices[obj_No];
+		vertex_index_start = vertex_begin_per_obj[cloth->size() + obj_No];
+		real_index_to_system_index = real_index_to_unfixed_index[cloth->size() + obj_No];
+		volume = tet_mesh_struct[obj_No]->volume.data();
+		A = tet_mesh_struct[obj_No]->A.data();
+
+		for (unsigned int i = 0; i < size; ++i) {
+			for (unsigned int j = 0; j < 4; ++j) {
+				is_unfixed[j] = (inv_mass_[indices[i][j]] != 0.0);
+				vertex_position_in_system[j] = 3 * (vertex_index_start + real_index_to_system_index[indices[i][j]]);
+				if (is_unfixed[j]) {
+					diagonal_coeff[j] = hessian_coeff_diag + 3 * vertex_position_in_system[j];
+					g_tet[j] = g_ + vertex_position_in_system[j];
+				}
+				else {
+					diagonal_coeff[j] = use_for_temp;
+					g_tet[j] = use_for_temp;
+				}
+			}
+			if (is_unfixed[0] || is_unfixed[1] || is_unfixed[2] || is_unfixed[3]) {
+
+				computeARAPHessianFixedStructure(vertex_pos[indices[i][0]].data(), vertex_pos[indices[i][1]].data(), vertex_pos[indices[i][2]].data(), vertex_pos[indices[i][3]].data(),
+					diagonal_coeff[0], diagonal_coeff[1], diagonal_coeff[2], diagonal_coeff[3], address, stiffness* volume[i], A[i], is_unfixed,
+					g_tet[0], g_tet[1], g_tet[2], g_tet[3]);
+			}
+		}
+	}
+}
+
+
+//void NewtonMethod::setARAPHessianForTest(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3, int* vertex_index,
+//	std::vector<Triplet<double>>* hessian_nnz, double stiffness, Matrix<double, 3, 4>& A, bool* is_unfixed, double* g_0, double* g_1, double* g_2, double* g_3)
+//{
+//
+//	Vector3d eigen_value;
+//	Vector3d position;
+//	Matrix3d deformation_gradient;
+//	Matrix3d U, V, rotation;
+//	Matrix<double, 12, 12> Hessian;
+//	FEM::getDeformationGradient(vertex_position_0, vertex_position_1, vertex_position_2, vertex_position_3, A, deformation_gradient);
+//	FEM::extractRotation(deformation_gradient, eigen_value, U, V, rotation);
+//	Matrix<double, 3, 4> grad_C_transpose;
+//	grad_C_transpose = (2.0 * stiffness) * (deformation_gradient - rotation) * A;
+//
+//	Matrix4d result = 2.0 * A.transpose() * A;
+//	Hessian.setZero();
+//	for (unsigned int i = 0; i < 4; ++i) {
+//		for (unsigned int j = 0; j < 4; ++j) {
+//			Hessian(3 * i, 3 * j) = result(i, j);
+//			Hessian(3 * i + 1, 3 * j + 1) = result(i, j);
+//			Hessian(3 * i + 2, 3 * j + 2) = result(i, j);
+//		}
+//	}
+//	Hessian *= stiffness;
+//
+//	for (unsigned int i = 0; i < 4; ++i) {
+//		if (is_unfixed[i]) {
+//			for (int j = 0; j < 4; ++j) {
+//				if (is_unfixed[j]) {
+//					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j], vertex_index[i], Hessian(3 * j, 3 * i)));
+//					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j] + 1, vertex_index[i], Hessian(3 * j + 1, 3 * i)));
+//					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j] + 2, vertex_index[i], Hessian(3 * j + 2, 3 * i)));
+//
+//					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j], vertex_index[i] + 1, Hessian(3 * j, 3 * i + 1)));
+//					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j] + 1, vertex_index[i] + 1, Hessian(3 * j + 1, 3 * i + 1)));
+//					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j] + 2, vertex_index[i] + 1, Hessian(3 * j + 2, 3 * i + 1)));
+//
+//					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j], vertex_index[i] + 2, Hessian(3 * j, 3 * i + 2)));
+//					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j] + 1, vertex_index[i] + 2, Hessian(3 * j + 1, 3 * i + 2)));
+//					hessian_nnz->emplace_back(Triplet<double>(vertex_index[j] + 2, vertex_index[i] + 2, Hessian(3 * j + 2, 3 * i + 2)));
+//				}
+//			}
+//		}
+//	}
+//
+//
+//	for (unsigned int i = 0; i < 3; ++i) {
+//		g_0[i] -= grad_C_transpose.data()[i];
+//		g_1[i] -= grad_C_transpose.data()[i + 3];
+//		g_2[i] -= grad_C_transpose.data()[i + 6];
+//		g_3[i] -= grad_C_transpose.data()[i + 9];
+//	}
+//
+//}
+
+
+void NewtonMethod::computeARAPHessianFixedStructure(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
+	double* diagonal_coeff_0, double* diagonal_coeff_1, double* diagonal_coeff_2, double* diagonal_coeff_3, double**& address,
+	double stiffness, Matrix<double, 3, 4>& A, bool* is_unfixed, double* g_0, double* g_1, double* g_2, double* g_3)
+{
+	Vector3d eigen_value;
+	Vector3d position;
+	Matrix3d deformation_gradient;
+	Matrix3d U, V, rotation;
+	Matrix<double, 12, 12> Hessian;
+	FEM::getDeformationGradient(vertex_position_0, vertex_position_1, vertex_position_2, vertex_position_3, A, deformation_gradient);
+	FEM::extractRotation(deformation_gradient, eigen_value, U, V, rotation);
+	Matrix<double, 3, 4> grad_C_transpose;
+	grad_C_transpose =(2.0*stiffness) * (deformation_gradient - rotation) * A;
+
+	//Matrix<double, 9, 9> dPdF;
+	//FEM::getdPdF(U, V, eigen_value, dPdF);
+	//FEM::backpropagateElementHessian(Hessian, dPdF, A);
+
+	Matrix4d result = 2.0 * A.transpose() * A;
+	Hessian.setZero();
+	for (unsigned int i = 0; i < 4; ++i) {
+		for (unsigned int j = 0; j < 4; ++j) {
+			Hessian(3 * i, 3 * j) = result(i, j);
+			Hessian(3 * i+1, 3 * j+1) = result(i, j);
+			Hessian(3 * i+2, 3 * j+2) = result(i, j);
+		}
+	}
+	Hessian *=stiffness;
+
+	//record hessian
+	for (unsigned int i = 1; i < 4; ++i) {
+		if (is_unfixed[i]) {
+			for (int j = 0; j < i; ++j) {
+				if (is_unfixed[j]) {
+					**address += Hessian(3 * j, 3 * i);
+					address++;
+					**address += Hessian(3 * j + 1, 3 * i);
+					address++;
+					**address += Hessian(3 * j + 2, 3 * i);
+					address++;
+
+					**address += Hessian(3 * j, 3 * i + 1);
+					address++;
+					**address += Hessian(3 * j + 1, 3 * i + 1);
+					address++;
+					**address += Hessian(3 * j + 2, 3 * i + 1);
+					address++;
+
+					**address += Hessian(3 * j, 3 * i + 2);
+					address++;
+					**address += Hessian(3 * j + 1, 3 * i + 2);
+					address++;
+					**address += Hessian(3 * j + 2, 3 * i + 2);
+					address++;
+				}
+			}
+		}
+	}
+
+	for (unsigned int i = 0; i < 3; ++i) {
+		if (is_unfixed[i]) {
+			for (unsigned int j = i + 1; j < 4; ++j) {
+				if (is_unfixed[j]) {
+					**address += Hessian(3 * j, 3 * i);
+					address++;
+					**address += Hessian(3 * j + 1, 3 * i);
+					address++;
+					**address += Hessian(3 * j + 2, 3 * i);
+					address++;
+					**address += Hessian(3 * j, 3 * i + 1);
+					address++;
+					**address += Hessian(3 * j + 1, 3 * i + 1);
+					address++;
+					**address += Hessian(3 * j + 2, 3 * i + 1);
+					address++;
+					**address += Hessian(3 * j, 3 * i + 2);
+					address++;
+					**address += Hessian(3 * j + 1, 3 * i + 2);
+					address++;
+					**address += Hessian(3 * j + 2, 3 * i + 2);
+					address++;
+				}
+			}
+		}
+	}
+	if (is_unfixed[0]) {
+		for (unsigned int i = 0; i < 3; ++i) {//column
+			for (unsigned int j = 0; j < 3; ++j) {//row
+				diagonal_coeff_0[3 * i + j] += Hessian(j, i);
+			}
+		}
+	}
+
+	if (is_unfixed[1]) {
+		for (unsigned int i = 0; i < 3; ++i) {//column
+			for (unsigned int j = 0; j < 3; ++j) {//row
+				diagonal_coeff_1[3 * i + j] += Hessian(3 + j, 3 + i);
+			}
+		}
+	}
+
+	if (is_unfixed[2]) {
+		for (unsigned int i = 0; i < 3; ++i) {//column
+			for (unsigned int j = 0; j < 3; ++j) {//row
+				diagonal_coeff_2[3 * i + j] += Hessian(6 + j, 6 + i);
+			}
+		}
+	}
+
+	if (is_unfixed[3]) {
+		for (unsigned int i = 0; i < 3; ++i) {//column
+			for (unsigned int j = 0; j < 3; ++j) {//row
+				diagonal_coeff_3[3 * i + j] += Hessian(9 + j, 9 + i);
+			}
+		}
+	}
+
+	for (unsigned int i = 0; i < 3; ++i) {
+		g_0[i] -=  grad_C_transpose.data()[i];
+		g_1[i] -=  grad_C_transpose.data()[i+3];
+		g_2[i] -=  grad_C_transpose.data()[i+6];
+		g_3[i] -=  grad_C_transpose.data()[i+9];
+	}
+
+}
 
 
 
@@ -334,6 +902,22 @@ void NewtonMethod::newmarkBetaMethod()
 }
 
 
+//void NewtonMethod::updateTest()
+//{
+//	b_for_test.setZero();
+//	testSetHessian();
+//
+//	Matrix_test.setFromTriplets(test_nnz.begin(), test_nnz.end());
+//	construct_b_Test();
+//	Matrix_test *= time_step_square;
+//	b_for_test *= time_step_square;
+//
+//	global_llt.compute(Matrix_test);
+//
+//	delta_x = global_llt.solve(b_for_test);
+//	std::cout << (Matrix_test - Hessian).squaredNorm() << " " << (b_for_test - b).squaredNorm() << std::endl;
+//}
+
 void NewtonMethod::solveNewtonMethod_()
 {
 	storeInitialPosition();
@@ -351,20 +935,16 @@ void NewtonMethod::solveNewtonMethod_()
 	store_residual.clear();
 	while (convergenceCondition())
 	{
+		//updateTest();
 		updateHessianFixedStructure();
-		//compareTwoMatrix(Hessian, vertex_position, edge_vertices_mass_spring, only_one_vertex_fix_edge_vertices,
-		//	edge_length_stiffness[0][0], unfixed_rest_length, fixed_one_vertices_rest_length, unfixed_vertex, mass, time_step);
-		//compareTwoForce(Sn, b, vertex_position, edge_vertices_mass_spring, only_one_vertex_fix_edge_vertices,
-		//	edge_length_stiffness[0][0], unfixed_rest_length, fixed_one_vertices_rest_length, unfixed_vertex, mass, time_step);
+		////compareTwoMatrix(Hessian, vertex_position, edge_vertices_mass_spring, only_one_vertex_fix_edge_vertices,
+		////	edge_length_stiffness[0][0], unfixed_rest_length, fixed_one_vertices_rest_length, unfixed_vertex, mass, time_step);
+		////compareTwoForce(Sn, b, vertex_position, edge_vertices_mass_spring, only_one_vertex_fix_edge_vertices,
+		////	edge_length_stiffness[0][0], unfixed_rest_length, fixed_one_vertices_rest_length, unfixed_vertex, mass, time_step);
 		global_llt.factorize(Hessian);
 		delta_x = global_llt.solve(b);
 
-		//std::cout << Hessian << std::endl;
-		//if (*time_stamp == 92 && iteration_number<5) {
-		//	std::cout << "====" << std::endl;
-		//	std::cout << delta_x.segment(0,10) << std::endl;
-		//std::cout << Hessian << std::endl;
-		//}
+
 
 		displacement_coe = 1.0;
 		thread->assignTask(this, UPDATE_POSITION_NEWTON);
@@ -431,7 +1011,7 @@ void NewtonMethod::initialDHatTolerance(double ave_edge_length)
 
 bool NewtonMethod::convergenceCondition()
 {
-	if (iteration_number < 2) {
+	if (iteration_number <1) {
 		return true;
 	}
 
@@ -487,13 +1067,13 @@ void NewtonMethod::updateInternalForce(int thread_No)
 
 	double* f_ = b_thread[thread_No].data();
 
-	for (unsigned int obj_No = 0; obj_No < total_obj_num; ++obj_No) {
+	for (unsigned int obj_No = 0; obj_No < cloth->size(); ++obj_No) {
 		vertex_pos = vertex_position[obj_No];
 		edge_vertex = edge_vertices_mass_spring[obj_No]->data();
 		vertex_begin = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No] << 1;
 		vertex_end = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No + 1] << 1;
 		rest_length_ = unfixed_rest_length[obj_No]->data();
-		edge_length_stiffness_ = *edge_length_stiffness[obj_No];
+		edge_length_stiffness_ = *edge_length_stiffness[obj_No]*time_step_square;
 		unfixed_vertex_index = unfixed_vertex[obj_No]->data();
 		index_start = vertex_begin_per_obj[obj_No];
 
@@ -537,7 +1117,7 @@ void NewtonMethod::computeMassSpringEnergy(int thread_No)
 	unsigned int* unfixed_vertex_index;
 	unsigned int index_start;
 	double energy = 0;
-	for (unsigned int obj_No = 0; obj_No < total_obj_num; ++obj_No) {
+	for (unsigned int obj_No = 0; obj_No < cloth->size(); ++obj_No) {
 		vertex_pos = vertex_position[obj_No];
 		edge_vertex = edge_vertices_mass_spring[obj_No]->data();
 		vertex_begin = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No] << 1;
@@ -575,7 +1155,6 @@ void NewtonMethod::updateHessianFixedStructure(int thread_No)
 	std::array<double, 3>* vertex_pos;
 
 	double* f_ = b_thread[thread_No].data();
-	memset(f_, 0, 8 * b_thread[thread_No].size());
 
 	memset(hessian_coeff_diagonal[thread_No].data(), 0, 8 * hessian_coeff_diagonal[thread_No].size());
 	double* hessian_coeff_diag = hessian_coeff_diagonal[thread_No].data();
@@ -590,7 +1169,7 @@ void NewtonMethod::updateHessianFixedStructure(int thread_No)
 	unsigned int* unfixed_index_to_normal_index;
 	double damp_stiff = *damp_stiffness * time_step;
 
-	for (unsigned int obj_No = 0; obj_No < total_obj_num; ++obj_No) {
+	for (unsigned int obj_No = 0; obj_No < cloth->size(); ++obj_No) {
 		vertex_begin_in_obj = vertex_begin_per_obj[obj_No];
 		vertex_pos = vertex_position[obj_No];
 		edge_vertex = edge_vertices_mass_spring[obj_No]->data();
@@ -631,7 +1210,6 @@ void NewtonMethod::massSpring(int thread_No)
 	unsigned int* edge_vertex;
 	std::array<double, 3>* vertex_pos;
 
-	memset(hessian_coeff_diagonal[thread_No].data(), 0, 8 * hessian_coeff_diagonal[thread_No].size());
 	double* hessian_coeff_diag = hessian_coeff_diagonal[thread_No].data();
 
 	Triplet<double>* hessian_nnz_ = hessian_nnz.data() + off_diagonal_hessian_nnz_index_begin_per_thread[thread_No];
@@ -646,7 +1224,7 @@ void NewtonMethod::massSpring(int thread_No)
 
 	unsigned int* unfixed_index_to_normal_index;
 
-	for (unsigned int obj_No = 0; obj_No < total_obj_num; ++obj_No) {
+	for (unsigned int obj_No = 0; obj_No < cloth->size(); ++obj_No) {
 		vertex_pos = vertex_position[obj_No];
 		edge_vertex = edge_vertices_mass_spring[obj_No]->data();
 		edge_begin = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No] << 1;
@@ -1034,7 +1612,7 @@ void NewtonMethod::sumB(int thread_No)
 					for (unsigned int k = 1; k < total_thread_num_; ++k) {
 						b_thread[0][j + m] += b_thread[k][j + m];
 					}
-					b.data()[j + m] = (b_thread[0][j + m] + f_ext.data()[j + m]) * time_step_square_ +
+					b.data()[j + m] = b_thread[0][j + m] + f_ext.data()[j + m] * time_step_square_ +
 						mass_[index] * (coe1 * (position_of_beginning.data()[j + m] - vertex_pos[3 * index + m]) + coe2 * velocity.data()[j + m] + coe3 * acceleration.data()[j + m])
 						- Sn.data()[j + m];
 				}
@@ -1048,10 +1626,86 @@ void NewtonMethod::sumB(int thread_No)
 					for (unsigned int k = 1; k < total_thread_num_; ++k) {
 						b_thread[0][j + m] += b_thread[k][j + m];
 					}
-					b.data()[j + m] = b_thread[0][j + m] * time_step_square_ +
+					b.data()[j + m] = b_thread[0][j + m] +
 						mass_[index] * (Sn.data()[j + m] - vertex_pos[3 * index + m])
 						+ coe * mass_[index] * (position_of_beginning[j + m] - vertex_pos[3 * index + m]);
 					pos_dis.data()[j + m] = position_of_beginning[j + m] - vertex_pos[3 * index + m];
+				}
+			}
+		}
+	}
+}
+
+void NewtonMethod::getARAPCoeffAddress()
+{
+	unsigned int size;
+	int vertex_position_in_system[4];
+	bool is_unfixed[4];
+	std::array<int, 4>* indices;
+	double* inv_mass_;
+	unsigned int vertex_index_start;
+	unsigned int* real_index_to_system_index;
+
+
+	for (unsigned int obj_No = 0; obj_No < tetrahedron->size(); ++obj_No) {
+		size = tet_mesh_struct[obj_No]->indices.size();
+		inv_mass_ = inv_mass[cloth->size() + obj_No];
+		indices = tet_indices[obj_No];
+		vertex_index_start = vertex_begin_per_obj[cloth->size() + obj_No];
+		real_index_to_system_index = real_index_to_unfixed_index[cloth->size() + obj_No];
+
+		for (unsigned int i = 0; i < size; ++i) {
+			for (unsigned int j = 0; j < 4; ++j) {
+				is_unfixed[j] = (inv_mass_[indices[i][j]] != 0.0);
+				vertex_position_in_system[j] = 3 * (vertex_index_start + real_index_to_system_index[indices[i][j]]);
+			}
+
+			if (is_unfixed[0] || is_unfixed[1] || is_unfixed[2] || is_unfixed[3]) {
+
+				getARAPHessianCoeffAddress(vertex_position_in_system, &Hessian_coeff_address, is_unfixed);
+
+			}
+		}
+	}
+}
+
+void NewtonMethod::getARAPHessianCoeffAddress(int* start_index_in_system, std::vector<double*>* address, bool* is_unfixed)
+{
+	for (unsigned int i = 1; i < 4; ++i) {
+		if (is_unfixed[i]) {
+			for (int j = 0; j < i; ++j) {
+				if (is_unfixed[j]) {
+					address->emplace_back(&Hessian.coeffRef(start_index_in_system[j], start_index_in_system[i]));
+					address->emplace_back(address->back() + 1);
+					address->emplace_back(address->back() + 1);
+
+					address->emplace_back(&Hessian.coeffRef(start_index_in_system[j], start_index_in_system[i] + 1));
+					address->emplace_back(address->back() + 1);
+					address->emplace_back(address->back() + 1);
+
+					address->emplace_back(&Hessian.coeffRef(start_index_in_system[j], start_index_in_system[i] + 2));
+					address->emplace_back(address->back() + 1);
+					address->emplace_back(address->back() + 1);
+				}
+			}
+		}
+	}
+
+	for (unsigned int i = 0; i < 3; ++i) {
+		if (is_unfixed[i]) {
+			for (unsigned int j = i + 1; j < 4; ++j) {
+				if (is_unfixed[j]) {
+					address->emplace_back(&Hessian.coeffRef(start_index_in_system[j], start_index_in_system[i]));
+					address->emplace_back(address->back() + 1);
+					address->emplace_back(address->back() + 1);
+
+					address->emplace_back(&Hessian.coeffRef(start_index_in_system[j], start_index_in_system[i] + 1));
+					address->emplace_back(address->back() + 1);
+					address->emplace_back(address->back() + 1);
+
+					address->emplace_back(&Hessian.coeffRef(start_index_in_system[j], start_index_in_system[i] + 2));
+					address->emplace_back(address->back() + 1);
+					address->emplace_back(address->back() + 1);
 				}
 			}
 		}
@@ -1070,7 +1724,7 @@ void NewtonMethod::hessianCoeffAddress(int thread_No)
 	unsigned int vertex_index_begin_in_system;
 
 	//off diagonal
-	for (unsigned int obj_No = 0; obj_No < total_obj_num; ++obj_No) {
+	for (unsigned int obj_No = 0; obj_No < cloth->size(); ++obj_No) {
 		edge_vertex = edge_vertices_mass_spring[obj_No]->data();
 		vertex_begin = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No] << 1;
 		vertex_end = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No + 1] << 1;
@@ -1244,7 +1898,6 @@ void NewtonMethod::setHessianDiagonalFixedStructure(int thread_No)
 	else {
 		stiff_coe = 1.0 + rayleigh_damp_stiffness[0] * time_step;
 	}
-
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		index_end = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No + 1];
 		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
@@ -1263,14 +1916,6 @@ void NewtonMethod::setHessianDiagonalFixedStructure(int thread_No)
 
 			for (unsigned int k = 0; k < 9; ++k) {
 				*Hessian_coeff_address[vertex_start + k] = hessian_coeff_diagonal_0[vertex_start + k];
-				//*Hessian_coeff_address[hessian_index_start + 1] = hessian_coeff_diagonal_0[vertex_start + 1];
-				//*Hessian_coeff_address[hessian_index_start + 2] = hessian_coeff_diagonal_0[vertex_start + 2];
-				//*Hessian_coeff_address[hessian_index_start + 3] = hessian_coeff_diagonal_0[vertex_start + 1];
-				//*Hessian_coeff_address[hessian_index_start + 4] = hessian_coeff_diagonal_0[vertex_start + 3];
-				//*Hessian_coeff_address[hessian_index_start + 5] = hessian_coeff_diagonal_0[vertex_start + 4];
-				//*Hessian_coeff_address[hessian_index_start + 6] = hessian_coeff_diagonal_0[vertex_start + 2];
-				//*Hessian_coeff_address[hessian_index_start + 7] = hessian_coeff_diagonal_0[vertex_start + 4];
-				//*Hessian_coeff_address[hessian_index_start + 8] = hessian_coeff_diagonal_0[vertex_start + 5];
 			}
 
 		}
@@ -1615,6 +2260,9 @@ void NewtonMethod::reorganzieDataOfObjects()
 	//	vertex_pos_max_step[i]= cloth->data()[i].mesh_struct.vertex_position
 	//}
 
+	tet_indices.resize(tetrahedron->size());
+	tet_mesh_struct.resize(tetrahedron->size());
+	inv_mass.resize(total_obj_num);
 
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		vertex_position[i] = cloth->data()[i].mesh_struct.vertex_position.data();
@@ -1642,6 +2290,9 @@ void NewtonMethod::reorganzieDataOfObjects()
 		real_index_to_unfixed_index[i] = cloth->data()[i].mesh_struct.real_index_to_unfixed_index.data();
 
 		previous_frame_edge_length_stiffness[i] = cloth->data()[i].length_stiffness;
+
+		inv_mass[i] = cloth->data()[i].mesh_struct.mass_inv.data();
+
 	}
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		vertex_position[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_position.data();
@@ -1667,6 +2318,11 @@ void NewtonMethod::reorganzieDataOfObjects()
 		real_index_to_unfixed_index[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.real_index_to_unfixed_index.data();
 
 		previous_frame_edge_length_stiffness[i] = tetrahedron->data()[i].edge_length_stiffness;
+
+
+		inv_mass[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.mass_inv.data();
+		tet_indices[i] = tetrahedron->data()[i].mesh_struct.indices.data();
+		tet_mesh_struct[i] = &tetrahedron->data()[i].mesh_struct;
 	}
 
 	//std::cout << edge_vertices_mass_spring[0]->size() << " " << only_one_vertex_fix_edge_vertices[0]->size() << " " <<

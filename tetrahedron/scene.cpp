@@ -32,6 +32,7 @@ Scene::Scene()
 	xpbd.time_stamp= &time_stamp;
 
 	newton_method.time_step = time_step;
+	newton_method.time_step_square = time_step * time_step;
 	newton_method.time_stamp = &time_stamp;
 
 	second_order_xpbd_large.time_step = time_step;
@@ -1165,6 +1166,7 @@ void Scene::selectAnchor(bool* control_parameter, bool* select_anchor, double* s
 				tetrahedron[i].mesh_struct.setAnchorPosition();
 				tetrahedron[i].mesh_struct.updateAnchorPerThread(thread.thread_num);
 				tetrahedron[i].mesh_struct.updateUnfixedPointData();
+				tetrahedron[i].mesh_struct.resetMassInv();
 				newton_method.updateIndexBeginPerObj();
 			}
 			break;
