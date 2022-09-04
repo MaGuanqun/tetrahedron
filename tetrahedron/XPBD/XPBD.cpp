@@ -10,7 +10,7 @@ XPBD::XPBD()
 	damping_coe = 0.0;
 
 	perform_collision = false;
-	max_iteration_number =300;
+	max_iteration_number =50;
 	outer_max_iteration_number =4;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
@@ -601,7 +601,7 @@ void XPBD::PBDsolve()
 
 bool XPBD::convergeCondition(unsigned int iteration_num)
 {
-	if (iteration_num < 3) {
+	if (iteration_num < max_iteration_number) {
 		return false;
 	}
 

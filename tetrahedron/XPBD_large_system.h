@@ -3,6 +3,8 @@
 #include"basic/eigenDenseOperation.h"
 #include"external/Eigen/Sparse"
 #include"external/Eigen/SparseLU"
+#include"external/Eigen/SparseQR"
+
 #include"thread.h"
 #include"basic/global.h"
 #include"object/cloth.h"
@@ -179,8 +181,9 @@ private:
 	void computeGravity();
 
 
-	//SparseLU<SparseMatrix<double>, COLAMDOrdering<int> >global_llt;
-	SparseLU<SparseMatrix<double>, COLAMDOrdering<int>> global_llt;
+	//SimplicialLDLT<SparseMatrix<double>> global_llt;
+	//SparseLU<SparseMatrix<double>, COLAMDOrdering<int>> global_llt;
+	SparseQR<SparseMatrix<double>, COLAMDOrdering<int>> global_llt;
 
 
 	void updateRenderPosition();
@@ -258,7 +261,7 @@ private:
 	void updateARAPHessianFixedStructure();
 	void computeARAPHessianFixedStructure(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
 		double* diagonal_coeff_0, double* diagonal_coeff_1, double* diagonal_coeff_2, double* diagonal_coeff_3, double**& address,
-		double alpha, Matrix<double, 3, 4>& A, bool* is_unfixed, double* lambda, double* h, double* g_0, double* g_1,  double* g_2, double* g_3);
+		double alpha, Matrix<double, 3, 4>& A, bool* is_unfixed, double* lambda, double* h, double* g_0, double* g_1,  double* g_2, double* g_3, unsigned int index);
 
 	void updateARAPLambda();
 
@@ -266,4 +269,22 @@ private:
 	void checkIfSampleRight(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
 		int* vertex_index, unsigned int constraint_start_in_sys,
 		double alpha, Matrix<double, 3, 4>& A, bool* is_unfixed, double* lambda);
+
+	void setARAPHessianForTest(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
+		std::vector<Triplet<double>>* hessian_nnz,
+		int* vertex_index, unsigned int constraint_start_in_sys,
+		double alpha, Matrix<double, 3, 4>& A, bool* is_unfixed, double* lambda, double* g_0, double* g_1, double* g_2, double* g_3, double* h, unsigned int index);
+	void setARAP_ForTest();
+	std::vector<Triplet<double>>test_nnz;
+	std::vector<std::vector<double>>lambda_test;
+	SparseMatrix<double> Matrix_test;
+	SparseMatrix<double> only_constraint;
+
+	VectorXd b_test;
+
+	void updateTest();
+	void construct_b_Test();
+
+	double temp_record_0, temp_record_1, temp_record_2;
+
 };

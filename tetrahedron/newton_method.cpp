@@ -14,7 +14,7 @@ NewtonMethod::NewtonMethod()
 	time_step_square = time_step * time_step;
 	conv_rate = time_step * 1e-5;
 
-	max_itr_num = 20;
+	max_itr_num = 10;
 	//damp_coe = 0.99;
 	beta = 0.25;
 	gamma = 0.5;
