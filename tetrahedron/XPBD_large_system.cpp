@@ -13,8 +13,8 @@ SecondOrderLargeSystem::SecondOrderLargeSystem()
 	time_step_square = time_step * time_step;
 	conv_rate = time_step * 1e-5;
 
-	max_itr_num = 50;
-	//damp_coe = 0.99;
+	max_itr_num = 30;
+	damp_coe = 0.99;
 	beta = 0.25;
 	gamma = 0.5;
 }
@@ -828,8 +828,8 @@ void SecondOrderLargeSystem::updateARAPHessianFixedStructure()
 		vertex_pos = vertex_position[obj_No + cloth->size()];
 		alpha = 1.0 / (tetrahedron->data()[obj_No].ARAP_stiffness * time_step_square);
 		size = tet_mesh_struct[obj_No]->indices.size();
-		//lambda = tet_lambda[obj_No].data();
-		lambda = lambda_test[obj_No].data();
+		lambda = tet_lambda[obj_No].data();
+		//lambda = lambda_test[obj_No].data();
 		inv_mass_ = inv_mass[cloth->size() + obj_No];
 		indices = tet_indices[obj_No];
 		vertex_index_start = vertex_begin_per_obj[cloth->size() + obj_No];
@@ -927,8 +927,15 @@ void SecondOrderLargeSystem::updateTest()
 	Matrix_test.setFromTriplets(test_nnz.begin(), test_nnz.end());
 
 
+	
 
 	global_llt.compute(Matrix_test);
+
+	//global_llt1.compute(Matrix_test);
+
+	//std::cout <<"determinent "<< global_llt1.determinant()<<" "<< global_llt1.logAbsDeterminant() << std::endl;
+
+	//std::cout << Matrix_test << std::endl;
 
 	delta_x = global_llt.solve(b_test);
 
@@ -1395,8 +1402,6 @@ void SecondOrderLargeSystem::updateVelocity(int thread_No)
 	double time_step_ = time_step;
 	double* vertex_render_pos;
 
-
-
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		vertex_pos = vertex_position[i][0].data();
 		vertex_render_pos = render_position[i][0].data();
@@ -1406,9 +1411,9 @@ void SecondOrderLargeSystem::updateVelocity(int thread_No)
 		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
 		for (unsigned int j = index_start; j < index_end; ++j) {
 			vertex_start = 3 * unfixed_index_to_normal_index[index];
-			velocity.data()[3 * j] = (vertex_pos[vertex_start] - vertex_render_pos[vertex_start]) / time_step_;
-			velocity.data()[3 * j+1] = (vertex_pos[vertex_start+1] - vertex_render_pos[vertex_start+1]) / time_step_;
-			velocity.data()[3 * j+2] = (vertex_pos[vertex_start+2] - vertex_render_pos[vertex_start+2]) / time_step_;
+			velocity.data()[3 * j] =damp_coe* (vertex_pos[vertex_start] - vertex_render_pos[vertex_start]) / time_step_;
+			velocity.data()[3 * j+1] = damp_coe * (vertex_pos[vertex_start+1] - vertex_render_pos[vertex_start+1]) / time_step_;
+			velocity.data()[3 * j+2] = damp_coe * (vertex_pos[vertex_start+2] - vertex_render_pos[vertex_start+2]) / time_step_;
 			index++;
 		}
 	}
@@ -1693,11 +1698,11 @@ void SecondOrderLargeSystem::updateInternalForce(double* vertex_position_0, doub
 	coe = lambda / coe;
 	MULTI_(Ax, coe);
 
-	//SUM_(force_0, Ax);
-	//SUB_(force_1, Ax);
+	SUM_(force_0, Ax);
+	SUB_(force_1, Ax);
 
 
-	*h = -C - lambda * alpha;
+	*h = C + lambda * alpha;
 
 }
 
@@ -1712,8 +1717,8 @@ void SecondOrderLargeSystem::updateInternalForceOnlyOneEdgeFixed(double* vertex_
 	coe = lambda / coe;
 	MULTI_(Ax, coe);
 
-	//SUM_(force_0, Ax);
-	*h = -C - lambda * alpha;
+	SUM_(force_0, Ax);
+	*h = C + lambda * alpha;
 
 
 }
@@ -1765,9 +1770,9 @@ void SecondOrderLargeSystem::computeHessianOnlyOneVertexFixedEdge(double* vertex
 
 	for (unsigned int i = 0; i < 3; ++i) {
 		*(grad_C_address[i]) = -Ax[i];
-		*(grad_C_address[i + 3]) = Ax[i];
+		*(grad_C_address[i + 3]) = -Ax[i];
 	}
-	*(grad_C_address[6]) = alpha;
+	*(grad_C_address[6]) = -alpha;
 }
 
 
@@ -1801,10 +1806,10 @@ void SecondOrderLargeSystem::computeHessianFixedStructure(double* vertex_positio
 	for (unsigned int i = 0; i < 3; ++i) {
 		*grad_C_address[i] = -Ax[i];
 		*grad_C_address[i+3] = Ax[i];
-		*grad_C_address[i+6] = Ax[i];
-		*grad_C_address[i+9] = -Ax[i];
+		*grad_C_address[i+6] = -Ax[i];
+		*grad_C_address[i+9] = Ax[i];
 	}
-	*grad_C_address[12] = alpha;
+	*grad_C_address[12] = -alpha;
 }
 
 void SecondOrderLargeSystem::computeARAPHessianFixedStructure(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3, 
@@ -1841,7 +1846,7 @@ void SecondOrderLargeSystem::computeARAPHessianFixedStructure(double* vertex_pos
 		Hessian *= -*lambda;
 
 		//Hessian.setZero();
-		*h = -C - alpha * (*lambda);
+		*h = C + alpha * (*lambda);
 	}
 
 		//if (index == 25) {
@@ -1917,15 +1922,15 @@ void SecondOrderLargeSystem::computeARAPHessianFixedStructure(double* vertex_pos
 
 	for (unsigned int i = 0; i < 4; ++i) {
 		if (is_unfixed[i]) {
-			**address = grad.data()[3 * i];
+			**address = -grad.data()[3 * i];
 			address++;
-			**address = grad.data()[3 * i+1];
+			**address = -grad.data()[3 * i+1];
 			address++;
-			**address = grad.data()[3 * i+2];
+			**address = -grad.data()[3 * i+2];
 			address++;
 		}
 	}
-	**address = alpha;
+	**address = -alpha;
 	address++;
 
 	if (is_unfixed[0]) {
@@ -2062,6 +2067,10 @@ void SecondOrderLargeSystem::setARAPHessianForTest(double* vertex_position_0, do
 	double C = (deformation_gradient - rotation).norm();
 	Matrix<double, 12, 1> grad;
 
+	//if (iteration_number == 0) {
+		//*lambda = -C / alpha;
+	//}
+
 	if (C < 1e-8) {
 		Hessian.setZero();
 		grad.setZero();
@@ -2072,14 +2081,10 @@ void SecondOrderLargeSystem::setARAPHessianForTest(double* vertex_position_0, do
 	else {
 		Matrix<double, 3, 4> grad_C_transpose;
 		grad_C_transpose = (1.0 / C) * (deformation_gradient - rotation) * A;// 
-
 		memcpy(grad.data(), grad_C_transpose.data(), 96);
 
 		Matrix<double, 9, 9> dPdF;
-
 		FEM::getdPdF(U, V, eigen_value, dPdF);
-
-
 		FEM::backpropagateElementHessian(Hessian, dPdF, A);
 		Hessian *= (0.5 / C);
 		Hessian -= ((1.0 / C) * grad) * grad.transpose();
@@ -2136,12 +2141,12 @@ void SecondOrderLargeSystem::setARAPHessianForTest(double* vertex_position_0, do
 	hessian_nnz->emplace_back(Triplet<double>(constraint_start_in_sys, constraint_start_in_sys, -alpha));
 
 
-		for (unsigned int i = 0; i < 3; ++i) {
-			g_0[i] += *lambda * grad.data()[i];
-			g_1[i] += *lambda * grad.data()[i + 3];
-			g_2[i] += *lambda * grad.data()[i + 6];
-			g_3[i] += *lambda * grad.data()[i + 9];
-		}
+	for (unsigned int i = 0; i < 3; ++i) {
+		g_0[i] += *lambda * grad.data()[i];
+		g_1[i] += *lambda * grad.data()[i + 3];
+		g_2[i] += *lambda * grad.data()[i + 6];
+		g_3[i] += *lambda * grad.data()[i + 9];
+	}
 	
 }
 

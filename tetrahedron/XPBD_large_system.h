@@ -182,8 +182,8 @@ private:
 
 
 	//SimplicialLDLT<SparseMatrix<double>> global_llt;
-	//SparseLU<SparseMatrix<double>, COLAMDOrdering<int>> global_llt;
-	SparseQR<SparseMatrix<double>, COLAMDOrdering<int>> global_llt;
+	SparseLU<SparseMatrix<double>, COLAMDOrdering<int>> global_llt;
+	//SparseQR<SparseMatrix<double>, COLAMDOrdering<int>> global_llt;
 
 
 	void updateRenderPosition();
@@ -283,8 +283,9 @@ private:
 	VectorXd b_test;
 
 	void updateTest();
-	void construct_b_Test();
 
+
+	double damp_coe;
 	double temp_record_0, temp_record_1, temp_record_2;
 
 };
