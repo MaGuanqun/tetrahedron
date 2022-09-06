@@ -102,7 +102,7 @@ void Scene::reorganizeData()
 void Scene::saveParameter(std::vector<std::string>& path, std::vector<std::string>& collider_path, std::vector<std::array<double, 6>>* cloth_stiffness, std::vector<std::array<double, 6>>* tet_stiffness,
 	std::vector<std::array<double, 8>>* cloth_collision_stiffness, std::vector<std::array<double, 8>>* tet_collision_stiffness, double* tolerance_ratio, double* friction_coe)
 {
-	double velocity_damp;
+	double velocity_damp=1.0;
 	switch (use_method)
 	{
 	case PD_:
@@ -115,7 +115,7 @@ void Scene::saveParameter(std::vector<std::string>& path, std::vector<std::strin
 		velocity_damp = 1.0;
 		break;
 	case XPBD_SECOND_ORDER_LARGE_:
-		velocity_damp = 1.0;
+		velocity_damp = second_order_xpbd_large.velocity_damp;
 		break;
 	}
 	SaveParameter::writeParameter(path, collider_path, cloth_stiffness, tet_stiffness, cloth_collision_stiffness, tet_collision_stiffness, use_method,

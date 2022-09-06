@@ -67,6 +67,8 @@ public:
 	void updatePositionFromOri(int thread_No);
 
 	void setHessianDiagonalFixedStructureInitialStiffness(int thread_No);
+	double damping_coeff;
+	double velocity_damp;
 private:
 
 
@@ -170,13 +172,13 @@ private:
 	void getHessianCoeffAddressFixedOneAddress(unsigned int start_index_in_system_0, double** grad_C_address, unsigned int constraint_start_index_0);
 	void computeHessianFixedStructure(double* vertex_position_0, double* vertex_position_1, double* diagonal_coeff_0,
 		double* diagonal_coeff_1, double** hessian_coeff_address, double alpha, double** grad_C_address,
-		double lambda);
+		double lambda, double* ori_0, double* ori_1, double beta);
 
 
 	void updateHessianFixedStructure();
 
 	void updateInternalForce(double* vertex_position_0, double* vertex_position_1, double* force_0,
-		double* force_1, double rest_length, double* h, double lambda, double alpha);
+		double* force_1, double rest_length, double* h, double lambda, double alpha, double* ori_0, double* ori_1, double beta);
 
 	void computeGravity();
 
@@ -192,9 +194,9 @@ private:
 
 
 	void computeHessianOnlyOneVertexFixedEdge(double* vertex_position_0, double* vertex_position_1, double* diagonal_coeff_0,
-		double alpha, double** grad_C_address, double lambda);
+		double alpha, double** grad_C_address, double lambda, double* ori_0, double* ori_1, double beta);
 	void updateInternalForceOnlyOneEdgeFixed(double* vertex_position_0, double* vertex_position_1, double* force_0,
-		double alpha, double rest_length, double* h, double lambda);
+		double alpha, double rest_length, double* h, double lambda, double* ori_0, double* ori_1, double beta);
 
 
 	void computeMassSpringEnergy(int thread_No);
@@ -273,7 +275,8 @@ private:
 	void setARAPHessianForTest(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
 		std::vector<Triplet<double>>* hessian_nnz,
 		int* vertex_index, unsigned int constraint_start_in_sys,
-		double alpha, Matrix<double, 3, 4>& A, bool* is_unfixed, double* lambda, double* g_0, double* g_1, double* g_2, double* g_3, double* h, unsigned int index);
+		double alpha, Matrix<double, 3, 4>& A, bool* is_unfixed, double* lambda, double* g_0, double* g_1, double* g_2, double* g_3, double* h, unsigned int index,
+		double* ori_0, double* ori_1, double* ori_2, double* ori_3, double beta);
 	void setARAP_ForTest();
 	std::vector<Triplet<double>>test_nnz;
 	std::vector<std::vector<double>>lambda_test;
@@ -285,7 +288,9 @@ private:
 	void updateTest();
 
 
-	double damp_coe;
+
 	double temp_record_0, temp_record_1, temp_record_2;
+
+
 
 };
