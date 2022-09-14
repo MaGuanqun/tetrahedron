@@ -12,9 +12,9 @@ NewtonMethod::NewtonMethod()
 	time_step = 1.0 / 30.0;
 	perform_collision = false;
 	time_step_square = time_step * time_step;
-	conv_rate = time_step * 1e-5;
+	conv_rate = time_step * 1e-3;
 
-	max_itr_num = 10;
+	max_itr_num = 30;
 	//damp_coe = 0.99;
 	beta = 0.25;
 	gamma = 0.5;

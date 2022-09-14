@@ -182,6 +182,7 @@
     <ClCompile Include="collision\predictive_contact.cpp" />
     <ClCompile Include="collision\rootparitycollisiontest.cpp" />
     <ClCompile Include="collision\spatial_hashing.cpp" />
+    <ClCompile Include="compute_energy.cpp" />
     <ClCompile Include="external\glad.c" />
     <ClCompile Include="external\imgui\imgui.cpp" />
     <ClCompile Include="external\imgui\imgui_draw.cpp" />
@@ -254,6 +255,7 @@
     <ClInclude Include="collision\parallel_radix_sort.h" />
     <ClInclude Include="collision\predictive_contact.h" />
     <ClInclude Include="collision\spatial_hashing.h" />
+    <ClInclude Include="compute_energy.h" />
     <ClInclude Include="external\imgui\imgui.h" />
     <ClInclude Include="external\imgui\imgui_impl_glfw.h" />
     <ClInclude Include="external\imgui\imgui_impl_opengl3.h" />

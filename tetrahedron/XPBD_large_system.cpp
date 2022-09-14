@@ -13,7 +13,7 @@ SecondOrderLargeSystem::SecondOrderLargeSystem()
 	time_step_square = time_step * time_step;
 	conv_rate = time_step * 1e-5;
 
-	max_itr_num = 30;
+	max_itr_num = 50;
 	velocity_damp = 0.99;
 	beta = 0.25;
 	gamma = 0.5;
@@ -135,6 +135,11 @@ void SecondOrderLargeSystem::setSizeOfSys()
 
 	b_test.resize(sys_total_size);
 	Matrix_test.resize(sys_total_size, sys_total_size);
+
+	residual.resize(total_obj_num);
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		residual[i].resize(total_vertex_num[i],Vector3d::Zero());
+	}
 }
 
 void SecondOrderLargeSystem::computeGravity()
@@ -372,10 +377,12 @@ void SecondOrderLargeSystem::solveNewtonMethod_()
 	iteration_number = 0;
 
 	//std::cout << "====" << std::endl;
-//	computeEnergy();
+	//computeEnergy();
 	//std::cout << "energy " << total_energy << std::endl;
+	computeResidual();
+
+	previous_residual = total_residual;
 	previous_energy = total_energy;
-	store_residual.clear();
 	while (convergenceCondition())
 	{
 		updateTest();
@@ -387,36 +394,41 @@ void SecondOrderLargeSystem::solveNewtonMethod_()
 		displacement_coe = 1.0;
 		thread->assignTask(this, UPDATE_POSITION_NEWTON);
 		updateARAPLambda();
-		//thread->assignTask(this, VELOCITY_NEWTON);
 		//computeEnergy();
 		//std::cout << "energy0 " << total_energy << std::endl;
+		computeResidual();
 
-		//if (total_energy > previous_energy) {
-		//	updateRenderPosition();
-		//	displacement_coe *= 0.5;
-		//	change_direction = false;
-		//	while (total_energy > previous_energy)
-		//	{				
-		//		thread->assignTask(this, UPDATE_POSITION_NEWTON_FROM_ORI);
-		//		computeEnergy();
-		//		if (abs(displacement_coe) < 1e-4) {
-		//			//std::cout << "displacement_coe too small " << displacement_coe << std::endl;
-		//			//if (!change_direction) {
-		//			//	displacement_coe = -1.0;
-		//			//	change_direction = true;
-		//			//}
-		//			//else {
-		//				break;
-		//			//}
-		//		}
-		//		displacement_coe *= 0.5;
-		//	}
-		//}
+		if (iteration_number != 0) {
+			if (total_residual > previous_residual) {
+				displacement_coe *= 0.5;
+				change_direction = false;
+				//std::cout << "activate " << std::endl;
+				while (total_residual > previous_residual)
+				{
+					thread->assignTask(this, UPDATE_POSITION_NEWTON_FROM_ORI);
+					updateARAPLambdaFromOri();
+					//computeEnergy();
+					computeResidual();
+					if (abs(displacement_coe) < 1e-4) {
+						//std::cout << "too many times " << std::endl;
+						//std::cout << "displacement_coe too small " << displacement_coe << std::endl;
+						//if (!change_direction) {
+						//	//displacement_coe = 1.0;
+						//	change_direction = true;
+						//}
+						//else {
+							break;
+						//}
+					}
+					displacement_coe *= 0.5;
+				}
+			}
+		}
+		//std::cout << total_residual<<" "<<previous_residual << std::endl;
 
-		//residual = sqrt(b.dot(b));
-		//store_residual.emplace_back(residual);
 		iteration_number++;
 		previous_energy = total_energy;
+		previous_residual = total_residual;
 		//std::cout << "residual " << residual << std::endl;
 	}
 	thread->assignTask(this, VELOCITY_NEWTON);
@@ -585,23 +597,13 @@ void SecondOrderLargeSystem::computeMassSpringEnergy(int thread_No)
 		unfixed_vertex_index = unfixed_vertex[obj_No]->data();
 		index_start = vertex_begin_per_obj[obj_No];
 		for (unsigned int i = vertex_begin; i < vertex_end; i += 2) {
-			energy += computeMassSpringEnergy(vertex_pos[unfixed_vertex_index[edge_vertex[i]]].data(), vertex_pos[unfixed_vertex_index[edge_vertex[i + 1]]].data(),
+			energy += compute_energy.computeMassSpringEnergy(vertex_pos[unfixed_vertex_index[edge_vertex[i]]].data(), vertex_pos[unfixed_vertex_index[edge_vertex[i + 1]]].data(),
 				rest_length_[i >> 1], edge_length_stiffness_);
 		}
 	}
 	energy_per_thread[thread_No] += energy;
 }
 
-
-double SecondOrderLargeSystem::computeMassSpringEnergy(double* position_0, double* position_1, double rest_length, double stiffness)
-{
-	double current_length;
-	current_length = sqrt((position_0[0] - position_1[0]) * (position_0[0] - position_1[0])
-		+ (position_0[1] - position_1[1]) * (position_0[1] - position_1[1])
-		+ (position_0[2] - position_1[2]) * (position_0[2] - position_1[2]));
-	current_length -= rest_length;
-	return 0.5 * stiffness * current_length * current_length;
-}
 
 
 //UPDATE_HESSIAN_FIXED_STRUCTURE
@@ -803,6 +805,39 @@ void SecondOrderLargeSystem::getARAPCoeffAddress()
 }
 
 
+void SecondOrderLargeSystem::computeARAPEnergy(int thread_No)
+{
+	unsigned int tet_begin;
+	unsigned int tet_end;
+
+	std::array<double, 3>* vertex_pos;
+	std::array<int, 4>* tet_index;
+
+	Matrix<double, 3, 4>* A;
+	double* volume;
+	double stiffness;
+	double energy = 0.0;
+	double* mass_inv_;
+	for (unsigned int obj_No = 0; obj_No < tetrahedron->size(); ++obj_No) {
+		vertex_pos = vertex_position[obj_No+cloth->size()];
+		tet_begin = tet_index_begin_per_thread[obj_No][thread_No];
+		tet_end = tet_index_begin_per_thread[obj_No][thread_No + 1];
+		tet_index = tet_indices[obj_No];
+		A = tet_mesh_struct[obj_No]->A.data();
+		volume = tet_mesh_struct[obj_No]->volume.data();
+		stiffness = tetrahedron->data()[obj_No].ARAP_stiffness;
+		mass_inv_ = inv_mass[obj_No + cloth->size()];
+		for (unsigned int i =tet_begin; i < tet_end; i ++) {
+			if (mass_inv_[tet_index[i][0]] != 0.0 || mass_inv_[tet_index[i][1]] != 0.0 || mass_inv_[tet_index[i][2]] != 0.0 || mass_inv_[tet_index[i][3]] != 0.0) {
+				energy += compute_energy.computeARAPEnergy(vertex_pos[tet_index[i][0]].data(), vertex_pos[tet_index[i][1]].data(), vertex_pos[tet_index[i][2]].data(),
+					vertex_pos[tet_index[i][3]].data(), A[i], volume[i], stiffness);
+			}
+
+		}
+	}
+	energy_per_thread[thread_No] += energy;
+}
+
 //also compute internal force
 void SecondOrderLargeSystem::updateARAPHessianFixedStructure()
 {
@@ -942,6 +977,7 @@ void SecondOrderLargeSystem::updateTest()
 
 	global_llt.compute(Matrix_test);
 
+	
 	//global_llt1.compute(Matrix_test);
 
 	//std::cout <<"determinent "<< global_llt1.determinant()<<" "<< global_llt1.logAbsDeterminant() << std::endl;
@@ -949,6 +985,9 @@ void SecondOrderLargeSystem::updateTest()
 	//std::cout << Matrix_test << std::endl;
 
 	delta_x = global_llt.solve(b_test);
+
+	//std::cout << b_test << std::endl;
+	//std::cout << "====" << std::endl;
 
 	//std::cout << "error " << (Matrix_test * delta_x - b_test).norm() << std::endl;
 
@@ -1010,8 +1049,9 @@ void SecondOrderLargeSystem::setARAP_ForTest()
 					ori_vertex_pos[indices[i][3]].data(), rayleigh_damp_stiffness[0]*time_step);
 
 				//if (i == 25) {
-				//	std::cout << "test h start " << constraint_index_in_system_ << std::endl;
-				//	std::cout << "test " << constraint_index_in_system_ - 1 << " " << indices[i][0] << " " << indices[i][1] << " " << indices[i][2] << " " << indices[i][3] << std::endl;
+					//std::cout << *lambda << std::endl;
+					//std::cout << "test h start " << constraint_index_in_system_ << std::endl;
+					//std::cout << "test " << constraint_index_in_system_ - 1 << " " << indices[i][0] << " " << indices[i][1] << " " << indices[i][2] << " " << indices[i][3] << std::endl;
 				//}
 				constraint_index_in_system_++;
 				lambda++;
@@ -1255,7 +1295,57 @@ void SecondOrderLargeSystem::computeEnergy(int thread_No)
 {
 	energy_per_thread[thread_No] = 0;
 	computeMassSpringEnergy(thread_No);
+	computeARAPEnergy(thread_No);
 	computeInertial(thread_No);
+
+}
+
+void SecondOrderLargeSystem::computeResidual()
+{
+	double* mass_;
+	Vector3d* residual_;
+	unsigned int vertex_size;
+
+
+	unsigned int index_end;
+	unsigned int index_start;
+	std::array<double,3>* vertex_pos;
+
+	unsigned int vertex_start;
+	unsigned int* unfixed_index_to_normal_index;
+
+	unsigned int j;
+	unsigned int start;
+
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		mass_ = mass[i];
+		vertex_pos = vertex_position[i];
+		residual_ = residual[i].data();
+		vertex_size = unfixed_vertex_begin_per_thread[i][total_thread_num];
+		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
+		for (unsigned int k = 0; k < vertex_size; ++k) {
+			start = 3 * (vertex_begin_per_obj[i] + k);
+			j = unfixed_index_to_normal_index[k];
+			residual_[j][0] = mass_[j] * (vertex_pos[j][0] - Sn[start]) / (time_step_square);
+			residual_[j][1] = mass_[j] * (vertex_pos[j][1] - Sn[start+1]) / (time_step_square);
+			residual_[j][2] = mass_[j] * (vertex_pos[j][2] - Sn[start+2]) / (time_step_square);
+		}
+	}
+
+	computeEdgeLenthResidual();
+	computeARAPResidual();
+	double residual_norm = 0.0;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		residual_ = residual[i].data();
+		for (unsigned int j = 0; j < residual[i].size(); ++j) {
+			residual_norm += residual_[j].squaredNorm();
+		}
+	}
+
+	total_residual = sqrt(residual_norm);
+
+	//std::cout << "residual norm "<<residual_norm << std::endl;
+
 }
 
 
@@ -1282,20 +1372,98 @@ void SecondOrderLargeSystem::computeInertial(int thread_No)
 		index_start = vertex_start + unfixed_vertex_begin_per_thread[i][thread_No];
 
 		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
-
-		for (unsigned int l = index_start; l < index_end; ++l) {
-			j = 3 * l;
-			start = 3 * unfixed_index_to_normal_index[l - vertex_start];
-			energy += mass_[unfixed_index_to_normal_index[l - vertex_start]] *
-				((vertex_pos[start] - Sn.data()[j]) * (vertex_pos[start] - Sn.data()[j]) +
-					(vertex_pos[start + 1] - Sn.data()[j + 1]) * (vertex_pos[start + 1] - Sn.data()[j + 1]) +
-					(vertex_pos[start + 2] - Sn.data()[j + 2]) * (vertex_pos[start + 2] - Sn.data()[j + 2]));
-		}
+		energy_per_thread[thread_No] += compute_energy.computeInertial(time_step, index_start, index_end, vertex_pos, mass_, Sn, vertex_start, unfixed_index_to_normal_index);
 	}
-	energy /= (2.0 * time_step_square);
-	energy_per_thread[thread_No] += energy;
 }
 
+
+
+
+
+void SecondOrderLargeSystem::computeEdgeLenthResidual()
+{
+
+	unsigned int size;
+	double stiffness;
+	unsigned int* edge_vertex_index;
+	Vector3d force_0;
+	Vector3d force_1;
+
+	std::array<double, 3>* v_p;
+	Vector3d* residual_;
+	double* edge_length;
+	double* inv_mass_;
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		size = cloth->data()[i].mesh_struct.edge_length.size();
+		edge_vertex_index = cloth->data()[i].mesh_struct.edge_vertices.data();
+		stiffness = cloth->data()[i].length_stiffness;
+		v_p = vertex_position[i];
+		residual_ = residual[i].data();
+		edge_length = cloth->data()[i].mesh_struct.edge_length.data();
+		inv_mass_ = inv_mass[i];
+		for (unsigned int j = 0; j < size; ++j) {
+			if (inv_mass_[edge_vertex_index[(j) << 1]] != 0 || inv_mass_[edge_vertex_index[((j) << 1) + 1]] != 0) {
+				second_order_constraint.computeEdgeLengthForce(v_p[edge_vertex_index[(j) << 1]].data(),
+					v_p[edge_vertex_index[((j) << 1) + 1]].data(), stiffness, force_0.data(), force_1.data(),
+					edge_length[j]);
+				if (inv_mass_[edge_vertex_index[(j) << 1]] != 0) {
+					residual_[edge_vertex_index[(j) << 1]] += force_0;
+				}
+				if (inv_mass_[edge_vertex_index[((j) << 1) + 1]] != 0) {
+					residual_[edge_vertex_index[((j) << 1) + 1]] += force_1;
+				}
+			}
+		}
+	}
+}
+
+
+
+void SecondOrderLargeSystem::computeARAPResidual()
+{
+	unsigned int size;
+	double stiffness;
+	unsigned int* edge_vertex_index;
+
+	std::array<double, 3>* vertex_pos;
+	Vector3d* residual_;
+	std::array<int, 4>* indices;
+	double* volume;
+
+	Matrix<double, 3, 4>* A;
+
+	Matrix<double, 3, 4> force;
+	double* inv_mass_;
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		size = tetrahedron->data()[i].mesh_struct.indices.size();
+		indices = tetrahedron->data()[i].mesh_struct.indices.data();
+		vertex_pos = vertex_position[i + cloth->size()];
+		volume = tetrahedron->data()[i].mesh_struct.volume.data();
+		stiffness = tetrahedron->data()[i].ARAP_stiffness;
+		A = tetrahedron->data()[i].mesh_struct.A.data();
+		residual_ = residual[i + cloth->size()].data();
+		inv_mass_ = inv_mass[cloth->size() + i];
+		for (unsigned int j = 0; j < size; ++j) {
+			if (inv_mass_[indices[j][0]] != 0.0 || inv_mass_[indices[j][1]] != 0.0 || inv_mass_[indices[j][2]] != 0.0 || inv_mass_[indices[j][3]] != 0.0) {
+				second_order_constraint.computeARAPForce(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
+					vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), stiffness, A[j], volume[j], force);
+				if (inv_mass_[indices[j][0]] != 0.0) {
+					residual_[indices[j][0]] += force.col(0);
+				}
+				if (inv_mass_[indices[j][1]] != 0.0) {
+					residual_[indices[j][1]] += force.col(1);
+				}
+				if (inv_mass_[indices[j][2]] != 0.0) {
+					residual_[indices[j][2]] += force.col(2);
+				}
+				if (inv_mass_[indices[j][3]] != 0.0) {
+					residual_[indices[j][3]] += force.col(3);
+				}
+			}		
+		}
+	}
+
+}
 
 //
 void SecondOrderLargeSystem::updateARAPLambda()
@@ -1368,7 +1536,20 @@ void SecondOrderLargeSystem::updatePosition(int thread_No)
 	
 }
 
+//
+void SecondOrderLargeSystem::updateARAPLambdaFromOri()
+{
+	unsigned int size;
+	double* lambda;
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		size = lambda_test[i].size();
+		lambda = lambda_test[i].data();
+		for (unsigned int j = 0; j < size; ++j) {
+			lambda[j] -= displacement_coe*delta_x[ARAP_constrant_in_system[i] + j];
+		}
+	}
 
+}
 
 //UPDATE_POSITION_NEWTON_FROM_ORI
 void SecondOrderLargeSystem::updatePositionFromOri(int thread_No)
@@ -1376,18 +1557,16 @@ void SecondOrderLargeSystem::updatePositionFromOri(int thread_No)
 	unsigned int index_end;
 	unsigned int index_start;
 	double* vertex_pos;
-	double* ori_vertex_pos;
+
 	unsigned int index;
 
 	unsigned int* unfixed_index_to_normal_index;
-
 	unsigned int vertex_start;
 
 	double coe = displacement_coe;
 
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		vertex_pos = vertex_position[i][0].data();
-		ori_vertex_pos = render_position[i][0].data();
 		index = unfixed_vertex_begin_per_thread[i][thread_No];
 		index_end = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No + 1];
 		index_start = vertex_begin_per_obj[i] + unfixed_vertex_begin_per_thread[i][thread_No];
@@ -1395,7 +1574,7 @@ void SecondOrderLargeSystem::updatePositionFromOri(int thread_No)
 		for (unsigned int j = index_start; j < index_end; ++j) {
 			vertex_start = 3 * unfixed_index_to_normal_index[index];
 			for (unsigned int k = 0; k < 3; ++k) {
-				vertex_pos[vertex_start + k] = ori_vertex_pos[vertex_start + k] + coe * delta_x[3 * j + k];
+				vertex_pos[vertex_start + k] -= coe * delta_x[3 * j + k];
 			}
 			index++;
 		}
@@ -1435,14 +1614,6 @@ void SecondOrderLargeSystem::updateVelocity(int thread_No)
 		}
 	}
 }
-
-
-
-void SecondOrderLargeSystem::computeResidual()
-{
-
-}
-
 
 
 //SUM_B
@@ -2122,14 +2293,13 @@ void SecondOrderLargeSystem::setARAPHessianForTest(double* vertex_position_0, do
 	Matrix<double, 12, 1> grad;
 
 	//if (iteration_number == 0) {
-
 	//}
 
 	if (C < 1e-8) {
 		Hessian.setZero();
 		grad.setZero();
 		*h = 0.0;
-		*lambda = -C / alpha;
+		//*lambda = -C / alpha;
 		hessian_nnz->emplace_back(Triplet<double>(constraint_start_in_sys, constraint_start_in_sys, -alpha));
 		return;
 	}
@@ -2154,11 +2324,11 @@ void SecondOrderLargeSystem::setARAPHessianForTest(double* vertex_position_0, do
 
 		Matrix<double, 12, 1> grad_damp = (1 + alpha * beta) * grad + alpha * beta * (Hessian * x_dis);
 
-		*lambda = -C / alpha - beta * grad.dot(x_dis);
+		//*lambda = -C / alpha - beta * grad.dot(x_dis);
 
 		Hessian *= -*lambda;
 		//Hessian.setZero();
-		*h = 0.0;// C + alpha * (*lambda) + alpha * beta * grad.dot(x_dis);
+		*h =  C + alpha * (*lambda) + alpha * beta * grad.dot(x_dis);
 
 		//std::cout << *h << std::endl;
 
@@ -2482,6 +2652,8 @@ void SecondOrderLargeSystem::reorganzieDataOfObjects()
 
 		previous_frame_edge_length_stiffness[i] = cloth->data()[i].length_stiffness;
 	}
+
+	tet_index_begin_per_thread.resize(tetrahedron->size());
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		vertex_position[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_position.data();
 		render_position[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_for_render.data();
@@ -2510,6 +2682,7 @@ void SecondOrderLargeSystem::reorganzieDataOfObjects()
 		tet_indices[i] = tetrahedron->data()[i].mesh_struct.indices.data();
 		tet_mesh_struct[i] = &tetrahedron->data()[i].mesh_struct;
 
+		tet_index_begin_per_thread[i] = tetrahedron->data()[i].mesh_struct.tetrahedron_index_begin_per_thread.data();
 	}
 
 	//std::cout << edge_vertices_mass_spring[0]->size() << " " << only_one_vertex_fix_edge_vertices[0]->size() << " " <<

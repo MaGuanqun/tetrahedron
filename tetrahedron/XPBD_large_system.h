@@ -11,6 +11,8 @@
 #include"object/tetrahedron.h"
 #include"object/collider.h"
 #include"collision/collision.h"
+#include"compute_energy.h"
+#include"XPBD/second_order.h"
 
 using namespace Eigen;
 using namespace denseOperation;
@@ -201,7 +203,7 @@ private:
 
 	void computeMassSpringEnergy(int thread_No);
 	void computeInertial(int thread_No);
-	double computeMassSpringEnergy(double* position_0, double* position_1, double rest_length, double stiffness);
+
 	std::vector<double> energy_per_thread;
 	void computeEnergy();
 	double total_energy;
@@ -211,10 +213,10 @@ private:
 	bool change_direction;
 	void computeResidual();
 
-	double residual;
+	//double residual;
 
-	std::vector<double>store_residual;
-	std::vector<double>log_store_residual;
+	//std::vector<double>store_residual;
+	//std::vector<double>log_store_residual;
 
 	std::vector<VectorXd> b_thread;
 
@@ -291,6 +293,19 @@ private:
 
 	double temp_record_0, temp_record_1, temp_record_2;
 
+	ComputeEnergy compute_energy;
 
+	void computeARAPEnergy(int thread_No);
 
+	std::vector<unsigned int*> tet_index_begin_per_thread;
+
+	std::vector<std::vector<Vector3d>>residual;
+	SecondOrderConstraint second_order_constraint;
+	void computeEdgeLenthResidual();
+
+	void computeARAPResidual();
+
+	double total_residual;
+	double previous_residual;
+	void updateARAPLambdaFromOri();
 };

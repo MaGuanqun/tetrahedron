@@ -190,6 +190,9 @@
     <ClCompile Include="XPBD_large_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="compute_energy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="basic\basic_imgui.h">
@@ -406,6 +409,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="XPBD\FEM_relate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compute_energy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

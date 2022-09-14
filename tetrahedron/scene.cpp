@@ -10,7 +10,7 @@ Scene::Scene()
 	light.diffuse = glm::vec3(0.9, 0.9, 0.9);
 	light.specular = glm::vec3(0.85, 0.85, 0.85);
 
-	time_step = 1.0 / 120.0;
+	time_step = 1.0 / 60.0;
 
 
 	max_force_magnitude = 2.0;
