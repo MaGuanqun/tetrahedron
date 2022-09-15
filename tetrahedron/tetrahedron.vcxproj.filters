@@ -414,6 +414,9 @@
     <ClInclude Include="compute_energy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="testHessian.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

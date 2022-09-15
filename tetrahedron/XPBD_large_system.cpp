@@ -2,6 +2,8 @@
 #include"basic/write_txt.h"
 #include"XPBD/FEM_relate.h"
 
+#include"testHessian.h"
+
 SecondOrderLargeSystem::SecondOrderLargeSystem()
 {
 	gravity_ = 9.8;
@@ -13,10 +15,12 @@ SecondOrderLargeSystem::SecondOrderLargeSystem()
 	time_step_square = time_step * time_step;
 	conv_rate = time_step * 1e-5;
 
-	max_itr_num = 50;
+	max_itr_num = 70;
 	velocity_damp = 0.99;
 	beta = 0.25;
 	gamma = 0.5;
+
+	TEST_HESSIAN::testARAPHessianMulti();
 }
 
 
@@ -359,7 +363,8 @@ void SecondOrderLargeSystem::resetLambda()
 	}
 
 	for (unsigned int i = 0; i < lambda_test.size(); ++i) {
-		memset(lambda_test[i].data(), 0, 8 * lambda_test[i].size());
+		//memset(lambda_test[i].data(), 0, 8 * lambda_test[i].size());
+		std::fill(lambda_test[i].begin(), lambda_test[i].end(), 1.0);
 	}
 }
 
@@ -369,18 +374,17 @@ void SecondOrderLargeSystem::solveNewtonMethod_()
 	//storeInitialPosition();
 	thread->assignTask(this, SET_S_N);
 	updatePositionFromSn();
-	//if (iteration_number > 1000) {
-	//	system("pause");
-	//}
-	resetLambda();
+
+
+	//resetLambda();
 
 	iteration_number = 0;
 
 	//std::cout << "====" << std::endl;
-	//computeEnergy();
+	computeEnergy();
 	//std::cout << "energy " << total_energy << std::endl;
 	computeResidual();
-
+	std::cout <<"== "<< total_residual << std::endl;
 	previous_residual = total_residual;
 	previous_energy = total_energy;
 	while (convergenceCondition())
@@ -394,23 +398,26 @@ void SecondOrderLargeSystem::solveNewtonMethod_()
 		displacement_coe = 1.0;
 		thread->assignTask(this, UPDATE_POSITION_NEWTON);
 		updateARAPLambda();
-		//computeEnergy();
+		computeEnergy();
 		//std::cout << "energy0 " << total_energy << std::endl;
 		computeResidual();
 
 		if (iteration_number != 0) {
-			if (total_residual > previous_residual) {
+			if (abs(total_energy) >abs(previous_energy)) {
 				displacement_coe *= 0.5;
 				change_direction = false;
-				//std::cout << "activate " << std::endl;
-				while (total_residual > previous_residual)
+				std::cout << "activate " << std::endl;
+				while (abs(total_energy) > abs(previous_energy)) 
 				{
 					thread->assignTask(this, UPDATE_POSITION_NEWTON_FROM_ORI);
 					updateARAPLambdaFromOri();
-					//computeEnergy();
+					computeEnergy();
 					computeResidual();
 					if (abs(displacement_coe) < 1e-4) {
-						//std::cout << "too many times " << std::endl;
+						std::cout << "too many times " << std::endl;
+						//std::cout <<"determinent "<< global_llt.determinant()<<" "<< global_llt.logAbsDeterminant() << std::endl;
+						//std::cout << (Matrix_test * delta_x - b_test).norm()<<" "<<b_test.norm() << std::endl;
+						//total_residual
 						//std::cout << "displacement_coe too small " << displacement_coe << std::endl;
 						//if (!change_direction) {
 						//	//displacement_coe = 1.0;
@@ -424,7 +431,12 @@ void SecondOrderLargeSystem::solveNewtonMethod_()
 				}
 			}
 		}
-		//std::cout << total_residual<<" "<<previous_residual << std::endl;
+		
+		if (total_residual > previous_residual) {
+			std::cout << total_residual << " " << previous_residual << std::endl;
+		}
+
+		//std::cout << total_residual<< std::endl;
 
 		iteration_number++;
 		previous_energy = total_energy;
@@ -587,18 +599,28 @@ void SecondOrderLargeSystem::computeMassSpringEnergy(int thread_No)
 	unsigned int* unfixed_vertex_index;
 	unsigned int index_start;
 	double energy = 0;
+	double* lambda;
 	for (unsigned int obj_No = 0; obj_No < cloth->size(); ++obj_No) {
 		vertex_pos = vertex_position[obj_No];
 		edge_vertex = edge_vertices_mass_spring[obj_No]->data();
 		vertex_begin = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No] << 1;
 		vertex_end = edge_index_begin_per_thread_for_mass_spring[obj_No][thread_No + 1] << 1;
 		rest_length_ = unfixed_rest_length[obj_No]->data();
-		edge_length_stiffness_ = *edge_length_stiffness[obj_No];
 		unfixed_vertex_index = unfixed_vertex[obj_No]->data();
-		index_start = vertex_begin_per_obj[obj_No];
+		lambda = lambda_unfixed[obj_No].data();
 		for (unsigned int i = vertex_begin; i < vertex_end; i += 2) {
-			energy += compute_energy.computeMassSpringEnergy(vertex_pos[unfixed_vertex_index[edge_vertex[i]]].data(), vertex_pos[unfixed_vertex_index[edge_vertex[i + 1]]].data(),
-				rest_length_[i >> 1], edge_length_stiffness_);
+			energy += compute_energy.computeMassSpringConstraint(vertex_pos[unfixed_vertex_index[edge_vertex[i]]].data(), vertex_pos[unfixed_vertex_index[edge_vertex[i + 1]]].data(),
+				rest_length_[i >> 1], *edge_length_stiffness[obj_No], lambda[i >> 1],time_step_square);
+		}
+		//only one vertex fixed in the edge
+		edge_vertex = only_one_vertex_fix_edge_vertices[obj_No]->data();
+		vertex_begin = only_one_vertex_fixed_edge_index_begin_per_thread[obj_No][thread_No] << 1;
+		vertex_end = only_one_vertex_fixed_edge_index_begin_per_thread[obj_No][thread_No + 1] << 1;
+		rest_length_ = fixed_one_vertices_rest_length[obj_No]->data();
+		lambda = lambda_fixed_one_vertex[obj_No].data();
+		for (unsigned int i = vertex_begin; i < vertex_end; i += 2) {
+			energy += compute_energy.computeMassSpringConstraint(vertex_pos[unfixed_vertex_index[edge_vertex[i]]].data(), vertex_pos[edge_vertex[i + 1]].data(),
+				rest_length_[i >> 1], *edge_length_stiffness[obj_No], lambda[i >> 1], time_step_square);
 		}
 	}
 	energy_per_thread[thread_No] += energy;
@@ -688,6 +710,7 @@ void SecondOrderLargeSystem::initialLambda()
 		tet_lambda[i].resize(tetrahedron->data()[i].mesh_struct.indices.size());
 		lambda_test[i].resize(tetrahedron->data()[i].mesh_struct.indices.size());
 	}
+	resetLambda();
 }
 
 
@@ -805,9 +828,8 @@ void SecondOrderLargeSystem::getARAPCoeffAddress()
 }
 
 
-void SecondOrderLargeSystem::computeARAPEnergy(int thread_No)
+void SecondOrderLargeSystem::computeARAPEnergy()
 {
-	unsigned int tet_begin;
 	unsigned int tet_end;
 
 	std::array<double, 3>* vertex_pos;
@@ -818,24 +840,28 @@ void SecondOrderLargeSystem::computeARAPEnergy(int thread_No)
 	double stiffness;
 	double energy = 0.0;
 	double* mass_inv_;
+	double* lambda_;
 	for (unsigned int obj_No = 0; obj_No < tetrahedron->size(); ++obj_No) {
 		vertex_pos = vertex_position[obj_No+cloth->size()];
-		tet_begin = tet_index_begin_per_thread[obj_No][thread_No];
-		tet_end = tet_index_begin_per_thread[obj_No][thread_No + 1];
+		tet_end = tet_index_begin_per_thread[obj_No][total_thread_num];
 		tet_index = tet_indices[obj_No];
 		A = tet_mesh_struct[obj_No]->A.data();
 		volume = tet_mesh_struct[obj_No]->volume.data();
 		stiffness = tetrahedron->data()[obj_No].ARAP_stiffness;
 		mass_inv_ = inv_mass[obj_No + cloth->size()];
-		for (unsigned int i =tet_begin; i < tet_end; i ++) {
+		lambda_ = lambda_test[obj_No].data();
+		for (unsigned int i =0; i < tet_end; i ++) {
 			if (mass_inv_[tet_index[i][0]] != 0.0 || mass_inv_[tet_index[i][1]] != 0.0 || mass_inv_[tet_index[i][2]] != 0.0 || mass_inv_[tet_index[i][3]] != 0.0) {
+				//energy += compute_energy.computeARAPConstraint(vertex_pos[tet_index[i][0]].data(), vertex_pos[tet_index[i][1]].data(), vertex_pos[tet_index[i][2]].data(),
+				//	vertex_pos[tet_index[i][3]].data(), A[i], volume[i], stiffness, *lambda_,time_step_square);
+				//lambda_++;
 				energy += compute_energy.computeARAPEnergy(vertex_pos[tet_index[i][0]].data(), vertex_pos[tet_index[i][1]].data(), vertex_pos[tet_index[i][2]].data(),
 					vertex_pos[tet_index[i][3]].data(), A[i], volume[i], stiffness);
 			}
 
 		}
 	}
-	energy_per_thread[thread_No] += energy;
+	total_energy += energy;
 }
 
 //also compute internal force
@@ -1288,6 +1314,8 @@ void SecondOrderLargeSystem::computeEnergy()
 	for (unsigned int i = 0; i < total_thread_num; ++i) {
 		total_energy += energy_per_thread[i];
 	}
+	computeARAPEnergy();
+
 }
 
 //NEWTON_METHOD_ENERGY
@@ -1295,7 +1323,6 @@ void SecondOrderLargeSystem::computeEnergy(int thread_No)
 {
 	energy_per_thread[thread_No] = 0;
 	computeMassSpringEnergy(thread_No);
-	computeARAPEnergy(thread_No);
 	computeInertial(thread_No);
 
 }
@@ -1372,7 +1399,7 @@ void SecondOrderLargeSystem::computeInertial(int thread_No)
 		index_start = vertex_start + unfixed_vertex_begin_per_thread[i][thread_No];
 
 		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
-		energy_per_thread[thread_No] += compute_energy.computeInertial(time_step, index_start, index_end, vertex_pos, mass_, Sn, vertex_start, unfixed_index_to_normal_index);
+		energy_per_thread[thread_No] += compute_energy.computeInertial(time_step,index_start, index_end, vertex_pos, mass_, Sn, vertex_start, unfixed_index_to_normal_index);
 	}
 }
 

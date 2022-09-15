@@ -295,7 +295,7 @@ private:
 
 	ComputeEnergy compute_energy;
 
-	void computeARAPEnergy(int thread_No);
+	void computeARAPEnergy();
 
 	std::vector<unsigned int*> tet_index_begin_per_thread;
 
