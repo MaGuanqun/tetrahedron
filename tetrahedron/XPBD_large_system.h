@@ -308,4 +308,6 @@ private:
 	double total_residual;
 	double previous_residual;
 	void updateARAPLambdaFromOri();
+
+	double energy_conv_rate;
 };

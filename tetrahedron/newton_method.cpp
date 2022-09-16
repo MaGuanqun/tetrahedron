@@ -275,21 +275,21 @@ void NewtonMethod::computeARAPHessian(double* vertex_position_0, double* vertex_
 {
 	Vector3d eigen_value;
 	Matrix3d deformation_gradient;
-	Matrix3d U, V, rotation;
+	Matrix3d S, rotation;
 	Matrix<double, 12, 12> Hessian;
 	Matrix<double, 12, 1> grad;
 
 	FEM::getDeformationGradient(vertex_position_0, vertex_position_1, vertex_position_2, vertex_position_3, A, deformation_gradient);
-	FEM::extractRotation(deformation_gradient, eigen_value, U, V, rotation);
+
+	FEM::polarDecomposition(deformation_gradient, eigen_value, S, rotation);
 	
 
 	Matrix<double, 3, 4> grad_C_transpose;
 	grad_C_transpose =(2.0* stiffness) * (deformation_gradient - rotation) * A;
 	memcpy(grad.data(), grad_C_transpose.data(), 96);
 
-	Matrix<double, 9, 9> dPdF;
-	FEM::getdPdF(U, V, eigen_value, dPdF);
-	FEM::backpropagateElementHessian(Hessian, dPdF, A);
+	Matrix3d Dm = A.block<3, 3>(0, 1).transpose();
+	FEM::getHessian(Hessian, S, rotation, Dm, A);
 
 	//Matrix4d result = 2.0 * A.transpose() * A;
 	//Hessian.setZero();
@@ -739,26 +739,15 @@ void NewtonMethod::computeARAPHessianFixedStructure(double* vertex_position_0, d
 	Vector3d eigen_value;
 	Vector3d position;
 	Matrix3d deformation_gradient;
-	Matrix3d U, V, rotation;
+	Matrix3d S, rotation;
 	Matrix<double, 12, 12> Hessian;
 	FEM::getDeformationGradient(vertex_position_0, vertex_position_1, vertex_position_2, vertex_position_3, A, deformation_gradient);
-	FEM::extractRotation(deformation_gradient, eigen_value, U, V, rotation);
+	FEM::polarDecomposition(deformation_gradient, eigen_value, S, rotation);
 	Matrix<double, 3, 4> grad_C_transpose;
 	grad_C_transpose =(2.0*stiffness) * (deformation_gradient - rotation) * A;
 
-	Matrix<double, 9, 9> dPdF;
-	FEM::getdPdF(U, V, eigen_value, dPdF);
-	FEM::backpropagateElementHessian(Hessian, dPdF, A);
-
-	//Matrix4d result = 2.0 * A.transpose() * A;
-	//Hessian.setZero();
-	//for (unsigned int i = 0; i < 4; ++i) {
-	//	for (unsigned int j = 0; j < 4; ++j) {
-	//		Hessian(3 * i, 3 * j) = result(i, j);
-	//		Hessian(3 * i+1, 3 * j+1) = result(i, j);
-	//		Hessian(3 * i+2, 3 * j+2) = result(i, j);
-	//	}
-	//}
+	Matrix3d Dm = A.block<3, 3>(0, 1).transpose();
+	FEM::getHessian(Hessian, S, rotation, Dm, A);
 	Hessian *=stiffness;
 
 	//record hessian

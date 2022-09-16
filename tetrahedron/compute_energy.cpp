@@ -60,5 +60,5 @@ double ComputeEnergy::computeInertial(double time_step, unsigned int index_start
 				(vertex_pos[start + 1] - Sn.data()[j + 1]) * (vertex_pos[start + 1] - Sn.data()[j + 1]) +
 				(vertex_pos[start + 2] - Sn.data()[j + 2]) * (vertex_pos[start + 2] - Sn.data()[j + 2]));
 	}
-	return (0.5 / time_step * time_step) * energy; //
+	return (0.5 / time_step * time_step) * energy; // 
 }

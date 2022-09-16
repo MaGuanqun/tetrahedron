@@ -15,11 +15,12 @@ SecondOrderLargeSystem::SecondOrderLargeSystem()
 	time_step_square = time_step * time_step;
 	conv_rate = time_step * 1e-5;
 
-	max_itr_num = 70;
+	max_itr_num = 100;
 	velocity_damp = 0.99;
 	beta = 0.25;
 	gamma = 0.5;
 
+	energy_conv_rate = 1e-3;
 	//TEST_HESSIAN::testARAPHessianMulti();
 }
 
@@ -402,41 +403,41 @@ void SecondOrderLargeSystem::solveNewtonMethod_()
 		//std::cout << "energy0 " << total_energy << std::endl;
 		computeResidual();
 
-		//if (iteration_number != 0) {
-		//	if (abs(total_energy) >abs(previous_energy)) {
-		//		displacement_coe *= 0.5;
-		//		change_direction = false;
-		//		std::cout << "activate " << std::endl;
-		//		while (abs(total_energy) > abs(previous_energy)) 
-		//		{
-		//			thread->assignTask(this, UPDATE_POSITION_NEWTON_FROM_ORI);
-		//			updateARAPLambdaFromOri();
-		//			computeEnergy();
-		//			computeResidual();
-		//			if (abs(displacement_coe) < 1e-4) {
-		//				std::cout << "too many times " << std::endl;
-		//				//std::cout <<"determinent "<< global_llt.determinant()<<" "<< global_llt.logAbsDeterminant() << std::endl;
-		//				//std::cout << (Matrix_test * delta_x - b_test).norm()<<" "<<b_test.norm() << std::endl;
-		//				//total_residual
-		//				//std::cout << "displacement_coe too small " << displacement_coe << std::endl;
-		//				//if (!change_direction) {
-		//				//	//displacement_coe = 1.0;
-		//				//	change_direction = true;
-		//				//}
-		//				//else {
-		//					break;
-		//				//}
-		//			}
-		//			displacement_coe *= 0.5;
-		//		}
-		//	}
-		//}
+		if (iteration_number != 0) {
+			if (abs(total_energy) >abs(previous_energy)) {
+				displacement_coe *= 0.5;
+				change_direction = false;
+				//std::cout << "activate " << std::endl;
+				while (abs(total_energy) > abs(previous_energy)) 
+				{
+					thread->assignTask(this, UPDATE_POSITION_NEWTON_FROM_ORI);
+					updateARAPLambdaFromOri();
+					computeEnergy();
+					computeResidual();
+					if (abs(displacement_coe) < 1e-4) {
+						//std::cout << "too many times " << std::endl;
+						//std::cout <<"determinent "<< global_llt.determinant()<<" "<< global_llt.logAbsDeterminant() << std::endl;
+						//std::cout << (Matrix_test * delta_x - b_test).norm()<<" "<<b_test.norm() << std::endl;
+						//total_residual
+						//std::cout << "displacement_coe too small " << displacement_coe << std::endl;
+						//if (!change_direction) {
+						//	//displacement_coe = 1.0;
+						//	change_direction = true;
+						//}
+						//else {
+							break;
+						//}
+					}
+					displacement_coe *= 0.5;
+				}
+			}
+		}
 		
 		//if (total_residual > previous_residual) {
-			std::cout << total_residual << " " << previous_residual << std::endl;
+		//	std::cout << total_residual << " " << previous_residual << std::endl;
 		//}
 
-		//std::cout << total_residual<< std::endl;
+		//std::cout << total_energy << std::endl;
 
 		iteration_number++;
 		previous_energy = total_energy;
@@ -492,21 +493,27 @@ bool SecondOrderLargeSystem::convergenceCondition()
 		return false;
 	}
 
-	//double a = 0.0;
-	//double b = 0.0;
-	//for (unsigned int i = 0; i < delta_x.size(); i++) {
-	//	if (a < abs(delta_x.data()[i])) {
-	//		a = abs(delta_x.data()[i]);
-	//		//b = delta_x.data()[i];
-	//	}
+	//if (abs((total_energy- previous_energy)/ previous_energy)< energy_conv_rate) {
+	//	return false;
 	//}
+
+	//return true;
+
+	double a = 0.0;
+	double b = 0.0;
+	for (unsigned int i = 0; i < delta_x.size(); i++) {
+		if (a < abs(delta_x.data()[i])) {
+			a = abs(delta_x.data()[i]);
+			//b = delta_x.data()[i];
+		}
+	}
 
 	////std::cout << b << std::endl;
 
-	//if (a > conv_rate) {
-	//	return true;
-	//}
-	//return false;
+	if (a > conv_rate) {
+		return true;
+	}
+	return false;
 }
 
 void SecondOrderLargeSystem::updateRenderPosition()
