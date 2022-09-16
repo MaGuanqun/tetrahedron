@@ -20,7 +20,7 @@ SecondOrderLargeSystem::SecondOrderLargeSystem()
 	beta = 0.25;
 	gamma = 0.5;
 
-	TEST_HESSIAN::testARAPHessianMulti();
+	//TEST_HESSIAN::testARAPHessianMulti();
 }
 
 
@@ -363,8 +363,8 @@ void SecondOrderLargeSystem::resetLambda()
 	}
 
 	for (unsigned int i = 0; i < lambda_test.size(); ++i) {
-		//memset(lambda_test[i].data(), 0, 8 * lambda_test[i].size());
-		std::fill(lambda_test[i].begin(), lambda_test[i].end(), 1.0);
+		memset(lambda_test[i].data(), 0, 8 * lambda_test[i].size());
+		//std::fill(lambda_test[i].begin(), lambda_test[i].end(), 1.0);
 	}
 }
 
@@ -376,7 +376,7 @@ void SecondOrderLargeSystem::solveNewtonMethod_()
 	updatePositionFromSn();
 
 
-	//resetLambda();
+	resetLambda();
 
 	iteration_number = 0;
 
@@ -384,7 +384,7 @@ void SecondOrderLargeSystem::solveNewtonMethod_()
 	computeEnergy();
 	//std::cout << "energy " << total_energy << std::endl;
 	computeResidual();
-	std::cout <<"== "<< total_residual << std::endl;
+	//std::cout <<"== "<< total_residual << std::endl;
 	previous_residual = total_residual;
 	previous_energy = total_energy;
 	while (convergenceCondition())
@@ -402,39 +402,39 @@ void SecondOrderLargeSystem::solveNewtonMethod_()
 		//std::cout << "energy0 " << total_energy << std::endl;
 		computeResidual();
 
-		if (iteration_number != 0) {
-			if (abs(total_energy) >abs(previous_energy)) {
-				displacement_coe *= 0.5;
-				change_direction = false;
-				std::cout << "activate " << std::endl;
-				while (abs(total_energy) > abs(previous_energy)) 
-				{
-					thread->assignTask(this, UPDATE_POSITION_NEWTON_FROM_ORI);
-					updateARAPLambdaFromOri();
-					computeEnergy();
-					computeResidual();
-					if (abs(displacement_coe) < 1e-4) {
-						std::cout << "too many times " << std::endl;
-						//std::cout <<"determinent "<< global_llt.determinant()<<" "<< global_llt.logAbsDeterminant() << std::endl;
-						//std::cout << (Matrix_test * delta_x - b_test).norm()<<" "<<b_test.norm() << std::endl;
-						//total_residual
-						//std::cout << "displacement_coe too small " << displacement_coe << std::endl;
-						//if (!change_direction) {
-						//	//displacement_coe = 1.0;
-						//	change_direction = true;
-						//}
-						//else {
-							break;
-						//}
-					}
-					displacement_coe *= 0.5;
-				}
-			}
-		}
+		//if (iteration_number != 0) {
+		//	if (abs(total_energy) >abs(previous_energy)) {
+		//		displacement_coe *= 0.5;
+		//		change_direction = false;
+		//		std::cout << "activate " << std::endl;
+		//		while (abs(total_energy) > abs(previous_energy)) 
+		//		{
+		//			thread->assignTask(this, UPDATE_POSITION_NEWTON_FROM_ORI);
+		//			updateARAPLambdaFromOri();
+		//			computeEnergy();
+		//			computeResidual();
+		//			if (abs(displacement_coe) < 1e-4) {
+		//				std::cout << "too many times " << std::endl;
+		//				//std::cout <<"determinent "<< global_llt.determinant()<<" "<< global_llt.logAbsDeterminant() << std::endl;
+		//				//std::cout << (Matrix_test * delta_x - b_test).norm()<<" "<<b_test.norm() << std::endl;
+		//				//total_residual
+		//				//std::cout << "displacement_coe too small " << displacement_coe << std::endl;
+		//				//if (!change_direction) {
+		//				//	//displacement_coe = 1.0;
+		//				//	change_direction = true;
+		//				//}
+		//				//else {
+		//					break;
+		//				//}
+		//			}
+		//			displacement_coe *= 0.5;
+		//		}
+		//	}
+		//}
 		
-		if (total_residual > previous_residual) {
+		//if (total_residual > previous_residual) {
 			std::cout << total_residual << " " << previous_residual << std::endl;
-		}
+		//}
 
 		//std::cout << total_residual<< std::endl;
 
@@ -2311,11 +2311,10 @@ void SecondOrderLargeSystem::setARAPHessianForTest(double* vertex_position_0, do
 	Vector3d eigen_value;
 	Vector3d position;
 	Matrix3d deformation_gradient;
-	Matrix3d U, V, rotation;
+	Matrix3d S, rotation;
 	Matrix<double, 12, 12> Hessian;
 	FEM::getDeformationGradient(vertex_position_0, vertex_position_1, vertex_position_2, vertex_position_3, A, deformation_gradient);
-
-	FEM::extractRotation(deformation_gradient, eigen_value, U, V, rotation);
+	FEM::polarDecomposition(deformation_gradient, eigen_value, S, rotation);
 	double C = (deformation_gradient - rotation).norm();
 	Matrix<double, 12, 1> grad;
 
@@ -2335,9 +2334,8 @@ void SecondOrderLargeSystem::setARAPHessianForTest(double* vertex_position_0, do
 		grad_C_transpose = (1.0 / C) * (deformation_gradient - rotation) * A;// 
 		memcpy(grad.data(), grad_C_transpose.data(), 96);
 
-		Matrix<double, 9, 9> dPdF;
-		FEM::getdPdF(U, V, eigen_value, dPdF);
-		FEM::backpropagateElementHessian(Hessian, dPdF, A);
+		Matrix3d Dm = A.block<3, 3>(0, 1).transpose();
+		FEM::getHessian(Hessian, S, rotation, Dm, A);
 		Hessian *= (0.5 / C);
 		Hessian -= ((1.0 / C) * grad) * grad.transpose();
 
@@ -2351,10 +2349,8 @@ void SecondOrderLargeSystem::setARAPHessianForTest(double* vertex_position_0, do
 
 		Matrix<double, 12, 1> grad_damp = (1 + alpha * beta) * grad + alpha * beta * (Hessian * x_dis);
 
-		//*lambda = -C / alpha - beta * grad.dot(x_dis);
 
 		Hessian *= -*lambda;
-		//Hessian.setZero();
 		*h =  C + alpha * (*lambda) + alpha * beta * grad.dot(x_dis);
 
 		//std::cout << *h << std::endl;

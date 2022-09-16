@@ -42,6 +42,22 @@ namespace TEST_HESSIAN {
 		Matrix<double, 12, 1>grad,grad_forward;
 		Matrix<double, 12, 12> Hessian;
 		grad = computeGrad(v[0], v[1], v[2], v[3], A);
+		double C = computeC(v[0], v[1], v[2], v[3], A);
+
+	
+
+		Matrix<double, 12, 1> grad_test;
+
+		for (unsigned int i = 0; i < 4; ++i) {
+			for (unsigned int j = 0; j < 3; ++j) {
+				temp_v = v;
+				temp_v[i][j] += step_size;
+				double C_ = computeC(temp_v[0], temp_v[1], temp_v[2], temp_v[3], A);
+				grad_test(3 * i + j) = (C_ -C ) / step_size;
+			}
+		}
+
+
 		for (unsigned int i = 0; i < 4; ++i) {
 			for (unsigned int j = 0; j < 3; ++j) {
 				temp_v = v;
@@ -57,19 +73,17 @@ namespace TEST_HESSIAN {
 	{
 		Matrix3d deformation_gradient;
 		FEM::getDeformationGradient(v[0].data(), v[1].data(), v[2].data(), v[3].data(), A, deformation_gradient);
-		Matrix3d U, V, rotation;
+		Matrix3d S, rotation;
 		Vector3d eigen_value;
-		FEM::extractRotation(deformation_gradient, eigen_value, U, V, rotation);
+		FEM::polarDecomposition(deformation_gradient, eigen_value, S, rotation);
 		double C = computeC(v[0], v[1], v[2], v[3], A);
 		Matrix<double, 3, 4> grad_C_transpose;
-		grad_C_transpose = (1.0 / C) * (deformation_gradient - rotation) * A;//
+		grad_C_transpose = (1.0 / C) * (deformation_gradient - rotation) * A;//// (1.0 / C) 
 		Matrix<double, 12, 1> grad;
 		memcpy(grad.data(), grad_C_transpose.data(), 96);
-		Matrix<double, 9, 9> dPdF;
-		//FEM::getdPdF(U, V, eigen_value, dPdF);
-		dPdF = 2.0 * Matrix<double, 9, 9>::Identity();
 		Matrix<double, 12, 12> Hessian;
-		FEM::backpropagateElementHessian(Hessian, dPdF, A);
+		Matrix3d Dm = A.block<3, 3>(0, 1).transpose();
+		FEM::getHessian(Hessian, S, rotation, Dm, A);
 		Hessian *= (0.5 / C);
 		Hessian -= ((1.0 / C) * grad) * grad.transpose();
 		return Hessian;
@@ -148,16 +162,16 @@ namespace TEST_HESSIAN {
 
 		info_v0[0] = ((double)rand() / (double)RAND_MAX - 0.5) * M_PI;
 		info_v0[1] = ((double)rand() / (double)RAND_MAX) * 2.0 * M_PI;
-		info_v0[2] = 4.0;
+		info_v0[2] = 2.0;
 		info_v1[0] = ((double)rand() / (double)RAND_MAX - 0.5) * M_PI;
 		info_v1[1] = ((double)rand() / (double)RAND_MAX) * 2.0 * M_PI;
-		info_v1[2] = 4.0;
+		info_v1[2] = 2.0;
 		info_v2[0] = ((double)rand() / (double)RAND_MAX - 0.5) * M_PI;
 		info_v2[1] = ((double)rand() / (double)RAND_MAX) * 2.0 * M_PI;
-		info_v2[2] = 4.0;
+		info_v2[2] = 2.0;
 		info_v3[0] = ((double)rand() / (double)RAND_MAX - 0.5) * M_PI;
 		info_v3[1] = ((double)rand() / (double)RAND_MAX) * 2.0 * M_PI;
-		info_v3[2] = 4.0;
+		info_v3[2] = 2.0;
 
 		x0 = Vector3d(info_v0[2] * sin(info_v0[0]), info_v0[2] * cos(info_v0[0]) * sin(info_v0[1]), info_v0[2] * cos(info_v0[0]) * cos(info_v0[1]));
 		x1 = Vector3d(info_v1[2] * sin(info_v1[0]), info_v1[2] * cos(info_v1[0]) * sin(info_v1[1]), info_v1[2] * cos(info_v1[0]) * cos(info_v1[1]));
@@ -171,11 +185,38 @@ namespace TEST_HESSIAN {
 		}
 
 
+		//x0 = Vector3d(1.69815, -1.0563, -0.0225372);
+		//x1 = Vector3d(1.2283, -0.134068, -1.57267);
+		//x2 = Vector3d(- 1.7082, -0.805883, 0.657723);
+		//x3 = Vector3d(- 1.15517, 0.153489, 1.62543);
+
+		//ori_x0 = Vector3d(- 0.959055, 0.213091, -0.186565);
+		//ori_x1 = Vector3d(0.99935, 0.0120611, -0.0339639);
+		//ori_x2 = Vector3d(-0.894807, 0.385558, 0.22509);
+		//ori_x3 = Vector3d(-0.930833, 0.01072, 0.365288);
+
 		Matrix<double, 3, 3> p;
 		p.col(0) = ori_x1 - ori_x0;
 		p.col(1) = ori_x2 - ori_x0;
 		p.col(2) = ori_x3 - ori_x0;
 		Matrix3d p_ = p.inverse();
+
+
+		//std::cout << "four vertices " << std::endl;
+		//std::cout << x0[0] << ", " << x0[1] << ", " << x0[2] << std::endl;
+		//std::cout << x1[0] << ", " << x1[1] << ", " << x1[2] << std::endl;
+		//std::cout << x2[0] << ", " << x2[1] << ", " << x2[2] << std::endl;
+		//std::cout << x3[0] << ", " << x3[1] << ", " << x3[2] << std::endl;
+
+		//std::cout << "ori four vertices " << std::endl;
+		//std::cout << ori_x0[0] << ", " << ori_x0[1] << ", " << ori_x0[2] << std::endl;
+		//std::cout << ori_x1[0] << ", " << ori_x1[1] << ", " << ori_x1[2] << std::endl;
+		//std::cout << ori_x2[0] << ", " << ori_x2[1] << ", " << ori_x2[2] << std::endl;
+		//std::cout << ori_x3[0] << ", " << ori_x3[1] << ", " << ori_x3[2] << std::endl;
+
+		//std::cout << "inverse matrix " << std::endl;
+		//std::cout << p_ << std::endl;
+
 		Matrix<double, 3, 4> A;
 		for (unsigned int i = 0; i < 3; ++i) {
 			A.data()[i] = -p_.col(i).sum();
@@ -185,21 +226,28 @@ namespace TEST_HESSIAN {
 		}
 		std::vector<Vector3d> v(4);
 		v[0] = x0; v[1] = x1; v[2] = x2; v[3] = x3;
-		double step_size = 1e-5;
+		double step_size = 1e-8;
 		Matrix<double, 12, 12> Hessian_num = computeHessianByGradNumeric(v, A, step_size);
 		Matrix<double, 12, 12> Hessian_ana = computeHessianByAna(v, A, step_size);
 
-		std::cout << (Hessian_ana - Hessian_num).norm() << std::endl;
+		//std::cout << (Hessian_ana - Hessian_num).norm() << std::endl;
 
-		std::cout << Hessian_ana << std::endl;
-		std::cout << "===" << std::endl;
-		std::cout << Hessian_num << std::endl;
+		double v_ = 1.0 / (6 * A.block<3, 3>(0, 1).determinant());
+
+		std::cout << (Hessian_ana - Hessian_num).norm() << std::endl;
+		//if ((Hessian_ana - Hessian_num).norm() > 1e-4) {
+		//	std::cout << "++++" << std::endl;
+		//	std::cout <<Hessian_ana- Hessian_num << std::endl;
+		//	//std::cout << "===" << std::endl;
+		//	//std::cout <<  << std::endl;
+		//}
+		
 
 	}
 
 	inline void testARAPHessianMulti()
 	{
-		for (unsigned int i = 0; i < 1; ++i) {
+		for (unsigned int i = 0; i < 100; ++i) {
 			testARAPHessian();
 		}
 	}

@@ -5,6 +5,44 @@
 using namespace Eigen;
 
 namespace FEM {
+	//FEM course p31
+	inline void getDeltaF(Matrix3d& delta_F, Matrix3d& Dm, unsigned int type)
+	{
+		delta_F.setZero();
+		if (type < 3) {
+			delta_F(type, 0) = -Dm.col(0).sum();
+			delta_F(type, 1) = -Dm.col(1).sum();
+			delta_F(type, 2) = -Dm.col(2).sum();
+		}
+		else if(type < 6) {
+			delta_F.row(type - 3) = Dm.row(0);
+		}
+		else if (type < 9) {
+			delta_F.row(type - 6) = Dm.row(1);
+		}
+		else {
+			delta_F.row(type - 9) = Dm.row(2);
+		}
+	}
+	//mpmcourse p20
+	inline void getDeltaR(Matrix3d& delta_F,Matrix3d& delta_R, Matrix3d& S, Matrix3d& R)
+	{
+		//first compute R^T Delta R
+		Matrix3d left = R.transpose() * delta_F - delta_F.transpose() * R;
+		Matrix3d A;
+		A << S.data()[0]+ S.data()[4], S.data()[7], -S.data()[6], 
+			S.data()[7], S.data()[0]+ S.data()[8], S.data()[3],
+			-S.data()[6], S.data()[3], S.data()[4]+ S.data()[8];
+		Vector3d b;
+		b << left.data()[3], left.data()[6], left.data()[7];
+		ColPivHouseholderQR<Matrix3d> sys(A);
+		Vector3d result=sys.solve(b);
+		Matrix3d RT_Delta_R;
+		RT_Delta_R << 0, result.data()[0], result.data()[1], 
+			-result.data()[0], 0, result.data()[2],
+			-result.data()[1], -result.data()[2], 0;
+		delta_R = R * RT_Delta_R;
+	}
 
 	inline void getdPdF(Matrix3d& U, Matrix3d& V, Vector3d& eigen_value, Matrix<double, 9, 9>& dPdF)
 	{
@@ -151,6 +189,24 @@ namespace FEM {
 		memcpy(P_inv.data(), A.data() + 3, 72);
 		deformation_gradient = q_e * P_inv.transpose();
 	}
+
+
+	inline void polarDecomposition(Matrix3d& deformation_gradient, Vector3d& eigen_value, Matrix3d& S, Matrix3d& rotation)
+	{
+		JacobiSVD<Matrix3d> svd;
+		svd.compute(deformation_gradient, ComputeFullU | ComputeFullV);
+		eigen_value = svd.singularValues();
+		double determinant = eigen_value[0] * eigen_value[1] * eigen_value[2];
+		Matrix3d U;
+		U = svd.matrixU();
+		if (determinant < 0) {
+			U.col(2) *= -1.0;
+			eigen_value[2] *= -1.0;
+		}
+		rotation = U * svd.matrixV().transpose();
+		S = svd.matrixV() * eigen_value.asDiagonal() * svd.matrixV().transpose();
+	}
+
 	inline void extractRotation(Matrix3d& deformation_gradient, Vector3d& eigen_value, Matrix3d& U, Matrix3d& V, Matrix3d& rotation)
 	{
 		JacobiSVD<Matrix3d> svd;
@@ -167,6 +223,16 @@ namespace FEM {
 		rotation = U * V.transpose();
 	}
 
-
+	inline void getHessian(Matrix<double, 12, 12>& Hessian, Matrix3d& S, Matrix3d& R, Matrix3d& Dm, Matrix<double, 3, 4>& A)
+	{
+		Matrix3d delta_F, delta_R;
+		Matrix<double, 3, 4> delta_H;
+		for (unsigned int i = 0; i < 12; ++i) {
+			getDeltaF(delta_F, Dm, i);
+			getDeltaR(delta_F, delta_R, S, R);
+			delta_H = 2.0 * (delta_F - delta_R) * A;
+			memcpy(Hessian.data() + 12 * i, delta_H.data(), 96);
+		}		
+	}
 }
 
