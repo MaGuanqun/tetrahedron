@@ -414,7 +414,7 @@ void SecondOrderLargeSystem::solveNewtonMethod_()
 					updateARAPLambdaFromOri();
 					computeEnergy();
 					computeResidual();
-					if (abs(displacement_coe) < 1e-4) {
+					if (abs(displacement_coe) < 1e-3) {
 						//std::cout << "too many times " << std::endl;
 						//std::cout <<"determinent "<< global_llt.determinant()<<" "<< global_llt.logAbsDeterminant() << std::endl;
 						//std::cout << (Matrix_test * delta_x - b_test).norm()<<" "<<b_test.norm() << std::endl;
@@ -1081,11 +1081,6 @@ void SecondOrderLargeSystem::setARAP_ForTest()
 					b_test.data() + constraint_index_in_system_,i, ori_vertex_pos[indices[i][0]].data(), ori_vertex_pos[indices[i][1]].data(), ori_vertex_pos[indices[i][2]].data(),
 					ori_vertex_pos[indices[i][3]].data(), rayleigh_damp_stiffness[0]*time_step);
 
-				//if (i == 25) {
-					//std::cout << *lambda << std::endl;
-					//std::cout << "test h start " << constraint_index_in_system_ << std::endl;
-					//std::cout << "test " << constraint_index_in_system_ - 1 << " " << indices[i][0] << " " << indices[i][1] << " " << indices[i][2] << " " << indices[i][3] << std::endl;
-				//}
 				constraint_index_in_system_++;
 				lambda++;
 
@@ -2077,11 +2072,12 @@ void SecondOrderLargeSystem::computeARAPHessianFixedStructure(double* vertex_pos
 	Vector3d eigen_value;
 	Vector3d position;
 	Matrix3d deformation_gradient;
-	Matrix3d U, V, rotation;
+	Matrix3d S, rotation;
 	Matrix<double, 12, 12> Hessian;
 	FEM::getDeformationGradient(vertex_position_0, vertex_position_1, vertex_position_2, vertex_position_3, A, deformation_gradient);
 
-	FEM::extractRotation(deformation_gradient, eigen_value, U, V, rotation);
+	FEM::polarDecomposition(deformation_gradient, eigen_value, S, rotation);
+
 	double C = (deformation_gradient - rotation).norm();
 	Matrix<double, 12, 1> grad;
 
@@ -2093,12 +2089,11 @@ void SecondOrderLargeSystem::computeARAPHessianFixedStructure(double* vertex_pos
 	else {
 		Matrix<double, 3, 4> grad_C_transpose;
 		grad_C_transpose = (1.0 / C) * (deformation_gradient - rotation) * A;//
-
 		memcpy(grad.data(), grad_C_transpose.data(), 96);
 
-		Matrix<double, 9, 9> dPdF;
-		FEM::getdPdF(U, V, eigen_value, dPdF);
-		FEM::backpropagateElementHessian(Hessian, dPdF, A);
+		Matrix3d Dm = A.block<3, 3>(0, 1).transpose();
+		FEM::getHessian(Hessian, S, rotation, Dm, A);
+
 		Hessian *= (0.5 / C);
 		Hessian -= ((1.0 / C) * grad) * grad.transpose();
 		Hessian *= -*lambda;
@@ -2332,7 +2327,9 @@ void SecondOrderLargeSystem::setARAPHessianForTest(double* vertex_position_0, do
 		Hessian.setZero();
 		grad.setZero();
 		*h = 0.0;
-		//*lambda = -C / alpha;
+		//if (iteration_number == 0) {
+		//	*lambda = -C / alpha;
+		//}
 		hessian_nnz->emplace_back(Triplet<double>(constraint_start_in_sys, constraint_start_in_sys, -alpha));
 		return;
 	}
@@ -2356,7 +2353,9 @@ void SecondOrderLargeSystem::setARAPHessianForTest(double* vertex_position_0, do
 
 		Matrix<double, 12, 1> grad_damp = (1 + alpha * beta) * grad + alpha * beta * (Hessian * x_dis);
 
-
+		//if (iteration_number == 0) {
+		//	*lambda = -C / alpha;
+		//}
 		Hessian *= -*lambda;
 		*h =  C + alpha * (*lambda) + alpha * beta * grad.dot(x_dis);
 
@@ -2372,6 +2371,7 @@ void SecondOrderLargeSystem::setARAPHessianForTest(double* vertex_position_0, do
 
 
 	////record hessian
+
 		for (unsigned int i = 0; i < 4; ++i) {
 			if (is_unfixed[i]) {
 				for (unsigned int j = 0; j < 4; ++j) {

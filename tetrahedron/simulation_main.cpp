@@ -27,8 +27,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 	control_parameter[ONLY_COLLISION_TEST] =false;
 	control_parameter[USE_XPBD] = false;
 	control_parameter[USE_PD_] = false;
-	control_parameter[USE_NEWTON_] = true;
-	control_parameter[USE_XPBD_LARGE] = false;
+	control_parameter[USE_NEWTON_] = false;
+	control_parameter[USE_XPBD_LARGE] = true;
 	control_parameter[DRAW_VT] = true;
 
 
