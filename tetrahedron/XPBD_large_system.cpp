@@ -13,7 +13,7 @@ SecondOrderLargeSystem::SecondOrderLargeSystem()
 	time_step = 1.0 / 30.0;
 	perform_collision = false;
 	time_step_square = time_step * time_step;
-	conv_rate = time_step * 1e-5;
+	conv_rate = time_step * 1e-3;
 
 	max_itr_num = 100;
 	velocity_damp = 0.99;
@@ -1006,11 +1006,10 @@ void SecondOrderLargeSystem::updateTest()
 	Matrix_test.setFromTriplets(test_nnz.begin(), test_nnz.end());
 
 
-	
+	//std::cout << Matrix_test << std::endl;
 
 	global_llt.compute(Matrix_test);
 
-	
 	//global_llt1.compute(Matrix_test);
 
 	//std::cout <<"determinent "<< global_llt1.determinant()<<" "<< global_llt1.logAbsDeterminant() << std::endl;
@@ -2343,6 +2342,9 @@ void SecondOrderLargeSystem::setARAPHessianForTest(double* vertex_position_0, do
 		Hessian *= (0.5 / C);
 		Hessian -= ((1.0 / C) * grad) * grad.transpose();
 
+		//FEM::SPDprojection(Hessian);
+
+
 		Matrix<double, 12, 1> x_dis;
 		for (unsigned int i = 0; i < 3; ++i) {
 			x_dis[i] = vertex_position_0[i] - ori_0[i];
@@ -2359,14 +2361,7 @@ void SecondOrderLargeSystem::setARAPHessianForTest(double* vertex_position_0, do
 		Hessian *= -*lambda;
 		*h =  C + alpha * (*lambda) + alpha * beta * grad.dot(x_dis);
 
-		//std::cout << *h << std::endl;
 
-		//if (index == 25) {
-			//std::cout << C << " " << alpha << " " << *lambda << std::endl;
-			//temp_record_0 = C;
-			//temp_record_1 = *lambda;
-			//temp_record_2 = alpha;
-		//}
 
 
 
@@ -2431,11 +2426,11 @@ void SecondOrderLargeSystem::computeARAPHessian(double* vertex_position_0, doubl
 	Vector3d eigen_value;
 	Vector3d position;
 	Matrix3d deformation_gradient;
-	Matrix3d U, V, rotation;
+	Matrix3d S, rotation;
 	Matrix<double, 12, 12> Hessian;
 	FEM::getDeformationGradient(vertex_position_0, vertex_position_1, vertex_position_2, vertex_position_3, A, deformation_gradient);
+	FEM::polarDecomposition(deformation_gradient, eigen_value, S, rotation);
 
-	FEM::extractRotation(deformation_gradient, eigen_value, U, V, rotation);
 	double C = (deformation_gradient - rotation).norm();
 	Matrix<double, 12, 1> grad;
 
@@ -2449,12 +2444,10 @@ void SecondOrderLargeSystem::computeARAPHessian(double* vertex_position_0, doubl
 
 		memcpy(grad.data(), grad_C_transpose.data(), 96);
 
-		Matrix<double, 9, 9> dPdF;
-
-		FEM::getdPdF(U, V, eigen_value, dPdF);
-
-
-		FEM::backpropagateElementHessian(Hessian, dPdF, A);
+		
+		Matrix<double, 12, 12> Hessian;
+		Matrix3d Dm = A.block<3, 3>(0, 1).transpose();
+		FEM::getHessian(Hessian, S, rotation, Dm, A);
 		Hessian *= (0.5 / C);
 		Hessian -= ((1.0 / C) * grad) * grad.transpose();
 		Hessian *= -*lambda;

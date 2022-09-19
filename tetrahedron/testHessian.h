@@ -185,15 +185,14 @@ namespace TEST_HESSIAN {
 		}
 
 
-		//x0 = Vector3d(1.69815, -1.0563, -0.0225372);
-		//x1 = Vector3d(1.2283, -0.134068, -1.57267);
-		//x2 = Vector3d(- 1.7082, -0.805883, 0.657723);
-		//x3 = Vector3d(- 1.15517, 0.153489, 1.62543);
-
-		//ori_x0 = Vector3d(- 0.959055, 0.213091, -0.186565);
-		//ori_x1 = Vector3d(0.99935, 0.0120611, -0.0339639);
-		//ori_x2 = Vector3d(-0.894807, 0.385558, 0.22509);
-		//ori_x3 = Vector3d(-0.930833, 0.01072, 0.365288);
+		x0 = Vector3d(1.69815, -1.0563, -0.0225372);
+		x1 = Vector3d(1.2283, -0.134068, -1.57267);
+		x2 = Vector3d(- 1.7082, -0.805883, 0.657723);
+		x3 = Vector3d(- 1.15517, 0.153489, 1.62543);
+		ori_x0 = Vector3d(- 0.959055, 0.213091, -0.186565);
+		ori_x1 = Vector3d(0.99935, 0.0120611, -0.0339639);
+		ori_x2 = Vector3d(-0.894807, 0.385558, 0.22509);
+		ori_x3 = Vector3d(-0.930833, 0.01072, 0.365288);
 
 		Matrix<double, 3, 3> p;
 		p.col(0) = ori_x1 - ori_x0;
@@ -234,7 +233,11 @@ namespace TEST_HESSIAN {
 
 		double v_ = 1.0 / (6 * A.block<3, 3>(0, 1).determinant());
 
-		std::cout << (Hessian_ana - Hessian_num).norm() << std::endl;
+		std::cout << v_ * Hessian_num << std::endl;
+		std::cout << "===" << std::endl;
+		std::cout << v_ * Hessian_ana << std::endl;
+
+		//std::cout << (Hessian_ana - Hessian_num).norm() << std::endl;
 		//if ((Hessian_ana - Hessian_num).norm() > 1e-4) {
 		//	std::cout << "++++" << std::endl;
 		//	std::cout <<Hessian_ana- Hessian_num << std::endl;
@@ -247,7 +250,7 @@ namespace TEST_HESSIAN {
 
 	inline void testARAPHessianMulti()
 	{
-		for (unsigned int i = 0; i < 100; ++i) {
+		for (unsigned int i = 0; i < 1; ++i) {
 			testARAPHessian();
 		}
 	}

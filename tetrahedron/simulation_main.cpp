@@ -67,7 +67,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	memset(set_stiffness, 0, 13);
 	std::vector<double> temp_stiffness(18);
 	double temp_data[18] = {1e2,2e2,2e2,2e2,1e1,3e-5,1e1,1.0,0.0,
-		1e-4,0.0,
+		0.0,0.0,
 	//1e-3, 2e-3,2e-3,2e-3, 1e-3,1e-9,1e-2};
 	0.0, 0.0,0.0,0.0, 0.0,0.0,0.0 };
 	memcpy(temp_stiffness.data(), temp_data, 18 * 8);
@@ -269,7 +269,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 			}
 
 			if (control_parameter[SAVE_SCENE_DATA]) {
-				scene.saveParameter(object_path, collider_path,&cloth_stiffness,&tetrahedron_stiffness,&cloth_collision_stiffness,&tetrahedron_collision_stiffness,
+				scene.saveParameter(object_path, collider_path,cloth_stiffness,tetrahedron_stiffness,cloth_collision_stiffness,tetrahedron_collision_stiffness,
 					tolerance_ratio,friction_coe);
 				control_parameter[SAVE_SCENE_DATA] = false;
 			}

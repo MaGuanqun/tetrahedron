@@ -206,6 +206,9 @@ namespace SaveParameter{
 		else if (line == "newton") {
 			use_method = NEWTON_;
 		}
+		else  if(line=="second_order_large_XPBD") {
+			use_method = XPBD_SECOND_ORDER_LARGE_;
+		}
 		else {
 			std::cout << "error reading the simulation method" << std::endl;
 			return;
@@ -257,8 +260,8 @@ namespace SaveParameter{
 
 	inline void writeBasicPara(std::ofstream& input_file, std::vector<std::string>& path, std::vector<std::string>& collider_path,
 		unsigned int use_method, std::vector<std::vector<int>*>& anchor_veretx, double time_step,
-		std::vector<std::array<double, 6>>* cloth_stiffness, std::vector<std::array<double, 6>>* tet_stiffness,
-		std::vector<std::array<double, 8>>* cloth_collision_stiffness, std::vector<std::array<double, 8>>* tet_collision_stiffness, double cloth_density, double tet_density,
+		std::vector<std::array<double, 6>>& cloth_stiffness, std::vector<std::array<double, 6>>& tet_stiffness,
+		std::vector<std::array<double, 8>>& cloth_collision_stiffness, std::vector<std::array<double, 8>>& tet_collision_stiffness, double cloth_density, double tet_density,
 		double velocity_damp, double* friction_coe, bool floor_exist, int floor_dimension, bool floor_normal_direction, double floor_value)
 	{
 		//input_file.precision(64);
@@ -273,25 +276,25 @@ namespace SaveParameter{
 			input_file << collider_path[i] << "\n";
 		}
 		input_file << "stiffness" << "\n";
-		for (unsigned int i = 0; i < cloth_stiffness->size(); ++i) {
-			for (unsigned int j = 0; j < cloth_stiffness->data()[i].size(); ++j) {
-				input_file << cloth_stiffness->data()[i][j] << " ";
+		for (unsigned int i = 0; i < cloth_stiffness.size(); ++i) {
+			for (unsigned int j = 0; j < cloth_stiffness.data()[i].size(); ++j) {
+				input_file << cloth_stiffness.data()[i][j] << " ";
 			}
 			input_file << "\n";
-			for (unsigned int j = 0; j < cloth_collision_stiffness->data()[i].size(); ++j) {
-				input_file << cloth_collision_stiffness->data()[i][j] << " ";
-			}
-			input_file << "\n";
-		}
-		for (unsigned int i = 0; i < tet_stiffness->size(); ++i) {
-			for (unsigned int j = 0; j < tet_stiffness->data()[i].size(); ++j) {
-				input_file << tet_stiffness->data()[i][j] << " ";
+			for (unsigned int j = 0; j < cloth_collision_stiffness.data()[i].size(); ++j) {
+				input_file << cloth_collision_stiffness.data()[i][j] << " ";
 			}
 			input_file << "\n";
 		}
-		for (unsigned int i = 0; i < tet_collision_stiffness->size(); ++i) {
-			for (unsigned int j = 0; j < tet_collision_stiffness->data()[i].size(); ++j) {
-				input_file << tet_collision_stiffness->data()[i][j] << " ";
+		for (unsigned int i = 0; i < tet_stiffness.size(); ++i) {
+			for (unsigned int j = 0; j < tet_stiffness.data()[i].size(); ++j) {
+				input_file << tet_stiffness.data()[i][j] << " ";
+			}
+			input_file << "\n";
+		}
+		for (unsigned int i = 0; i < tet_collision_stiffness.size(); ++i) {
+			for (unsigned int j = 0; j < tet_collision_stiffness.data()[i].size(); ++j) {
+				input_file << tet_collision_stiffness.data()[i][j] << " ";
 			}
 			input_file << "\n";
 		}
@@ -333,8 +336,8 @@ namespace SaveParameter{
 	}
 
 
-	inline void writeParameter(std::vector<std::string>& path, std::vector<std::string>& collider_path, std::vector<std::array<double,6>>* cloth_stiffness, 
-		std::vector<std::array<double, 6>>* tet_stiffness, std::vector<std::array<double, 8>>* cloth_collision_stiffness, std::vector<std::array<double, 8>>* tet_collision_stiffness,
+	inline void writeParameter(std::vector<std::string>& path, std::vector<std::string>& collider_path, std::vector<std::array<double,6>>& cloth_stiffness, 
+		std::vector<std::array<double, 6>>& tet_stiffness, std::vector<std::array<double, 8>>& cloth_collision_stiffness, std::vector<std::array<double, 8>>& tet_collision_stiffness,
 		unsigned int use_method, std::vector<std::vector<int>*>&anchor_veretx, double time_step, double outer_convergence_rate,
 		double local_convergence_rate,
 		unsigned int sub_step_num, unsigned int iteration_num, double cloth_density, double tet_density, double velocity_damp,
@@ -368,6 +371,9 @@ namespace SaveParameter{
 			break;
 		case NEWTON_:
 			input_file << "newton" << "\n";
+			break;
+		case XPBD_SECOND_ORDER_LARGE_:
+			input_file << "second_order_large_XPBD" << "\n";
 			break;
 		}
 	}

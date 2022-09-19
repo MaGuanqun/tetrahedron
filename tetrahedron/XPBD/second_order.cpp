@@ -63,11 +63,11 @@ void SecondOrderConstraint::solveARAPConstraint(double* vertex_position_0, doubl
 	Vector3d eigen_value;
 	Vector3d position;
 	Matrix3d deformation_gradient;
-	Matrix3d U, V, rotation;
+	Matrix3d S, rotation;
 
 	FEM::getDeformationGradient(vertex_position_0, vertex_position_1, vertex_position_2, vertex_position_3, A, deformation_gradient);
 
-	FEM::extractRotation(deformation_gradient, eigen_value, U, V, rotation);
+	FEM::polarDecomposition(deformation_gradient, eigen_value, S, rotation);
 
 	//use P_inv to record transform
 
@@ -84,12 +84,11 @@ void SecondOrderConstraint::solveARAPConstraint(double* vertex_position_0, doubl
 	Matrix<double, 12, 1> grad;
 	memcpy(grad.data(), grad_C_transpose.data(), 96);
 
-	Matrix<double, 9, 9> dPdF;
-
-	FEM::getdPdF(U, V, eigen_value, dPdF);
-
 	Matrix<double, 12, 12> Hessian;
-	FEM::backpropagateElementHessian(Hessian, dPdF, A);
+
+	Matrix3d Dm = A.block<3, 3>(0, 1).transpose();
+	FEM::getHessian(Hessian, S, rotation, Dm, A);
+
 	Hessian *= (0.5 / C);
 	Hessian -= ((1.0 / C) * grad) * grad.transpose();
 

@@ -240,6 +240,9 @@ void TetrahedronMeshStruct::setVolume(int thread_No)
 {
 	for (int i = tetrahedron_index_begin_per_thread[thread_No]; i < tetrahedron_index_begin_per_thread[thread_No + 1]; ++i) {
 		volume[i] = getTetrahedronVolume(vertex_position[indices[i][0]].data(), vertex_position[indices[i][1]].data(), vertex_position[indices[i][2]].data(), vertex_position[indices[i][3]].data());
+		if (volume[i] < 0) {
+			std::cout << "error " << std::endl;
+		}
 	}
 }
 
@@ -250,7 +253,7 @@ double TetrahedronMeshStruct::getTetrahedronVolume(double* v1, double* v2, doubl
 	SUB(b, v3, v1);
 	CROSS(c, a, b);
 	SUB(a, v4, v1);
-	return fabs(DOT(c, a)) / 6.0;
+	return (DOT(c, a)) / 6.0;
 }
 
 double TetrahedronMeshStruct::setMass(double density)
