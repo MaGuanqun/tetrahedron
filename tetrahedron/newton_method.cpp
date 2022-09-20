@@ -5,7 +5,7 @@
 
 NewtonMethod::NewtonMethod()
 {
-	gravity_ = 9.8;
+	gravity_ = 0.0;
 
 	iteration_number = 1000;
 

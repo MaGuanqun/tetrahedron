@@ -6,14 +6,14 @@
 
 SecondOrderLargeSystem::SecondOrderLargeSystem()
 {
-	gravity_ = 9.8;
+	gravity_ = 0.0;
 
 	iteration_number = 10;
 
 	time_step = 1.0 / 30.0;
 	perform_collision = false;
 	time_step_square = time_step * time_step;
-	conv_rate = time_step * 1e-3;
+	conv_rate = time_step * 1e-5;
 
 	max_itr_num = 100;
 	velocity_damp = 0.99;
@@ -21,7 +21,10 @@ SecondOrderLargeSystem::SecondOrderLargeSystem()
 	gamma = 0.5;
 
 	energy_conv_rate = 1e-3;
-	//TEST_HESSIAN::testARAPHessianMulti();
+
+	line_search_control_parameter = 1e-4;
+	search_shrink_ratio = 0.9;
+	TEST_HESSIAN::testARAPHessianMulti();
 }
 
 
@@ -133,12 +136,16 @@ void SecondOrderLargeSystem::setSizeOfSys()
 	velocity.resize(3 * vertex_begin_per_obj[total_obj_num]);
 	velocity.setZero();
 
+	gradient.resize(3 * vertex_begin_per_obj[total_obj_num]);
+	gradient.setZero();
+
 	b_thread.resize(total_thread_num);
 	for (unsigned int i = 0; i < total_thread_num; ++i) {
 		b_thread[i].resize(sys_total_size);
 	}
 
 	b_test.resize(sys_total_size);
+	
 	Matrix_test.resize(sys_total_size, sys_total_size);
 
 	residual.resize(total_obj_num);
@@ -396,26 +403,38 @@ void SecondOrderLargeSystem::solveNewtonMethod_()
 		//global_llt.factorize(Hessian);
 		//delta_x = global_llt.solve(b_thread[0]);
 
-		displacement_coe = 1.0;
+		//std::cout << Matrix_test << std::endl;
+		
 		thread->assignTask(this, UPDATE_POSITION_NEWTON);
 		updateARAPLambda();
 		computeEnergy();
 		//std::cout << "energy0 " << total_energy << std::endl;
-		computeResidual();
+		computeResidual();	
 
 		if (iteration_number != 0) {
 			if (abs(total_energy) >abs(previous_energy)) {
-				displacement_coe *= 0.5;
+				gradient.normalize();
+
 				change_direction = false;
+				displacement_coe = 1.0;
 				//std::cout << "activate " << std::endl;
-				while (abs(total_energy) > abs(previous_energy)) 
+
+				//set condition for line search
+				local_slope = -line_search_control_parameter*gradient.dot(delta_x.segment(0, 3 * vertex_begin_per_obj[total_obj_num]));
+
+				std::cout << "local_slope " << local_slope<<" "<< total_energy <<" "<< previous_energy << std::endl;
+
+				while (abs(total_energy) > abs(previous_energy) - displacement_coe * local_slope) //
 				{
+					//std::cout << total_energy << std::endl;
+
+					displacement_coe *= search_shrink_ratio;
 					thread->assignTask(this, UPDATE_POSITION_NEWTON_FROM_ORI);
 					updateARAPLambdaFromOri();
 					computeEnergy();
 					computeResidual();
-					if (abs(displacement_coe) < 1e-3) {
-						//std::cout << "too many times " << std::endl;
+					if (abs(displacement_coe) < 1e-4) {
+						std::cout << "too many times " << std::endl;
 						//std::cout <<"determinent "<< global_llt.determinant()<<" "<< global_llt.logAbsDeterminant() << std::endl;
 						//std::cout << (Matrix_test * delta_x - b_test).norm()<<" "<<b_test.norm() << std::endl;
 						//total_residual
@@ -428,7 +447,7 @@ void SecondOrderLargeSystem::solveNewtonMethod_()
 							break;
 						//}
 					}
-					displacement_coe *= 0.5;
+					
 				}
 			}
 		}
@@ -485,7 +504,7 @@ void SecondOrderLargeSystem::initialDHatTolerance(double ave_edge_length)
 
 bool SecondOrderLargeSystem::convergenceCondition()
 {
-	if (iteration_number < 2) {
+	if (iteration_number < 1) {
 		return true;
 	}
 
@@ -1002,6 +1021,8 @@ void SecondOrderLargeSystem::updateTest()
 	b_test.setZero();
 	test_nnz.clear();
 
+	gradient.setZero();
+
 	setARAP_ForTest();
 	Matrix_test.setFromTriplets(test_nnz.begin(), test_nnz.end());
 
@@ -1017,6 +1038,8 @@ void SecondOrderLargeSystem::updateTest()
 	//std::cout << Matrix_test << std::endl;
 
 	delta_x = global_llt.solve(b_test);
+
+	
 
 	//std::cout << b_test << std::endl;
 	//std::cout << "====" << std::endl;
@@ -1055,7 +1078,7 @@ void SecondOrderLargeSystem::setARAP_ForTest()
 	std::array<double, 3>* ori_vertex_pos;
 	for (unsigned int obj_No = 0; obj_No < tetrahedron->size(); ++obj_No) {
 		vertex_pos = vertex_position[obj_No + cloth->size()];
-		alpha = 1.0 / (tetrahedron->data()[obj_No].ARAP_stiffness * time_step_square);
+		alpha = tetrahedron->data()[obj_No].ARAP_stiffness;
 		size = tet_mesh_struct[obj_No]->indices.size();
 		lambda = lambda_test[obj_No].data();
 		inv_mass_ = inv_mass[cloth->size() + obj_No];
@@ -1075,10 +1098,11 @@ void SecondOrderLargeSystem::setARAP_ForTest()
 				setARAPHessianForTest(vertex_pos[indices[i][0]].data(), vertex_pos[indices[i][1]].data(), vertex_pos[indices[i][2]].data(),
 					vertex_pos[indices[i][3]].data(),
 					&test_nnz, vertex_position_in_system,
-					constraint_index_in_system_, alpha / volume[i], A[i], is_unfixed, lambda,b_test.data()+ vertex_position_in_system[0],
+					constraint_index_in_system_, alpha * volume[i], time_step_square, A[i], is_unfixed, lambda,b_test.data()+ vertex_position_in_system[0],
 					b_test.data() + vertex_position_in_system[1], b_test.data() + vertex_position_in_system[2], b_test.data() + vertex_position_in_system[3],
 					b_test.data() + constraint_index_in_system_,i, ori_vertex_pos[indices[i][0]].data(), ori_vertex_pos[indices[i][1]].data(), ori_vertex_pos[indices[i][2]].data(),
-					ori_vertex_pos[indices[i][3]].data(), rayleigh_damp_stiffness[0]*time_step);
+					ori_vertex_pos[indices[i][3]].data(), rayleigh_damp_stiffness[0]*time_step, gradient.data() + vertex_position_in_system[0],
+					gradient.data() + vertex_position_in_system[1], gradient.data() + vertex_position_in_system[2], gradient.data() + vertex_position_in_system[3]);
 
 				constraint_index_in_system_++;
 				lambda++;
@@ -1105,6 +1129,11 @@ void SecondOrderLargeSystem::setARAP_ForTest()
 			b_test.data()[3 * j] -= mass_ * (vertex_pos[actual_index][0] - Sn.data()[3 * j]);
 			b_test.data()[3 * j+1] -= mass_ * (vertex_pos[actual_index][1] - Sn.data()[3 * j+1]);
 			b_test.data()[3 * j+2] -= mass_ * (vertex_pos[actual_index][2] - Sn.data()[3 * j+2]);
+
+			mass_ /= time_step_square;
+			gradient.data()[3 * j] += mass_ * (vertex_pos[actual_index][0] - Sn.data()[3 * j]);
+			gradient.data()[3 * j + 1] += mass_ * (vertex_pos[actual_index][1] - Sn.data()[3 * j + 1]);
+			gradient.data()[3 * j + 2] += mass_ * (vertex_pos[actual_index][2] - Sn.data()[3 * j + 2]);
 		}
 
 
@@ -1569,11 +1598,12 @@ void SecondOrderLargeSystem::updateARAPLambdaFromOri()
 {
 	unsigned int size;
 	double* lambda;
+	double  coe = displacement_coe / search_shrink_ratio * (1.0 - search_shrink_ratio);
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		size = lambda_test[i].size();
 		lambda = lambda_test[i].data();
 		for (unsigned int j = 0; j < size; ++j) {
-			lambda[j] -= displacement_coe*delta_x[ARAP_constrant_in_system[i] + j];
+			lambda[j] -= coe *delta_x[ARAP_constrant_in_system[i] + j];
 		}
 	}
 
@@ -1591,7 +1621,7 @@ void SecondOrderLargeSystem::updatePositionFromOri(int thread_No)
 	unsigned int* unfixed_index_to_normal_index;
 	unsigned int vertex_start;
 
-	double coe = displacement_coe;
+	double coe = displacement_coe / search_shrink_ratio * (1.0 - search_shrink_ratio);
 
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		vertex_pos = vertex_position[i][0].data();
@@ -2306,9 +2336,10 @@ void SecondOrderLargeSystem::checkIfSampleRight(double* vertex_position_0, doubl
 void SecondOrderLargeSystem::setARAPHessianForTest(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
 	std::vector<Triplet<double>>* hessian_nnz,
 	int* vertex_index, unsigned int constraint_start_in_sys,
-	double alpha, Matrix<double, 3, 4>& A, bool* is_unfixed, double* lambda, double* g_0, double* g_1,double* g_2, double* g_3, double* h, unsigned int index,
-	double* ori_0, double* ori_1, double* ori_2, double* ori_3, double beta)
+	double alpha_, double time_step_square, Matrix<double, 3, 4>& A, bool* is_unfixed, double* lambda, double* g_0, double* g_1,double* g_2, double* g_3, double* h, unsigned int index,
+	double* ori_0, double* ori_1, double* ori_2, double* ori_3, double beta, double* gradient_0, double* gradient_1, double* gradient_2, double* gradient_3)
 {
+	double alpha = 1.0 / (alpha_* time_step_square);
 	Vector3d eigen_value;
 	Vector3d position;
 	Matrix3d deformation_gradient;
@@ -2319,16 +2350,17 @@ void SecondOrderLargeSystem::setARAPHessianForTest(double* vertex_position_0, do
 	double C = (deformation_gradient - rotation).norm();
 	Matrix<double, 12, 1> grad;
 
-	//if (iteration_number == 0) {
-	//}
+	//std::cout << C << std::endl;
+
+
+	if (iteration_number == 0) {
+		*lambda = -C / alpha;
+	}
 
 	if (C < 1e-8) {
 		Hessian.setZero();
 		grad.setZero();
 		*h = 0.0;
-		//if (iteration_number == 0) {
-		//	*lambda = -C / alpha;
-		//}
 		hessian_nnz->emplace_back(Triplet<double>(constraint_start_in_sys, constraint_start_in_sys, -alpha));
 		return;
 	}
@@ -2336,6 +2368,10 @@ void SecondOrderLargeSystem::setARAPHessianForTest(double* vertex_position_0, do
 		Matrix<double, 3, 4> grad_C_transpose;
 		grad_C_transpose = (1.0 / C) * (deformation_gradient - rotation) * A;// 
 		memcpy(grad.data(), grad_C_transpose.data(), 96);
+
+
+
+
 
 		Matrix3d Dm = A.block<3, 3>(0, 1).transpose();
 		FEM::getHessian(Hessian, S, rotation, Dm, A);
@@ -2355,9 +2391,6 @@ void SecondOrderLargeSystem::setARAPHessianForTest(double* vertex_position_0, do
 
 		Matrix<double, 12, 1> grad_damp = (1 + alpha * beta) * grad + alpha * beta * (Hessian * x_dis);
 
-		//if (iteration_number == 0) {
-		//	*lambda = -C / alpha;
-		//}
 		Hessian *= -*lambda;
 		*h =  C + alpha * (*lambda) + alpha * beta * grad.dot(x_dis);
 
@@ -2394,23 +2427,38 @@ void SecondOrderLargeSystem::setARAPHessianForTest(double* vertex_position_0, do
 			}
 		}
 
+		//std::cout << grad << std::endl;
+
 		for (unsigned int i = 0; i < 4; ++i) {
 			if (is_unfixed[i]) {
-				hessian_nnz->emplace_back(Triplet<double>(constraint_start_in_sys, vertex_index[i], -grad_damp.data()[3 * i]));
-				hessian_nnz->emplace_back(Triplet<double>(constraint_start_in_sys, vertex_index[i] + 1,-grad_damp.data()[3 * i + 1]));
-				hessian_nnz->emplace_back(Triplet<double>(constraint_start_in_sys, vertex_index[i] + 2, -grad_damp.data()[3 * i + 2]));
+				hessian_nnz->emplace_back(Triplet<double>(constraint_start_in_sys, vertex_index[i], -grad.data()[3 * i]));
+				hessian_nnz->emplace_back(Triplet<double>(constraint_start_in_sys, vertex_index[i] + 1,-grad.data()[3 * i + 1]));
+				hessian_nnz->emplace_back(Triplet<double>(constraint_start_in_sys, vertex_index[i] + 2, -grad.data()[3 * i + 2]));
 			}
 		}
 
+		//std::cout << grad_damp << std::endl;
+
+
 		hessian_nnz->emplace_back(Triplet<double>(constraint_start_in_sys, constraint_start_in_sys, -alpha));
 
+		*h = C + alpha * (*lambda) + alpha * beta * grad.dot(x_dis);
 
+		C *= alpha_;
 		for (unsigned int i = 0; i < 3; ++i) {
 			g_0[i] += *lambda * grad.data()[i];
 			g_1[i] += *lambda * grad.data()[i + 3];
 			g_2[i] += *lambda * grad.data()[i + 6];
 			g_3[i] += *lambda * grad.data()[i + 9];
+
+			gradient_0[i]+=C*grad.data()[i];
+			gradient_1[i]+=C*grad.data()[i+3];
+			gradient_2[i]+=C*grad.data()[i+6];
+			gradient_3[i]+=C*grad.data()[i+9];
 		}
+
+	
+
 	}
 }
 

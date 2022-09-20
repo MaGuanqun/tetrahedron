@@ -187,5 +187,7 @@ private:
 
 	void readScene();
 	void updateAnchorTet();
+	void reflectModel();
+	void checkVolume();
 	//Draw_Edge draw_edge_;
 };

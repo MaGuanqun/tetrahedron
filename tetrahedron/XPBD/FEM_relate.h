@@ -74,7 +74,7 @@ namespace FEM {
 		Matrix3d U;
 		U = svd.matrixU();
 
-		//std::cout << "determinant " << determinant<<" "<< (svd.matrixU() * svd.matrixV().transpose()).determinant() << std::endl;
+		//std::cout << "determinant " << determinant<<" "<< << std::endl;
 		if (determinant < 0) {
 		//if ((svd.matrixU()* svd.matrixV().transpose()).determinant() < 0) {
 			//std::cout << "reverse " << std::endl;
@@ -137,6 +137,14 @@ namespace FEM {
 		}
 		A = svd.eigenvectors() * fixed_eigen_value.asDiagonal() * svd.eigenvectors().transpose();
 
+	}
+
+	inline void mssMatrix()
+	{
+		Matrix<double, 12, 12> mass;
+		for (unsigned int i = 0; i < 12; ++i) {
+
+		}
 	}
 
 }

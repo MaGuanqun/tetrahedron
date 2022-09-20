@@ -27,8 +27,12 @@ double ComputeEnergy::computeARAPEnergy(double* position_0, double* position_1, 
 	FEM::getDeformationGradient(position_0,position_1, position_2, position_3, A, deformation_gradient);
 	JacobiSVD<Matrix3d> svd;
 	svd.compute(deformation_gradient);
-	double norm = (svd.singularValues()[0] - 1.0) * (svd.singularValues()[0] - 1.0) + (svd.singularValues()[1] - 1.0) * (svd.singularValues()[1] - 1.0) +
-		(svd.singularValues()[2] - 1.0) * (svd.singularValues()[2] - 1.0);
+	Vector3d eigen_value = svd.singularValues();
+	if (deformation_gradient.determinant() < 0) {
+		eigen_value[2] *= -1.0;
+	}
+	double norm = (eigen_value[0] - 1.0) * (eigen_value[0] - 1.0) + (eigen_value[1] - 1.0) * (eigen_value[1] - 1.0) +
+		(eigen_value[2] - 1.0) * (eigen_value[2] - 1.0);
 
 	return 0.5*norm * stiffness * volume;
 }
@@ -41,8 +45,12 @@ double ComputeEnergy::computeARAPConstraint(double* position_0, double* position
 	FEM::getDeformationGradient(position_0, position_1, position_2, position_3, A, deformation_gradient);
 	JacobiSVD<Matrix3d> svd;
 	svd.compute(deformation_gradient);
-	double norm = (svd.singularValues()[0] - 1.0) * (svd.singularValues()[0] - 1.0) + (svd.singularValues()[1] - 1.0) * (svd.singularValues()[1] - 1.0) +
-		(svd.singularValues()[2] - 1.0) * (svd.singularValues()[2] - 1.0);
+	Vector3d eigen_value = svd.singularValues();
+	if (deformation_gradient.determinant() < 0) {
+		eigen_value[2] *= -1.0;
+	}
+	double norm = (eigen_value[0] - 1.0) * (eigen_value[0] - 1.0) + (eigen_value[1] - 1.0) * (eigen_value[1] - 1.0) +
+		(eigen_value[2] - 1.0) * (eigen_value[2] - 1.0);
 	return -sqrt(norm)*lambda-0.5/(stiffness*volume* time_step_square)*lambda*lambda;
 }
 

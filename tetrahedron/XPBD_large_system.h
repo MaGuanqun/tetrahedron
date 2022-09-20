@@ -277,8 +277,8 @@ private:
 	void setARAPHessianForTest(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
 		std::vector<Triplet<double>>* hessian_nnz,
 		int* vertex_index, unsigned int constraint_start_in_sys,
-		double alpha, Matrix<double, 3, 4>& A, bool* is_unfixed, double* lambda, double* g_0, double* g_1, double* g_2, double* g_3, double* h, unsigned int index,
-		double* ori_0, double* ori_1, double* ori_2, double* ori_3, double beta);
+		double alpha_, double time_step_square, Matrix<double, 3, 4>& A, bool* is_unfixed, double* lambda, double* g_0, double* g_1, double* g_2, double* g_3, double* h, unsigned int index,
+		double* ori_0, double* ori_1, double* ori_2, double* ori_3, double beta, double* gradient_0, double* gradient_1, double*gradient_2, double* gradient_3);
 	void setARAP_ForTest();
 	std::vector<Triplet<double>>test_nnz;
 	std::vector<std::vector<double>>lambda_test;
@@ -310,4 +310,10 @@ private:
 	void updateARAPLambdaFromOri();
 
 	double energy_conv_rate;
+
+	VectorXd gradient;
+
+	//line search
+	double local_slope, line_search_control_parameter, search_shrink_ratio;
+
 };

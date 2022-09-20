@@ -16,8 +16,13 @@ namespace TEST_HESSIAN {
 		FEM::getDeformationGradient(v0.data(), v1.data(), v2.data(), v3.data(), A, deformation_gradient);
 		JacobiSVD<Matrix3d> svd;
 		svd.compute(deformation_gradient);
-		double norm = (svd.singularValues()[0] - 1.0) * (svd.singularValues()[0] - 1.0) + (svd.singularValues()[1] - 1.0) * (svd.singularValues()[1] - 1.0) +
-			(svd.singularValues()[2] - 1.0) * (svd.singularValues()[2] - 1.0);
+		Vector3d eigen;
+		eigen = svd.singularValues();
+		if (deformation_gradient.determinant() < 0) {
+			eigen[2] *= -1.0;
+		}
+		double norm = (eigen[0] - 1.0) * (eigen[0] - 1.0) + (eigen[1] - 1.0) * (eigen[1] - 1.0) +
+			(eigen[2] - 1.0) * (eigen[2] - 1.0);
 		return sqrt(norm);
 	}
 
@@ -42,6 +47,9 @@ namespace TEST_HESSIAN {
 		Matrix<double, 12, 1>grad,grad_forward;
 		Matrix<double, 12, 12> Hessian;
 		grad = computeGrad(v[0], v[1], v[2], v[3], A);
+
+		std::cout << grad << std::endl;
+		std::cout << "===" << std::endl;
 		double C = computeC(v[0], v[1], v[2], v[3], A);
 
 	
@@ -57,6 +65,7 @@ namespace TEST_HESSIAN {
 			}
 		}
 
+		std::cout << grad_test << std::endl;
 
 		for (unsigned int i = 0; i < 4; ++i) {
 			for (unsigned int j = 0; j < 3; ++j) {
@@ -185,14 +194,19 @@ namespace TEST_HESSIAN {
 		}
 
 
-		x0 = Vector3d(1.69815, -1.0563, -0.0225372);
-		x1 = Vector3d(1.2283, -0.134068, -1.57267);
-		x2 = Vector3d(- 1.7082, -0.805883, 0.657723);
-		x3 = Vector3d(- 1.15517, 0.153489, 1.62543);
+		//x0 = Vector3d(1.69815, -1.0563, -0.0225372);
+		//x1 = Vector3d(1.2283, -0.134068, -1.57267);
+		//x2 = Vector3d(- 1.7082, -0.805883, 0.657723);
+		//x3 = Vector3d(- 1.15517, 0.153489, 1.62543);
 		ori_x0 = Vector3d(- 0.959055, 0.213091, -0.186565);
 		ori_x1 = Vector3d(0.99935, 0.0120611, -0.0339639);
 		ori_x2 = Vector3d(-0.894807, 0.385558, 0.22509);
 		ori_x3 = Vector3d(-0.930833, 0.01072, 0.365288);
+
+		x0 = Vector3d(-0.959055, -0.213091, -0.186565);
+		x1 = Vector3d(0.99935, -0.0120611, -0.0339639);
+		x2 = Vector3d(-0.894807, -0.385558, 0.22509);
+		x3 = Vector3d(-0.930833, -0.01072, 0.365288);
 
 		Matrix<double, 3, 3> p;
 		p.col(0) = ori_x1 - ori_x0;
