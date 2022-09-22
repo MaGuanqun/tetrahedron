@@ -70,3 +70,4 @@ double ComputeEnergy::computeInertial(double time_step, unsigned int index_start
 	}
 	return 0.5 / (time_step * time_step) * energy; // 
 }
+

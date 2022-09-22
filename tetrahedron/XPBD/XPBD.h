@@ -15,6 +15,7 @@
 #include"../basic/save_scene.h"
 
 #include"second_order.h"
+#include"../compute_energy.h"
 
 using namespace Eigen;
 using namespace denseOperation;
@@ -144,10 +145,10 @@ private:
 
 
 	double energy;
-	//double previous_energy = 1e-15;
+	double previous_energy = 1e-15;
 	//std::vector<double>energy_per_thread;
 
-	//double energy_converge_ratio;
+	double energy_converge_ratio;
 
 	SaveScene save_scene;
 
@@ -160,6 +161,7 @@ private:
 	void computeCurrentEnergy();
 	double computeCurrentEnergyEdgeLength();
 	double computeInertialEnergy();
+	double computeCurrentARAPEnergy();
 
 	std::vector<std::vector<Vector3d>>residual;
 
@@ -169,6 +171,6 @@ private:
 
 	void computeEdgeLenthResidual();
 	void computeARAPResidual();
-
+	ComputeEnergy compute_energy;
 };
 

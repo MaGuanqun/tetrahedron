@@ -316,4 +316,7 @@ private:
 	//line search
 	double local_slope, line_search_control_parameter, search_shrink_ratio;
 
+	void testGrad(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
+		Matrix<double, 3, 4>& A, Matrix<double, 12, 1>& grad);
+
 };

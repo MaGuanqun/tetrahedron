@@ -6,7 +6,7 @@
 
 SecondOrderLargeSystem::SecondOrderLargeSystem()
 {
-	gravity_ = 0.0;
+	gravity_ = 9.8;
 
 	iteration_number = 10;
 
@@ -15,7 +15,7 @@ SecondOrderLargeSystem::SecondOrderLargeSystem()
 	time_step_square = time_step * time_step;
 	conv_rate = time_step * 1e-5;
 
-	max_itr_num = 100;
+	max_itr_num = 300;
 	velocity_damp = 0.99;
 	beta = 0.25;
 	gamma = 0.5;
@@ -24,7 +24,7 @@ SecondOrderLargeSystem::SecondOrderLargeSystem()
 
 	line_search_control_parameter = 1e-4;
 	search_shrink_ratio = 0.9;
-	TEST_HESSIAN::testARAPHessianMulti();
+	//TEST_HESSIAN::testARAPHessianMulti();
 }
 
 
@@ -413,42 +413,40 @@ void SecondOrderLargeSystem::solveNewtonMethod_()
 
 		if (iteration_number != 0) {
 			if (abs(total_energy) >abs(previous_energy)) {
-				gradient.normalize();
-
-				change_direction = false;
-				displacement_coe = 1.0;
+				//gradient.normalize();				
 				//std::cout << "activate " << std::endl;
-
 				//set condition for line search
 				local_slope = -line_search_control_parameter*gradient.dot(delta_x.segment(0, 3 * vertex_begin_per_obj[total_obj_num]));
-
-				std::cout << "local_slope " << local_slope<<" "<< total_energy <<" "<< previous_energy << std::endl;
-
-				while (abs(total_energy) > abs(previous_energy) - displacement_coe * local_slope) //
-				{
-					//std::cout << total_energy << std::endl;
-
-					displacement_coe *= search_shrink_ratio;
-					thread->assignTask(this, UPDATE_POSITION_NEWTON_FROM_ORI);
-					updateARAPLambdaFromOri();
-					computeEnergy();
-					computeResidual();
-					if (abs(displacement_coe) < 1e-4) {
-						std::cout << "too many times " << std::endl;
-						//std::cout <<"determinent "<< global_llt.determinant()<<" "<< global_llt.logAbsDeterminant() << std::endl;
-						//std::cout << (Matrix_test * delta_x - b_test).norm()<<" "<<b_test.norm() << std::endl;
-						//total_residual
-						//std::cout << "displacement_coe too small " << displacement_coe << std::endl;
-						//if (!change_direction) {
-						//	//displacement_coe = 1.0;
-						//	change_direction = true;
-						//}
-						//else {
-							break;
-						//}
-					}
-					
+				if (local_slope < 0) {
+					std::cout << "directioin increase " << std::endl;
 				}
+
+
+				//if (local_slope < 0) {
+				//	change_direction = true;
+				//	displacement_coe = -1.0;
+				//	thread->assignTask(this, UPDATE_POSITION_NEWTON_FROM_ORI);
+				//	updateARAPLambdaFromOri();
+				//	//std::cout << "roor" << std::endl;
+				//}
+				//else {
+				//	displacement_coe = 1.0;
+				//	change_direction = false;
+				//}
+				////std::cout << "local_slope " << local_slope<<" "<< total_energy <<" "<< previous_energy << std::endl;
+				//while (abs(total_energy) > abs(previous_energy) - displacement_coe * local_slope) //
+				//{
+				//	displacement_coe *= search_shrink_ratio;
+				//	thread->assignTask(this, UPDATE_POSITION_NEWTON_FROM_ORI);
+				//	updateARAPLambdaFromOri();
+				//	computeEnergy();
+				//	//std::cout << total_energy- previous_energy << std::endl;
+				//	computeResidual();
+				//	if (abs(displacement_coe) < 1e-4) {
+				//			break;
+				//	}					
+				//}
+				//std::cout << "coe " << displacement_coe << std::endl;
 			}
 		}
 		
@@ -1598,7 +1596,14 @@ void SecondOrderLargeSystem::updateARAPLambdaFromOri()
 {
 	unsigned int size;
 	double* lambda;
-	double  coe = displacement_coe / search_shrink_ratio * (1.0 - search_shrink_ratio);
+	double  coe;
+	if (change_direction) {
+		coe = -displacement_coe;
+	}
+	else {
+		coe = displacement_coe / search_shrink_ratio * (1.0 - search_shrink_ratio);
+	}
+
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		size = lambda_test[i].size();
 		lambda = lambda_test[i].data();
@@ -1621,8 +1626,14 @@ void SecondOrderLargeSystem::updatePositionFromOri(int thread_No)
 	unsigned int* unfixed_index_to_normal_index;
 	unsigned int vertex_start;
 
-	double coe = displacement_coe / search_shrink_ratio * (1.0 - search_shrink_ratio);
-
+	double coe;
+	if (change_direction) {
+		coe = -displacement_coe;
+	}
+	else {
+		coe = displacement_coe / search_shrink_ratio * (1.0 - search_shrink_ratio);
+	}
+	
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		vertex_pos = vertex_position[i][0].data();
 		index = unfixed_vertex_begin_per_thread[i][thread_No];
@@ -2333,6 +2344,25 @@ void SecondOrderLargeSystem::checkIfSampleRight(double* vertex_position_0, doubl
 	}
 }
 
+
+void SecondOrderLargeSystem::testGrad(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3, 
+	Matrix<double, 3, 4>& A, Matrix<double, 12, 1>& grad)
+{
+	std::vector<Vector3d> pos(4);
+	memcpy(pos[0].data(), vertex_position_0, 24);
+	memcpy(pos[1].data(), vertex_position_1, 24);
+	memcpy(pos[2].data(), vertex_position_2, 24);
+	memcpy(pos[3].data(), vertex_position_3, 24);
+
+	Matrix<double, 12, 1>grad_test = TEST_HESSIAN::computeGradByNumeric(pos, A, 1e-5);
+	if ((grad_test - grad).norm() > 1e-3) {
+		std::cout << "error " << std::endl;
+		std::cout << grad_test.transpose() << std::endl;
+		std::cout << grad.transpose() << std::endl;
+	}
+
+}
+
 void SecondOrderLargeSystem::setARAPHessianForTest(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
 	std::vector<Triplet<double>>* hessian_nnz,
 	int* vertex_index, unsigned int constraint_start_in_sys,
@@ -2378,7 +2408,11 @@ void SecondOrderLargeSystem::setARAPHessianForTest(double* vertex_position_0, do
 		Hessian *= (0.5 / C);
 		Hessian -= ((1.0 / C) * grad) * grad.transpose();
 
+		//testGrad(vertex_position_0, vertex_position_1, vertex_position_2, vertex_position_3, A, grad);
+
 		//FEM::SPDprojection(Hessian);
+
+
 
 
 		Matrix<double, 12, 1> x_dis;

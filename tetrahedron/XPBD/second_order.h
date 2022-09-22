@@ -25,7 +25,7 @@ public:
 	void solveARAPConstraint(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
 		double stiffness, double dt,
 		Matrix<double, 3, 4>& A, double* inv_mass, double& lambda, const double damping_stiffness, double sigma_min,
-		double sigma_max, double volume);
+		double sigma_max, double volume, double* sn_0, double* sn_1, double* sn_2, double* sn_3);
 
 	void computeEdgeLengthForce(double* vertex_0, double* vertex_1, double stiffness,
 		double* potential_0, double* potential_1, double rest_length);

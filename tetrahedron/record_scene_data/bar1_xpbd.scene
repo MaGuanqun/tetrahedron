@@ -1,0 +1,32 @@
+object
+1
+D:\tetrahedron\tetrahedron\model\bar.1.ele
+collider
+0
+stiffness
+100 50000 0 0 0 0 
+100 200 200 200 0 0 0 0 
+anchor_vertex
+0
+8 5 8 13 14 15 16 28 30 
+time_step
+0.0333333
+cloth_density
+1
+tet_density
+1
+velocity_damp
+0.995
+friction_coe
+0.9 0.8 0.9
+floor_dimension
+4
+floor_value
+-0.55
+XPBD
+substep_num
+1
+iteration_num
+50
+sub_step_per_detection
+1

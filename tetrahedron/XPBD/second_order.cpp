@@ -58,7 +58,7 @@ void SecondOrderConstraint::computeARAPForce(double* vertex_position_0, double* 
 void SecondOrderConstraint::solveARAPConstraint(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
 	double stiffness, double dt,
 	Matrix<double, 3, 4>& A, double* inv_mass, double& lambda, const double damping_stiffness, double sigma_min,
-	double sigma_max, double volume)
+	double sigma_max, double volume, double* sn_0, double* sn_1, double* sn_2, double* sn_3)
 {
 	Vector3d eigen_value;
 	Vector3d position;
@@ -104,13 +104,34 @@ void SecondOrderConstraint::solveARAPConstraint(double* vertex_position_0, doubl
 		}
 	}
 	Hessian *= -lambda;
+	//Hessian.setZero();
 	for (unsigned int i = 0; i < 144; i += 13) {
 		Hessian.data()[i] += 1.0;
 	}
+
+	//Matrix<double, 12, 1> M_inv_g;
+	//SUB(M_inv_g.data(), vertex_position_0, sn_0);
+	//M_inv_g.data()[3] = vertex_position_1[0] - sn_1[0];
+	//M_inv_g.data()[4] = vertex_position_1[1] - sn_1[1];
+	//M_inv_g.data()[5] = vertex_position_1[2] - sn_1[2];
+	//M_inv_g.data()[6] = vertex_position_2[0] - sn_2[0];
+	//M_inv_g.data()[7] = vertex_position_2[1] - sn_2[1];
+	//M_inv_g.data()[8] = vertex_position_2[2] - sn_2[2];
+	//M_inv_g.data()[9] = vertex_position_3[0] - sn_3[0];
+	//M_inv_g.data()[10] = vertex_position_3[1] - sn_3[1];
+	//M_inv_g.data()[11] = vertex_position_3[2] - sn_3[2];
+	//M_inv_g -= lambda * inv_mass_sys.cwiseProduct(grad);
+
 	ColPivHouseholderQR <Matrix<double,12,12>> linear(Hessian);
+
+	//if (abs(Hessian.determinant()) < 1e-8) {
+	//	std::cout << Hessian.determinant() << std::endl;
+	//}
+
 	double h = C + alpha_ * lambda;
-	double delta_lambda = -h / (grad.dot(linear.solve(inv_mass_sys.cwiseProduct(grad))) + alpha_);
-	Matrix<double, 12, 1> delta_x = linear.solve(delta_lambda * (inv_mass_sys.cwiseProduct(grad)));
+	double delta_lambda = (-h) / (grad.dot(linear.solve(inv_mass_sys.cwiseProduct(grad))) + alpha_);//  + grad.dot(linear.solve(M_inv_g))
+	Matrix<double, 12, 1> delta_x = linear.solve(delta_lambda * (inv_mass_sys.cwiseProduct(grad))); //-M_inv_g
+
 
 	vertex_position_0[0] += delta_x[0];
 	vertex_position_0[1] += delta_x[1];

@@ -227,7 +227,7 @@ void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 	}
 	only_test_collision = control_parameter[ONLY_COLLISION_TEST];
 	cloth_density = 1;
-	tetrahedron_density = 100;
+	tetrahedron_density = 1;
 
 
 	std::vector<std::vector<double>>obj_stiffness,collide_stiffness;
@@ -382,7 +382,6 @@ void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 		//setGroup();
 	}
 
-	std::cout << "kk" << std::endl;
 
 	move_object.initial(&cloth, &collider, &tetrahedron, &thread);
 
@@ -435,26 +434,27 @@ void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 	//std::cout << tetrahedron[0].mesh_struct.vertex_position[3][1] << std::endl;
 	//double v = tetrahedron[0].mesh_struct.getTetrahedronVolume(tetrahedron[0].mesh_struct.vertex_position[0].data(), tetrahedron[0].mesh_struct.vertex_position[1].data(), tetrahedron[0].mesh_struct.vertex_position[2].data(), tetrahedron[0].mesh_struct.vertex_position[3].data());
 	//std::cout << "volume2 " <<v << std::endl;
-	reflectModel();
+
+	//reflectModel();
 }
 
 void Scene::reflectModel()
 {
-	for (unsigned int i = 0; i < tetrahedron[0].mesh_struct.vertex_position.size(); ++i) {
-		tetrahedron[0].mesh_struct.vertex_position[i][1] = -0.32 - tetrahedron[0].mesh_struct.vertex_position[i][1];
-		tetrahedron[0].mesh_struct.vertex_for_render[i][1] = -0.32 - tetrahedron[0].mesh_struct.vertex_for_render[i][1];
-	}
+	//for (unsigned int i = 0; i < tetrahedron[0].mesh_struct.vertex_position.size(); ++i) {
+	//	tetrahedron[0].mesh_struct.vertex_position[i][1] = -0.32 - tetrahedron[0].mesh_struct.vertex_position[i][1];
+	//	tetrahedron[0].mesh_struct.vertex_for_render[i][1] = -0.32 - tetrahedron[0].mesh_struct.vertex_for_render[i][1];
+	//}
 
 
-	//std::uniform_real_distribution<double> distribution(-2, 2);
-	//std::default_random_engine engine;
-	//std::vector<double>x(tetrahedron[0].mesh_struct.vertex_position.size() * 3);
-	//auto gen = [&distribution, &engine]() {
-	//	return distribution(engine);
-	//};
-	//std::generate(std::begin(x), std::end(x),gen);
-	//memcpy(tetrahedron[0].mesh_struct.vertex_position[0].data(), x.data(),8 * x.size());
-	//memcpy(tetrahedron[0].mesh_struct.vertex_for_render[0].data(), x.data(),8 * x.size());
+	std::uniform_real_distribution<double> distribution(-2, 2);
+	std::default_random_engine engine;
+	std::vector<double>x(tetrahedron[0].mesh_struct.vertex_position.size() * 3);
+	auto gen = [&distribution, &engine]() {
+		return distribution(engine);
+	};
+	std::generate(std::begin(x), std::end(x),gen);
+	memcpy(tetrahedron[0].mesh_struct.vertex_position[0].data(), x.data(),8 * x.size());
+	memcpy(tetrahedron[0].mesh_struct.vertex_for_render[0].data(), x.data(),8 * x.size());
 
 
 }
@@ -1203,7 +1203,9 @@ void Scene::updateAnchorTet()
 		tetrahedron[i].mesh_struct.updateUnfixedPointData();
 		tetrahedron[i].mesh_struct.resetMassInv();
 	}
-	second_order_xpbd_large.updateIndexBeginPerObj();
+	if (use_method == XPBD_SECOND_ORDER_LARGE_) {
+		second_order_xpbd_large.updateIndexBeginPerObj();
+	}
 }
 
 

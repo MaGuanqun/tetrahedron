@@ -16,14 +16,13 @@ namespace TEST_HESSIAN {
 		FEM::getDeformationGradient(v0.data(), v1.data(), v2.data(), v3.data(), A, deformation_gradient);
 		JacobiSVD<Matrix3d> svd;
 		svd.compute(deformation_gradient);
-		Vector3d eigen;
-		eigen = svd.singularValues();
-		if (deformation_gradient.determinant() < 0) {
-			eigen[2] *= -1.0;
-		}
-		double norm = (eigen[0] - 1.0) * (eigen[0] - 1.0) + (eigen[1] - 1.0) * (eigen[1] - 1.0) +
-			(eigen[2] - 1.0) * (eigen[2] - 1.0);
-		return sqrt(norm);
+		Matrix3d U, V, rotation;
+		Vector3d eigen_value;
+		FEM::extractRotation(deformation_gradient, eigen_value, U, V, rotation);
+		
+
+		double C = (deformation_gradient - rotation).norm();
+		return C;
 	}
 
 	inline Matrix<double, 12, 1> computeGrad(Vector3d& v0, Vector3d& v1, Vector3d& v2, Vector3d& v3, Matrix<double, 3, 4>& A)
@@ -33,12 +32,34 @@ namespace TEST_HESSIAN {
 		Matrix3d U, V, rotation;
 		Vector3d eigen_value;
 		FEM::extractRotation(deformation_gradient, eigen_value, U, V, rotation);
+
+		//if (deformation_gradient.determinant() < 0) {
+		//	std::cout << "reflection " << std::endl;
+		//}
+		//std::cout << deformation_gradient- rotation << std::endl;
+
 		double C = (deformation_gradient - rotation).norm();
 		Matrix<double, 3, 4> grad_C_transpose;
 		grad_C_transpose = (1.0 / C) * (deformation_gradient - rotation) * A;//
 		Matrix<double, 12, 1> grad;
 		memcpy(grad.data(), grad_C_transpose.data(), 96);
 		return grad;
+	}
+
+	inline Matrix<double, 12, 1>computeGradByNumeric(std::vector<Vector3d>& v, Matrix<double, 3, 4>& A, double step_size)
+	{
+		std::vector<Vector3d>temp_v = v;
+		Matrix<double, 12, 1>grad_test;
+		double C = computeC(v[0], v[1], v[2], v[3], A);
+		for (unsigned int i = 0; i < 4; ++i) {
+			for (unsigned int j = 0; j < 3; ++j) {
+				temp_v = v;
+				temp_v[i][j] += step_size;
+				double C_ = computeC(temp_v[0], temp_v[1], temp_v[2], temp_v[3], A);
+				grad_test(3 * i + j) = (C_ - C) / step_size;
+			}
+		}
+		return grad_test;
 	}
 
 	inline Matrix<double, 12, 12> computeHessianByGradNumeric(std::vector<Vector3d>& v, Matrix<double, 3, 4>& A, double step_size)
@@ -48,8 +69,10 @@ namespace TEST_HESSIAN {
 		Matrix<double, 12, 12> Hessian;
 		grad = computeGrad(v[0], v[1], v[2], v[3], A);
 
-		std::cout << grad << std::endl;
 		std::cout << "===" << std::endl;
+
+		std::cout << grad.transpose() << std::endl;
+
 		double C = computeC(v[0], v[1], v[2], v[3], A);
 
 	
@@ -65,7 +88,18 @@ namespace TEST_HESSIAN {
 			}
 		}
 
-		std::cout << grad_test << std::endl;
+		std::cout <<"forward "<< grad_test.transpose() << std::endl;
+
+		for (unsigned int i = 0; i < 4; ++i) {
+			for (unsigned int j = 0; j < 3; ++j) {
+				temp_v = v;
+				temp_v[i][j] -= step_size;
+				double C_ = computeC(temp_v[0], temp_v[1], temp_v[2], temp_v[3], A);
+				grad_test(3 * i + j) = ( C- C_) / step_size;
+			}
+		}
+
+		std::cout << "backward " << grad_test.transpose() << std::endl;
 
 		for (unsigned int i = 0; i < 4; ++i) {
 			for (unsigned int j = 0; j < 3; ++j) {
@@ -198,10 +232,20 @@ namespace TEST_HESSIAN {
 		//x1 = Vector3d(1.2283, -0.134068, -1.57267);
 		//x2 = Vector3d(- 1.7082, -0.805883, 0.657723);
 		//x3 = Vector3d(- 1.15517, 0.153489, 1.62543);
+
 		ori_x0 = Vector3d(- 0.959055, 0.213091, -0.186565);
 		ori_x1 = Vector3d(0.99935, 0.0120611, -0.0339639);
 		ori_x2 = Vector3d(-0.894807, 0.385558, 0.22509);
 		ori_x3 = Vector3d(-0.930833, 0.01072, 0.365288);
+
+		Matrix3d R;
+		Vector3d rotate_axe = Vector3d(0.1, -0.1, 0.1);
+		rotateAroundVector(R.data(), rotate_axe.data(), 145.0 / 180.0 * M_PI);
+		//x0 = R * ori_x0;
+		//x1 = R * ori_x1;
+		//x2 = R * ori_x2;
+		//x3 = R * ori_x3;
+
 
 		x0 = Vector3d(-0.959055, -0.213091, -0.186565);
 		x1 = Vector3d(0.99935, -0.0120611, -0.0339639);
@@ -239,7 +283,7 @@ namespace TEST_HESSIAN {
 		}
 		std::vector<Vector3d> v(4);
 		v[0] = x0; v[1] = x1; v[2] = x2; v[3] = x3;
-		double step_size = 1e-8;
+		double step_size = 1e-5;
 		Matrix<double, 12, 12> Hessian_num = computeHessianByGradNumeric(v, A, step_size);
 		Matrix<double, 12, 12> Hessian_ana = computeHessianByAna(v, A, step_size);
 
@@ -247,9 +291,9 @@ namespace TEST_HESSIAN {
 
 		double v_ = 1.0 / (6 * A.block<3, 3>(0, 1).determinant());
 
-		std::cout << v_ * Hessian_num << std::endl;
-		std::cout << "===" << std::endl;
-		std::cout << v_ * Hessian_ana << std::endl;
+		//std::cout << v_ * Hessian_num << std::endl;
+		//std::cout << "===" << std::endl;
+		//std::cout << v_ * Hessian_ana << std::endl;
 
 		//std::cout << (Hessian_ana - Hessian_num).norm() << std::endl;
 		//if ((Hessian_ana - Hessian_num).norm() > 1e-4) {
