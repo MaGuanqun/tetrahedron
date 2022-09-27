@@ -3,9 +3,10 @@
 #include"test_assemble_matrix_newton.h"
 #include"XPBD/FEM_relate.h"
 
+
 NewtonMethod::NewtonMethod()
 {
-	gravity_ = 0.0;
+	gravity_ = 9.8;
 
 	iteration_number = 1000;
 
@@ -917,8 +918,7 @@ void NewtonMethod::solveNewtonMethod_()
 
 	iteration_number = 0;
 
-	//std::cout << "====" << std::endl;
-//	computeEnergy();
+	//computeEnergy();
 	//std::cout << "energy " << total_energy << std::endl;
 	previous_energy = total_energy;
 	store_residual.clear();
@@ -1000,7 +1000,8 @@ void NewtonMethod::initialDHatTolerance(double ave_edge_length)
 
 bool NewtonMethod::convergenceCondition()
 {
-	if (iteration_number <1) {
+	//std::cout << total_energy << std::endl;
+	if (iteration_number <5) {
 		return true;
 	}
 
@@ -1323,6 +1324,7 @@ void NewtonMethod::computeEnergy()
 	for (unsigned int i = 0; i < total_thread_num; ++i) {
 		total_energy += energy_per_thread[i];
 	}
+	computeARAPEnergy();
 }
 
 //NEWTON_METHOD_ENERGY
@@ -1332,6 +1334,42 @@ void NewtonMethod::computeEnergy(int thread_No)
 	computeMassSpringEnergy(thread_No);
 	computeInertial(thread_No);
 }
+
+
+
+void NewtonMethod::computeARAPEnergy()
+{
+	unsigned int tet_end;
+
+	std::array<double, 3>* vertex_pos;
+	std::array<int, 4>* tet_index;
+
+	Matrix<double, 3, 4>* A;
+	double* volume;
+	double stiffness;
+	double energy = 0.0;
+	double* mass_inv_;
+	double* lambda_;
+	for (unsigned int obj_No = 0; obj_No < tetrahedron->size(); ++obj_No) {
+		vertex_pos = vertex_position[obj_No + cloth->size()];
+		tet_end = tet_mesh_struct[obj_No]->indices.size();
+		tet_index = tet_indices[obj_No];
+		A = tet_mesh_struct[obj_No]->A.data();
+		volume = tet_mesh_struct[obj_No]->volume.data();
+		stiffness = tetrahedron->data()[obj_No].ARAP_stiffness;
+		mass_inv_ = inv_mass[obj_No + cloth->size()];
+		for (unsigned int i = 0; i < tet_end; i++) {
+			if (mass_inv_[tet_index[i][0]] != 0.0 || mass_inv_[tet_index[i][1]] != 0.0 || mass_inv_[tet_index[i][2]] != 0.0 || mass_inv_[tet_index[i][3]] != 0.0) {
+				energy += compute_energy.computeARAPEnergy(vertex_pos[tet_index[i][0]].data(), vertex_pos[tet_index[i][1]].data(), vertex_pos[tet_index[i][2]].data(),
+					vertex_pos[tet_index[i][3]].data(), A[i], volume[i], stiffness);
+			}
+
+		}
+	}
+	total_energy += energy;
+}
+
+
 
 
 void NewtonMethod::computeInertial(int thread_No)

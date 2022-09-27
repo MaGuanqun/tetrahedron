@@ -101,6 +101,19 @@ namespace FEM {
 		rotation = U * V.transpose();
 	}
 
+	inline void getHessianForOneVertex(Matrix3d& Hessian, Matrix3d& S, Matrix3d& R, Matrix3d& Dm, Matrix<double, 3, 4>& A, unsigned int vertex_no)
+	{
+		Matrix3d delta_F, delta_R;
+		Matrix<double, 3, 4> delta_H;
+		for (unsigned int i = 0; i < 3; ++i) {
+			getDeltaF(delta_F, Dm, 3*vertex_no+ i);
+			getDeltaR(delta_F, delta_R, S, R);
+			delta_H = 2.0 * (delta_F - delta_R) * A;
+			memcpy(Hessian.data() + 3 * i, delta_H.data()+3*vertex_no, 24);
+		}
+	}
+
+
 	inline void getHessian(Matrix<double, 12, 12>& Hessian, Matrix3d& S, Matrix3d& R, Matrix3d& Dm, Matrix<double, 3, 4>& A)
 	{
 		Matrix3d delta_F, delta_R;

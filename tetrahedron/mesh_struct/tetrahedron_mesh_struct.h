@@ -23,7 +23,7 @@ public:
 	std::vector<int> vertex_surface_index;//size is the global vertex size, verted index -> surface index
 	std::vector<unsigned int> vertex_index_on_surface_begin_per_thread;
 
-	std::vector<std::vector<unsigned int>> vertex_tet_index;//tet indices that contain the vertex
+
 	void recordTetIndexForVertex();
 	//std::vector<Matrix3d> P_inv;
 	std::vector<Matrix<double,3,4>> A;

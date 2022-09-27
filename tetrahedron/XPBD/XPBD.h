@@ -58,6 +58,9 @@ public:
 	double velocity_damp;
 	unsigned int* sub_step_per_detection;
 private:
+
+	void coordinateDescent();
+
 	double gravity[3];
 
 	unsigned int total_thread_num;
@@ -175,6 +178,7 @@ private:
 
 	void secondOrderCoordinateDiscentTetStrain();
 
-
+	void newtonCDTet();
+	void newtonCD();
 };
 

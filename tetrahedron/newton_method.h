@@ -9,6 +9,7 @@
 #include"object/tetrahedron.h"
 #include"object/collider.h"
 #include"collision/collision.h"
+#include"compute_energy.h"
 
 using namespace Eigen;
 using namespace denseOperation;
@@ -282,5 +283,6 @@ private:
 	void updateTest();
 	void construct_b_Test();
 	*/
-
+	void computeARAPEnergy();
+	ComputeEnergy compute_energy;
 };

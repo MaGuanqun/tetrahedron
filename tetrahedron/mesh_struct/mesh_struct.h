@@ -121,6 +121,8 @@ public:
 	void updateAnchorPerThread(int total_thread_num);
 	void resetMassInv();
 
+	std::vector<std::vector<unsigned int>> vertex_tet_index;//tet indices that contain the vertex
+
 protected:
 	int type;
 	bool isEdgeExist(unsigned int v0, unsigned int v1, unsigned int& edge_index);

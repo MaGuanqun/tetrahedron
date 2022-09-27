@@ -417,9 +417,9 @@ void SecondOrderLargeSystem::solveNewtonMethod_()
 				//std::cout << "activate " << std::endl;
 				//set condition for line search
 				local_slope = -line_search_control_parameter*gradient.dot(delta_x.segment(0, 3 * vertex_begin_per_obj[total_obj_num]));
-				if (local_slope < 0) {
-					std::cout << "directioin increase " << std::endl;
-				}
+				//if (local_slope < 0) {
+				//	std::cout << "directioin increase " << std::endl;
+				//}
 
 
 				//if (local_slope < 0) {

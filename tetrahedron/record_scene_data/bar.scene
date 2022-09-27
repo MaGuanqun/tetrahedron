@@ -1,6 +1,6 @@
 object
 1
-D:\tetrahedron\tetrahedron\model\bar.ele
+.\model\bar.ele
 collider
 0
 stiffness
@@ -23,7 +23,7 @@ floor_dimension
 4
 floor_value
 -0.55
-XPBD
+newton
 substep_num
 1
 iteration_num

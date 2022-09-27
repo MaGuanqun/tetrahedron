@@ -231,7 +231,7 @@ void TetrahedronMeshStruct::recordTetIndexForSurfaceIndex()
 				if (vertices[indices[i][j]].tetrahedron.empty()) {
 					vertices[indices[i][j]].tetrahedron.reserve(5);
 				}
-				vertices[indices[i][j]].tetrahedron.push_back(i);
+				vertices[indices[i][j]].tetrahedron.emplace_back(i);
 			}
 		}
 	}

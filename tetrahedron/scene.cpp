@@ -11,7 +11,7 @@ Scene::Scene()
 	light.diffuse = glm::vec3(0.9, 0.9, 0.9);
 	light.specular = glm::vec3(0.85, 0.85, 0.85);
 
-	time_step = 1.0 / 30.0;
+	time_step = 1.0 / 100.0;
 
 
 	max_force_magnitude = 2.0;
@@ -400,7 +400,27 @@ void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 		second_order_xpbd_large.setForNewtonMethod(&cloth, &tetrahedron, &collider, &floor, &thread, tolerance_ratio);
 		break;
 	}
-	std::cout << "kk2" << std::endl;
+
+	if (load_by_scene_file) {
+		for (unsigned int i = 0; i < tetrahedron.size(); ++i) {
+			if (!anchor_vertex[i + cloth.size()].empty()) {
+				tetrahedron[i].mesh_struct.updateAnchorPerThread(thread.thread_num);
+				tetrahedron[i].mesh_struct.updateUnfixedPointData();
+				if (use_method == NEWTON_) {
+					newton_method.updateIndexBeginPerObj();
+				}
+			}
+			else {
+				tetrahedron[i].mesh_struct.updateAnchorPerThread(thread.thread_num);
+				tetrahedron[i].mesh_struct.updateUnfixedPointData();
+				if (use_method == NEWTON_) {
+					newton_method.updateIndexBeginPerObj();
+				}
+			}
+		}
+	}
+
+
 	if (control_parameter[ONLY_COLLISION_TEST]) {
 		test_draw_collision.initial(&cloth, &collider, &tetrahedron, &thread, &floor, tolerance_ratio, &project_dynamic.collision,
 			&xpbd.collision, &newton_method.collision,use_method);
@@ -415,7 +435,6 @@ void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 	if (load_by_scene_file) {
 		updateAnchorTet();
 	}
-
 
 	//unsigned int  k = cloth[0].mesh_struct.vertices[49 * 50].edge[0];
 	//unsigned int v;
