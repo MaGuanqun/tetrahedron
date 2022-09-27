@@ -209,6 +209,20 @@ void TetrahedronMeshStruct::findSurface()
 //}
 
 
+void TetrahedronMeshStruct::recordTetIndexForVertex()
+{
+	vertex_tet_index.resize(vertex_position.size());
+	for (int i = 0; i < indices.size(); ++i) {
+		for (int j = 0; j < 4; ++j) {
+			if (vertex_tet_index[indices[i][j]].empty()) {
+				vertex_tet_index[indices[i][j]].reserve(8);
+			}
+			vertex_tet_index[indices[i][j]].emplace_back(i);
+		}		
+	}
+}
+
+
 void TetrahedronMeshStruct::recordTetIndexForSurfaceIndex()
 {
 	for (int i = 0; i < indices.size(); ++i) {

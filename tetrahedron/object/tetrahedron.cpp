@@ -29,6 +29,9 @@ void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	obtainAABBMoveRadius();
 
 	neighbor_vertex_per_thread.resize(thread->thread_num);
+
+	mesh_struct.recordTetIndexForVertex();
+
 }
 
 

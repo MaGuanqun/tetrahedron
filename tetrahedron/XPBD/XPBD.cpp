@@ -601,7 +601,7 @@ void XPBD::PBDsolve()
 
 bool XPBD::convergeCondition(unsigned int iteration_num)
 {
-	if (iteration_num < 1) {//max_iteration_number
+	if (iteration_num < 50) {//max_iteration_number
 		return false;
 	}
 
@@ -925,7 +925,8 @@ double XPBD::computeCurrentARAPEnergy()
 }
 
 
-void XPBD::secondOrderSolveTetStrainConstraint()
+
+void XPBD::secondOrderCoordinateDiscentTetStrain()
 {
 	unsigned int size;
 	std::array<int, 4>* indices;
@@ -937,17 +938,19 @@ void XPBD::secondOrderSolveTetStrainConstraint()
 	double stiffness;
 	Matrix<double, 3, 4>* A;
 	double* lambda_ = lambda.data() + constraint_index_start[2];
+
 	double* sigma_limit;
 	double youngs_modulus, poisson_ratio;
 	std::array<double, 3>* original_vertex_pos;
 	double damp_stiffness;
 
-	double iteration_num_inverse = 1.0 / (double)(max_iteration_number + 1);
 	double energy_;
 
 	double mass_inv_tet[4];
+	double mass_tet[4];
 
 	std::array<double, 3>* sn_;
+	double* mass;
 
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		mesh_struct_ = mesh_struct[i + cloth->size()];
@@ -960,11 +963,75 @@ void XPBD::secondOrderSolveTetStrainConstraint()
 		A = tetrahedron->data()[i].mesh_struct.A.data();
 		sigma_limit = (*tetrahedron)[i].sigma_limit;
 		mass_inv = mesh_struct_->mass_inv.data();
+		mass = mesh_struct_->mass.data();
+		youngs_modulus = tetrahedron->data()[i].youngs_modulus;
+		poisson_ratio = tetrahedron->data()[i].poisson_ratio;
+		damp_stiffness = tetrahedron->data()[i].damp_ARAP_stiffness;
+		sn_ = sn[i + cloth->size()].data();
+
+		for (unsigned int j = 0; j < size; ++j) {
+			mass_inv_tet[0] = mass_inv[indices[j][0]]; 	mass_inv_tet[1] = mass_inv[indices[j][1]];
+			mass_inv_tet[2] = mass_inv[indices[j][2]];	mass_inv_tet[3] = mass_inv[indices[j][3]];
+
+			mass_tet[0] = mass[indices[j][0]]; 	mass_tet[1] = mass[indices[j][1]];
+			mass_tet[2] = mass[indices[j][2]];	mass_tet[3] = mass[indices[j][3]];
+
+			if (mass_inv_tet[0] != 0.0 || mass_inv_tet[1] != 0.0 || mass_inv_tet[2] != 0.0 || mass_inv_tet[3] != 0.0) {
+				second_order_constraint.solveARAPConstraint(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
+					vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(),
+					stiffness, sub_time_step, A[j], mass_inv_tet,
+					*lambda_, damp_stiffness, mass, volume[j]);
+			}
+			lambda_++;
+		}
+	}
+}
+
+
+
+void XPBD::secondOrderSolveTetStrainConstraint()
+{
+	unsigned int size;
+	std::array<int, 4>* indices;
+	MeshStruct* mesh_struct_;
+	double* volume;
+	std::array<double, 3>* vertex_pos;
+	std::array<double, 3>* initial_vertex_pos;
+	double* mass_inv;
+	double stiffness;
+	Matrix<double, 3, 4>* A;
+	double* lambda_ = lambda.data() + constraint_index_start[2];
+
+	double* sigma_limit;
+	double youngs_modulus, poisson_ratio;
+	std::array<double, 3>* original_vertex_pos;
+	double damp_stiffness;
+
+	double energy_;
+
+	double mass_inv_tet[4];
+	double mass_tet[4];
+
+	std::array<double, 3>* sn_;
+	double* mass;
+
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		mesh_struct_ = mesh_struct[i + cloth->size()];
+		size = tetrahedron->data()[i].mesh_struct.indices.size();
+		indices = tetrahedron->data()[i].mesh_struct.indices.data();
+		volume = tetrahedron->data()[i].mesh_struct.volume.data();
+		vertex_pos = vertex_position[i + cloth->size()];
+		initial_vertex_pos = initial_vertex_position[i + cloth->size()];
+		stiffness = tetrahedron->data()[i].ARAP_stiffness;
+		A = tetrahedron->data()[i].mesh_struct.A.data();
+		sigma_limit = (*tetrahedron)[i].sigma_limit;
+		mass_inv = mesh_struct_->mass_inv.data();
+		mass = mesh_struct_->mass.data();
 		youngs_modulus = tetrahedron->data()[i].youngs_modulus;
 		poisson_ratio = tetrahedron->data()[i].poisson_ratio;
 		damp_stiffness = tetrahedron->data()[i].damp_ARAP_stiffness;
 		sn_ = sn[i+cloth->size()].data();
-
+		
 
 		for (unsigned int j = 0; j < size; ++j) {
 
@@ -973,12 +1040,14 @@ void XPBD::secondOrderSolveTetStrainConstraint()
 			mass_inv_tet[0] = mass_inv[indices[j][0]]; 	mass_inv_tet[1] = mass_inv[indices[j][1]]; 
 			mass_inv_tet[2] = mass_inv[indices[j][2]];	mass_inv_tet[3] = mass_inv[indices[j][3]];
 
-			if (mass_inv_tet[0] != 0.0 && mass_inv_tet[1] != 0.0 && mass_inv_tet[2] != 0.0 && mass_inv_tet[3] != 0.0) {
+			mass_tet[0] = mass[indices[j][0]]; 	mass_tet[1] = mass[indices[j][1]];
+			mass_tet[2] = mass[indices[j][2]];	mass_tet[3] = mass[indices[j][3]];
+
+			if (mass_inv_tet[0] != 0.0 || mass_inv_tet[1] != 0.0 || mass_inv_tet[2] != 0.0 || mass_inv_tet[3] != 0.0) {
 				second_order_constraint.solveARAPConstraint(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
 					vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(),
 					stiffness, sub_time_step, A[j], mass_inv_tet,
-					*lambda_, damp_stiffness, sigma_limit[0], sigma_limit[1], volume[j], sn_[indices[j][0]].data(), sn_[indices[j][1]].data(),
-					sn_[indices[j][2]].data(), sn_[indices[j][3]].data());
+					*lambda_, damp_stiffness, mass, volume[j]);
 			}
 
 			lambda_++;

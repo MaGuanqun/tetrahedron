@@ -172,5 +172,9 @@ private:
 	void computeEdgeLenthResidual();
 	void computeARAPResidual();
 	ComputeEnergy compute_energy;
+
+	void secondOrderCoordinateDiscentTetStrain();
+
+
 };
 

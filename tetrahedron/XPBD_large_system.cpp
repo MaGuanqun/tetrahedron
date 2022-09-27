@@ -24,7 +24,7 @@ SecondOrderLargeSystem::SecondOrderLargeSystem()
 
 	line_search_control_parameter = 1e-4;
 	search_shrink_ratio = 0.9;
-	//TEST_HESSIAN::testARAPHessianMulti();
+	TEST_HESSIAN::testARAPHessianMulti();
 }
 
 

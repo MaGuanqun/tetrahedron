@@ -55,10 +55,24 @@ void SecondOrderConstraint::computeARAPForce(double* vertex_position_0, double* 
 }
 
 
+
+void SecondOrderConstraint::solveCD_ARAP(std::array<double, 3>* vertex_position, double stiffness, double dt,
+	Matrix<double, 3, 4>* A, double* inv_mass, double* lambda, std::vector<unsigned int> tet_indices, std::array<int, 4>* indices, double* mass, double* volume)
+{
+
+}
+
+void getARAPGradHessian(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
+	Matrix<double, 3, 4>& A, double* inv_mass, double& lambda, double* mass, Matrix3d& Hessian, Vector3d& grad)
+{
+
+}
+
+
 void SecondOrderConstraint::solveARAPConstraint(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
 	double stiffness, double dt,
-	Matrix<double, 3, 4>& A, double* inv_mass, double& lambda, const double damping_stiffness, double sigma_min,
-	double sigma_max, double volume, double* sn_0, double* sn_1, double* sn_2, double* sn_3)
+	Matrix<double, 3, 4>& A, double* inv_mass, double& lambda, const double damping_stiffness, double* mass,
+	double volume)
 {
 	Vector3d eigen_value;
 	Vector3d position;
@@ -92,22 +106,39 @@ void SecondOrderConstraint::solveARAPConstraint(double* vertex_position_0, doubl
 	Hessian *= (0.5 / C);
 	Hessian -= ((1.0 / C) * grad) * grad.transpose();
 
-	Matrix<double, 12, 1> inv_mass_sys;
-	inv_mass_sys << inv_mass[0], inv_mass[0], inv_mass[0], inv_mass[1], inv_mass[1], inv_mass[1], inv_mass[2], inv_mass[2], inv_mass[2],
-		inv_mass[3], inv_mass[3], inv_mass[3];
-	//how to improve this
-	for (unsigned int j = 0; j < 12; ++j) {
-		for (unsigned int i = 0; i < 4; ++i) {
-			Hessian(i + i + i, j) *= inv_mass[i];
-			Hessian(i + i + i+1, j) *= inv_mass[i];
-			Hessian(i + i + i+2, j) *= inv_mass[i];
+	for (unsigned int i = 0; i < 4; ++i) {
+		if (inv_mass[i] == 0.0) {
+			Hessian.block<12, 3>(0, 3 * i).setZero();
+			Hessian.block<3, 12>(3 * i, 0).setZero();
+			grad.segment(3 * i, 3).setZero();
 		}
 	}
+
+
+	//Matrix<double, 12, 1> inv_mass_sys;
+	//inv_mass_sys << inv_mass[0], inv_mass[0], inv_mass[0], inv_mass[1], inv_mass[1], inv_mass[1], inv_mass[2], inv_mass[2], inv_mass[2],
+	//	inv_mass[3], inv_mass[3], inv_mass[3];
+	////how to improve this
+	//for (unsigned int j = 0; j < 12; ++j) {
+	//	for (unsigned int i = 0; i < 4; ++i) {
+	//		Hessian(i + i + i, j) *= inv_mass[i];
+	//		Hessian(i + i + i+1, j) *= inv_mass[i];
+	//		Hessian(i + i + i+2, j) *= inv_mass[i];
+	//	}
+	//}
+
 	Hessian *= -lambda;
-	//Hessian.setZero();
-	for (unsigned int i = 0; i < 144; i += 13) {
-		Hessian.data()[i] += 1.0;
+
+	for (unsigned int i = 0; i < 4; ++i) {
+		Hessian.data()[39 * i] += mass[i];
+		Hessian.data()[39 * i+13] += mass[i];
+		Hessian.data()[39 * i+26] += mass[i];
 	}
+
+	//Hessian.setZero();
+	//for (unsigned int i = 0; i < 144; i += 13) {
+	//	Hessian.data()[i] += 1.0;
+	//}
 
 	//Matrix<double, 12, 1> M_inv_g;
 	//SUB(M_inv_g.data(), vertex_position_0, sn_0);
@@ -129,8 +160,12 @@ void SecondOrderConstraint::solveARAPConstraint(double* vertex_position_0, doubl
 	//}
 
 	double h = C + alpha_ * lambda;
-	double delta_lambda = (-h) / (grad.dot(linear.solve(inv_mass_sys.cwiseProduct(grad))) + alpha_);//  + grad.dot(linear.solve(M_inv_g))
-	Matrix<double, 12, 1> delta_x = linear.solve(delta_lambda * (inv_mass_sys.cwiseProduct(grad))); //-M_inv_g
+
+	double delta_lambda = (-h) / (grad.dot(linear.solve(grad)) + alpha_);//  + grad.dot(linear.solve(M_inv_g))
+	Matrix<double, 12, 1> delta_x = linear.solve(delta_lambda * grad); //-M_inv_g
+
+	//double delta_lambda = (-h) / (grad.dot(linear.solve(inv_mass_sys.cwiseProduct(grad))) + alpha_);//  + grad.dot(linear.solve(M_inv_g))
+	//Matrix<double, 12, 1> delta_x = linear.solve(delta_lambda * (inv_mass_sys.cwiseProduct(grad))); //-M_inv_g
 
 
 	vertex_position_0[0] += delta_x[0];

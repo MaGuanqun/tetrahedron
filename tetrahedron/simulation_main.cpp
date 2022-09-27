@@ -25,10 +25,10 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool control_parameter[31];
 	memset(control_parameter, 0, 31);
 	control_parameter[ONLY_COLLISION_TEST] =false;
-	control_parameter[USE_XPBD] = true;
+	control_parameter[USE_XPBD] = false;
 	control_parameter[USE_PD_] = false;
 	control_parameter[USE_NEWTON_] = false;
-	control_parameter[USE_XPBD_LARGE] = false;
+	control_parameter[USE_XPBD_LARGE] = true;
 	control_parameter[DRAW_VT] = true;
 
 
@@ -66,7 +66,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool set_stiffness[13];
 	memset(set_stiffness, 0, 13);
 	std::vector<double> temp_stiffness(18);
-	double temp_data[18] = {1e2,2e2,2e2,2e2,1e1,3e-5,2e3,1.0,0.0,
+	double temp_data[18] = {1e2,2e2,2e2,2e2,1e1,3e-5,1e2,1.0,0.0,
 		0.0,0.0,
 	//1e-3, 2e-3,2e-3,2e-3, 1e-3,1e-9,1e-2};
 	0.0, 0.0,0.0,0.0, 0.0,0.0,0.0 };

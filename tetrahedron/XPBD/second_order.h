@@ -24,13 +24,24 @@ public:
 
 	void solveARAPConstraint(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
 		double stiffness, double dt,
-		Matrix<double, 3, 4>& A, double* inv_mass, double& lambda, const double damping_stiffness, double sigma_min,
-		double sigma_max, double volume, double* sn_0, double* sn_1, double* sn_2, double* sn_3);
+		Matrix<double, 3, 4>& A, double* inv_mass, double& lambda, const double damping_stiffness, double* mass,
+		double volume);
+		
+
+	void solveCD_ARAP(std::array<double,3>* vertex_position, double stiffness, double dt,
+		Matrix<double, 3, 4>* A, double* inv_mass, double* lambda, std::vector<unsigned int> tet_indices, std::array<int, 4>* indices, double* mass, double* volume);
+
+
+	void getARAPGradHessian(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3, 
+		Matrix<double, 3, 4>& A, double* inv_mass, double& lambda,  double* mass, Matrix3d& Hessian, Vector3d& grad);
+
 
 	void computeEdgeLengthForce(double* vertex_0, double* vertex_1, double stiffness,
 		double* potential_0, double* potential_1, double rest_length);
 	void computeARAPForce(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
 		double stiffness, Matrix<double, 3, 4>& A, double volume, Matrix<double, 3, 4>& force);
+
+
 
 private:
 	double epsilon_for_bending= 1e-10;
