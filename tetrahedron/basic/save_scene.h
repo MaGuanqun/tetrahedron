@@ -16,6 +16,9 @@ public:
 	void save_scene_XPBD(size_t time_stamp, unsigned int simulate_scene_indicator, std::vector<MeshStruct*>& obj_mesh_struct,
 		std::vector<std::vector<std::array<double, 3>>>* velocity, std::vector<MeshStruct*>& collider_mesh_struct);
 
+	//void save_scene_newton(size_t time_stamp, unsigned int simulate_scene_indicator, std::vector<MeshStruct*>& obj_mesh_struct,
+	//	double* velocity, unsigned int velocity_size, std::vector<MeshStruct*>& collider_mesh_struct);
+
 	bool read_scene_XPBD(const char* file_name, size_t* time_stamp, unsigned int* simulate_scene_indicator, std::vector<MeshStruct*>& obj_mesh_struct,
 		std::vector<std::vector<std::array<double, 3>>>* velocity, std::vector<MeshStruct*>& collider_mesh_struct);
 

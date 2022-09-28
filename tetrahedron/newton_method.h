@@ -10,6 +10,7 @@
 #include"object/collider.h"
 #include"collision/collision.h"
 #include"compute_energy.h"
+#include"basic/save_scene.h"
 
 using namespace Eigen;
 using namespace denseOperation;
@@ -69,11 +70,16 @@ public:
 
 	void updatePositionFromOri(int thread_No);
 
-
+	void saveScene();
+	void readScene(const char* file_name);
 
 	void setBn(int thread_No);
 	void updateVelocityAccelerationNewMark(int thread_No);
 	void setHessianDiagonalFixedStructureInitialStiffness(int thread_No);
+
+	unsigned int* time_indicate_for_simu;
+
+
 private:
 
 
@@ -285,4 +291,13 @@ private:
 	*/
 	void computeARAPEnergy();
 	ComputeEnergy compute_energy;
+
+	SaveScene save_scene;
+
+
+	std::vector<MeshStruct*> mesh_struct;
+	std::vector<MeshStruct*> collider_mesh_struct;
+	std::vector<std::vector<std::array<double, 3>>> velocity_total;
+	void updateTotalVelocity();
+	void updateVelocity();
 };

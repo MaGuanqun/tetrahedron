@@ -102,9 +102,75 @@ void NewtonMethod::initialHessianNnz()
 		b_thread[i].resize(3 * vertex_begin_per_obj[total_obj_num]);
 	}
 
+
+	velocity_total.resize(total_obj_num);
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		velocity_total[i].resize(mesh_struct[i]->vertex_position.size());
+	}
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		velocity_total[i].resize(mesh_struct[i + cloth->size()]->vertex_position.size());
+	}
+
 	//b_for_test.resize(3 * vertex_begin_per_obj[total_obj_num]);
 	//Matrix_test.resize(3 * vertex_begin_per_obj[total_obj_num], 3 * vertex_begin_per_obj[total_obj_num]);
 	//only_constraint.resize(3 * vertex_begin_per_obj[total_obj_num], 3 * vertex_begin_per_obj[total_obj_num]);
+}
+
+
+void NewtonMethod::updateVelocity()
+{
+	unsigned int vertex_index_start;
+	unsigned int* unfixed_index_to_normal_index;
+	unsigned int size;
+	std::array<double, 3>* velocity_;
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		vertex_index_start = vertex_begin_per_obj[i];
+		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
+		size = unfixed_vertex[i]->size();
+		velocity_ = velocity_total[i].data();
+		for (unsigned int k = 0; k < size; ++k) {
+			memcpy(velocity.data() + 3 * (vertex_index_start + k), velocity_[unfixed_index_to_normal_index[k]].data(), 24);
+		}
+	}
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		vertex_index_start = vertex_begin_per_obj[i + cloth->size()];
+		unfixed_index_to_normal_index = unfixed_vertex[i + cloth->size()]->data();
+		size = unfixed_vertex[i + cloth->size()]->size();
+		velocity_ = velocity_total[i + cloth->size()].data();
+		for (unsigned int k = 0; k < size; ++k) {
+			memcpy(velocity.data() + 3 * (vertex_index_start + k), velocity_[unfixed_index_to_normal_index[k]].data(), 24);
+		}
+	}
+}
+
+
+
+void NewtonMethod::updateTotalVelocity()
+{
+	unsigned int vertex_index_start;
+	unsigned int* unfixed_index_to_normal_index;
+	unsigned int size;
+	std::array<double,3>* velocity_;
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		memset(velocity_total[i][0].data(), 0, 24 * velocity_total[i].size());
+		vertex_index_start = vertex_begin_per_obj[i];
+		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
+		size = unfixed_vertex[i]->size();
+		velocity_ = velocity_total[i].data();
+		for (unsigned int k = 0; k < size; ++k) {
+			memcpy(velocity_[unfixed_index_to_normal_index[k]].data(), velocity.data() + 3 * (vertex_index_start + k), 24);
+		}
+	}
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		memset(velocity_total[i+cloth->size()][0].data(), 0, 24 * velocity_total[i + cloth->size()].size());
+		vertex_index_start = vertex_begin_per_obj[i + cloth->size()];
+		unfixed_index_to_normal_index = unfixed_vertex[i + cloth->size()]->data();
+		size = unfixed_vertex[i + cloth->size()]->size();
+		velocity_ = velocity_total[i+cloth->size()].data();
+		for (unsigned int k = 0; k < size; ++k) {
+			memcpy(velocity_[unfixed_index_to_normal_index[k]].data(), velocity.data() + 3 * (vertex_index_start + k), 24);
+		}
+	}
 }
 
 void NewtonMethod::computeGravity()
@@ -849,6 +915,23 @@ void NewtonMethod::computeARAPHessianFixedStructure(double* vertex_position_0, d
 }
 
 
+void NewtonMethod::saveScene()
+{
+	updateTotalVelocity();
+	save_scene.save_scene_XPBD(*time_stamp, *time_indicate_for_simu, mesh_struct, &velocity_total, collider_mesh_struct);
+}
+
+void NewtonMethod::readScene(const char* file_name)
+{
+	save_scene.read_scene_XPBD(file_name, time_stamp, time_indicate_for_simu, mesh_struct, &velocity_total, collider_mesh_struct);
+	for (unsigned int i = 0; i < mesh_struct.size(); ++i) {
+		memcpy(mesh_struct[i]->vertex_for_render[0].data(), mesh_struct[i]->vertex_position[0].data(), 24 * mesh_struct[i]->vertex_position.size());
+	}
+	for (unsigned int i = 0; i < collider_mesh_struct.size(); ++i) {
+		memcpy(collider_mesh_struct[i]->vertex_for_render[0].data(), collider_mesh_struct[i]->vertex_position[0].data(), 24 * collider_mesh_struct[i]->vertex_position.size());
+	}
+	updateVelocity();
+}
 
 
 
@@ -2275,6 +2358,10 @@ void NewtonMethod::reorganzieDataOfObjects()
 	real_index_to_unfixed_index.resize(total_obj_num);
 
 
+	mesh_struct.resize(total_obj_num);
+	collider_mesh_struct.resize(collider->size());
+
+
 	anchor_vertex.resize(total_obj_num);
 	anchor_stiffness.resize(total_obj_num);
 	anchor_position.resize(total_obj_num);
@@ -2290,6 +2377,7 @@ void NewtonMethod::reorganzieDataOfObjects()
 	tet_indices.resize(tetrahedron->size());
 	tet_mesh_struct.resize(tetrahedron->size());
 	inv_mass.resize(total_obj_num);
+
 
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		vertex_position[i] = cloth->data()[i].mesh_struct.vertex_position.data();
@@ -2319,6 +2407,10 @@ void NewtonMethod::reorganzieDataOfObjects()
 		previous_frame_edge_length_stiffness[i] = cloth->data()[i].length_stiffness;
 
 		inv_mass[i] = cloth->data()[i].mesh_struct.mass_inv.data();
+
+		mesh_struct[i] = &cloth->data()[i].mesh_struct;
+
+
 
 	}
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
@@ -2350,8 +2442,13 @@ void NewtonMethod::reorganzieDataOfObjects()
 		inv_mass[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.mass_inv.data();
 		tet_indices[i] = tetrahedron->data()[i].mesh_struct.indices.data();
 		tet_mesh_struct[i] = &tetrahedron->data()[i].mesh_struct;
+		mesh_struct[i+cloth->size()] = &tetrahedron->data()[i].mesh_struct;
 	}
 
+
+	for (unsigned int i = 0; i < collider->size(); ++i) {
+		collider_mesh_struct[i]= &collider->data()[i].mesh_struct;
+	}
 	//std::cout << edge_vertices_mass_spring[0]->size() << " " << only_one_vertex_fix_edge_vertices[0]->size() << " " <<
 	//	unfixed_rest_length[0]->size() << " " << fixed_one_vertices_rest_length[0]->size() << " " << unfixed_vertex[0]->size() << std::endl;
 

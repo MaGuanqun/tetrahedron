@@ -14,13 +14,14 @@ Scene::Scene()
 	time_step = 1.0 / 100.0;
 
 
-	max_force_magnitude = 2.0;
+	max_force_magnitude = 200.0;
 
 	last_output_obj_stamp = -1;
 	time_stamp = 0;
 	time_indicate_for_simu = 0;
 
 	xpbd.time_indicate_for_simu = &time_indicate_for_simu;
+	newton_method.time_indicate_for_simu = &time_indicate_for_simu;
 	xpbd.move_model = &move_model;
 	
 	genShader();
@@ -765,7 +766,7 @@ void Scene::saveScene()
 		xpbd.saveScene();
 		break;
 	case NEWTON_:
-
+		newton_method.saveScene();
 		break;
 	}
 }
@@ -781,7 +782,7 @@ void Scene::readScene(std::string& path)
 		xpbd.readScene(path.c_str());
 		break;
 	case NEWTON_:
-
+		newton_method.readScene(path.c_str());
 		break;
 	}
 }
@@ -1522,8 +1523,9 @@ void Scene::cursorMovement(Camera* camera, double* cursor_screen, double* force_
 {
 	camera->getCursorPosInSpace(cursor_pos_in_space, cursor_screen, object_position);
 	SUB(force_direction, cursor_pos_in_space, object_position);
+	force_coe *= 100.0;
 	MULTI(force_direction, force_direction, force_coe);
-	double force_magnitude = sqrt(DOT(force_direction, force_direction));
+	double force_magnitude =sqrt(DOT(force_direction, force_direction));
 	if (force_magnitude > max_force_magnitude) {
 		force_magnitude = max_force_magnitude / force_magnitude;
 		MULTI(force_direction, force_direction, force_magnitude);

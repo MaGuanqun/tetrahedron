@@ -10,7 +10,7 @@ void SaveScene::save_scene_XPBD(size_t time_stamp, unsigned int simulate_scene_i
 	std::string prefix = "./record_simulation_data/";
 	if (_access(prefix.c_str(), 0) == -1)
 		_mkdir(prefix.c_str());
-	std::string file_name = prefix + "XPBD_obj_";
+	std::string file_name = prefix + "obj_";
 	std::string final_file_name;
 	final_file_name = file_name+std::to_string(time_stamp) + ".dat";
 	std::ofstream input_file(final_file_name.c_str(), std::ios::out | std::ios::binary | std::ios::trunc);
@@ -34,9 +34,6 @@ void SaveScene::save_scene_XPBD(size_t time_stamp, unsigned int simulate_scene_i
 	input_file.close();
 
 }
-
-
-
 
 
 

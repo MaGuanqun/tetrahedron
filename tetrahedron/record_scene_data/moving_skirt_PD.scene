@@ -1,7 +1,7 @@
 object
 2
-C:\Users\guanq\OneDrive - Clemson University\LearnOpenGL\tetrahedron\tetrahedron\model\skirt0.obj
-C:\Users\guanq\OneDrive - Clemson University\LearnOpenGL\tetrahedron\tetrahedron\model\skirt1.obj
+.\model\skirt0.obj
+.\model\skirt1.obj
 collider
 0
 stiffness
