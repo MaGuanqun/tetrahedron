@@ -52,11 +52,13 @@ public:
 	MoveModel* move_model;
 	bool* control_parameter;
 
-	void saveScene();
+	void saveScene(double* force_direction, int obj_No);
 	void readScene(const char* file_name);
 	unsigned int max_iteration_number;
 	double velocity_damp;
 	unsigned int* sub_step_per_detection;
+
+	bool* has_force;
 private:
 
 	void coordinateDescent();

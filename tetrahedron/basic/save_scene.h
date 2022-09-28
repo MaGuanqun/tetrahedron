@@ -14,13 +14,15 @@ class SaveScene
 public:
 	//save time stamp, simulate_scene_indicator, position velocity of all objects, position of all colliders
 	void save_scene_XPBD(size_t time_stamp, unsigned int simulate_scene_indicator, std::vector<MeshStruct*>& obj_mesh_struct,
-		std::vector<std::vector<std::array<double, 3>>>* velocity, std::vector<MeshStruct*>& collider_mesh_struct);
-
+		std::vector<std::vector<std::array<double, 3>>>* velocity, std::vector<MeshStruct*>& collider_mesh_struct,
+		std::string& final_file_name);
+	void save_force(std::string& final_file_name, double* force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int obj_No);
 	//void save_scene_newton(size_t time_stamp, unsigned int simulate_scene_indicator, std::vector<MeshStruct*>& obj_mesh_struct,
 	//	double* velocity, unsigned int velocity_size, std::vector<MeshStruct*>& collider_mesh_struct);
 
 	bool read_scene_XPBD(const char* file_name, size_t* time_stamp, unsigned int* simulate_scene_indicator, std::vector<MeshStruct*>& obj_mesh_struct,
-		std::vector<std::vector<std::array<double, 3>>>* velocity, std::vector<MeshStruct*>& collider_mesh_struct);
+		std::vector<std::vector<std::array<double, 3>>>* velocity, std::vector<MeshStruct*>& collider_mesh_struct, bool& has_force,
+		double* force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int obj_No);
 
 private:
 	size_t record_time_stamp= ULLONG_MAX;
@@ -55,5 +57,14 @@ private:
 		}
 		in.read((char*)data, size * sizeof(T));
 		return true;
+	}
+
+	template<typename T>
+	void read_binary(std::ifstream& in, std::vector<T>* data)
+	{
+		unsigned int size = 0;
+		in.read((char*)(&size), sizeof(unsigned int));
+		data->resize(size);
+		in.read((char*)data->data(), size * sizeof(T));
 	}
 };

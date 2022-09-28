@@ -764,6 +764,9 @@ void Scene::saveScene()
 		break;
 	case XPBD_:
 		xpbd.saveScene();
+		if (have_force) {
+
+		}
 		break;
 	case NEWTON_:
 		newton_method.saveScene();
@@ -1497,7 +1500,6 @@ void Scene::setCursorForce(Camera* camera, double* cursor_screen, float force_co
 	}
 	else {
 		//std::cout << force_direction[0] << " " << force_direction[1] << " " << force_direction[2] << std::endl;
-
 		switch (use_method)
 		{
 		case PD_:

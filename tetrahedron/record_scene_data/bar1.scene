@@ -4,17 +4,17 @@ object
 collider
 0
 stiffness
-10 50000 0 0 0 0 
+50 50000 0 0 0 0 
 100 200 200 200 0 0 0 0 
 anchor_vertex
 0
 8 5 8 13 14 15 16 28 30 
 time_step
-0.0166667
+0.033333333
 cloth_density
 1
 tet_density
-0.1
+1
 velocity_damp
 0.99
 friction_coe
@@ -23,4 +23,4 @@ floor_dimension
 4
 floor_value
 -0.55
-second_order_large_XPBD
+XPBD

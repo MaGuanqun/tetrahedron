@@ -1,6 +1,7 @@
 #include"save_scene.h"
 void SaveScene::save_scene_XPBD(size_t time_stamp, unsigned int simulate_scene_indicator, std::vector<MeshStruct*>& obj_mesh_struct,
-	std::vector<std::vector<std::array<double, 3>>>* velocity, std::vector<MeshStruct*>& collider_mesh_struct)
+	std::vector<std::vector<std::array<double, 3>>>* velocity, std::vector<MeshStruct*>& collider_mesh_struct,
+	std::string& final_file_name)
 {
 	if (record_time_stamp == time_stamp) {
 		return;
@@ -11,7 +12,6 @@ void SaveScene::save_scene_XPBD(size_t time_stamp, unsigned int simulate_scene_i
 	if (_access(prefix.c_str(), 0) == -1)
 		_mkdir(prefix.c_str());
 	std::string file_name = prefix + "obj_";
-	std::string final_file_name;
 	final_file_name = file_name+std::to_string(time_stamp) + ".dat";
 	std::ofstream input_file(final_file_name.c_str(), std::ios::out | std::ios::binary | std::ios::trunc);
 	//input_file.precision(64);
@@ -32,13 +32,25 @@ void SaveScene::save_scene_XPBD(size_t time_stamp, unsigned int simulate_scene_i
 		write_binary_add(input_file, final_file_name.c_str(), collider_mesh_struct[i]->vertex_position[0].data(), 3 * vertex_num);
 	}
 	input_file.close();
+}
+
+void SaveScene::save_force(std::string& final_file_name, double* force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int obj_No)
+{
+	std::ofstream input_file(final_file_name.c_str(), std::ios::out | std::ios::binary | std::ios::app);
+	input_file.write((char*)&obj_No, sizeof(int));
+	input_file.write((char*)force_direction, 3 * sizeof(double));
+	unsigned int size = neighbor_vertex.size();
+	write_binary_add(input_file, final_file_name.c_str(), neighbor_vertex.data(), size);
+	write_binary_add(input_file, final_file_name.c_str(), coe.data(), size);
+	input_file.close();
 
 }
 
 
 
 bool SaveScene::read_scene_XPBD(const char* file_name, size_t* time_stamp, unsigned int* simulate_scene_indicator, std::vector<MeshStruct*>& obj_mesh_struct,
-	std::vector<std::vector<std::array<double, 3>>>* velocity, std::vector<MeshStruct*>& collider_mesh_struct)
+	std::vector<std::vector<std::array<double, 3>>>* velocity, std::vector<MeshStruct*>& collider_mesh_struct, bool& has_force,
+	double* force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int obj_No)
 {
 	std::ifstream in(file_name, std::ios::in | std::ios::binary);
 	if (!in.good())
@@ -61,32 +73,43 @@ bool SaveScene::read_scene_XPBD(const char* file_name, size_t* time_stamp, unsig
 
 	if (obj_num != obj_mesh_struct.size()) {
 		std::cout << "the object count does not match" << std::endl;
+		in.close();
 		return false;
 	}
 	if (collider_num != collider_mesh_struct.size()) {
 		std::cout << "the collider count does not match" << std::endl;
+		in.close();
 		return false;
 	}
 
 	for (unsigned int i = 0; i < obj_num; ++i) {
 		if (!read_binary(in, obj_mesh_struct[i]->vertex_position[0].data(), 3*obj_mesh_struct[i]->vertex_position.size())) {
+			in.close();
 			return false;
 		}
 		if (!read_binary(in, velocity->data()[i][0].data(), 3*obj_mesh_struct[i]->vertex_position.size())) {
+			in.close();
 			return false;
 		}
 	}
 
 	for (unsigned int i = 0; i < collider_num; ++i) {
-		std::cout << "coll " << std::endl;
 		if (!read_binary(in, collider_mesh_struct[i]->vertex_position[0].data(), 3*collider_mesh_struct[i]->vertex_position.size())) {
+			in.close();
 			return false;
 		}
 	}
-
-
-
-
+	if (in.peek() == EOF) {
+		has_force = false;
+	}
+	else {
+		has_force = true;
+		in.read((char*)&obj_No, sizeof(int));
+		in.read((char*)force_direction, 3*sizeof(double));
+		read_binary(in, &neighbor_vertex);
+		read_binary(in, &coe);
+	}
+	in.close();
 	return true;
 
 }

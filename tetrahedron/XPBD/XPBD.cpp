@@ -210,9 +210,22 @@ void XPBD::reorganzieDataOfObjects()
 }
 
 
-void XPBD::saveScene()
+void XPBD::saveScene(double* force_direction, int obj_No)
 {
-	save_scene.save_scene_XPBD(*time_stamp, *time_indicate_for_simu, mesh_struct, &velocity, collider_mesh_struct);
+	std::string file_name;
+	save_scene.save_scene_XPBD(*time_stamp, *time_indicate_for_simu, mesh_struct, &velocity, 
+		collider_mesh_struct, file_name);	
+	if (*has_force) {
+		if (obj_No < cloth->size()) {
+			save_scene.save_force(file_name, force_direction, cloth->data()[obj_No].coe_neighbor_vertex_force,
+				cloth->data()[obj_No].neighbor_vertex, obj_No);
+		}
+		else {
+			save_scene.save_force(file_name, force_direction, tetrahedron->data()[obj_No - cloth->size()].coe_neighbor_vertex_force,
+				tetrahedron->data()[obj_No - cloth->size()].neighbor_vertex, obj_No);
+		}		
+	}
+
 }
 
 void XPBD::readScene(const char* file_name)
@@ -409,7 +422,7 @@ void XPBD::solveBySecondOrderXPBD()
 		collision.collisionCulling();
 	}
 	iteration_number = 0;
-	std::cout << "/////" << std::endl;
+	//std::cout << "XXX" << std::endl;
 	computeCurrentEnergy();
 
 	//last_pos = mesh_struct[0]->vertex_position;
@@ -976,6 +989,7 @@ void XPBD::secondOrderCoordinateDiscentTetStrain()
 		mass = mesh_struct_->mass.data();
 		damp_stiffness = tetrahedron->data()[i].damp_ARAP_stiffness;
 		sn_ = sn[i + cloth->size()].data();
+		//std::cout << "test" << std::endl;
 		for (unsigned int j = 0; j < size; ++j) {
 			if (mass_inv[j] != 0.0) {
 				second_order_constraint.solveCD_ARAP(vertex_pos, stiffness, sub_time_step, A, lambda_,
