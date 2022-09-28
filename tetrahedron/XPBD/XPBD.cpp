@@ -15,7 +15,7 @@ XPBD::XPBD()
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
 	velocity_damp = 0.995;
-	energy_converge_ratio = 5e-3;
+	energy_converge_ratio = 1e-3;
 	XPBD_constraint.test();
 
 
@@ -441,8 +441,8 @@ void XPBD::solveBySecondOrderXPBD()
 			if (perform_collision) {
 				updateNormal();
 			}
-			newtonCD();
-			//coordinateDescent();
+			//newtonCD();
+			coordinateDescent();
 			//solveSecondOrderConstraint((inner_iteration_number == 0) && sub_step % *sub_step_per_detection == 0);//sub_step % prediction_sub_step_size//|| inner_iteration_number== (max_iteration_number/2+1)
 			inner_iteration_number++;		
 			computeCurrentEnergy();
@@ -483,7 +483,7 @@ void XPBD::solveByXPBD()
 	if (sub_step_num == 1) {
 		updateSn();
 	}
-	//std::cout << "////" << std::endl;
+	std::cout << "////" << std::endl;
 	//}
 	iteration_number = 0;
 	computeCurrentEnergy();
@@ -566,8 +566,8 @@ void XPBD::PBDsolve()
 		solveByPBD();
 	}
 	else {
-		solveByXPBD();
-		//solveBySecondOrderXPBD();
+		//solveByXPBD();
+		solveBySecondOrderXPBD();
 	}
 }
 
@@ -603,9 +603,9 @@ void XPBD::PBDsolve()
 
 bool XPBD::convergeCondition(unsigned int iteration_num)
 {
-	std::cout << energy << std::endl;
+	//std::cout << energy << std::endl;
 
-	if (iteration_num < 50) {//max_iteration_number
+	if (iteration_num < 15) {//max_iteration_number
 		return false;
 	}
 
@@ -662,7 +662,6 @@ void XPBD::computeCurrentEnergy()
 	//std::cout << "///" << std::endl;
 	energy = 0.0;
 	energy += 0.5 * computeInertialEnergy();
-	//std::cout << energy << std::endl;
 	energy += 0.5*computeCurrentEnergyEdgeLength();
 	energy += computeCurrentARAPEnergy();
 
@@ -925,6 +924,7 @@ double XPBD::computeCurrentARAPEnergy()
 	Matrix<double, 3, 4>* A;
 	double* volume;
 	double stiffness;
+	double* mass_inv_;
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		size = tetrahedron->data()[i].mesh_struct.indices.size();
 		indices = tetrahedron->data()[i].mesh_struct.indices.data();
@@ -932,9 +932,12 @@ double XPBD::computeCurrentARAPEnergy()
 		A = tetrahedron->data()[i].mesh_struct.A.data();
 		volume = tetrahedron->data()[i].mesh_struct.volume.data();
 		stiffness = tetrahedron->data()[i].ARAP_stiffness;
+		mass_inv_ = tetrahedron->data()[i].mesh_struct.mass_inv.data();
 		for (unsigned int j = 0; j < size; ++j) {
-			energy += compute_energy.computeARAPEnergy(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
-				vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j], volume[j], stiffness);
+			if (mass_inv_[indices[i][0]] != 0.0 || mass_inv_[indices[i][1]] != 0.0 || mass_inv_[indices[i][2]] != 0.0 || mass_inv_[indices[i][3]] != 0.0) {
+				energy += compute_energy.computeARAPEnergy(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
+					vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j], volume[j], stiffness);
+			}
 		}
 
 	}

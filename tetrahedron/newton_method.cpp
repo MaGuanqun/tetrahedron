@@ -117,6 +117,9 @@ void NewtonMethod::initialHessianNnz()
 }
 
 
+
+
+
 void NewtonMethod::updateVelocity()
 {
 	unsigned int vertex_index_start;
@@ -995,13 +998,14 @@ void NewtonMethod::solveNewtonMethod_()
 {
 	storeInitialPosition();
 	thread->assignTask(this, SET_S_N);
+	
 	//if (iteration_number > 1000) {
 	//	system("pause");
 	//}
 
 	iteration_number = 0;
-
-	//computeEnergy();
+	std::cout << "===" << std::endl;
+	computeEnergy();
 	//std::cout << "energy " << total_energy << std::endl;
 	previous_energy = total_energy;
 	store_residual.clear();
@@ -1021,8 +1025,8 @@ void NewtonMethod::solveNewtonMethod_()
 		displacement_coe = 1.0;
 		thread->assignTask(this, UPDATE_POSITION_NEWTON);
 		//thread->assignTask(this, VELOCITY_NEWTON);
-		//computeEnergy();
-		//std::cout << "energy0 " << total_energy << std::endl;
+		computeEnergy();
+		//std::cout << total_energy << std::endl;
 
 		//if (total_energy > previous_energy) {
 		//	updateRenderPosition();
@@ -1083,8 +1087,8 @@ void NewtonMethod::initialDHatTolerance(double ave_edge_length)
 
 bool NewtonMethod::convergenceCondition()
 {
-	//std::cout << total_energy << std::endl;
-	if (iteration_number <5) {
+	std::cout << total_energy << std::endl;
+	if (iteration_number <50) {
 		return true;
 	}
 
@@ -1342,10 +1346,10 @@ void NewtonMethod::setSn(int thread_No)
 
 		for (unsigned int l = index_start; l < index_end; ++l) {
 			j = 3 * l;
-			for (unsigned int k = 0; k < 3; ++k) {
-				Sn.data()[j + k] =
-					(vertex_pos[3 * unfixed_index_to_normal_index[l - vertex_start] + k]
-						+ time_step_ * velocity.data()[j + k]) + time_step_square_ * f_ext.data()[j + k] / mass_[unfixed_index_to_normal_index[l - vertex_start]];
+			for (unsigned int k = 0; k < 3; ++k) {				
+					vertex_pos[3 * unfixed_index_to_normal_index[l - vertex_start] + k]
+						+= time_step_ * velocity.data()[j + k] + time_step_square_ * f_ext.data()[j + k] / mass_[unfixed_index_to_normal_index[l - vertex_start]];
+					Sn.data()[j + k] = vertex_pos[3 * unfixed_index_to_normal_index[l - vertex_start] + k];
 			}
 		}
 	}
@@ -1407,6 +1411,7 @@ void NewtonMethod::computeEnergy()
 	for (unsigned int i = 0; i < total_thread_num; ++i) {
 		total_energy += energy_per_thread[i];
 	}
+	//computeInertialEnergy();
 	computeARAPEnergy();
 }
 
@@ -1454,12 +1459,31 @@ void NewtonMethod::computeARAPEnergy()
 
 
 
-
+double NewtonMethod::computeInertialEnergy()
+{
+	double energy = 0.0;
+	std::array<double, 3>* vertex_pos;
+	unsigned int vertex_index_start, size;
+	double* mass;
+	unsigned int* unfixed_index_to_normal_index;
+	double* sn_single;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		vertex_pos = vertex_position[i];
+		vertex_index_start = vertex_begin_per_obj[i];
+		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
+		size = unfixed_vertex[i]->size();
+		mass = mesh_struct[i]->mass.data();
+		for (unsigned int k = 0; k < size; ++k) {
+			sn_single = Sn.data() + 3 * (vertex_index_start + k);
+			energy += mass[unfixed_index_to_normal_index[k]] * (EDGE_LENGTH(vertex_pos[unfixed_index_to_normal_index[k]], sn_single));
+		}
+	}
+	return energy / (2.0 * time_step * time_step);
+}
 void NewtonMethod::computeInertial(int thread_No)
 {
-	unsigned int index_end;
-	unsigned int index_start;
-	double* vertex_pos;
+
+	std::array<double, 3>* vertex_pos;
 	double* mass_;
 
 	unsigned int vertex_start;
@@ -1468,29 +1492,29 @@ void NewtonMethod::computeInertial(int thread_No)
 	unsigned int j;
 
 	double energy = 0;
-	unsigned int start;
-
+	unsigned int end;
+	double* sn_single;
+	
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
-		mass_ = mass[i];
+		mass_ = mesh_struct[i]->mass.data();
 		vertex_start = vertex_begin_per_obj[i];
-		vertex_pos = vertex_position[i][0].data();
-		index_end = vertex_start + unfixed_vertex_begin_per_thread[i][thread_No + 1];
-		index_start = vertex_start + unfixed_vertex_begin_per_thread[i][thread_No];
+		vertex_pos = vertex_position[i];
 
 		unfixed_index_to_normal_index = unfixed_vertex[i]->data();
-
-		for (unsigned int l = index_start; l < index_end; ++l) {
-			j = 3 * l;
-			start = 3 * unfixed_index_to_normal_index[l - vertex_start];
-			energy += mass_[unfixed_index_to_normal_index[l - vertex_start]] *
-				((vertex_pos[start] - Sn.data()[j]) * (vertex_pos[start] - Sn.data()[j]) +
-					(vertex_pos[start + 1] - Sn.data()[j + 1]) * (vertex_pos[start + 1] - Sn.data()[j + 1]) +
-					(vertex_pos[start + 2] - Sn.data()[j + 2]) * (vertex_pos[start + 2] - Sn.data()[j + 2]));
+		end = unfixed_vertex_begin_per_thread[i][thread_No + 1];
+		for (unsigned int k = unfixed_vertex_begin_per_thread[i][thread_No]; k < end; ++k) {
+			sn_single = Sn.data() + 3 * (vertex_start + k);
+			energy += mass_[unfixed_index_to_normal_index[k]] *
+				(EDGE_LENGTH(vertex_pos[unfixed_index_to_normal_index[k]], sn_single));
 		}
 	}
-	energy /= (2.0 * time_step_square);
+	energy /= (2.0 * time_step*time_step);
 	energy_per_thread[thread_No] += energy;
 }
+
+
+
+
 
 
 //UPDATEVELOCITY_ACCELERATION_NEWMARK

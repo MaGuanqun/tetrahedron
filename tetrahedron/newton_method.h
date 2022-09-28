@@ -300,4 +300,5 @@ private:
 	std::vector<std::vector<std::array<double, 3>>> velocity_total;
 	void updateTotalVelocity();
 	void updateVelocity();
+	double computeInertialEnergy();
 };

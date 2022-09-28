@@ -4,7 +4,7 @@ object
 collider
 0
 stiffness
-2000 50000 0 0 0 0 
+800 50000 0 0 0 0 
 100 200 200 200 0 0 0 0 
 anchor_vertex
 0
@@ -23,7 +23,7 @@ floor_dimension
 4
 floor_value
 -0.55
-newton
+XPBD
 substep_num
 1
 iteration_num
