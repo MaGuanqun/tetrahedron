@@ -214,6 +214,7 @@
     <ClCompile Include="XPBD\second_order.cpp" />
     <ClCompile Include="XPBD\XPBD.cpp" />
     <ClCompile Include="XPBD\XPBD_constraint.cpp" />
+    <ClCompile Include="XPBD_IPC.cpp" />
     <ClCompile Include="XPBD_large_system.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -290,6 +291,7 @@
     <ClInclude Include="XPBD\FEM_relate.h" />
     <ClInclude Include="XPBD\XPBD.h" />
     <ClInclude Include="XPBD\XPBD_constraint.h" />
+    <ClInclude Include="XPBD_IPC.h" />
     <ClInclude Include="XPBD_large_system.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

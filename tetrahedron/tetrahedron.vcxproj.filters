@@ -193,6 +193,9 @@
     <ClCompile Include="compute_energy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="XPBD_IPC.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="basic\basic_imgui.h">
@@ -415,6 +418,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="testHessian.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="XPBD_IPC.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

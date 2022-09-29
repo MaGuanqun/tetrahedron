@@ -1,33 +1,32 @@
 #pragma once
-#include"../external/Eigen/Dense"
-#include"../basic/eigenDenseOperation.h"
-#include"../external/Eigen/Sparse"
-#include"../external/Eigen/SparseCholesky"
+#include"./external/Eigen/Dense"
+#include"./basic/eigenDenseOperation.h"
+#include"./external/Eigen/Sparse"
+#include"./external/Eigen/SparseCholesky"
 //#include"basic/EigenMatrixIO.h"
-#include"../thread.h"
-#include"../basic/global.h"
-#include"../object/cloth.h"
-#include"../object/tetrahedron.h"
-#include"../object/collider.h"
-#include"../collision/collision.h"
-#include"XPBD_constraint.h"
-#include"../basic/move_model.h"
-#include"../basic/save_scene.h"
-
-#include"second_order.h"
-#include"../compute_energy.h"
+#include"./thread.h"
+#include"./basic/global.h"
+#include"./object/cloth.h"
+#include"./object/tetrahedron.h"
+#include"./object/collider.h"
+#include"./collision/collision.h"
+#include"./XPBD/XPBD_constraint.h"
+#include"./basic/move_model.h"
+#include"./basic/save_scene.h"
+#include"./XPBD/second_order.h"
+#include"./compute_energy.h"
 
 using namespace Eigen;
 using namespace denseOperation;
 
-class XPBD
+class XPBD_IPC
 {
 public:
-	XPBD();
+	XPBD_IPC();
 	double time_step;
 	double gravity_;
 	unsigned int sub_step_num;
-	void PBDsolve();
+
 	void setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, Floor* floor,
 		Thread* thread, double* tolerance_ratio);
 	size_t* time_stamp;
@@ -44,7 +43,8 @@ public:
 	void addExternalForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int obj_No);
 	void updateItrInfo(int* iteration_num);
 
-	void PBD_IPCSolve();
+	void XPBD_IPCSolve();
+
 	Collision collision;
 
 	unsigned int* time_indicate_for_simu;
@@ -59,14 +59,14 @@ public:
 	unsigned int* sub_step_per_detection;
 
 	bool* has_force;
-private:
 
+private:
 	void coordinateDescent();
 
 	double gravity[3];
 
 	unsigned int total_thread_num;
-	
+
 	std::vector<Cloth>* cloth;
 	std::vector<Tetrahedron>* tetrahedron;
 	std::vector<Collider>* collider;
@@ -95,7 +95,7 @@ private:
 
 
 	std::vector<double> lambda;
-	
+
 	std::vector<double> lambda_collision;
 	std::vector<unsigned int>constraint_index_start;
 	std::vector<std::vector<unsigned int>>collision_constraint_index_start;
@@ -126,7 +126,7 @@ private:
 	std::vector<std::vector<unsigned int>* >unfixed_vertex;
 	double max_move_standard;//the max displacement to stop iteration
 	double outer_max_move_standard;//the max displacement to stop iteration
-		
+
 
 
 	double converge_condition_ratio;// converge_condition_ratio* edge length
@@ -137,16 +137,7 @@ private:
 
 	unsigned int outer_max_iteration_number;
 
-	bool use_bending_based_on_vertex=true;
-
-
-
-	//void recordOuterVertexPosition();
-	//bool outerConvergeCondition(unsigned int iteration_num);
-
-	bool use_PBD = false;
-	void solveByPBD();
-	void solveByXPBD();
+	bool use_bending_based_on_vertex = true;
 
 
 	double energy;
@@ -159,7 +150,7 @@ private:
 
 	SecondOrderConstraint second_order_constraint;
 	void updateSn();
-	void solveBySecondOrderXPBD();
+
 	void solveSecondOrderConstraint(bool need_detection);
 	void solveTetStrainConstraintSecondOrder();
 	void solveEdgeLengthSecondOrder();
@@ -184,7 +175,7 @@ private:
 	void newtonCD();
 
 
-	void testIterativeSolveNewtonCDSingleVertex(std::vector<std::array<double,3>>&vertex_pos_record);
+	void testIterativeSolveNewtonCDSingleVertex(std::vector<std::array<double, 3>>& vertex_pos_record);
 	void testIterativeSolveXPBDCDSingleVertex(std::vector<std::array<double, 3>>& vertex_pos_record);
 
 	void testIfSame();
