@@ -26,7 +26,14 @@ public:
 		double stiffness, double dt,
 		Matrix<double, 3, 4>& A, double* inv_mass, double& lambda, const double damping_stiffness, double* mass,
 		double volume);
+
+	void solveSingleVertexNewton(std::array<double, 3>* vertex_position, double stiffness, double dt,
+		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, double* mass,
+		double* volume, unsigned int vertex_index, std::array<double, 3>* sn);
 		
+	void solveSingleVertexCD_ARAP(std::array<double, 3>* vertex_position, double stiffness, double dt,
+		Matrix<double, 3, 4>* A, double* lambda, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices,
+		double* mass, double* volume, unsigned int vertex_index, std::array<double, 3>* sn);
 
 	void solveCD_ARAP(std::array<double,3>* vertex_position, double stiffness, double dt,
 		Matrix<double, 3, 4>* A, double* lambda, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, 

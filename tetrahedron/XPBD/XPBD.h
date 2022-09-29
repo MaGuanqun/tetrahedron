@@ -17,6 +17,8 @@
 #include"second_order.h"
 #include"../compute_energy.h"
 
+#define _CRT_SECURE_NO_WARNINGS
+
 using namespace Eigen;
 using namespace denseOperation;
 
@@ -182,5 +184,11 @@ private:
 
 	void newtonCDTet();
 	void newtonCD();
+
+
+	void testIterativeSolveNewtonCDSingleVertex(std::vector<std::array<double,3>>&vertex_pos_record);
+	void testIterativeSolveXPBDCDSingleVertex(std::vector<std::array<double, 3>>& vertex_pos_record);
+
+	void testIfSame();
 };
 

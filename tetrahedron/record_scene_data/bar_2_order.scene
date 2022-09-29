@@ -10,7 +10,7 @@ anchor_vertex
 0
 8 5 8 13 14 15 16 28 30 
 time_step
-0.01
+0.033333
 cloth_density
 1
 tet_density
@@ -23,7 +23,7 @@ floor_dimension
 4
 floor_value
 -0.55
-newton
+XPBD
 substep_num
 1
 iteration_num

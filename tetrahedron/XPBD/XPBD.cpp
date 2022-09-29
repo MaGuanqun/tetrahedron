@@ -230,7 +230,7 @@ void XPBD::saveScene(double* force_direction, int obj_No)
 
 void XPBD::readScene(const char* file_name)
 {
-	save_scene.read_scene_XPBD(file_name, time_stamp, time_indicate_for_simu, mesh_struct, &velocity, collider_mesh_struct);
+	//save_scene.read_scene_XPBD(file_name, time_stamp, time_indicate_for_simu, mesh_struct, &velocity, collider_mesh_struct,*has_force,);
 	for (unsigned int i = 0; i < mesh_struct.size(); ++i) {
 		memcpy(mesh_struct[i]->vertex_for_render[0].data(), mesh_struct[i]->vertex_position[0].data(), 24 * mesh_struct[i]->vertex_position.size());
 	}
@@ -429,6 +429,8 @@ void XPBD::solveBySecondOrderXPBD()
 
 	computeResidual();
 
+	testIfSame();
+
 	for (unsigned int sub_step = 0; sub_step < sub_step_num; ++sub_step) {
 		memset(lambda.data(), 0, 8 * lambda.size());
 		inner_iteration_number = 0;
@@ -454,8 +456,8 @@ void XPBD::solveBySecondOrderXPBD()
 			if (perform_collision) {
 				updateNormal();
 			}
-			//newtonCD();
-			coordinateDescent();
+			newtonCD();
+			//coordinateDescent();
 			//solveSecondOrderConstraint((inner_iteration_number == 0) && sub_step % *sub_step_per_detection == 0);//sub_step % prediction_sub_step_size//|| inner_iteration_number== (max_iteration_number/2+1)
 			inner_iteration_number++;		
 			computeCurrentEnergy();
@@ -957,6 +959,101 @@ double XPBD::computeCurrentARAPEnergy()
 	return energy;
 }
 
+
+void XPBD::testIfSame()
+{
+	std::vector<std::array<double, 3>> XPBD_CD_record;
+	std::vector<std::array<double, 3>>newton_CD_record;
+	XPBD_CD_record.reserve(20);
+	newton_CD_record.reserve(20);
+	testIterativeSolveNewtonCDSingleVertex(newton_CD_record);
+	testIterativeSolveXPBDCDSingleVertex(XPBD_CD_record);
+
+	for (unsigned int i = 0; i < XPBD_CD_record.size(); ++i) {
+		std::cout <<"+ "<< newton_CD_record[i][0] << " " << newton_CD_record[i][1] << " " << newton_CD_record[i][2] << std::endl;
+		std::cout << "- " << XPBD_CD_record[i][0] << " " << XPBD_CD_record[i][1] << " " << XPBD_CD_record[i][2] << std::endl;
+	}
+	for (unsigned int i = 0; i < XPBD_CD_record.size(); ++i) {
+		std::cout << newton_CD_record[i][0]- XPBD_CD_record[i][0] << " " << newton_CD_record[i][1] - XPBD_CD_record[i][1] << " " << newton_CD_record[i][2]- XPBD_CD_record[i][2] << std::endl;
+	}
+}
+
+void XPBD::testIterativeSolveNewtonCDSingleVertex(std::vector<std::array<double, 3>>& vertex_pos_record)
+{
+	unsigned int size;
+	std::array<int, 4>* indices;
+	MeshStruct* mesh_struct_;
+	double* volume;
+
+	double* mass_inv;
+	double stiffness;
+	Matrix<double, 3, 4>* A;
+	std::array<double, 3>* sn_;
+	double* mass;
+
+	unsigned int i = 0;
+
+	std::vector<std::array<double, 3>> vertex_pos = tetrahedron->data()[i].mesh_struct.vertex_position;
+
+		mesh_struct_ = mesh_struct[i + cloth->size()];
+		size = tetrahedron->data()[i].mesh_struct.vertex_position.size();
+		indices = tetrahedron->data()[i].mesh_struct.indices.data();
+		volume = tetrahedron->data()[i].mesh_struct.volume.data();
+		stiffness = tetrahedron->data()[i].ARAP_stiffness;
+		A = tetrahedron->data()[i].mesh_struct.A.data();
+		mass_inv = mesh_struct_->mass_inv.data();
+		mass = mesh_struct_->mass.data();
+		sn_ = sn[i + cloth->size()].data();
+		for (unsigned int j = 20; j < size; ++j) {
+			if (mass_inv[j] != 0.0) {
+				for (unsigned int k = 0; k < 30; ++k) {
+					second_order_constraint.solveSingleVertexNewton(vertex_pos.data(), stiffness, sub_time_step, A,
+						mesh_struct_->vertex_tet_index[j], indices, mass, volume, j, sn_);
+					vertex_pos_record.push_back(vertex_pos[j]);
+				}			
+				break;
+			}
+		}	
+}
+
+void XPBD::testIterativeSolveXPBDCDSingleVertex(std::vector<std::array<double, 3>>& vertex_pos_record)
+{
+	unsigned int size;
+	std::array<int, 4>* indices;
+	MeshStruct* mesh_struct_;
+	double* volume;
+	double* mass_inv;
+	double stiffness;
+	Matrix<double, 3, 4>* A;
+	std::array<double, 3>* sn_;
+	double* mass;
+	
+	unsigned int i = 0;
+	std::vector<double> lambda(tetrahedron->data()[i].mesh_struct.indices.size(), 0.0);
+	std::vector<std::array<double, 3>> vertex_pos = tetrahedron->data()[i].mesh_struct.vertex_position;
+
+		mesh_struct_ = mesh_struct[i + cloth->size()];
+		size = tetrahedron->data()[i].mesh_struct.vertex_position.size();
+		indices = tetrahedron->data()[i].mesh_struct.indices.data();
+		volume = tetrahedron->data()[i].mesh_struct.volume.data();
+		stiffness = tetrahedron->data()[i].ARAP_stiffness;
+		A = tetrahedron->data()[i].mesh_struct.A.data();
+		mass_inv = mesh_struct_->mass_inv.data();
+		mass = mesh_struct_->mass.data();
+		sn_ = sn[i + cloth->size()].data();
+		//std::cout << "test" << std::endl;
+		for (unsigned int j = 20; j < size; ++j) {
+			if (mass_inv[j] != 0.0) {
+				for (unsigned int k = 0; k < 30; ++k) {
+					second_order_constraint.solveSingleVertexCD_ARAP(vertex_pos.data(), stiffness, sub_time_step, A, lambda.data(),
+						mesh_struct_->vertex_tet_index[j], indices, mass, volume, j, sn_);
+					vertex_pos_record.push_back(vertex_pos[j]);
+				}
+				break;
+			}
+
+		}
+}
 
 
 void XPBD::secondOrderCoordinateDiscentTetStrain()

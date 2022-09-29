@@ -921,12 +921,12 @@ void NewtonMethod::computeARAPHessianFixedStructure(double* vertex_position_0, d
 void NewtonMethod::saveScene()
 {
 	updateTotalVelocity();
-	save_scene.save_scene_XPBD(*time_stamp, *time_indicate_for_simu, mesh_struct, &velocity_total, collider_mesh_struct);
+	//save_scene.save_scene_XPBD(*time_stamp, *time_indicate_for_simu, mesh_struct, &velocity_total, collider_mesh_struct);
 }
 
 void NewtonMethod::readScene(const char* file_name)
 {
-	save_scene.read_scene_XPBD(file_name, time_stamp, time_indicate_for_simu, mesh_struct, &velocity_total, collider_mesh_struct);
+	//save_scene.read_scene_XPBD(file_name, time_stamp, time_indicate_for_simu, mesh_struct, &velocity_total, collider_mesh_struct);
 	for (unsigned int i = 0; i < mesh_struct.size(); ++i) {
 		memcpy(mesh_struct[i]->vertex_for_render[0].data(), mesh_struct[i]->vertex_position[0].data(), 24 * mesh_struct[i]->vertex_position.size());
 	}

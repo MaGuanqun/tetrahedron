@@ -23,7 +23,7 @@ floor_dimension
 4
 floor_value
 -0.55
-newton
+XPBD
 substep_num
 1
 iteration_num

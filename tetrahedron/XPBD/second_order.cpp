@@ -54,6 +54,46 @@ void SecondOrderConstraint::computeARAPForce(double* vertex_position_0, double* 
 
 }
 
+void SecondOrderConstraint::solveSingleVertexNewton(std::array<double, 3>* vertex_position, double stiffness, double dt,
+	Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, double* mass,
+	double* volume, unsigned int vertex_index, std::array<double, 3>* sn)
+{
+	unsigned int tet_index;
+	Matrix3d Hessian_single;
+	Vector3d grad_single;
+	unsigned int vertex_no;
+	Matrix3d Hessian;
+	Vector3d grad;
+	Hessian.setZero();
+	grad.setZero();
+	double C;
+	for (unsigned int i = 0; i < tet_indices.size(); ++i) {
+		tet_index = tet_indices[i];
+		vertex_no = findVertexNo(vertex_index, indices[tet_index].data());
+		if (getARAPGradHessianNewton(vertex_position[indices[tet_index][0]].data(), vertex_position[indices[tet_index][1]].data(),
+			vertex_position[indices[tet_index][2]].data(), vertex_position[indices[tet_index][3]].data(),
+			A[tet_index], Hessian_single, grad_single, C, vertex_no)) {
+			Hessian += (0.5 * stiffness * volume[tet_index]) * Hessian_single;
+			grad -= (0.5 * stiffness * volume[tet_index]) * grad_single;
+		}
+	}
+
+	double mass_dt_2 = mass[vertex_index] / (dt * dt);
+
+	Hessian.data()[0] += mass_dt_2;
+	Hessian(1, 1) += mass_dt_2;
+	Hessian(2, 2) += mass_dt_2;
+	grad.data()[0] -= mass_dt_2 * (vertex_position[vertex_index][0] - sn[vertex_index][0]);
+	grad.data()[1] -= mass_dt_2 * (vertex_position[vertex_index][1] - sn[vertex_index][1]);
+	grad.data()[2] -= mass_dt_2 * (vertex_position[vertex_index][2] - sn[vertex_index][2]);
+
+	ColPivHouseholderQR <Matrix3d> linear(Hessian);
+	Vector3d result = linear.solve(grad);
+
+	SUM_(vertex_position[vertex_index], result);
+}
+
+
 
 void SecondOrderConstraint::solveNewtonCD_ARAP(std::array<double, 3>* vertex_position, double stiffness, double dt,
 	Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, double* mass,
@@ -95,6 +135,56 @@ void SecondOrderConstraint::solveNewtonCD_ARAP(std::array<double, 3>* vertex_pos
 
 }
 
+void SecondOrderConstraint::solveSingleVertexCD_ARAP(std::array<double, 3>* vertex_position, double stiffness, double dt,
+	Matrix<double, 3, 4>* A, double* lambda, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, double* mass,
+	double* volume, unsigned int vertex_index, std::array<double, 3>* sn)
+{
+	unsigned int tet_index;
+	Matrix3d Hessian_single;
+	Vector3d grad_single;
+	unsigned int vertex_no;
+	MatrixXd Hessian;
+	Hessian.resize(3 + tet_indices.size(), 3 + tet_indices.size());
+	Hessian.setZero();
+
+	VectorXd b;
+	b.resize(3 + tet_indices.size());
+	b.setZero();
+	double C;
+	double alpha;
+
+	for (unsigned int i = 0; i < tet_indices.size(); ++i) {
+		tet_index = tet_indices[i];
+		vertex_no = findVertexNo(vertex_index, indices[tet_index].data());
+		if (getARAPGradHessian(vertex_position[indices[tet_index][0]].data(), vertex_position[indices[tet_index][1]].data(),
+			vertex_position[indices[tet_index][2]].data(), vertex_position[indices[tet_index][3]].data(),
+			A[tet_index], Hessian_single, grad_single, C, vertex_no)) {
+			Hessian_single *= -lambda[tet_index];
+			Hessian.block<3, 3>(0, 0) += Hessian_single;
+			Hessian.block<3, 1>(0, 3 + i) = -grad_single;
+			Hessian.block<1, 3>(3 + i, 0) = -grad_single;
+			b.head(3) += lambda[tet_index] * grad_single;
+		}
+		alpha = 1.0 / (stiffness * volume[tet_index] * dt * dt);
+		Hessian(3 + i, 3 + i) = -alpha;
+		b.data()[3 + i] = C + alpha * lambda[tet_index];
+	}
+
+	Hessian.data()[0] += mass[vertex_index];
+	Hessian(1, 1) += mass[vertex_index];
+	Hessian(2, 2) += mass[vertex_index];
+	b.data()[0] -= mass[vertex_index] * (vertex_position[vertex_index][0] - sn[vertex_index][0]);
+	b.data()[1] -= mass[vertex_index] * (vertex_position[vertex_index][1] - sn[vertex_index][1]);
+	b.data()[2] -= mass[vertex_index] * (vertex_position[vertex_index][2] - sn[vertex_index][2]);
+
+	ColPivHouseholderQR <MatrixXd> linear(Hessian);
+	VectorXd result = linear.solve(b);
+
+	SUM_(vertex_position[vertex_index], result);
+	for (unsigned int i = 0; i < tet_indices.size(); ++i) {
+		lambda[tet_indices[i]] += result[3 + i];
+	}
+}
 
 void SecondOrderConstraint::solveCD_ARAP(std::array<double, 3>* vertex_position, double stiffness, double dt,
 	Matrix<double, 3, 4>* A, double* lambda, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, double* mass, 
