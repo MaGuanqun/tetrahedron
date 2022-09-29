@@ -54,8 +54,8 @@ public:
 	MoveModel* move_model;
 	bool* control_parameter;
 
-	void saveScene(double* force_direction, int obj_No);
-	void readScene(const char* file_name);
+	void saveScene(double* force_direction, int obj_No, bool have_force);
+	void readScene(const char* file_name, double* force_direction, int& obj_No);
 	unsigned int max_iteration_number;
 	double velocity_damp;
 	unsigned int* sub_step_per_detection;

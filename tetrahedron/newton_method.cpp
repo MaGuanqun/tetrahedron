@@ -918,20 +918,45 @@ void NewtonMethod::computeARAPHessianFixedStructure(double* vertex_position_0, d
 }
 
 
-void NewtonMethod::saveScene()
+void NewtonMethod::saveScene(double* force_direction, int obj_No, bool have_force)
 {
 	updateTotalVelocity();
-	//save_scene.save_scene_XPBD(*time_stamp, *time_indicate_for_simu, mesh_struct, &velocity_total, collider_mesh_struct);
+	std::string file_name;
+	save_scene.save_scene_XPBD(*time_stamp, *time_indicate_for_simu, mesh_struct, 
+		&velocity_total, collider_mesh_struct, file_name);
+	if (have_force) {
+		if (obj_No < cloth->size()) {
+			save_scene.save_force(file_name, force_direction, cloth->data()[obj_No].coe_neighbor_vertex_force,
+				cloth->data()[obj_No].neighbor_vertex, obj_No);
+		}
+		else {
+			save_scene.save_force(file_name, force_direction, tetrahedron->data()[obj_No - cloth->size()].coe_neighbor_vertex_force,
+				tetrahedron->data()[obj_No - cloth->size()].neighbor_vertex, obj_No);
+		}
+	}
 }
 
-void NewtonMethod::readScene(const char* file_name)
+void NewtonMethod::readScene(const char* file_name, double* force_direction, int& obj_No)
 {
-	//save_scene.read_scene_XPBD(file_name, time_stamp, time_indicate_for_simu, mesh_struct, &velocity_total, collider_mesh_struct);
+	std::vector<double>force_coe;
+	std::vector<int>neighbor_vertex_index;
+	save_scene.read_scene_XPBD(file_name, time_stamp, time_indicate_for_simu, mesh_struct, 
+		&velocity_total, collider_mesh_struct,*has_force,force_direction, force_coe, neighbor_vertex_index, obj_No);
 	for (unsigned int i = 0; i < mesh_struct.size(); ++i) {
 		memcpy(mesh_struct[i]->vertex_for_render[0].data(), mesh_struct[i]->vertex_position[0].data(), 24 * mesh_struct[i]->vertex_position.size());
 	}
 	for (unsigned int i = 0; i < collider_mesh_struct.size(); ++i) {
 		memcpy(collider_mesh_struct[i]->vertex_for_render[0].data(), collider_mesh_struct[i]->vertex_position[0].data(), 24 * collider_mesh_struct[i]->vertex_position.size());
+	}
+	if (*has_force) {
+		if (obj_No < cloth->size()) {
+			cloth->data()[obj_No].coe_neighbor_vertex_force = force_coe;
+			cloth->data()[obj_No].neighbor_vertex = neighbor_vertex_index;
+		}
+		else {
+			tetrahedron->data()[obj_No - cloth->size()].coe_neighbor_vertex_force = force_coe;
+			tetrahedron->data()[obj_No - cloth->size()].neighbor_vertex = neighbor_vertex_index;
+		}
 	}
 	updateVelocity();
 }

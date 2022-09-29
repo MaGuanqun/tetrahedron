@@ -189,6 +189,8 @@ private:
 	void updateAnchorTet();
 	void reflectModel();
 	void checkVolume();
-	bool have_force;
+	double force_direction[3];
+	bool read_force;
+	void addExternalForce();
 	//Draw_Edge draw_edge_;
 };

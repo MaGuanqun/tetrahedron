@@ -16,7 +16,7 @@ XPBD::XPBD()
 
 	velocity_damp = 0.995;
 	energy_converge_ratio = 1e-3;
-	XPBD_constraint.test();
+	//XPBD_constraint.test();
 
 
 
@@ -210,12 +210,12 @@ void XPBD::reorganzieDataOfObjects()
 }
 
 
-void XPBD::saveScene(double* force_direction, int obj_No)
+void XPBD::saveScene(double* force_direction, int obj_No, bool have_force)
 {
 	std::string file_name;
 	save_scene.save_scene_XPBD(*time_stamp, *time_indicate_for_simu, mesh_struct, &velocity, 
 		collider_mesh_struct, file_name);	
-	if (*has_force) {
+	if (have_force) {
 		if (obj_No < cloth->size()) {
 			save_scene.save_force(file_name, force_direction, cloth->data()[obj_No].coe_neighbor_vertex_force,
 				cloth->data()[obj_No].neighbor_vertex, obj_No);
@@ -228,21 +228,32 @@ void XPBD::saveScene(double* force_direction, int obj_No)
 
 }
 
-void XPBD::readScene(const char* file_name)
+void XPBD::readScene(const char* file_name, double* force_direction, int& obj_No)
 {
-	//save_scene.read_scene_XPBD(file_name, time_stamp, time_indicate_for_simu, mesh_struct, &velocity, collider_mesh_struct,*has_force,);
+	std::vector<double>force_coe;
+	std::vector<int>neighbor_vertex_index;
+	save_scene.read_scene_XPBD(file_name, time_stamp, time_indicate_for_simu, mesh_struct, 
+		&velocity, collider_mesh_struct,*has_force,force_direction,force_coe, neighbor_vertex_index,obj_No);
 	for (unsigned int i = 0; i < mesh_struct.size(); ++i) {
 		memcpy(mesh_struct[i]->vertex_for_render[0].data(), mesh_struct[i]->vertex_position[0].data(), 24 * mesh_struct[i]->vertex_position.size());
 	}
 	for (unsigned int i = 0; i < collider_mesh_struct.size(); ++i) {
 		memcpy(collider_mesh_struct[i]->vertex_for_render[0].data(), collider_mesh_struct[i]->vertex_position[0].data(), 24 * collider_mesh_struct[i]->vertex_position.size());
 	}
+	if (*has_force) {
+		if (obj_No < cloth->size()) {
+			cloth->data()[obj_No].coe_neighbor_vertex_force = force_coe;
+			cloth->data()[obj_No].neighbor_vertex = neighbor_vertex_index;
+		}
+		else {
+			tetrahedron->data()[obj_No - cloth->size()].coe_neighbor_vertex_force = force_coe;
+			tetrahedron->data()[obj_No - cloth->size()].neighbor_vertex = neighbor_vertex_index;
+		}
+	}
 	updateRenderNormal();
 	updateNormal();
 	updateRenderVertexNormal();
 }
-
-
 
 double XPBD::calEdgeLength()
 {
@@ -429,7 +440,7 @@ void XPBD::solveBySecondOrderXPBD()
 
 	computeResidual();
 
-	testIfSame();
+	//testIfSame();
 
 	for (unsigned int sub_step = 0; sub_step < sub_step_num; ++sub_step) {
 		memset(lambda.data(), 0, 8 * lambda.size());
@@ -620,7 +631,7 @@ bool XPBD::convergeCondition(unsigned int iteration_num)
 {
 	//std::cout << energy << std::endl;
 
-	if (iteration_num < 15) {//max_iteration_number
+	if (iteration_num < 50) {//max_iteration_number
 		return false;
 	}
 

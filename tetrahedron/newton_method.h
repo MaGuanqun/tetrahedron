@@ -70,15 +70,15 @@ public:
 
 	void updatePositionFromOri(int thread_No);
 
-	void saveScene();
-	void readScene(const char* file_name);
+	void saveScene(double* force_direction, int obj_No, bool have_force);
+	void readScene(const char* file_name, double* force_direction, int& obj_No);
 
 	void setBn(int thread_No);
 	void updateVelocityAccelerationNewMark(int thread_No);
 	void setHessianDiagonalFixedStructureInitialStiffness(int thread_No);
 
 	unsigned int* time_indicate_for_simu;
-
+	bool* has_force;
 
 private:
 

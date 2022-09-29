@@ -50,7 +50,7 @@ void SaveScene::save_force(std::string& final_file_name, double* force_direction
 
 bool SaveScene::read_scene_XPBD(const char* file_name, size_t* time_stamp, unsigned int* simulate_scene_indicator, std::vector<MeshStruct*>& obj_mesh_struct,
 	std::vector<std::vector<std::array<double, 3>>>* velocity, std::vector<MeshStruct*>& collider_mesh_struct, bool& has_force,
-	double* force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int obj_No)
+	double* force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int& obj_No)
 {
 	std::ifstream in(file_name, std::ios::in | std::ios::binary);
 	if (!in.good())
@@ -99,6 +99,7 @@ bool SaveScene::read_scene_XPBD(const char* file_name, size_t* time_stamp, unsig
 			return false;
 		}
 	}
+
 	if (in.peek() == EOF) {
 		has_force = false;
 	}

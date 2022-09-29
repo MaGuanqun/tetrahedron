@@ -77,7 +77,8 @@ Scene::Scene()
 	//compareArray();
 
 	//std::cout << cbrt(-27.0) << " " << cbrt(27.0) << std::endl;
-
+	xpbd.has_force = &read_force;
+	newton_method.has_force = &read_force;
 }
 
 
@@ -763,13 +764,10 @@ void Scene::saveScene()
 	case PD_:
 		break;
 	case XPBD_:
-		//xpbd.saveScene();
-		if (have_force) {
-
-		}
+		xpbd.saveScene(force_direction, intersection.obj_No,intersection.happened);
 		break;
 	case NEWTON_:
-		newton_method.saveScene();
+		newton_method.saveScene(force_direction, intersection.obj_No, intersection.happened);
 		break;
 	}
 }
@@ -782,10 +780,10 @@ void Scene::readScene(std::string& path)
 	case PD_:
 		break;
 	case XPBD_:
-		xpbd.readScene(path.c_str());
+		xpbd.readScene(path.c_str(),force_direction,intersection.obj_No);
 		break;
 	case NEWTON_:
-		newton_method.readScene(path.c_str());
+		newton_method.readScene(path.c_str(), force_direction, intersection.obj_No);
 		break;
 	}
 }
@@ -908,6 +906,11 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 		case XPBD_SECOND_ORDER_LARGE_:
 			second_order_xpbd_large.resetExternalForce();
 			break;
+		}
+
+		if (read_force) {
+			addExternalForce();
+			read_force = false;
 		}
 		//std::cout << intersection.happened << " " << control_parameter[START_TEST] << std::endl;
 		if (intersection.happened && !control_parameter[START_TEST]) {
@@ -1329,7 +1332,6 @@ void Scene::obtainCursorIntersection(double* pos, Camera* camera, std::vector<st
 	int chosen_index[2];
 	pick_triangle.pickTriangle(&cloth, &collider, &tetrahedron, camera, hide, chosen_index, mouse_pos);
 	intersection.initialIntersection();
-	//std::cout << chosen_index[0] << std::endl;
 	if (chosen_index[0] > -1) {
 		//double cursor_pos[3];
 		intersection.setIntersection(chosen_index);
@@ -1407,8 +1409,7 @@ bool Scene::sameDirection(Camera* camera, unsigned int obj_index)
 
 void Scene::moveObj(Camera* camera, double* cursor_screen, bool only_move_vertex_pos)
 {
-	double cursor_pos[3];
-	double force_direction[3];
+	double cursor_pos[3];	
 	if (intersection.obj_No < cloth.size()) {
 		getCursorPos(cursor_pos, cloth[intersection.obj_No].mesh_struct.vertex_position,
 			cloth[intersection.obj_No].mesh_struct.triangle_indices[intersection.face_index].data());
@@ -1457,8 +1458,6 @@ void Scene::setObjMoveInfo(Camera* camera, double* cursor_screen)
 void Scene::setCursorForce(Camera* camera, double* cursor_screen, float force_coe)
 {
 	double cursor_pos[3];
-	double force_direction[3];
-
 
 	if (intersection.obj_No < cloth.size()) {
 		getCursorPos(cursor_pos, cloth[intersection.obj_No].mesh_struct.vertex_position,
@@ -1481,6 +1480,15 @@ void Scene::setCursorForce(Camera* camera, double* cursor_screen, float force_co
 	double cursor_pos_in_space[3];
 	cursorMovement(camera, cursor_screen, force_direction, force_coe, cursor_pos, cursor_pos_in_space);
 	cursor.translate(cursor_pos, cursor_pos_in_space);
+
+	addExternalForce();
+}
+
+
+
+
+void  Scene::addExternalForce()
+{
 	if (intersection.obj_No < cloth.size()) {
 		switch (use_method)
 		{
@@ -1499,7 +1507,6 @@ void Scene::setCursorForce(Camera* camera, double* cursor_screen, float force_co
 		}
 	}
 	else {
-		//std::cout << force_direction[0] << " " << force_direction[1] << " " << force_direction[2] << std::endl;
 		switch (use_method)
 		{
 		case PD_:
@@ -1516,9 +1523,7 @@ void Scene::setCursorForce(Camera* camera, double* cursor_screen, float force_co
 			break;
 		}
 	}
-
 }
-
 
 
 void Scene::cursorMovement(Camera* camera, double* cursor_screen, double* force_direction, float force_coe, double* object_position, double* cursor_pos_in_space)
@@ -1588,11 +1593,6 @@ void Scene::testForWritetToArray(int thread_No)
 	//thread_test[10000 * thread_No] = test;
 }
 
-//for (unsigned int m = 0; m < 100; ++m) {
-//	test_pair_[i] -= 2;
-//	test_pair_[i] *= 2;
-//}
-//std::cout << thread_test[10000 * thread_No] << std::endl;
 
 
 void Scene::testForWritetToArraySingle(int total_thread_num)
@@ -1676,13 +1676,6 @@ void Scene::updateStiffness(UpdateObjStiffness& update_obj_stiffness, std::vecto
 	}
 }
 
-//for (unsigned int m = 0; m < 100; ++m) {
-//	test_pair_[j] -= 2;
-//	test_pair_[j] *= 2;
-//}
-
-//thread_test[10000 * k] = test;
-//std::cout << thread_test[10000 * k] << std::endl;
 
 void Scene::voidForWritetToArraySingle(int total_thread_num)
 {
