@@ -11,7 +11,7 @@ public:
 
 	void initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider,
 		std::vector<Tetrahedron>* tetrahedron, Thread* thread, Floor* floor, double* tolerance_ratio,
-		Collision* pd_collision, Collision* pbd_collision, Collision* newton_collision, unsigned int simulation_method);
+		Collision* pd_collision, Collision* pbd_collision, Collision* newton_collision, Collision* xpbd_ipc_collision, unsigned int simulation_method);
 	void setCollisionData();
 	void drawCollision(bool draw_VT, Light& light,  Camera* camera, Shader* object_shader_front, 
 		std::vector<std::vector<bool>>& drawCollision, Shadow* shadow,  Shader* wireframe_shader, bool draw_all_collision_pair, bool draw_all_element);

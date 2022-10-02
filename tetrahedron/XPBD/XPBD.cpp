@@ -509,8 +509,6 @@ void XPBD::solveByXPBD()
 	if (sub_step_num == 1) {
 		updateSn();
 	}
-	std::cout << "////" << std::endl;
-	//}
 	iteration_number = 0;
 	computeCurrentEnergy();
 	computeResidual();

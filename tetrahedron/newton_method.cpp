@@ -524,15 +524,6 @@ void NewtonMethod::updateHessianFixedStructure()
 
 	thread->assignTask(this, UPDATE_DIAGONAL_HESSIAN_FIXED_STRUCTURE);
 
-	//std::cout << only_constraint << std::endl;
-	//std::cout << "/////" << std::endl;
-	//std::cout << Hessian << std::endl;
-	//std::cout << "error " << (only_constraint - Hessian).squaredNorm() << std::endl;
-	//for (unsigned int i = 0; i < Hessian.nonZeros(); ++i) {
-	//	if (Hessian.valuePtr()[i] != only_constraint.valuePtr()[i]) {
-	//		std::cout << i << " " << Hessian.innerIndexPtr()[i] << " " << Hessian.valuePtr()[i] << " " << only_constraint.valuePtr()[i] << std::endl;
-	//	}
-	//}
 
 
 	///temp comment damp
@@ -558,10 +549,6 @@ void NewtonMethod::updateHessianFixedStructure()
 	}
 	////////////
 
-	//std::cout << Hessian << std::endl;
-	//std::cout << "/////" << std::endl;
-	//std::cout << Hessian << std::endl;
-	//std::cout << b << std::endl;
 
 
 
@@ -1029,9 +1016,7 @@ void NewtonMethod::solveNewtonMethod_()
 	//}
 
 	iteration_number = 0;
-	std::cout << "===" << std::endl;
 	computeEnergy();
-	//std::cout << "energy " << total_energy << std::endl;
 	previous_energy = total_energy;
 	store_residual.clear();
 	while (convergenceCondition())
@@ -1051,7 +1036,6 @@ void NewtonMethod::solveNewtonMethod_()
 		thread->assignTask(this, UPDATE_POSITION_NEWTON);
 		//thread->assignTask(this, VELOCITY_NEWTON);
 		computeEnergy();
-		//std::cout << total_energy << std::endl;
 
 		//if (total_energy > previous_energy) {
 		//	updateRenderPosition();

@@ -445,7 +445,6 @@ void Tetrahedron::findAllNeighborVertex(int face_index, double cursor_pos[3], do
 	for (unsigned int i = 0; i < total_thread_num; ++i) {
 		neighbor_vertex.insert(neighbor_vertex.end(), neighbor_vertex_per_thread[i].begin(), neighbor_vertex_per_thread[i].end());
 	}
-	std::cout << neighbor_vertex.size() << std::endl;
 	if(neighbor_vertex.size()<4){
 		std::vector<bool>is_vertex_used(mesh_struct.vertices.size(), false);
 		for (unsigned int i = 0; i < neighbor_vertex.size(); ++i) {

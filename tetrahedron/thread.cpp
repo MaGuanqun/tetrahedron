@@ -15,6 +15,7 @@
 #include"./basic/move_object.h"
 #include"newton_method.h"
 #include"XPBD_large_system.h"
+#include"XPBD_IPC.h"
 //#include"collision/mesh_patch.h"
 
 Thread::Thread()
@@ -741,7 +742,26 @@ job Thread::create_task(XPBD* func, int thread_id, XPBDFunc function_type)
     return k;
 }
 
-
+job Thread::create_task(XPBD_IPC* func, int thread_id, XPBDFunc function_type)
+{
+    job k;
+    switch (function_type)
+    {
+    case SET_POS_PREDICT:
+        k = job([func, thread_id]() {func->setPosPredict(thread_id); });
+        break;
+    case SET_POS_PREDICT_SUB_TIME_STEP:
+        k = job([func, thread_id]() {func->setPosPredictSubTimeStep(thread_id, false); });
+        break;
+    case SET_POS_PREDICT_SUB_TIME_STEP_FOR_CULLING:
+        k = job([func, thread_id]() {func->setPosPredictSubTimeStep(thread_id, true); });
+        break;
+    case XPBD_VELOCITY:
+        k = job([func, thread_id]() {func->computeVelocity(thread_id); });
+        break;
+    }
+    return k;
+}
 
 //job Thread::create_task(MeshPatch* func, int thread_id, MeshPatchFunc function_type)
 //{

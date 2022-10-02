@@ -76,8 +76,6 @@ void Preprocessing::getRegularizationInfo()
 	regularization_info.move_info[2] = 0.0;
 	regularization_info.max_dis_from_center = 1.2 * sqrt(3.0* max_cen);
 
-	std::cout << (aabb_pos[4] - aabb_pos[1]) << " " << aabb_pos[4] << " " << aabb_pos[1] << std::endl;
-
 }
 
 void Preprocessing::getPresetRegularizationInfo()

@@ -209,12 +209,39 @@ namespace SaveParameter{
 		else  if(line=="second_order_large_XPBD") {
 			use_method = XPBD_SECOND_ORDER_LARGE_;
 		}
+		else if (line == "XPBD_IPC") {
+			use_method = XPBD_IPC_;
+		}
 		else {
 			std::cout << "error reading the simulation method" << std::endl;
 			return;
 		}
 		switch (use_method)
 		{
+		case XPBD_IPC_:
+		{
+			std::getline(in, line);
+			if (line != "substep_num") {
+				std::cout << "error read substep num" << std::endl;
+				return;
+			}
+			std::getline(in, line);
+			sub_step_num = std::stoi(line);
+			std::getline(in, line);
+			if (line != "iteration_num") {
+				std::cout << "error read iteration num" << std::endl;
+				return;
+			}
+			std::getline(in, line);
+			iteration_num = std::stoi(line);
+			std::getline(in, line);
+			if (line != "sub_step_per_detection") {
+				std::cout << "error read sub_step per detection" << std::endl;
+			}
+			std::getline(in, line);
+			sub_step_per_detection = std::stoi(line);
+		}
+		break;
 		case XPBD_:
 		{
 			std::getline(in, line);
@@ -375,7 +402,16 @@ namespace SaveParameter{
 		case XPBD_SECOND_ORDER_LARGE_:
 			input_file << "second_order_large_XPBD" << "\n";
 			break;
-		}
+		case XPBD_IPC_:
+			input_file << "XPBD_IPC" << "\n";
+			input_file << "substep_num" << "\n";
+			input_file << sub_step_num << "\n";
+			input_file << "iteration_num" << "\n";
+			input_file << iteration_num << "\n";
+			input_file << "sub_step_per_detection" << "\n";
+			input_file << sub_step_per_detection << "\n";
+			break;
+		}		
 	}
 
 

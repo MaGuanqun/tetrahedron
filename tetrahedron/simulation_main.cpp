@@ -22,13 +22,14 @@ void simu_main(GLFWwindow* window, Input* input) {
 	Camera camera(cameraPos, normalize(glm::vec3(0.0f, 1.0f, 0.0f)));
 	float zoom_value = 1.0;
 	CoordinateSystem coordinateSystem;
-	bool control_parameter[31];
+	bool control_parameter[32];
 	memset(control_parameter, 0, 31);
 	control_parameter[ONLY_COLLISION_TEST] =false;
-	control_parameter[USE_XPBD] = true;
+	control_parameter[USE_XPBD] = false;
 	control_parameter[USE_PD_] = false;
 	control_parameter[USE_NEWTON_] = false;
 	control_parameter[USE_XPBD_LARGE] = false;
+	control_parameter[USE_XPBD_IPC] = true;
 	control_parameter[DRAW_VT] = true;
 
 
@@ -208,7 +209,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 		}
 		start_time = clock();
-		if (control_parameter[USE_PD_] || control_parameter[USE_XPBD] || control_parameter[USE_NEWTON_]|| control_parameter[USE_XPBD_LARGE]) {
+		if (control_parameter[USE_PD_] || control_parameter[USE_XPBD] || control_parameter[USE_NEWTON_]|| control_parameter[USE_XPBD_LARGE] || control_parameter[USE_XPBD_IPC]) {
 			imgui_windows.operationWindow(cloth_stiffness, tetrahedron_stiffness, simulation_parameter, cloth_collision_stiffness, tetrahedron_collision_stiffness, set_stiffness, temp_stiffness.data(),
 				update_obj_stiffness, set_anchor, !scene.tetrahedron.empty(), &damp_stiffness, rayleigh_damp_stiffness);
 			if (update_obj_stiffness.update_length) {

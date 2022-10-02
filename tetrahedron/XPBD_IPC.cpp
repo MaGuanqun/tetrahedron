@@ -295,7 +295,6 @@ void XPBD_IPC::XPBD_IPCSolve()
 	computeCurrentEnergy();
 
 	//last_pos = mesh_struct[0]->vertex_position;
-
 	for (unsigned int sub_step = 0; sub_step < sub_step_num; ++sub_step) {
 		memset(lambda.data(), 0, 8 * lambda.size());
 		inner_iteration_number = 0;
@@ -371,7 +370,6 @@ void XPBD_IPC::updatePosition()
 
 void XPBD_IPC::computeCurrentEnergy()
 {
-	//std::cout << "///" << std::endl;
 	energy = 0.0;
 	energy += 0.5 * computeInertialEnergy();
 	energy += computeCurrentARAPEnergy();
@@ -396,7 +394,7 @@ void XPBD_IPC::newtonCDTet()
 	Matrix<double, 3, 4>* A;
 	std::array<double, 3>* sn_;
 	double* mass;
-
+	double* lambda_= lambda.data() + constraint_index_start[2];
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		mesh_struct_ = mesh_struct[i + cloth->size()];
 		size = tetrahedron->data()[i].mesh_struct.vertex_position.size();
@@ -411,9 +409,10 @@ void XPBD_IPC::newtonCDTet()
 		for (unsigned int j = 0; j < size; ++j) {
 			if (mass_inv[j] != 0.0) {
 				solveNewtonCD_tet(vertex_pos, stiffness, sub_time_step, A,
-					mesh_struct_->vertex_tet_index[j], indices, mass, volume, j, sn_);
+					mesh_struct_->vertex_tet_index[j], indices, mass, volume, j, sn_,lambda_);
 			}
 		}
+		lambda_ += tetrahedron->data()[i].mesh_struct.indices.size();
 	}
 
 }
@@ -454,10 +453,6 @@ void XPBD_IPC::solveNewtonCD_tet(std::array<double, 3>* vertex_position, double 
 
 	ColPivHouseholderQR <Matrix3d> linear(Hessian);
 	Vector3d result = linear.solve(grad);
-
-
-
-
 	SUM_(vertex_position[vertex_index], result);
 
 }
@@ -540,6 +535,38 @@ void XPBD_IPC::setPosPredict(int thread_No)
 		}
 	}
 }
+
+//SET_POS_PREDICT_SUB_TIME_STEP_FOR_CULLING
+//SET_POS_PREDICT_SUB_TIME_STEP
+void XPBD_IPC::setPosPredictSubTimeStep(int thread_No, bool predictLargerStep)
+{
+	std::array<double, 3>* vertex_pos;
+	std::array<double, 3>* vertex_pos_initial;
+	unsigned int vertex_end = 0;
+	double* mass_inv;
+	std::array<double, 3>* f_ext_;
+	std::array<double, 3>* velocity_;
+	double gravity__[3];
+	memcpy(gravity__, gravity, 24);
+	double delta_t = sub_time_step;
+	double delta_t_2 = delta_t * delta_t;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		vertex_pos = vertex_position[i];
+		vertex_pos_initial = initial_vertex_position[i];
+		vertex_end = vertex_index_begin_per_thread[i][thread_No + 1];
+		mass_inv = mesh_struct[i]->mass_inv.data();
+		f_ext_ = f_ext[i].data();
+		velocity_ = velocity[i].data();
+		for (unsigned int j = vertex_index_begin_per_thread[i][thread_No]; j < vertex_end; ++j) {
+			if (mass_inv[j] != 0) {
+				for (unsigned int k = 0; k < 3; ++k) {
+					vertex_pos[j][k] = vertex_pos_initial[j][k] + delta_t * velocity_[j][k] + delta_t_2 * (mass_inv[j] * f_ext_[j][k] + gravity__[k]);
+				}
+			}
+		}
+	}
+}
+
 
 void XPBD_IPC::resetExternalForce()
 {

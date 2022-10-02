@@ -19,6 +19,7 @@
 #include"basic/move_model.h"
 #include"mesh_struct/graph_color.h"
 #include"XPBD_large_system.h"
+#include"XPBD_IPC.h"
 
 //#include<windows.h>
 //#include"basic/drawEdge.h"
@@ -104,7 +105,7 @@ private:
 	void updateBuffer();
 	ProjectDynamic project_dynamic;
 	XPBD xpbd;
-
+	XPBD_IPC xpbd_ipc;
 	NewtonMethod newton_method;
 	SecondOrderLargeSystem second_order_xpbd_large;
 

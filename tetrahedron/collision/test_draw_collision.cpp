@@ -3,7 +3,7 @@
 
 void TestDrawCollision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider,
 	std::vector<Tetrahedron>* tetrahedron, Thread* thread, Floor* floor, double* tolerance_ratio,
-	Collision* pd_collision, Collision* pbd_collision, Collision* newton_collision, unsigned int simulation_method)
+	Collision* pd_collision, Collision* pbd_collision, Collision* newton_collision, Collision* xpbd_ipc_collision, unsigned int simulation_method)
 {
 	this->cloth = cloth;
 	this->collider = collider;
@@ -27,6 +27,9 @@ void TestDrawCollision::initial(std::vector<Cloth>* cloth, std::vector<Collider>
 		break;
 	case NEWTON_:
 		collision = newton_collision;
+		break;
+	case XPBD_IPC_:
+		collision = xpbd_ipc_collision;
 		break;
 	default:
 		collision = new Collision();
