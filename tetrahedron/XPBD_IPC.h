@@ -101,11 +101,10 @@ private:
 	std::vector<std::vector<unsigned int>>collision_constraint_index_start;
 
 	void initialClothBending();
-	void solveBendingConstraint();
-	void solveEdgeLengthConstraint();
-	void solveConstraint(bool need_detection);
+	//void solveBendingConstraint();
+	//void solveEdgeLengthConstraint();
+	//void solveConstraint(bool need_detection);
 	void setConstraintIndex();
-	void solveTetStrainConstraint();
 
 	void updatePosition();
 	double damping_coe;
@@ -151,33 +150,17 @@ private:
 	SecondOrderConstraint second_order_constraint;
 	void updateSn();
 
-	void solveSecondOrderConstraint(bool need_detection);
-	void solveTetStrainConstraintSecondOrder();
-	void solveEdgeLengthSecondOrder();
 	void computeCurrentEnergy();
-	double computeCurrentEnergyEdgeLength();
 	double computeInertialEnergy();
 	double computeCurrentARAPEnergy();
 
 	std::vector<std::vector<Vector3d>>residual;
 
-	void computeResidual();
-
-	void secondOrderSolveTetStrainConstraint();
-
-	void computeEdgeLenthResidual();
-	void computeARAPResidual();
 	ComputeEnergy compute_energy;
-
-	void secondOrderCoordinateDiscentTetStrain();
-
 	void newtonCDTet();
 	void newtonCD();
-
-
-	void testIterativeSolveNewtonCDSingleVertex(std::vector<std::array<double, 3>>& vertex_pos_record);
-	void testIterativeSolveXPBDCDSingleVertex(std::vector<std::array<double, 3>>& vertex_pos_record);
-
-	void testIfSame();
+	void solveNewtonCD_tet(std::array<double, 3>* vertex_position, double stiffness, double dt,
+		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, double* mass,
+		double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double* lambda);
 };
 
