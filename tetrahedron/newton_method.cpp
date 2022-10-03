@@ -43,7 +43,7 @@ void NewtonMethod::setForNewtonMethod(std::vector<Cloth>* cloth, std::vector<Tet
 	setHessian();
 
 	if (perform_collision) {
-		collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio, NEWTON_);
+		collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio, NEWTON_,false);
 	}
 }
 

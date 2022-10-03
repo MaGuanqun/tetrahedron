@@ -52,7 +52,7 @@ void SecondOrderLargeSystem::setForNewtonMethod(std::vector<Cloth>* cloth, std::
 	setHessian();
 
 	if (perform_collision) {
-		collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio, NEWTON_);
+		collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio, XPBD_SECOND_ORDER_LARGE_,false);
 	}
 }
 

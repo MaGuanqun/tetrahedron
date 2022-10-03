@@ -27,7 +27,7 @@ public:
 	double collision_time;
 
 	void initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread, Floor* floor,
-		double* tolerance_ratio, unsigned int use_method);
+		double* tolerance_ratio, unsigned int use_method, bool record_pair_by_element);
 	void initialDHatTolerance(double ave_edge_length);
 	void findAllTrianglePairs(int thread_No);
 	void globalCollision();
@@ -145,7 +145,7 @@ public:
 
 private:
 
-	
+	bool record_paiar_by_element;
 
 	//double* floor_lambda;
 
@@ -161,7 +161,10 @@ private:
 	unsigned int max_index_number_in_one_cell_collider;
 
 
-	unsigned int estimate_coeff_for_pair_num;
+	unsigned int estimate_coeff_for_vt_pair_num;
+	unsigned int estimate_coeff_for_vt_collider_pair_num;
+	unsigned int estimate_coeff_for_ee_pair_num;
+	unsigned int estimate_coeff_for_tv_pair_num;
 
 	unsigned int tetrahedron_begin_obj_index;
 	unsigned int total_obj_num;//except collider
@@ -428,8 +431,10 @@ private:
 
 	void totalCount();
 
+	void findVertexTriangleInNewSP(unsigned int obj_0,unsigned int vertex_index_on_surface, unsigned int vertex_index_0, unsigned int obj_1, unsigned int tri_index1);
 	void findVertexTriangleInBVH(unsigned int obj_0, unsigned int vertex_index_0, unsigned int obj_1, unsigned int tri_index1);
 	void findEdgeEdgeInBVH(unsigned int obj_0, unsigned int edge_index_0, unsigned int obj_1, unsigned int edge_index_1);
+	void findEdgeEdgeInNewSP(unsigned int obj_0, unsigned int edge_index_0, unsigned int obj_1, unsigned int edge_index_1);
 
 	void vertexTriangleCollisionTime(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index, unsigned int end_pair_index,
 		double& collision_time);
@@ -576,4 +581,5 @@ private:
 
 	unsigned int use_method;
 	bool CCD_compare=false;
+	void findInSP();
 };

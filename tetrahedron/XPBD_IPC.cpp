@@ -8,7 +8,7 @@ XPBD_IPC::XPBD_IPC()
 
 	damping_coe = 0.0;
 
-	perform_collision = false;
+	perform_collision = true;
 	max_iteration_number = 100;
 	outer_max_iteration_number = 4;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
@@ -59,7 +59,7 @@ void XPBD_IPC::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* t
 	//energy_per_thread.resize(thread->thread_num,0.0);
 	if (perform_collision) {
 		//collision.energy = energy_per_thread.data();
-		collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio, XPBD_);
+		collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio, XPBD_,true);
 		//collision.setParameter(&lambda_collision,lambda.data()+ constraint_index_start[3], collision_constraint_index_start.data(), damping_coe, sub_time_step);
 	}
 

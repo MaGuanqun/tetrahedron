@@ -1,7 +1,7 @@
 #include"collision.h"
 
 void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider,
-	std::vector<Tetrahedron>* tetrahedron, Thread* thread, Floor* floor,  double* tolerance_ratio, unsigned int use_method)
+	std::vector<Tetrahedron>* tetrahedron, Thread* thread, Floor* floor,  double* tolerance_ratio, unsigned int use_method, bool record_pair_by_element)
 {
 	//dcd.test();
 	this->use_method = use_method;
@@ -22,8 +22,13 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	thread_num = thread->thread_num;
 	max_index_number_in_one_cell = 1200;
 	max_index_number_in_one_cell_collider = 400;
-	estimate_coeff_for_pair_num = 800;
 
+	estimate_coeff_for_vt_pair_num = 400;
+	estimate_coeff_for_vt_collider_pair_num =400;
+	estimate_coeff_for_ee_pair_num =800;
+	estimate_coeff_for_tv_pair_num =300;
+
+	this->record_paiar_by_element = record_pair_by_element;
 	use_BVH = false;
 	//findPatchOfObjects();
 	if (use_BVH) {
@@ -428,7 +433,8 @@ void Collision::initialSpatialHashing(std::vector<Cloth>* cloth, std::vector<Col
 	double* tolerance_ratio)
 {
 	spatial_hashing.setInObject(cloth, collider, tetrahedron, thread, tolerance_ratio, 8, 
-		max_index_number_in_one_cell, max_index_number_in_one_cell_collider, estimate_coeff_for_pair_num);
+		max_index_number_in_one_cell, max_index_number_in_one_cell_collider, estimate_coeff_for_vt_pair_num, estimate_coeff_for_vt_collider_pair_num,
+		estimate_coeff_for_tv_pair_num, estimate_coeff_for_ee_pair_num, record_paiar_by_element);
 }
 
 
@@ -497,7 +503,7 @@ void Collision::globalCollision()
 //}
 //std::cout << "find triangle pair " << clock() - t1 << std::endl;
 
-////testCollision();
+//testCollision();
 
 //t1 = clock();
 //for (int i = 0; i < 100; ++i) {
@@ -814,6 +820,44 @@ void Collision::testRepeatability()
 
 }
 
+void Collision::findInSP()
+{
+	unsigned int* vertex_tri_pair = spatial_hashing.vertex_triangle_pair[0]+1;
+	unsigned int vertex_num;
+	unsigned int num;
+	unsigned int real_vertex_index;
+	unsigned int* record_triangle;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		if (i < cloth->size()) {
+			vertex_num = cloth->data()[i].mesh_struct.vertex_position.size();
+		}
+		else {
+			vertex_num = tetrahedron->data()[i-cloth->size()].mesh_struct.vertex_index_on_sureface.size();
+		}
+		for (unsigned int j = 0; j < vertex_num; ++j) {
+			num = spatial_hashing.vertex_triangle_pair_num_record[i][j];
+			record_triangle = spatial_hashing.vertex_triangle_pair_by_vertex[i] + j * estimate_coeff_for_vt_pair_num;
+			if (i < cloth->size()) {
+				real_vertex_index = j;
+			}
+			else {
+				real_vertex_index = tetrahedron->data()[i - cloth->size()].mesh_struct.vertex_index_on_sureface[j];
+			}
+
+			for (unsigned int k = 0; k < num; k += 2) {
+				if (vertex_tri_pair[0] == real_vertex_index && vertex_tri_pair[1] == i && vertex_tri_pair[2] == record_triangle[k + 1]
+					&& vertex_tri_pair[3] == record_triangle[k]) {
+					vertex_tri_pair += 4;
+				}
+				else {
+					std::cout << "vertex triangle not consistent error " << std::endl;
+				}
+			}
+
+		}
+	}
+	std::cout << "finished testing " << std::endl;
+}
 
 void Collision::testIfSPRight()
 {
@@ -821,17 +865,23 @@ void Collision::testIfSPRight()
 	for (unsigned int i = 0; i < thread_num; ++i) {
 		vertex_tri_pair = spatial_hashing.vertex_triangle_pair[i] + 1;
 		for (unsigned int j = 0; j < spatial_hashing.vertex_triangle_pair[i][0]; j += 4) {
-			findVertexTriangleInBVH(vertex_tri_pair[j + 1], vertex_tri_pair[j], vertex_tri_pair[j + 3], vertex_tri_pair[j + 2]);
+			if (vertex_tri_pair[j + 1] < cloth->size()) {
+				findVertexTriangleInNewSP(vertex_tri_pair[j + 1], vertex_tri_pair[j], vertex_tri_pair[j], vertex_tri_pair[j + 3], vertex_tri_pair[j + 2]);
+			}
+			else {
+				findVertexTriangleInNewSP(vertex_tri_pair[j + 1], tetrahedron->data()[vertex_tri_pair[j + 1]-cloth->size()].mesh_struct.vertex_surface_index[vertex_tri_pair[j]], vertex_tri_pair[j], vertex_tri_pair[j + 3], vertex_tri_pair[j + 2]);
+			}
 		}
 	}
 	unsigned int* edge_edge_pair;
 	for (unsigned int i = 0; i < thread_num; ++i) {
 		edge_edge_pair = spatial_hashing.edge_edge_pair[i] + 1;
 		for (unsigned int j = 0; j < spatial_hashing.edge_edge_pair[i][0]; j += 4) {
-			findEdgeEdgeInBVH(edge_edge_pair[j + 1], edge_edge_pair[j], edge_edge_pair[j + 3], edge_edge_pair[j + 2]);
+			findEdgeEdgeInNewSP(edge_edge_pair[j + 1], edge_edge_pair[j], edge_edge_pair[j + 3], edge_edge_pair[j + 2]);
+			//findEdgeEdgeInBVH(edge_edge_pair[j + 1], edge_edge_pair[j], edge_edge_pair[j + 3], edge_edge_pair[j + 2]);
 		}
 	}
-	
+	findInSP();
 
 	//std::vector<unsigned int>* tri_tri_pair = spatial_hashing.triangle_pair;
 	//std::vector<unsigned int>* tri_tri_pair_collider = spatial_hashing.triangle_pair_with_collider;
@@ -873,8 +923,8 @@ void Collision::testIfSPRight()
 	//for (unsigned int i = 0; i < cloth->data()[0].triangle_neighbor_obj_triangle[0][0].size(); ++i) {
 	//	std::cout << cloth->data()[0].triangle_neighbor_obj_triangle[0][0][i]<<" " << std::endl;
 	//}
-	//std::cout <<(int) AABB::AABB_intersection(obj_tri_aabb[0][0].data(), obj_tri_aabb[0][6].data()) << std::endl;
-	std::cout << "test is right" << std::endl;
+	////std::cout <<(int) AABB::AABB_intersection(obj_tri_aabb[0][0].data(), obj_tri_aabb[0][6].data()) << std::endl;
+	//std::cout << "test is right" << std::endl;
 
 
 }
@@ -911,6 +961,8 @@ void Collision::findInSPCollider(std::vector<std::vector<std::vector<unsigned in
 	//	}
 	//}
 }
+
+
 
 void Collision::findInSP(std::vector<std::vector<std::vector<unsigned int>>>* tri_obj, unsigned int obj_index)
 {
@@ -949,6 +1001,24 @@ void Collision::findInSP(std::vector<std::vector<std::vector<unsigned int>>>* tr
 	//}
 }
 
+void Collision::findEdgeEdgeInNewSP(unsigned int obj_0, unsigned int edge_index_0, unsigned int obj_1, unsigned int edge_index_1)
+{
+	unsigned int* neighbor;
+	bool find = false;
+
+	unsigned int num = spatial_hashing.edge_edge_pair_num_record[obj_0][edge_index_0];
+	neighbor = spatial_hashing.edge_edge_pair_by_edge[obj_0] + edge_index_0 * estimate_coeff_for_ee_pair_num;
+
+	for (unsigned int i = 0; i < num; i += 2) {
+		if (neighbor[i] == obj_1 && neighbor[i + 1] == edge_index_1) {
+			find = true;
+		}
+	}
+	if (!find) {
+		std::cout << "does not find edge edge pair: " << obj_0 << " " << edge_index_0 << " " << obj_1 << " " << edge_index_1 << std::endl;
+	}
+}
+
 void Collision::findEdgeEdgeInBVH(unsigned int obj_0, unsigned int edge_index_0, unsigned int obj_1, unsigned int edge_index_1)
 {
 	std::vector<int>* neighbor;
@@ -966,6 +1036,24 @@ void Collision::findEdgeEdgeInBVH(unsigned int obj_0, unsigned int edge_index_0,
 	}
 	if (!find) {
 		std::cout << "does not find edge edge pair: " << obj_0 << " " << edge_index_0 << " " << obj_1 << " " << edge_index_1 << std::endl;
+	}
+}
+
+
+void Collision::findVertexTriangleInNewSP(unsigned int obj_0, unsigned int vertex_index_on_surface, unsigned int vertex_index_0, unsigned int obj_1, unsigned int tri_index1)
+{
+	unsigned int* neighbor;
+	bool find = false;
+	unsigned int num = spatial_hashing.vertex_triangle_pair_num_record[obj_0][vertex_index_on_surface];
+	neighbor = spatial_hashing.vertex_triangle_pair_by_vertex[obj_0] + vertex_index_on_surface * estimate_coeff_for_vt_pair_num;
+	
+	for (unsigned int i = 0; i < num; i+=2) {
+		if (neighbor[i]== obj_1 &&  neighbor[i+1] == tri_index1) {
+			find = true;
+		}
+	}
+	if (!find) {
+		std::cout << "does not find vertex triangle pair: " << obj_0 << " " << vertex_index_0 << " " << obj_1 << " " << tri_index1 << std::endl;
 	}
 }
 
@@ -1122,16 +1210,16 @@ void Collision::collisionCulling()
 		//spatial_hashing.edge_edge_pair[j][0] = 0;
 //		spatial_hashing.vertex_obj_triangle_collider_pair[j][0] = 0;
 	//}
-
-	setPairIndexEveryThread();
-
-	if (use_BVH) {
-		buildBVH();
-		thread->assignTask(this, FIND_TRIANGLE_PAIRS);
-		thread->assignTask(this, FIND_PRIMITIVE_AROUND);
-		testIfSPRight();
-		testRepeatability();
+	if (!record_paiar_by_element) {
+		setPairIndexEveryThread();
 	}
+	//if (use_BVH) {
+	//	buildBVH();
+	//	thread->assignTask(this, FIND_TRIANGLE_PAIRS);
+	//	thread->assignTask(this, FIND_PRIMITIVE_AROUND);
+		//testIfSPRight();
+	//	testRepeatability();
+	//}
 	
 
 
@@ -4216,16 +4304,14 @@ void Collision::collisionTime(int thread_No)
 
 void Collision::testCollision()
 {
-	int k = 0;
-	for (int i = 0; i < (*cloth)[0].triangle_neighbor_obj_triangle.size(); ++i) {
-		//(*cloth)[0].triangle_neighbor_cloth_triangle[i][0].push_back(i);
-		k += (*cloth)[0].triangle_neighbor_obj_triangle[i][0].size();
-	}
+	//int k = 0;
+	//for (int i = 0; i < (*cloth)[0].triangle_neighbor_obj_triangle.size(); ++i) {
+	//	//(*cloth)[0].triangle_neighbor_cloth_triangle[i][0].push_back(i);
+	//	k += (*cloth)[0].triangle_neighbor_obj_triangle[i][0].size();
+	//}
 	//std::cout << k + (*cloth)[0].triangle_neighbor_cloth_triangle.size()<<std::endl;
 
 	//for (int i = 0; i < (*cloth)[0].mesh_struct.vertices.size(); ++i) {
-	//int i = 0;
-
 	//for (int j = 0; j < (*cloth)[0].vertex_neighbor_collider_triangle[i][0].size(); ++j) {
 	//	//std::cout << (*cloth)[0].vertex_AABB[i].min[0] << " " << (*cloth)[0].vertex_AABB[i].min[1] << " " << (*cloth)[0].vertex_AABB[i].min[2] << " "
 	//		<< (*cloth)[0].vertex_AABB[i].max[0] << " " << (*cloth)[0].vertex_AABB[i].max[1] << " " << (*cloth)[0].vertex_AABB[i].max[2] << std::endl;
@@ -5807,20 +5893,20 @@ void Collision::initialPair()
 		vertex_vertex_pair_collider = new unsigned int* [thread_num];
 
 		for (unsigned int i = 0; i < thread_num; ++i) {
-			vertex_edge_pair[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 2];// 
-			memset(vertex_edge_pair[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 2));
-			vertex_vertex_pair[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 8];// 
-			memset(vertex_vertex_pair[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 8));		
+			vertex_edge_pair[i] = new unsigned int[estimate_coeff_for_vt_pair_num * total_triangle_num];// 
+			memset(vertex_edge_pair[i], 0, 4 * (estimate_coeff_for_vt_pair_num * total_triangle_num));
+			vertex_vertex_pair[i] = new unsigned int[estimate_coeff_for_vt_pair_num * total_triangle_num / 4];// 
+			memset(vertex_vertex_pair[i], 0, 4 * (estimate_coeff_for_vt_pair_num * total_triangle_num / 4));
 
 			if (has_collider) {
-				vertex_obj_edge_collider_pair[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 2];
-				memset(vertex_obj_edge_collider_pair[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 2));
+				vertex_obj_edge_collider_pair[i] = new unsigned int[estimate_coeff_for_vt_pair_num * total_triangle_num];
+				memset(vertex_obj_edge_collider_pair[i], 0, 4 * (estimate_coeff_for_vt_pair_num * total_triangle_num));
 
-				vertex_collider_edge_obj_pair[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 2];
-				memset(vertex_collider_edge_obj_pair[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 2));
+				vertex_collider_edge_obj_pair[i] = new unsigned int[estimate_coeff_for_vt_pair_num * total_triangle_num];
+				memset(vertex_collider_edge_obj_pair[i], 0, 4 * (estimate_coeff_for_vt_pair_num * total_triangle_num));
 
-				vertex_vertex_pair_collider[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 8];
-				memset(vertex_vertex_pair_collider[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 8));
+				vertex_vertex_pair_collider[i] = new unsigned int[estimate_coeff_for_vt_pair_num * total_triangle_num / 4];
+				memset(vertex_vertex_pair_collider[i], 0, 4 * (estimate_coeff_for_vt_pair_num * total_triangle_num / 4));
 
 				
 			}
@@ -5833,9 +5919,9 @@ void Collision::initialPair()
 	}
 	unsigned int pair_num = 0;
 	for (unsigned int i = 0; i < thread_num; ++i) {
-		pair_num += estimate_coeff_for_pair_num * total_triangle_num / 4;
+		pair_num += estimate_coeff_for_vt_pair_num * total_triangle_num / 2;
 		if (has_collider) {
-			pair_num += estimate_coeff_for_pair_num * total_triangle_num / 8;
+			pair_num += estimate_coeff_for_vt_pair_num * total_triangle_num / 4;
 		}
 	}
 	//target_position_and_stiffness.resize(thread_num);

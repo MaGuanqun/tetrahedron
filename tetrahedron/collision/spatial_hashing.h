@@ -339,6 +339,7 @@ private:
 
 	void findAllTriangleVertexPairByTriangle();
 
+	//initial triangle_vertex_pair_num_record
 	void initialPairByElement();
 
 };
