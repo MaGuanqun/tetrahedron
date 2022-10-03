@@ -285,8 +285,9 @@ void XPBD_IPC::initialCollisionConstriantNum()
 
 void XPBD_IPC::XPBD_IPCSolve()
 {
-	thread->assignTask(this, SET_POS_PREDICT);
+	thread->assignTask(this, SET_POS_PREDICT_);
 	updateSn();
+	firstNewtonCD();
 
 	if (perform_collision) {
 		collision.collisionCulling();
@@ -294,26 +295,32 @@ void XPBD_IPC::XPBD_IPCSolve()
 	iteration_number = 0;
 	computeCurrentEnergy();
 
-	//last_pos = mesh_struct[0]->vertex_position;
-	for (unsigned int sub_step = 0; sub_step < sub_step_num; ++sub_step) {
-		memset(lambda.data(), 0, 8 * lambda.size());
-		inner_iteration_number = 0;
-		while (!convergeCondition(inner_iteration_number)) {
-			recordVertexPosition();
-			if (perform_collision) {
-				updateNormal();
-			}
-			newtonCD();
-			inner_iteration_number++;
-			computeCurrentEnergy();
+	memset(lambda.data(), 0, 8 * lambda.size());
+	inner_iteration_number = 0;
+	while (!convergeCondition(inner_iteration_number)) {
+
+		collision.globalCollisionTime();
+		thread->assignTask(this, COLLISION_FREE_POSITION);
+
+		recordVertexPosition();
+		if (perform_collision) {
+			updateNormal();
 		}
-		iteration_number += inner_iteration_number;
-		thread->assignTask(this, XPBD_VELOCITY);
-		updatePosition();
-		updateRenderNormal();
+		newtonCD();
+		inner_iteration_number++;
+		computeCurrentEnergy();
 	}
+	iteration_number += inner_iteration_number;
+	thread->assignTask(this, XPBD_IPC_VELOCITY);
+	updatePosition();
+	updateRenderNormal();
+	
 	updateRenderVertexNormal();
 }
+
+
+
+
 
 bool XPBD_IPC::convergeCondition(unsigned int iteration_num)
 {
@@ -376,7 +383,7 @@ void XPBD_IPC::computeCurrentEnergy()
 
 }
 
-void XPBD_IPC::newtonCD()
+void XPBD_IPC::firstNewtonCD()
 {
 	previous_energy = energy;
 	newtonCDTet();
@@ -458,7 +465,7 @@ void XPBD_IPC::solveNewtonCD_tet(std::array<double, 3>* vertex_position, double 
 }
 
 
-//XPBD_VELOCITY
+//XPBD_IPC_VELOCITY
 void XPBD_IPC::computeVelocity(int thread_No)
 {
 	double damp_coe = velocity_damp;
@@ -507,7 +514,7 @@ double XPBD_IPC::computeInertialEnergy()
 	}
 	return energy / (sub_time_step * sub_time_step);
 }
-//SET_POS_PREDICT
+//SET_POS_PREDICT_
 void XPBD_IPC::setPosPredict(int thread_No)
 {
 	std::array<double, 3>* vertex_pos;
@@ -530,37 +537,6 @@ void XPBD_IPC::setPosPredict(int thread_No)
 			if (mass_inv[j] != 0) {
 				for (unsigned int k = 0; k < 3; ++k) {
 					vertex_pos[j][k] += delta_t * velocity_[j][k] + delta_t_2 * (mass_inv[j] * f_ext_[j][k] + gravity__[k]);
-				}
-			}
-		}
-	}
-}
-
-//SET_POS_PREDICT_SUB_TIME_STEP_FOR_CULLING
-//SET_POS_PREDICT_SUB_TIME_STEP
-void XPBD_IPC::setPosPredictSubTimeStep(int thread_No, bool predictLargerStep)
-{
-	std::array<double, 3>* vertex_pos;
-	std::array<double, 3>* vertex_pos_initial;
-	unsigned int vertex_end = 0;
-	double* mass_inv;
-	std::array<double, 3>* f_ext_;
-	std::array<double, 3>* velocity_;
-	double gravity__[3];
-	memcpy(gravity__, gravity, 24);
-	double delta_t = sub_time_step;
-	double delta_t_2 = delta_t * delta_t;
-	for (unsigned int i = 0; i < total_obj_num; ++i) {
-		vertex_pos = vertex_position[i];
-		vertex_pos_initial = initial_vertex_position[i];
-		vertex_end = vertex_index_begin_per_thread[i][thread_No + 1];
-		mass_inv = mesh_struct[i]->mass_inv.data();
-		f_ext_ = f_ext[i].data();
-		velocity_ = velocity[i].data();
-		for (unsigned int j = vertex_index_begin_per_thread[i][thread_No]; j < vertex_end; ++j) {
-			if (mass_inv[j] != 0) {
-				for (unsigned int k = 0; k < 3; ++k) {
-					vertex_pos[j][k] = vertex_pos_initial[j][k] + delta_t * velocity_[j][k] + delta_t_2 * (mass_inv[j] * f_ext_[j][k] + gravity__[k]);
 				}
 			}
 		}
@@ -675,5 +651,27 @@ double XPBD_IPC::computeCurrentARAPEnergy()
 
 	}
 	return energy;
+}
+
+//COLLISION_FREE_POSITION_
+void XPBD_IPC::computeCollisionFreePosition(int thread_No)
+{
+	unsigned int index_end;
+
+	double collision_time = collision.collision_time;
+	std::array<double, 3>* q_pre;
+	std::array<double, 3>* q_end;
+
+	for (unsigned int i = 0; i <total_obj_num; ++i) {
+		index_end = vertex_index_begin_per_thread[i][thread_No + 1];
+		q_end = vertex_position[i];
+		q_pre = initial_vertex_position[i];
+		for (unsigned int j = vertex_index_begin_per_thread[i][thread_No]; j < index_end; ++j) {
+			q_pre[j][0] += collision_time * (q_end[j][0] - q_pre[j][0]);
+			q_pre[j][1] += collision_time * (q_end[j][1] - q_pre[j][1]);
+			q_pre[j][2] += collision_time * (q_end[j][2] - q_pre[j][2]);
+			memcpy(q_end[j].data(), q_pre[j].data(), 24);
+		}
+	}
 }
 

@@ -742,21 +742,18 @@ job Thread::create_task(XPBD* func, int thread_id, XPBDFunc function_type)
     return k;
 }
 
-job Thread::create_task(XPBD_IPC* func, int thread_id, XPBDFunc function_type)
+job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_type)
 {
     job k;
     switch (function_type)
     {
-    case SET_POS_PREDICT:
+    case SET_POS_PREDICT_:
         k = job([func, thread_id]() {func->setPosPredict(thread_id); });
         break;
-    case SET_POS_PREDICT_SUB_TIME_STEP:
-        k = job([func, thread_id]() {func->setPosPredictSubTimeStep(thread_id, false); });
+    case COLLISION_FREE_POSITION_:
+        k = job([func, thread_id]() {func->computeCollisionFreePosition(thread_id); });
         break;
-    case SET_POS_PREDICT_SUB_TIME_STEP_FOR_CULLING:
-        k = job([func, thread_id]() {func->setPosPredictSubTimeStep(thread_id, true); });
-        break;
-    case XPBD_VELOCITY:
+    case XPBD_IPC_VELOCITY:
         k = job([func, thread_id]() {func->computeVelocity(thread_id); });
         break;
     }

@@ -145,7 +145,7 @@ public:
 
 private:
 
-	bool record_paiar_by_element;
+	bool record_pair_by_element;
 
 	//double* floor_lambda;
 
@@ -372,6 +372,7 @@ private:
 
 
 	std::vector<unsigned int*> vertex_index_start_per_thread;
+	std::vector<unsigned int*> edge_index_start_per_thread;
 
 
 	std::vector<double*>mass;
@@ -582,4 +583,13 @@ private:
 	unsigned int use_method;
 	bool CCD_compare=false;
 	void findInSP();
+
+	void VTCollisionTimeOneVertex(double* initial_pos, double* current_pos, double& collision_time, unsigned int num, 
+		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex);
+	void EECollisionTimeOneEdge(double* initial_pos_a0, double* initial_pos_a1, double* current_pos_a0, double* current_pos_a1, 
+		double& collision_time,
+		unsigned int edge_index, unsigned int edge_obj_No, unsigned int num, unsigned int* edge_indices);
+	void collisionTimeByPair(int thread_No);
+	void collisionTimeByElement(int thread_No);
+
 };

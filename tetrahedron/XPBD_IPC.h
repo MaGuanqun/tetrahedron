@@ -31,7 +31,6 @@ public:
 		Thread* thread, double* tolerance_ratio);
 	size_t* time_stamp;
 	void setPosPredict(int thread_No);
-	void setPosPredictSubTimeStep(int thread_No, bool predictLargerStep);
 	void computeVelocity(int thread_No);
 	unsigned int iteration_number;
 	unsigned int inner_iteration_number;
@@ -59,7 +58,7 @@ public:
 	unsigned int* sub_step_per_detection;
 
 	bool* has_force;
-
+	void computeCollisionFreePosition(int thread_No);
 private:
 	void coordinateDescent();
 
@@ -158,7 +157,7 @@ private:
 
 	ComputeEnergy compute_energy;
 	void newtonCDTet();
-	void newtonCD();
+	void firstNewtonCD();
 	void solveNewtonCD_tet(std::array<double, 3>* vertex_position, double stiffness, double dt,
 		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, double* mass,
 		double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double* lambda);

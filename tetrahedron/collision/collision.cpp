@@ -28,7 +28,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	estimate_coeff_for_ee_pair_num =800;
 	estimate_coeff_for_tv_pair_num =300;
 
-	this->record_paiar_by_element = record_pair_by_element;
+	this->record_pair_by_element = record_pair_by_element;
 	use_BVH = false;
 	//findPatchOfObjects();
 	if (use_BVH) {
@@ -239,6 +239,7 @@ void Collision::reorganzieDataOfObjects()
 	triangle_normal_magnitude_reciprocal.resize(total_obj_num);
 
 	vertex_index_start_per_thread.resize(total_obj_num);
+	edge_index_start_per_thread.resize(total_obj_num);
 
 	damp_collision.resize(total_obj_num);
 
@@ -265,6 +266,7 @@ void Collision::reorganzieDataOfObjects()
 		mass_inv[i] = cloth->data()[i].mesh_struct.mass_inv.data();
 		triangle_normal_magnitude_reciprocal[i] = cloth->data()[i].mesh_struct.triangle_normal_magnitude_reciprocal.data();
 		vertex_index_start_per_thread[i] = cloth->data()[i].mesh_struct.vertex_index_begin_per_thread.data();
+		edge_index_start_per_thread[i] = cloth->data()[i].mesh_struct.edge_index_begin_per_thread.data();
 		damp_collision[i] = cloth->data()[i].damp_collision_stiffness;
 	}
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
@@ -291,7 +293,8 @@ void Collision::reorganzieDataOfObjects()
 		mass[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.mass.data();
 		mass_inv[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.mass_inv.data();
 		triangle_normal_magnitude_reciprocal[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.triangle_normal_magnitude_reciprocal.data();
-		vertex_index_start_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_index_begin_per_thread.data();
+		vertex_index_start_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_index_on_surface_begin_per_thread.data();
+		edge_index_start_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.edge_index_begin_per_thread.data();
 		damp_collision[i + cloth->size()] = tetrahedron->data()[i].damp_collision_stiffness;
 	}
 
@@ -434,7 +437,7 @@ void Collision::initialSpatialHashing(std::vector<Cloth>* cloth, std::vector<Col
 {
 	spatial_hashing.setInObject(cloth, collider, tetrahedron, thread, tolerance_ratio, 8, 
 		max_index_number_in_one_cell, max_index_number_in_one_cell_collider, estimate_coeff_for_vt_pair_num, estimate_coeff_for_vt_collider_pair_num,
-		estimate_coeff_for_tv_pair_num, estimate_coeff_for_ee_pair_num, record_paiar_by_element);
+		estimate_coeff_for_tv_pair_num, estimate_coeff_for_ee_pair_num, record_pair_by_element);
 }
 
 
@@ -1210,7 +1213,7 @@ void Collision::collisionCulling()
 		//spatial_hashing.edge_edge_pair[j][0] = 0;
 //		spatial_hashing.vertex_obj_triangle_collider_pair[j][0] = 0;
 	//}
-	if (!record_paiar_by_element) {
+	if (!record_pair_by_element) {
 		setPairIndexEveryThread();
 	}
 	//if (use_BVH) {
@@ -1577,57 +1580,46 @@ void Collision::setPairIndexEveryThread(unsigned int** pair, std::vector<unsigne
 
 void Collision::globalCollisionTime()
 {
-	for (int i = 0; i < cloth->size(); ++i) {
-		thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL);
-	}
-	for (int i = 0; i < tetrahedron->size(); ++i) {
-		thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL);
-	}
-
-	time_t t, t1;
-
-	updateEigenPosition();
-	
-	t = clock();
-	for (unsigned int j = 0; j < 10; ++j) {
-		for (unsigned int i = 0; i < thread_num; ++i) {		
-			collisionTime(i);
-		}		
-	}
-	t1 = clock();
-	std::cout << "ccd collision detection time single thread " << t1 - t << std::endl;
-
-
-	t = clock();
-	for (unsigned int j = 0; j < 10; ++j) {
-		for (unsigned int i = 0; i < thread_num; ++i) {
-			collisionTimeCompare(i);
-		}
-	}
-	t1 = clock();
-	std::cout << "ccd collision detection time IPC ori single thread " << t1 - t << std::endl;
-
-
-
-	t = clock();
-	for (unsigned int j = 0; j < 10; ++j) {
+	//for (int i = 0; i < cloth->size(); ++i) {
+	//	thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL);
+	//}
+	//for (int i = 0; i < tetrahedron->size(); ++i) {
+	//	thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL);
+	//}
+	//time_t t, t1;
+	//updateEigenPosition();	
+	//t = clock();
+	//for (unsigned int j = 0; j < 10; ++j) {
+	//	for (unsigned int i = 0; i < thread_num; ++i) {		
+	//		collisionTime(i);
+	//	}		
+	//}
+	//t1 = clock();
+	//std::cout << "ccd collision detection time single thread " << t1 - t << std::endl;
+	//t = clock();
+	//for (unsigned int j = 0; j < 10; ++j) {
+	//	for (unsigned int i = 0; i < thread_num; ++i) {
+	//		collisionTimeCompare(i);
+	//	}
+	//}
+	//t1 = clock();
+	//std::cout << "ccd collision detection time IPC ori single thread " << t1 - t << std::endl;
+	//t = clock();
+	//for (unsigned int j = 0; j < 10; ++j) {
 		thread->assignTask(this, GLOBAL_COLLISION_TIME);
-	}
-	t1 = clock();
-
-	std::cout << "ccd collision detection time multi thread " << t1 - t << std::endl;
-
+	//}
+	//t1 = clock();
+	//std::cout << "ccd collision detection time multi thread " << t1 - t << std::endl;
 	collision_time = collision_time_thread[0];
 	for (int i = 1; i < thread_num; ++i) {
 		if (collision_time > collision_time_thread[i]) {
 			collision_time = collision_time_thread[i];
 		}
 	}
-	//collision_time *= 0.9;
 	if (collision_time > 1.0) {
 		collision_time = 1.0;
 	}
-
+	//collision_time *= 0.9;
 	std::cout <<"collision time "<< collision_time << std::endl;
 }
 
@@ -3768,6 +3760,57 @@ void Collision::vertexTriangleCollisionTimeCompare(int thread_No, unsigned int p
 	}
 }
 
+void Collision::EECollisionTimeOneEdge(double* initial_pos_a0, double* initial_pos_a1, double* current_pos_a0, double* current_pos_a1, double& collision_time, 
+	unsigned int edge_index, unsigned int edge_obj_No,  unsigned int num, unsigned int* edge_indices)
+{
+	double time;
+	unsigned int* indices;
+
+	for (unsigned int i = 0; i < num; i += 2) {
+		if (edge_obj_No < edge_indices[i]) {
+			indices = edge_vertices[edge_indices[i]] + (edge_indices[i + 1] << 1);
+			time = CCD::edgeEdgeCcd(initial_pos_a0, initial_pos_a1, vertex_for_render[edge_indices[i]][*indices].data(),
+				vertex_for_render[edge_indices[i]][*(indices + 1)].data(),
+				current_pos_a0, current_pos_a1, vertex_position[edge_indices[i]][*indices].data(),
+				vertex_position[edge_indices[i]][*(indices + 1)].data(), eta, tolerance);
+			if (time < collision_time) {
+				collision_time = time;
+			}
+		}
+		else if (edge_obj_No == edge_indices[i] && edge_index < edge_indices[i + 1]) {
+			indices = edge_vertices[edge_indices[i]] + (edge_indices[i + 1] << 1);
+			time = CCD::edgeEdgeCcd(initial_pos_a0, initial_pos_a1, vertex_for_render[edge_indices[i]][*indices].data(),
+				vertex_for_render[edge_indices[i]][*(indices + 1)].data(),
+				current_pos_a0, current_pos_a1, vertex_position[edge_indices[i]][*indices].data(),
+				vertex_position[edge_indices[i]][*(indices + 1)].data(), eta, tolerance);
+			if (time < collision_time) {
+				collision_time = time;
+			}
+		}
+	}
+}
+
+void Collision::VTCollisionTimeOneVertex(double* initial_pos, double* current_pos, double& collision_time, unsigned int num,
+	unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex)
+{
+	double time;
+	int* indices;
+	for (unsigned int i = 0; i < num; i += 2) {
+		indices = triangle_indices[triangle_index[i]][triangle_index[i+1]].data();
+		time = CCD::pointTriangleCcd(initial_pos,
+			initial_vertex[triangle_index[i]][indices[0]].data(),
+			initial_vertex[triangle_index[i]][indices[1]].data(),
+			initial_vertex[triangle_index[i]][indices[2]].data(),
+			current_pos,
+			current_vertex[triangle_index[i]][indices[0]].data(),
+			current_vertex[triangle_index[i]][indices[1]].data(),
+			current_vertex[triangle_index[i]][indices[2]].data(), eta, tolerance);
+		if (time < collision_time) {
+			collision_time = time;
+		}
+	}
+}
+
 
 void Collision::vertexTriangleCollisionTime(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index, 
 	unsigned int end_pair_index, double& collision_time)
@@ -3778,13 +3821,13 @@ void Collision::vertexTriangleCollisionTime(int thread_No, unsigned int pair_thr
 	int* indices;
 	for (unsigned int i = start_pair_index; i < end_pair_index; i += 4) {
 		indices = triangle_indices[pair[i + 3]][pair[i + 2]].data();
-		if (approx_CCD.vertexTriangleCCD(time, vertex_for_render[pair[i + 1]][pair[i]].data(), vertex_position[pair[i + 1]][pair[i]].data(),
-			vertex_for_render[pair[i + 3]][indices[0]].data(), vertex_position[pair[i + 3]][indices[0]].data(), vertex_for_render[pair[i + 3]][indices[1]].data(),
-			vertex_position[pair[i + 3]][indices[1]].data(), vertex_for_render[pair[i + 3]][indices[2]].data(), vertex_position[pair[i + 3]][indices[2]].data(), conservative_rescaling_)) {
-			if (time < collision_time) {
-				collision_time = time;
-			}
-		}
+		//if (approx_CCD.vertexTriangleCCD(time, vertex_for_render[pair[i + 1]][pair[i]].data(), vertex_position[pair[i + 1]][pair[i]].data(),
+		//	vertex_for_render[pair[i + 3]][indices[0]].data(), vertex_position[pair[i + 3]][indices[0]].data(), vertex_for_render[pair[i + 3]][indices[1]].data(),
+		//	vertex_position[pair[i + 3]][indices[1]].data(), vertex_for_render[pair[i + 3]][indices[2]].data(), vertex_position[pair[i + 3]][indices[2]].data(), conservative_rescaling_)) {
+		//	if (time < collision_time) {
+		//		collision_time = time;
+		//	}
+		//}
 		//if (approx_CCD.pointTriangleCollisionTime(time, vertex_for_render[pair[i + 1]][pair[i]].data(), vertex_position[pair[i + 1]][pair[i]].data(),
 		//	vertex_for_render[pair[i + 3]][indices[0]].data(), vertex_position[pair[i + 3]][indices[0]].data(), vertex_for_render[pair[i + 3]][indices[1]].data(),
 		//	vertex_position[pair[i + 3]][indices[1]].data(), vertex_for_render[pair[i + 3]][indices[2]].data(), vertex_position[pair[i + 3]][indices[2]].data(),
@@ -3794,15 +3837,17 @@ void Collision::vertexTriangleCollisionTime(int thread_No, unsigned int pair_thr
 		//		collision_time = time;
 		//	}
 		//}
-		//time = CCD::pointTriangleCcd(vertex_for_render[pair[i + 1]][pair[i]].data(),
-		//	vertex_for_render[pair[i + 3]][indices[0]].data(),
-		//	vertex_for_render[pair[i + 3]][indices[1]].data(),
-		//	vertex_for_render[pair[i + 3]][indices[2]].data(),
-		//	vertex_position[pair[i + 1]][pair[i]].data(),
-		//	vertex_position[pair[i + 3]][indices[0]].data(),
-		//	vertex_position[pair[i + 3]][indices[1]].data(),
-		//	vertex_position[pair[i + 3]][indices[2]].data(), eta, tolerance);
-		
+		time = CCD::pointTriangleCcd(vertex_for_render[pair[i + 1]][pair[i]].data(),
+			vertex_for_render[pair[i + 3]][indices[0]].data(),
+			vertex_for_render[pair[i + 3]][indices[1]].data(),
+			vertex_for_render[pair[i + 3]][indices[2]].data(),
+			vertex_position[pair[i + 1]][pair[i]].data(),
+			vertex_position[pair[i + 3]][indices[0]].data(),
+			vertex_position[pair[i + 3]][indices[1]].data(),
+			vertex_position[pair[i + 3]][indices[2]].data(), eta, tolerance);
+		if (time < collision_time) {
+			collision_time = time;
+		}		
 	}
 }
 
@@ -3843,26 +3888,26 @@ void Collision::edgeEdgeCollisionTime(int thread_No, unsigned int pair_thread_No
 	for (unsigned int i = start_pair_index; i < end_pair_index; i += 4) {
 		indices_0 = edge_vertices[pair[i + 1]] + (pair[i]<<1);
 		indices_1 = edge_vertices[pair[i + 3]] + (pair[i + 2]<<1);
-		if (approx_CCD.edgeEdgeCCD(time, vertex_position[pair[i + 1]][indices_0[0]].data(),
-			vertex_position[pair[i + 1]][indices_0[1]].data(), vertex_for_render[pair[i + 1]][indices_0[0]].data(),
-			vertex_for_render[pair[i + 1]][indices_0[1]].data(), vertex_position[pair[i + 3]][indices_1[0]].data(),
-			vertex_position[pair[i + 3]][indices_1[1]].data(), vertex_for_render[pair[i + 3]][indices_1[0]].data(),
-			vertex_for_render[pair[i + 3]][indices_1[1]].data(), conservative_rescaling_)) {
-			if (time < collision_time) {
-				collision_time = time;
-			}
-		}
-		//time = CCD::edgeEdgeCcd(vertex_for_render[pair[i + 1]][indices_0[0]].data(),
-		//	vertex_for_render[pair[i + 1]][indices_0[1]].data(),
-		//	vertex_for_render[pair[i + 3]][indices_1[0]].data(),
-		//	vertex_for_render[pair[i + 3]][indices_1[1]].data(),
-		//	vertex_position[pair[i + 1]][indices_0[0]].data(),
-		//	vertex_position[pair[i + 1]][indices_0[1]].data(),
-		//	vertex_position[pair[i + 3]][indices_1[0]].data(),
-		//	vertex_position[pair[i + 3]][indices_1[1]].data(), eta, tolerance);
-		//if (time < collision_time) {
-		//	collision_time = time;
+		//if (approx_CCD.edgeEdgeCCD(time, vertex_position[pair[i + 1]][indices_0[0]].data(),
+		//	vertex_position[pair[i + 1]][indices_0[1]].data(), vertex_for_render[pair[i + 1]][indices_0[0]].data(),
+		//	vertex_for_render[pair[i + 1]][indices_0[1]].data(), vertex_position[pair[i + 3]][indices_1[0]].data(),
+		//	vertex_position[pair[i + 3]][indices_1[1]].data(), vertex_for_render[pair[i + 3]][indices_1[0]].data(),
+		//	vertex_for_render[pair[i + 3]][indices_1[1]].data(), conservative_rescaling_)) {
+		//	if (time < collision_time) {
+		//		collision_time = time;
+		//	}
 		//}
+		time = CCD::edgeEdgeCcd(vertex_for_render[pair[i + 1]][indices_0[0]].data(),
+			vertex_for_render[pair[i + 1]][indices_0[1]].data(),
+			vertex_for_render[pair[i + 3]][indices_1[0]].data(),
+			vertex_for_render[pair[i + 3]][indices_1[1]].data(),
+			vertex_position[pair[i + 1]][indices_0[0]].data(),
+			vertex_position[pair[i + 1]][indices_0[1]].data(),
+			vertex_position[pair[i + 3]][indices_1[0]].data(),
+			vertex_position[pair[i + 3]][indices_1[1]].data(), eta, tolerance);
+		if (time < collision_time) {
+			collision_time = time;
+		}
 	}
 }
 
@@ -4010,6 +4055,7 @@ void Collision::findAllVertexEdgePairs(int thread_No)
 	}
 }
 
+
 //
 void Collision::collisionTimeCompare(int thread_No)
 {
@@ -4083,8 +4129,87 @@ void Collision::collisionTimeCompare(int thread_No)
 }
 
 
-//GLOBAL_COLLISION_TIME
-void Collision::collisionTime(int thread_No)
+
+void Collision::collisionTimeByElement(int thread_No)
+{
+	double collision_time = 2.0;
+	unsigned int element_end;
+	std::array<double, 3>* initial_pos;
+	std::array<double, 3>* current_pos;
+
+	unsigned int* element;
+	unsigned int* element_num;
+
+	unsigned int* surface_to_normal;
+	//VT
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		element_end = vertex_index_start_per_thread[i][thread_No + 1];
+		initial_pos = vertex_for_render[i];
+		current_pos = vertex_position[i];
+		element = spatial_hashing.vertex_triangle_pair_by_vertex[i];
+		element_num = spatial_hashing.vertex_triangle_pair_num_record[i];
+		if(i<cloth->size()){
+			for (unsigned int j = vertex_index_start_per_thread[i][thread_No]; j < element_end; ++j) {
+				VTCollisionTimeOneVertex(initial_pos[j].data(), current_pos[j].data(), collision_time, element_num[j],
+					element + estimate_coeff_for_vt_pair_num * j,vertex_for_render.data(), vertex_position.data());
+			}
+		}
+		else {
+			unsigned int j;
+			surface_to_normal = tetrahedron->data()[i - cloth->size()].mesh_struct.vertex_index_on_sureface.data();
+			for (unsigned int k = vertex_index_start_per_thread[i][thread_No]; k < element_end; ++k) {
+				j = surface_to_normal[k];
+				VTCollisionTimeOneVertex(initial_pos[j].data(), current_pos[j].data(), collision_time, element_num[k],
+					element + estimate_coeff_for_vt_pair_num * k, vertex_for_render.data(), vertex_position.data());
+			}
+		}
+	}
+	//EE
+	unsigned int* edge_vertex;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		element_end = edge_index_start_per_thread[i][thread_No + 1];
+		initial_pos = vertex_for_render[i];
+		current_pos = vertex_position[i];
+		element = spatial_hashing.edge_edge_pair_by_edge[i];
+		element_num = spatial_hashing.edge_edge_pair_num_record[i];		
+		for (unsigned int j = edge_index_start_per_thread[i][thread_No]; j < element_end; ++j) {
+			edge_vertex=edge_vertices[i]+(j<<1);
+			EECollisionTimeOneEdge(initial_pos[*edge_vertex].data(),initial_pos[*(edge_vertex+1)].data(),
+				current_pos[*edge_vertex].data(), current_pos[*(edge_vertex+1)].data(), 
+				collision_time,j,i, element_num[j],
+				element + estimate_coeff_for_ee_pair_num * j);
+		}
+	}
+	//VT collider
+	if (has_collider) {
+		for (unsigned int i = 0; i < total_obj_num; ++i) {
+			element_end = vertex_index_start_per_thread[i][thread_No + 1];
+			initial_pos = vertex_for_render[i];
+			current_pos = vertex_position[i];
+			element = spatial_hashing.vertex_obj_triangle_collider_pair_by_vertex[i];
+			element_num = spatial_hashing.vertex_obj_triangle_collider_num_record[i];
+			if (i < cloth->size()) {
+				for (unsigned int j = vertex_index_start_per_thread[i][thread_No]; j < element_end; ++j) {
+					VTCollisionTimeOneVertex(initial_pos[j].data(), current_pos[j].data(), collision_time, element_num[j],
+						element + estimate_coeff_for_vt_collider_pair_num * j, vertex_for_render_collider.data(), vertex_position_collider.data());
+				}
+			}
+			else {
+				unsigned int j;
+				surface_to_normal = tetrahedron->data()[i - cloth->size()].mesh_struct.vertex_index_on_sureface.data();
+				for (unsigned int k = vertex_index_start_per_thread[i][thread_No]; k < element_end; ++k) {
+					j = surface_to_normal[k];
+					VTCollisionTimeOneVertex(initial_pos[j].data(), current_pos[j].data(), collision_time, element_num[k],
+						element + estimate_coeff_for_vt_collider_pair_num * k, vertex_for_render_collider.data(), vertex_position_collider.data());
+				}
+			}
+		}
+	}
+
+	collision_time_thread[thread_No] = collision_time;
+}
+
+void Collision::collisionTimeByPair(int thread_No)
 {
 	double collision_time = 2.0;
 	//vertex_triangle
@@ -4096,7 +4221,7 @@ void Collision::collisionTime(int thread_No)
 			vertexTriangleCollisionTime(thread_No, i, 0,
 				spatial_hashing.vertex_triangle_pair[i][0], collision_time);
 		}
-		vertexTriangleCollisionTime(thread_No, vertex_triangle_pair_index_start_per_thread[(thread_No+1) << 1], 0,
+		vertexTriangleCollisionTime(thread_No, vertex_triangle_pair_index_start_per_thread[(thread_No + 1) << 1], 0,
 			vertex_triangle_pair_index_start_per_thread[(thread_No << 1) + 3], collision_time);
 	}
 	else {
@@ -4124,7 +4249,7 @@ void Collision::collisionTime(int thread_No)
 	// vertex edge
 	if (vertex_edge_pair_index_start_per_thread[(thread_No + 1) << 1] > vertex_edge_pair_index_start_per_thread[thread_No << 1]) {
 		vertexEdgeCollisionTime(thread_No, vertex_edge_pair_index_start_per_thread[thread_No << 1], vertex_edge_pair_index_start_per_thread[(thread_No << 1) + 1],
-			vertex_edge_pair[vertex_edge_pair_index_start_per_thread[thread_No << 1]][0], collision_time,VERTEX_EDGE);
+			vertex_edge_pair[vertex_edge_pair_index_start_per_thread[thread_No << 1]][0], collision_time, VERTEX_EDGE);
 		for (unsigned int i = vertex_edge_pair_index_start_per_thread[thread_No << 1] + 1;
 			i < vertex_edge_pair_index_start_per_thread[(thread_No + 1) << 1]; ++i) {
 			vertexEdgeCollisionTime(thread_No, i, 0,
@@ -4153,7 +4278,7 @@ void Collision::collisionTime(int thread_No)
 		vertexVertexCollisionTime(thread_No, vertex_vertex_pair_index_start_per_thread[thread_No << 1], vertex_vertex_pair_index_start_per_thread[(thread_No << 1) + 1],
 			vertex_vertex_pair_index_start_per_thread[(thread_No << 1) + 3], collision_time, VERTEX_VERTEX);
 	}
-	
+
 	if (has_collider) {
 		//vertex_collider_triangle
 		//if (vertex_collider_triangle_obj_pair_index_start_per_thread[(thread_No + 1) << 1] > vertex_collider_triangle_obj_pair_index_start_per_thread[thread_No << 1]) {
@@ -4243,6 +4368,20 @@ void Collision::collisionTime(int thread_No)
 
 	}
 	collision_time_thread[thread_No] = collision_time;
+}
+
+
+
+
+//GLOBAL_COLLISION_TIME
+void Collision::collisionTime(int thread_No)
+{
+	if (record_pair_by_element) {
+		collisionTimeByElement(thread_No);
+	}
+	else {
+		collisionTimeByPair(thread_No);
+	}
 	
 }
 
