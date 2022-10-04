@@ -54,6 +54,18 @@ public:
 	std::vector<std::vector<unsigned int>>edge_edge_target_pos_index;
 	//std::vector<std::vector<unsigned int>>edge_edge_collider_target_pos_index;
 
+	unsigned int** vertex_triangle_pair_by_vertex;//store pair by every vertex. (obj_index,triangle_index)
+	unsigned int** vertex_triangle_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
+	unsigned int** triangle_vertex_pair_by_triangle; //store pair by triangle. for every triangle, store vertex: (obj_index,vertex_index)
+	unsigned int** triangle_vertex_pair_num_record;// record the number of vertex pairs for every triangle. For fast initialize, we recoed it in this variable
+	unsigned int** edge_edge_pair_by_edge; //for coordinate descent, we should store both (e1,e2) & (e2,e1)
+	unsigned int** edge_edge_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
+	unsigned int** vertex_obj_triangle_collider_pair_by_vertex;// store pair by every vertex. (obj_index, triangle_index)
+	unsigned int** vertex_obj_triangle_collider_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
+
+
+
+
 
 	unsigned int ave_pair_num[5];//vertex_triangle_pair,edge_edge_pair,vertex_obj_triangle_collider_pair,vertex_collider_triangle_obj_pair,edge_edge_pair_collider.
 
@@ -165,6 +177,11 @@ private:
 	unsigned int estimate_coeff_for_vt_collider_pair_num;
 	unsigned int estimate_coeff_for_ee_pair_num;
 	unsigned int estimate_coeff_for_tv_pair_num;
+
+	unsigned int close_vt_pair_num;
+	unsigned int close_vt_collider_pair_num;
+	unsigned int close_ee_pair_num;
+	unsigned int close_tv_pair_num;
 
 	unsigned int tetrahedron_begin_obj_index;
 	unsigned int total_obj_num;//except collider
@@ -326,6 +343,8 @@ private:
 	std::vector<std::array<double, 6>*> edge_aabb_collider;
 
 
+	std::vector<unsigned int*> vertex_index_on_surface;
+
 	std::vector<std::array<double, 3>*> vertex_for_render;
 	std::vector<std::array<double, 3>*> vertex_position;
 	std::vector<std::array<double, 3>*> triangle_normal_render;
@@ -373,6 +392,7 @@ private:
 
 	std::vector<unsigned int*> vertex_index_start_per_thread;
 	std::vector<unsigned int*> edge_index_start_per_thread;
+	std::vector<MeshStruct*> mesh_struct;
 
 
 	std::vector<double*>mass;
@@ -584,12 +604,32 @@ private:
 	bool CCD_compare=false;
 	void findInSP();
 
-	void VTCollisionTimeOneVertex(double* initial_pos, double* current_pos, double& collision_time, unsigned int num, 
+	void VTCollisionTimeOneVertex(double* initial_pos, double* current_pos, double& collision_time, unsigned int num,
 		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex);
 	void EECollisionTimeOneEdge(double* initial_pos_a0, double* initial_pos_a1, double* current_pos_a0, double* current_pos_a1, 
 		double& collision_time,
 		unsigned int edge_index, unsigned int edge_obj_No, unsigned int num, unsigned int* edge_indices);
 	void collisionTimeByPair(int thread_No);
 	void collisionTimeByElement(int thread_No);
+	void findClosePair();
+	void findVT_ClosePair();
+	void findVT_ColliderClosePair();
+	void findEE_ClosePair();
+	void findTV_ClosePair();
+	void findTV_ClosePair(int obj_No, unsigned int* vt_pair_initial, unsigned int* vt_pair_num, unsigned int** tv_pair,
+		unsigned int** tv_pair_num, unsigned int total_length_every_element_vt, unsigned int total_length_every_element_tv, bool is_tet);
+
+	void findVT_ClosePairSingleVertex(double* current_position, unsigned int* trianlge_index,
+		unsigned int triangle_num, std::vector<std::array<double, 3>*>& position, 
+		std::vector<std::array<int, 3>*>& triangle_vertex_index,
+		unsigned int* close_triangle_index, unsigned int& close_triangle_num);
+	void findEE_ClosePairSingleEdge(double* current_position_a0, double* current_position_a1,
+		unsigned int* edge_index, unsigned int edge_num, std::vector<std::array<double, 3>*>& position,
+		std::vector<unsigned int*>& edge_vertex_index,
+		unsigned int* close_edge_index, unsigned int& close_edge_num);
+
+	void initialPairRecord();
+
+	void initialPairByElement();
 
 };
