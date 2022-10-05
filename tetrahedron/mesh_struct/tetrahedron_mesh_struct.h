@@ -56,7 +56,7 @@ public:
 
 	//void setVertexIndexOnSurfaceEdgeTriangle();
 	void setTetEdges();
-	double getTetrahedronVolume(double* v1, double* v2, double* v3, double* v4);
+
 private:
 	struct TetrahedronFace {
 		std::array<int, 3> index;

@@ -200,6 +200,28 @@ inline double gaussian(double x, double sigma) {
 
 }
 
+
+inline double getTetCubeVolume(double* v1, double* v2, double* v3, double* v4)
+{
+	double a[3], b[3], c[3];
+	SUB(a, v2, v1);
+	SUB(b, v3, v1);
+	CROSS(c, a, b);
+	SUB(a, v4, v1);
+	return (DOT(c, a));
+}
+
+inline double getTetrahedronVolume(double* v1, double* v2, double* v3, double* v4)
+{
+	double a[3], b[3], c[3];
+	SUB(a, v2, v1);
+	SUB(b, v3, v1);
+	CROSS(c, a, b);
+	SUB(a, v4, v1);
+	return (DOT(c, a)) / 6.0;
+}
+
+
 inline void normalize(double* x) {
 	double norm = sqrt(DOT(x, x));
 	if (norm > 1e-15) {

@@ -116,12 +116,13 @@ private:
 	void updateRenderVertexNormal();
 
 	bool convergeCondition(unsigned int iteration_num);
+	bool innerConvergeCondition(unsigned int iteration_num);
 
 	std::vector<std::vector<std::array<double, 3>>> record_vertex_position;
 	//std::vector<std::vector<std::array<double, 3>>> record_outer_vertex_position;
 	void recordVertexPosition();
 
-	std::vector<std::vector<unsigned int>* >unfixed_vertex;
+	//std::vector<std::vector<unsigned int>* >unfixed_vertex;
 	double max_move_standard;//the max displacement to stop iteration
 	double outer_max_move_standard;//the max displacement to stop iteration
 
@@ -161,5 +162,14 @@ private:
 	void solveNewtonCD_tet(std::array<double, 3>* vertex_position, double stiffness, double dt,
 		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, double* mass,
 		double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double* lambda);
+
+	void solveNewtonCDTetWithCollision(std::array<double, 3>* vertex_position, double stiffness, double dt,
+		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* tet_vertex_indices, double* mass,
+		double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double* ARAP_lambda);
+	void getARAPHessian(Matrix3d& Hessian, Vector3d& grad, std::array<double, 3>* vertex_position, double stiffness,
+		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, 
+		double* volume, unsigned int vertex_index);
+	void getVTCollisionHessain(Matrix3d& Hessian, Vector3d& grad, std::array<double, 3>* vertex_position, double stiffness,
+		unsigned int vertex_index, unsigned int obj_No, unsigned int* VT, unsigned int num);
 };
 

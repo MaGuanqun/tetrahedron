@@ -527,7 +527,7 @@ void Scene::reflectModel()
 void Scene::checkVolume()
 {
 	for (int i = 0; i < tetrahedron[0].mesh_struct.indices.size(); ++i) {
-		double volume = tetrahedron[0].mesh_struct.getTetrahedronVolume(tetrahedron[0].mesh_struct.vertex_position[tetrahedron[0].mesh_struct.indices[i][0]].data(), tetrahedron[0].mesh_struct.vertex_position[tetrahedron[0].mesh_struct.indices[i][1]].data(), tetrahedron[0].mesh_struct.vertex_position[tetrahedron[0].mesh_struct.indices[i][2]].data(),
+		double volume = getTetrahedronVolume(tetrahedron[0].mesh_struct.vertex_position[tetrahedron[0].mesh_struct.indices[i][0]].data(), tetrahedron[0].mesh_struct.vertex_position[tetrahedron[0].mesh_struct.indices[i][1]].data(), tetrahedron[0].mesh_struct.vertex_position[tetrahedron[0].mesh_struct.indices[i][2]].data(),
 			tetrahedron[0].mesh_struct.vertex_position[tetrahedron[0].mesh_struct.indices[i][3]].data());
 		if (volume < 0) {
 			std::cout << "error volume negative " << std::endl;

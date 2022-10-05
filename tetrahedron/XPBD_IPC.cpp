@@ -170,7 +170,7 @@ void XPBD_IPC::reorganzieDataOfObjects()
 	vertex_index_begin_per_thread.resize(total_obj_num);
 	record_vertex_position.resize(total_obj_num);
 	//record_outer_vertex_position.resize(total_obj_num);
-	unfixed_vertex.resize(total_obj_num);
+	//unfixed_vertex.resize(total_obj_num);
 
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		vertex_position[i] = cloth->data()[i].mesh_struct.vertex_position.data();
@@ -179,7 +179,7 @@ void XPBD_IPC::reorganzieDataOfObjects()
 		vertex_index_begin_per_thread[i] = cloth->data()[i].mesh_struct.vertex_index_begin_per_thread.data();
 		record_vertex_position[i].resize(cloth->data()[i].mesh_struct.vertex_position.size());
 		//record_outer_vertex_position[i].resize(cloth->data()[i].mesh_struct.vertex_position.size());
-		unfixed_vertex[i] = &cloth->data()[i].mesh_struct.unfixed_point_index;
+		//unfixed_vertex[i] = &cloth->data()[i].mesh_struct.unfixed_point_index;
 	}
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		vertex_position[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_position.data();
@@ -188,7 +188,7 @@ void XPBD_IPC::reorganzieDataOfObjects()
 		vertex_index_begin_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_index_begin_per_thread.data();
 		record_vertex_position[i + cloth->size()].resize(tetrahedron->data()[i].mesh_struct.vertex_position.size());
 		//record_outer_vertex_position[i + cloth->size()].resize(tetrahedron->data()[i].mesh_struct.vertex_position.size());
-		unfixed_vertex[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct.unfixed_point_index;
+		//unfixed_vertex[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct.unfixed_point_index;
 	}
 	recordVertexPosition();
 
@@ -296,21 +296,29 @@ void XPBD_IPC::XPBD_IPCSolve()
 	computeCurrentEnergy();
 
 	memset(lambda.data(), 0, 8 * lambda.size());
-	inner_iteration_number = 0;
-	while (!convergeCondition(inner_iteration_number)) {
+	
+	while (!convergeCondition(iteration_number)) {
 
 		collision.globalCollisionTime();
-		thread->assignTask(this, COLLISION_FREE_POSITION);
-
+		thread->assignTask(this, COLLISION_FREE_POSITION_);
 		recordVertexPosition();
-		if (perform_collision) {
-			updateNormal();
+		collision.findClosePair();
+
+
+		inner_iteration_number = 0;
+		while (!innerConvergeCondition(inner_iteration_number))
+		{
+
+
+			inner_iteration_number++;
+
 		}
-		newtonCD();
-		inner_iteration_number++;
-		computeCurrentEnergy();
+
+
+		
+		iteration_number += inner_iteration_number;
 	}
-	iteration_number += inner_iteration_number;
+	
 	thread->assignTask(this, XPBD_IPC_VELOCITY);
 	updatePosition();
 	updateRenderNormal();
@@ -318,7 +326,14 @@ void XPBD_IPC::XPBD_IPCSolve()
 	updateRenderVertexNormal();
 }
 
+bool XPBD_IPC::innerConvergeCondition(unsigned int iteration_num)
+{
+	if (iteration_num < 50) {//max_iteration_number
+		return false;
+	}
 
+	return true;
+}
 
 
 
@@ -340,24 +355,28 @@ bool XPBD_IPC::convergeCondition(unsigned int iteration_num)
 
 	return false;
 
-	//unsigned int* unfixed_vertex_index;
-	//std::array<double, 3>* current_pos;
-	//std::array<double, 3>* previous_pos;
-	//for (unsigned int i = 0; i < total_obj_num; ++i) {
-	//	unfixed_vertex_index = unfixed_vertex[i]->data();
-	//	previous_pos = record_vertex_position[i].data();
-	//	current_pos = vertex_position[i];		
-	//	for (unsigned int j = 0; j < unfixed_vertex[i]->size(); ++j) {
-	//		for(unsigned int k=0;k<3;++k){
-	//			if (abs(previous_pos[unfixed_vertex_index[j]][k] - current_pos[unfixed_vertex_index[j]][k])> max_move_standard) {
-	//				return false;
-	//			}
-	//		}
-	//	}
-	//}
-	////std::cout << iteration_num << std::endl;
+	unsigned int num;
+	std::array<double, 3>* current_pos;
+	std::array<double, 3>* previous_pos;
+	double* mass_;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		previous_pos = record_vertex_position[i].data();
+		current_pos = vertex_position[i];		
+		num = mesh_struct[i]->vertex_position.size();
+		mass_ = mesh_struct[i]->mass_inv.data();
+		for (unsigned int j = 0; j < num; ++j) {
+			if (mass_[j] != 0.0) {
+				for (unsigned int k = 0; k < 3; ++k) {
+					if (abs(previous_pos[j][k] - current_pos[j][k]) > max_move_standard) {
+						return false;
+					}
+				}
+			}		
+		}
+	}
+	//std::cout << iteration_num << std::endl;
 	//std::cout << abs(energy - previous_energy) / previous_energy << std::endl;
-	//return true;
+	return true;
 
 }
 
@@ -388,6 +407,14 @@ void XPBD_IPC::firstNewtonCD()
 	previous_energy = energy;
 	newtonCDTet();
 }
+
+
+void XPBD_IPC::newtonCDTetWithCollision()
+{
+
+}
+
+
 
 void XPBD_IPC::newtonCDTet()
 {
@@ -424,19 +451,34 @@ void XPBD_IPC::newtonCDTet()
 
 }
 
-
-void XPBD_IPC::solveNewtonCD_tet(std::array<double, 3>* vertex_position, double stiffness, double dt,
-	Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, double* mass,
-	double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double* lambda)
+void XPBD_IPC::solveNewtonCDTetWithCollision(std::array<double, 3>* vertex_position, double stiffness, double dt,
+	Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* tet_vertex_indices, double* mass,
+	double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double* ARAP_lambda, double* collision_lambda,
+	)
 {
-	unsigned int tet_index;
+
+}
+
+void XPBD_IPC::getVTCollisionHessain(Matrix3d& Hessian, Vector3d& grad, std::array<double, 3>* vertex_position, double stiffness, 
+	unsigned int vertex_index, unsigned int obj_No, unsigned int* VT, unsigned int num)
+{
 	Matrix3d Hessian_single;
 	Vector3d grad_single;
-	unsigned int vertex_no;
-	Matrix3d Hessian;
-	Vector3d grad;
-	Hessian.setZero();
-	grad.setZero();
+	for (unsigned int i = 0; i < num; i += 2) {
+		second_order_constraint.getVTGradHessian(){
+
+		}
+	}
+}
+
+
+void XPBD_IPC::getARAPHessian(Matrix3d& Hessian, Vector3d& grad, std::array<double, 3>* vertex_position, double stiffness,
+	Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, 
+	double* volume, unsigned int vertex_index)
+{
+	unsigned int tet_index, vertex_no;
+	Matrix3d Hessian_single;
+	Vector3d grad_single;
 	double C;
 	for (unsigned int i = 0; i < tet_indices.size(); ++i) {
 		tet_index = tet_indices[i];
@@ -448,6 +490,20 @@ void XPBD_IPC::solveNewtonCD_tet(std::array<double, 3>* vertex_position, double 
 			grad -= (0.5 * stiffness * volume[tet_index]) * grad_single;
 		}
 	}
+}
+
+
+void XPBD_IPC::solveNewtonCD_tet(std::array<double, 3>* vertex_position, double stiffness, double dt,
+	Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, double* mass,
+	double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double* lambda)
+{
+	Matrix3d Hessian;
+	Vector3d grad;
+	Hessian.setZero();
+	grad.setZero();
+
+	getARAPHessian(Hessian, grad, vertex_position, stiffness, A, tet_indices, indices, volume, vertex_index);
+
 
 	double mass_dt_2 = mass[vertex_index] / (dt * dt);
 

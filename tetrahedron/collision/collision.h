@@ -153,7 +153,7 @@ public:
 	double* energy;
 
 	double* friction_coe;//self, collider, floor
-
+	void findClosePair();
 
 private:
 
@@ -611,7 +611,7 @@ private:
 		unsigned int edge_index, unsigned int edge_obj_No, unsigned int num, unsigned int* edge_indices);
 	void collisionTimeByPair(int thread_No);
 	void collisionTimeByElement(int thread_No);
-	void findClosePair();
+
 	void findVT_ClosePair();
 	void findVT_ColliderClosePair();
 	void findEE_ClosePair();

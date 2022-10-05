@@ -247,6 +247,54 @@ unsigned int SecondOrderConstraint::findVertexNo(int vertex_index, int* indices)
 }
 
 
+bool SecondOrderConstraint::getCollisionPairHessian(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
+	double ori_volume, double& Hessian, Vector3d& grad, double& C, unsigned int vertex_no)
+{
+	double volume =getTetCubeVolume(vertex_position_0, vertex_position_1, vertex_position_2, vertex_position_3);
+	if (abs(volume) >= ori_volume) {
+		return false;
+	}
+	if (abs(volume) < 1e-9) {
+		std::cout << "may be edge edge parallel " << std::endl;
+		return false;
+	}
+	double e0[3], e1[3];
+	switch (vertex_no)
+	{
+	case 0:
+		SUB(e0, vertex_position_2, vertex_position_1);
+		SUB(e1, vertex_position_3, vertex_position_1);
+		CROSS(grad.data(), e0, e1);		 
+		break;
+	case 1:
+		SUB(e0, vertex_position_3, vertex_position_2);
+		SUB(e1, vertex_position_0, vertex_position_2);
+		CROSS(grad.data(), e0, e1);
+		break;
+	case 2:
+		SUB(e0, vertex_position_0, vertex_position_3);
+		SUB(e1, vertex_position_1, vertex_position_3);
+		CROSS(grad.data(), e0, e1);
+		break;	
+	case 3:
+		SUB(e0, vertex_position_1, vertex_position_0);
+		SUB(e1, vertex_position_2, vertex_position_0);
+		CROSS(grad.data(), e0, e1);
+		break;
+	}
+	if (volume < 0) {
+		grad *= -1.0;
+		volume = -volume;
+	}
+	double ln_ = log(volume / ori_volume);
+	grad *= (ori_volume - volume) * (2.0 * ln_ - ori_volume / volume + 1.0);
+	Hessian = -2.0 * ln_ + (ori_volume - volume) * (ori_volume + 3.0 * volume) / (volume * volume);
+	return true;
+}
+
+
+
+
 bool SecondOrderConstraint::getARAPGradHessianNewton(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
 	Matrix<double, 3, 4>& A, Matrix3d& Hessian, Vector3d& grad, double& C, unsigned int vertex_no)
 {
