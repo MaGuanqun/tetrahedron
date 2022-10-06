@@ -63,9 +63,14 @@ public:
 	unsigned int** vertex_obj_triangle_collider_pair_by_vertex;// store pair by every vertex. (obj_index, triangle_index)
 	unsigned int** vertex_obj_triangle_collider_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
 
-
-
-
+	std::vector<std::vector<unsigned int>> VT_volume;
+	unsigned int** VT_start_index; //prefix sum start index
+	std::vector<std::vector<unsigned int>> TV_volume;
+	unsigned int** TV_start_index; //prefix sum start index
+	std::vector<std::vector<unsigned int>> EE_volume;
+	unsigned int**EE_start_index; //prefix sum start index
+	std::vector<std::vector<unsigned int>> VT_collider_volume;
+	unsigned int** VT_collider_start_index; //prefix sum start index
 
 	unsigned int ave_pair_num[5];//vertex_triangle_pair,edge_edge_pair,vertex_obj_triangle_collider_pair,vertex_collider_triangle_obj_pair,edge_edge_pair_collider.
 
@@ -155,6 +160,12 @@ public:
 	double* friction_coe;//self, collider, floor
 	void findClosePair();
 
+	unsigned int close_vt_pair_num;
+	unsigned int close_vt_collider_pair_num;
+	unsigned int close_ee_pair_num;
+	unsigned int close_tv_pair_num;
+
+
 private:
 
 	bool record_pair_by_element;
@@ -178,10 +189,7 @@ private:
 	unsigned int estimate_coeff_for_ee_pair_num;
 	unsigned int estimate_coeff_for_tv_pair_num;
 
-	unsigned int close_vt_pair_num;
-	unsigned int close_vt_collider_pair_num;
-	unsigned int close_ee_pair_num;
-	unsigned int close_tv_pair_num;
+
 
 	unsigned int tetrahedron_begin_obj_index;
 	unsigned int total_obj_num;//except collider
@@ -631,5 +639,5 @@ private:
 	void initialPairRecord();
 
 	void initialPairByElement();
-
+	void initialVolume();
 };

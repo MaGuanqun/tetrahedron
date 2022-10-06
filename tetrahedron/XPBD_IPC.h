@@ -78,6 +78,8 @@ private:
 
 	//std::vector<std::vector<std::array<double, 3>>> total_gravity;
 
+	std::vector<std::array<double, 3>*> vertex_position_collider;
+
 	std::vector<std::array<double, 3>*> vertex_position;
 	std::vector<std::array<double, 3>*> initial_vertex_position;
 	std::vector<MeshStruct*> mesh_struct;
@@ -92,12 +94,18 @@ private:
 	std::vector<std::vector<double>> rest_mean_curvature_norm;
 	//std::vector<std::vector<Vector3d>> rest_Aq;
 
+	std::vector<std::array<int, 3>*> triangle_indices;
+	std::vector<std::array<int, 3>*> triangle_indices_collider;
+
 
 	std::vector<double> lambda;
 
 	std::vector<double> lambda_collision;
 	std::vector<unsigned int>constraint_index_start;
 	std::vector<std::vector<unsigned int>>collision_constraint_index_start;
+
+	std::vector<unsigned int*> edge_vertices;
+	std::vector<unsigned int*> collider_edge_vertices;
 
 	void initialClothBending();
 	//void solveBendingConstraint();
@@ -163,13 +171,21 @@ private:
 		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, double* mass,
 		double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double* lambda);
 
-	void solveNewtonCDTetWithCollision(std::array<double, 3>* vertex_position, double stiffness, double dt,
+	void solveNewtonCDTetWithCollision(std::array<double, 3>* vertex_position, double ARAP_stiffness, double dt,
 		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* tet_vertex_indices, double* mass,
-		double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double* ARAP_lambda);
+		double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double collision_stiffness, unsigned int obj_No);
 	void getARAPHessian(Matrix3d& Hessian, Vector3d& grad, std::array<double, 3>* vertex_position, double stiffness,
 		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, 
 		double* volume, unsigned int vertex_index);
-	void getVTCollisionHessain(Matrix3d& Hessian, Vector3d& grad, std::array<double, 3>* vertex_position, double stiffness,
-		unsigned int vertex_index, unsigned int obj_No, unsigned int* VT, unsigned int num);
+	void getVTCollisionHessain(Matrix3d& Hessian, Vector3d& grad, double* vertex_position_, double stiffness,
+		 unsigned int* VT, unsigned int num, double* ori_volume);
+	void getTVCollisionHessain(Matrix3d& Hessian, Vector3d& grad,
+		double* pos_0, double* pos_1, double* pos_2,
+		unsigned int vertex_no, double stiffness, unsigned int* TV, unsigned int num, double* ori_volume);
+
+	void getEECollisionHessian(Matrix3d& Hessian, Vector3d& grad, double* pos0, double* pos1, unsigned int* EE, unsigned int num,
+		double* ori_volume, double stiffness, unsigned int obj_index, unsigned int edge_index, unsigned int vertex_no);
+	void getVT_ColiderCollisionHessain(Matrix3d& Hessian, Vector3d& grad, double* vertex_position_, double stiffness,
+		unsigned int* VT, unsigned int num, double* ori_volume);
 };
 

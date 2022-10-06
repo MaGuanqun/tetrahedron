@@ -201,6 +201,18 @@ inline double gaussian(double x, double sigma) {
 }
 
 
+template<typename T>
+T findVertexNo(int vertex_index, T* indices, unsigned int size)
+{
+	for (unsigned int i = 0; i < size; ++i) {
+		if (vertex_index == indices[i]) {
+			return i;
+		}
+	}
+}
+
+
+
 inline double getTetCubeVolume(double* v1, double* v2, double* v3, double* v4)
 {
 	double a[3], b[3], c[3];

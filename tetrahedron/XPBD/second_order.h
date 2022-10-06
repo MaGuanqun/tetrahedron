@@ -38,8 +38,6 @@ public:
 	void solveCD_ARAP(std::array<double,3>* vertex_position, double stiffness, double dt,
 		Matrix<double, 3, 4>* A, double* lambda, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, 
 		double* mass, double* volume, unsigned int vertex_index, std::array<double, 3>* sn);
-
-	unsigned int findVertexNo(int vertex_index, int* indices);
 	 
 	bool getARAPGradHessian(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3, 
 		Matrix<double, 3, 4>& A, Matrix3d& Hessian, Vector3d& grad, double& C, unsigned int vertex_no);
@@ -48,7 +46,7 @@ public:
 		Matrix<double, 3, 4>& A, Matrix3d& Hessian, Vector3d& grad, double& C, unsigned int vertex_no);
 
 	bool getCollisionPairHessian(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
-		double ori_volume, double& Hessian, Vector3d& grad, double& C, unsigned int vertex_no);
+		double ori_volume, double& Hessian, Vector3d& grad, unsigned int vertex_no);
 
 	void computeEdgeLengthForce(double* vertex_0, double* vertex_1, double stiffness,
 		double* potential_0, double* potential_1, double rest_length);

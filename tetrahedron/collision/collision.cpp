@@ -1,4 +1,6 @@
 #include"collision.h"
+#include"../basic/basic_function.h"
+
 
 void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider,
 	std::vector<Tetrahedron>* tetrahedron, Thread* thread, Floor* floor,  double* tolerance_ratio, unsigned int use_method, bool record_pair_by_element)
@@ -6209,6 +6211,20 @@ void Collision::findEdgeAroundEdge(int thread_No)
 }
 
 
+void Collision::initialVolume()
+{
+	VT_volume.resize(total_obj_num);
+	TV_volume.resize(total_obj_num);
+	EE_volume.resize(total_obj_num);
+	VT_collider_volume.resize(total_obj_num);
+
+	VT_start_index = new unsigned int* [total_obj_num];
+	TV_start_index = new unsigned int* [total_obj_num];
+	EE_start_index = new unsigned int* [total_obj_num];
+	VT_collider_start_index = new unsigned int* [total_obj_num];
+}
+
+
 void Collision::initialPairRecord()
 {
 	vertex_triangle_pair_by_vertex = new unsigned int* [total_obj_num];
@@ -6220,6 +6236,7 @@ void Collision::initialPairRecord()
 	triangle_vertex_pair_num_record = new unsigned int* [total_obj_num];
 	edge_edge_pair_num_record = new unsigned int* [total_obj_num];
 	vertex_obj_triangle_collider_num_record = new unsigned int* [total_obj_num];
+
 
 	unsigned int vertex_num, triangle_num, edge_num;
 

@@ -69,7 +69,7 @@ void SecondOrderConstraint::solveSingleVertexNewton(std::array<double, 3>* verte
 	double C;
 	for (unsigned int i = 0; i < tet_indices.size(); ++i) {
 		tet_index = tet_indices[i];
-		vertex_no = findVertexNo(vertex_index, indices[tet_index].data());
+		vertex_no = findVertexNo(vertex_index, indices[tet_index].data(),4);
 		if (getARAPGradHessianNewton(vertex_position[indices[tet_index][0]].data(), vertex_position[indices[tet_index][1]].data(),
 			vertex_position[indices[tet_index][2]].data(), vertex_position[indices[tet_index][3]].data(),
 			A[tet_index], Hessian_single, grad_single, C, vertex_no)) {
@@ -110,7 +110,7 @@ void SecondOrderConstraint::solveNewtonCD_ARAP(std::array<double, 3>* vertex_pos
 	double C;
 	for (unsigned int i = 0; i < tet_indices.size(); ++i) {
 		tet_index = tet_indices[i];
-		vertex_no = findVertexNo(vertex_index, indices[tet_index].data());
+		vertex_no = findVertexNo(vertex_index, indices[tet_index].data(),4);
 		if (getARAPGradHessianNewton(vertex_position[indices[tet_index][0]].data(), vertex_position[indices[tet_index][1]].data(),
 			vertex_position[indices[tet_index][2]].data(), vertex_position[indices[tet_index][3]].data(),
 			A[tet_index], Hessian_single, grad_single, C, vertex_no)) {
@@ -155,7 +155,7 @@ void SecondOrderConstraint::solveSingleVertexCD_ARAP(std::array<double, 3>* vert
 
 	for (unsigned int i = 0; i < tet_indices.size(); ++i) {
 		tet_index = tet_indices[i];
-		vertex_no = findVertexNo(vertex_index, indices[tet_index].data());
+		vertex_no = findVertexNo(vertex_index, indices[tet_index].data(),4);
 		if (getARAPGradHessian(vertex_position[indices[tet_index][0]].data(), vertex_position[indices[tet_index][1]].data(),
 			vertex_position[indices[tet_index][2]].data(), vertex_position[indices[tet_index][3]].data(),
 			A[tet_index], Hessian_single, grad_single, C, vertex_no)) {
@@ -206,7 +206,7 @@ void SecondOrderConstraint::solveCD_ARAP(std::array<double, 3>* vertex_position,
 
 	for (unsigned int i = 0; i < tet_indices.size(); ++i) {
 		tet_index = tet_indices[i];
-		vertex_no = findVertexNo(vertex_index, indices[tet_index].data());
+		vertex_no = findVertexNo(vertex_index, indices[tet_index].data(),4);
 		if (getARAPGradHessian(vertex_position[indices[tet_index][0]].data(), vertex_position[indices[tet_index][1]].data(),
 			vertex_position[indices[tet_index][2]].data(), vertex_position[indices[tet_index][3]].data(),
 			A[tet_index],  Hessian_single, grad_single, C, vertex_no)) {
@@ -237,19 +237,12 @@ void SecondOrderConstraint::solveCD_ARAP(std::array<double, 3>* vertex_position,
 	}
 }
 
-unsigned int SecondOrderConstraint::findVertexNo(int vertex_index, int* indices)
-{
-	for (unsigned int i = 0; i < 4; ++i) {
-		if (vertex_index == indices[i]) {
-			return i;
-		}
-	}
-}
-
 
 bool SecondOrderConstraint::getCollisionPairHessian(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
-	double ori_volume, double& Hessian, Vector3d& grad, double& C, unsigned int vertex_no)
+	double ori_volume, double& Hessian, Vector3d& grad, unsigned int vertex_no)
 {
+	double C;
+
 	double volume =getTetCubeVolume(vertex_position_0, vertex_position_1, vertex_position_2, vertex_position_3);
 	if (abs(volume) >= ori_volume) {
 		return false;
@@ -261,19 +254,22 @@ bool SecondOrderConstraint::getCollisionPairHessian(double* vertex_position_0, d
 	double e0[3], e1[3];
 	switch (vertex_no)
 	{
-	case 0:
+	case 0: {
 		SUB(e0, vertex_position_2, vertex_position_1);
-		SUB(e1, vertex_position_3, vertex_position_1);
-		CROSS(grad.data(), e0, e1);		 
+		CROSS(grad.data(), vertex_position_3,  e0);
+		double temp[3];
+		CROSS(temp, vertex_position_2, vertex_position_1);
+		SUM_(grad, temp);
+	}
 		break;
 	case 1:
-		SUB(e0, vertex_position_3, vertex_position_2);
-		SUB(e1, vertex_position_0, vertex_position_2);
+		SUB(e0, vertex_position_2, vertex_position_0);
+		SUB(e1, vertex_position_3, vertex_position_0);
 		CROSS(grad.data(), e0, e1);
 		break;
 	case 2:
-		SUB(e0, vertex_position_0, vertex_position_3);
-		SUB(e1, vertex_position_1, vertex_position_3);
+		SUB(e0, vertex_position_3, vertex_position_0);
+		SUB(e1, vertex_position_1, vertex_position_0);
 		CROSS(grad.data(), e0, e1);
 		break;	
 	case 3:
@@ -285,6 +281,7 @@ bool SecondOrderConstraint::getCollisionPairHessian(double* vertex_position_0, d
 	if (volume < 0) {
 		grad *= -1.0;
 		volume = -volume;
+		std::cout << "collision volume negative" << std::endl;
 	}
 	double ln_ = log(volume / ori_volume);
 	grad *= (ori_volume - volume) * (2.0 * ln_ - ori_volume / volume + 1.0);
