@@ -63,13 +63,13 @@ public:
 	unsigned int** vertex_obj_triangle_collider_pair_by_vertex;// store pair by every vertex. (obj_index, triangle_index)
 	unsigned int** vertex_obj_triangle_collider_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
 
-	std::vector<std::vector<unsigned int>> VT_volume;
+	std::vector<std::vector<double>> VT_volume;
 	unsigned int** VT_start_index; //prefix sum start index
-	std::vector<std::vector<unsigned int>> TV_volume;
+	std::vector<std::vector<double>> TV_volume;
 	unsigned int** TV_start_index; //prefix sum start index
-	std::vector<std::vector<unsigned int>> EE_volume;
+	std::vector<std::vector<double>> EE_volume;
 	unsigned int**EE_start_index; //prefix sum start index
-	std::vector<std::vector<unsigned int>> VT_collider_volume;
+	std::vector<std::vector<double>> VT_collider_volume;
 	unsigned int** VT_collider_start_index; //prefix sum start index
 
 	unsigned int ave_pair_num[5];//vertex_triangle_pair,edge_edge_pair,vertex_obj_triangle_collider_pair,vertex_collider_triangle_obj_pair,edge_edge_pair_collider.
@@ -165,8 +165,16 @@ public:
 	unsigned int close_ee_pair_num;
 	unsigned int close_tv_pair_num;
 
+	void computeVolume(int thread_No);
+	void saveCollisionPairVolume();
+
+	void setCollisionFreeVertex(std::vector<std::vector<std::array<double, 3>>>* record_vertex_position);
 
 private:
+
+	
+
+	void storeVolume();
 
 	bool record_pair_by_element;
 
@@ -366,6 +374,8 @@ private:
 	std::vector<std::array<int, 3>*> triangle_indices_collider;
 
 
+	std::vector<std::array<double, 3>*> vertex_collision_free;
+
 	std::vector<std::array<double, 3>*> vertex_for_render_collider;
 	std::vector<std::array<double, 3>*> vertex_position_collider;
 	std::vector<std::array<double, 3>*> triangle_normal_render_collider;
@@ -399,6 +409,7 @@ private:
 
 
 	std::vector<unsigned int*> vertex_index_start_per_thread;
+	std::vector<unsigned int*>triangle_index_start_per_thread;
 	std::vector<unsigned int*> edge_index_start_per_thread;
 	std::vector<MeshStruct*> mesh_struct;
 
@@ -616,7 +627,8 @@ private:
 		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex);
 	void EECollisionTimeOneEdge(double* initial_pos_a0, double* initial_pos_a1, double* current_pos_a0, double* current_pos_a1, 
 		double& collision_time,
-		unsigned int edge_index, unsigned int edge_obj_No, unsigned int num, unsigned int* edge_indices);
+		unsigned int edge_index, unsigned int edge_obj_No, unsigned int num, unsigned int* edge_indices,
+		std::vector<std::array<double, 3>*>& vertex_for_render);
 	void collisionTimeByPair(int thread_No);
 	void collisionTimeByElement(int thread_No);
 
@@ -640,4 +652,15 @@ private:
 
 	void initialPairByElement();
 	void initialVolume();
+	void computeVTVolume(int thread_No);
+	void computeEEVolume(int thread_No);
+	void computeTVVolume(int thread_No);
+	void computeVTColliderVolume(int thread_No);
+
+	void computeVTVolume(double* vertex_position_, unsigned int pair_num, unsigned int* triangle_record, double* volume,
+		std::vector<std::array<double, 3>*>& vertex_position);
+	void computeTVVolume(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, unsigned int pair_num,
+		unsigned int* vertex_record, double* volume, std::vector<std::array<double, 3>*>& vertex_position);
+	void computeEEVolume(double* vertex_position_0, double* vertex_position_1, unsigned int pair_num,
+		unsigned int* edge_record, double* volume, std::vector<std::array<double, 3>*>& vertex_position, std::vector<unsigned int*>& edge_vertices);
 };

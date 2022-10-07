@@ -62,9 +62,9 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	}
 	collision_time_thread.resize(thread->thread_num);
 
-	initialCollidePairInfo();
-	reorganzieDataOfObjects();
 
+	reorganzieDataOfObjects();
+	initialCollidePairInfo();
 	//collision_constraint.testPT();
 	//approx_CCD.test();
 	//CCD::test();
@@ -169,11 +169,8 @@ void Collision::initialCollidePairInfo()
 {
 	floor_collision_vertex.resize(thread_num);
 	unsigned int vertex_num=0;
-	for (int i = 0; i < cloth->size(); ++i) {
-		vertex_num += cloth->data()[i].mesh_struct.vertex_position.size();
-	}
-	for (int i = 0; i < tetrahedron->size(); ++i) {
-		vertex_num += tetrahedron->data()[i].mesh_struct.vertex_position.size();
+	for (int i = 0; i < total_obj_num; ++i) {
+		vertex_num += vertex_index_start_per_thread[i][thread_num];
 	}
 	vertex_num = vertex_num / thread_num *2;
 	for (unsigned int i = 0; i < thread_num; ++i) {
@@ -222,6 +219,14 @@ void Collision::initialCollidePairInfo()
 	//}
 }
 
+void Collision::setCollisionFreeVertex(std::vector<std::vector<std::array<double, 3>>>* record_vertex_position)
+{
+	vertex_collision_free.resize(total_obj_num);
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		vertex_collision_free[i] = record_vertex_position->data()[i].data();
+	}
+}
+
 
 void Collision::reorganzieDataOfObjects()
 {
@@ -252,6 +257,9 @@ void Collision::reorganzieDataOfObjects()
 
 	vertex_index_start_per_thread.resize(total_obj_num);
 	edge_index_start_per_thread.resize(total_obj_num);
+	triangle_index_start_per_thread.resize(total_obj_num);
+
+
 	mesh_struct.resize(total_obj_num);
 
 	damp_collision.resize(total_obj_num);
@@ -282,6 +290,7 @@ void Collision::reorganzieDataOfObjects()
 		triangle_normal_magnitude_reciprocal[i] = cloth->data()[i].mesh_struct.triangle_normal_magnitude_reciprocal.data();
 		vertex_index_start_per_thread[i] = cloth->data()[i].mesh_struct.vertex_index_begin_per_thread.data();
 		edge_index_start_per_thread[i] = cloth->data()[i].mesh_struct.edge_index_begin_per_thread.data();
+		triangle_index_start_per_thread[i] = cloth->data()[i].mesh_struct.face_index_begin_per_thread.data();
 		damp_collision[i] = cloth->data()[i].damp_collision_stiffness;
 		mesh_struct[i] = &cloth->data()[i].mesh_struct;
 	}
@@ -311,6 +320,7 @@ void Collision::reorganzieDataOfObjects()
 		triangle_normal_magnitude_reciprocal[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.triangle_normal_magnitude_reciprocal.data();
 		vertex_index_start_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_index_on_surface_begin_per_thread.data();
 		edge_index_start_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.edge_index_begin_per_thread.data();
+		triangle_index_start_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.face_index_begin_per_thread.data();
 		damp_collision[i + cloth->size()] = tetrahedron->data()[i].damp_collision_stiffness;
 		mesh_struct[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct;
 		vertex_index_on_surface[i] = tetrahedron->data()[i].mesh_struct.vertex_index_on_sureface.data();
@@ -1192,12 +1202,6 @@ void Collision::collisionCulling()
 
 	spatial_hashing.buildSpatialHashing(scene_aabb);
 
-
-	//std::cout << "culling vertex_position " << std::endl;
-	//std::cout << tetrahedron->data()[1].mesh_struct.vertex_for_render[0][0] << " " << tetrahedron->data()[1].mesh_struct.vertex_for_render[0][1] << " " << tetrahedron->data()[1].mesh_struct.vertex_for_render[0][2] << std::endl;
-	//std::cout << tetrahedron->data()[1].mesh_struct.vertex_position[0][0] << " " << tetrahedron->data()[1].mesh_struct.vertex_position[0][1] << " " << tetrahedron->data()[1].mesh_struct.vertex_position[0][2] << std::endl;
-
-
 	//unsigned int num = 0;
 	//std::cout << "pair num " << std::endl;
 	//for (unsigned int j = 0; j < thread_num; ++j) {
@@ -1620,6 +1624,8 @@ void Collision::globalCollisionTime()
 	//t = clock();
 	//for (unsigned int j = 0; j < 10; ++j) {
 		thread->assignTask(this, GLOBAL_COLLISION_TIME);
+
+		
 	//}
 	//t1 = clock();
 	//std::cout << "ccd collision detection time multi thread " << t1 - t << std::endl;
@@ -1633,9 +1639,209 @@ void Collision::globalCollisionTime()
 		collision_time = 1.0;
 	}
 	//collision_time *= 0.9;
-	std::cout <<"collision time "<< collision_time << std::endl;
+	//std::cout <<"collision time "<< collision_time << std::endl;
+
 }
 
+void Collision::saveCollisionPairVolume()
+{
+	storeVolume();
+	thread->assignTask(this, COMPUTE_VOLUME);
+}
+
+void Collision::storeVolume()
+{
+	//store the start index of volume
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		Basic::cumulativeSumDoubleRecord(vertex_triangle_pair_num_record[i], 
+			vertex_index_start_per_thread[i][thread_num], VT_start_index[i]);
+		Basic::cumulativeSumDoubleRecord(triangle_vertex_pair_num_record[i],
+			(unsigned int)mesh_struct[i]->triangle_indices.size(), TV_start_index[i]);
+		Basic::cumulativeSumDoubleRecord(edge_edge_pair_num_record[i],
+			(unsigned int)(mesh_struct[i]->edge_vertices.size()>>1), EE_start_index[i]);
+		if (!collider->empty()) {
+			Basic::cumulativeSumDoubleRecord(vertex_obj_triangle_collider_num_record[i],
+				vertex_index_start_per_thread[i][thread_num], VT_collider_start_index[i]);
+		}
+	}
+
+	//resize volume
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		VT_volume[i].resize(VT_start_index[i][vertex_index_start_per_thread[i][thread_num]]);
+		TV_volume[i].resize(TV_start_index[i][mesh_struct[i]->triangle_indices.size()]);
+		EE_volume[i].resize(EE_start_index[i][mesh_struct[i]->edge_vertices.size()/2]);
+		if (!collider->empty()) {
+			VT_collider_volume[i].resize(VT_collider_start_index[i][vertex_index_start_per_thread[i][thread_num]]);
+		}
+	}	
+}
+
+//COMPUTE_VOLUME
+void Collision::computeVolume(int thread_No)
+{
+	computeVTVolume(thread_No);
+	computeEEVolume(thread_No);
+	computeTVVolume(thread_No);
+	if (!collider->empty()) {
+		computeVTColliderVolume(thread_No);
+	}
+
+}
+
+void Collision::computeEEVolume(int thread_No)
+{
+	unsigned int edge_num;
+	std::array<double, 3>* vertex_pos;
+	unsigned int* pair_num;
+	unsigned int* primitive_record;
+	double* volume;
+	unsigned int* start_index;
+	unsigned int* edge_vertex;
+
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		edge_num =edge_index_start_per_thread[i][thread_No + 1];
+		vertex_pos = vertex_for_render[i];
+		pair_num =edge_edge_pair_num_record[i];
+		primitive_record = edge_edge_pair_by_edge[i];
+		volume = EE_volume[i].data();
+		start_index = EE_start_index[i];
+		edge_vertex = edge_vertices[i];
+		for (unsigned int j = edge_index_start_per_thread[i][thread_No]; j < edge_num; ++j) {
+			computeEEVolume(vertex_pos[edge_vertex[j<<1]].data(), vertex_pos[edge_vertex[(j << 1)+1]].data(),
+				pair_num[j], primitive_record + close_ee_pair_num * j, volume + start_index[j],vertex_for_render, edge_vertices);
+		}		
+	}
+}
+
+
+void Collision::computeTVVolume(int thread_No)
+{
+	unsigned int triangle_num;
+	std::array<double, 3>* vertex_pos;
+	unsigned int* pair_num;
+	unsigned int* primitive_record;
+	double* volume;
+	unsigned int* start_index;
+	std::array<int,3>* triangle_vertex;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		triangle_num = triangle_index_start_per_thread[i][thread_No + 1];
+		vertex_pos = vertex_for_render[i];
+		pair_num = triangle_vertex_pair_num_record[i];
+		primitive_record = triangle_vertex_pair_by_triangle[i];
+		volume =TV_volume[i].data();
+		start_index = TV_start_index[i];
+		triangle_vertex = triangle_indices[i];
+		for (unsigned int j = triangle_index_start_per_thread[i][thread_No]; j < triangle_num; ++j) {		
+			computeTVVolume(vertex_pos[triangle_vertex[j][0]].data(), vertex_pos[triangle_vertex[j][1]].data(),
+				vertex_pos[triangle_vertex[j][2]].data(),
+				pair_num[j], primitive_record + close_tv_pair_num * j, volume + start_index[j], vertex_for_render);
+		}
+	}
+}
+
+
+
+
+void Collision::computeVTColliderVolume(int thread_No)
+{
+	unsigned int vertex_num;
+	std::array<double, 3>* vertex_pos;
+	unsigned int* pair_num;
+	unsigned int* primitive_record;
+	double* volume;
+	unsigned int* start_index;
+	unsigned int* vertex_index_on_surface_;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		vertex_num = vertex_index_start_per_thread[i][thread_No + 1];
+		vertex_pos = vertex_for_render[i];
+		pair_num = vertex_obj_triangle_collider_num_record[i];
+		primitive_record = vertex_obj_triangle_collider_pair_by_vertex[i];
+		volume = VT_collider_volume[i].data();
+		start_index = VT_collider_start_index[i];
+		if (i < cloth->size()) {
+			for (unsigned int j = vertex_index_start_per_thread[i][thread_No]; j < vertex_num; ++j) {
+				computeVTVolume(vertex_pos[j].data(), pair_num[j], primitive_record + close_vt_collider_pair_num * j, 
+					volume + start_index[j],
+					vertex_for_render_collider);
+			}
+		}
+		else {
+			vertex_index_on_surface_ = vertex_index_on_surface[i - cloth->size()];
+			for (unsigned int j = vertex_index_start_per_thread[i][thread_No]; j < vertex_num; ++j) {
+				computeVTVolume(vertex_pos[vertex_index_on_surface_[j]].data(), pair_num[j], primitive_record + close_vt_collider_pair_num * j, volume + start_index[j],
+					vertex_for_render_collider);
+			}
+		}
+	}
+}
+
+
+
+
+void Collision::computeVTVolume(int thread_No)
+{
+	unsigned int vertex_num;
+	std::array<double, 3>* vertex_pos;
+	unsigned int* pair_num;
+	unsigned int* primitive_record;
+	double* volume;
+	unsigned int* start_index;
+	unsigned int* vertex_index_on_surface_;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		vertex_num = vertex_index_start_per_thread[i][thread_No + 1];
+		vertex_pos = vertex_for_render[i];
+		pair_num = vertex_triangle_pair_num_record[i];
+		primitive_record = vertex_triangle_pair_by_vertex[i];
+		volume = VT_volume[i].data();
+		start_index = VT_start_index[i];
+		if (i < cloth->size()) {
+			for (unsigned int j = vertex_index_start_per_thread[i][thread_No]; j < vertex_num; ++j) {
+				computeVTVolume(vertex_pos[j].data(), pair_num[j], primitive_record + close_vt_pair_num * j, volume + start_index[j],
+					vertex_for_render);
+			}
+		}
+		else {
+			vertex_index_on_surface_ = vertex_index_on_surface[i - cloth->size()];
+			for (unsigned int j = vertex_index_start_per_thread[i][thread_No]; j < vertex_num; ++j) {
+				computeVTVolume(vertex_pos[vertex_index_on_surface_[j]].data(), pair_num[j], primitive_record + close_vt_pair_num * j, volume + start_index[j],
+					vertex_for_render);
+			}
+		}
+	}
+}
+
+
+
+void Collision::computeVTVolume(double* vertex_position_, unsigned int pair_num, unsigned int* triangle_record, double* volume,
+ std::vector<std::array<double,3>*>& vertex_position)
+{
+	int* triangle_index;
+	for (unsigned int i = 0; i < pair_num; i += 2) {
+		triangle_index = triangle_indices[triangle_record[i]][triangle_record[i + 1]].data();
+		*(volume++)=abs(getTetCubeVolume(vertex_position_, vertex_position[triangle_record[i]][triangle_index[0]].data(),
+			vertex_position[triangle_record[i]][triangle_index[1]].data(), vertex_position[triangle_record[i]][triangle_index[2]].data()));
+	}
+}
+
+void Collision::computeTVVolume(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, unsigned int pair_num,
+	unsigned int* vertex_record, double* volume, std::vector<std::array<double, 3>*>& vertex_position)
+{
+	for (unsigned int i = 0; i < pair_num; i += 2) {
+		*(volume++) =abs( getTetCubeVolume(vertex_position_0, vertex_position_1,
+			vertex_position_2, vertex_position[vertex_record[i]][vertex_record[i+1]].data()));
+	}
+}
+
+void Collision::computeEEVolume(double* vertex_position_0, double* vertex_position_1,  unsigned int pair_num,
+	unsigned int* edge_record, double* volume, std::vector<std::array<double, 3>*>& vertex_position, std::vector<unsigned int*>& edge_vertices)
+{
+	unsigned int* edge_index;
+	for (unsigned int i = 0; i < pair_num; i += 2) {
+		edge_index = edge_vertices[edge_record[i]] + (edge_record[i + 1] << 1);
+		*(volume++) = abs(getTetCubeVolume(vertex_position_0, vertex_position_1,
+			vertex_position[edge_record[i]][edge_index[i]].data(),vertex_position[edge_record[i]][edge_index[i + 1]].data()));
+	}
+}
 
 void Collision::getCollisionPair()
 {
@@ -3963,7 +4169,7 @@ void Collision::vertexTriangleCollisionTimeCompare(int thread_No, unsigned int p
 }
 
 void Collision::EECollisionTimeOneEdge(double* initial_pos_a0, double* initial_pos_a1, double* current_pos_a0, double* current_pos_a1, double& collision_time, 
-	unsigned int edge_index, unsigned int edge_obj_No,  unsigned int num, unsigned int* edge_indices)
+	unsigned int edge_index, unsigned int edge_obj_No,  unsigned int num, unsigned int* edge_indices, std::vector<std::array<double,3>*>& vertex_for_render)
 {
 	double time;
 	unsigned int* indices;
@@ -4346,14 +4552,14 @@ void Collision::collisionTimeByElement(int thread_No)
 	//VT
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		element_end = vertex_index_start_per_thread[i][thread_No + 1];
-		initial_pos = vertex_for_render[i];
+		initial_pos = vertex_collision_free[i];
 		current_pos = vertex_position[i];
 		element = spatial_hashing.vertex_triangle_pair_by_vertex[i];
 		element_num = spatial_hashing.vertex_triangle_pair_num_record[i];
 		if(i<cloth->size()){
 			for (unsigned int j = vertex_index_start_per_thread[i][thread_No]; j < element_end; ++j) {
 				VTCollisionTimeOneVertex(initial_pos[j].data(), current_pos[j].data(), collision_time, element_num[j],
-					element + estimate_coeff_for_vt_pair_num * j,vertex_for_render.data(), vertex_position.data());
+					element + estimate_coeff_for_vt_pair_num * j, vertex_collision_free.data(), vertex_position.data());
 			}
 		}
 		else {
@@ -4362,7 +4568,7 @@ void Collision::collisionTimeByElement(int thread_No)
 			for (unsigned int k = vertex_index_start_per_thread[i][thread_No]; k < element_end; ++k) {
 				j = surface_to_normal[k];
 				VTCollisionTimeOneVertex(initial_pos[j].data(), current_pos[j].data(), collision_time, element_num[k],
-					element + estimate_coeff_for_vt_pair_num * k, vertex_for_render.data(), vertex_position.data());
+					element + estimate_coeff_for_vt_pair_num * k, vertex_collision_free.data(), vertex_position.data());
 			}
 		}
 	}
@@ -4370,7 +4576,7 @@ void Collision::collisionTimeByElement(int thread_No)
 	unsigned int* edge_vertex;
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		element_end = edge_index_start_per_thread[i][thread_No + 1];
-		initial_pos = vertex_for_render[i];
+		initial_pos = vertex_collision_free[i];
 		current_pos = vertex_position[i];
 		element = spatial_hashing.edge_edge_pair_by_edge[i];
 		element_num = spatial_hashing.edge_edge_pair_num_record[i];		
@@ -4379,14 +4585,14 @@ void Collision::collisionTimeByElement(int thread_No)
 			EECollisionTimeOneEdge(initial_pos[*edge_vertex].data(),initial_pos[*(edge_vertex+1)].data(),
 				current_pos[*edge_vertex].data(), current_pos[*(edge_vertex+1)].data(), 
 				collision_time,j,i, element_num[j],
-				element + estimate_coeff_for_ee_pair_num * j);
+				element + estimate_coeff_for_ee_pair_num * j, vertex_collision_free);
 		}
 	}
 	//VT collider
 	if (has_collider) {
 		for (unsigned int i = 0; i < total_obj_num; ++i) {
 			element_end = vertex_index_start_per_thread[i][thread_No + 1];
-			initial_pos = vertex_for_render[i];
+			initial_pos = vertex_collision_free[i];
 			current_pos = vertex_position[i];
 			element = spatial_hashing.vertex_obj_triangle_collider_pair_by_vertex[i];
 			element_num = spatial_hashing.vertex_obj_triangle_collider_num_record[i];
@@ -6217,11 +6423,22 @@ void Collision::initialVolume()
 	TV_volume.resize(total_obj_num);
 	EE_volume.resize(total_obj_num);
 	VT_collider_volume.resize(total_obj_num);
-
 	VT_start_index = new unsigned int* [total_obj_num];
 	TV_start_index = new unsigned int* [total_obj_num];
 	EE_start_index = new unsigned int* [total_obj_num];
 	VT_collider_start_index = new unsigned int* [total_obj_num];
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		VT_volume[i].reserve(mesh_struct[i]->vertex_position.size());
+		TV_volume[i].reserve(mesh_struct[i]->vertex_position.size());
+		EE_volume[i].reserve(mesh_struct[i]->vertex_position.size());
+		VT_start_index[i] = new unsigned int[vertex_index_start_per_thread[i][thread_num] + 1];
+		TV_start_index[i] = new unsigned int[mesh_struct[i]->triangle_indices.size()+1];
+		EE_start_index[i] = new unsigned int[mesh_struct[i]->edge_vertices.size()/2+1];
+		if (!collider->empty()) {
+			VT_collider_volume[i].reserve(mesh_struct[i]->vertex_position.size());
+			VT_collider_start_index[i] = new unsigned int[vertex_index_start_per_thread[i][thread_num] + 1];
+		}
+	}
 }
 
 
@@ -6271,7 +6488,7 @@ void Collision::initialPairRecord()
 			//vertex_collider_triangle_obj_pair[i] = new unsigned int[1];
 		}
 	}
-
+	initialVolume();
 }
 
 

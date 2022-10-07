@@ -9,4 +9,13 @@ namespace Basic {
 			prefix_sum[i + 1] = prefix_sum[i] + cell_num[i];
 		}
 	}
+	template<typename T>
+	void cumulativeSumDoubleRecord(T* cell_num, T size, T* prefix_sum)	//cell num store double actual num
+	{
+		prefix_sum[0] = 0;
+		prefix_sum += 1;
+		for (T i = 0; i < size; ++i) {
+			prefix_sum[i + 1] = prefix_sum[i] + (cell_num[i]>>1);
+		}
+	}
 };

@@ -128,7 +128,7 @@ private:
 
 	std::vector<std::vector<std::array<double, 3>>> record_vertex_position;
 	//std::vector<std::vector<std::array<double, 3>>> record_outer_vertex_position;
-	void recordVertexPosition();
+	//void recordLastStepVertexPosition();
 
 	//std::vector<std::vector<unsigned int>* >unfixed_vertex;
 	double max_move_standard;//the max displacement to stop iteration
@@ -173,7 +173,8 @@ private:
 
 	void solveNewtonCDTetWithCollision(std::array<double, 3>* vertex_position, double ARAP_stiffness, double dt,
 		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* tet_vertex_indices, double* mass,
-		double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double collision_stiffness, unsigned int obj_No);
+		double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double collision_stiffness, unsigned int obj_No,
+		bool vertex_on_surface, unsigned int vertex_index_on_surface);
 	void getARAPHessian(Matrix3d& Hessian, Vector3d& grad, std::array<double, 3>* vertex_position, double stiffness,
 		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, 
 		double* volume, unsigned int vertex_index);
@@ -187,5 +188,7 @@ private:
 		double* ori_volume, double stiffness, unsigned int obj_index, unsigned int edge_index, unsigned int vertex_no);
 	void getVT_ColiderCollisionHessain(Matrix3d& Hessian, Vector3d& grad, double* vertex_position_, double stiffness,
 		unsigned int* VT, unsigned int num, double* ori_volume);
+	void newtonCDTetWithCollision();
+	void updateCollisionFreePosition();
 };
 
