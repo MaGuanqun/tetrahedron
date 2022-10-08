@@ -169,10 +169,11 @@ public:
 	void saveCollisionPairVolume();
 
 	void setCollisionFreeVertex(std::vector<std::vector<std::array<double, 3>>>* record_vertex_position);
+	double d_hat;
 
 private:
 
-	
+	double d_hat_2;
 
 	void storeVolume();
 
@@ -250,7 +251,7 @@ private:
 	ApproxCCD approx_CCD;
 	CollisionConstraint collision_constraint;
 
-	double d_hat;
+
 	double tolerance_2;// distance to report a collision
 
 	double epsilon;
@@ -663,4 +664,6 @@ private:
 		unsigned int* vertex_record, double* volume, std::vector<std::array<double, 3>*>& vertex_position);
 	void computeEEVolume(double* vertex_position_0, double* vertex_position_1, unsigned int pair_num,
 		unsigned int* edge_record, double* volume, std::vector<std::array<double, 3>*>& vertex_position, std::vector<unsigned int*>& edge_vertices);
+	bool floorCollisionTime(double* initial_position, double* current_pos, unsigned int dimension, bool direction, 
+		double floor_value, double& collision_time);
 };

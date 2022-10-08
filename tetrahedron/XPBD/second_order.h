@@ -46,7 +46,7 @@ public:
 		Matrix<double, 3, 4>& A, Matrix3d& Hessian, Vector3d& grad, double& C, unsigned int vertex_no);
 
 	bool getCollisionPairHessian(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
-		double ori_volume, double& Hessian, Vector3d& grad, unsigned int vertex_no);
+		double ori_volume, Matrix3d& Hessian, Vector3d& grad, unsigned int vertex_no);
 
 	void computeEdgeLengthForce(double* vertex_0, double* vertex_1, double stiffness,
 		double* potential_0, double* potential_1, double rest_length);

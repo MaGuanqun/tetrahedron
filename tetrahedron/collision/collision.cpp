@@ -2230,6 +2230,15 @@ void Collision::findTV_ClosePair(int obj_No, unsigned int* vt_pair_initial, unsi
 		vt_pair = vt_pair_initial + ind * total_length_every_element_vt;
 		for (unsigned int j = 0; j < total_num; j += 2) {
 			temp_address = tv_pair[vt_pair[j]] + vt_pair[j + 1] * total_length_every_element_tv + tv_pair_num[vt_pair[j]][vt_pair[j + 1]];
+
+			if (CCD::internal::pointTriangleDistanceUnclassified(current_position, position[trianlge_index[i]][triangle_vertex[0]].data(),
+				position[trianlge_index[i]][triangle_vertex[1]].data(), position[trianlge_index[i]][triangle_vertex[2]].data()) < d_hat_2) {
+				memcpy(close_triangle_index, trianlge_index + i, 8);
+				close_triangle_index += 2;
+				close_triangle_num += 2;
+			}
+
+
 			*(temp_address++) = obj_No;
 			*temp_address = i;
 			tv_pair_num[vt_pair[j]][vt_pair[j + 1]]++;
@@ -2301,7 +2310,7 @@ void Collision::findVT_ClosePairSingleVertex(double* current_position, unsigned 
 	for (unsigned int i = 0; i < triangle_num; i+=2) {
 		triangle_vertex = triangle_vertex_index[trianlge_index[i]][trianlge_index[i + 1]].data();
 		if (CCD::internal::pointTriangleDistanceUnclassified(current_position, position[trianlge_index[i]][triangle_vertex[0]].data(),
-			position[trianlge_index[i]][triangle_vertex[1]].data(), position[trianlge_index[i]][triangle_vertex[2]].data()) < tolerance_2) {
+			position[trianlge_index[i]][triangle_vertex[1]].data(), position[trianlge_index[i]][triangle_vertex[2]].data()) < d_hat_2) {
 			memcpy(close_triangle_index, trianlge_index + i, 8);
 			close_triangle_index += 2;
 			close_triangle_num += 2;
@@ -2319,7 +2328,7 @@ void Collision::findEE_ClosePairSingleEdge(double* current_position_a0, double* 
 	for (unsigned int i = 0; i < edge_num; i += 2) {
 		edge_vertex = edge_vertex_index[edge_index[i]]+ (edge_index[i+1]<<1);
 		if (CCD::internal::edgeEdgeDistanceUnclassified(current_position_a0, current_position_a1, 
-			position[edge_index[i]][edge_vertex[0]].data(),position[edge_index[i]][edge_vertex[1]].data()) < tolerance_2) {
+			position[edge_index[i]][edge_vertex[0]].data(),position[edge_index[i]][edge_vertex[1]].data()) < d_hat_2) {
 			memcpy(close_edge_index, edge_index + i, 8);
 			close_edge_index += 2;
 			close_edge_num += 2;
@@ -4198,6 +4207,28 @@ void Collision::EECollisionTimeOneEdge(double* initial_pos_a0, double* initial_p
 	}
 }
 
+bool Collision::floorCollisionTime(double* initial_position, double* current_pos, unsigned int dimension, bool direction,
+	double floor_value, double& collision_time)
+{
+	if (direction) {
+		if (current_pos[dimension] > floor_value) {
+			return false;
+		}
+	}
+	else {
+		if (current_pos[dimension] < floor_value) {
+			return false;
+		}
+	}
+	double time = (initial_position[dimension] - floor_value) / (initial_position[dimension] - current_pos[dimension]);
+	if (collision_time > time) {
+		collision_time = time;
+	}
+
+	return true;
+}
+
+
 void Collision::VTCollisionTimeOneVertex(double* initial_pos, double* current_pos, double& collision_time, unsigned int num,
 	unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex)
 {
@@ -4611,6 +4642,33 @@ void Collision::collisionTimeByElement(int thread_No)
 						element + estimate_coeff_for_vt_collider_pair_num * k, vertex_for_render_collider.data(), vertex_position_collider.data());
 				}
 			}
+		}
+	}
+
+	//floor
+	if (floor->exist) {
+		for (unsigned int i = 0; i < total_obj_num; ++i) {
+			element_end = vertex_index_start_per_thread[i][thread_No + 1];
+			initial_pos = vertex_collision_free[i];
+			current_pos = vertex_position[i];
+			element = spatial_hashing.vertex_obj_triangle_collider_pair_by_vertex[i];
+			element_num = spatial_hashing.vertex_obj_triangle_collider_num_record[i];
+			if (i < cloth->size()) {
+				for (unsigned int j = vertex_index_start_per_thread[i][thread_No]; j < element_end; ++j) {
+					floorCollisionTime(initial_pos[j].data(), current_pos[j].data(), floor->dimension,
+						floor->normal_direction, floor->value, collision_time);
+				}
+			}
+			else {
+				unsigned int j;
+				surface_to_normal = vertex_index_on_surface[i - cloth->size()];
+				for (unsigned int k = vertex_index_start_per_thread[i][thread_No]; k < element_end; ++k) {
+					j = surface_to_normal[k];
+					floorCollisionTime(initial_pos[j].data(), current_pos[j].data(), floor->dimension,
+						floor->normal_direction, floor->value, collision_time);
+				}
+			}
+
 		}
 	}
 

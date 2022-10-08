@@ -61,7 +61,7 @@ public:
 	void computeCollisionFreePosition(int thread_No);
 private:
 	void coordinateDescent();
-
+	Floor* floor;
 	double gravity[3];
 
 	unsigned int total_thread_num;
@@ -190,5 +190,12 @@ private:
 		unsigned int* VT, unsigned int num, double* ori_volume);
 	void newtonCDTetWithCollision();
 	void updateCollisionFreePosition();
+	void getCollisionHessian(Matrix3d& Hessian, Vector3d& grad, std::array<double, 3>* vertex_position, 
+		std::array<double, 3>* initial_vertex_position,
+		double collision_stiffness, unsigned int obj_No,
+		unsigned int vertex_index, unsigned int vertex_index_on_surface);
+	bool getFloorHessian(double& Hessian, double& grad, double* vertex_position, double floor_value,
+		double* last_step_position, unsigned int dimension, double collision_stiffness, bool direction, double tolerance);
+
 };
 

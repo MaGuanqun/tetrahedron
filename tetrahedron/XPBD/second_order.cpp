@@ -239,7 +239,7 @@ void SecondOrderConstraint::solveCD_ARAP(std::array<double, 3>* vertex_position,
 
 
 bool SecondOrderConstraint::getCollisionPairHessian(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
-	double ori_volume, double& Hessian, Vector3d& grad, unsigned int vertex_no)
+	double ori_volume, Matrix3d& Hessian, Vector3d& grad, unsigned int vertex_no)
 {
 	double C;
 
@@ -284,8 +284,9 @@ bool SecondOrderConstraint::getCollisionPairHessian(double* vertex_position_0, d
 		std::cout << "collision volume negative" << std::endl;
 	}
 	double ln_ = log(volume / ori_volume);
+	Hessian = ( - 2.0 * ln_ + (ori_volume - volume) * (ori_volume + 3.0 * volume) / (volume * volume))*grad*grad.transpose();
 	grad *= (ori_volume - volume) * (2.0 * ln_ - ori_volume / volume + 1.0);
-	Hessian = -2.0 * ln_ + (ori_volume - volume) * (ori_volume + 3.0 * volume) / (volume * volume);
+	
 	return true;
 }
 
