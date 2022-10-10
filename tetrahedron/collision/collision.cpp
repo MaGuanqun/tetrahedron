@@ -383,6 +383,9 @@ void Collision::initialDHatTolerance(double ave_edge_length)
 
 	d_hat = 2e-2 * ave_edge_length;
 	d_hat_2 = d_hat * d_hat;
+
+	volume_boundary = 0.5 * d_hat*ave_edge_length;
+
 	tolerance = 1e-3 * d_hat;
 
 	eta = 0.01;	
@@ -1679,8 +1682,9 @@ void Collision::storeVolume()
 void Collision::computeVolume(int thread_No)
 {
 	computeVTVolume(thread_No);
-	computeEEVolume(thread_No);
 	computeTVVolume(thread_No);
+	std::cout << "start EE " << std::endl;
+	computeEEVolume(thread_No);
 	if (!collider->empty()) {
 		computeVTColliderVolume(thread_No);
 	}

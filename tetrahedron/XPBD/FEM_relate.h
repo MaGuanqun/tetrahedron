@@ -48,7 +48,6 @@ namespace FEM {
 		Matrix<double, 3, 4>& A, Matrix3d& deformation_gradient)
 	{
 		Matrix3d q_e;
-		double determinant;
 		memcpy(q_e.data(), vertex_position_1, 24);
 		memcpy(q_e.data() + 3, vertex_position_2, 24);
 		memcpy(q_e.data() + 6, vertex_position_3, 24);

@@ -33,7 +33,11 @@ namespace rootparity
     
     class RootParityCollisionTest
     {     
+#ifndef M_PI
 #define M_PI 3.1415926
+#endif // !1
+
+
     public:
         
         /// Constructor, take a reference to the input vertex locations at t=0 and t=1.  User also specifies whether the vertices 

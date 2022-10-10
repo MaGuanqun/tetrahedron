@@ -991,6 +991,8 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 		}
 		auto t0 = std::chrono::system_clock::now();
 
+		
+
 		switch (use_method)
 		{
 		case PD_:

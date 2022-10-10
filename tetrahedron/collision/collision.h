@@ -170,10 +170,12 @@ public:
 
 	void setCollisionFreeVertex(std::vector<std::vector<std::array<double, 3>>>* record_vertex_position);
 	double d_hat;
-
+	double volume_boundary;
 private:
 
 	double d_hat_2;
+
+
 
 	void storeVolume();
 
