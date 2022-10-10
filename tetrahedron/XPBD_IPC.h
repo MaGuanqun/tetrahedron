@@ -171,7 +171,7 @@ private:
 		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, double* mass,
 		double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double* lambda);
 
-	void solveNewtonCDTetWithCollision(std::array<double, 3>* vertex_position, double ARAP_stiffness, double dt,
+	void solveNewtonCDTetWithCollision(std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position, double ARAP_stiffness, double dt,
 		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* tet_vertex_indices, double* mass,
 		double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double collision_stiffness, unsigned int obj_No,
 		bool vertex_on_surface, unsigned int vertex_index_on_surface);
@@ -196,6 +196,6 @@ private:
 		unsigned int vertex_index, unsigned int vertex_index_on_surface);
 	bool getFloorHessian(double& Hessian, double& grad, double* vertex_position, double floor_value,
 		double* last_step_position, unsigned int dimension, double collision_stiffness, bool direction, double tolerance);
-
+	unsigned int min_inner_iteration, min_outer_iteration;
 };
 

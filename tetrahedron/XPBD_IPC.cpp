@@ -15,6 +15,9 @@ XPBD_IPC::XPBD_IPC()
 
 	velocity_damp = 0.995;
 	energy_converge_ratio = 1e-3;
+
+	min_inner_iteration = 3;
+	min_outer_iteration = 5;
 }
 void XPBD_IPC::initial()
 {
@@ -324,6 +327,7 @@ void XPBD_IPC::XPBD_IPCSolve()
 			inner_iteration_number++;
 		}		
 		iteration_number += inner_iteration_number;
+		//iteration_number++;
 	}
 
 	collision.globalCollisionTime();
@@ -338,7 +342,7 @@ void XPBD_IPC::XPBD_IPCSolve()
 
 bool XPBD_IPC::innerConvergeCondition(unsigned int iteration_num)
 {
-	if (iteration_num < 50) {//max_iteration_number
+	if (iteration_num < min_inner_iteration) {//max_iteration_number
 		return false;
 	}
 
@@ -349,7 +353,7 @@ bool XPBD_IPC::innerConvergeCondition(unsigned int iteration_num)
 
 bool XPBD_IPC::convergeCondition(unsigned int iteration_num)
 {
-	if (iteration_num < 50) {//max_iteration_number
+	if (iteration_num < min_outer_iteration) {//max_iteration_number
 		return false;
 	}
 
@@ -359,11 +363,10 @@ bool XPBD_IPC::convergeCondition(unsigned int iteration_num)
 		return true;
 	}
 
-	if (abs(energy - previous_energy) / previous_energy < energy_converge_ratio) {
-		return true;
-	}
-
-	return false;
+	//if (abs(energy - previous_energy) / previous_energy < energy_converge_ratio) {
+	//	return true;
+	//}
+	//return false;
 
 	unsigned int num;
 	std::array<double, 3>* current_pos;
@@ -426,6 +429,7 @@ void XPBD_IPC::newtonCDTetWithCollision()
 	MeshStruct* mesh_struct_;
 	double* volume;
 	std::array<double, 3>* vertex_pos;
+	std::array<double, 3>* initial_vertex_pos;
 	double* mass_inv;
 	double stiffness;
 	Matrix<double, 3, 4>* A;
@@ -440,6 +444,7 @@ void XPBD_IPC::newtonCDTetWithCollision()
 		indices = tetrahedron->data()[i].mesh_struct.indices.data();
 		volume = tetrahedron->data()[i].mesh_struct.volume.data();
 		vertex_pos = vertex_position[i + cloth->size()];
+		initial_vertex_pos = initial_vertex_position[i + cloth->size()];
 		stiffness = tetrahedron->data()[i].ARAP_stiffness;
 		A = tetrahedron->data()[i].mesh_struct.A.data();
 		mass_inv = mesh_struct_->mass_inv.data();
@@ -451,7 +456,7 @@ void XPBD_IPC::newtonCDTetWithCollision()
 
 		for (unsigned int j = 0; j < size; ++j) {
 			if (mass_inv[j] != 0.0) {
-					solveNewtonCDTetWithCollision(vertex_pos, stiffness, sub_time_step, A,
+					solveNewtonCDTetWithCollision(vertex_pos, initial_vertex_pos, stiffness, sub_time_step, A,
 						mesh_struct_->vertex_tet_index[j], indices, mass, volume, j, sn_,
 						colliision_stiffness, i + cloth->size(), (*is_surface_vertex)[j],vertex_index[j]);
 			}
@@ -511,20 +516,23 @@ bool XPBD_IPC::getFloorHessian(double& Hessian, double& grad, double* vertex_pos
 		}
 	}
 	double d_current = vertex_position[dimension] - floor_value;
-	double d_ori = abs(last_step_position[dimension] - floor_value);
-	
+	double d_ori = abs(last_step_position[dimension] - floor_value);// 
+	if (d_ori < tolerance) {
+		d_ori = tolerance;
+	}
+	double ln_;
+
 	if (d_current < 0) {
 		d_current = -d_current;
-		double ln_ = log(d_current / d_ori);
+		ln_ = log(d_current / d_ori);
 		grad =-collision_stiffness * (d_ori - d_current) * (2.0 * ln_ - d_ori / d_current + 1.0);
 		Hessian =- collision_stiffness *(-2.0 * ln_ + (d_ori - d_current) * (d_ori + 3.0 * d_current) / (d_current * d_current));
 	}
 	else {
-		double ln_ = log(d_current / d_ori);
+		ln_ = log(d_current / d_ori);
 		grad = collision_stiffness * (d_ori - d_current) * (2.0 * ln_ - d_ori / d_current + 1.0);
 		Hessian = collision_stiffness * (-2.0 * ln_ + (d_ori - d_current) * (d_ori + 3.0 * d_current) / (d_current * d_current));
 	}
-
 	return true;
 }
 
@@ -535,53 +543,56 @@ void XPBD_IPC::getCollisionHessian(Matrix3d& Hessian, Vector3d& grad, std::array
 	double collision_stiffness, unsigned int obj_No,
 	unsigned int vertex_index,	unsigned int vertex_index_on_surface)
 {
-	getVTCollisionHessain(Hessian, grad, vertex_position[vertex_index].data(), collision_stiffness,
-		collision.vertex_triangle_pair_by_vertex[obj_No] + collision.close_vt_pair_num * vertex_index_on_surface, collision.vertex_triangle_pair_num_record[obj_No][vertex_index_on_surface],
-		collision.VT_volume[obj_No].data() + collision.VT_start_index[obj_No][vertex_index_on_surface]);
+	//getVTCollisionHessain(Hessian, grad, vertex_position[vertex_index].data(), collision_stiffness,
+	//	collision.vertex_triangle_pair_by_vertex[obj_No] + collision.close_vt_pair_num * vertex_index_on_surface, collision.vertex_triangle_pair_num_record[obj_No][vertex_index_on_surface],
+	//	collision.VT_volume[obj_No].data() + collision.VT_start_index[obj_No][vertex_index_on_surface]);
 
-	int* triangle_;
-	std::vector<unsigned int>* triangle = &mesh_struct[obj_No]->vertices[vertex_index].face;
+	//int* triangle_;
+	//std::vector<unsigned int>* triangle = &mesh_struct[obj_No]->vertices[vertex_index].face;
 
-	for (unsigned int i = 0; i < triangle->size(); ++i) {
-		triangle_ = triangle_indices[obj_No][triangle->data()[i]].data();
-		getTVCollisionHessain(Hessian, grad, vertex_position[triangle_[0]].data(), vertex_position[triangle_[1]].data(),
-			vertex_position[triangle_[2]].data(),
-			findVertexNo(vertex_index, triangle_, 3),
-			collision_stiffness, collision.triangle_vertex_pair_by_triangle[obj_No] + collision.close_tv_pair_num * triangle->data()[i],
-			collision.triangle_vertex_pair_num_record[obj_No][triangle->data()[i]],
-			collision.TV_volume[obj_No].data() + collision.TV_start_index[obj_No][triangle->data()[i]]);
-	}
+	//for (unsigned int i = 0; i < triangle->size(); ++i) {
+	//	triangle_ = triangle_indices[obj_No][triangle->data()[i]].data();
+	//	getTVCollisionHessain(Hessian, grad, vertex_position[triangle_[0]].data(), vertex_position[triangle_[1]].data(),
+	//		vertex_position[triangle_[2]].data(),
+	//		findVertexNo(vertex_index, triangle_, 3),
+	//		collision_stiffness, collision.triangle_vertex_pair_by_triangle[obj_No] + collision.close_tv_pair_num * triangle->data()[i],
+	//		collision.triangle_vertex_pair_num_record[obj_No][triangle->data()[i]],
+	//		collision.TV_volume[obj_No].data() + collision.TV_start_index[obj_No][triangle->data()[i]]);
+	//}
 
-	std::vector<unsigned int>* edge = &mesh_struct[obj_No]->vertices[vertex_index].edge;
-	unsigned int* edge_;
-	for (unsigned int i = 0; i < edge->size(); ++i) {
-		edge_ = edge_vertices[obj_No] + (edge->data()[i] << 1);
-		getEECollisionHessian(Hessian, grad, vertex_position[edge_[0]].data(), vertex_position[edge_[1]].data(),
-			collision.edge_edge_pair_by_edge[obj_No] + collision.close_ee_pair_num * edge->data()[i],
-			collision.edge_edge_pair_num_record[obj_No][edge->data()[i]], collision.EE_volume[obj_No].data() + collision.EE_start_index[obj_No][edge->data()[i]], collision_stiffness, obj_No, edge->data()[i],
-			findVertexNo(vertex_index, edge_, 2));
-	}
+	//std::vector<unsigned int>* edge = &mesh_struct[obj_No]->vertices[vertex_index].edge;
+	//unsigned int* edge_;
+	//for (unsigned int i = 0; i < edge->size(); ++i) {
+	//	edge_ = edge_vertices[obj_No] + (edge->data()[i] << 1);
+	//	getEECollisionHessian(Hessian, grad, vertex_position[edge_[0]].data(), vertex_position[edge_[1]].data(),
+	//		collision.edge_edge_pair_by_edge[obj_No] + collision.close_ee_pair_num * edge->data()[i],
+	//		collision.edge_edge_pair_num_record[obj_No][edge->data()[i]], collision.EE_volume[obj_No].data() + collision.EE_start_index[obj_No][edge->data()[i]], collision_stiffness, obj_No, edge->data()[i],
+	//		findVertexNo(vertex_index, edge_, 2));
+	//}
 
-	if (!collider->empty()) {
-		getVT_ColiderCollisionHessain(Hessian, grad, vertex_position[vertex_index].data(), collision_stiffness,
-			collision.vertex_obj_triangle_collider_pair_by_vertex[obj_No] + collision.close_vt_collider_pair_num * vertex_index_on_surface,
-			collision.vertex_obj_triangle_collider_num_record[obj_No][vertex_index_on_surface],
-			collision.VT_collider_volume[obj_No].data() + collision.VT_collider_start_index[obj_No][vertex_index_on_surface]);
-	}
+	//if (!collider->empty()) {
+	//	getVT_ColiderCollisionHessain(Hessian, grad, vertex_position[vertex_index].data(), collision_stiffness,
+	//		collision.vertex_obj_triangle_collider_pair_by_vertex[obj_No] + collision.close_vt_collider_pair_num * vertex_index_on_surface,
+	//		collision.vertex_obj_triangle_collider_num_record[obj_No][vertex_index_on_surface],
+	//		collision.VT_collider_volume[obj_No].data() + collision.VT_collider_start_index[obj_No][vertex_index_on_surface]);
+	//}
 
 	//floor
 	if (floor->exist) {
-		double Hessian, grad;
-		getFloorHessian(Hessian, grad, vertex_position[vertex_index].data(), floor->value,
-			initial_vertex_position[vertex_index].data(), floor->dimension, collision_stiffness, floor->normal_direction, collision.d_hat);
-		..
+		double Hessian_, grad_;
+		if (getFloorHessian(Hessian_, grad_, vertex_position[vertex_index].data(), floor->value,
+			initial_vertex_position[vertex_index].data(), floor->dimension, collision_stiffness, floor->normal_direction, collision.d_hat)) {
+			grad.data()[floor->dimension] -= grad_;
+			Hessian.data()[floor->dimension << 2] += Hessian_;
+		}	
 	}
 
 }
 
 
 
-void XPBD_IPC::solveNewtonCDTetWithCollision(std::array<double, 3>* vertex_position, double ARAP_stiffness, double dt,
+void XPBD_IPC::solveNewtonCDTetWithCollision(std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position,
+	double ARAP_stiffness, double dt,
 	Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* tet_vertex_indices, double* mass,
 	double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double collision_stiffness, unsigned int obj_No,
 	bool vertex_on_surface, unsigned int vertex_index_on_surface)
@@ -594,7 +605,7 @@ void XPBD_IPC::solveNewtonCDTetWithCollision(std::array<double, 3>* vertex_posit
 	getARAPHessian(Hessian, grad, vertex_position, ARAP_stiffness, A, tet_indices, tet_vertex_indices, volume, vertex_index);
 
 	if (vertex_on_surface) {
-		getCollisionHessian(Hessian, grad, vertex_position, collision_stiffness, obj_No, vertex_index, vertex_index_on_surface);
+		getCollisionHessian(Hessian, grad, vertex_position, initial_vertex_position,collision_stiffness, obj_No, vertex_index, vertex_index_on_surface);
 	}
 
 	double mass_dt_2 = mass[vertex_index] / (dt * dt);
@@ -608,6 +619,8 @@ void XPBD_IPC::solveNewtonCDTetWithCollision(std::array<double, 3>* vertex_posit
 
 	ColPivHouseholderQR <Matrix3d> linear(Hessian);
 	Vector3d result = linear.solve(grad);
+
+
 
 	SUM_(vertex_position[vertex_index], result);
 

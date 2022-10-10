@@ -48,7 +48,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	initialSpatialHashing(cloth, collider, tetrahedron, thread, tolerance_ratio);
 
 	this->tolerance_ratio = tolerance_ratio;
-
+	reorganzieDataOfObjects();
 	//testPairEven();
 	if (record_pair_by_element) {
 		initialPairRecord();
@@ -63,7 +63,6 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	collision_time_thread.resize(thread->thread_num);
 
 
-	reorganzieDataOfObjects();
 	initialCollidePairInfo();
 	//collision_constraint.testPT();
 	//approx_CCD.test();
@@ -382,8 +381,8 @@ void Collision::initialDHatTolerance(double ave_edge_length)
 		tolerance_radius[i] = tolerance_ratio[i] * ave_edge_length;
 	}	
 
-	d_hat = 1e-2 * ave_edge_length;
-
+	d_hat = 2e-2 * ave_edge_length;
+	d_hat_2 = d_hat * d_hat;
 	tolerance = 1e-3 * d_hat;
 
 	eta = 0.01;	
@@ -1638,8 +1637,7 @@ void Collision::globalCollisionTime()
 	if (collision_time > 1.0) {
 		collision_time = 1.0;
 	}
-	//collision_time *= 0.9;
-	//std::cout <<"collision time "<< collision_time << std::endl;
+	collision_time *= 0.9;
 
 }
 
@@ -1668,6 +1666,7 @@ void Collision::storeVolume()
 	//resize volume
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		VT_volume[i].resize(VT_start_index[i][vertex_index_start_per_thread[i][thread_num]]);
+
 		TV_volume[i].resize(TV_start_index[i][mesh_struct[i]->triangle_indices.size()]);
 		EE_volume[i].resize(EE_start_index[i][mesh_struct[i]->edge_vertices.size()/2]);
 		if (!collider->empty()) {
@@ -2214,7 +2213,6 @@ void Collision::findTV_ClosePair(int obj_No, unsigned int* vt_pair_initial, unsi
 	unsigned int vertex_end, i;
 	unsigned int total_num;
 
-	bool is_tet = obj_No >= cloth->size();
 	unsigned int* temp_address;
 
 	unsigned int* vt_pair;
@@ -2230,15 +2228,6 @@ void Collision::findTV_ClosePair(int obj_No, unsigned int* vt_pair_initial, unsi
 		vt_pair = vt_pair_initial + ind * total_length_every_element_vt;
 		for (unsigned int j = 0; j < total_num; j += 2) {
 			temp_address = tv_pair[vt_pair[j]] + vt_pair[j + 1] * total_length_every_element_tv + tv_pair_num[vt_pair[j]][vt_pair[j + 1]];
-
-			if (CCD::internal::pointTriangleDistanceUnclassified(current_position, position[trianlge_index[i]][triangle_vertex[0]].data(),
-				position[trianlge_index[i]][triangle_vertex[1]].data(), position[trianlge_index[i]][triangle_vertex[2]].data()) < d_hat_2) {
-				memcpy(close_triangle_index, trianlge_index + i, 8);
-				close_triangle_index += 2;
-				close_triangle_num += 2;
-			}
-
-
 			*(temp_address++) = obj_No;
 			*temp_address = i;
 			tv_pair_num[vt_pair[j]][vt_pair[j + 1]]++;
