@@ -281,7 +281,7 @@ bool SecondOrderConstraint::getCollisionPairHessian(double* vertex_position_0, d
 	if (volume < 0) {
 		grad *= -1.0;
 		volume = -volume;
-		std::cout << "collision volume negative" << std::endl;
+		//std::cout << "collision volume negative" << std::endl;
 	}
 	double ln_ = log(volume / ori_volume);
 	Hessian = ( - 2.0 * ln_ + (ori_volume - volume) * (ori_volume + 3.0 * volume) / (volume * volume))*grad*grad.transpose();

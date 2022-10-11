@@ -1683,7 +1683,6 @@ void Collision::computeVolume(int thread_No)
 {
 	computeVTVolume(thread_No);
 	computeTVVolume(thread_No);
-	std::cout << "start EE " << std::endl;
 	computeEEVolume(thread_No);
 	if (!collider->empty()) {
 		computeVTColliderVolume(thread_No);
@@ -1842,7 +1841,7 @@ void Collision::computeEEVolume(double* vertex_position_0, double* vertex_positi
 	for (unsigned int i = 0; i < pair_num; i += 2) {
 		edge_index = edge_vertices[edge_record[i]] + (edge_record[i + 1] << 1);
 		*(volume++) = abs(getTetCubeVolume(vertex_position_0, vertex_position_1,
-			vertex_position[edge_record[i]][edge_index[i]].data(),vertex_position[edge_record[i]][edge_index[i + 1]].data()));
+			vertex_position[edge_record[i]][*edge_index].data(),vertex_position[edge_record[i]][edge_index[1]].data()));
 	}
 }
 

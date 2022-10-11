@@ -3,7 +3,7 @@
 
 Floor::Floor()
 {
-	half_floor_length = 1.0;
+	half_floor_length = 10.0;
 
 	vertex_position.resize(12);
 	unsigned int vertex_indi[6] = { 0,1,2,0,2,3 };

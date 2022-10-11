@@ -563,7 +563,9 @@ void XPBD_IPC::getCollisionHessian(Matrix3d& Hessian, Vector3d& grad, std::array
 		edge_ = edge_vertices[obj_No] + (edge->data()[i] << 1);
 		getEECollisionHessian(Hessian, grad, vertex_position[edge_[0]].data(), vertex_position[edge_[1]].data(),
 			collision.edge_edge_pair_by_edge[obj_No] + collision.close_ee_pair_num * edge->data()[i],
-			collision.edge_edge_pair_num_record[obj_No][edge->data()[i]], collision.EE_volume[obj_No].data() + collision.EE_start_index[obj_No][edge->data()[i]], collision_stiffness, obj_No, edge->data()[i],
+			collision.edge_edge_pair_num_record[obj_No][edge->data()[i]], 
+			collision.EE_volume[obj_No].data() + collision.EE_start_index[obj_No][edge->data()[i]], 
+			collision_stiffness, obj_No, edge->data()[i],
 			findVertexNo(vertex_index, edge_, 2));
 	}
 	if (!collider->empty()) {
@@ -632,7 +634,7 @@ void XPBD_IPC::getEECollisionHessian(Matrix3d& Hessian, Vector3d& grad, double* 
 	unsigned int* edge_vertex;
 	double volume;
 	for (unsigned int i = 0; i < num; i += 2) {
-		volume = (ori_volume[i >> 1] > collision.volume_boundary ? ori_volume[i << 1] : collision.volume_boundary);
+		volume = (ori_volume[i >> 1] > collision.volume_boundary ? ori_volume[i >> 1] : collision.volume_boundary);
 		edge_vertex = edge_vertices[EE[i]] + (EE[i + 1] << 1);
 		if (obj_index < EE[i] || (obj_index == EE[i] && edge_index < EE[i + 1])) {
 			if (second_order_constraint.getCollisionPairHessian(pos0, pos1, vertex_position[EE[i]][edge_vertex[0]].data(),
@@ -665,7 +667,7 @@ void XPBD_IPC::getTVCollisionHessain(Matrix3d& Hessian, Vector3d& grad,
 	Vector3d grad_single;
 	double volume;
 	for (unsigned int i = 0; i < num; i += 2) {
-		volume = (ori_volume[i >> 1] > collision.volume_boundary ? ori_volume[i << 1] : collision.volume_boundary);
+		volume = (ori_volume[i >> 1] > collision.volume_boundary ? ori_volume[i >> 1] : collision.volume_boundary);
 		if (second_order_constraint.getCollisionPairHessian(pos_0, pos_1,  pos_2,
 			vertex_position[TV[i]][TV[i+1]].data(),
 			volume, Hessian_single, grad_single, vertex_no)) {
@@ -688,7 +690,7 @@ void XPBD_IPC::getVT_ColiderCollisionHessain(Matrix3d& Hessian, Vector3d& grad, 
 	double volume;
 	for (unsigned int i = 0; i < num; i += 2) {
 		triangle_vertex = triangle_indices_collider[VT[i]][VT[i + 1]].data();
-		volume = (ori_volume[i >> 1] > collision.volume_boundary ? ori_volume[i << 1] : collision.volume_boundary);
+		volume = (ori_volume[i >> 1] > collision.volume_boundary ? ori_volume[i >> 1] : collision.volume_boundary);
 		if (second_order_constraint.getCollisionPairHessian(vertex_position_collider[VT[i]][triangle_vertex[0]].data(),
 			vertex_position_collider[VT[i]][triangle_vertex[1]].data(), vertex_position_collider[VT[i]][triangle_vertex[2]].data(), vertex_position_,
 			volume, Hessian_single, grad_single, 3)) {
@@ -710,7 +712,7 @@ void XPBD_IPC::getVTCollisionHessain(Matrix3d& Hessian, Vector3d& grad, double* 
 	double volume;
 	for (unsigned int i = 0; i < num; i += 2) {
 		triangle_vertex = triangle_indices[VT[i]][VT[i + 1]].data();
-		volume =( ori_volume[i >> 1]>collision.volume_boundary?ori_volume[i<<1] :collision.volume_boundary);
+		volume =( ori_volume[i >> 1]>collision.volume_boundary?ori_volume[i >> 1] :collision.volume_boundary);
 		if (second_order_constraint.getCollisionPairHessian( vertex_position[VT[i]][triangle_vertex[0]].data(),
 			vertex_position[VT[i]][triangle_vertex[1]].data(), vertex_position[VT[i]][triangle_vertex[2]].data(), vertex_position_,
 			volume, Hessian_single, grad_single, 3)) {

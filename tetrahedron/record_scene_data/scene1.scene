@@ -1,18 +1,13 @@
 object
-2
-C:\graphics\tetrahedron\model\single_tet.ele
+1
 C:\graphics\tetrahedron\model\single_tet.ele
 collider
 0
 stiffness
 100 50000 0 0 0 0 
-100 50000 0 0 0 0 
-1e+06 200 200 200 0 0 0 0 
-1e+06 200 200 200 0 0 0 0 
+100 200 200 200 0 0 0 0 
 anchor_vertex
 0
-0 
-1
 0 
 time_step
 0.01
@@ -27,7 +22,7 @@ friction_coe
 floor_dimension
 2
 floor_value
--1.05
+-1.15
 XPBD_IPC
 substep_num
 1
