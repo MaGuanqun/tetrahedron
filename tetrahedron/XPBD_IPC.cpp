@@ -76,10 +76,9 @@ void XPBD_IPC::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* t
 
 void XPBD_IPC::setConvergeCondition()
 {
-	converge_condition_ratio = 1e-3;
+	converge_condition_ratio = 5e-3;
 	double edge_length = calEdgeLength();
 	max_move_standard = converge_condition_ratio * edge_length;
-	outer_max_move_standard = 5.0 * converge_condition_ratio * edge_length;
 }
 
 void XPBD_IPC::initialClothBending()

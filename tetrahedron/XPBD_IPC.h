@@ -132,7 +132,6 @@ private:
 
 	//std::vector<std::vector<unsigned int>* >unfixed_vertex;
 	double max_move_standard;//the max displacement to stop iteration
-	double outer_max_move_standard;//the max displacement to stop iteration
 
 
 
