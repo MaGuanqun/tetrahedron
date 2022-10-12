@@ -128,12 +128,12 @@ void SpatialHashing::initialHashCell(unsigned int total_triangle_num, unsigned i
 	}
 	else {
 		vertex_triangle_pair_by_vertex = new unsigned int* [collider_begin_obj_index];
-		//triangle_vertex_pair_by_triangle = new unsigned int* [collider_begin_obj_index];
+		triangle_vertex_pair_by_triangle = new unsigned int* [collider_begin_obj_index];
 		edge_edge_pair_by_edge = new unsigned int* [collider_begin_obj_index];
 		vertex_obj_triangle_collider_pair_by_vertex = new unsigned int* [collider_begin_obj_index];
 
 		vertex_triangle_pair_num_record = new unsigned int* [collider_begin_obj_index];
-		//triangle_vertex_pair_num_record = new unsigned int* [collider_begin_obj_index];
+		triangle_vertex_pair_num_record = new unsigned int* [collider_begin_obj_index];
 		edge_edge_pair_num_record = new unsigned int* [collider_begin_obj_index];
 		vertex_obj_triangle_collider_num_record = new unsigned int* [collider_begin_obj_index];
 
@@ -161,13 +161,13 @@ void SpatialHashing::initialHashCell(unsigned int total_triangle_num, unsigned i
 				vertex_triangle_pair_num_record[i] = new unsigned int[tetrahedron->data()[i - cloth->size()].mesh_struct.vertex_index_on_sureface.size()];// 
 				memset(vertex_triangle_pair_num_record[i], 0, 4 * tetrahedron->data()[i - cloth->size()].mesh_struct.vertex_index_on_sureface.size());			
 			}
-			//triangle_vertex_pair_by_triangle[i] = new unsigned int[total_length_every_element_for_triangle_vertex * mesh_struct[i]->triangle_indices.size()];// 
-			//memset(triangle_vertex_pair_by_triangle[i], 0, 4 * (total_length_every_element_for_triangle_vertex * mesh_struct[i]->triangle_indices.size()));
+			triangle_vertex_pair_by_triangle[i] = new unsigned int[total_length_every_element_for_triangle_vertex * mesh_struct[i]->triangle_indices.size()];// 
+			memset(triangle_vertex_pair_by_triangle[i], 0, 4 * (total_length_every_element_for_triangle_vertex * mesh_struct[i]->triangle_indices.size()));
 
 			edge_edge_pair_num_record[i] = new unsigned int[mesh_struct[i]->edge_length.size()];// 
 			memset(edge_edge_pair_num_record[i], 0, 4 * mesh_struct[i]->edge_length.size());
-			//triangle_vertex_pair_num_record[i] = new unsigned int[mesh_struct[i]->triangle_indices.size()];// 
-			//memset(triangle_vertex_pair_num_record[i], 0, 4 * mesh_struct[i]->triangle_indices.size());
+			triangle_vertex_pair_num_record[i] = new unsigned int[mesh_struct[i]->triangle_indices.size()];// 
+			memset(triangle_vertex_pair_num_record[i], 0, 4 * mesh_struct[i]->triangle_indices.size());
 
 			if (has_collider) {
 				vertex_obj_triangle_collider_pair_by_vertex[i] = new unsigned int[total_length_every_element_for_vertex_triange_collider * mesh_struct[i]->vertex_position.size()];
@@ -601,9 +601,9 @@ void SpatialHashing::buildSpatialHashing(double* scene_aabb)
 		thread->assignTask(this, COMBINE_HASH_TABLE);
 		thread->assignTask(this, FIND_ALL_PAIRS_HASH_TABLE_BY_ELEMENT);
 
-		//if (record_pair_by_element) {
-		//	findAllTriangleVertexPairByTriangle();
-		//}
+		if (record_pair_by_element) {
+			findAllTriangleVertexPairByTriangle();
+		}
 	}
 		//for (unsigned int i = 0; i < thread_num; ++i) {
 		//	findAllEdgeEdgePairs(i);
@@ -819,23 +819,23 @@ void SpatialHashing::findAllVertexTrianglePairsByPrimitive(int thread_No)
 
 
 
-//void SpatialHashing::initialPairByElement()
-//{
-//	for (unsigned int i = 0; i < collider_begin_obj_index;++i){
-//		memset(triangle_vertex_pair_num_record[i], 0, 4 * mesh_struct[i]->triangle_indices.size());
-//	}
-//}
-//
-//
-//
-//void SpatialHashing::findAllTriangleVertexPairByTriangle()
-//{
-//	initialPairByElement();
-//	for (unsigned int i = 0; i < collider_begin_obj_index; ++i) {
-//		findAllTriangleVertexPairByTriangleSingleObj(i, vertex_triangle_pair_by_vertex[i], vertex_triangle_pair_num_record[i], triangle_vertex_pair_by_triangle,
-//			triangle_vertex_pair_num_record, total_length_every_element_for_vertex_triange, total_length_every_element_for_triangle_vertex);
-//	}
-//}
+void SpatialHashing::initialPairByElement()
+{
+	for (unsigned int i = 0; i < collider_begin_obj_index;++i){
+		memset(triangle_vertex_pair_num_record[i], 0, 4 * mesh_struct[i]->triangle_indices.size());
+	}
+}
+
+
+
+void SpatialHashing::findAllTriangleVertexPairByTriangle()
+{
+	initialPairByElement();
+	for (unsigned int i = 0; i < collider_begin_obj_index; ++i) {
+		findAllTriangleVertexPairByTriangleSingleObj(i, vertex_triangle_pair_by_vertex[i], vertex_triangle_pair_num_record[i], triangle_vertex_pair_by_triangle,
+			triangle_vertex_pair_num_record, total_length_every_element_for_vertex_triange, total_length_every_element_for_triangle_vertex);
+	}
+}
 
 
 

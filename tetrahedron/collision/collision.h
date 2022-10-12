@@ -171,6 +171,11 @@ public:
 	void setCollisionFreeVertex(std::vector<std::vector<std::array<double, 3>>>* record_vertex_position);
 	double d_hat;
 	double volume_boundary;
+
+	void updateCollisionTime(unsigned int obj_No, unsigned int vertex);
+	void collisionTimeSingleVertex(unsigned int obj_index, unsigned int vertex_index, unsigned int vertex_index_on_surface,
+		std::array<double, 3>* initial_pos,	std::array<double, 3>* current_pos);
+
 private:
 
 	double d_hat_2;
@@ -416,6 +421,7 @@ private:
 	std::vector<unsigned int*> edge_index_start_per_thread;
 	std::vector<MeshStruct*> mesh_struct;
 
+	std::vector<int*> surface_index_to_general_index;
 
 	std::vector<double*>mass;
 	std::vector<double*>mass_inv;
@@ -628,7 +634,14 @@ private:
 
 	void VTCollisionTimeOneVertex(double* initial_pos, double* current_pos, double& collision_time, unsigned int num,
 		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex);
-	void EECollisionTimeOneEdge(double* initial_pos_a0, double* initial_pos_a1, double* current_pos_a0, double* current_pos_a1, 
+
+	void TVCollisionTimeOneVertex(double* initial_pos_0, double* initial_pos_1, double* initial_pos_2,
+		double* current_pos_0, double* current_pos_1, double* current_pos_2,
+		double& collision_time, unsigned int num,
+		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex);
+
+	void EECollisionTimeOneEdge(double* initial_pos_a0, double* initial_pos_a1, double* current_pos_a0, 
+		double* current_pos_a1, 
 		double& collision_time,
 		unsigned int edge_index, unsigned int edge_obj_No, unsigned int num, unsigned int* edge_indices,
 		std::vector<std::array<double, 3>*>& vertex_for_render);

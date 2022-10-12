@@ -37,8 +37,8 @@ public:
 
 	unsigned int** vertex_triangle_pair_by_vertex;//store pair by every vertex. (obj_index,triangle_index)
 	unsigned int** vertex_triangle_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
-	//unsigned int** triangle_vertex_pair_by_triangle; //store pair by triangle. for every triangle, store vertex: (obj_index,vertex_index)
-	//unsigned int** triangle_vertex_pair_num_record;// record the number of vertex pairs for every triangle. For fast initialize, we recoed it in this variable
+	unsigned int** triangle_vertex_pair_by_triangle; //store pair by triangle. for every triangle, store vertex: (obj_index,vertex_index)
+	unsigned int** triangle_vertex_pair_num_record;// record the number of vertex pairs for every triangle. For fast initialize, we recoed it in this variable
 	unsigned int** edge_edge_pair_by_edge; //for coordinate descent, we should store both (e1,e2) & (e2,e1)
 	unsigned int** edge_edge_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
 	unsigned int** vertex_obj_triangle_collider_pair_by_vertex;// store pair by every vertex. (obj_index, triangle_index)
@@ -337,10 +337,10 @@ private:
 	void findAllTriangleVertexPairByTriangleSingleObj(int obj_No, unsigned int* vt_pair_initial, unsigned int* vt_pair_num, unsigned int** tv_pair,
 		unsigned int** tv_pair_num, unsigned int total_length_every_element_vt, unsigned int total_length_every_element_tv);
 
-	//void findAllTriangleVertexPairByTriangle();
+	void findAllTriangleVertexPairByTriangle();
 
 	//initial triangle_vertex_pair_num_record
-	//void initialPairByElement();
+	void initialPairByElement();
 
 };
 

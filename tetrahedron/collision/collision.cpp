@@ -263,7 +263,7 @@ void Collision::reorganzieDataOfObjects()
 
 	damp_collision.resize(total_obj_num);
 
-	vertex_index_on_surface.resize(tetrahedron->size());
+	vertex_index_on_surface.resize(total_obj_num);
 
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		obj_tri_aabb[i] = cloth->data()[i].triangle_AABB.data();
@@ -322,7 +322,8 @@ void Collision::reorganzieDataOfObjects()
 		triangle_index_start_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.face_index_begin_per_thread.data();
 		damp_collision[i + cloth->size()] = tetrahedron->data()[i].damp_collision_stiffness;
 		mesh_struct[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct;
-		vertex_index_on_surface[i] = tetrahedron->data()[i].mesh_struct.vertex_index_on_sureface.data();
+		vertex_index_on_surface[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_index_on_sureface.data();
+		surface_index_to_general_index[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_surface_index.data();
 	}
 
 	if (has_collider) {
@@ -736,7 +737,7 @@ void Collision::testRepeatability()
 			tri_obj_tri = &tetrahedron->data()[m-cloth->size()].surface_vertex_neighbor_obj_triangle;
 		}		
 		for (int i = 0; i < tri_obj_tri->size(); ++i) {		//vertex 0			
-			surface_vertex_index_on_global = vertex_index_on_surface[m - cloth->size()][i];
+			surface_vertex_index_on_global = vertex_index_on_surface[m][i];
 			for (int j = 0; j < tri_obj_tri->data()[i].size(); ++j) {		//obj 1		
 				for (int k = 0; k < tri_obj_tri->data()[i][j].size(); ++k) {  // triangle 1
 					tri_pair_num_++;
@@ -869,7 +870,7 @@ void Collision::findInSP()
 				real_vertex_index = j;
 			}
 			else {
-				real_vertex_index = vertex_index_on_surface[i - cloth->size()][j];
+				real_vertex_index = vertex_index_on_surface[i][j];
 			}
 
 			for (unsigned int k = 0; k < num; k += 2) {
@@ -1644,6 +1645,11 @@ void Collision::globalCollisionTime()
 
 }
 
+void Collision::updateCollisionTime(unsigned int obj_No, unsigned int vertex)
+{
+
+}
+
 void Collision::saveCollisionPairVolume()
 {
 	storeVolume();
@@ -1768,7 +1774,7 @@ void Collision::computeVTColliderVolume(int thread_No)
 			}
 		}
 		else {
-			vertex_index_on_surface_ = vertex_index_on_surface[i - cloth->size()];
+			vertex_index_on_surface_ = vertex_index_on_surface[i];
 			for (unsigned int j = vertex_index_start_per_thread[i][thread_No]; j < vertex_num; ++j) {
 				computeVTVolume(vertex_pos[vertex_index_on_surface_[j]].data(), pair_num[j], primitive_record + close_vt_collider_pair_num * j, volume + start_index[j],
 					vertex_for_render_collider);
@@ -1803,7 +1809,7 @@ void Collision::computeVTVolume(int thread_No)
 			}
 		}
 		else {
-			vertex_index_on_surface_ = vertex_index_on_surface[i - cloth->size()];
+			vertex_index_on_surface_ = vertex_index_on_surface[i];
 			for (unsigned int j = vertex_index_start_per_thread[i][thread_No]; j < vertex_num; ++j) {
 				computeVTVolume(vertex_pos[vertex_index_on_surface_[j]].data(), pair_num[j], primitive_record + close_vt_pair_num * j, volume + start_index[j],
 					vertex_for_render);
@@ -2086,7 +2092,7 @@ void Collision::XPBDfloorCollisionResponse()
 	unsigned int* index;
 	unsigned int obj_index;
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
-		index = vertex_index_on_surface[i];
+		index = vertex_index_on_surface[i+cloth->size()];
 		size = vertex_index_start_per_thread[i+cloth->size()][thread_num];
 		obj_index = i + cloth->size();
 		for (unsigned int j = 0; j < size; ++j) {
@@ -2175,7 +2181,7 @@ void Collision::findVT_ClosePair()
 			}
 		}
 		else {
-			vertex_index_on_surface_ = vertex_index_on_surface[i - cloth->size()];
+			vertex_index_on_surface_ = vertex_index_on_surface[i];
 			for (unsigned int j = 0; j < vertex_num; ++j) {				
 				findVT_ClosePairSingleVertex(vertex_position[i][vertex_index_on_surface_[j]].data(), vertex_triangle + estimate_coeff_for_vt_pair_num * j,
 					vertex_triangle_num[j], vertex_position, triangle_indices, vertex_triangle_pair_by_vertex[i] + j * close_vt_pair_num,
@@ -2222,7 +2228,7 @@ void Collision::findTV_ClosePair(int obj_No, unsigned int* vt_pair_initial, unsi
 	vertex_end = vertex_index_start_per_thread[obj_No][thread_num];
 	for (unsigned int ind = 0; ind < vertex_end; ++ind) {
 		if (is_tet) {
-			i = vertex_index_on_surface[obj_No - cloth->size()][ind];
+			i = vertex_index_on_surface[obj_No][ind];
 		}
 		else {
 			i = ind;
@@ -2281,7 +2287,7 @@ void Collision::findVT_ColliderClosePair()
 			}
 		}
 		else {
-			vertex_index_on_surface_ = vertex_index_on_surface[i - cloth->size()];
+			vertex_index_on_surface_ = vertex_index_on_surface[i];
 			for (unsigned int j = 0; j < vertex_num; ++j) {
 				findVT_ClosePairSingleVertex(vertex_position[i][vertex_index_on_surface_[j]].data(), vertex_triangle + estimate_coeff_for_vt_collider_pair_num * j,
 					vertex_triangle_num[j], vertex_position_collider, triangle_indices_collider,
@@ -4221,6 +4227,26 @@ bool Collision::floorCollisionTime(double* initial_position, double* current_pos
 }
 
 
+void Collision::TVCollisionTimeOneVertex(double* initial_pos_0, double* initial_pos_1, double* initial_pos_2,
+	double* current_pos_0, double* current_pos_1, double* current_pos_2,
+	double& collision_time, unsigned int num,
+	unsigned int* vertex_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex)
+{
+	double time;
+	int* indices;
+	for (unsigned int i = 0; i < num; i += 2) {
+		time = CCD::pointTriangleCcd(initial_vertex[vertex_index[i]][vertex_index[i+1]].data(),
+			initial_pos_0, initial_pos_1,	initial_pos_2,
+			current_vertex[vertex_index[i]][vertex_index[i + 1]].data(),
+			current_pos_0, current_pos_1, current_pos_2, eta, tolerance);
+		if (time < collision_time) {
+			collision_time = time;
+		}
+	}
+}
+
+
+
 void Collision::VTCollisionTimeOneVertex(double* initial_pos, double* current_pos, double& collision_time, unsigned int num,
 	unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex)
 {
@@ -4560,6 +4586,44 @@ void Collision::collisionTimeCompare(int thread_No)
 }
 
 
+void Collision::collisionTimeSingleVertex(unsigned int obj_index, unsigned int vertex_index, unsigned int vertex_index_on_surface,
+	std::array<double, 3>* initial_pos, std::array<double, 3>* current_pos)
+{
+	double collision_time = 2.0;
+	VTCollisionTimeOneVertex(initial_pos[vertex_index].data(), current_pos[vertex_index].data(), collision_time, 
+		spatial_hashing.vertex_triangle_pair_num_record[obj_index][vertex_index_on_surface],
+		spatial_hashing.vertex_triangle_pair_by_vertex[obj_index] + estimate_coeff_for_vt_pair_num * vertex_index_on_surface,
+		vertex_collision_free.data(), vertex_position.data());
+	
+	std::vector<unsigned int>* element = &mesh_struct[obj_index]->vertices[vertex_index].edge;
+	unsigned int* element_;
+	for (auto i = element->begin(); i != element->end(); ++i) {
+		element_ = edge_vertices[obj_index] + ((*i) << 1);
+		EECollisionTimeOneEdge(initial_pos[*element_].data(), initial_pos[*(element_ + 1)].data(),
+			current_pos[*element_].data(), current_pos[*(element_ + 1)].data(),
+			collision_time, *i, obj_index, spatial_hashing.edge_edge_pair_num_record[obj_index][*i],
+			spatial_hashing.edge_edge_pair_by_edge[obj_index] + estimate_coeff_for_ee_pair_num * (*i), vertex_collision_free);
+	}
+	element = &mesh_struct[obj_index]->vertices[vertex_index].face;
+	int* triangle_;
+	for (auto i = element->begin(); i != element->end(); ++i) {
+		triangle_ = triangle_indices[obj_index][*i].data();
+		TVCollisionTimeOneVertex(initial_pos[*triangle_].data(), initial_pos[*(triangle_ + 1)].data(),
+			initial_pos[*(triangle_ + 1)].data(), current_pos[*triangle_].data(), current_pos[*(triangle_ + 1)].data(),
+			current_pos[*(triangle_ + 1)].data(), collision_time,
+			spatial_hashing.triangle_vertex_pair_num_record[obj_index][*i],
+			spatial_hashing.triangle_vertex_pair_by_triangle[obj_index] + estimate_coeff_for_tv_pair_num * (*i),
+			vertex_collision_free.data(), vertex_position.data());
+	}
+
+
+}
+
+
+void Collision::updateLocalPosition()
+{
+
+}
 
 void Collision::collisionTimeByElement(int thread_No)
 {
@@ -4587,7 +4651,7 @@ void Collision::collisionTimeByElement(int thread_No)
 		}
 		else {
 			unsigned int j;
-			surface_to_normal = vertex_index_on_surface[i - cloth->size()];
+			surface_to_normal = vertex_index_on_surface[i];
 			for (unsigned int k = vertex_index_start_per_thread[i][thread_No]; k < element_end; ++k) {
 				j = surface_to_normal[k];
 				VTCollisionTimeOneVertex(initial_pos[j].data(), current_pos[j].data(), collision_time, element_num[k],
@@ -4627,7 +4691,7 @@ void Collision::collisionTimeByElement(int thread_No)
 			}
 			else {
 				unsigned int j;
-				surface_to_normal = vertex_index_on_surface[i - cloth->size()];
+				surface_to_normal = vertex_index_on_surface[i];
 				for (unsigned int k = vertex_index_start_per_thread[i][thread_No]; k < element_end; ++k) {
 					j = surface_to_normal[k];
 					VTCollisionTimeOneVertex(initial_pos[j].data(), current_pos[j].data(), collision_time, element_num[k],
@@ -4653,7 +4717,7 @@ void Collision::collisionTimeByElement(int thread_No)
 			}
 			else {
 				unsigned int j;
-				surface_to_normal = vertex_index_on_surface[i - cloth->size()];
+				surface_to_normal = vertex_index_on_surface[i];
 				for (unsigned int k = vertex_index_start_per_thread[i][thread_No]; k < element_end; ++k) {
 					j = surface_to_normal[k];
 					floorCollisionTime(initial_pos[j].data(), current_pos[j].data(), floor->dimension,
@@ -5020,7 +5084,7 @@ void Collision::sumTargetPositionPerThread(int thread_id)
 		global_need_update = obj_target_pos.need_update[j];
 		b_sum = &obj_target_pos.b_sum[j];
 		index_begin = (*tetrahedron)[j - tetrahedron_begin_obj_index].mesh_struct.vertex_index_on_surface_begin_per_thread.data();
-		surface_vertex_index = vertex_index_on_surface[j - tetrahedron_begin_obj_index];
+		surface_vertex_index = vertex_index_on_surface[j];
 		global_stiffness = obj_target_pos.stiffness[j].data();
 		for (unsigned int i = 0; i < thread_num; ++i) {
 			need_update = obj_target_pos_per_thread[i].need_update[j];
@@ -5071,7 +5135,7 @@ void Collision::resumTargetPositionPerThread(int thread_id)
 	for (unsigned int j = tetrahedron_begin_obj_index; j < total_obj_num; ++j) {
 		b_sum = &obj_target_pos.b_sum[j];
 		index_begin = (*tetrahedron)[j - tetrahedron_begin_obj_index].mesh_struct.vertex_index_on_surface_begin_per_thread.data();
-		surface_vertex_index = vertex_index_on_surface[j - tetrahedron_begin_obj_index];
+		surface_vertex_index = vertex_index_on_surface[j];
 		need_update = obj_target_pos.need_update[j];
 		for (unsigned int i = 0; i < thread_num; ++i) {
 			b_sum_per_thread = &obj_target_pos_per_thread[i].b_sum[j];
@@ -6300,7 +6364,7 @@ void Collision::findObjTriangleAroundVertex(int thread_No)
 					vertex_neighbor_this_obj_triangle->clear();
 					vertex_neighbor_this_obj_triangle->reserve(triangle_neighbor_this_obj_triangle->size());
 					
-					vertex_global_index = vertex_index_on_surface[k - tetrahedron_begin_obj_index][j];
+					vertex_global_index = vertex_index_on_surface[k][j];
 
 					for (unsigned int m = 0; m < triangle_neighbor_this_obj_triangle->size(); ++m) {
 						if (!vertexInTriangle((*face_indices)[(*triangle_neighbor_this_obj_triangle)[m]].data(), vertex_global_index)) {
