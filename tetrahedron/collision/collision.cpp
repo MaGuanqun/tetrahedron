@@ -4620,11 +4620,6 @@ void Collision::collisionTimeSingleVertex(unsigned int obj_index, unsigned int v
 }
 
 
-void Collision::updateLocalPosition()
-{
-
-}
-
 void Collision::collisionTimeByElement(int thread_No)
 {
 	double collision_time = 2.0;
