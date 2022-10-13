@@ -130,6 +130,7 @@ private:
 	bool innerConvergeCondition(unsigned int iteration_num);
 
 	std::vector<std::vector<std::array<double, 3>>> record_vertex_position;
+	std::vector<std::vector<std::array<double, 3>>> record_gloabl_CCD_vertex_position;
 	//std::vector<std::vector<std::array<double, 3>>> record_outer_vertex_position;
 	//void recordLastStepVertexPosition();
 
@@ -173,7 +174,10 @@ private:
 		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, double* mass,
 		double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double* lambda);
 
-	void solveNewtonCDTetWithCollision(std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position, double ARAP_stiffness, double dt,
+	void solveNewtonCDTetWithCollision(std::array<double, 3>* vertex_position, 
+		double* record_vertex_position_,
+		double* last_step_vertex_position, 
+		double ARAP_stiffness, double dt,
 		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* tet_vertex_indices, double* mass,
 		double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double collision_stiffness, unsigned int obj_No,
 		bool vertex_on_surface, unsigned int vertex_index_on_surface);
@@ -193,7 +197,7 @@ private:
 	void newtonCDTetWithCollision();
 	void updateCollisionFreePosition();
 	void getCollisionHessian(Matrix3d& Hessian, Vector3d& grad, std::array<double, 3>* vertex_position, 
-		std::array<double, 3>* initial_vertex_position,
+		double* last_step_vertex_position,
 		double collision_stiffness, unsigned int obj_No,
 		unsigned int vertex_index, unsigned int vertex_index_on_surface);
 	bool getFloorHessian(double& Hessian, double& grad, double* vertex_position, double floor_value,

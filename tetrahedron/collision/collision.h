@@ -176,10 +176,20 @@ public:
 	void collisionTimeSingleVertex(unsigned int obj_index, unsigned int vertex_index, unsigned int vertex_index_on_surface,
 		std::array<double, 3>* initial_pos,	std::array<double, 3>* current_pos);
 
+	void collisionFreeOneVertex(unsigned int obj_No, unsigned int vertex_No, unsigned int vertex_index_on_surface, double* initial_vertex_pos, double* current_vertex_pos,
+		std::array<double, 3>* initial_pos_this_obj, std::array<double, 3>* current_pos_this_obj,
+		std::array<double, 3>** current_pos);
 private:
 
 	double d_hat_2;
 
+	void VTCollisionTimeOneVertex(double* initial_pos, double* current_pos, double& collision_time, unsigned int num,
+		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex);
+
+	void TVCollisionTimeOneVertex(double* initial_pos_0, double* initial_pos_1, double* initial_pos_2,
+		double* current_pos_0, double* current_pos_1, double* current_pos_2,
+		double& collision_time, unsigned int num,
+		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex);
 
 
 	void storeVolume();
@@ -632,19 +642,13 @@ private:
 	bool CCD_compare=false;
 	void findInSP();
 
-	void VTCollisionTimeOneVertex(double* initial_pos, double* current_pos, double& collision_time, unsigned int num,
-		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex);
 
-	void TVCollisionTimeOneVertex(double* initial_pos_0, double* initial_pos_1, double* initial_pos_2,
-		double* current_pos_0, double* current_pos_1, double* current_pos_2,
-		double& collision_time, unsigned int num,
-		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex);
 
 	void EECollisionTimeOneEdge(double* initial_pos_a0, double* initial_pos_a1, double* current_pos_a0, 
 		double* current_pos_a1, 
 		double& collision_time,
 		unsigned int edge_index, unsigned int edge_obj_No, unsigned int num, unsigned int* edge_indices,
-		std::vector<std::array<double, 3>*>& vertex_for_render);
+		std::array<double, 3>** vertex_for_render, std::array<double, 3>** vertex_pos);
 	void collisionTimeByPair(int thread_No);
 	void collisionTimeByElement(int thread_No);
 
