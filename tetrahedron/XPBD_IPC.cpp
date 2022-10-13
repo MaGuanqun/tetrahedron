@@ -66,7 +66,7 @@ void XPBD_IPC::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* t
 	if (perform_collision) {
 		//collision.energy = energy_per_thread.data();
 		collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio, XPBD_,true);
-		collision.setCollisionFreeVertex(&record_vertex_position);
+		collision.setCollisionFreeVertex(&record_gloabl_CCD_vertex_position);
 		//collision.setParameter(&lambda_collision,lambda.data()+ constraint_index_start[3], collision_constraint_index_start.data(), damping_coe, sub_time_step);
 	}
 
