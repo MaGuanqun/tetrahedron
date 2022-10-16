@@ -969,6 +969,7 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 			xpbd_ipc.resetExternalForce();
 			break;
 		}
+	}
 
 		if (read_force) {
 			addExternalForce();
@@ -977,6 +978,8 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 		if (intersection.happened && !control_parameter[START_TEST]) {
 			setCursorForce(camera, cursor_screen, force_coe);
 		}
+
+	if (control_parameter[START_SIMULATION] || control_parameter[ONE_FRAME]) {
 		if (control_parameter[START_TEST]) {
 			time_indicate_for_simu++;
 			//if (!collider.empty()) {
@@ -1482,6 +1485,7 @@ void Scene::moveObj(Camera* camera, double* cursor_screen, bool only_move_vertex
 		getCursorPos(cursor_pos, collider[intersection.obj_No - obj_num_except_collider].mesh_struct.vertex_position,
 			collider[intersection.obj_No - obj_num_except_collider].mesh_struct.triangle_indices[intersection.face_index].data());
 	}
+
 	double cursor_pos_in_space[3];
 	camera->getCursorPosInSpace(cursor_pos_in_space, cursor_screen, cursor_pos);
 	double displacement[3];
@@ -1529,6 +1533,10 @@ void Scene::setCursorForce(Camera* camera, double* cursor_screen, float force_co
 	else {
 		getCursorPos(cursor_pos, tetrahedron[intersection.obj_No - cloth.size()].mesh_struct.vertex_position,
 			tetrahedron[intersection.obj_No - cloth.size()].mesh_struct.triangle_indices[intersection.face_index].data());
+
+		int* indices = tetrahedron[intersection.obj_No - cloth.size()].mesh_struct.triangle_indices[intersection.face_index].data();
+		std::cout << "chosen vertex " << indices[0] << " " << indices[1] << " " << indices[2] << std::endl;
+
 		if (intersection.first_intersection_frame) {
 			tetrahedron[intersection.obj_No - cloth.size()].findAllNeighborVertex(intersection.face_index, cursor_pos, ave_edge_length);
 			intersection.first_intersection_frame = false;

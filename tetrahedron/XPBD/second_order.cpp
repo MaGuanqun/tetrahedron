@@ -307,8 +307,14 @@ bool SecondOrderConstraint::getARAPGradHessianNewton(double* vertex_position_0, 
 		C = 0;
 		return false;
 	}
+
 	grad =2.0 * (deformation_gradient - rotation) * A.col(vertex_no);
 	Matrix3d Dm = A.block<3, 3>(0, 1).transpose();
+
+	//Matrix<double, 12, 12> Hessian_global;
+	//FEM::getHessian(Hessian_global, S, rotation, Dm, A);
+	//Hessian = Hessian_global.block<3, 3>(3 * vertex_no, 3 * vertex_no);
+
 	FEM::getHessianForOneVertex(Hessian, S, rotation, Dm, A, vertex_no);
 	return true;
 }

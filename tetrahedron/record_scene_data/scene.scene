@@ -1,21 +1,21 @@
 object
 2
-C:\graphics\tetrahedron\model\single_tet.ele
-C:\graphics\tetrahedron\model\single_tet.ele
+C:\graphics\tetrahedron\model\bar.1.ele
+C:\graphics\tetrahedron\model\bar.1.ele
 collider
 0
 stiffness
 100 50000 0 0 0 0 
 100 50000 0 0 0 0 
-1e+06 200 200 200 0 0 0 0 
-1e+06 200 200 200 0 0 0 0 
+100 50000 0 0 0 0 0 0 
+100 50000 0 0 0 0 0 0 
 anchor_vertex
 0
 0 
 1
 0 
 time_step
-0.01
+0.02
 cloth_density
 1
 tet_density
@@ -27,7 +27,7 @@ friction_coe
 floor_dimension
 2
 floor_value
--1.05
+-0.75
 XPBD_IPC
 substep_num
 1

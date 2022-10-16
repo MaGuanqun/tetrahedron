@@ -183,9 +183,9 @@ private:
 		bool vertex_on_surface, unsigned int vertex_index_on_surface);
 	void getARAPHessian(Matrix3d& Hessian, Vector3d& grad, std::array<double, 3>* vertex_position, double stiffness,
 		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, 
-		double* volume, unsigned int vertex_index);
+		double* volume, unsigned int vertex_index, unsigned int obj_No);
 	void getVTCollisionHessain(Matrix3d& Hessian, Vector3d& grad, double* vertex_position_, double stiffness,
-		 unsigned int* VT, unsigned int num, double* ori_volume);
+		 unsigned int* VT, unsigned int num, double* ori_volume, unsigned int obj_No, unsigned int vertex_index);
 	void getTVCollisionHessain(Matrix3d& Hessian, Vector3d& grad,
 		double* pos_0, double* pos_1, double* pos_2,
 		unsigned int vertex_no, double stiffness, unsigned int* TV, unsigned int num, double* ori_volume);

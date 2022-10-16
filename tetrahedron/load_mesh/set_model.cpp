@@ -61,6 +61,12 @@ void SetModel::load_getAABB(std::string& path, int& index, int obj_index)
 		//}
 
 	}
+
+
+	if (obj_index == 1) {
+		moveBodyCapsule(ori_mesh);
+	}
+
 	
 	getAABB();
 	setBackMaterial(ori_mesh);
@@ -172,7 +178,7 @@ void SetModel::splitPath(std::string& path, std::string& name)
 void SetModel::moveBodyCapsule(OriMesh& ori_mesh)
 {
 	//band capsule
-	double move[3] = { 1.5,-2.8,-0.3 };//
+	double move[3] = { 0.0,-0.9,0.0 };//
 	//double move[3] = { 0.0,-0.9,-0.3 };//this is for two prisms
 	//double move[3] = { -60, -130,-30 };//this is for two dragons
 	// move capsule

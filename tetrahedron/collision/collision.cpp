@@ -1644,6 +1644,8 @@ void Collision::globalCollisionTime()
 	}
 	collision_time *= 0.9;
 
+	std::cout << "collision time " << collision_time << std::endl;
+
 }
 
 void Collision::updateCollisionTime(unsigned int obj_No, unsigned int vertex)
@@ -2155,11 +2157,11 @@ void Collision::findClosePair()
 {
 	initialPairByElement();
 	findVT_ClosePair();
-	if (has_collider) {
-		findVT_ColliderClosePair();
-	}
-	findEE_ClosePair();
-	findTV_ClosePair();
+	//if (has_collider) {
+	//	findVT_ColliderClosePair();
+	//}
+	//findEE_ClosePair();
+	//findTV_ClosePair();
 }
 
 
@@ -4636,37 +4638,36 @@ void Collision::collisionFreeOneVertex(unsigned int obj_No, unsigned int vertex_
 		vertex_triangle_pair_by_vertex[obj_No] + close_vt_pair_num * vertex_index_on_surface, current_pos,
 		current_pos);
 	
-	//TV
-	element = &mesh_struct[obj_No]->vertices[vertex_No].face;
-	int* triangle_;
-	for (auto i = element->begin(); i != element->end(); ++i) {
-		triangle_ = triangle_indices[obj_No][*i].data();
-		TVCollisionTimeOneVertex(initial_pos_this_obj[*triangle_].data(), initial_pos_this_obj[*(triangle_ + 1)].data(),
-			initial_pos_this_obj[*(triangle_ + 2)].data(), current_pos_this_obj[*triangle_].data(), 
-			current_pos_this_obj[*(triangle_ + 1)].data(),
-			current_pos_this_obj[*(triangle_ + 2)].data(), collision_time,
-			triangle_vertex_pair_num_record[obj_No][*i],
-			triangle_vertex_pair_by_triangle[obj_No] + close_tv_pair_num * (*i),
-			current_pos, current_pos);
-	}
+	////TV
+	//element = &mesh_struct[obj_No]->vertices[vertex_No].face;
+	//int* triangle_;
+	//for (auto i = element->begin(); i != element->end(); ++i) {
+	//	triangle_ = triangle_indices[obj_No][*i].data();
+	//	TVCollisionTimeOneVertex(initial_pos_this_obj[*triangle_].data(), initial_pos_this_obj[*(triangle_ + 1)].data(),
+	//		initial_pos_this_obj[*(triangle_ + 2)].data(), current_pos_this_obj[*triangle_].data(), 
+	//		current_pos_this_obj[*(triangle_ + 1)].data(),
+	//		current_pos_this_obj[*(triangle_ + 2)].data(), collision_time,
+	//		triangle_vertex_pair_num_record[obj_No][*i],
+	//		triangle_vertex_pair_by_triangle[obj_No] + close_tv_pair_num * (*i),
+	//		current_pos, current_pos);
+	//}
 
-	element = &mesh_struct[obj_No]->vertices[vertex_No].edge;
-	unsigned int* element_;
-	for (auto i = element->begin(); i != element->end(); ++i) {
-		element_ = edge_vertices[obj_No] + ((*i) << 1);
-		EECollisionTimeOneEdge(initial_pos_this_obj[*element_].data(), initial_pos_this_obj[*(element_ + 1)].data(),
-			current_pos_this_obj[*element_].data(), current_pos_this_obj[*(element_ + 1)].data(),
-			collision_time, *i, obj_No, edge_edge_pair_num_record[obj_No][*i],
-			edge_edge_pair_by_edge[obj_No] + close_ee_pair_num * (*i), current_pos, current_pos);
-	}
-
-	//VT collider
-	if (has_collider) {
-		VTCollisionTimeOneVertex(initial_vertex_pos, current_vertex_pos, collision_time, 
-			vertex_obj_triangle_collider_num_record[obj_No][vertex_index_on_surface],
-			vertex_obj_triangle_collider_pair_by_vertex[obj_No] + close_vt_collider_pair_num * vertex_index_on_surface,
-			vertex_position_collider.data(), vertex_position_collider.data());	
-	}
+	//element = &mesh_struct[obj_No]->vertices[vertex_No].edge;
+	//unsigned int* element_;
+	//for (auto i = element->begin(); i != element->end(); ++i) {
+	//	element_ = edge_vertices[obj_No] + ((*i) << 1);
+	//	EECollisionTimeOneEdge(initial_pos_this_obj[*element_].data(), initial_pos_this_obj[*(element_ + 1)].data(),
+	//		current_pos_this_obj[*element_].data(), current_pos_this_obj[*(element_ + 1)].data(),
+	//		collision_time, *i, obj_No, edge_edge_pair_num_record[obj_No][*i],
+	//		edge_edge_pair_by_edge[obj_No] + close_ee_pair_num * (*i), current_pos, current_pos);
+	//}
+	////VT collider
+	//if (has_collider) {
+	//	VTCollisionTimeOneVertex(initial_vertex_pos, current_vertex_pos, collision_time, 
+	//		vertex_obj_triangle_collider_num_record[obj_No][vertex_index_on_surface],
+	//		vertex_obj_triangle_collider_pair_by_vertex[obj_No] + close_vt_collider_pair_num * vertex_index_on_surface,
+	//		vertex_position_collider.data(), vertex_position_collider.data());	
+	//}
 	//floor
 	if (floor->exist) {	
 		floorCollisionTime(initial_vertex_pos, current_vertex_pos, floor->dimension,
@@ -4718,47 +4719,47 @@ void Collision::collisionTimeByElement(int thread_No)
 			}
 		}
 	}
-	//EE
-	unsigned int* edge_vertex;
-	for (unsigned int i = 0; i < total_obj_num; ++i) {
-		element_end = edge_index_start_per_thread[i][thread_No + 1];
-		initial_pos = vertex_collision_free[i];
-		current_pos = vertex_position[i];
-		element = spatial_hashing.edge_edge_pair_by_edge[i];
-		element_num = spatial_hashing.edge_edge_pair_num_record[i];		
-		for (unsigned int j = edge_index_start_per_thread[i][thread_No]; j < element_end; ++j) {
-			edge_vertex=edge_vertices[i]+(j<<1);
-			EECollisionTimeOneEdge(initial_pos[*edge_vertex].data(),initial_pos[*(edge_vertex+1)].data(),
-				current_pos[*edge_vertex].data(), current_pos[*(edge_vertex+1)].data(), 
-				collision_time,j,i, element_num[j],
-				element + estimate_coeff_for_ee_pair_num * j, vertex_collision_free.data(),vertex_position.data());
-		}
-	}
-	//VT collider
-	if (has_collider) {
-		for (unsigned int i = 0; i < total_obj_num; ++i) {
-			element_end = vertex_index_start_per_thread[i][thread_No + 1];
-			initial_pos = vertex_collision_free[i];
-			current_pos = vertex_position[i];
-			element = spatial_hashing.vertex_obj_triangle_collider_pair_by_vertex[i];
-			element_num = spatial_hashing.vertex_obj_triangle_collider_num_record[i];
-			if (i < cloth->size()) {
-				for (unsigned int j = vertex_index_start_per_thread[i][thread_No]; j < element_end; ++j) {
-					VTCollisionTimeOneVertex(initial_pos[j].data(), current_pos[j].data(), collision_time, element_num[j],
-						element + estimate_coeff_for_vt_collider_pair_num * j, vertex_for_render_collider.data(), vertex_position_collider.data());
-				}
-			}
-			else {
-				unsigned int j;
-				surface_to_normal = vertex_index_on_surface[i];
-				for (unsigned int k = vertex_index_start_per_thread[i][thread_No]; k < element_end; ++k) {
-					j = surface_to_normal[k];
-					VTCollisionTimeOneVertex(initial_pos[j].data(), current_pos[j].data(), collision_time, element_num[k],
-						element + estimate_coeff_for_vt_collider_pair_num * k, vertex_for_render_collider.data(), vertex_position_collider.data());
-				}
-			}
-		}
-	}
+	////EE
+	//unsigned int* edge_vertex;
+	//for (unsigned int i = 0; i < total_obj_num; ++i) {
+	//	element_end = edge_index_start_per_thread[i][thread_No + 1];
+	//	initial_pos = vertex_collision_free[i];
+	//	current_pos = vertex_position[i];
+	//	element = spatial_hashing.edge_edge_pair_by_edge[i];
+	//	element_num = spatial_hashing.edge_edge_pair_num_record[i];		
+	//	for (unsigned int j = edge_index_start_per_thread[i][thread_No]; j < element_end; ++j) {
+	//		edge_vertex=edge_vertices[i]+(j<<1);
+	//		EECollisionTimeOneEdge(initial_pos[*edge_vertex].data(),initial_pos[*(edge_vertex+1)].data(),
+	//			current_pos[*edge_vertex].data(), current_pos[*(edge_vertex+1)].data(), 
+	//			collision_time,j,i, element_num[j],
+	//			element + estimate_coeff_for_ee_pair_num * j, vertex_collision_free.data(),vertex_position.data());
+	//	}
+	//}
+	////VT collider
+	//if (has_collider) {
+	//	for (unsigned int i = 0; i < total_obj_num; ++i) {
+	//		element_end = vertex_index_start_per_thread[i][thread_No + 1];
+	//		initial_pos = vertex_collision_free[i];
+	//		current_pos = vertex_position[i];
+	//		element = spatial_hashing.vertex_obj_triangle_collider_pair_by_vertex[i];
+	//		element_num = spatial_hashing.vertex_obj_triangle_collider_num_record[i];
+	//		if (i < cloth->size()) {
+	//			for (unsigned int j = vertex_index_start_per_thread[i][thread_No]; j < element_end; ++j) {
+	//				VTCollisionTimeOneVertex(initial_pos[j].data(), current_pos[j].data(), collision_time, element_num[j],
+	//					element + estimate_coeff_for_vt_collider_pair_num * j, vertex_for_render_collider.data(), vertex_position_collider.data());
+	//			}
+	//		}
+	//		else {
+	//			unsigned int j;
+	//			surface_to_normal = vertex_index_on_surface[i];
+	//			for (unsigned int k = vertex_index_start_per_thread[i][thread_No]; k < element_end; ++k) {
+	//				j = surface_to_normal[k];
+	//				VTCollisionTimeOneVertex(initial_pos[j].data(), current_pos[j].data(), collision_time, element_num[k],
+	//					element + estimate_coeff_for_vt_collider_pair_num * k, vertex_for_render_collider.data(), vertex_position_collider.data());
+	//			}
+	//		}
+	//	}
+	//}
 
 	//floor
 	if (floor->exist) {

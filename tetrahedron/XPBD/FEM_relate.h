@@ -36,6 +36,7 @@ namespace FEM {
 		Vector3d b;
 		b << left.data()[3], left.data()[6], left.data()[7];
 		ColPivHouseholderQR<Matrix3d> sys(A);
+
 		Vector3d result=sys.solve(b);
 		Matrix3d RT_Delta_R;
 		RT_Delta_R << 0, result.data()[0], result.data()[1], 
