@@ -199,7 +199,7 @@ void Scene::obtainConvergenceInfo(double* convergence_rate, int* iteration_num)
 			break;
 		case XPBD_IPC_:
 			iteration_num[LOCAL_GLOBAL] = xpbd_ipc.iteration_number;
-			iteration_num[OUTER] = xpbd_ipc.sub_step_num;
+			iteration_num[OUTER] = xpbd_ipc.outer_itr_num;
 			break;
 		}
 	//}

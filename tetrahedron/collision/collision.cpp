@@ -1644,7 +1644,7 @@ void Collision::globalCollisionTime()
 	}
 	collision_time *= 0.9;
 
-	//std::cout << "collision time " << collision_time << std::endl;
+	std::cout << "collision time " << collision_time << std::endl;
 
 }
 
@@ -4638,36 +4638,35 @@ void Collision::collisionFreeOneVertex(unsigned int obj_No, unsigned int vertex_
 		vertex_triangle_pair_by_vertex[obj_No] + close_vt_pair_num * vertex_index_on_surface, current_pos,
 		current_pos);
 	
-	////TV
-	//element = &mesh_struct[obj_No]->vertices[vertex_No].face;
-	//int* triangle_;
-	//for (auto i = element->begin(); i != element->end(); ++i) {
-	//	triangle_ = triangle_indices[obj_No][*i].data();
-	//	TVCollisionTimeOneVertex(initial_pos_this_obj[*triangle_].data(), initial_pos_this_obj[*(triangle_ + 1)].data(),
-	//		initial_pos_this_obj[*(triangle_ + 2)].data(), current_pos_this_obj[*triangle_].data(), 
-	//		current_pos_this_obj[*(triangle_ + 1)].data(),
-	//		current_pos_this_obj[*(triangle_ + 2)].data(), collision_time,
-	//		triangle_vertex_pair_num_record[obj_No][*i],
-	//		triangle_vertex_pair_by_triangle[obj_No] + close_tv_pair_num * (*i),
-	//		current_pos, current_pos);
-	//}
-
-	//element = &mesh_struct[obj_No]->vertices[vertex_No].edge;
-	//unsigned int* element_;
-	//for (auto i = element->begin(); i != element->end(); ++i) {
-	//	element_ = edge_vertices[obj_No] + ((*i) << 1);
-	//	EECollisionTimeOneEdge(initial_pos_this_obj[*element_].data(), initial_pos_this_obj[*(element_ + 1)].data(),
-	//		current_pos_this_obj[*element_].data(), current_pos_this_obj[*(element_ + 1)].data(),
-	//		collision_time, *i, obj_No, edge_edge_pair_num_record[obj_No][*i],
-	//		edge_edge_pair_by_edge[obj_No] + close_ee_pair_num * (*i), current_pos, current_pos);
-	//}
-	////VT collider
-	//if (has_collider) {
-	//	VTCollisionTimeOneVertex(initial_vertex_pos, current_vertex_pos, collision_time, 
-	//		vertex_obj_triangle_collider_num_record[obj_No][vertex_index_on_surface],
-	//		vertex_obj_triangle_collider_pair_by_vertex[obj_No] + close_vt_collider_pair_num * vertex_index_on_surface,
-	//		vertex_position_collider.data(), vertex_position_collider.data());	
-	//}
+	//TV
+	element = &mesh_struct[obj_No]->vertices[vertex_No].face;
+	int* triangle_;
+	for (auto i = element->begin(); i != element->end(); ++i) {
+		triangle_ = triangle_indices[obj_No][*i].data();
+		TVCollisionTimeOneVertex(initial_pos_this_obj[*triangle_].data(), initial_pos_this_obj[*(triangle_ + 1)].data(),
+			initial_pos_this_obj[*(triangle_ + 2)].data(), current_pos_this_obj[*triangle_].data(), 
+			current_pos_this_obj[*(triangle_ + 1)].data(),
+			current_pos_this_obj[*(triangle_ + 2)].data(), collision_time,
+			triangle_vertex_pair_num_record[obj_No][*i],
+			triangle_vertex_pair_by_triangle[obj_No] + close_tv_pair_num * (*i),
+			current_pos, current_pos);
+	}
+	element = &mesh_struct[obj_No]->vertices[vertex_No].edge;
+	unsigned int* element_;
+	for (auto i = element->begin(); i != element->end(); ++i) {
+		element_ = edge_vertices[obj_No] + ((*i) << 1);
+		EECollisionTimeOneEdge(initial_pos_this_obj[*element_].data(), initial_pos_this_obj[*(element_ + 1)].data(),
+			current_pos_this_obj[*element_].data(), current_pos_this_obj[*(element_ + 1)].data(),
+			collision_time, *i, obj_No, edge_edge_pair_num_record[obj_No][*i],
+			edge_edge_pair_by_edge[obj_No] + close_ee_pair_num * (*i), current_pos, current_pos);
+	}
+	//VT collider
+	if (has_collider) {
+		VTCollisionTimeOneVertex(initial_vertex_pos, current_vertex_pos, collision_time, 
+			vertex_obj_triangle_collider_num_record[obj_No][vertex_index_on_surface],
+			vertex_obj_triangle_collider_pair_by_vertex[obj_No] + close_vt_collider_pair_num * vertex_index_on_surface,
+			vertex_position_collider.data(), vertex_position_collider.data());	
+	}
 	//floor
 	if (floor->exist) {	
 		floorCollisionTime(initial_vertex_pos, current_vertex_pos, floor->dimension,

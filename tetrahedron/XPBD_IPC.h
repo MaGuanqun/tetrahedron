@@ -34,6 +34,7 @@ public:
 	void computeVelocity(int thread_No);
 	unsigned int iteration_number;
 	unsigned int inner_iteration_number;
+	unsigned int outer_itr_num;
 	void initial();
 	void reset();
 	void resetExternalForce();
@@ -60,7 +61,6 @@ public:
 	bool* has_force;
 	void computeCollisionFreePosition(int thread_No);
 
-	void local_XPBD_IPCSolve();
 
 private:
 	void coordinateDescent();
@@ -213,5 +213,12 @@ private:
 
 	bool nearly_not_move;//to indicate if the move distance of current itr is far than requirement
 
+	void firstOnlyInertialCollision();
+	void solveInertialCollision(std::array<double, 3>* vertex_position,
+		double* record_vertex_position_,
+		double* last_step_vertex_position,
+		double dt, double* mass,
+		double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double collision_stiffness, unsigned int obj_No,
+		bool vertex_on_surface, unsigned int vertex_index_on_surface);
 };
 
