@@ -9,15 +9,15 @@ XPBD_IPC::XPBD_IPC()
 	damping_coe = 0.0;
 
 	perform_collision = true;
-	max_iteration_number = 1;
+	max_iteration_number = 500;
 	outer_max_iteration_number = 4;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
 	velocity_damp = 0.995;
 	energy_converge_ratio = 1e-3;
 
-	min_inner_iteration = 500;
-	min_outer_iteration = 1;
+	min_inner_iteration = 300;
+	min_outer_iteration = 5;
 }
 void XPBD_IPC::initial()
 {
@@ -76,7 +76,7 @@ void XPBD_IPC::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* t
 
 void XPBD_IPC::setConvergeCondition()
 {
-	converge_condition_ratio = 5e-3;
+	converge_condition_ratio = 3e-3;
 	double edge_length = calEdgeLength();
 	max_move_standard = converge_condition_ratio * edge_length;
 }
@@ -328,7 +328,7 @@ void XPBD_IPC::XPBD_IPCSolve()
 
 	updateSn();
 	//firstNewtonCD();
-
+	iteration_number = 0;
 	if (perform_collision) {
 		collision.collisionCulling();
 	}
@@ -340,7 +340,6 @@ void XPBD_IPC::XPBD_IPCSolve()
 	//while (!convergeCondition(iteration_number)) { 
 
 		collision.globalCollisionTime();
-		collision.collision_time = 0.5;
 		thread->assignTask(this, COLLISION_FREE_POSITION_);
 		//updateCollisionFreePosition();
 		//collision.findClosePair();
@@ -355,8 +354,8 @@ void XPBD_IPC::XPBD_IPCSolve()
 		//iteration_number++;
 	//}
 
-	//collision.globalCollisionTime();
-	//thread->assignTask(this, COLLISION_FREE_POSITION_);
+	collision.globalCollisionTime();
+	thread->assignTask(this, COLLISION_FREE_POSITION_);
 
 	thread->assignTask(this, XPBD_IPC_VELOCITY);
 	updatePosition();

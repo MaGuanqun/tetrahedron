@@ -1644,7 +1644,7 @@ void Collision::globalCollisionTime()
 	}
 	collision_time *= 0.9;
 
-	std::cout << "collision time " << collision_time << std::endl;
+	//std::cout << "collision time " << collision_time << std::endl;
 
 }
 
@@ -4697,28 +4697,28 @@ void Collision::collisionTimeByElement(int thread_No)
 
 	unsigned int* surface_to_normal;
 	//VT
-	for (unsigned int i = 0; i < total_obj_num; ++i) {
-		element_end = vertex_index_start_per_thread[i][thread_No + 1];
-		initial_pos = vertex_collision_free[i];
-		current_pos = vertex_position[i];
-		element = spatial_hashing.vertex_triangle_pair_by_vertex[i];
-		element_num = spatial_hashing.vertex_triangle_pair_num_record[i];
-		if(i<cloth->size()){
-			for (unsigned int j = vertex_index_start_per_thread[i][thread_No]; j < element_end; ++j) {
-				VTCollisionTimeOneVertex(initial_pos[j].data(), current_pos[j].data(), collision_time, element_num[j],
-					element + estimate_coeff_for_vt_pair_num * j, vertex_collision_free.data(), vertex_position.data());
-			}
-		}
-		else {
-			unsigned int j;
-			surface_to_normal = vertex_index_on_surface[i];
-			for (unsigned int k = vertex_index_start_per_thread[i][thread_No]; k < element_end; ++k) {
-				j = surface_to_normal[k];
-				VTCollisionTimeOneVertex(initial_pos[j].data(), current_pos[j].data(), collision_time, element_num[k],
-					element + estimate_coeff_for_vt_pair_num * k, vertex_collision_free.data(), vertex_position.data());
-			}
-		}
-	}
+	//for (unsigned int i = 0; i < total_obj_num; ++i) {
+	//	element_end = vertex_index_start_per_thread[i][thread_No + 1];
+	//	initial_pos = vertex_collision_free[i];
+	//	current_pos = vertex_position[i];
+	//	element = spatial_hashing.vertex_triangle_pair_by_vertex[i];
+	//	element_num = spatial_hashing.vertex_triangle_pair_num_record[i];
+	//	if(i<cloth->size()){
+	//		for (unsigned int j = vertex_index_start_per_thread[i][thread_No]; j < element_end; ++j) {
+	//			VTCollisionTimeOneVertex(initial_pos[j].data(), current_pos[j].data(), collision_time, element_num[j],
+	//				element + estimate_coeff_for_vt_pair_num * j, vertex_collision_free.data(), vertex_position.data());
+	//		}
+	//	}
+	//	else {
+	//		unsigned int j;
+	//		surface_to_normal = vertex_index_on_surface[i];
+	//		for (unsigned int k = vertex_index_start_per_thread[i][thread_No]; k < element_end; ++k) {
+	//			j = surface_to_normal[k];
+	//			VTCollisionTimeOneVertex(initial_pos[j].data(), current_pos[j].data(), collision_time, element_num[k],
+	//				element + estimate_coeff_for_vt_pair_num * k, vertex_collision_free.data(), vertex_position.data());
+	//		}
+	//	}
+	//}
 	////EE
 	//unsigned int* edge_vertex;
 	//for (unsigned int i = 0; i < total_obj_num; ++i) {

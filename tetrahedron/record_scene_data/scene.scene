@@ -1,7 +1,7 @@
 object
 2
-C:\graphics\tetrahedron\model\bar.1.ele
-C:\graphics\tetrahedron\model\bar.1.ele
+.\model\bar.1.ele
+.\model\bar.1.ele
 collider
 0
 stiffness
