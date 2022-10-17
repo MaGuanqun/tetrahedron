@@ -27,7 +27,7 @@ friction_coe
 floor_dimension
 2
 floor_value
--0.75
+-1.125
 XPBD_IPC
 substep_num
 1

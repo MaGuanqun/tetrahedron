@@ -136,7 +136,7 @@ private:
 
 	//std::vector<std::vector<unsigned int>* >unfixed_vertex;
 	double max_move_standard;//the max displacement to stop iteration
-
+	double max_move_standard_inner_itr;
 
 
 	double converge_condition_ratio;// converge_condition_ratio* edge length
@@ -210,6 +210,8 @@ private:
 		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* tet_vertex_indices, double* mass,
 		double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double collision_stiffness, unsigned int obj_No,
 		bool vertex_on_surface, unsigned int vertex_index_on_surface);
+
+	bool nearly_not_move;//to indicate if the move distance of current itr is far than requirement
 
 };
 
