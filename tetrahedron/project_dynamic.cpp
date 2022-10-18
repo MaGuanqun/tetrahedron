@@ -5,8 +5,8 @@ ProjectDynamic::ProjectDynamic()
 {
 	gravity_ = 9.8;
 	
-	outer_itr_conv_rate = 1e-1;// 7.5e-2; 
-	local_global_conv_rate = 1.5e-1;
+	outer_itr_conv_rate = 1e-2;// 7.5e-2; 
+	local_global_conv_rate = 1.5e-2;
 	sub_step_num = 1;
 
 	use_dierct_solve_for_coarest_mesh = true;
@@ -20,7 +20,7 @@ ProjectDynamic::ProjectDynamic()
 	iteration_method.setConvergenceRate(1e-8, 100);
 	max_inner_iteration_num = 20;
 
-	perform_collision = true;
+	perform_collision = false;
 	velocity_damp = 0.995;
 }
 
@@ -408,39 +408,38 @@ void ProjectDynamic::copmuteGlobalStepMatrixSingleTetrahedron(TetrahedronMeshStr
 	double& volume_preserve_stiffness, double position_stiffness, double length_stiffness,  int vertex_index_start)
 {
 	//ARAP + volume preserve: they have the same matrix.
-	//Matrix4d m_ARAP = (ARAP_stiffness+volume_preserve_stiffness) * m_for_ARAP;//
 
-	//int index[4];
-	//std::cout << "tet " << mesh_struct.indices.size() << std::endl;
-	//Matrix4d AT_A;
-	//for (unsigned int i = 0; i < mesh_struct.indices.size(); ++i) {
-	//	memcpy(index, mesh_struct.indices[i].data(), 16);
-	//	for (unsigned int j = 0; j < 4; ++j){
-	//		index[j] += vertex_index_start;
-	//	}
-	//	AT_A = ((ARAP_stiffness + volume_preserve_stiffness) * mesh_struct.volume[i]) * mesh_struct.A[i].transpose() * mesh_struct.A[i];
-	//	for (unsigned int j = 0; j < 4; ++j) {
-	//		for (unsigned int k = j + 1; k < 4; ++k) {
-	//			global_mat_nnz.push_back(Triplet<double>(index[j], index[k], AT_A.data()[4 * j + k]));//mesh_struct.volume[i] *
-	//			global_mat_nnz.push_back(Triplet<double>(index[k], index[j], AT_A.data()[4 * k + j]));// mesh_struct.volume[i] *
-	//		}
-	//		global_mat_nnz.push_back(Triplet<double>(index[j], index[j], AT_A.data()[4 * j + j]));//mesh_struct.volume[i] *
-	//	}
-	//	//std::cout << mesh_struct.volume[i] << std::endl;
-	//}
+	int index[4];
+	std::cout << "tet " << mesh_struct.indices.size() << std::endl;
+	Matrix4d AT_A;
+	for (unsigned int i = 0; i < mesh_struct.indices.size(); ++i) {
+		memcpy(index, mesh_struct.indices[i].data(), 16);
+		for (unsigned int j = 0; j < 4; ++j){
+			index[j] += vertex_index_start;
+		}
+		AT_A = ((ARAP_stiffness + volume_preserve_stiffness) * mesh_struct.volume[i]) * mesh_struct.A[i].transpose() * mesh_struct.A[i];
+		for (unsigned int j = 0; j < 4; ++j) {
+			for (unsigned int k = j + 1; k < 4; ++k) {
+				global_mat_nnz.push_back(Triplet<double>(index[j], index[k], AT_A.data()[4 * j + k]));//mesh_struct.volume[i] *
+				global_mat_nnz.push_back(Triplet<double>(index[k], index[j], AT_A.data()[4 * k + j]));// mesh_struct.volume[i] *
+			}
+			global_mat_nnz.push_back(Triplet<double>(index[j], index[j], AT_A.data()[4 * j + j]));//mesh_struct.volume[i] *
+		}
+		//std::cout << mesh_struct.volume[i] << std::endl;
+	}
 
 	//std::cout <<"size "<<  mesh_struct.tet_edge_vertices.size()<<" "<< vertex_index_start << std::endl;
 
-	//edge length
-	int id0, id1;
-	for (int i = 0; i < mesh_struct.tet_edge_vertices.size(); i+=2) {
-		id0 = mesh_struct.tet_edge_vertices[i] + vertex_index_start;
-		id1 = mesh_struct.tet_edge_vertices[i + 1] + vertex_index_start;
-		global_mat_nnz.push_back(Triplet<double>(id0, id0, length_stiffness));
-		global_mat_nnz.push_back(Triplet<double>(id1, id1, length_stiffness));
-		global_mat_nnz.push_back(Triplet<double>(id0, id1, -length_stiffness));
-		global_mat_nnz.push_back(Triplet<double>(id1, id0, -length_stiffness));
-	}
+	////edge length
+	//int id0, id1;
+	//for (int i = 0; i < mesh_struct.tet_edge_vertices.size(); i+=2) {
+	//	id0 = mesh_struct.tet_edge_vertices[i] + vertex_index_start;
+	//	id1 = mesh_struct.tet_edge_vertices[i + 1] + vertex_index_start;
+	//	global_mat_nnz.push_back(Triplet<double>(id0, id0, length_stiffness));
+	//	global_mat_nnz.push_back(Triplet<double>(id1, id1, length_stiffness));
+	//	global_mat_nnz.push_back(Triplet<double>(id0, id1, -length_stiffness));
+	//	global_mat_nnz.push_back(Triplet<double>(id1, id0, -length_stiffness));
+	//}
 
 	//std::cout << "tet " << mesh_struct.indices.size() << std::endl;
 	
@@ -1065,12 +1064,15 @@ void ProjectDynamic::computeEnergyIPCPD()
 void ProjectDynamic::PDsolve()
 {
 	PDsetPosPredict();
-	collision.collisionCulling();
-
+	if (perform_collision) {
+		collision.collisionCulling();
+	}
 	int itr_num = 0;
 	outer_iteration_num = 0;
 	initialEnergy();
 	local_global_iteration_num = 0;
+
+
 
 	//std::cout << global_mat << std::endl;
 
@@ -1086,7 +1088,6 @@ void ProjectDynamic::PDsolve()
 	for (unsigned int i = 0; i < collider->size(); ++i) {
 		thread->assignTask(&(*collider)[i].mesh_struct, FACE_NORMAL);
 	}
-	//std::cout << "===" << std::endl;
 	while (!PDConvergeCondition()) {	
 		//collision.globalCollision()
 		initialEnergyOuterInteration();
@@ -1574,7 +1575,6 @@ bool ProjectDynamic::PDConvergeCondition()
 	bool standard = (energy_satisfied || need_to_stop) && outer_iteration_num > 0;
 	//if (outer_iteration_num > 0) {//
 	if (standard) {//
-		//std::cout << (current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy << std::endl;
 		return true;
 	}
 	else {
@@ -1652,9 +1652,9 @@ void ProjectDynamic::localProjectionPerThread(int thread_id, bool with_energy)
 
 
 	//ARAP
-	//localARAPProjectionPerThread(thread_id, with_energy);
+	localARAPProjectionPerThread(thread_id, with_energy);
 	//tet edge length
-	localTetEdgeLengthProjectionPerThread(thread_id, with_energy);
+	//localTetEdgeLengthProjectionPerThread(thread_id, with_energy);
 }
 
 
@@ -2312,19 +2312,19 @@ void ProjectDynamic::constructbTetPerThead(double* b, TetrahedronMeshStruct& mes
 	}
 
 	//edge length
-	int edge_size = mesh_struct.tet_edge_vertices.size() >> 1;
-	for (int i = 0; i < edge_size; ++i) {
-		b[mesh_struct.tet_edge_vertices[i << 1] + vertex_index_start] += tet_edge_length[i].data()[dimension];
-		b[mesh_struct.tet_edge_vertices[(i << 1) + 1] + vertex_index_start] -= tet_edge_length[i].data()[dimension];
-	}
+	//int edge_size = mesh_struct.tet_edge_vertices.size() >> 1;
+	//for (int i = 0; i < edge_size; ++i) {
+	//	b[mesh_struct.tet_edge_vertices[i << 1] + vertex_index_start] += tet_edge_length[i].data()[dimension];
+	//	b[mesh_struct.tet_edge_vertices[(i << 1) + 1] + vertex_index_start] -= tet_edge_length[i].data()[dimension];
+	//}
 
 	////ARAP + volime_preserve
-	//int tet_size = mesh_struct.indices.size();
-	//for (int i = 0; i < tet_size; ++i) {
-	//	for (int j = 0; j < 4; ++j) {
-	//		b[indices[i][j] + vertex_index_start] += p_ARAP_volume_preserve[i].data()[4 * dimension + j];
-	//	}		
-	//}
+	int tet_size = mesh_struct.indices.size();
+	for (int i = 0; i < tet_size; ++i) {
+		for (int j = 0; j < 4; ++j) {
+			b[indices[i][j] + vertex_index_start] += p_ARAP_volume_preserve[i].data()[4 * dimension + j];
+		}		
+	}
 	
 	//position
 	for (int i = 0; i < anchor_vertex.size(); ++i) {
@@ -2392,11 +2392,6 @@ void ProjectDynamic::solveSystemPerThread(int thread_id, bool with_collision)
 			{
 			case DIRECT_SOLVE:
 				u[i] = collision_free_llt.solve(b[i]);
-				if (i == 1) {
-				//	std::cout << "=====" << std::endl;
-				//	std::cout << b[i] << std::endl;
-				}
-
 				break;
 			}
 		}
@@ -2411,32 +2406,25 @@ void ProjectDynamic::solveClothSystem2(bool compute_energy)
 	switch (itr_solver_method)
 	{
 	case JACOBI: {
-		//std::cout << "refer" << std::endl;
 		//testJacobiMatrix();
 		//testJacobi();
-		//std::cout << b[0] << std::endl;
 			iteration_method.solveByJacobi(u.data(), b.data(), itr_num);
-		//std::cout << "Jacobi "<< itr_num << std::endl;
 	}
 			   break;
 	case A_JACOBI: {
 			iteration_method.solveByAJacobi_2(u.data(), b.data(), itr_num);
-		//std::cout << "super jacobi " << itr_num << std::endl;
 	}
 				break;
 	case CHEBYSHEV_A_JACOBI: {
 			iteration_method.solveByChebyshevSemiIterativeAJacobi2(u.data(), b.data(), itr_num);
-		//std::cout << "chebyshev super jacobi "<< itr_num << std::endl;
 	}
 							   break;
 	case GAUSS_SEIDEL: {
 			iteration_method.solveByGaussSeidel(u.data(), b.data(), itr_num);
-		//std::cout << "gauss_seidel "<< itr_num << std::endl;
 	}
 					 break;
 	case GAUSS_SEIDEL_CHEBYSHEV: {
 			iteration_method.solveByChebyshevGaussSeidel(u.data(), b.data(), itr_num, 0.8);
-		//std::cout << "gauss_seidel_chebysev "<< itr_num << std::endl;
 	}
 							   break;
 	case CHEBYSHEV_JACOBI: {
