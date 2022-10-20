@@ -538,7 +538,8 @@ public:
 				mesh.vertices.push_back(std::array<double, 3>{
 					-r * cos(M_PI * (double)j / (double)globe_num_2) - half_capsule_length,
 						r* sin(M_PI* (double)j / (double)globe_num_2)* sin(2.0 * M_PI * (double)i / (double)col_num),
-						r* sin(M_PI* (double)j / (double)globe_num_2)* cos(2.0 * M_PI * (double)i / (double)col_num)});
+						r* sin(M_PI* (double)j / (double)globe_num_2)* cos(2.0 * M_PI * (double)i / (double)col_num),
+							-r * cos(M_PI * (double)j / (double)globe_num_2) - half_capsule_length});
 			}
 		}
 		mesh.vertices.push_back(std::array<double, 3>{-half_capsule_length - r, 0.0, 0.0});
