@@ -326,6 +326,12 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     case COMPUTE_COLLISION_ENERGY:
         k = job([func, thread_id]() {func->collisionEnergy(thread_id); });
         break;
+    case COLLISION_CONSTRAINT_IPC:
+        k = job([func, thread_id]() {func->collisionConstraintIPC(thread_id); });
+        break;
+    case RE_COLLISION_CONSTRAINT_IPC:
+        k = job([func, thread_id]() {func->re_collisionConstraintIPC(thread_id); });
+        break;
     case COLLISION_CONSTRAINT:
         k = job([func, thread_id]() {func->collisionConstraint(thread_id); });
         break;

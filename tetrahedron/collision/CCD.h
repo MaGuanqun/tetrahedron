@@ -63,6 +63,11 @@ namespace CCD {
                 break;
             }
             toc += toc_lower_bound;
+
+            if (toc < 0.0) {
+                return 0.0;
+            }
+
             if (toc > 1.0) {
                 return 1.0;
             }

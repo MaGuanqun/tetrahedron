@@ -501,13 +501,13 @@ public:
 
 	void setCapsule(OriMesh& mesh)
 	{
-		int col_num = 34;
-		int row_num = 34;
-		double r = 0.12;
-		int globe_row = 9;
-		int globe_num_2 = 17;
+		int col_num = 17;
+		int row_num = 17;
+		double r = 0.4;
+		int globe_row =5;
+		int globe_num_2 = 8;
 
-		double half_capsule_length = 0.4;
+		double half_capsule_length = 1.2;
 		double capsule_length = 2.0 * half_capsule_length;
 
 		mesh.vertices.push_back(std::array<double, 3>{half_capsule_length + r, 0.0, 0.0});
@@ -552,9 +552,9 @@ public:
 
 	void setSphere(OriMesh& mesh)
 	{
-		int col_num = 100;
-		double r = 0.2;
-		int globe_num_2 = 50;
+		int col_num = 50;
+		double r = 2;
+		int globe_num_2 = 25;
 		//double radius = 0.3;		
 		for (int j = 1; j < globe_num_2; j++) {
 			for (int i = 0; i < col_num; i++) {

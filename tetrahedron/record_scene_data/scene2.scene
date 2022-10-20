@@ -1,0 +1,37 @@
+object
+2
+.\model\bar.1.ele
+.\model\bar.1.ele
+collider
+0
+stiffness
+100 50000 0 0 0 0 
+100000 50000 0 0 0 0 
+100 50000 0 0 0 0 0 0 
+100000 1000 0 0 0 0 0 0 
+anchor_vertex
+0
+0 
+1
+0 
+time_step
+0.02
+cloth_density
+1
+tet_density
+1
+velocity_damp
+0.995
+friction_coe
+0.9 0.8 0.9
+floor_dimension
+2
+floor_value
+-1.125
+XPBD_IPC
+substep_num
+1
+iteration_num
+100
+sub_step_per_detection
+1

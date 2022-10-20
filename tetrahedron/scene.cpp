@@ -11,7 +11,7 @@ Scene::Scene()
 	light.diffuse = glm::vec3(0.9, 0.9, 0.9);
 	light.specular = glm::vec3(0.85, 0.85, 0.85);
 
-	time_step = 1.0 / 50.0;
+	time_step = 1.0 / 100.0;
 
 
 	max_force_magnitude = 200.0;
@@ -336,17 +336,12 @@ void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 
 	for (int i = 0; i < cloth_num; ++i) {
 		cloth[i].loadMesh(preprocessing.ori_simulation_mesh[cloth_index_in_object[i]], cloth_density, &thread);
-		if (use_method==NEWTON_ || use_method ==XPBD_||use_method==XPBD_SECOND_ORDER_LARGE_|| use_method == XPBD_IPC_)
-		{
-			cloth[i].mesh_struct.initialUnfixedIndex();
-		}
+		cloth[i].mesh_struct.initialUnfixedIndex();
 	}
 	for (int i = 0; i < tetrahedron_num; ++i) {
 		tetrahedron[i].loadMesh(preprocessing.ori_simulation_mesh[tetrahedron_index_in_object[i]], tetrahedron_density, &thread);
-		if (use_method == NEWTON_ || use_method == XPBD_ || use_method == XPBD_SECOND_ORDER_LARGE_||use_method==XPBD_IPC_)
-		{
-			tetrahedron[i].mesh_struct.initialUnfixedIndex();
-		}
+		tetrahedron[i].mesh_struct.initialUnfixedIndex();
+		
 	}
 	setWireframwColor();
 
@@ -999,7 +994,8 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 		switch (use_method)
 		{
 		case PD_:
-			project_dynamic.PDsolve();
+			//project_dynamic.PDsolve();
+			project_dynamic.PD_IPC_solve(record_matrix);
 			break;
 		case XPBD_:
 			xpbd.PBDsolve();

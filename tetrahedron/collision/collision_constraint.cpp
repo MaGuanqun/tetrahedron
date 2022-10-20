@@ -121,6 +121,56 @@ bool CollisionConstraint::pointTriangleResponse(double* initial_position, double
 }
 
 
+bool CollisionConstraint::floorResponse(double* target_position, double* current_position, double* initial_position,
+	unsigned int dimension, bool normal_direction,
+	double floor_value, double d_hat, double& stiffness, double epsilon)
+{
+	double d_2;
+
+	memcpy(target_position, initial_position, 24);
+	d_2 = (initial_position[dimension] - floor_value) * (initial_position[dimension] - floor_value);
+	if (normal_direction) {
+		if (initial_position[dimension] > floor_value + d_hat) {
+			return false;
+		}
+	}
+	else {
+		if (initial_position[dimension] < floor_value - d_hat) {
+			return false;
+		}
+	}
+	double d_hat_2 = d_hat * d_hat;
+
+
+
+	stiffness *= barrier((d_hat_2 - d_2) / d_hat_2, d_2 / d_hat_2);
+
+	epsilon += 1.0;
+
+	double relative_velocity =abs( epsilon*(current_position[dimension] - initial_position[dimension]));
+
+	if (normal_direction) {
+		if (relative_velocity < d_hat+ floor_value - initial_position[dimension]) {
+			target_position[dimension] = d_hat + floor_value;
+		}
+		else {
+			target_position[dimension] = initial_position[dimension] + relative_velocity;
+		}
+	}
+	else {
+		if (relative_velocity < initial_position[dimension] -(floor_value - d_hat)) {
+			target_position[dimension] = floor_value- d_hat;
+		}
+		else {
+			target_position[dimension] = initial_position[dimension] - relative_velocity;
+		}
+	}
+	return true;
+}
+
+
+
+
 bool CollisionConstraint::pointTriangleColliderResponse(double* initial_position, double* current_position,
 	double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
 	double* initial_triangle_normal, double* vertex_target_pos,

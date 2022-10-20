@@ -52,6 +52,10 @@ public:
 		double* initial_compare_edge_vertex_0, double* initial_compare_edge_vertex_1, 
 		double d_hat, double& stiffness, double epsilon, double mass_e_0_0, double mass_e_0_1);
 
+	bool floorResponse(double* target_position, double* current_position, double* initial_position,
+		unsigned int dimension, bool normal_direction,
+		double floor_value, double d_hat, double& stiffness, double epsilon);
+
 	void testPT();
 	void testEE();
 

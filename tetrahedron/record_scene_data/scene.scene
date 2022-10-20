@@ -1,21 +1,17 @@
 object
-2
-.\model\bar.1.ele
-.\model\bar.1.ele
+1
+C:\graphics\tetrahedron\model\bar.1.ele
 collider
-0
+1
+C:\graphics\tetrahedron\model\capsule.obj
 stiffness
-100 50000 0 0 0 0 
-100000 50000 0 0 0 0 
-100 50000 0 0 0 0 0 0 
-100000 1000 0 0 0 0 0 0 
+200 50000 0 0 0 0 
+1000 2000 2000 20 0 0 0 0 
 anchor_vertex
 0
 0 
-1
-0 
 time_step
-0.02
+0.01
 cloth_density
 1
 tet_density
@@ -27,11 +23,8 @@ friction_coe
 floor_dimension
 2
 floor_value
--1.125
-XPBD_IPC
-substep_num
-1
-iteration_num
-100
-sub_step_per_detection
-1
+-0.35
+PD
+convergence_rate
+0.015
+0.01
