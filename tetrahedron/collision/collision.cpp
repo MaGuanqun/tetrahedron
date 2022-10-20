@@ -384,7 +384,7 @@ void Collision::initialDHatTolerance(double ave_edge_length)
 		tolerance_radius[i] = tolerance_ratio[i] * ave_edge_length;
 	}	
 
-	d_hat = 2e-2 * ave_edge_length;
+	d_hat = 5e-2 * ave_edge_length;
 	d_hat_2 = d_hat * d_hat;
 
 	volume_boundary = 0.5 * d_hat*ave_edge_length;
@@ -1646,7 +1646,7 @@ void Collision::globalCollisionTime()
 	}
 	collision_time *= 0.9;
 
-	////std::cout << "--collision time " << collision_time << std::endl;
+	std::cout << "--collision time " << collision_time << std::endl;
 
 }
 
@@ -4438,6 +4438,10 @@ void Collision::vertexTriangleColliderCollisionTime(int thread_No, unsigned int 
 			vertex_position_collider[pair[i + 3]][indices[0]].data(),
 			vertex_position_collider[pair[i + 3]][indices[1]].data(),
 			vertex_position_collider[pair[i + 3]][indices[2]].data(), eta, tolerance);
+
+		if (pair[i] == 353) {
+			std::cout << "collision time " << time << std::endl;
+		}
 		if (time < collision_time) {
 			collision_time = time;
 		}
@@ -4855,8 +4859,6 @@ void Collision::vertexTriangleCollisionTime(int thread_No, unsigned int pair_thr
 		////std::cout << "index info " << pair[i + 3] << " " << indices[0] << " " << indices[1] << " " << indices[2] << std::endl;
 		////std::cout << vertex_for_render[pair[i + 1]][pair[i]][1] << " " << vertex_position[pair[i + 1]][pair[i]][1] <<
 		//	" " << vertex_for_render[pair[i + 3]][indices[0]][1] << " " << vertex_position[pair[i + 3]][indices[0]][1] << std::endl;
-
-
 
 		if (time < collision_time) {
 			collision_time = time;
@@ -7340,6 +7342,22 @@ void Collision::initialPair()
 
 	}
 	
+}
+
+
+void Collision::testPointPair()
+{
+	test_triangle_index.clear();
+	 chosen_show_vertex = 350;
+	unsigned int pair_num;
+	for (unsigned int i = 0; i < thread_num; ++i) {
+		pair_num = spatial_hashing.vertex_obj_triangle_collider_pair[i][0];
+		for (unsigned int j = 0; j < pair_num; j += 4) {
+			if (*(spatial_hashing.vertex_obj_triangle_collider_pair[i] + 1 + j) == chosen_show_vertex) {
+				test_triangle_index.push_back(*(spatial_hashing.vertex_obj_triangle_collider_pair[i] + 3 + j));
+			}
+		}		
+	}
 }
 
 

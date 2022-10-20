@@ -61,6 +61,9 @@ public:
 
 	void updateSystemPos();
 	double velocity_damp;
+
+
+
 private:
 
 	unsigned int tetrahedron_begin_obj_index;
@@ -234,4 +237,6 @@ private:
 	void localTetEdgeLengthProjectionPerThread(int thread_id, bool with_energy);
 
 	bool perform_collision;
+
+
 };

@@ -538,8 +538,7 @@ public:
 				mesh.vertices.push_back(std::array<double, 3>{
 					-r * cos(M_PI * (double)j / (double)globe_num_2) - half_capsule_length,
 						r* sin(M_PI* (double)j / (double)globe_num_2)* sin(2.0 * M_PI * (double)i / (double)col_num),
-						r* sin(M_PI* (double)j / (double)globe_num_2)* cos(2.0 * M_PI * (double)i / (double)col_num),
-							-r * cos(M_PI * (double)j / (double)globe_num_2) - half_capsule_length});
+						r* sin(M_PI * (double)j / (double)globe_num_2)* cos(2.0 * M_PI * (double)i / (double)col_num)});
 			}
 		}
 		mesh.vertices.push_back(std::array<double, 3>{-half_capsule_length - r, 0.0, 0.0});
@@ -548,6 +547,14 @@ public:
 
 		globeIndices(globe_row, col_num, mesh, before_last_half_sphere);
 		cylinderIndices(mesh, first_half_sphere, total_num, col_num, row_num);
+
+
+		double k = 0;
+		for (unsigned int i = 0; i < mesh.vertices.size(); ++i) {
+			k = mesh.vertices[i][0];
+			mesh.vertices[i][0] = mesh.vertices[i][2];
+			mesh.vertices[i][2] = k;
+		}
 
 	}
 

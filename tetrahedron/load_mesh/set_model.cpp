@@ -3,7 +3,7 @@
 #include"readObj.h"
 #include"read_ele.h"
 
-void SetModel::load_getAABB(std::string& path, int& index, int obj_index)
+void SetModel::load_getAABB(std::string& path, int& index, int obj_index, bool collider)
 {
 	std::string extension_name;
 	extension_name = path.substr(path.length() - 3, 3);
@@ -64,7 +64,11 @@ void SetModel::load_getAABB(std::string& path, int& index, int obj_index)
 
 
 
-		moveBodyCapsule(ori_mesh,obj_index);
+		moveBodyCapsule(ori_mesh, obj_index,collider);
+	
+
+
+		//moveBodyCapsule(ori_mesh,obj_index);
 	
 
 	
@@ -175,13 +179,17 @@ void SetModel::splitPath(std::string& path, std::string& name)
 	name = path.substr(index+1, path.length()-index);
 }
 
-void SetModel::moveBodyCapsule(OriMesh& ori_mesh, unsigned int obj_No)
+void SetModel::moveBodyCapsule(OriMesh& ori_mesh, unsigned int obj_No, bool collider)
 {
 	//band capsule
 	double move[3] = { 0.0,-0.5,0.0 };//
-	if (obj_No == 0) {
+	if (collider && obj_No == 0) {
 		move[1] = 1.2;
 		//move[2] = 0.1;
+	}
+	if (!collider) {
+		move[1] = 4.8;
+		move[2] = -0.3;
 	}
 	//double move[3] = { 0.0,-0.9,-0.3 };//this is for two prisms
 	//double move[3] = { -60, -130,-30 };//this is for two dragons

@@ -46,6 +46,7 @@ namespace CCD {
         T toc = 0.0;
         int itr = 0;
 
+        T ori_dist2_cur = dist2_cur;
 
         while (true) {
            // T toc_lower_bound = (1 - eta) * (dist_cur - thickness) / max_disp_mag;
@@ -57,21 +58,33 @@ namespace CCD {
 
             dist2_cur = internal::pointTriangleDistanceUnclassified(p, t0, t1, t2);
             dist_cur = std::sqrt(dist2_cur);
-            if ((toc && ((dist2_cur - thickness * thickness) / (dist_cur + thickness) < gap)) || itr > 200) {
+            if ((toc && ((dist2_cur - thickness * thickness) / (dist_cur + thickness) < gap))) {// || itr > 200
                // std::cout << toc<<" "<< toc_lower_bound<<" "<< dist_cur - thickness<<" "<<gap << std::endl;
 
                 break;
             }
             toc += toc_lower_bound;
 
-            if (toc < 0.0) {
-                return 0.0;
-            }
+            //if (toc < 0.0) {
+            //    return 0.0;
+            //}
 
             if (toc > 1.0) {
                 return 1.0;
             }
             itr++;
+
+            //if (itr > 500) {
+            //    std::cout <<"toc "<< toc << " " << toc_lower_bound<<" "<< (dist2_cur - thickness * thickness) / (dist_cur + thickness)<<" "<<gap << std::endl;
+            //    std::cout <<"velocity "<< max_disp_mag<<" "<<ori_dist2_cur << std::endl;
+            //    std::cout << (1 - eta) * (ori_dist2_cur - thickness * thickness) / ((sqrt(ori_dist2_cur) + thickness) * max_disp_mag) << std::endl;
+
+            //    //std::cout << p[0] << " " << p[1] << " " << p[2] << std::endl;
+            //    //std::cout << t0[0] << " " << t0[1] << " " << t0[2] << std::endl;
+            //    //std::cout << t1[0] << " " << t1[1] << " " << t1[2] << std::endl;
+            //    //std::cout << t2[0] << " " << t2[1] << " " << t2[2] << std::endl;
+            //}
+
         }
         return toc;
     }

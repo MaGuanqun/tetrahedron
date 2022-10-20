@@ -13,7 +13,7 @@ public:
 	
 	void setInObjNum(unsigned int obj_num);
 
-	void draw(Camera* camera, glm::vec3& color, float transparence = 1.0f);
+	void draw(Camera* camera, glm::vec3 color, float transparence = 1.0f);
 	void setVertex(std::vector<std::array<double,3>>&v_list, std::vector<bool>& index);
 	void setVertex(std::vector<std::array<double,3>>&v_list, std::vector<int>& index);
 	void setVertex(std::vector<std::array<double, 3>>& v_list, double tolerance);	

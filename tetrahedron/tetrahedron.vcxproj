@@ -156,6 +156,7 @@
     <ClCompile Include="basic\Coordinate.cpp" />
     <ClCompile Include="basic\cursor.cpp" />
     <ClCompile Include="basic\drawEdge.cpp" />
+    <ClCompile Include="basic\draw_triangle.cpp" />
     <ClCompile Include="basic\draw_vertex.cpp" />
     <ClCompile Include="basic\floor.cpp" />
     <ClCompile Include="basic\move_model.cpp" />
@@ -225,6 +226,7 @@
     <ClInclude Include="basic\Coordinate.h" />
     <ClInclude Include="basic\cursor.h" />
     <ClInclude Include="basic\drawEdge.h" />
+    <ClInclude Include="basic\draw_triangle.h" />
     <ClInclude Include="basic\draw_vertex.h" />
     <ClInclude Include="basic\EigenMatrixIO.h" />
     <ClInclude Include="basic\enum_setting.h" />

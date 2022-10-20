@@ -1,12 +1,12 @@
 object
 1
-D:\tetrahedron\tetrahedron\model\bar.ele
+.\model\bar.ele
 collider
 1
-D:\tetrahedron\tetrahedron\model\capsule.obj
+.\model\capsule.obj
 stiffness
 200 50000 0 0 0 0 
-100 2000 2000 20 0 0 0 0 
+1000 2000 2000 20 0 0 0 0 
 anchor_vertex
 0
 0 

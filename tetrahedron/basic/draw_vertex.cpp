@@ -380,7 +380,7 @@ void DrawVertex::setBuffer()
 	glVertexAttribPointer(1, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*)0);
 	glBindVertexArray(0);
 }
-void DrawVertex::draw(Camera* camera,glm::vec3& color,float transparence)
+void DrawVertex::draw(Camera* camera,glm::vec3 color,float transparence)
 {
 	if (!indices.empty()) {
 		setBuffer();

@@ -192,7 +192,9 @@ public:
 	void re_collisionConstraintIPC(int thread_No);
 
 	void re_solveCollisionConstraintForIPC();
-
+	std::vector<unsigned int>test_triangle_index;
+	void testPointPair();
+	unsigned int chosen_show_vertex;
 private:
 
 	double d_hat_2;

@@ -149,9 +149,7 @@ void ProjectDynamic::initialDHatTolerance(double ave_edge_length)
 	for (int i = 0; i < cloth->size(); ++i) {
 		element_count += (*cloth)[i].mesh_struct.vertex_for_render.size();
 	}
-	displacement_bound = 1e-3 * ave_edge_length;
-	displacement_bound *= displacement_bound;
-	displacement_bound *= (double)element_count;
+	displacement_bound = 1e-2 * ave_edge_length;
 }
 
 void ProjectDynamic::setForClothPD(std::vector<Cloth>* cloth)
@@ -933,13 +931,20 @@ void ProjectDynamic::firstPDForIPC(bool& record_matrix)
 }
 
 
+
+
+
 void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 {
 	firstPDForIPC(record_matrix);
 	collision.collisionCulling();
+	collision.testPointPair();
 	outer_iteration_num = 1;
 	reset_ave_iteration_record();
+	std::cout << " == " << std::endl;
 	while (!IPC_PDConvergeCondition()) {
+
+		//collision.collisionCulling();
 		collision.globalCollisionTime();
 		thread->assignTask(this, COLLISION_FREE_POSITION);//in document, we use q_n+1, however, here, we use vertices_for_render & cloth_u to store this collision free position.
 		u_previous_itr = u;
@@ -1390,7 +1395,6 @@ void ProjectDynamic::computeDisplacement(int thread_No)
 	double x, y, z;
 	double* displacement_norm_ = &displacement_norm_thread[thread_No];
 	*displacement_norm_ = 0;
-	double displace_current;
 	u_x = u[0].data();
 	u_y = u[1].data();
 	u_z = u[2].data();
@@ -1401,9 +1405,17 @@ void ProjectDynamic::computeDisplacement(int thread_No)
 		x = u_x[j] - u_pre_x[j];
 		y = u_y[j] - u_pre_y[j];
 		z = u_z[j] - u_pre_z[j];
-		displace_current = x * x + y * y + z * z;
-		//if (*displacement_norm_ < displace_current) {
-		*displacement_norm_ += displace_current;
+		
+		if (*displacement_norm_ < fabs(x)) {
+			*displacement_norm_ = fabs(x);
+		}
+		if (*displacement_norm_ < fabs(y)) {
+			*displacement_norm_ = fabs(y);
+		}
+		if (*displacement_norm_ < fabs(z)) {
+			*displacement_norm_ = fabs(z);
+		}
+
 	}
 }
 
@@ -1509,15 +1521,17 @@ bool ProjectDynamic::IPC_PDConvergeCondition()
 			thread->assignTask(this, COMPUTE_DISPLACEMENT);
 			displacement_norm = displacement_norm_thread[0];
 			for (unsigned int i = 1; i < total_thread_num; ++i) {
-				//if (displacement_norm < displacement_norm_thread[i]) {
-					displacement_norm += displacement_norm_thread[i];
-				//}
+				if (displacement_norm < displacement_norm_thread[i]) {
+					displacement_norm = displacement_norm_thread[i];
+				}
 			}
 			bool ratio_changing = fabs(displacement_ratio_dif + (previous_displacement_norm - displacement_norm)) / displacement_norm < 1e-7;
 			//if (outer_iteration_num > 990) {
 				////std::cout << "displacement ratio " << displacement_norm / displacement_bound <<" "<< fabs(displacement_ratio_dif + (previous_displacement_norm - displacement_norm)) / displacement_norm << std::endl;
 			//}
-			if (displacement_norm / displacement_bound < 1.0 || ratio_changing) {//  
+			//std::cout << displacement_norm << " " << displacement_bound << std::endl;
+			if (displacement_norm < displacement_bound || ratio_changing) {//  
+
 				return true;
 			}
 			//}

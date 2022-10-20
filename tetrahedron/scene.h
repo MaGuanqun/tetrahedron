@@ -20,6 +20,7 @@
 #include"mesh_struct/graph_color.h"
 #include"XPBD_large_system.h"
 #include"XPBD_IPC.h"
+#include"basic/draw_triangle.h"
 
 //#include<windows.h>
 //#include"basic/drawEdge.h"
@@ -194,4 +195,7 @@ private:
 	bool read_force;
 	void addExternalForce();
 	//Draw_Edge draw_edge_;
+
+	DrawVertex draw_vertex;
+	DrawTriangle draw_triangle;
 };

@@ -173,20 +173,20 @@ bool CollisionConstraint::floorResponse(double* target_position, double* current
 	double relative_velocity =abs( epsilon*(current_position[dimension] - initial_position[dimension]));
 
 	if (normal_direction) {
-		if (relative_velocity < d_hat+ floor_value - initial_position[dimension]) {
-			target_position[dimension] = d_hat + floor_value;
-		}
-		else {
+		//if (relative_velocity < d_hat+ floor_value - initial_position[dimension]) {
+		//	target_position[dimension] = d_hat + floor_value;
+		//}
+		//else {
 			target_position[dimension] = initial_position[dimension] + relative_velocity;
-		}
+		//}
 	}
 	else {
-		if (relative_velocity < initial_position[dimension] -(floor_value - d_hat)) {
-			target_position[dimension] = floor_value- d_hat;
-		}
-		else {
+		//if (relative_velocity < initial_position[dimension] -(floor_value - d_hat)) {
+		//	target_position[dimension] = floor_value- d_hat;
+		//}
+		//else {
 			target_position[dimension] = initial_position[dimension] - relative_velocity;
-		}
+		//}
 	}
 	return true;
 }
@@ -228,28 +228,28 @@ bool CollisionConstraint::pointTriangleColliderResponse(double* initial_position
 		double direct_velocity = DOT(initial_triangle_normal, relative_velocity);
 		if (direct_velocity > 0) {
 			coe = abs(coe);
-			if (coe < d_hat) {
-				coe = d_hat;
-			}
+			//if (coe < d_hat) {
+			//	coe = d_hat;
+			//}
 		}
 		else {
 			coe = -abs(coe);
-			if (coe > -d_hat) {
-				coe = -d_hat;
-			}
+			//if (coe > -d_hat) {
+			//	coe = -d_hat;
+			//}
 		}
 	}
 	else if (sideness < 0) {
 		coe = abs(coe);
-		if (coe < d_hat + sideness) {
-			coe = d_hat + sideness;
-		}
+		//if (coe < d_hat + sideness) {
+		//	coe = d_hat + sideness;
+		//}
 	}
 	else {
 		coe = -abs(coe);
-		if (coe > -d_hat + sideness) {
-			coe = -d_hat + sideness;
-		}
+		//if (coe > -d_hat + sideness) {
+		//	coe = -d_hat + sideness;
+		//}
 	}
 
 	//if (coe == 0.0) {

@@ -752,6 +752,8 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 			tetrahedron[j].drawWireframe(camera, wireframe_shader);
 		}
 	}
+
+
 	//project_dynamic.collision.draw_culling.drawTetTriangle(camera, wireframe_shader, light, shadow.far_plane);
 	//project_dynamic.collision.draw_culling.draw(camera, shadow.far_plane);
 
@@ -795,6 +797,15 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 	if (control_parameter[SAVE_SIMULATION_DATA]) {
 
 	}
+
+	draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[project_dynamic.collision.chosen_show_vertex].data(),
+		0.05);
+	draw_vertex.draw(camera, glm::vec3(1.0, 0.0, 0.0));
+	draw_triangle.drawTriangle(camera, object_shader_front, collider[0].mesh_struct.vertex_for_render,
+		collider[0].mesh_struct.triangle_indices, collider[0].mesh_struct.face_normal_for_render,
+		project_dynamic.collision.test_triangle_index, glm::vec3(0.0, 1.0, 0.0));
+
+
 
 	//draw_edge_.drawEdge(camera, wireframe_shader, cloth[0].mesh_struct.vertex_position, cloth[0].mesh_struct.unconnected_edge_index[0], glm::vec3(1.0, 0.0, 0.0), cloth[0].mesh_struct.edge_vertices);
 }
