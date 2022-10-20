@@ -509,47 +509,47 @@ private:
 	void findEdgeEdgeInBVH(unsigned int obj_0, unsigned int edge_index_0, unsigned int obj_1, unsigned int edge_index_1);
 	void findEdgeEdgeInNewSP(unsigned int obj_0, unsigned int edge_index_0, unsigned int obj_1, unsigned int edge_index_1);
 
-	void vertexTriangleCollisionTime(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index, unsigned int end_pair_index,
+	void vertexTriangleCollisionTime(int thread_No, unsigned int pair_thread_No, int start_pair_index, int end_pair_index,
 		double& collision_time);
-	void edgeEdgeCollisionTime(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, double& collision_time);
-	void vertexColliderTriangleCollisionTime(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, double& collision_time);
-	void vertexTriangleColliderCollisionTime(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, double& collision_time);
-	void edgeEdgeColliderCollisionTime(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, double& collision_time);
+	void edgeEdgeCollisionTime(int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, double& collision_time);
+	void vertexColliderTriangleCollisionTime(int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, double& collision_time);
+	void vertexTriangleColliderCollisionTime(int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, double& collision_time);
+	void edgeEdgeColliderCollisionTime(int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, double& collision_time);
 	double conservative_rescaling;
 
 	void initialPair();
 	void findAllVertexEdgePairs(int thread_No);
 	void findAllVertexVertexPairs(int thread_No);
 
-	void findVertexEdgePair(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, CollisionIndicateType type);
+	void findVertexEdgePair(int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, CollisionIndicateType type);
 
-	void findVertexVertexPair(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, CollisionIndicateType type);
+	void findVertexVertexPair(int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, CollisionIndicateType type);
 
-	void vertexVertexCollisionTime(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, double& collision_time, CollisionIndicateType type);
-	void vertexEdgeCollisionTime(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, double& collision_time, CollisionIndicateType type);
+	void vertexVertexCollisionTime(int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, double& collision_time, CollisionIndicateType type);
+	void vertexEdgeCollisionTime(int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, double& collision_time, CollisionIndicateType type);
 
-	void vertexTriangleCollisionTimeCompare(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, double& collision_time);
+	void vertexTriangleCollisionTimeCompare(int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, double& collision_time);
 
 	std::vector<std::vector<Eigen::Vector3d>> vertex_for_render_eigen;
 	std::vector<std::vector<Eigen::Vector3d>> vertex_position_eigen;
 
-	void edgeEdgeCollisionTimeCompare(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, double& collision_time);
+	void edgeEdgeCollisionTimeCompare(int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, double& collision_time);
 
-	void vertexVertexCollisionTimeCompare(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, double& collision_time, CollisionIndicateType type);
+	void vertexVertexCollisionTimeCompare(int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, double& collision_time, CollisionIndicateType type);
 
-	void vertexEdgeCollisionTimeCompare(int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, double& collision_time, CollisionIndicateType type);
+	void vertexEdgeCollisionTimeCompare(int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, double& collision_time, CollisionIndicateType type);
 
 	void updateEigenPosition();
 	void pointTriangleResponse(int thread_No, TargetPosition* target_pos);
@@ -558,16 +558,16 @@ private:
 	void edgeEdgeResponse(int thread_No, TargetPosition* target_pos);
 	void edgeEdgeColliderResponse(int thread_No, TargetPosition* target_pos);
 
-	void pointTriangleResponse(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, TargetPosition* target_pos);
-	void pointTriangleColliderResponse(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, TargetPosition* target_pos);
-	void pointColliderTriangleResponse(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, TargetPosition* target_pos);
-	void edgeEdgeResponse(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, TargetPosition* target_pos);
-	void edgeEdgeColliderResponse(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, TargetPosition* target_pos);
+	void pointTriangleResponse(unsigned int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, TargetPosition* target_pos);
+	void pointTriangleColliderResponse(unsigned int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, TargetPosition* target_pos);
+	void pointColliderTriangleResponse(unsigned int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, TargetPosition* target_pos);
+	void edgeEdgeResponse(unsigned int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, TargetPosition* target_pos);
+	void edgeEdgeColliderResponse(unsigned int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, TargetPosition* target_pos);
 
 
 	void pointTriangleResponseForIPC(int thread_No, TargetPosition* target_pos);
@@ -576,22 +576,19 @@ private:
 
 
 
-	void pointTriangleResponseForIPC(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, TargetPosition* target_pos);
+	void pointTriangleResponseForIPC(unsigned int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, TargetPosition* target_pos);
 
-	void edgeEdgeResponseForIPC(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, TargetPosition* target_pos);
+	void edgeEdgeResponseForIPC(unsigned int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, TargetPosition* target_pos);
 
-	void pointTriangleColliderResponseForIPC(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, TargetPosition* target_pos);
+	void pointTriangleColliderResponseForIPC(unsigned int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, TargetPosition* target_pos);
 
 	
 
 	void checkTargetPosSize(int thread_No);
 
-
-	std::vector<unsigned int> test_point_triangle_record_true_number;
-	std::vector<unsigned int> test_edge_edge_record_true_number;
 
 	
 
@@ -599,19 +596,19 @@ private:
 
 	void setPairIndexEveryThread(std::vector<unsigned int>* pair, std::vector<unsigned int>& pair_index_start_per_thread);
 
-	void computeEnergy(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end, double& energy);
+	void computeEnergy(unsigned int pair_thread_No, int index_start, int index_end, double& energy);
 
-	double collision_stiffness[4];//we assume the initial stiffness of every objects are same
+	double* collision_stiffness;//we assume the initial stiffness of every objects are same
 
 	DCD dcd;
 
-	void re_pointColliderTriangleResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end, TargetPosition* target_pos);
+	void re_pointColliderTriangleResponse(unsigned int pair_thread_No, int index_start, int index_end, TargetPosition* target_pos);
 
-	void re_pointTriangleColliderResponseForIPC(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end, TargetPosition* target_pos);
+	void re_pointTriangleColliderResponseForIPC(unsigned int pair_thread_No, int index_start, int index_end, TargetPosition* target_pos);
 
-	void re_pointTriangleResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end, TargetPosition* target_pos);
+	void re_pointTriangleResponse(unsigned int pair_thread_No, int index_start, int index_end, TargetPosition* target_pos);
 	void setIndexEveryThread(std::vector<unsigned int>* pair, std::vector<unsigned int>& pair_index_start_per_thread);
-	void re_pointTriangleColliderResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end, TargetPosition* target_pos);
+	void re_pointTriangleColliderResponse(unsigned int pair_thread_No, int index_start, int index_end, TargetPosition* target_pos);
 
 	void construct_b_sum(double* b_sum, double* target_pos, double stiffness);
 
@@ -622,18 +619,18 @@ private:
 	void re_pointColliderTriangleResponse(int thread_No, TargetPosition* target_pos);
 
 
-	void re_pointTriangleResponseForIPC(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end, TargetPosition* target_pos);
+	void re_pointTriangleResponseForIPC(unsigned int pair_thread_No, int index_start, int index_end, TargetPosition* target_pos);
 
 
 	void testPairEven();
 
-	void re_edgeEdgeResponseForIPC(unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, TargetPosition* target_pos);
+	void re_edgeEdgeResponseForIPC(unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, TargetPosition* target_pos);
 
-	void re_edgeEdgeResponse(unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, TargetPosition* target_pos);
-	void re_edgeEdgeColliderResponse(unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index, TargetPosition* target_pos);
+	void re_edgeEdgeResponse(unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, TargetPosition* target_pos);
+	void re_edgeEdgeColliderResponse(unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index, TargetPosition* target_pos);
 	void re_edgeEdgeResponse(int thread_No, TargetPosition* target_pos);
 	void re_edgeEdgeResponseForIPC(int thread_No, TargetPosition* target_pos);
 	void re_edgeEdgeColliderResponse(int thread_No, TargetPosition* target_pos);
@@ -643,25 +640,25 @@ private:
 
 	void testNearestPoint();
 
-	void pointTriangleCollisionPair(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index);
+	void pointTriangleCollisionPair(unsigned int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index);
 	void pointTriangleCollisionPair(int thread_No);
 	void edgeEdgeCollisionPair(int thread_No);
-	void edgeEdgeCollisionPair(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index);
+	void edgeEdgeCollisionPair(unsigned int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index);
 
 	void pointTriangleColliderPair(int thread_No);
-	void pointTriangleColliderPair(unsigned int thread_No, unsigned int pair_thread_No, unsigned int start_pair_index,
-		unsigned int end_pair_index);
+	void pointTriangleColliderPair(unsigned int thread_No, unsigned int pair_thread_No, int start_pair_index,
+		int end_pair_index);
 
-	void solveXPBDpointTriangleResponse(unsigned int thread_No, unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
-	void solveXPBDedgeEdgeResponse(unsigned int thread_No, unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
-	void solveXPBDpointTriangleColliderResponse(unsigned int thread_No, unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
+	void solveXPBDpointTriangleResponse(unsigned int thread_No, unsigned int pair_thread_No, int index_start, int index_end);
+	void solveXPBDedgeEdgeResponse(unsigned int thread_No, unsigned int pair_thread_No, int index_start, int index_end);
+	void solveXPBDpointTriangleColliderResponse(unsigned int thread_No, unsigned int pair_thread_No, int index_start, int index_end);
 
 
-	void re_solveXPBDedgeEdgeResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
-	void re_solveXPBDpointTriangleResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
-	void re_solveXPBDpointTriangleColliderResponse(unsigned int pair_thread_No, unsigned int index_start, unsigned int index_end);
+	void re_solveXPBDedgeEdgeResponse(unsigned int pair_thread_No, int index_start, int index_end);
+	void re_solveXPBDpointTriangleResponse(unsigned int pair_thread_No, int index_start, int index_end);
+	void re_solveXPBDpointTriangleColliderResponse(unsigned int pair_thread_No, int index_start, int index_end);
 	//std::vector<double>* lambda;
 	//std::vector<unsigned int>* collision_lambda_index_start;
 	//double damp_stiffness;

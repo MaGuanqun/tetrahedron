@@ -501,11 +501,11 @@ public:
 
 	void setCapsule(OriMesh& mesh)
 	{
-		int col_num = 17;
-		int row_num = 17;
-		double r = 0.4;
-		int globe_row =5;
-		int globe_num_2 = 8;
+		int col_num = 34;
+		int row_num = 34;
+		double r = 0.3;
+		int globe_row =9;
+		int globe_num_2 = 17;
 
 		double half_capsule_length = 1.2;
 		double capsule_length = 2.0 * half_capsule_length;

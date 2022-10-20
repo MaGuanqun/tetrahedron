@@ -354,16 +354,16 @@ void ProjectDynamic::computeGlobalStepMatrix()
 	A = global_mat;
 	
 	for (int i = 0; i < tetrahedron_sys_size[0]; ++i) {
-		//std::cout << tetrahedron->data()[0].mesh_struct.mass[i] << std::endl;
+		////std::cout << tetrahedron->data()[0].mesh_struct.mass[i] << std::endl;
 	//	A.coeffRef(i, i) -= tetrahedron->data()[0].mesh_struct.mass[i] / (sub_time_step * sub_time_step);
-	//	std::cout << tetrahedron->data()[0].mesh_struct.mass[i] / (sub_time_step * sub_time_step) << std::endl;
+	//	//std::cout << tetrahedron->data()[0].mesh_struct.mass[i] / (sub_time_step * sub_time_step) << std::endl;
 	}
-	//std::cout.setf(std::ios::right);
-	//std::cout.width(5);
-	//std::cout << A << std::endl;
+	////std::cout.setf(std::ios::right);
+	////std::cout.width(5);
+	////std::cout << A << std::endl;
 	//for (unsigned int i = 0; i < tetrahedron_sys_size[0]; ++i)
 	//{
-	//	std::cout << A.row(i).sum() << std::endl;
+	//	//std::cout << A.row(i).sum() << std::endl;
 	//}
 
 
@@ -410,7 +410,7 @@ void ProjectDynamic::copmuteGlobalStepMatrixSingleTetrahedron(TetrahedronMeshStr
 	//ARAP + volume preserve: they have the same matrix.
 
 	int index[4];
-	std::cout << "tet " << mesh_struct.indices.size() << std::endl;
+	//std::cout << "tet " << mesh_struct.indices.size() << std::endl;
 	Matrix4d AT_A;
 	for (unsigned int i = 0; i < mesh_struct.indices.size(); ++i) {
 		memcpy(index, mesh_struct.indices[i].data(), 16);
@@ -425,10 +425,10 @@ void ProjectDynamic::copmuteGlobalStepMatrixSingleTetrahedron(TetrahedronMeshStr
 			}
 			global_mat_nnz.push_back(Triplet<double>(index[j], index[j], AT_A.data()[4 * j + j]));//mesh_struct.volume[i] *
 		}
-		//std::cout << mesh_struct.volume[i] << std::endl;
+		////std::cout << mesh_struct.volume[i] << std::endl;
 	}
 
-	//std::cout <<"size "<<  mesh_struct.tet_edge_vertices.size()<<" "<< vertex_index_start << std::endl;
+	////std::cout <<"size "<<  mesh_struct.tet_edge_vertices.size()<<" "<< vertex_index_start << std::endl;
 
 	////edge length
 	//int id0, id1;
@@ -441,7 +441,7 @@ void ProjectDynamic::copmuteGlobalStepMatrixSingleTetrahedron(TetrahedronMeshStr
 	//	global_mat_nnz.push_back(Triplet<double>(id1, id0, -length_stiffness));
 	//}
 
-	//std::cout << "tet " << mesh_struct.indices.size() << std::endl;
+	////std::cout << "tet " << mesh_struct.indices.size() << std::endl;
 	
 	//position
 	//for (int i = 0; i < mesh_struct.anchor_vertex.size(); ++i) {
@@ -450,7 +450,7 @@ void ProjectDynamic::copmuteGlobalStepMatrixSingleTetrahedron(TetrahedronMeshStr
 	//mass
 	for (int i = 0; i < sys_size; ++i) {
 		global_mat_nnz.push_back(Triplet<double>(i + vertex_index_start, i + vertex_index_start, mesh_struct.mass[i] / (sub_time_step * sub_time_step)));
-		//std::cout << mesh_struct.mass[i] / (sub_time_step * sub_time_step) << std::endl;
+		////std::cout << mesh_struct.mass[i] / (sub_time_step * sub_time_step) << std::endl;
 	}
 }
 
@@ -921,14 +921,14 @@ void ProjectDynamic::firstPDForIPC(bool& record_matrix)
 	}
 	current_PD_energy += current_constraint_energy;
 	current_collision_energy = 1e-15;
-	////std::cout << "++++" << std::endl;
+	//////std::cout << "++++" << std::endl;
 	//for (int i = 0; i < cloth_sys_size[0]; ++i) {
-	//	//std::cout << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "
+	//	////std::cout << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "
 	//		<< cloth_u[0][2][i] << std::endl;
 	//}
-	//std::cout << "first local-global without collision" << std::endl;
+	////std::cout << "first local-global without collision" << std::endl;
 	for (unsigned int i = 0; i < cloth_sys_size[0]; ++i) {
-		//std::cout << "    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "<< cloth_u[0][2][i] << std::endl;
+		////std::cout << "    " << cloth_u[0][0][i] << " " << cloth_u[0][1][i] << " "<< cloth_u[0][2][i] << std::endl;
 	}
 }
 
@@ -963,13 +963,14 @@ void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 			if (local_global_iteration_num != 0) {
 				collision.re_solveCollisionConstraintForIPC();
 			}
-				thread->assignTask(this, LOCAL_PROJECTION_WITHOUT_ENERGY);
+				thread->assignTask(this, LOCAL_PROJECTION);
 				current_constraint_energy = temEnergy[0];
 				for (unsigned int i = 1; i < total_thread_num; ++i) {
 					current_constraint_energy += temEnergy[i];
 				}
 				thread->assignTask(this, CONSTRUCT_B);
 				thread->assignTask(this, SOLVE_WITH_COLLISION);
+				//thread->assignTask(this, SOLVE_WITH_COLLISION);
 				solveClothSystem2(false);
 				local_global_iteration_num++;
 				computeInnerEnergyIPCPD();
@@ -982,7 +983,7 @@ void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 			//			//	//record_matrix = false;
 			//			//}
 		}
-//		//std::cout << outer_iteration_num << std::endl;
+//		////std::cout << outer_iteration_num << std::endl;
 		updateModelPosition();
 		outer_iteration_num++;
 		computeEnergyIPCPD();
@@ -1052,7 +1053,7 @@ void ProjectDynamic::PDsolve()
 
 
 
-	//std::cout << global_mat << std::endl;
+	////std::cout << global_mat << std::endl;
 
 	//for (int i = 0; i < cloth->size(); ++i) {
 	//	thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL_RENDER);
@@ -1070,9 +1071,9 @@ void ProjectDynamic::PDsolve()
 		//collision.globalCollision()
 		initialEnergyOuterInteration();
 		local_global_itr_in_single_outer = 0;
-		//std::cout << "outer===" << std::endl;
+		////std::cout << "outer===" << std::endl;
 		while (!PDLocalGlobalConvergeCondition()) {
-			//std::cout << "inner===" << std::endl;
+			////std::cout << "inner===" << std::endl;
 			initialEnergyLocalGlobal();
 			if (perform_collision) {
 				if (local_global_itr_in_single_outer == 0) {
@@ -1128,7 +1129,7 @@ void ProjectDynamic::PDsolve()
 	//updateRenderPosition();
 	thread->assignTask(this, UPDATE_UV);
 
-	//std::cout << v[1] << std::endl;
+	////std::cout << v[1] << std::endl;
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		thread->assignTask(&(*cloth)[i].mesh_struct, FACE_NORMAL);
 	}
@@ -1136,7 +1137,7 @@ void ProjectDynamic::PDsolve()
 		thread->assignTask(&(*tetrahedron)[i].mesh_struct, FACE_NORMAL);
 	}
 	updateRenderPosition();
-	//std::cout << "==========================" << std::endl;
+	////std::cout << "==========================" << std::endl;
 }
 
 
@@ -1202,9 +1203,35 @@ void ProjectDynamic::initialEnergyLocalGlobal()
 
 void ProjectDynamic::testJacobiMatrix()
 {
-	std::cout << "reference " << std::endl;
-	//std::cout << global_mat << std::endl;
+	//std::cout << "reference " << std::endl;
+	////std::cout << global_mat << std::endl;
 
+	VectorXd a(sys_size);
+	for (unsigned int i = 0; i < sys_size; ++i) {
+		a[i] = *(global_mat_diagonal_ref_address[i]);
+	}
+	////std::cout << a << std::endl;
+	for (unsigned int i = 0; i < sys_size; ++i) {
+		a[i] = 1.0 / a[i];
+	}
+	SparseMatrix<double, RowMajor> test = global_mat;
+	for (unsigned int i = 0; i < sys_size; ++i) {
+		test.coeffRef(i, i) = 0;
+	}
+	//std::cout << -1.0*a.asDiagonal() * test << std::endl;
+	//std::cout << a.asDiagonal()*b[0] << std::endl;
+	//std::cout << u[0] << std::endl;
+	//std::cout << "=============" << std::endl;
+	
+
+
+}
+
+
+void ProjectDynamic::testJacobi()
+{
+	//std::cout << "test for " << std::endl;
+	//std::cout << global_mat << std::endl;
 	VectorXd a(sys_size);
 	for (unsigned int i = 0; i < sys_size; ++i) {
 		a[i] = *(global_mat_diagonal_ref_address[i]);
@@ -1217,42 +1244,16 @@ void ProjectDynamic::testJacobiMatrix()
 	for (unsigned int i = 0; i < sys_size; ++i) {
 		test.coeffRef(i, i) = 0;
 	}
-	std::cout << -1.0*a.asDiagonal() * test << std::endl;
-	std::cout << a.asDiagonal()*b[0] << std::endl;
-	std::cout << u[0] << std::endl;
-	std::cout << "=============" << std::endl;
-	
-
-
-}
-
-
-void ProjectDynamic::testJacobi()
-{
-	std::cout << "test for " << std::endl;
-	std::cout << global_mat << std::endl;
-	VectorXd a(sys_size);
-	for (unsigned int i = 0; i < sys_size; ++i) {
-		a[i] = *(global_mat_diagonal_ref_address[i]);
-	}
-	std::cout << a << std::endl;
-	for (unsigned int i = 0; i < sys_size; ++i) {
-		a[i] = 1.0 / a[i];
-	}
-	SparseMatrix<double, RowMajor> test = global_mat;
-	for (unsigned int i = 0; i < sys_size; ++i) {
-		test.coeffRef(i, i) = 0;
-	}
 
 	SparseMatrix<double, RowMajor> test_R_jacobi = -1.0 * a.asDiagonal() * test;
 	Matrix4d test1 = Matrix4d(test_R_jacobi);
-	std::cout << test1 << std::endl;
+	//std::cout << test1 << std::endl;
 	JacobiSVD<Matrix4d> svd;
 	svd.compute(test1);
 	//	rotation_2 = svd.matrixU();
 
 	Vector4d eigen_value = svd.singularValues();
-	std::cout << eigen_value << std::endl;
+	//std::cout << eigen_value << std::endl;
 }
 
 
@@ -1266,7 +1267,7 @@ void ProjectDynamic::PDupdateSystemMatrix()
 		thread->assignTask(this, UPDATE_MATRIX);
 		global_llt.factorize(global_mat);
 		//time_t t1 = clock();
-		//std::cout << "update matrix &factorize " << t1 - t << std::endl;
+		////std::cout << "update matrix &factorize " << t1 - t << std::endl;
 	}
 		break;
 	case JACOBI:
@@ -1453,10 +1454,10 @@ void ProjectDynamic::updateMatrixPerThread(int thread_No)
 		vertex_end = vertex_index_begin_per_thread[thread_No + 1];
 		for (unsigned int i = vertex_index_begin_per_thread[thread_No]; i < vertex_end; ++i) {
 			*(diagonal_ref_address[i + vertex_index_start]) = diagonal_ref[i + vertex_index_start];
-			////std::cout << i << " " << *(diagonal_ref_address[i]) << std::endl;
+			//////std::cout << i << " " << *(diagonal_ref_address[i]) << std::endl;
 			if (need_update[i]) {
 				*(diagonal_ref_address[i + vertex_index_start]) += stiffness[i];
-				////std::cout<<"update "<<i << " " << *(diagonal_ref_address[i]) << std::endl;
+				//////std::cout<<"update "<<i << " " << *(diagonal_ref_address[i]) << std::endl;
 			}
 		}
 	}
@@ -1473,10 +1474,9 @@ void ProjectDynamic::updateMatrixPerThread(int thread_No)
 		for (unsigned int i = vertex_index_begin_per_thread[thread_No]; i < vertex_end; ++i) {
 			vertex_index = vertex_index_on_surface[i];
 			*(diagonal_ref_address[vertex_index + vertex_index_start]) = diagonal_ref[vertex_index + vertex_index_start];
-			////std::cout << i << " " << *(diagonal_ref_address[i]) << std::endl;
+			//////std::cout << i << " " << *(diagonal_ref_address[i]) << std::endl;
 			if (need_update[vertex_index]) {
 				*(diagonal_ref_address[vertex_index + vertex_index_start]) += stiffness[vertex_index];
-				////std::cout<<"update "<<i << " " << *(diagonal_ref_address[i]) << std::endl;
 			}
 		}
 	}
@@ -1489,11 +1489,15 @@ bool ProjectDynamic::innerIterationConvergeCondition()
 {
 	//return local_global_iteration_num > max_inner_iteration_num;
 
-	if (local_global_iteration_num > 6) {
-		bool energy_changing = fabs(current_PD_energy - previous_PD_energy) / previous_PD_energy < local_global_conv_rate || current_PD_energy < 5e-15;
-		if (energy_changing) {
-			return true;
-		}
+
+
+
+	if (local_global_iteration_num > 15) {
+		//bool energy_changing = fabs(current_PD_energy - previous_PD_energy) / previous_PD_energy < local_global_conv_rate || current_PD_energy < 5e-15;
+		//if (energy_changing) {
+		//	return true;
+		//}
+		return true;
 	}
 	return false;
 }
@@ -1511,7 +1515,7 @@ bool ProjectDynamic::IPC_PDConvergeCondition()
 			}
 			bool ratio_changing = fabs(displacement_ratio_dif + (previous_displacement_norm - displacement_norm)) / displacement_norm < 1e-7;
 			//if (outer_iteration_num > 990) {
-				//std::cout << "displacement ratio " << displacement_norm / displacement_bound <<" "<< fabs(displacement_ratio_dif + (previous_displacement_norm - displacement_norm)) / displacement_norm << std::endl;
+				////std::cout << "displacement ratio " << displacement_norm / displacement_bound <<" "<< fabs(displacement_ratio_dif + (previous_displacement_norm - displacement_norm)) / displacement_norm << std::endl;
 			//}
 			if (displacement_norm / displacement_bound < 1.0 || ratio_changing) {//  
 				return true;
@@ -1519,7 +1523,7 @@ bool ProjectDynamic::IPC_PDConvergeCondition()
 			//}
 		}
 		else {
-			////std::cout << "larger than 1000 " << std::endl;
+			//////std::cout << "larger than 1000 " << std::endl;
 			return true;
 		}
 	}
@@ -1533,14 +1537,14 @@ bool ProjectDynamic::PDConvergeCondition()
 
 	bool energy_satisfied = system_energy && collision_energy;
 	bool need_to_stop = local_global_iteration_num > max_it - 3 || fabs(current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy < 5e-6;
-	//std::cout << outer_iteration_num << std::endl;
+	////std::cout << outer_iteration_num << std::endl;
 	bool standard = (energy_satisfied || need_to_stop) && outer_iteration_num > 0;
 	//if (outer_iteration_num > 0) {//
 	if (standard) {//
 		return true;
 	}
 	else {
-		////std::cout << fabs(current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy << " " << current_PD_energy << std::endl;
+		//////std::cout << fabs(current_PD_energy - previous_itr_PD_energy) / previous_itr_PD_energy << " " << current_PD_energy << std::endl;
 		return false;
 	}
 
@@ -1564,9 +1568,9 @@ bool ProjectDynamic::PDLocalGlobalConvergeCondition()
 	bool standard = (energy_satisfied || need_to_stop);//&& local_global_itr_in_single_outer > 0;
 
 	//if (local_global_itr_in_single_outer > 300) {
-	//	//std::cout<<"energy " << current_collision_energy<<" "<< abs(previous_collision_energy - current_collision_energy) / previous_collision_energy << std::endl;
-	//	//std::cout << current_constraint_energy<<" "<< abs(current_constraint_energy - previous_constraint_energy) / previous_constraint_energy << std::endl;
-	//	//std::cout << current_PD_energy <<" "<< abs(current_PD_energy - previous_PD_energy) / previous_PD_energy << std::endl;
+	//	////std::cout<<"energy " << current_collision_energy<<" "<< abs(previous_collision_energy - current_collision_energy) / previous_collision_energy << std::endl;
+	//	////std::cout << current_constraint_energy<<" "<< abs(current_constraint_energy - previous_constraint_energy) / previous_constraint_energy << std::endl;
+	//	////std::cout << current_PD_energy <<" "<< abs(current_PD_energy - previous_PD_energy) / previous_PD_energy << std::endl;
 	//}
 
 	if (standard) {
@@ -1586,7 +1590,7 @@ void ProjectDynamic::localProjection()
 	//for (int i = 0; i < 1000; ++i) {
 	//	thread->assignTask(this, TEST_LOCAL_PROJECTION);
 	//}
-	////std::cout <<"time "<< clock() - t << std::endl;;
+	//////std::cout <<"time "<< clock() - t << std::endl;;
 
 	thread->assignTask(this, LOCAL_PROJECTION);
 }
@@ -1787,7 +1791,7 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 
 				//double k = (svd.matrixU() * svd.singularValues().asDiagonal() * svd.matrixV().transpose()- transform).norm();
 				//if (k > 1e-12) {
-				//	std::cout << k << std::endl;
+				//	//std::cout << k << std::endl;
 				//}
 
 				//if (!getDigonalForVolumePreserve(singular_value, volume_preserve_max, volume_preserve_min, sigma)) {
@@ -1803,12 +1807,12 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 				//	transform_for_volume_perserve = (rotation_2 * transform_for_volume_perserve.transpose()).eval();
 				//}
 				////if (i == 0) {
-				////	std::cout << (transform - svd.matrixU() * svd.singularValues().asDiagonal() * svd.matrixV().transpose()).squaredNorm() << std::endl;
+				////	//std::cout << (transform - svd.matrixU() * svd.singularValues().asDiagonal() * svd.matrixV().transpose()).squaredNorm() << std::endl;
 				////}
 				//transform = rotation_2* svd.matrixV().transpose();
 
 				//if ((transform - Matrix3d::Identity()).squaredNorm() > 1e-6) {
-				//	std::cout << transform << std::endl;
+				//	//std::cout << transform << std::endl;
 				//}
 
 				//for (int j = 0; j < 9; ++j) {
@@ -1817,13 +1821,13 @@ void ProjectDynamic::localARAPProjectionPerThread(int thread_id, bool with_energ
 				//	}
 				//}
 				//if (i == 0) {
-				//	std::cout << "transform " << std::endl;					
-				//	std::cout << transform << std::endl;
+				//	//std::cout << "transform " << std::endl;					
+				//	//std::cout << transform << std::endl;
 				//}
 				//p = transform * (PT_pos[i].transpose());
 				//temp_p = getARAPmatrix() * p.transpose();
 
-				//std::cout << temp_p.colwise().sum() << std::endl;
+				////std::cout << temp_p.colwise().sum() << std::endl;
 
 				//p_volume_preserve = transform_for_volume_perserve * (PT_pos[i].transpose());
 				ATAp_ARAP_volume_preserve[i] =
@@ -1970,7 +1974,7 @@ bool ProjectDynamic::getDigonalForVolumePreserve(Vector3d& svd_eigen, double max
 		sigma_multi = sigma.data()[0] * sigma.data()[1] * sigma.data()[2];
 		itr_num++;
 	}
-	//std::cout << itr_num << std::endl;
+	////std::cout << itr_num << std::endl;
 
 	return true;
 
@@ -2391,12 +2395,12 @@ void ProjectDynamic::solveClothSystem2(bool compute_energy)
 							   break;
 	case CHEBYSHEV_JACOBI: {
 			iteration_method.solveByChebyshevSemiIterativeJacobi(u.data(), b.data(), itr_num);
-		//std::cout <<"chebyshev jacobi "<< itr_num << std::endl;
+		////std::cout <<"chebyshev jacobi "<< itr_num << std::endl;
 	}
 						 break;
 	case PCG: {
 			iteration_method.solveByPCG(u.data(), b.data(), itr_num);
-		//std::cout <<"PCG "<< itr_num << std::endl;
+		////std::cout <<"PCG "<< itr_num << std::endl;
 	}
 			break;
 	}

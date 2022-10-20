@@ -180,8 +180,8 @@ void SetModel::moveBodyCapsule(OriMesh& ori_mesh, unsigned int obj_No)
 	//band capsule
 	double move[3] = { 0.0,-0.5,0.0 };//
 	if (obj_No == 0) {
-		move[1] = 0.2;
-		move[2] = 0.1;
+		move[1] = 1.2;
+		//move[2] = 0.1;
 	}
 	//double move[3] = { 0.0,-0.9,-0.3 };//this is for two prisms
 	//double move[3] = { -60, -130,-30 };//this is for two dragons

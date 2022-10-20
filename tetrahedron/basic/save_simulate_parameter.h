@@ -101,12 +101,13 @@ namespace SaveParameter{
 			collide_stiffness[i].reserve(8);
 			std::getline(in, line);
 			split(line, " ", vec);
-			for (unsigned int j = 0; j < vec.size(); ++j) {
+			std::cout << vec.size() << std::endl;
+			for (int j = 0; j < vec.size(); ++j) {
 				obj_stiffness[i].emplace_back(stod(vec[j]));
 			}
 			std::getline(in, line);
 			split(line, " ", vec);
-			for (unsigned int j = 0; j < vec.size(); ++j) {
+			for (int j = 0; j < vec.size(); ++j) {
 				collide_stiffness[i].emplace_back(stod(vec[j]));
 			}
 		}
@@ -318,8 +319,6 @@ namespace SaveParameter{
 				input_file << tet_stiffness.data()[i][j] << " ";
 			}
 			input_file << "\n";
-		}
-		for (unsigned int i = 0; i < tet_collision_stiffness.size(); ++i) {
 			for (unsigned int j = 0; j < tet_collision_stiffness.data()[i].size(); ++j) {
 				input_file << tet_collision_stiffness.data()[i][j] << " ";
 			}
