@@ -197,7 +197,7 @@ bool CollisionConstraint::floorResponse(double* target_position, double* current
 bool CollisionConstraint::pointTriangleColliderResponse(double* initial_position, double* current_position,
 	double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
 	double* initial_triangle_normal, double* vertex_target_pos,
-	double d_hat, double& stiffness, double epsilon)
+	double d_hat, double& stiffness, double epsilon, unsigned int vertex_index)
 {
 	double d_hat_2 = d_hat * d_hat;
 	double barycentric[3];
@@ -224,6 +224,8 @@ bool CollisionConstraint::pointTriangleColliderResponse(double* initial_position
 
 	double sideness = DOT(initial_triangle_normal, sub);
 
+	double indicate_move=0.0;
+
 	if (sideness == 0.0) {
 		double direct_velocity = DOT(initial_triangle_normal, relative_velocity);
 		if (direct_velocity > 0) {
@@ -241,15 +243,22 @@ bool CollisionConstraint::pointTriangleColliderResponse(double* initial_position
 	}
 	else if (sideness < 0) {
 		coe = abs(coe);
+		//indicate_move=d_hat + sideness;
 		//if (coe < d_hat + sideness) {
 		//	coe = d_hat + sideness;
 		//}
 	}
 	else {
 		coe = -abs(coe);
+		//indicate_move= -d_hat + sideness;
+		
 		//if (coe > -d_hat + sideness) {
 		//	coe = -d_hat + sideness;
 		//}
+	}
+
+	if (vertex_index == 350) {
+		std::cout << coe << " " << indicate_move <<" "<< epsilon << std::endl;
 	}
 
 	//if (coe == 0.0) {

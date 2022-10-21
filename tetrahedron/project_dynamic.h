@@ -62,7 +62,7 @@ public:
 	void updateSystemPos();
 	double velocity_damp;
 
-
+	std::vector<std::array<double, 3>> position_record_to_show;
 
 private:
 
@@ -238,5 +238,6 @@ private:
 
 	bool perform_collision;
 
+	void upadtePositionByRender();
 
 };

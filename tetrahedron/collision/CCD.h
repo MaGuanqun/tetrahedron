@@ -58,16 +58,16 @@ namespace CCD {
 
             dist2_cur = internal::pointTriangleDistanceUnclassified(p, t0, t1, t2);
             dist_cur = std::sqrt(dist2_cur);
-            if ((toc && ((dist2_cur - thickness * thickness) / (dist_cur + thickness) < gap))) {// || itr > 200
+            if ((toc && ((dist2_cur - thickness * thickness) / (dist_cur + thickness) < gap))|| itr > 300) {// || 
                // std::cout << toc<<" "<< toc_lower_bound<<" "<< dist_cur - thickness<<" "<<gap << std::endl;
 
                 break;
             }
             toc += toc_lower_bound;
 
-            //if (toc < 0.0) {
-            //    return 0.0;
-            //}
+            if (toc < 0.0) {
+                return 0.0;
+            }
 
             if (toc > 1.0) {
                 return 1.0;

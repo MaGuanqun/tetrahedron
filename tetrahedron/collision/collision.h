@@ -194,7 +194,11 @@ public:
 	void re_solveCollisionConstraintForIPC();
 	std::vector<unsigned int>test_triangle_index;
 	void testPointPair();
-	unsigned int chosen_show_vertex;
+	unsigned int chosen_show_vertex= 350;
+	std::vector<std::array<double, 3>> draw_target_position;
+
+
+
 private:
 
 	double d_hat_2;
@@ -731,4 +735,11 @@ private:
 		unsigned int* edge_record, double* volume, std::vector<std::array<double, 3>*>& vertex_position, std::vector<unsigned int*>& edge_vertices);
 	bool floorCollisionTime(double* initial_position, double* current_pos, unsigned int dimension, bool direction, 
 		double floor_value, double& collision_time);
+
+	std::vector<std::vector<double>>record_VT_collision_time;
+	std::vector<std::vector<double>>record_EE_collision_time;
+	std::vector<std::vector<double>>record_VTCollider_collision_time;
+
+	void initialCollisionTimeRecord(int thread_No);
+
 };
