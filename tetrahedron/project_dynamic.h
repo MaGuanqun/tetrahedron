@@ -240,4 +240,6 @@ private:
 
 	void upadtePositionByRender();
 
+	std::vector<std::vector<std::array<double, 3>>> record_collision_free_vertex_position;
+	void recordCollisionFreePosition();
 };

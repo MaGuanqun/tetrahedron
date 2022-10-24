@@ -179,6 +179,13 @@ dest[0]=0.5*(v0[0]+v0[3]);\
 dest[1]=0.5*(v0[1]+v0[4]);\
 dest[2]=0.5*(v0[2]+v0[5]);
 
+
+#undef COLLISION_POS
+#define COLLISION_POS(dest, collision_time, initial, current)\
+dest[0] = initial[0]+collision_time*(current[0]-initial[0]);\
+dest[1] = initial[1]+collision_time*(current[1]-initial[1]);\
+dest[2] = initial[2]+collision_time*(current[2]-initial[2]);
+
 #undef DIFF_SIGN
 #define DIFF_SIGN(v0,v1) ((v0>0&&v1<0)||(v0<0||v1>0))
 
@@ -370,6 +377,18 @@ inline bool vertexInTriangle(int* face_index, int vertex_index)
 	if (face_index[2] == vertex_index)
 		return true;
 	return false;
+}
+
+
+
+inline void getTriangleNormal(double* v0, double* v1, double* v2, double* normal)
+{
+	double e0[3];
+	double e1[3];
+	SUB(e0, v2, v1);
+	SUB(e1, v0, v1);
+	CROSS(normal, e0, e1);
+	normalize(normal);
 }
 
 #endif // !GLOBAL_H

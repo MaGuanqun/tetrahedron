@@ -16,6 +16,8 @@ public:
 	bool pointTriangleResponse(double* initial_position, double* current_position,
 		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
 		double* current_triangle_position_0, double* current_triangle_position_1, double* current_triangle_position_2,
+		double* previous_free_vertex_position, double* previous_free_triangle_position_0,
+		double* previous_free_triangle_position_1, double* previous_free_triangle_position_2,
 		double* initial_triangle_normal, double* vertex_target_pos,
 		double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
 		double d_hat, double& stiffness, double epsilon, double mass_point, double mass_t0, double mass_t1, 
@@ -37,9 +39,10 @@ public:
 		double* initial_compare_edge_vertex_1, double* mass, double d_hat, double& stiffness);
 
 	bool pointTriangleColliderResponse(double* initial_position, double* current_position,
+		double* previous_free_vertex_position,
 		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,
 		double* initial_triangle_normal, double* vertex_target_pos,
-		double d_hat, double& stiffness, double epsilon, unsigned int vertex_index);
+		double d_hat, double& stiffness, double epsilon, unsigned int vertex_index, double collision_time);
 
 	bool pointColliderTriangleResponse(double* initial_position,
 		double* initial_triangle_position_0, double* initial_triangle_position_1, double* initial_triangle_position_2,

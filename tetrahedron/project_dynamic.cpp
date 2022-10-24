@@ -241,6 +241,15 @@ void ProjectDynamic::initialPDvariable()
 	b = v;
 	u_prediction = u;
 	acceleration = v;
+
+	record_collision_free_vertex_position.resize(total_cloth_num + total_tetrahedron_num);
+	for (unsigned int i = 0; i < total_cloth_num; ++i) {
+		record_collision_free_vertex_position[i].resize(cloth->data()[i].mesh_struct.vertex_position.size());
+	}
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		record_collision_free_vertex_position[i + cloth->size()].resize(tetrahedron->data()[i].mesh_struct.vertex_position.size());
+	}
+	collision.setCollisionFreeVertex(&record_collision_free_vertex_position);
 }
 
 void ProjectDynamic::initialTetrahedronPDvariable()
@@ -261,6 +270,17 @@ void ProjectDynamic::initialTetrahedronPDvariable()
 				u[i].data()[vertex_start + k] = position[k][i];
 			}
 		}
+	}
+}
+
+
+void ProjectDynamic::recordCollisionFreePosition()
+{
+	for (unsigned int i = 0; i < cloth->size(); ++i) {
+		memcpy(record_collision_free_vertex_position[i][0].data(), cloth->data()[i].mesh_struct.vertex_for_render[0].data(), 24 * record_collision_free_vertex_position[i].size());
+	}
+	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+		memcpy(record_collision_free_vertex_position[i+total_cloth_num][0].data(), tetrahedron->data()[i].mesh_struct.vertex_for_render[0].data(), 24 * record_collision_free_vertex_position[i + total_cloth_num].size());
 	}
 }
 
@@ -963,6 +983,7 @@ void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 		//position_record_to_show.push_back(tetrahedron->data()[0].mesh_struct.vertex_for_render[collision.chosen_show_vertex]);
 		position_record_to_show.push_back(tetrahedron->data()[0].mesh_struct.vertex_position[collision.chosen_show_vertex]);
 		//collision.collisionCulling();
+		recordCollisionFreePosition();
 		collision.globalCollisionTime();
 		thread->assignTask(this, COLLISION_FREE_POSITION);//in document, we use q_n+1, however, here, we use vertices_for_render & cloth_u to store this collision free position.
 		u_previous_itr = u;

@@ -741,5 +741,6 @@ private:
 	std::vector<std::vector<double>>record_VTCollider_collision_time;
 
 	void initialCollisionTimeRecord(int thread_No);
+	void initialCollisionTimeRecord();
 
 };
