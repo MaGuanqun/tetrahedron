@@ -185,7 +185,6 @@ private:
 	void firstPDForIPC(bool& record_matrix);
 
 	std::vector<double>displacement_norm_thread;
-	std::vector<VectorXd> u_previous_itr;
 
 	double displacement_bound;
 	void computeEnergyIPCPD();
@@ -242,4 +241,13 @@ private:
 
 	std::vector<std::vector<std::array<double, 3>>> record_collision_free_vertex_position;
 	void recordCollisionFreePosition();
+
+	void reorganizeData();
+	std::vector<std::array<double, 3>*>vertex_position;
+	std::vector<std::array<double, 3>*>vertex_for_render;
+	std::vector<unsigned int*>vertex_start_per_thread;
+
+
+	void printPosition();
+
 };

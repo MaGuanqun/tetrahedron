@@ -1656,7 +1656,7 @@ void Collision::globalCollisionTime()
 	}
 	collision_time *= 0.9;
 
-	std::cout << "--collision time " << collision_time << std::endl;
+	//std::cout << "--collision time " << collision_time << std::endl;
 
 }
 
@@ -3510,8 +3510,13 @@ void Collision::re_FloorCollisionVertexForIPC(int thread_No)
 
 	for (int j = 0; j < total_size; j += 2) {
 		target_pos_v = collision_record_ + (j << 1);
+		
+		//std::cout << "find record " << target_pos_v[3] << " " << floor_collide_vertex[j] << " " << target_pos_v[1]<<" "<< 
+		//	vertex_position[floor_collide_vertex[j + 1]][floor_collide_vertex[j]][1] << std::endl;
+
 		addTargetPosToSystem(vertex_b_sum[floor_collide_vertex[j + 1]][floor_collide_vertex[j]].data(), target_pos->collision_energy,
 			vertex_position[floor_collide_vertex[j + 1]][floor_collide_vertex[j]].data(), target_pos_v, target_pos_v[3]);	
+
 	}
 
 }
@@ -3620,8 +3625,12 @@ void Collision::floorCollisionVertexForIPC(int thread_No)
 	std::array<double, 3>* initial_vertex_pos;
 	double stiffness;
 	unsigned int* vertex_index_on_surface_;
+
+	std::array<double, 3>* free_vertex_pos;
+
 	for (int i = 0; i < total_obj_num; ++i) {
 		vertex_pos = vertex_position[i];
+		free_vertex_pos = vertex_collision_free[i];
 		initial_vertex_pos = vertex_for_render[i];
 		start = vertex_index_start_per_thread[i][thread_No];
 		end = vertex_index_start_per_thread[i][thread_No + 1];
@@ -3630,7 +3639,7 @@ void Collision::floorCollisionVertexForIPC(int thread_No)
 			for (int j = start; j < end; ++j) {
 				stiffness = stiffness_initial;
 				if (collision_constraint.floorResponse(target_pos_v, vertex_pos[j].data(), initial_vertex_pos[j].data(),
-					dimension, normal_direction, floor_value, d_hat, stiffness, epsilon_)) {
+					dimension, normal_direction, floor_value, d_hat, stiffness, epsilon_, free_vertex_pos[j].data())) {
 
 					addTargetPosToSystemTotal(vertex_b_sum[i][j].data(), target_pos->collision_energy, vertex_position[i][j].data(),
 						target_pos_v, stiffness, record_stiffness[i][j], vetex_need_update[i][j]);
@@ -3642,7 +3651,7 @@ void Collision::floorCollisionVertexForIPC(int thread_No)
 					floor_collision_record_->emplace_back(target_pos_v[2]);
 					floor_collision_record_->emplace_back(stiffness);
 
-					//std::cout << "stiffness " << stiffness << " " << target_pos_v[1] << "  " << initial_vertex_pos[j][1] << std::endl;
+					
 
 				}
 			}
@@ -3654,7 +3663,7 @@ void Collision::floorCollisionVertexForIPC(int thread_No)
 				j = vertex_index_on_surface_[k];
 				stiffness = stiffness_initial;
 				if (collision_constraint.floorResponse(target_pos_v, vertex_pos[j].data(), initial_vertex_pos[j].data(),
-					dimension, normal_direction, floor_value, d_hat, stiffness, epsilon_)) {
+					dimension, normal_direction, floor_value, d_hat, stiffness, epsilon_, free_vertex_pos[j].data())) {
 
 					addTargetPosToSystemTotal(vertex_b_sum[i][j].data(), target_pos->collision_energy, vertex_position[i][j].data(),
 						target_pos_v, stiffness, record_stiffness[i][j], vetex_need_update[i][j]);
@@ -3665,6 +3674,8 @@ void Collision::floorCollisionVertexForIPC(int thread_No)
 					floor_collision_record_->emplace_back(target_pos_v[1]);
 					floor_collision_record_->emplace_back(target_pos_v[2]);
 					floor_collision_record_->emplace_back(stiffness);
+
+					//std::cout << "record stiffness " << stiffness << " "<<j<<" " << target_pos_v[1] << std::endl;
 
 				}
 			}
@@ -4808,6 +4819,9 @@ bool Collision::floorCollisionTime(double* initial_position, double* current_pos
 	if (collision_time > time) {
 		collision_time = time;
 	}
+	if (time < 0) {
+		std::cout << "error collision time of floor is negative" << std::endl;
+	}
 
 	return true;
 }
@@ -5496,7 +5510,7 @@ void Collision::collisionTimeByPair(int thread_No)
 		}
 
 
-		std::cout << "V collision time " << collision_time << std::endl;
+		//std::cout << "V collision time " << collision_time << std::endl;
 
 		//edge_edge_collider
 		//if (edge_edge_pair_collider_index_start_per_thread[(thread_No + 1) << 1] > edge_edge_pair_collider_index_start_per_thread[thread_No << 1]) {
@@ -5580,7 +5594,7 @@ void Collision::collisionTimeByPair(int thread_No)
 			}
 
 		}
-		std::cout << "F collision time " << collision_time << std::endl;
+		//std::cout << "F collision time " << collision_time << std::endl;
 	}
 
 	collision_time_thread[thread_No] = collision_time;

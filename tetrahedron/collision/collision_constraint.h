@@ -58,7 +58,7 @@ public:
 
 	bool floorResponse(double* target_position, double* current_position, double* initial_position,
 		unsigned int dimension, bool normal_direction,
-		double floor_value, double d_hat, double& stiffness, double epsilon);
+		double floor_value, double d_hat, double& stiffness, double epsilon, double* previous_free_pos);
 
 	void testPT();
 	void testEE();

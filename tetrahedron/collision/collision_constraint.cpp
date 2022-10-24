@@ -162,11 +162,9 @@ bool CollisionConstraint::pointTriangleResponse(double* initial_position, double
 
 bool CollisionConstraint::floorResponse(double* target_position, double* current_position, double* initial_position,
 	unsigned int dimension, bool normal_direction,
-	double floor_value, double d_hat, double& stiffness, double epsilon)
+	double floor_value, double d_hat, double& stiffness, double epsilon, double* previous_free_pos)
 {
 	double d_2;
-
-	memcpy(target_position, initial_position, 24);
 	d_2 = (initial_position[dimension] - floor_value) * (initial_position[dimension] - floor_value);
 	if (normal_direction) {
 		if (initial_position[dimension] > floor_value + d_hat) {
@@ -178,29 +176,57 @@ bool CollisionConstraint::floorResponse(double* target_position, double* current
 			return false;
 		}
 	}
+
 	double d_hat_2 = d_hat * d_hat;
+
+
 
 	stiffness *= barrier((d_hat_2 - d_2) / d_hat_2, d_2 / d_hat_2);
 
 	epsilon += 1.0;
 
-	double relative_velocity =abs( epsilon*(current_position[dimension] - initial_position[dimension]));
 
-	if (normal_direction) {
-		//if (relative_velocity < d_hat+ floor_value - initial_position[dimension]) {
-		//	target_position[dimension] = d_hat + floor_value;
-		//}
-		//else {
-			target_position[dimension] = initial_position[dimension] + relative_velocity;
-		//}
+	double collision_pos[3];
+
+
+
+	double collision_time;
+	if (abs(current_position[dimension] - initial_position[dimension]) < 1e-10) {
+		collision_time = 1.0;
 	}
 	else {
-		//if (relative_velocity < initial_position[dimension] -(floor_value - d_hat)) {
-		//	target_position[dimension] = floor_value- d_hat;
-		//}
-		//else {
-			target_position[dimension] = initial_position[dimension] - relative_velocity;
-		//}
+		collision_time = (floor_value - initial_position[dimension]) / (current_position[dimension] - initial_position[dimension]);
+	}	
+
+	if (collision_time > 1.0) {
+		collision_time = 1.0;
+	}
+
+	COLLISION_POS(collision_pos, collision_time, previous_free_pos, current_position);
+
+	memcpy(target_position, collision_pos, 24);
+
+	if (normal_direction) {
+		if (floor_value-current_position[dimension] < d_hat) {
+			target_position[dimension] = floor_value + d_hat;
+		}
+		else if (current_position[dimension] > d_hat + floor_value) {
+			memcpy(target_position, current_position, 24);
+		}
+		else {
+			target_position[dimension] += floor_value - current_position[dimension];
+		}
+	}
+	else {
+		if (current_position[dimension]- floor_value < d_hat) {
+			target_position[dimension] = floor_value - d_hat;
+		}
+		else  if (current_position[dimension] < d_hat - floor_value) {
+			memcpy(target_position, current_position, 24);
+		}
+		else {
+			target_position[dimension] -= current_position[dimension]- floor_value;
+		}
 	}
 	return true;
 }
@@ -245,39 +271,41 @@ bool CollisionConstraint::pointTriangleColliderResponse(double* initial_position
 	double sideness = DOT(initial_triangle_normal, sub);
 
 	SUB(sub, collision_vertex, initial_triangle_position_0);
-
 	double collision_dis = DOT(initial_triangle_normal, sub);
-
-	double indicate_move=0.0;
+	//double indicate_move=0.0;
 
 
 	if (sideness == 0.0) {
 		double direct_velocity = DOT(initial_triangle_normal, relative_velocity);
 		if (direct_velocity > 0) {
 			coe = abs(coe);
-			//if (coe < d_hat) {
-			//	coe = d_hat;
-			//}
+			if (coe < d_hat) {
+				coe = d_hat;
+			}
 		}
 		else {
 			coe = -abs(coe);
-			//if (coe > -d_hat) {
-			//	coe = -d_hat;
-			//}
+			if (coe > -d_hat) {
+				coe = -d_hat;
+			}
 		}
 	}
 	else if (sideness < 0) {
-		coe = abs(coe);
-		//indicate_move=d_hat + sideness;
-		if (coe < d_hat + collision_dis) {
+		if (collision_dis < -d_hat) {
+			memcpy(vertex_target_pos, collision_vertex, 24);
+			return true;
+		}
+		
+		if (coe - collision_dis < d_hat) {
 			coe = d_hat + collision_dis;
 		}
 	}
 	else {
-		coe = -abs(coe);
-		//indicate_move= -d_hat + sideness;
-		
-		if (coe > -d_hat + collision_dis) {
+		if (collision_dis > d_hat) {
+			memcpy(vertex_target_pos, collision_vertex, 24);
+			return true;
+		}
+		if (collision_dis -coe < d_hat) {
 			coe = -d_hat + collision_dis;
 		}
 	}
