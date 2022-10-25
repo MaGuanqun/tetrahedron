@@ -4189,6 +4189,7 @@ void Collision::edgeEdgeResponseForIPC(unsigned int thread_No, unsigned int pair
 	std::vector<double>* record_stiffness = target_pos->stiffness.data();
 	bool** vetex_need_update = target_pos->need_update;
 	unsigned int* pair;
+	double* collision_time = record_EE_collision_time[pair_thread_No].data();
 	for (int i = start_pair_index; i < end_pair_index; i += 4) {
 		stiffness = stiffness_initial;
 		pair = pair_ + i;
@@ -4199,9 +4200,11 @@ void Collision::edgeEdgeResponseForIPC(unsigned int thread_No, unsigned int pair
 			vertex_for_render[*(pair + 1)][*indices].data(), vertex_for_render[*(pair + 1)][*(indices + 1)].data(),
 			vertex_position[*(pair + 3)][*compare_indices].data(), vertex_position[*(pair + 3)][*(compare_indices + 1)].data(),
 			vertex_for_render[*(pair + 3)][*compare_indices].data(), vertex_for_render[*(pair + 3)][*(compare_indices + 1)].data(),
+			vertex_collision_free[*(pair + 1)][*indices].data(), vertex_collision_free[*(pair + 1)][*(indices + 1)].data(),
+			vertex_collision_free[*(pair + 3)][*compare_indices].data(), vertex_collision_free[*(pair + 3)][*(compare_indices + 1)].data(),
 			d_hat_, stiffness, epsilon_,
 			mass[*(pair + 1)][*indices], mass[*(pair + 1)][*(indices + 1)],
-			mass[*(pair + 3)][*compare_indices], mass[*(pair + 3)][*(compare_indices + 1)]))
+			mass[*(pair + 3)][*compare_indices], mass[*(pair + 3)][*(compare_indices + 1)], collision_time[i>>2]))
 		{
 			addTargetPosToSystemTotal(vertex_b_sum[*(pair + 1)][*indices].data(), target_pos->collision_energy, vertex_position[*(pair + 1)][*indices].data(),
 				target_pos_edge, stiffness, record_stiffness[*(pair + 1)][*indices], vetex_need_update[*(pair + 1)][*indices]);

@@ -26,8 +26,11 @@ public:
 	bool edgeEdgeResponse(double* edge_target_pos_0, double* edge_target_pos_1,
 		double* compare_target_pos_0, double* compare_target_pos_1, double* current_edge_vertex_0, double* current_edge_vertex_1, double* initial_edge_vertex_0, double* initial_edge_vertex_1,
 		double* current_compare_edge_vertex_0, double* current_compare_edge_vertex_1, double* initial_compare_edge_vertex_0,
-		double* initial_compare_edge_vertex_1, double d_hat, double& stiffness, double epsilon,
-		double mass_e_0_0, double mass_e_0_1, double mass_e_1_0, double mass_e_1_1);
+		double* initial_compare_edge_vertex_1, 
+		double* previous_free_edge_v0, double* previous_free_edge_v1,
+		double* previous_free_compare_edge_v0, double* previous_free_compare_edge_v1,
+		double d_hat, double& stiffness, double epsilon,
+		double mass_e_0_0, double mass_e_0_1, double mass_e_1_0, double mass_e_1_1, double collision_time);
 
 
 	bool pointColliderTriangle(double* initial_position, double* current_position,

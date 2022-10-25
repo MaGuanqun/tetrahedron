@@ -155,6 +155,12 @@ dest[0]=barycoe[0]*v0[0]+barycoe[1]*v1[0]+barycoe[2]*v2[0];\
 dest[1]=barycoe[0]*v0[1]+barycoe[1]*v1[1]+barycoe[2]*v2[1];\
 dest[2]=barycoe[0]*v0[2]+barycoe[1]*v1[2]+barycoe[2]*v2[2];
 
+#undef EDGE_OF_TWO_EDGE
+#define EDGE_OF_TWO_EDGE(dest, barycentric,e00,e01, e10,e11)\
+dest[0] = barycentric[0]*e00[0]+barycentric[1]*e01[0]-barycentric[2]*e10[0]-barycentric[3]*e11[0];\
+dest[1] = barycentric[0]*e00[1]+barycentric[1]*e01[1]-barycentric[2]*e10[1]-barycentric[3]*e11[1];\
+dest[2] = barycentric[0]*e00[2]+barycentric[1]*e01[2]-barycentric[2]*e10[2]-barycentric[3]*e11[2];
+
 #undef POINT_ON_EDGE
 #define POINT_ON_EDGE(dest,coe0,coe1,v0,v1)\
 dest[0]=coe0*v0[0]+coe1*v1[0];\

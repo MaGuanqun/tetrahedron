@@ -1,18 +1,14 @@
 object
-2
-.\model\bar.1.ele
-.\model\bar.1.ele
+1
+.\model\bar.ele
 collider
-0
+1
+.\model\capsule.obj
 stiffness
 200 50000 0 0 0 0 
-1000 2000 2000 20 0 0 0 0 
-200 50000 0 0 0 0 
-1000 2000 2000 20 0 0 0 0 
+2000 2000 2000 20 0 0 0 0 
 anchor_vertex
 0
-0 
-1
 0 
 time_step
 0.01
@@ -27,7 +23,7 @@ friction_coe
 floor_dimension
 2
 floor_value
--0.55
+1
 PD
 convergence_rate
 0.015
