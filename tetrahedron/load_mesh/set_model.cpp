@@ -66,12 +66,6 @@ void SetModel::load_getAABB(std::string& path, int& index, int obj_index, bool c
 
 		moveBodyCapsule(ori_mesh, obj_index,collider);
 	
-
-
-		//moveBodyCapsule(ori_mesh,obj_index);
-	
-
-	
 	getAABB();
 	setBackMaterial(ori_mesh);
 	if (path == "./model/floor.obj") {
@@ -182,14 +176,15 @@ void SetModel::splitPath(std::string& path, std::string& name)
 void SetModel::moveBodyCapsule(OriMesh& ori_mesh, unsigned int obj_No, bool collider)
 {
 	//band capsule
-	double move[3] = { 0.0,-0.5,0.0 };//
+	double move[3] = { 0.0,4.0,0.0 };//
 	if (collider && obj_No == 0) {
 		move[1] = 1.2;
 		//move[2] = 0.1;
 	}
-	if (!collider) {
-		move[1] = 4.8;
-		move[2] = -0.3;
+	if (!collider && obj_No == 0) {
+		move[1] = 5.3;//4.8
+		//move[2] = -0.3;
+		//move[0] = -0.3;
 	}
 	//double move[3] = { 0.0,-0.9,-0.3 };//this is for two prisms
 	//double move[3] = { -60, -130,-30 };//this is for two dragons

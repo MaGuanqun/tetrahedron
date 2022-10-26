@@ -994,6 +994,7 @@ void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 {
 	//position_record_to_show.clear();
 
+	std::cout << "=-===== " << *time_stamp << std::endl;
 	
 	
 	//collision.testPointPair();
@@ -1022,37 +1023,20 @@ void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 				}
 				thread->assignTask(this, CONSTRUCT_B);
 				thread->assignTask(this, SOLVE_WITH_COLLISION);
-				//thread->assignTask(this, SOLVE_WITH_COLLISION);
 				solveClothSystem2(false);
 			
 				updateModelPosition();
 				//printPosition();
 				local_global_iteration_num++;
 				computeInnerEnergyIPCPD();
-
-
-
 			}
 		}
+
+
+
 		recordCollisionFreePosition();
 		collision.globalCollisionTime();
 		thread->assignTask(this, COLLISION_FREE_POSITION);//in document, we use q_n+1, however, here, we use vertices_for_render & cloth_u to store this collision free position.
-
-//
-////		if (record_matrix && outer_iteration_num==1) {
-////			std::string matrix_name = "./save_matrix/global_" + std::to_string(*time_stamp) + ".dat";
-////			//saveSparseMatrix(cloth_global_mat[0], matrix_name);
-////			//std::string off_diagonal_name = "off_diagonal_" + std::to_string(*time_stamp) + ".dat";
-////			//saveSparseMatrix(iteration_method.off_diagonal[0], off_diagonal_name);
-////			std::string u_name = "./save_matrix/u_" + std::to_string(*time_stamp) + "_";
-/////*			for (int i = 0; i < 3; ++i) {
-////				saveMatrix(i, cloth_u[0][i], u_name);
-////			}	*/		
-////		}
-// 
-
-		
-//		////std::cout << outer_iteration_num << std::endl;
 		updateModelPosition();
 		outer_iteration_num++;
 		computeEnergyIPCPD();
@@ -1449,6 +1433,9 @@ void ProjectDynamic::computeCollisionFreePosition(int thread_No)
 			u_x[j + vertex_index_start] = q_pre[j][0];
 			u_y[j + vertex_index_start] = q_pre[j][1];
 			u_z[j + vertex_index_start] = q_pre[j][2];
+
+
+
 		}
 	}
 }
@@ -1587,7 +1574,7 @@ bool ProjectDynamic::innerIterationConvergeCondition()
 
 bool ProjectDynamic::IPC_PDConvergeCondition()
 {
-	if (outer_iteration_num > 3) {
+	if (outer_iteration_num > 10) {
 		if (outer_iteration_num < max_it) {
 			thread->assignTask(this, COMPUTE_DISPLACEMENT);
 			displacement_norm = displacement_norm_thread[0];
