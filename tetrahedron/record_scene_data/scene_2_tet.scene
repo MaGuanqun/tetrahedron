@@ -1,7 +1,7 @@
 object
 2
-D:\tetrahedron\tetrahedron\model\single_tet.ele
-D:\tetrahedron\tetrahedron\model\single_tet.ele
+.\model\single_tet.ele
+.\model\single_tet.ele
 collider
 0
 stiffness
@@ -27,7 +27,7 @@ friction_coe
 floor_dimension
 2
 floor_value
--1.75
+-2.0
 PD
 convergence_rate
 0.015

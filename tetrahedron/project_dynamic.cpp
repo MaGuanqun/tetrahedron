@@ -150,7 +150,7 @@ void ProjectDynamic::initialDHatTolerance(double ave_edge_length)
 	for (int i = 0; i < cloth->size(); ++i) {
 		element_count += (*cloth)[i].mesh_struct.vertex_for_render.size();
 	}
-	displacement_bound = 1e-2 * ave_edge_length;
+	displacement_bound = 1e-3 * ave_edge_length;
 }
 
 void ProjectDynamic::setForClothPD(std::vector<Cloth>* cloth)
@@ -992,15 +992,12 @@ void ProjectDynamic::firstPDForIPC(bool& record_matrix)
 
 void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 {
-	//position_record_to_show.clear();
-
-	std::cout << "=-===== " << *time_stamp << std::endl;
-	
+	//position_record_to_show.clear();	
 	
 	//collision.testPointPair();
 	outer_iteration_num = 0;
 	reset_ave_iteration_record();
-	std::cout << " == " << std::endl;
+
 	while (!IPC_PDConvergeCondition()) {
 
 		if (outer_iteration_num == 0) {
@@ -1562,7 +1559,7 @@ bool ProjectDynamic::innerIterationConvergeCondition()
 
 
 
-	if (local_global_iteration_num > 5) {
+	if (local_global_iteration_num > 10) {
 		//bool energy_changing = fabs(current_PD_energy - previous_PD_energy) / previous_PD_energy < local_global_conv_rate || current_PD_energy < 5e-15;
 		//if (energy_changing) {
 		//	return true;
@@ -1574,7 +1571,7 @@ bool ProjectDynamic::innerIterationConvergeCondition()
 
 bool ProjectDynamic::IPC_PDConvergeCondition()
 {
-	if (outer_iteration_num > 10) {
+	if (outer_iteration_num > 15) {
 		if (outer_iteration_num < max_it) {
 			thread->assignTask(this, COMPUTE_DISPLACEMENT);
 			displacement_norm = displacement_norm_thread[0];

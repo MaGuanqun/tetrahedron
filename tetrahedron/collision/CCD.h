@@ -156,7 +156,7 @@ namespace CCD {
             }
             dist_cur = std::sqrt(dist2_cur);
 
-            if ((toc && (dFunc / (dist_cur + thickness) < gap)) || itr > 200) {
+            if ((toc && (dFunc / (dist_cur + thickness) < gap)) || itr > 300) {
                 break;
             }
             toc += toc_lower_bound;
@@ -166,57 +166,82 @@ namespace CCD {
         }
         return toc;
     }
-//    void test()
-//    {
-//        //double initial_pos[3] = { 0.657142857142857, 0.7, 0.785714285714286 };
-//    //double current_pos[3] = { 0.657142857142857, 0.699755000142151, 0.785714285714286 };
-//    //double initial_triangle_0[3] = { 0.657142857142857, 0.633333333333333, 0.776190476190476 };
-//    //double initial_triangle_1[3] = { 0.692857142857143, 0.666666666666667, 0.780952380952381 };
-//    //double initial_triangle_2[3] = { 0.692857142857143, 0.633333333333333, 0.776190476190476 };
-//    //double current_triangle_0[3] = { 0.657142857142857, 0.633088333368321, 0.776190476190476 };
-//    //double current_triangle_1[3] = { 0.692857142857143, 0.666421666742275, 0.780952380952381 };
-//    //double current_triangle_2[3] = { 0.692857142857143, 0.633088333369544, 0.776190476190476 };
-//
-///*    double initial_pos[3] = { 1.09,0.00001,0.0 };
-//    double current_pos[3] = { -1.09,0.00001,0.0 };
-//    double initial_triangle_0[3] = { 1.0,0.0,0.0 };
-//    double initial_triangle_1[3] = { -1.0,0.0,-1.0 };
-//    double initial_triangle_2[3] = { -1.0,0.0,1.0 };
-//    double current_triangle_0[3] = { 1.0,0.0,0.0 };
-//    double current_triangle_1[3] = { -1.0,0.0,-1.0 };
-//    double current_triangle_2[3] = { -1.0,0.0,1.0 };*/
-//
-//    //edge 1
-//        double initial_pos[3] = { 0.0,1.0,1.0 };
-//        double initial_triangle_0[3] = { 0.0,1.0,3.0 };
-//        double current_pos[3] = { 0.0,0.0,2.0 };
-//        double current_triangle_0[3] = { 0.0,0.0,4.0 };
-//
-//        //edge 2
-//        double initial_triangle_1[3] = { 0.0,0.0,1.0 };
-//        double initial_triangle_2[3] = { 0.0,0.0,3.0 };
-//
-//        double current_triangle_1[3] = { 0.0,0.0,1.0 };
-//        double current_triangle_2[3] = { 0.0,0.0,3.0 };
-//
-//
-//        double* initial_pos_a; double* initial_triangle_0_a; double* initial_triangle_1_a; double* initial_triangle_2_a;
-//        double* current_pos_a; double* current_triangle_0_a; double* current_triangle_1_a; double* current_triangle_2_a;
-//        initial_pos_a = initial_pos;
-//        initial_triangle_0_a = initial_triangle_0;
-//        initial_triangle_1_a = initial_triangle_1;
-//        initial_triangle_2_a = initial_triangle_2;
-//        current_pos_a = current_pos;
-//        current_triangle_0_a = current_triangle_0;
-//        current_triangle_1_a = current_triangle_1;
-//        current_triangle_2_a = current_triangle_2;
-//        double edge[3];
-//        SUB(edge, initial_triangle_0, initial_triangle_1);
-//        double tolerance = sqrt(DOT(edge, edge)) * 1e-4;
-//        double time = edgeEdgeCcd(initial_pos_a, initial_triangle_0_a, initial_triangle_1_a, initial_triangle_2_a,
-//            current_pos_a, current_triangle_0_a, current_triangle_1_a, current_triangle_2_a, 0.1, tolerance);
-//        std::cout << "ccd " << time << std::endl;
-//    }
+    inline void test()
+    {
+        //double initial_pos[3] = { 0.657142857142857, 0.7, 0.785714285714286 };
+    //double current_pos[3] = { 0.657142857142857, 0.699755000142151, 0.785714285714286 };
+    //double initial_triangle_0[3] = { 0.657142857142857, 0.633333333333333, 0.776190476190476 };
+    //double initial_triangle_1[3] = { 0.692857142857143, 0.666666666666667, 0.780952380952381 };
+    //double initial_triangle_2[3] = { 0.692857142857143, 0.633333333333333, 0.776190476190476 };
+    //double current_triangle_0[3] = { 0.657142857142857, 0.633088333368321, 0.776190476190476 };
+    //double current_triangle_1[3] = { 0.692857142857143, 0.666421666742275, 0.780952380952381 };
+    //double current_triangle_2[3] = { 0.692857142857143, 0.633088333369544, 0.776190476190476 };
+/*    double initial_pos[3] = { 1.09,0.00001,0.0 };
+    double current_pos[3] = { -1.09,0.00001,0.0 };
+    double initial_triangle_0[3] = { 1.0,0.0,0.0 };
+    double initial_triangle_1[3] = { -1.0,0.0,-1.0 };
+    double initial_triangle_2[3] = { -1.0,0.0,1.0 };
+    double current_triangle_0[3] = { 1.0,0.0,0.0 };
+    double current_triangle_1[3] = { -1.0,0.0,-1.0 };
+    double current_triangle_2[3] = { -1.0,0.0,1.0 };*/
+
+    ////edge 1
+    //    double initial_pos[3] = { 0.0,1.0,1.0 };
+    //    double initial_triangle_0[3] = { 0.0,1.0,3.0 };
+    //    double current_pos[3] = { 0.0,0.0,2.0 };
+    //    double current_triangle_0[3] = { 0.0,0.0,4.0 };
+
+    //    //edge 2
+    //    double initial_triangle_1[3] = { 0.0,0.0,1.0 };
+    //    double initial_triangle_2[3] = { 0.0,0.0,3.0 };
+
+    //    double current_triangle_1[3] = { 0.0,0.0,1.0 };
+    //    double current_triangle_2[3] = { 0.0,0.0,3.0 };
+
+
+        //double* initial_pos_a; double* initial_triangle_0_a; double* initial_triangle_1_a; double* initial_triangle_2_a;
+        //double* current_pos_a; double* current_triangle_0_a; double* current_triangle_1_a; double* current_triangle_2_a;
+        //initial_pos_a = initial_pos;
+        //initial_triangle_0_a = initial_triangle_0;
+        //initial_triangle_1_a = initial_triangle_1;
+        //initial_triangle_2_a = initial_triangle_2;
+        //current_pos_a = current_pos;
+        //current_triangle_0_a = current_triangle_0;
+        //current_triangle_1_a = current_triangle_1;
+        //current_triangle_2_a = current_triangle_2;
+        //double edge[3];
+        //SUB(edge, initial_triangle_0, initial_triangle_1);
+        //double tolerance = sqrt(DOT(edge, edge)) * 1e-4;
+        //double time = edgeEdgeCcd(initial_pos_a, initial_triangle_0_a, initial_triangle_1_a, initial_triangle_2_a,
+        //    current_pos_a, current_triangle_0_a, current_triangle_1_a, current_triangle_2_a, 0.1, tolerance);
+        //std::cout << "ccd " << time << std::endl;
+
+
+        double initial_pos[3] = { 0.6, - 0.530341, - 0.5 };
+        double initial_triangle_0[3] = { 0.1, - 0.530341, 0.2 };
+
+        double current_pos[3] = { -0.600375, - 1.9947, - 0.198086 };
+        double current_triangle_0[3] = { 0.401501, - 0.519231, - 0.207114 };
+
+        double bary[4];
+        double d_2 =internal::edgeEdgeNearestPoint(initial_pos, initial_triangle_0, current_pos,
+            current_triangle_0, bary);
+        std::cout << internal::edgeEdgeDistanceType(initial_pos, initial_triangle_0, current_pos,
+            current_triangle_0) << std::endl;
+
+        double point_0[3];
+        double point_1[3];
+        POINT_ON_EDGE(point_0, bary[0], bary[1], initial_pos, initial_triangle_0);
+        POINT_ON_EDGE(point_1, bary[2], bary[3], current_pos, current_triangle_0);
+
+        std::cout << point_0[0] << " " << point_0[1] << " " << point_0[2] << std::endl;
+        std::cout << point_1[0] << " " << point_1[1] << " " << point_1[2] << std::endl;
+
+        std::cout << internal::edgeEdgeDistance(initial_pos, initial_triangle_0, current_pos, current_triangle_0, bary) << std::endl;;
+
+        std::cout << "initial d " << d_2<<" "<<bary[0]<<" "<<bary[1]<<" "<<bary[2]<<" "<<bary[3] << std::endl;
+
+    }
 } //
 
 

@@ -150,12 +150,12 @@ bool CollisionConstraint::pointTriangleResponse(double* initial_position, double
 	SUBTRACT_A_WITH_COE_B(triangle_target_pos_1, collision_tri_1, normal, move_d_t1);
 	SUBTRACT_A_WITH_COE_B(triangle_target_pos_2, collision_tri_2, normal, move_d_t2);
 
-	if (obj_index[0] == 2 && obj_index[1] == 1) {
-		double test[3];
-		BARYCENTRIC(test, barycentric, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2);
-		SUB_(test, vertex_target_pos);
-		std::cout << "dis " << sqrt(DOT(test, test)) << " " << d_hat << " " << stiffness << std::endl;
-	}
+	//if (obj_index[0] == 2 && obj_index[1] == 1) {
+	//	double test[3];
+	//	BARYCENTRIC(test, barycentric, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2);
+	//	SUB_(test, vertex_target_pos);
+	//	std::cout << "dis " << sqrt(DOT(test, test)) << " " << d_hat << " " << stiffness << std::endl;
+	//}
 
 
 	
@@ -548,7 +548,7 @@ bool CollisionConstraint::edgeEdgeResponse(double* edge_target_pos_0, double* ed
 	double* previous_free_edge_v0, double* previous_free_edge_v1,
 	double* previous_free_compare_edge_v0, double* previous_free_compare_edge_v1,
 	double d_hat, double& stiffness, double epsilon,
-	double mass_e_0_0, double mass_e_0_1,double mass_e_1_0,double mass_e_1_1, double collision_time)
+	double mass_e_0_0, double mass_e_0_1,double mass_e_1_0,double mass_e_1_1, double collision_time, unsigned int* edge_index)
 {
 	//std::cout << collision_time << std::endl;
 
@@ -556,7 +556,8 @@ bool CollisionConstraint::edgeEdgeResponse(double* edge_target_pos_0, double* ed
 
 	double bary_centric[4];
 	double d_2 = CCD::internal::edgeEdgeNearestPoint(initial_edge_vertex_0, initial_edge_vertex_1, initial_compare_edge_vertex_0,
-		initial_compare_edge_vertex_1, bary_centric);
+		initial_compare_edge_vertex_1, bary_centric);	
+
 	if (d_2 >= d_hat_2) {
 		return false;
 	}
@@ -630,6 +631,7 @@ bool CollisionConstraint::edgeEdgeResponse(double* edge_target_pos_0, double* ed
 	SUBTRACT_A_WITH_COE_B(edge_target_pos_1, initial_edge_vertex_1, collision_normal, move_d_0_1);
 	SUBTRACT_A_WITH_COE_B(compare_target_pos_0, initial_compare_edge_vertex_0, collision_normal, move_d_1_0);
 	SUBTRACT_A_WITH_COE_B(compare_target_pos_1, initial_compare_edge_vertex_1, collision_normal, move_d_1_1);
+
 	return true;
 }
 

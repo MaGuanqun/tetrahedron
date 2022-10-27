@@ -408,9 +408,9 @@ namespace CCD {
         inline T edgeEdgeDistance(const T* ea0, const T* ea1, const T* eb0, const T* eb1, const T* barycentric)
         {
             T temp0[3];
-            temp0[0] = barycentric[0] * ea0[0] + barycentric[1] * ea1[0] + barycentric[2] * eb0[0] + barycentric[3] * eb1[0];
-            temp0[1] = barycentric[0] * ea0[1] + barycentric[1] * ea1[1] + barycentric[2] * eb0[1] + barycentric[3] * eb1[1];
-            temp0[2] = barycentric[0] * ea0[2] + barycentric[1] * ea1[2] + barycentric[2] * eb0[2] + barycentric[3] * eb1[2];
+            temp0[0] = barycentric[0] * ea0[0] + barycentric[1] * ea1[0] - barycentric[2] * eb0[0] - barycentric[3] * eb1[0];
+            temp0[1] = barycentric[0] * ea0[1] + barycentric[1] * ea1[1] - barycentric[2] * eb0[1] - barycentric[3] * eb1[1];
+            temp0[2] = barycentric[0] * ea0[2] + barycentric[1] * ea1[2] - barycentric[2] * eb0[2] - barycentric[3] * eb1[2];
             return DOT(temp0, temp0);
         }
 

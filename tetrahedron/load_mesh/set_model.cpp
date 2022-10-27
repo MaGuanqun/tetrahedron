@@ -182,7 +182,7 @@ void SetModel::moveBodyCapsule(OriMesh& ori_mesh, unsigned int obj_No, bool coll
 		//move[2] = 0.1;
 	}
 	if (!collider && obj_No == 0) {
-		move[1] = 5.3;//4.8
+		move[1] = 5.0;//4.8
 		//move[2] = -0.3;
 		//move[0] = -0.3;
 	}
