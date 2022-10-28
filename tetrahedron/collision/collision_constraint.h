@@ -21,7 +21,7 @@ public:
 		double* initial_triangle_normal, double* vertex_target_pos,
 		double* triangle_target_pos_0, double* triangle_target_pos_1, double* triangle_target_pos_2,
 		double d_hat, double& stiffness, double epsilon, double mass_point, double mass_t0, double mass_t1, 
-		double mass_t2, unsigned int* obj_index, double collision_time);
+		double mass_t2, unsigned int* obj_index, double collision_time, double global_collision_time);
 
 	bool edgeEdgeResponse(double* edge_target_pos_0, double* edge_target_pos_1,
 		double* compare_target_pos_0, double* compare_target_pos_1, double* current_edge_vertex_0, double* current_edge_vertex_1, double* initial_edge_vertex_0, double* initial_edge_vertex_1,
@@ -61,7 +61,7 @@ public:
 
 	bool floorResponse(double* target_position, double* current_position, double* initial_position,
 		unsigned int dimension, bool normal_direction,
-		double floor_value, double d_hat, double& stiffness, double epsilon, double* previous_free_pos);
+		double floor_value, double d_hat, double& stiffness, double* previous_free_pos);
 
 	void testPT();
 	void testEE();

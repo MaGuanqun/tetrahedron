@@ -13,8 +13,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 Input global_input;
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv{
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);

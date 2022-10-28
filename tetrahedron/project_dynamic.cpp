@@ -11,7 +11,7 @@ ProjectDynamic::ProjectDynamic()
 
 	use_dierct_solve_for_coarest_mesh = true;
 	super_jacobi_step_size = 3;
-	max_it = 50;
+	max_it = 150;
 	max_jacobi_itr_num = 20;
 	
 	max_single_inner_iter_num = 2;
@@ -1423,16 +1423,21 @@ void ProjectDynamic::computeCollisionFreePosition(int thread_No)
 		q_end = mesh_struct->vertex_position.data();
 		q_pre = mesh_struct->vertex_for_render.data();
 		vertex_index_start = vertex_begin_per_tetrahedron[i];
+
 		for (unsigned int j = mesh_struct->vertex_index_begin_per_thread[thread_No]; j < index_end; ++j) {
+
+			if (i == 0 && j == 18) {
+				std::cout << "====" << std::endl;
+				std::cout << q_pre[j][0] << " " << q_pre[j][1] << q_pre[j][2] << std::endl;
+				std::cout << q_end[j][0] << " " << q_end[j][1] << q_end[j][2] << std::endl;
+			}
+
 			q_pre[j][0] += collision_time * (q_end[j][0] - q_pre[j][0]);
 			q_pre[j][1] += collision_time * (q_end[j][1] - q_pre[j][1]);
 			q_pre[j][2] += collision_time * (q_end[j][2] - q_pre[j][2]);
 			u_x[j + vertex_index_start] = q_pre[j][0];
 			u_y[j + vertex_index_start] = q_pre[j][1];
 			u_z[j + vertex_index_start] = q_pre[j][2];
-
-
-
 		}
 	}
 }

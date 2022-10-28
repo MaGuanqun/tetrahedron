@@ -389,7 +389,7 @@ void Collision::initialDHatTolerance(double ave_edge_length)
 		tolerance_radius[i] = tolerance_ratio[i] * ave_edge_length;
 	}	
 
-	d_hat = 2e-2 * ave_edge_length;
+	d_hat = 1e-2 * ave_edge_length;
 	d_hat_2 = d_hat * d_hat;
 
 	std::cout << "d_hat_ " << d_hat << std::endl;
@@ -400,7 +400,7 @@ void Collision::initialDHatTolerance(double ave_edge_length)
 
 	eta = 0.01;	
 	tolerance_2 = tolerance * tolerance;
-	epsilon = 0.05;
+	epsilon = 0.0;
 	////std::cout << "d_hat_2 " << d_hat_2 << std::endl;
 
 }
@@ -3352,7 +3352,6 @@ void Collision::re_edgeEdgeResponseForIPC(unsigned int pair_thread_No, int start
 	unsigned int* target_pos_index_record_ = edge_edge_target_pos_index[pair_thread_No].data() + 1;
 	double* target_pos_record_ = edge_edge_target_pos_record[pair_thread_No].data();
 	double tolerance = tolerance_radius[SELF_EDGE_EDGE];
-	double epsilon_ = epsilon;
 	unsigned int* indices;
 	unsigned int* compare_indices;
 	double* target_pos_edge;
@@ -3387,7 +3386,6 @@ void Collision::re_edgeEdgeResponse(unsigned int pair_thread_No, int start_pair_
 	//unsigned int* target_pos_index_ = target_position_index[thread_No].data() + 1 + (target_position_index[thread_No][0] << 1);
 	unsigned int* target_pos_index_record_ = edge_edge_target_pos_index[pair_thread_No].data() + 1;
 	double tolerance = tolerance_radius[SELF_EDGE_EDGE];
-	double epsilon_ = epsilon;
 	unsigned int* indices;
 	unsigned int* compare_indices;
 	double target_pos_edge_0[3];
@@ -3483,7 +3481,6 @@ void Collision::floorCollisionVertex(int thread_No)
 	bool** vetex_need_update = target_pos->need_update;
 
 	double tolerance = tolerance_radius[BODY_POINT_TRIANGLE];
-	double epsilon_ = epsilon;
 	int* indices;
 	double target_pos_v[3];
 	double stiffness_initial = collision_stiffness[BODY_POINT_TRIANGLE];
@@ -3548,7 +3545,6 @@ void Collision::re_FloorCollisionVertex(int thread_No)
 	bool** vetex_need_update = target_pos->need_update;
 
 	double tolerance = tolerance_radius[BODY_POINT_TRIANGLE];
-	double epsilon_ = epsilon;
 	int* indices;
 	double target_pos_v[3];
 	double stiffness_initial = collision_stiffness[BODY_POINT_TRIANGLE];
@@ -3625,7 +3621,6 @@ void Collision::floorCollisionVertexForIPC(int thread_No)
 	bool** vetex_need_update = target_pos->need_update;
 
 	double tolerance = tolerance_radius[BODY_POINT_TRIANGLE];
-	double epsilon_ = epsilon;
 	int* indices;
 	double target_pos_v[3];
 	double stiffness_initial = collision_stiffness[BODY_POINT_TRIANGLE];
@@ -3655,7 +3650,7 @@ void Collision::floorCollisionVertexForIPC(int thread_No)
 			for (int j = start; j < end; ++j) {
 				stiffness = stiffness_initial;
 				if (collision_constraint.floorResponse(target_pos_v, vertex_pos[j].data(), initial_vertex_pos[j].data(),
-					dimension, normal_direction, floor_value, d_hat, stiffness, epsilon_, free_vertex_pos[j].data())) {
+					dimension, normal_direction, floor_value, d_hat, stiffness, free_vertex_pos[j].data())) {
 
 					addTargetPosToSystemTotal(vertex_b_sum[i][j].data(), target_pos->collision_energy, vertex_position[i][j].data(),
 						target_pos_v, stiffness, record_stiffness[i][j], vetex_need_update[i][j]);
@@ -3679,7 +3674,7 @@ void Collision::floorCollisionVertexForIPC(int thread_No)
 				j = vertex_index_on_surface_[k];
 				stiffness = stiffness_initial;
 				if (collision_constraint.floorResponse(target_pos_v, vertex_pos[j].data(), initial_vertex_pos[j].data(),
-					dimension, normal_direction, floor_value, d_hat, stiffness, epsilon_, free_vertex_pos[j].data())) {
+					dimension, normal_direction, floor_value, d_hat, stiffness, free_vertex_pos[j].data())) {
 
 					addTargetPosToSystemTotal(vertex_b_sum[i][j].data(), target_pos->collision_energy, vertex_position[i][j].data(),
 						target_pos_v, stiffness, record_stiffness[i][j], vetex_need_update[i][j]);
@@ -3767,7 +3762,7 @@ void Collision::pointTriangleResponseForIPC(unsigned int thread_No, unsigned int
 			target_pos_v, target_pos_v+3, target_pos_v+6, target_pos_v+9, d_hat_, stiffness, epsilon_,
 			mass[*(pair + 1)][*pair],
 			mass[*(pair + 3)][indices[0]], mass[*(pair + 3)][indices[1]], mass[*(pair + 3)][indices[2]], pair,
-			collision_time[i>>2]))
+			collision_time[i>>2], this->collision_time))
 		{
 			addTargetPosToSystemTotal(vertex_b_sum[*(pair + 1)][*pair].data(), target_pos->collision_energy, vertex_position[*(pair + 1)][*pair].data(),
 				target_pos_v, stiffness, record_stiffness[*(pair + 1)][*pair], vetex_need_update[*(pair + 1)][*pair]);
