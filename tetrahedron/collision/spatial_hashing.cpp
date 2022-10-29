@@ -601,10 +601,10 @@ void SpatialHashing::buildSpatialHashing(double* scene_aabb)
 		thread->assignTask(this, COMBINE_HASH_TABLE);
 		thread->assignTask(this, FIND_ALL_PAIRS_HASH_TABLE_BY_ELEMENT);
 
-		for (unsigned int i = 0; i < thread_num; ++i) {
+		//for (unsigned int i = 0; i < thread_num; ++i) {
 			//vertex_triangle_pair[i][0] = 0;
-			edge_edge_pair[i][0] = 0;
-		}
+			//edge_edge_pair[i][0] = 0;
+		//}
 
 
 		if (record_pair_by_element) {

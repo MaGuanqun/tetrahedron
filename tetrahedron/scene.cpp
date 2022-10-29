@@ -1548,7 +1548,7 @@ void Scene::setCursorForce(Camera* camera, double* cursor_screen, float force_co
 			tetrahedron[intersection.obj_No - cloth.size()].mesh_struct.triangle_indices[intersection.face_index].data());
 
 		int* indices = tetrahedron[intersection.obj_No - cloth.size()].mesh_struct.triangle_indices[intersection.face_index].data();
-		std::cout << "chosen vertex " << indices[0] << " " << indices[1] << " " << indices[2] << std::endl;
+		std::cout << "chosen vertex " << indices[0] << " " << indices[1] << " " << indices[2]<<" "<< intersection.face_index <<" "<< intersection.obj_No << std::endl;
 
 		if (intersection.first_intersection_frame) {
 			tetrahedron[intersection.obj_No - cloth.size()].findAllNeighborVertex(intersection.face_index, cursor_pos, ave_edge_length);

@@ -21,6 +21,10 @@ bool CollisionConstraint::pointTriangleResponse(double* initial_position, double
 	double d_hat, double& stiffness, double epsilon, double mass_point, double mass_t0, double mass_t1, double mass_t2,unsigned int* obj_index,
 	double collision_time, double global_collision_time)
 {
+	//if (collision_time == 1.0) {
+	//	return false;
+	//}
+
 	double d_hat_2 = d_hat * d_hat;
 	double barycentric[3];
 	double d_2 = CCD::internal::pointTriangleNearestDistance(initial_position, initial_triangle_position_0, initial_triangle_position_1,
@@ -29,16 +33,16 @@ bool CollisionConstraint::pointTriangleResponse(double* initial_position, double
 	if (d_2 == 0.0) {
 		std::cout << "error VT distance should never be zero " << obj_index[0] << " " << obj_index[1] << " " << obj_index[2] << " " << obj_index[3] << std::endl;
 
-	//	std::cout << initial_position[0] << " " << initial_position[1] << " " << initial_position[2] << std::endl;
-	//	std::cout << initial_triangle_position_0[0] << " " << initial_triangle_position_0[1] << " " << initial_triangle_position_0[2] << std::endl;
-	//	std::cout << initial_triangle_position_1[0] << " " << initial_triangle_position_1[1] << " " << initial_triangle_position_1[2] << std::endl;
-	//	std::cout << initial_triangle_position_2[0] << " " << initial_triangle_position_2[1] << " " << initial_triangle_position_2[2] << std::endl;
+	//	//std::cout << << initial_position[0] << " " << initial_position[1] << " " << initial_position[2] << std::endl;
+	//	//std::cout << << initial_triangle_position_0[0] << " " << initial_triangle_position_0[1] << " " << initial_triangle_position_0[2] << std::endl;
+	//	//std::cout << << initial_triangle_position_1[0] << " " << initial_triangle_position_1[1] << " " << initial_triangle_position_1[2] << std::endl;
+	//	//std::cout << << initial_triangle_position_2[0] << " " << initial_triangle_position_2[1] << " " << initial_triangle_position_2[2] << std::endl;
 
-	//	//std::cout <<  "yy "<< obj_index[0]<<" "<<obj_index[1]<<" "<< obj_index[2]<<" "<< obj_index[3] << std::endl;
-	//	//std::cout << initial_position[0] << " " << initial_position[1] << " " << initial_position[2] << std::endl;
-	//	//std::cout << initial_triangle_position_0[0] << " " << initial_triangle_position_0[1] << " " << initial_triangle_position_0[2] << std::endl;
-	//	//std::cout << initial_triangle_position_1[0] << " " << initial_triangle_position_1[1] << " " << initial_triangle_position_1[2] << std::endl;
-	//	//std::cout << initial_triangle_position_2[0] << " " << initial_triangle_position_2[1] << " " << initial_triangle_position_2[2] << std::endl;
+	//	////std::cout << <<  "yy "<< obj_index[0]<<" "<<obj_index[1]<<" "<< obj_index[2]<<" "<< obj_index[3] << std::endl;
+	//	////std::cout << << initial_position[0] << " " << initial_position[1] << " " << initial_position[2] << std::endl;
+	//	////std::cout << << initial_triangle_position_0[0] << " " << initial_triangle_position_0[1] << " " << initial_triangle_position_0[2] << std::endl;
+	//	////std::cout << << initial_triangle_position_1[0] << " " << initial_triangle_position_1[1] << " " << initial_triangle_position_1[2] << std::endl;
+	//	////std::cout << << initial_triangle_position_2[0] << " " << initial_triangle_position_2[1] << " " << initial_triangle_position_2[2] << std::endl;
 	}
 
 
@@ -46,9 +50,9 @@ bool CollisionConstraint::pointTriangleResponse(double* initial_position, double
 		return false;
 	}
 
-	//std::cout << "collision time " << collision_time << std::endl;
+	////std::cout << << "collision time " << collision_time << std::endl;
 
-	////std::cout << d_2<<" "<< barycentric[0]<<" "<< barycentric[1]<<" "<< barycentric[2] << std::endl;
+	//////std::cout << << d_2<<" "<< barycentric[0]<<" "<< barycentric[1]<<" "<< barycentric[2] << std::endl;
 	stiffness *= barrier((d_hat_2 - d_2) / d_hat_2, d_2 / d_hat_2);
 
 	double collision_vertex[3];
@@ -68,9 +72,22 @@ bool CollisionConstraint::pointTriangleResponse(double* initial_position, double
 	BARYCENTRIC(initial_nearest_point, barycentric, collision_tri_0, collision_tri_1, collision_tri_2);
 	BARYCENTRIC(current_nearest_point, barycentric, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2);
 
-	////std::cout << "barycentric " << barycentric[0] << " " << barycentric[1] << " " << barycentric[2] << std::endl;
-	////std::cout << "move p " << initial_nearest_point[0] << " " << initial_nearest_point[1]<<" "<< initial_nearest_point[2] << std::endl;
+	//////std::cout << << "barycentric " << barycentric[0] << " " << barycentric[1] << " " << barycentric[2] << std::endl;
+	//////std::cout << << "move p " << initial_nearest_point[0] << " " << initial_nearest_point[1]<<" "<< initial_nearest_point[2] << std::endl;
 
+
+
+
+	double previous_free_nearest_point[3];
+	BARYCENTRIC(previous_free_nearest_point, barycentric, previous_free_triangle_position_0, previous_free_triangle_position_1, previous_free_triangle_position_2);
+
+
+	double total_relative_velocity[3];
+	total_relative_velocity[0] = current_position[0] - previous_free_vertex_position[0] - current_nearest_point[0] + previous_free_nearest_point[0];
+	total_relative_velocity[1] = current_position[1] - previous_free_vertex_position[1] - current_nearest_point[1] + previous_free_nearest_point[1];
+	total_relative_velocity[2] = current_position[2] - previous_free_vertex_position[2] - current_nearest_point[2] + previous_free_nearest_point[2];
+
+	double true_direction_indicator= DOT(total_relative_velocity, normal);
 
 	double relative_velocity[3];
 	relative_velocity[0] = current_position[0] - collision_vertex[0] - current_nearest_point[0] + initial_nearest_point[0];
@@ -78,7 +95,6 @@ bool CollisionConstraint::pointTriangleResponse(double* initial_position, double
 	relative_velocity[2] = current_position[2] - collision_vertex[2] - current_nearest_point[2] + initial_nearest_point[2];
 	
 	double total_distance;
-	epsilon += 1.0;
 
 	total_distance = DOT(relative_velocity, normal);
 
@@ -91,6 +107,27 @@ bool CollisionConstraint::pointTriangleResponse(double* initial_position, double
 
 	SUB(sub, collision_vertex, initial_nearest_point);
 	double collision_dis = DOT(sub, normal);
+
+	//if (obj_index[0] == 43 && obj_index[1] == 1 && obj_index[2] == 37 && obj_index[3] == 0) {
+	//	//std::cout << << d_hat << " " << sideness << " " << collision_dis << " " << true_direction_indicator << " " << total_distance << std::endl;
+	//	double c_ini_p[3];
+	//	double c_tri_0[3]; double c_tri_1[3]; double c_tri_2[3];
+	//	COLLISION_POS(c_ini_p, global_collision_time, previous_free_vertex_position, current_position);
+	//	COLLISION_POS(c_tri_0, global_collision_time, previous_free_triangle_position_0, current_triangle_position_0);
+	//	COLLISION_POS(c_tri_1, global_collision_time, previous_free_triangle_position_1, current_triangle_position_1);
+	//	COLLISION_POS(c_tri_2, global_collision_time, previous_free_triangle_position_2, current_triangle_position_2);
+	//	//double dis2_pre = CCD::internal::pointTriangleDistanceUnclassified(previous_free_vertex_position, previous_free_triangle_position_0, previous_free_triangle_position_1, previous_free_triangle_position_2);
+	//	//double dis2_ini = CCD::internal::pointTriangleDistanceUnclassified(initial_position, initial_triangle_position_0, initial_triangle_position_1, initial_triangle_position_2);
+	//	double dis2_col = CCD::internal::pointTriangleDistanceUnclassified(collision_vertex, collision_tri_0, collision_tri_1, collision_tri_2);
+	//	//double dis2_cu = CCD::internal::pointTriangleDistanceUnclassified(current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2);
+	//	double d_c= CCD::internal::pointTriangleDistanceUnclassified(c_ini_p, c_tri_0, c_tri_1, c_tri_2);
+	//	//std::cout << << "index " << obj_index[0] << " " << obj_index[1]<<" "<<obj_index[2]<<" "<<obj_index[3] << " " << std::endl;
+	//	//std::cout << << "dis " <<sqrt(dis2_col) << " " << collision_dis << std::endl;// dis2_pre << " " << dis2_ini<<" "<<d_c <<" " <<
+	//	////std::cout << << previous_free_vertex_position[0] << " " << previous_free_vertex_position[1] << " " << previous_free_vertex_position[2] << std::endl;
+	//	////std::cout << << current_position[0] << " " << current_position[1] << " " << " " << current_position[2] << std::endl;
+	//	//std::cout << << "collision time " << collision_time<<" "<< global_collision_time << std::endl;
+
+	//}
 
 	if (sideness == 0.0) {
 		double direct_velocity = DOT(initial_triangle_normal, relative_velocity);
@@ -109,40 +146,53 @@ bool CollisionConstraint::pointTriangleResponse(double* initial_position, double
 	}
 	else if(sideness < 0) {
 		if (collision_dis < -d_hat) {
-			//memcpy(vertex_target_pos, collision_vertex, 24);
-			//memcpy(triangle_target_pos_0, collision_tri_0, 24);
-			//memcpy(triangle_target_pos_1, collision_tri_1, 24);
-			//memcpy(triangle_target_pos_2, collision_tri_2, 24);
-			return false;
+			memcpy(vertex_target_pos, collision_vertex, 24);
+			memcpy(triangle_target_pos_0, collision_tri_0, 24);
+			memcpy(triangle_target_pos_1, collision_tri_1, 24);
+			memcpy(triangle_target_pos_2, collision_tri_2, 24);
+			//return false;
+			return true;
 		}
-		if (total_distance  - collision_dis < d_hat) { //<
+
+		if (true_direction_indicator < 0) {
+			total_distance = d_hat + collision_dis;
+		}
+		else if (total_distance  - collision_dis < d_hat) { //<
 			total_distance = d_hat + collision_dis;
 		}
 	}
 	else {
 		if (collision_dis > d_hat) {
-
-			double c_ini_p[3];
-			double c_tri_0[3]; double c_tri_1[3]; double c_tri_2[3];
-
-			COLLISION_POS(c_ini_p, global_collision_time, previous_free_vertex_position, current_position);
-			COLLISION_POS(c_tri_0, global_collision_time, previous_free_triangle_position_0, current_triangle_position_0);
-			COLLISION_POS(c_tri_1, global_collision_time, previous_free_triangle_position_1, current_triangle_position_1);
-			COLLISION_POS(c_tri_2, global_collision_time, previous_free_triangle_position_2, current_triangle_position_2);
-
-			double dis2_pre = CCD::internal::pointTriangleDistanceUnclassified(previous_free_vertex_position, previous_free_triangle_position_0, previous_free_triangle_position_1, previous_free_triangle_position_2);
-			double dis2_ini = CCD::internal::pointTriangleDistanceUnclassified(initial_position, initial_triangle_position_0, initial_triangle_position_1, initial_triangle_position_2);
-			double dis2_col = CCD::internal::pointTriangleDistanceUnclassified(collision_vertex, collision_tri_0, collision_tri_1, collision_tri_2);
-			double dis2_cu = CCD::internal::pointTriangleDistanceUnclassified(current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2);
-			double d_c= CCD::internal::pointTriangleDistanceUnclassified(c_ini_p, c_tri_0, c_tri_1, c_tri_2);
-			std::cout << "index " << obj_index[0] << " " << obj_index[1] << " " << std::endl;
-			std::cout << "dis " << dis2_pre << " " << dis2_ini<<" "<<d_c <<" " << dis2_col << " " << dis2_cu << std::endl;
-			std::cout << previous_free_vertex_position[0] << " " << previous_free_vertex_position[1] << " " << previous_free_vertex_position[2] << std::endl;
-			std::cout << current_position[0] << " " << current_position[1] << " " << " " << current_position[2] << std::endl;
-			std::cout << "collision time " << collision_time << std::endl;
 			return false;
+			//memcpy(vertex_target_pos, collision_vertex, 24);
+			//memcpy(triangle_target_pos_0, collision_tri_0, 24);
+			//memcpy(triangle_target_pos_1, collision_tri_1, 24);
+			//memcpy(triangle_target_pos_2, collision_tri_2, 24);
+			//return true;
+			//double c_ini_p[3];
+			//double c_tri_0[3]; double c_tri_1[3]; double c_tri_2[3];
+			//COLLISION_POS(c_ini_p, global_collision_time, previous_free_vertex_position, current_position);
+			//COLLISION_POS(c_tri_0, global_collision_time, previous_free_triangle_position_0, current_triangle_position_0);
+			//COLLISION_POS(c_tri_1, global_collision_time, previous_free_triangle_position_1, current_triangle_position_1);
+			//COLLISION_POS(c_tri_2, global_collision_time, previous_free_triangle_position_2, current_triangle_position_2);
+			//double dis2_pre = CCD::internal::pointTriangleDistanceUnclassified(previous_free_vertex_position, previous_free_triangle_position_0, previous_free_triangle_position_1, previous_free_triangle_position_2);
+			//double dis2_ini = CCD::internal::pointTriangleDistanceUnclassified(initial_position, initial_triangle_position_0, initial_triangle_position_1, initial_triangle_position_2);
+			//double dis2_col = CCD::internal::pointTriangleDistanceUnclassified(collision_vertex, collision_tri_0, collision_tri_1, collision_tri_2);
+			//double dis2_cu = CCD::internal::pointTriangleDistanceUnclassified(current_position, current_triangle_position_0, current_triangle_position_1, current_triangle_position_2);
+			//double d_c= CCD::internal::pointTriangleDistanceUnclassified(c_ini_p, c_tri_0, c_tri_1, c_tri_2);
+			////std::cout << << "index " << obj_index[0] << " " << obj_index[1] << " " << std::endl;
+			////std::cout << << "dis " << dis2_pre << " " << dis2_ini<<" "<<d_c <<" " << dis2_col << " " << dis2_cu << std::endl;
+			////std::cout << << previous_free_vertex_position[0] << " " << previous_free_vertex_position[1] << " " << previous_free_vertex_position[2] << std::endl;
+			////std::cout << << current_position[0] << " " << current_position[1] << " " << " " << current_position[2] << std::endl;
+			////std::cout << << "collision time " << collision_time << std::endl;
+			//return false;
 		}
-		if (collision_dis - total_distance < d_hat) { //<
+
+		if (true_direction_indicator > 0) {
+			total_distance = -d_hat + collision_dis;
+
+		}
+		else if (collision_dis - total_distance < d_hat) { //<
 			total_distance = -d_hat + collision_dis;
 		}
 	}
@@ -160,16 +210,22 @@ bool CollisionConstraint::pointTriangleResponse(double* initial_position, double
 	double move_d_t0 = mass_t1 / mass_t0 * move_d_t1;
 	double move_d_t2= mass_t1 / mass_t2 * move_d_t1;
 
+
+	//if (obj_index[0] == 43 && obj_index[1] == 1 && obj_index[2] == 37 && obj_index[3] == 0) {
+	//	//std::cout << << "move dis " << move_d_point << " " << collision_vertex[1] << std::endl;
+	//}
+
+
 	SUBTRACT_A_WITH_COE_B(vertex_target_pos, collision_vertex, normal, move_d_point);
 	SUBTRACT_A_WITH_COE_B(triangle_target_pos_0, collision_tri_0, normal, move_d_t0);
 	SUBTRACT_A_WITH_COE_B(triangle_target_pos_1, collision_tri_1, normal, move_d_t1);
 	SUBTRACT_A_WITH_COE_B(triangle_target_pos_2, collision_tri_2, normal, move_d_t2);
 
-	//if (obj_index[0] == 2 && obj_index[1] == 1) {
+	//if (obj_index[0] == 43 && obj_index[1] == 1 && obj_index[2] == 37 && obj_index[3] == 0) {
 	//	double test[3];
 	//	BARYCENTRIC(test, barycentric, triangle_target_pos_0, triangle_target_pos_1, triangle_target_pos_2);
 	//	SUB_(test, vertex_target_pos);
-	//	std::cout << "dis " << sqrt(DOT(test, test)) << " " << d_hat << " " << stiffness << std::endl;
+	//	//std::cout << << "dis " << total_distance<<" "<< sqrt(DOT(test, test)) << " " << d_hat << " " << stiffness << std::endl;
 	//}
 
 
@@ -183,13 +239,13 @@ bool CollisionConstraint::pointTriangleResponse(double* initial_position, double
 	//double d_3 = CCD::internal::pointTriangleNearestDistance(vertex_target_pos, triangle_target_pos_0, triangle_target_pos_1,
 	//	triangle_target_pos_2, norm, barycentric, d_hat_2);
 
-	//std::cout << "d compare " << d_2 << " " << d_3<<" "<<d_hat_2 << std::endl;
+	////std::cout << << "d compare " << d_2 << " " << d_3<<" "<<d_hat_2 << std::endl;
 
 	//PROJECT_VELOCITY_COE_ON_NORMAL(coe, current_position, initial_position, initial_triangle_normal);
 	
 
-	////std::cout <<"coe "<< coe << std::endl;
-	////std::cout <<"coe "<< initial_triangle_normal[0]<<" "<< initial_triangle_normal[1]<<" "<<initial_triangle_normal[2] << std::endl;
+	//////std::cout << <<"coe "<< coe << std::endl;
+	//////std::cout << <<"coe "<< initial_triangle_normal[0]<<" "<< initial_triangle_normal[1]<<" "<<initial_triangle_normal[2] << std::endl;
 
 	//SUBTRACT_A_WITH_COE_B(vertex_target_pos, initial_position, initial_triangle_normal, coe);	
 	//PROJECT_VELOCITY_COE_ON_NORMAL(coe, current_triangle_position_0, initial_triangle_position_0, initial_triangle_normal);
@@ -236,15 +292,37 @@ bool CollisionConstraint::floorResponse(double* target_position, double* current
 
 
 	double collision_time;
-	if (abs(current_position[dimension] - initial_position[dimension]) < 1e-10) {
+	if (abs(current_position[dimension] - previous_free_pos[dimension]) < 1e-10) {
 		collision_time = 1.0;
 	}
 	else {
-		collision_time = (floor_value - initial_position[dimension]) / (current_position[dimension] - initial_position[dimension]);
+		collision_time = (floor_value - previous_free_pos[dimension]) / (current_position[dimension] - previous_free_pos[dimension]);
 	}	
 
 	if (collision_time > 1.0) {
 		collision_time = 1.0;
+	}
+	else if (collision_time < 0.0) {
+		if (normal_direction) {
+			if (current_position[dimension] > d_hat + floor_value) {
+				return false;
+			}
+			else {
+				memcpy(target_position, current_position, 24);
+				target_position[dimension] = floor_value + d_hat;
+				return true;
+			}
+		}
+		else {
+			if (current_position[dimension] < floor_value- d_hat) {
+				return false;
+			}
+			else {
+				memcpy(target_position, current_position, 24);
+				target_position[dimension] = floor_value - d_hat;
+				return true;
+			}
+		}
 	}
 
 	COLLISION_POS(collision_pos, collision_time, previous_free_pos, current_position);
@@ -256,7 +334,7 @@ bool CollisionConstraint::floorResponse(double* target_position, double* current
 			target_position[dimension] = floor_value + d_hat;
 		}
 		else if (current_position[dimension] > d_hat + floor_value) {
-			memcpy(target_position, current_position, 24);
+			return false;
 		}
 		else {
 			target_position[dimension] += floor_value - current_position[dimension];
@@ -266,8 +344,8 @@ bool CollisionConstraint::floorResponse(double* target_position, double* current
 		if (current_position[dimension]- floor_value < d_hat) {
 			target_position[dimension] = floor_value - d_hat;
 		}
-		else  if (current_position[dimension] < d_hat - floor_value) {
-			memcpy(target_position, current_position, 24);
+		else  if (current_position[dimension] <  floor_value-d_hat) {
+			return false;
 		}
 		else {
 			target_position[dimension] -= current_position[dimension]- floor_value;
@@ -285,6 +363,10 @@ bool CollisionConstraint::pointTriangleColliderResponse(double* initial_position
 	double* initial_triangle_normal, double* vertex_target_pos,
 	double d_hat, double& stiffness, double epsilon, unsigned int vertex_index, double collision_time)
 {
+	if (collision_time == 1.0) {
+		return false;
+	}
+
 	double d_hat_2 = d_hat * d_hat;
 	double barycentric[3];
 
@@ -293,7 +375,7 @@ bool CollisionConstraint::pointTriangleColliderResponse(double* initial_position
 	if (d_2 >= d_hat_2) {
 		return false;
 	}
-	////std::cout << d_2 << std::endl;
+	//////std::cout << << d_2 << std::endl;
 
 	stiffness *= barrier((d_hat_2 - d_2) / d_hat_2, d_2 / d_hat_2);
 
@@ -306,7 +388,6 @@ bool CollisionConstraint::pointTriangleColliderResponse(double* initial_position
 
 	double coe;
 	PROJECT_VELOCITY_COE_ON_NORMAL(coe, current_position, collision_vertex, initial_triangle_normal);
-	coe *= epsilon;
 
 	double sub[3];
 	SUB(sub, initial_position, initial_triangle_position_0);
@@ -337,26 +418,33 @@ bool CollisionConstraint::pointTriangleColliderResponse(double* initial_position
 	}
 	else if (sideness < 0) {
 		if (collision_dis < -d_hat) {
-			memcpy(vertex_target_pos, collision_vertex, 24);
-			return true;
+			/*memcpy(vertex_target_pos, collision_vertex, 24);
+			return true;*/
+			return false;
 		}
-		
+		if (collision_dis < 0) {
+			coe = d_hat + collision_dis;
+		}
 		if (coe - collision_dis < d_hat) {
 			coe = d_hat + collision_dis;
 		}
 	}
 	else {
 		if (collision_dis > d_hat) {
-			memcpy(vertex_target_pos, collision_vertex, 24);
-			return true;
+			return false;
+			/*memcpy(vertex_target_pos, collision_vertex, 24);
+			return true;*/
 		}
-		if (collision_dis -coe < d_hat) {
+		if (collision_dis > 0) {
+			coe = -d_hat + collision_dis;
+		}
+		else if (collision_dis -coe < d_hat) {
 			coe = -d_hat + collision_dis;
 		}
 	}
 
 	//if (vertex_index == 350) {
-	//	std::cout << coe << " " << indicate_move <<" "<< epsilon << std::endl;
+	//	//std::cout << << coe << " " << indicate_move <<" "<< epsilon << std::endl;
 	//}
 	//if (coe == 0.0) {
 	//	coe = sqrt(d_hat_2);
@@ -365,8 +453,8 @@ bool CollisionConstraint::pointTriangleColliderResponse(double* initial_position
 	//if (sideness * direct_velocity > 0) {
 	//	coe *= -1.0;
 	//}
-	////std::cout <<"coe "<< coe << std::endl;
-	////std::cout <<"coe "<< initial_triangle_normal[0]<<" "<< initial_triangle_normal[1]<<" "<<initial_triangle_normal[2] << std::endl;
+	//////std::cout << <<"coe "<< coe << std::endl;
+	//////std::cout << <<"coe "<< initial_triangle_normal[0]<<" "<< initial_triangle_normal[1]<<" "<<initial_triangle_normal[2] << std::endl;
 
 	SUBTRACT_A_WITH_COE_B(vertex_target_pos, collision_vertex, initial_triangle_normal, coe);
 	return true;
@@ -388,7 +476,7 @@ bool CollisionConstraint::pointColliderTriangleResponse(double* initial_position
 		return false;
 	}
 
-	////std::cout << d_2 << std::endl;
+	//////std::cout << << d_2 << std::endl;
 
 	stiffness *= barrier((d_hat_2 - d_2) / d_hat_2, d_2 / d_hat_2);
 
@@ -438,7 +526,7 @@ bool CollisionConstraint::pointColliderTriangleResponse(double* initial_position
 		}
 	}
 
-	////std::cout << total_distance << std::endl;
+	//////std::cout << << total_distance << std::endl;
 
 	//if (sideness * direct_velocity > 0) {
 	//	total_distance *= -1.0;
@@ -475,7 +563,7 @@ bool CollisionConstraint::edgeEdgeColliderResponse(double* edge_target_pos_0, do
 	if (d_2 >= d_hat_2) {
 		return false;
 	}
-	////std::cout << d_2 << std::endl;
+	//////std::cout << << d_2 << std::endl;
 	stiffness *= barrier((d_hat_2 - d_2) / d_hat_2, d_2 / d_hat_2);
 	double coe;
 
@@ -564,7 +652,11 @@ bool CollisionConstraint::edgeEdgeResponse(double* edge_target_pos_0, double* ed
 	double d_hat, double& stiffness, double epsilon,
 	double mass_e_0_0, double mass_e_0_1,double mass_e_1_0,double mass_e_1_1, double collision_time, unsigned int* edge_index)
 {
-	//std::cout << collision_time << std::endl;
+	////std::cout << << collision_time << std::endl;
+
+	//if (collision_time == 1.0) {
+	//	return false;
+	//}
 
 	double d_hat_2 = d_hat * d_hat;
 
@@ -575,11 +667,10 @@ bool CollisionConstraint::edgeEdgeResponse(double* edge_target_pos_0, double* ed
 	if (d_2 >= d_hat_2) {
 		return false;
 	}
-	////std::cout << d_2 << std::endl;
+	//////std::cout << << d_2 << std::endl;
 	stiffness *= barrier((d_hat_2 - d_2) / d_hat_2, d_2 / d_hat_2);
 
 	double collision_normal[3];
-	epsilon += 1.0;
 
 	double collision_edge_v0[3];	double collision_edge_v1[3];	double collision_edge_compare_v0[3]; double collision_edge_compare_v1[3];
 
@@ -599,6 +690,16 @@ bool CollisionConstraint::edgeEdgeResponse(double* edge_target_pos_0, double* ed
 			- bary_centric[3] * (current_compare_edge_vertex_1[i] - collision_edge_compare_v1[i]);
 	}
 
+	double total_relative_velocity[3];
+	for (unsigned int i = 0; i < 3; ++i) {
+		total_relative_velocity[i] = bary_centric[0] * (current_edge_vertex_0[i] - previous_free_edge_v0[i])
+			+ bary_centric[1] * (current_edge_vertex_1[i] - previous_free_edge_v1[i])
+			- bary_centric[2] * (current_compare_edge_vertex_0[i] - previous_free_compare_edge_v0[i])
+			- bary_centric[3] * (current_compare_edge_vertex_1[i] - previous_free_compare_edge_v1[i]);
+	}
+
+
+
 	EDGE_OF_TWO_EDGE(collision_normal, bary_centric, previous_free_edge_v0, previous_free_edge_v1, previous_free_compare_edge_v0, previous_free_compare_edge_v1);
 
 	//if (DOT(collision_normal, collision_normal) < 1e-30) {
@@ -617,21 +718,28 @@ bool CollisionConstraint::edgeEdgeResponse(double* edge_target_pos_0, double* ed
 	normalize(collision_normal);
 
 
-	double total_distance = epsilon * DOT(relative_velocity, collision_normal);
+	double total_distance = DOT(relative_velocity, collision_normal);
+
+	double direction_indicator = DOT(total_relative_velocity, collision_normal);
+
 
 	double current_edge[3];
 	EDGE_OF_TWO_EDGE(current_edge, bary_centric, current_edge_vertex_0, current_edge_vertex_1, current_compare_edge_vertex_0, current_compare_edge_vertex_1);
 	double current_distance = DOT(current_edge, collision_normal);
 	if (current_distance > d_hat) {
-		memcpy(edge_target_pos_0, current_edge_vertex_0, 24);
-		memcpy(edge_target_pos_1, current_edge_vertex_1, 24);
-		memcpy(compare_target_pos_0, current_compare_edge_vertex_0, 24);
-		memcpy(compare_target_pos_1, current_compare_edge_vertex_1, 24);
-		return true;
+		//memcpy(edge_target_pos_0, current_edge_vertex_0, 24);
+		//memcpy(edge_target_pos_1, current_edge_vertex_1, 24);
+		//memcpy(compare_target_pos_0, current_compare_edge_vertex_0, 24);
+		//memcpy(compare_target_pos_1, current_compare_edge_vertex_1, 24);
+		return false;
 	}
-	if (total_distance > -d_hat) {
+	if (direction_indicator > 0) {
+		total_distance = -d_hat + current_distance;
+	}
+	else if (total_distance > -d_hat) {
 		total_distance = -d_hat;
 	}
+
 
 	double move_d_0_1 = mass_e_0_0 * (mass_e_1_0 + mass_e_1_1) * total_distance
 		/ ((mass_e_0_0 + mass_e_0_1 + mass_e_1_0 + mass_e_1_1) * (bary_centric[0] * mass_e_0_1 + bary_centric[1] * mass_e_0_0));
@@ -639,8 +747,8 @@ bool CollisionConstraint::edgeEdgeResponse(double* edge_target_pos_0, double* ed
 	double move_d_1_1 = -mass_e_1_0 * (mass_e_0_0 + mass_e_0_1) * total_distance
 		/ ((mass_e_0_0 + mass_e_0_1 + mass_e_1_0 + mass_e_1_1) * (bary_centric[2] * mass_e_1_1 + bary_centric[3] * mass_e_1_0));
 	double move_d_1_0 = (mass_e_1_1 / mass_e_1_0) * move_d_1_1;
-	////std::cout <<"coe "<< coe << std::endl;
-	////std::cout <<"coe "<< collision_normal[0]<<" "<< collision_normal[1]<<" "<<collision_normal[2] << std::endl;
+	//////std::cout << <<"coe "<< coe << std::endl;
+	//////std::cout << <<"coe "<< collision_normal[0]<<" "<< collision_normal[1]<<" "<<collision_normal[2] << std::endl;
 	SUBTRACT_A_WITH_COE_B(edge_target_pos_0, initial_edge_vertex_0, collision_normal, move_d_0_0);
 	SUBTRACT_A_WITH_COE_B(edge_target_pos_1, initial_edge_vertex_1, collision_normal, move_d_0_1);
 	SUBTRACT_A_WITH_COE_B(compare_target_pos_0, initial_compare_edge_vertex_0, collision_normal, move_d_1_0);
@@ -697,7 +805,7 @@ bool CollisionConstraint::pointSelfTriangle(double* initial_position, double* cu
 		d_move =4.0 * d_min;
 	}
 	//else {
-	//	//std::cout << d_move<<" "<< d_min << std::endl;
+	//	////std::cout << << d_move<<" "<< d_min << std::endl;
 	//}
 	//decide the direction
 	double direction[3];
@@ -714,18 +822,18 @@ bool CollisionConstraint::pointSelfTriangle(double* initial_position, double* cu
 			memcpy(direction, initial_triangle_normal, 24);
 		}
 	}	
-	////std::cout << d_move<<" "<<stiffness << std::endl;
+	//////std::cout << << d_move<<" "<<stiffness << std::endl;
 	moveDistance(vertex_mass, triangle_mass, vertex_target_pos, triangle_target_pos,d_move, nearest_point_barycentric, direction,initial_position, initial_triangle_position);
-	////std::cout << initial_triangle_position[0][0] << " " << initial_triangle_position[0][1] << " " << initial_triangle_position[0][2] << std::endl;
-	////std::cout << triangle_target_pos[0][0] << " " << triangle_target_pos[0][1] << " " << triangle_target_pos[0][2] << std::endl;
-	////std::cout << current_triangle_position[0][0] << " " << current_triangle_position[0][1] << " " << current_triangle_position[0][2] << std::endl;
-	////std::cout << initial_triangle_position[1][0] << " " << initial_triangle_position[1][1] << " " << initial_triangle_position[1][2] << std::endl;
-	////std::cout << triangle_target_pos[1][0] << " " << triangle_target_pos[1][1] << " " << triangle_target_pos[1][2] << std::endl;
-	////std::cout << current_triangle_position[1][0] << " " << current_triangle_position[1][1] << " " << current_triangle_position[1][2] << std::endl;
-	////std::cout << initial_triangle_position[2][0] << " " << initial_triangle_position[2][1] << " " << initial_triangle_position[2][2] << std::endl;
-	////std::cout << triangle_target_pos[2][0] << " " << triangle_target_pos[2][1] << " " << triangle_target_pos[2][2] << std::endl;
-	////std::cout << current_triangle_position[2][0] << " " << current_triangle_position[2][1] << " " << current_triangle_position[2][2] << std::endl;
-	////std::cout << "===" << std::endl;
+	//////std::cout << << initial_triangle_position[0][0] << " " << initial_triangle_position[0][1] << " " << initial_triangle_position[0][2] << std::endl;
+	//////std::cout << << triangle_target_pos[0][0] << " " << triangle_target_pos[0][1] << " " << triangle_target_pos[0][2] << std::endl;
+	//////std::cout << << current_triangle_position[0][0] << " " << current_triangle_position[0][1] << " " << current_triangle_position[0][2] << std::endl;
+	//////std::cout << << initial_triangle_position[1][0] << " " << initial_triangle_position[1][1] << " " << initial_triangle_position[1][2] << std::endl;
+	//////std::cout << << triangle_target_pos[1][0] << " " << triangle_target_pos[1][1] << " " << triangle_target_pos[1][2] << std::endl;
+	//////std::cout << << current_triangle_position[1][0] << " " << current_triangle_position[1][1] << " " << current_triangle_position[1][2] << std::endl;
+	//////std::cout << << initial_triangle_position[2][0] << " " << initial_triangle_position[2][1] << " " << initial_triangle_position[2][2] << std::endl;
+	//////std::cout << << triangle_target_pos[2][0] << " " << triangle_target_pos[2][1] << " " << triangle_target_pos[2][2] << std::endl;
+	//////std::cout << << current_triangle_position[2][0] << " " << current_triangle_position[2][1] << " " << current_triangle_position[2][2] << std::endl;
+	//////std::cout << << "===" << std::endl;
 
 
 	return true;
@@ -747,7 +855,7 @@ bool CollisionConstraint::pointColliderTriangle(double* initial_position, double
 		vertexLineSegmentDistance(2, 0, initial_position, current_triangle_position, nearest_point_info, barycentric_edge);		
 
 		//if (initial_position[1] < 0.769645) {
-		//	////std::cout << "distance when <floor "<< initial_position[0]<<" "<< initial_position[1]<<" "<< initial_position[2]<<" "
+		//	//////std::cout << << "distance when <floor "<< initial_position[0]<<" "<< initial_position[1]<<" "<< initial_position[2]<<" "
 		//		<< " " << current_triangle_position[0][0]<<" " << current_triangle_position[0][1] << " " << current_triangle_position[0][2] << " "
 		//		<< current_triangle_position[1][0] << " " << current_triangle_position[1][1] << " " << current_triangle_position[1][2] << " "
 		//		<< current_triangle_position[2][0] << " " << current_triangle_position[2][1] << " " << current_triangle_position[2][2] << " "
@@ -761,7 +869,7 @@ bool CollisionConstraint::pointColliderTriangle(double* initial_position, double
 	}
 	else {
 		//if (initial_position[1] < 0.769645) {
-		//	////std::cout << "distance when <floor" << initial_position[1] << " " << d_2 << " " << d_hat_2 << std::endl;
+		//	//////std::cout << << "distance when <floor" << initial_position[1] << " " << d_2 << " " << d_hat_2 << std::endl;
 		//}
 		if (d_2 >= d_hat_2) {
 			return false;
@@ -770,7 +878,7 @@ bool CollisionConstraint::pointColliderTriangle(double* initial_position, double
 	}
 
 	stiffness *= barrier((d_hat_2- d_2)/d_hat_2, d_2 / d_hat_2);
-	////std::cout << stiffness<<" "<< barrier(d_2 - d_hat_2, d_2 / d_hat_2) << std::endl;
+	//////std::cout << << stiffness<<" "<< barrier(d_2 - d_hat_2, d_2 / d_hat_2) << std::endl;
 	
 
 	double d_move;// = sqrt(DOT(d, d));
@@ -805,9 +913,9 @@ bool CollisionConstraint::pointColliderTriangle(double* initial_position, double
 	SUM_(vertex_target_pos, initial_position);
 
 	//if (vertex_target_pos[1] - current_triangle_position[0][1] < sqrt(d_hat_2)) {
-	//	////std::cout << vertex_target_pos[1] - current_triangle_position[0][1] << std::endl;
+	//	//////std::cout << << vertex_target_pos[1] - current_triangle_position[0][1] << std::endl;
 	//}
-	//////std::cout << "build constraint " << std::endl;
+	////////std::cout << << "build constraint " << std::endl;
 
 	return true;
 }
@@ -831,10 +939,10 @@ bool CollisionConstraint::edgeEdgeCollision(std::vector<std::array<double, 3>>& 
 	POINT_ON_EDGE(current_close_point_1, alpha[0], alpha[1], current_edge_vertex_0, current_edge_vertex_1);
 	POINT_ON_EDGE(current_close_point_2, alpha[2], alpha[3], current_compare_edge_vertex_0, current_compare_edge_vertex_1);
 
-	//////std::cout << "initial close point " << initial_close_point_1[0] << " " << initial_close_point_1[1] << " " << initial_close_point_1[2] << std::endl;
-	//////std::cout << "initial close point " << initial_close_point_2[0] << " " << initial_close_point_2[1] << " " << initial_close_point_2[2] << std::endl;
-	//////std::cout << "current close point " << current_close_point_1[0] << " " << current_close_point_1[1] << " " << current_close_point_1[2] << std::endl;
-	//////std::cout << "current close point " << current_close_point_2[0] << " " << current_close_point_2[1] << " " << current_close_point_2[2] << std::endl;
+	////////std::cout << << "initial close point " << initial_close_point_1[0] << " " << initial_close_point_1[1] << " " << initial_close_point_1[2] << std::endl;
+	////////std::cout << << "initial close point " << initial_close_point_2[0] << " " << initial_close_point_2[1] << " " << initial_close_point_2[2] << std::endl;
+	////////std::cout << << "current close point " << current_close_point_1[0] << " " << current_close_point_1[1] << " " << current_close_point_1[2] << std::endl;
+	////////std::cout << << "current close point " << current_close_point_2[0] << " " << current_close_point_2[1] << " " << current_close_point_2[2] << std::endl;
 
 	for (int i = 0; i < 3; ++i) {
 		d[i] = initial_close_point_2[i] - current_close_point_2[i] - (initial_close_point_1[i] - current_close_point_1[i]);
@@ -920,7 +1028,7 @@ void CollisionConstraint::testBarycentric()
 	for (unsigned int i = 0; i < 5; ++i) {
 		double d_2 = CCD::internal::edgeEdgeNearestPoint(initial_pos[i].data(), current_pos[i].data(),
 			initial_triangle_pos[1].data(), initial_triangle_pos[2].data(), barycentric);
-		//std::cout << barycentric[0] << " " << barycentric[1] << " " << barycentric[2]<<" "<<barycentric[3] << std::endl;
+		////std::cout << << barycentric[0] << " " << barycentric[1] << " " << barycentric[2]<<" "<<barycentric[3] << std::endl;
 	}
 
 }
@@ -982,15 +1090,15 @@ void CollisionConstraint::testPT()
 		initial_triangle_pos[2].data(), current_triangle_pos[0].data(), current_triangle_pos[1].data(), current_triangle_pos[2].data(),
 		initial_tri_normal, triangle_target_pos[0].data(), triangle_target_pos[1].data(), triangle_target_pos[2].data(),
 		d_hat, stiffness, epsilon, mass_0_1, mass_1_0, mass_1_1)) {
-		////std::cout <<"vertex "<< vertex_target_pos[0] << " " << vertex_target_pos[1] << " " << vertex_target_pos[2] << std::endl;
-		//////std::cout << "triangle vertex" << std::endl;
+		//////std::cout << <<"vertex "<< vertex_target_pos[0] << " " << vertex_target_pos[1] << " " << vertex_target_pos[2] << std::endl;
+		////////std::cout << << "triangle vertex" << std::endl;
 		for (int i = 0; i < 3; ++i) {
-			//std::cout << triangle_target_pos[i][0] << " " << triangle_target_pos[i][1] << " " << triangle_target_pos[i][2] << std::endl;
+			////std::cout << << triangle_target_pos[i][0] << " " << triangle_target_pos[i][1] << " " << triangle_target_pos[i][2] << std::endl;
 		}
-		////std::cout << stiffness << std::endl;
+		//////std::cout << << stiffness << std::endl;
 	}
 	else {
-		////std::cout << "does not collide " << std::endl;
+		//////std::cout << << "does not collide " << std::endl;
 	}
 }
 
@@ -1022,16 +1130,16 @@ void CollisionConstraint::testEE()
 	////if (edgeEdgeColliderResponse(target_pos[0].data(), target_pos[1].data(), current_edge_0, current_edge_1, initial_edge_0, initial_edge_1,
 	////	initial_compare_edge_0, initial_compare_edge_1, d_hat, stiffness, epsilon,
 	////	mass_0_0, mass_0_1)) {
-	//	//std::cout << "edge 0 " << target_pos[0][0] << " " << target_pos[0][1] << " " << target_pos[0][2] << std::endl;
-	//	//std::cout << "edge 1 " << target_pos[1][0] << " " << target_pos[1][1] << " " << target_pos[1][2] << std::endl;
-	//	//std::cout << "compare 0 " << compare_pos[0][0] << " " << compare_pos[0][1] << " " << compare_pos[0][2] << std::endl;
-	//	//std::cout << "compare 1 " << compare_pos[1][0] << " " << compare_pos[1][1] << " " << compare_pos[1][2] << std::endl;
-	//	//////std::cout << stiffness << std::endl;
+	//	////std::cout << << "edge 0 " << target_pos[0][0] << " " << target_pos[0][1] << " " << target_pos[0][2] << std::endl;
+	//	////std::cout << << "edge 1 " << target_pos[1][0] << " " << target_pos[1][1] << " " << target_pos[1][2] << std::endl;
+	//	////std::cout << << "compare 0 " << compare_pos[0][0] << " " << compare_pos[0][1] << " " << compare_pos[0][2] << std::endl;
+	//	////std::cout << << "compare 1 " << compare_pos[1][0] << " " << compare_pos[1][1] << " " << compare_pos[1][2] << std::endl;
+	//	////////std::cout << << stiffness << std::endl;
 	//	SUB_(target_pos[0], target_pos[1]);
-	//	//std::cout << "dis " << DOT(target_pos[0], target_pos[0]) << std::endl;
+	//	////std::cout << << "dis " << DOT(target_pos[0], target_pos[0]) << std::endl;
 	//}
 	//else {
-	//	////std::cout << "does not collide " << std::endl;
+	//	//////std::cout << << "does not collide " << std::endl;
 	//}
 }
 
@@ -1173,14 +1281,14 @@ void CollisionConstraint::moveDistance(double* mass, std::vector<std::array<doub
 	MULTI(target_pos[1], direction, d_close[1]);
 	SUM_(target_pos[1], initial_edge_vertex_1);
 
-	//////std::cout << "moving distance " << d_close[0] << " " << d_close[1]<<" ";
+	////////std::cout << << "moving distance " << d_close[0] << " " << d_close[1]<<" ";
 	d_close[1] = mass[2] * (mass[0] + mass[1]) * d_move / (mass_total * (barycentric[2] * mass[3] + barycentric[3] * mass[2]));
 	d_close[0] = mass[3] * d_close[1] / mass[2];
 	MULTI(compare_target_pos[0], direction, d_close[0]);
 	SUM_(compare_target_pos[0], initial_compare_edge_vertex_0);
 	MULTI(compare_target_pos[1], direction, d_close[1]);
 	SUM_(compare_target_pos[1], initial_compare_edge_vertex_1);
-	//////std::cout << d_close[0] << " " << d_close[1] << std::endl;
+	////////std::cout << << d_close[0] << " " << d_close[1] << std::endl;
 
 }
 
@@ -1194,7 +1302,7 @@ void CollisionConstraint::moveDistance(double vertex_mass, double* triangle_mass
 	double d_close = d_move / (vertex_mass + mass_triangle);
 	vertex_d = -mass_triangle * d_close;
 	d_close *= vertex_mass;
-	////std::cout << triangle_mass[0] << " " << triangle_mass[1] << " " << triangle_mass[2] << " " << barycentric[0]<<" "<< barycentric[1]<<" "<< barycentric[2] << std::endl;
+	//////std::cout << << triangle_mass[0] << " " << triangle_mass[1] << " " << triangle_mass[2] << " " << barycentric[0]<<" "<< barycentric[1]<<" "<< barycentric[2] << std::endl;
 
 	triangle_d[1] = triangle_mass[0] * triangle_mass[2] * d_close / (barycentric[0] * triangle_mass[1] * triangle_mass[2] + barycentric[1] * triangle_mass[0] * triangle_mass[2]
 		+ barycentric[2] * triangle_mass[0] * triangle_mass[1]);
@@ -1206,8 +1314,8 @@ void CollisionConstraint::moveDistance(double vertex_mass, double* triangle_mass
 	for (int i = 0; i < 3; ++i) {
 		MULTI(triangle_target_pos[i], direction, triangle_d[i]);
 		SUM_(triangle_target_pos[i], initial_triangle_position[i]);
-		//////std::cout << "direction " << triangle_d[i] << " " << triangle_d[i] << " " << triangle_d[i] << std::endl;
-		//////std::cout << "direction " << triangle_d[i][0] << " " << triangle_d[i][1] << " " << triangle_d[i][2] << std::endl;
+		////////std::cout << << "direction " << triangle_d[i] << " " << triangle_d[i] << " " << triangle_d[i] << std::endl;
+		////////std::cout << << "direction " << triangle_d[i][0] << " " << triangle_d[i][1] << " " << triangle_d[i][2] << std::endl;
 	}
 	
 }
@@ -1232,7 +1340,7 @@ bool CollisionConstraint::vertexTriangleDistance(double* vertex, double& d_2, st
 	barycentric[2] = temp * DOT(S2, triangle_normal);
 	barycentric[0] = 1.0 - barycentric[1] - barycentric[2];
 	//if (vertex[1] < 0.769645) {
-	//	////std::cout << "barycentric "<< barycentric[0]<<" "<< barycentric[1]<<" "<< barycentric[2] << std::endl;
+	//	//////std::cout << << "barycentric "<< barycentric[0]<<" "<< barycentric[1]<<" "<< barycentric[2] << std::endl;
 	//}
 
 	if (barycentric[0] > EPSILON && barycentric[1] > EPSILON && barycentric[2] > EPSILON) {

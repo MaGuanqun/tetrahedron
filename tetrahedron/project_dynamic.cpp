@@ -997,8 +997,10 @@ void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 	//collision.testPointPair();
 	outer_iteration_num = 0;
 	reset_ave_iteration_record();
-
+	//std::cout << "======= " << *time_stamp << std::endl;
 	while (!IPC_PDConvergeCondition()) {
+
+		//std::cout << "outer_iteration_num " << outer_iteration_num << std::endl;
 
 		if (outer_iteration_num == 0) {
 			firstPDForIPC(record_matrix);
@@ -1008,6 +1010,7 @@ void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 			collision.solveCollisionConstraintForIPC();
 			PDupdateSystemMatrix();
 			local_global_iteration_num = 0;
+			updateModelPosition();
 			while (!innerIterationConvergeCondition()) {
 
 				if (local_global_iteration_num != 0) {
@@ -1020,8 +1023,8 @@ void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 				}
 				thread->assignTask(this, CONSTRUCT_B);
 				thread->assignTask(this, SOLVE_WITH_COLLISION);
-				solveClothSystem2(false);
-			
+				solveClothSystem2(false);			
+
 				updateModelPosition();
 				//printPosition();
 				local_global_iteration_num++;
@@ -1034,7 +1037,6 @@ void ProjectDynamic::PD_IPC_solve(bool& record_matrix)
 		recordCollisionFreePosition();
 		collision.globalCollisionTime();
 		thread->assignTask(this, COLLISION_FREE_POSITION);//in document, we use q_n+1, however, here, we use vertices_for_render & cloth_u to store this collision free position.
-		updateModelPosition();
 		outer_iteration_num++;
 		computeEnergyIPCPD();
 		displacement_ratio_dif = previous_displacement_norm - displacement_norm;
@@ -1425,13 +1427,6 @@ void ProjectDynamic::computeCollisionFreePosition(int thread_No)
 		vertex_index_start = vertex_begin_per_tetrahedron[i];
 
 		for (unsigned int j = mesh_struct->vertex_index_begin_per_thread[thread_No]; j < index_end; ++j) {
-
-			if (i == 0 && j == 18) {
-				std::cout << "====" << std::endl;
-				std::cout << q_pre[j][0] << " " << q_pre[j][1] << q_pre[j][2] << std::endl;
-				std::cout << q_end[j][0] << " " << q_end[j][1] << q_end[j][2] << std::endl;
-			}
-
 			q_pre[j][0] += collision_time * (q_end[j][0] - q_pre[j][0]);
 			q_pre[j][1] += collision_time * (q_end[j][1] - q_pre[j][1]);
 			q_pre[j][2] += collision_time * (q_end[j][2] - q_pre[j][2]);
