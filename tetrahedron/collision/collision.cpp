@@ -389,10 +389,10 @@ void Collision::initialDHatTolerance(double ave_edge_length)
 		tolerance_radius[i] = tolerance_ratio[i] * ave_edge_length;
 	}	
 
-	d_hat = 5e-2 * ave_edge_length;
+	d_hat = 2e-2 * ave_edge_length;
 	d_hat_2 = d_hat * d_hat;
 
-	//std::cout << "d_hat_ " << d_hat << std::endl;
+	std::cout << "d_hat_ " << d_hat << std::endl;
 
 	volume_boundary = 0.5 * d_hat*ave_edge_length;
 
@@ -1671,6 +1671,10 @@ void Collision::globalCollisionTime()
 		collision_time = 1.0;
 	}
 	collision_time *= 0.9;
+
+	if (collision_time == 0.0) {
+		std::cout << "attention: collision time equals zero" << std::endl;
+	}
 
 	////std::cout << "--collision time " << collision_time << std::endl;
 

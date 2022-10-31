@@ -1559,11 +1559,11 @@ bool ProjectDynamic::innerIterationConvergeCondition()
 
 
 
-	if (local_global_iteration_num > 10) {
-		//bool energy_changing = fabs(current_PD_energy - previous_PD_energy) / previous_PD_energy < local_global_conv_rate || current_PD_energy < 5e-15;
-		//if (energy_changing) {
-		//	return true;
-		//}
+	if (local_global_iteration_num > 15) {
+		bool energy_changing = fabs(current_PD_energy - previous_PD_energy) / previous_PD_energy < local_global_conv_rate || current_PD_energy < 5e-15;
+		if (energy_changing) {
+			return true;
+		}
 		return true;
 	}
 	return false;

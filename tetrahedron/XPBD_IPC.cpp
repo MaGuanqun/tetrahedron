@@ -305,6 +305,26 @@ void XPBD_IPC::initialCollisionConstriantNum()
 }
 
 
+void XPBD_IPC::XPBD_IPC_Position_Solve()
+{
+	updateCollisionFreePosition();
+	thread->assignTask(this, SET_POS_PREDICT_);
+	updateSn();
+	firstNewtonCD();
+	iteration_number = 0;
+	if (perform_collision) {
+		collision.collisionCulling();
+	}
+	outer_itr_num = 0;
+
+	while (!convergeCondition(outer_itr_num)) {
+		collision.globalCollisionTime();
+		thread->assignTask(this, COLLISION_FREE_POSITION_);
+
+	}
+}
+
+
 void XPBD_IPC::XPBD_IPCSolve()
 {
 	updateCollisionFreePosition();
@@ -316,7 +336,6 @@ void XPBD_IPC::XPBD_IPCSolve()
 	if (perform_collision) {
 		collision.collisionCulling();
 	}
-	iteration_number = 0;
 	outer_itr_num = 0;
 	computeCurrentEnergy();
 

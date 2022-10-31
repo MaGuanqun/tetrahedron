@@ -45,6 +45,7 @@ public:
 
 	void XPBD_IPCSolve();
 
+	void XPBD_IPC_Position_Solve();//solve collision as four position constraint
 	Collision collision;
 
 	unsigned int* time_indicate_for_simu;
