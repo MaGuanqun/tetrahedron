@@ -909,6 +909,7 @@ void Scene::initial()
 
 void Scene::reset()
 {
+
 	//if (!only_test_collision) {
 		switch (use_method)
 		{
@@ -932,6 +933,9 @@ void Scene::reset()
 	for (int i = 0; i < cloth.size(); ++i) {
 		cloth[i].reset();
 	}
+
+
+
 	for (int i = 0; i < tetrahedron.size(); ++i) {
 		tetrahedron[i].reset(use_method==XPBD_);
 	}
@@ -1301,6 +1305,7 @@ void Scene::updateAnchorTet()
 		tetrahedron[i].mesh_struct.updateAnchorPerThread(thread.thread_num);
 		tetrahedron[i].mesh_struct.updateUnfixedPointData();
 		tetrahedron[i].mesh_struct.resetMassInv();
+		tetrahedron[i].mesh_struct.updateTetNeighborInfo();
 	}
 	if (use_method == XPBD_SECOND_ORDER_LARGE_) {
 		second_order_xpbd_large.updateIndexBeginPerObj();
@@ -1343,9 +1348,16 @@ void Scene::selectAnchor(bool* control_parameter, bool* select_anchor, double* s
 			break;
 		case XPBD_:
 			xpbd.updateTetrahedronAnchorVertices();
+			for (unsigned int i = 0; i < tetrahedron.size(); ++i) {
+				tetrahedron[i].mesh_struct.updateTetNeighborInfo();
+			}
+			
 			break;
 		case XPBD_IPC_:
 			xpbd_ipc.updateTetrahedronAnchorVertices();
+			for (unsigned int i = 0; i < tetrahedron.size(); ++i) {
+				tetrahedron[i].mesh_struct.updateTetNeighborInfo();
+			}
 			break;
 		}
 	}

@@ -31,7 +31,8 @@ void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	neighbor_vertex_per_thread.resize(thread->thread_num);
 
 	mesh_struct.recordTetIndexForVertex();
-
+	mesh_struct.recordTetIndexForTet();
+	mesh_struct.updateTetNeighborInfo();
 }
 
 
@@ -417,7 +418,7 @@ void Tetrahedron::initial()
 	obtainAABBMoveRadius();
 }
 
-void Tetrahedron::reset(bool use_XPBD)
+void Tetrahedron::reset(unsigned int use_method)
 {
 	memset(rotation_matrix, 0, 72);
 	rotation_matrix[0] = 1.0;
@@ -428,7 +429,7 @@ void Tetrahedron::reset(bool use_XPBD)
 	mesh_struct.vertex_for_render = ori_vertices;
 	mesh_struct.getRenderNormal();
 	mesh_struct.getNormal();
-	if (!use_XPBD) {
+	if (use_method == PD_) {
 		for (int i = 0; i < mesh_struct.anchor_vertex.size(); ++i) {
 			mesh_struct.anchor_position[i] = mesh_struct.vertex_position[mesh_struct.anchor_vertex[i]];
 		}

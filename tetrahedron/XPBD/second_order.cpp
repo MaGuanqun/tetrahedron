@@ -186,6 +186,51 @@ void SecondOrderConstraint::solveSingleVertexCD_ARAP(std::array<double, 3>* vert
 	}
 }
 
+void SecondOrderConstraint::solveCD_ARAP_block(std::array<double, 3>* vertex_position, double stiffness, double dt,
+	Matrix<double, 3, 4>* A, double* lambda, std::vector<unsigned int>& neighbor_tet_indices, std::array<int, 4>* indices, double* mass,
+	double* volume, unsigned int tet_index, std::array<double, 3>* sn, double* inv_mass, unsigned int* common_vertex_in_order,
+	int* tet_vertex_index)
+{
+	Matrix<double, 12, 12> Hessian;
+	Vector3d eigen_value;
+	Vector3d position;
+	Matrix3d deformation_gradient;
+	Matrix3d S, rotation;
+
+	FEM::getDeformationGradient(vertex_position[tet_vertex_index[0]].data(), vertex_position[tet_vertex_index[1]].data(),
+		vertex_position[tet_vertex_index[2]].data(), vertex_position[tet_vertex_index[3]].data(), A[tet_index], 
+		deformation_gradient);
+	FEM::polarDecomposition(deformation_gradient, eigen_value, S, rotation);
+
+	Matrix<double, 3, 4> grad_C_transpose;
+	grad_C_transpose = (2.0 * stiffness * volume[tet_index]) * (deformation_gradient - rotation) * A[tet_index];
+
+	Matrix3d Dm = A[tet_index].block<3, 3>(0, 1).transpose();
+	FEM::getHessian(Hessian, S, rotation, Dm, A[tet_index]);
+	Hessian *= volume[tet_index] * stiffness;
+
+
+	Matrix<double, 12, 3> temp_hessian;
+
+	unsigned int common_vertex_num;
+	for (unsigned int i = 0; i < neighbor_tet_indices.size(); ++i) {
+		common_vertex_num = *common_vertex_in_order;
+		common_vertex_in_order++;
+		for (unsigned int j = 0; j < common_vertex_num; ++j) {
+			for()
+		}
+	}
+
+}
+
+
+
+void SecondOrderConstraint::solveCertainHessianForNeighborTet(std::array<double, 3>* vertex_position, double stiffness,
+	Matrix<double, 3, 4>& A, unsigned int* &common_vertex_in_order, unsigned int* neighbor_tet_vetex_indices, Matrix<double,12,12>& sys_matrix)
+{// for a single neighbor tet, only compute common vertices
+	
+}
+
 void SecondOrderConstraint::solveCD_ARAP(std::array<double, 3>* vertex_position, double stiffness, double dt,
 	Matrix<double, 3, 4>* A, double* lambda, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, double* mass, 
 	double* volume, unsigned int vertex_index, std::array<double, 3>* sn)

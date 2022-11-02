@@ -57,6 +57,14 @@ public:
 		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, double* mass,
 		double* volume, unsigned int vertex_index, std::array<double, 3>* sn);
 
+
+	void solveCD_ARAP_block(std::array<double, 3>* vertex_position, double stiffness, double dt,
+		Matrix<double, 3, 4>* A, double* lambda, std::vector<unsigned int>& neighbor_tet_indices, std::array<int, 4>* indices, double* mass,
+		double* volume, unsigned int tet_index, std::array<double, 3>* sn, double* inv_mass, unsigned int* common_vertex_in_order, int* tet_vertex_index);
+
+	void solveCertainHessianForNeighborTet(std::array<double, 3>* vertex_position, double stiffness,
+		Matrix<double, 3, 4>& A, unsigned int*& common_vertex_in_order, unsigned int* neighbor_tet_vetex_indices, Matrix<double, 12, 12>& sys_matrix);
+
 private:
 	double epsilon_for_bending= 1e-10;
 

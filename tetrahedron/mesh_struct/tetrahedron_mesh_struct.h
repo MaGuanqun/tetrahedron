@@ -38,6 +38,8 @@ public:
 	//void getFaceNormalPerThread(int thread_id);
 	void getNormal();
 	void recordTetIndexForSurfaceIndex();
+	void updateTetNeighborInfo();
+	void recordTetIndexForTet();
 
 	void getVertexNormalPerThread(int thread_id);
 	void getRenderVertexNormalPerThread(int thread_id);
@@ -56,7 +58,7 @@ public:
 
 	//void setVertexIndexOnSurfaceEdgeTriangle();
 	void setTetEdges();
-
+	void updateTetNeighborTetVertexIndex(int thread_id);
 private:
 	struct TetrahedronFace {
 		std::array<int, 3> index;
@@ -92,5 +94,9 @@ private:
 
 
 	void addTetEdges(unsigned int p0, unsigned int p1, std::vector<std::vector<unsigned int>>& edge_vertex);
+
+	void updateTetNeighborTetVertexIndex();
+	void findCommonVertexInOrder(int* tet_0_index, int* tet_1_index, std::vector<unsigned int>* vertex_in_order, double* inv_mass);
+	unsigned int unfixedVertexIndexInATet(int* tet, int index, double* inv_mass);
 };
 

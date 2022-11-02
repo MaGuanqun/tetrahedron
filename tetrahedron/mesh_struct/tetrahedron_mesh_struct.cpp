@@ -222,6 +222,99 @@ void TetrahedronMeshStruct::recordTetIndexForVertex()
 	}
 }
 
+void TetrahedronMeshStruct::recordTetIndexForTet()
+{
+	std::vector<bool> is_used(indices.size(),false);
+	tet_tet_index.resize(indices.size());
+	for (unsigned int i = 0; i < indices.size(); ++i) {
+		std::fill(is_used.begin(), is_used.end(), false);
+		is_used[i] = true;
+		if (tet_tet_index[i].empty()) {
+			tet_tet_index[i].reserve(8);
+		}
+		for (unsigned int j = 0; j < 4; ++j) {
+			for (unsigned int k = 0; k < vertex_tet_index[indices[i][j]].size(); ++k) {
+				if (!is_used[vertex_tet_index[indices[i][j]][k]]) {
+					tet_tet_index[i].emplace_back(vertex_tet_index[indices[i][j]][k]);
+					is_used[vertex_tet_index[indices[i][j]][k]] = true;
+				}
+			}
+		}
+	}
+}
+
+
+void TetrahedronMeshStruct::updateTetNeighborInfo()
+{
+	tet_unfixed_vertex_num.resize(indices.size());
+	memset(tet_unfixed_vertex_num.data(), 0, 4 * tet_unfixed_vertex_num.size());
+	unsigned int j = 0;
+	for (auto itr = indices.begin(); itr < indices.end(); ++itr) {
+		for (unsigned int i = 0; i < 4; ++i) {
+			if (mass_inv[itr->data()[i]] != 0.0) {
+				tet_unfixed_vertex_num[j]++;
+			}
+		}
+		j++;
+	}
+
+	updateTetNeighborTetVertexIndex();
+
+
+}
+
+
+void TetrahedronMeshStruct::updateTetNeighborTetVertexIndex()
+{
+	tet_neighbor_tet_vertex_order.resize(indices.size());
+	thread->assignTask(this, TET_NEIGHBOR_TET_VERTEX_INDEX);
+}
+
+
+//TET_NEIGHBOR_TET_VERTEX_INDEX
+void TetrahedronMeshStruct::updateTetNeighborTetVertexIndex(int thread_id)
+{
+	for (unsigned int i = tetrahedron_index_begin_per_thread[thread_id]; i < tetrahedron_index_begin_per_thread[thread_id+1]; ++i) {
+		tet_neighbor_tet_vertex_order[i].clear();
+		tet_neighbor_tet_vertex_order[i].reserve(3 * tet_tet_index[i].size());
+		for (auto neighbor_tet = tet_tet_index[i].begin(); neighbor_tet < tet_tet_index[i].end(); ++neighbor_tet) {
+			findCommonVertexInOrder(indices[i].data(), indices[*neighbor_tet].data(), &tet_neighbor_tet_vertex_order[i],mass_inv.data());
+		}
+	}
+}
+
+void TetrahedronMeshStruct::findCommonVertexInOrder(int* tet_0_index, int* tet_1_index, std::vector<unsigned int>* vertex_in_order, double* inv_mass)
+{
+	vertex_in_order->emplace_back(0);
+	std::vector<unsigned int> vertex;
+	vertex.reserve(4);
+	unsigned int num = 0;
+	for (unsigned int i = 0; i < 4; ++i) {
+		if (inv_mass[tet_0_index[i]] != 0.0) {
+			for (unsigned int j = 0; j < 4; ++j) {
+				if (tet_0_index[i] == tet_1_index[j]) {
+					vertex_in_order->emplace_back(i);
+					vertex.emplace_back(j);
+					num++;
+					break;
+				}
+			}
+		}
+	}
+	*(vertex_in_order->end() - num - 1) = num;
+	vertex_in_order->insert(vertex_in_order->end(),vertex.begin(), vertex.end());
+}
+
+unsigned int TetrahedronMeshStruct::unfixedVertexIndexInATet(int* tet, int index, double* inv_mass)
+{
+	unsigned int unfixed_index = index;
+	for (unsigned int i = 0; i < index; ++i) {
+		if (inv_mass[tet[i]] == 0.0) {
+			unfixed_index--;
+		}
+	}
+	return unfixed_index;
+}
 
 void TetrahedronMeshStruct::recordTetIndexForSurfaceIndex()
 {

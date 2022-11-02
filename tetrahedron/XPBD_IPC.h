@@ -45,6 +45,8 @@ public:
 
 	void XPBD_IPCSolve();
 
+	void XPBD_IPC_Block_Solve();
+
 	void XPBD_IPC_Position_Solve();//solve collision as four position constraint
 	Collision collision;
 
@@ -221,5 +223,12 @@ private:
 		double dt, double* mass,
 		double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double collision_stiffness, unsigned int obj_No,
 		bool vertex_on_surface, unsigned int vertex_index_on_surface);
+
+	void newtonCDTetBlock();
+
+	void solveNewtonCD_tetBlock(std::array<double, 3>* vertex_position, double stiffness, double dt,
+		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, double* mass,
+		double* volume, unsigned int tet_index, std::array<double, 3>* sn, double* inv_mass);
+
 };
 

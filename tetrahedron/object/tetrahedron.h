@@ -45,7 +45,7 @@ public:
 	double sigma_limit[2];//min max sigma for volume preserve
 	void recordInitialMesh(SingleTetrahedronInfo& single_tetrahedron_info_ref);
 	void initial();
-	void reset(bool use_XPBD);
+	void reset(unsigned int use_method);
 	SingleTetrahedronInfo single_tetrahedron_info_ref;
 	void findAllNeighborVertex(int face_index, double cursor_pos[3], double average_edge_length);
 	void findNeighborVertex(int vertex_index, int recursion_deepth, std::vector<bool>& is_vertex_used);

@@ -187,6 +187,9 @@ job Thread::create_task(TetrahedronMeshStruct* func, int thread_id, MeshStructFu
     case VERTEX_NORMAL_FROM_RENDER:
         k = job([func, thread_id]() {func->getVertexNormalFromRenderPerThread(thread_id); });
         break;
+    case TET_NEIGHBOR_TET_VERTEX_INDEX:
+        k = job([func, thread_id]() {func->updateTetNeighborTetVertexIndex(thread_id); });
+        break;
     }
     return k;
 }
