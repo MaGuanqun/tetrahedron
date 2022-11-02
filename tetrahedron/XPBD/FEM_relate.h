@@ -70,12 +70,11 @@ namespace FEM {
 		JacobiSVD<Matrix3d> svd;
 		svd.compute(deformation_gradient, ComputeFullU | ComputeFullV);
 		eigen_value = svd.singularValues();
-		double determinant = deformation_gradient.determinant();//  eigen_value[0] * eigen_value[1] * eigen_value[2];
 		Matrix3d U;
 		U = svd.matrixU();
 
 		//std::cout << "determinant " << determinant<<" "<< << std::endl;
-		if (determinant < 0) {
+		if (deformation_gradient.determinant() < 0) {
 		//if ((svd.matrixU()* svd.matrixV().transpose()).determinant() < 0) {
 			//std::cout << "reverse " << std::endl;
 			U.col(2) *= -1.0;
@@ -137,6 +136,35 @@ namespace FEM {
 			delta_H = 2.0 * (delta_F - delta_R) * A;
 			memcpy(Hessian.data() + 12 * i, delta_H.data(), 96);
 		}		
+	}
+
+
+	inline void getHessianForSeveralVertex(MatrixXd& Hessian, Matrix3d& S, Matrix3d& R, Matrix3d& Dm, Matrix<double, 3, 4>& A, int* tet_vertex_order,
+		unsigned int unfixed_vertex_num)
+	{
+		Matrix3d delta_F, delta_R;
+		Matrix<double, 3, 4> delta_H;
+
+		if (unfixed_vertex_num < 4) {
+			for (int j = 0; j < unfixed_vertex_num; ++j) {
+				for (unsigned int i = 0; i < 3; ++i) {
+					getDeltaF(delta_F, Dm, 3 * tet_vertex_order[j] + i);
+					getDeltaR(delta_F, delta_R, S, R);
+					delta_H = 2.0 * (delta_F - delta_R) * A;
+					for (int k = 0; k < unfixed_vertex_num; ++k) {
+						memcpy(Hessian.data() + 3 * (unfixed_vertex_num * (3 * j + i) + k), delta_H.data() + 3 * tet_vertex_order[k], 24);
+					}
+				}
+			}
+		}
+		else {
+			for (unsigned int i = 0; i < 12; ++i) {
+				getDeltaF(delta_F, Dm, i);
+				getDeltaR(delta_F, delta_R, S, R);
+				delta_H = 2.0 * (delta_F - delta_R) * A;
+				memcpy(Hessian.data() + 12 * i, delta_H.data(), 96);
+			}
+		}
 	}
 
 

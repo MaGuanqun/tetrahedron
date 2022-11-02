@@ -257,10 +257,64 @@ void TetrahedronMeshStruct::updateTetNeighborInfo()
 		}
 		j++;
 	}
-
+	updateUnfixedTetVertexIndexInfo();
 	updateTetNeighborTetVertexIndex();
 
+//	std::cout << "anchor vertex ";
+//for (unsigned int i = 0; i < anchor_vertex.size(); ++i) {
+//	std::cout << anchor_vertex[i] << " ";
+//}
+//
+//	std::cout << std::endl;
+//	std::cout << "tet neighbor " << std::endl;
+//
+//	for (unsigned int i = 0; i < indices.size(); ++i) {
+//		std::cout << i << std::endl;
+//		unsigned int* index = tet_neighbor_tet_vertex_order[i].data();
+//		for (unsigned int j = 0; j < tet_tet_index[i].size(); ++j) {
+//			int num = *index;
+//			index++;
+//			for (int i = 0; i < 2*num; ++i) {
+//				std::cout << *(index + i) << " ";
+//			}
+//			std::cout << std::endl;
+//			std::cout << indices[tet_tet_index[i][j]][0] << " " << indices[tet_tet_index[i][j]][1] << " " << indices[tet_tet_index[i][j]][2] << " " << indices[tet_tet_index[i][j]][3] << " ";
+//			for (unsigned int k = 0; k < 4; ++k) {
+//				if (mass_inv[indices[i][k]] != 0) {
+//					std::cout << indices[i][k] << " ";
+//				}
+//			}
+//			std::cout<<std::endl;
+//			index += 2* num;
+//		}
+//		std::cout << std::endl;
+//	}
 
+
+
+
+	//std::cout << "tet indices " << std::endl;
+	//for (unsigned int i = 0; i < indices.size(); ++i) {
+	//	std::cout << i << " " << indices[i][0] << " " << indices[i][1] << " " << indices[i][2] << " " <<
+	//		indices[i][3] << " " << std::endl;
+	//	std::cout <<"= "<< tet_unfixed_vertex_num[i]<<" "<< unfixied_indices[i][0] << " " << unfixied_indices[i][1] << " " << unfixied_indices[i][2] << " " <<
+	//		unfixied_indices[i][3] << " " << std::endl;
+	//}
+}
+
+
+void TetrahedronMeshStruct::updateUnfixedTetVertexIndexInfo()
+{
+	unfixied_indices.resize(indices.size(), {-1,-1,-1,-1});
+	int* vertex_start;
+	for (unsigned int i = 0; i < indices.size(); ++i) {
+		vertex_start = unfixied_indices[i].data();
+		for (unsigned int j = 0; j < 4; ++j) {
+			if (mass_inv[indices[i][j]] != 0) {
+				*(vertex_start ++)= j;
+			}
+		}
+	}
 }
 
 
@@ -293,8 +347,8 @@ void TetrahedronMeshStruct::findCommonVertexInOrder(int* tet_0_index, int* tet_1
 		if (inv_mass[tet_0_index[i]] != 0.0) {
 			for (unsigned int j = 0; j < 4; ++j) {
 				if (tet_0_index[i] == tet_1_index[j]) {
-					vertex_in_order->emplace_back(i);
-					vertex.emplace_back(j);
+					vertex_in_order->emplace_back(j);
+					vertex.emplace_back(unfixedVertexIndexInATet(tet_0_index, i, inv_mass));
 					num++;
 					break;
 				}

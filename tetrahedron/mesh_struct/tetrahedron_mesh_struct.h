@@ -15,6 +15,9 @@ public:
 	std::vector<double>volume;
 	std::vector<int>tet_index_of_surface_face;
 
+	std::vector<std::array<int, 4>> unfixied_indices; //put the unfixed index at first in order between [0,3], the index in that tet
+
+
 	std::vector<unsigned int> tetrahedron_index_begin_per_thread;
 	void setVolume(int thread_No);
 	double setMass(double density);
@@ -98,5 +101,6 @@ private:
 	void updateTetNeighborTetVertexIndex();
 	void findCommonVertexInOrder(int* tet_0_index, int* tet_1_index, std::vector<unsigned int>* vertex_in_order, double* inv_mass);
 	unsigned int unfixedVertexIndexInATet(int* tet, int index, double* inv_mass);
+	void updateUnfixedTetVertexIndexInfo();
 };
 

@@ -937,7 +937,7 @@ void Scene::reset()
 
 
 	for (int i = 0; i < tetrahedron.size(); ++i) {
-		tetrahedron[i].reset(use_method==XPBD_);
+		tetrahedron[i].reset(use_method);
 	}
 	intersection.initialIntersection();
 	//spatial_hashing.time_stamp++;
@@ -1028,7 +1028,8 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 			second_order_xpbd_large.solveNewtonMethod();
 			break;
 		case XPBD_IPC_:
-			xpbd_ipc.XPBD_IPCSolve();
+			//xpbd_ipc.XPBD_IPCSolve();
+			xpbd_ipc.XPBD_IPC_Block_Solve();
 			break;
 		}
 

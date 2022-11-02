@@ -126,14 +126,13 @@ public:
 	std::vector<std::vector<unsigned int>> tet_tet_index;// tet indices that around a tet
 
 	std::vector<unsigned int>tet_unfixed_vertex_num;
-
-	//store vertex order of tet's neighbor tets. For every tet, 
+	//store common vertex order of tet's neighbor tets. For every tet, 
 	//store  2,2,1,1,2,1,0,1 means for the first neighbor tet, there are 2 vertices in common, 
-	// 2,1 means the two common vertices in this tet's vertex index's order is 2,1
-	// 1,2 means the two common vertices in the neighbor tet's vertex index's order is 1,2
+	// 2,1 means the two common vertices in the neighbor tet's vertex index's order is 2,1
+	// 1,2 means the two common vertices in this tet's vertex index's order is 1,2 (Here exclude fixed vertex)
 	//1 means for the second neighbor tet, there is 1 vertex in common
-	// 0 means the two common vertices in this tet's vertex index's order is 0
-	// 1 means the two common vertices in the neighbor tet's vertex index's order is 1
+	// 0 means the two common vertices in the neighbor tet's vertex index's order is 0
+	// 1 means the two common vertices in this tet's vertex index's order is 1 (Here exclude fixed vertex)
 	std::vector<std::vector<unsigned int>> tet_neighbor_tet_vertex_order; 
 
 

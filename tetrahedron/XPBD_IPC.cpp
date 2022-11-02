@@ -8,7 +8,7 @@ XPBD_IPC::XPBD_IPC()
 
 	damping_coe = 0.0;
 
-	perform_collision = true;
+	perform_collision = false;
 	max_iteration_number = 500;
 	outer_max_iteration_number = 20;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
@@ -361,7 +361,6 @@ void XPBD_IPC::XPBD_IPC_Block_Solve()
 	updateCollisionFreePosition();
 	thread->assignTask(this, SET_POS_PREDICT_);
 	updateSn();
-	firstNewtonCD();
 	iteration_number = 0;
 	if (perform_collision) {
 		collision.collisionCulling();
@@ -387,7 +386,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve()
 		while (!innerConvergeCondition(inner_iteration_number))
 		{
 			nearly_not_move = true;
-			newtonCDTetWithCollision();
+			newtonCDTetBlock();
 			inner_iteration_number++;
 		}
 		outer_itr_num++;
@@ -462,16 +461,19 @@ bool XPBD_IPC::innerConvergeCondition(unsigned int iteration_num)
 	if (iteration_num < min_inner_iteration) {//max_iteration_number
 		return false;
 	}
-
-	if (iteration_num > max_iteration_number) {
+	else {
 		return true;
 	}
 
-	if (!nearly_not_move) {
-		return false;
-	}
+	//if (iteration_num > max_iteration_number) {
+	//	return true;
+	//}
 
-	return true;
+	//if (!nearly_not_move) {
+	//	return false;
+	//}
+
+	//return true;
 }
 
 
@@ -482,7 +484,7 @@ bool XPBD_IPC::convergeCondition(unsigned int iteration_num)
 		return false;
 	}
 
-	//return true;
+	return true;
 
 	if (iteration_num > outer_max_iteration_number - 1) {
 		return true;
@@ -688,9 +690,14 @@ void XPBD_IPC::newtonCDTetBlock()
 	Matrix<double, 3, 4>* A;
 	std::array<double, 3>* sn_;
 	double* mass;
+	unsigned int* unfixed_vertex_num;
+	std::vector<unsigned int>* tet_neightbor_tet;
+	std::vector<unsigned int>* tet_neightbor_tet_common_vertex;
+	std::array<int,4>* unfixed_vertex_index;
+
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		mesh_struct_ = mesh_struct[i + cloth->size()];
-		size = tetrahedron->data()[i].mesh_struct.vertex_position.size();
+		size = tetrahedron->data()[i].mesh_struct.indices.size();
 		indices = tetrahedron->data()[i].mesh_struct.indices.data();
 		volume = tetrahedron->data()[i].mesh_struct.volume.data();
 		vertex_pos = vertex_position[i + cloth->size()];
@@ -699,11 +706,14 @@ void XPBD_IPC::newtonCDTetBlock()
 		mass_inv = mesh_struct_->mass_inv.data();
 		mass = mesh_struct_->mass.data();
 		sn_ = sn[i + cloth->size()].data();
+		unfixed_vertex_num = tetrahedron->data()[i].mesh_struct.tet_unfixed_vertex_num.data();
+		tet_neightbor_tet = tetrahedron->data()[i].mesh_struct.tet_tet_index.data();
+		tet_neightbor_tet_common_vertex= tetrahedron->data()[i].mesh_struct.tet_neighbor_tet_vertex_order.data();
+		unfixed_vertex_index = tetrahedron->data()[i].mesh_struct.unfixied_indices.data();
 		for (unsigned int j = 0; j < size; ++j) {
-			if (mass_inv[j] != 0.0) {
-				solveNewtonCD_tet(vertex_pos, stiffness, sub_time_step, A,
-					mesh_struct_->vertex_tet_index[j], indices, mass, volume, j, sn_);
-			}
+			solveNewtonCD_tetBlock(vertex_pos, stiffness, sub_time_step, mass, A, tet_neightbor_tet[j],
+				indices, volume, j, sn_, tet_neightbor_tet_common_vertex[j].data(), indices[j].data(),
+				unfixed_vertex_index[j].data(), unfixed_vertex_num[j]);
 		}
 	}
 }
@@ -1093,18 +1103,42 @@ void XPBD_IPC::getARAPHessian(Matrix3d& Hessian, Vector3d& grad, std::array<doub
 
 
 void XPBD_IPC::solveNewtonCD_tetBlock(std::array<double, 3>* vertex_position, double stiffness, double dt,
-	Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, double* mass,
-	double* volume, unsigned int tet_index, std::array<double, 3>* sn, double* inv_mass)
+	double* mass,
+	Matrix<double, 3, 4>* A, std::vector<unsigned int>& neighbor_tet_indices, std::array<int, 4>* indices,
+	double* volume, unsigned int tet_index, std::array<double, 3>* sn, unsigned int* common_vertex_in_order,
+	int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num)
 {
-	Matrix<double, 12, 12> Hessian;
+	MatrixXd Hessian;
+	VectorXd grad;
+	grad.resize(3 * unfixed_vertex_num);
+	Hessian.resize(3 * unfixed_vertex_num, 3 * unfixed_vertex_num);
 
-	Vector3d eigen_value;
-	Vector3d position;
-	Matrix3d deformation_gradient;
-	Matrix3d S, rotation;
+	second_order_constraint.solveCD_ARAP_block(Hessian, grad, vertex_position, stiffness, A, neighbor_tet_indices,
+		indices, volume, tet_index, common_vertex_in_order, tet_vertex_index,
+		unfixed_tet_vertex_index, unfixed_vertex_num);
 
-	FEM::polarDecomposition(deformation_gradient, eigen_value, S, rotation);
+	double mass_dt_2;
+	int vertex_index;
+	for (int i = 0; i < unfixed_vertex_num; ++i) {
+		vertex_index = tet_vertex_index[unfixed_tet_vertex_index[i]];
+		mass_dt_2 = mass[vertex_index] / (dt * dt);
+		Hessian(3 * i, 3 * i) += mass_dt_2;
+		Hessian(3 * i + 1, 3 * i + 1) += mass_dt_2;
+		Hessian(3 * i + 2, 3 * i + 2) += mass_dt_2;
+		grad.data()[3 * i] += mass_dt_2 * (vertex_position[vertex_index][0] - sn[vertex_index][0]);
+		grad.data()[3 * i + 1] += mass_dt_2 * (vertex_position[vertex_index][1] - sn[vertex_index][1]);
+		grad.data()[3 * i + 2] += mass_dt_2 * (vertex_position[vertex_index][2] - sn[vertex_index][2]);
+	}
 
+
+	ColPivHouseholderQR <MatrixXd> linear(Hessian);
+	VectorXd result = linear.solve(grad);
+
+	for (int i = 0; i < unfixed_vertex_num; ++i) {
+		vertex_index = tet_vertex_index[unfixed_tet_vertex_index[i]];
+		SUB_(vertex_position[vertex_index], (result.data() + 3 * i));
+
+	}
 
 }
 
@@ -1244,6 +1278,7 @@ void XPBD_IPC::updateTetrahedronAnchorVertices()
 
 	}
 }
+
 
 
 void XPBD_IPC::addExternalForce(double* neighbor_vertex_force_direction, std::vector<double>& coe, std::vector<int>& neighbor_vertex, int obj_No)

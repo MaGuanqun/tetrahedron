@@ -226,9 +226,10 @@ private:
 
 	void newtonCDTetBlock();
 
-	void solveNewtonCD_tetBlock(std::array<double, 3>* vertex_position, double stiffness, double dt,
-		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, double* mass,
-		double* volume, unsigned int tet_index, std::array<double, 3>* sn, double* inv_mass);
+	void solveNewtonCD_tetBlock(std::array<double, 3>* vertex_position, double stiffness, double dt, double* mass,
+		Matrix<double, 3, 4>* A, std::vector<unsigned int>& neighbor_tet_indices, std::array<int, 4>* indices,
+		double* volume, unsigned int tet_index, std::array<double, 3>* sn, unsigned int* common_vertex_in_order,
+		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num);
 
 };
 
