@@ -20,7 +20,7 @@ ProjectDynamic::ProjectDynamic()
 	iteration_method.setConvergenceRate(1e-8, 100);
 	max_inner_iteration_num = 20;
 
-	perform_collision = true;
+	perform_collision = false;
 	velocity_damp = 0.995;
 }
 

@@ -1015,8 +1015,8 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 		switch (use_method)
 		{
 		case PD_:
-			//project_dynamic.PDsolve();
-			project_dynamic.PD_IPC_solve(record_matrix);
+			project_dynamic.PDsolve();
+			//project_dynamic.PD_IPC_solve(record_matrix);
 			break;
 		case XPBD_:
 			xpbd.PBDsolve();

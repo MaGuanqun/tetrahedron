@@ -9,12 +9,12 @@ XPBD_IPC::XPBD_IPC()
 	damping_coe = 0.0;
 
 	perform_collision = false;
-	max_iteration_number = 500;
+	max_iteration_number = 10;
 	outer_max_iteration_number = 20;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
 	velocity_damp = 0.995;
-	energy_converge_ratio = 1e-3;
+	energy_converge_ratio = 5e-3;
 
 	min_inner_iteration = 2;
 	min_outer_iteration = 1;
@@ -373,33 +373,34 @@ void XPBD_IPC::XPBD_IPC_Block_Solve()
 
 	memset(lambda.data(), 0, 8 * lambda.size());
 
-	while (!convergeCondition(outer_itr_num)) {
+	//while (!convergeCondition(outer_itr_num)) {
 
-		if (perform_collision) {
-			collision.globalCollisionTime();
-			thread->assignTask(this, COLLISION_FREE_POSITION_);
-			updateCollisionFreePosition();
-			collision.findClosePair();
-			collision.saveCollisionPairVolume();
-			firstOnlyInertialCollision();
-		}
+	//	if (perform_collision) {
+	//		collision.globalCollisionTime();
+	//		thread->assignTask(this, COLLISION_FREE_POSITION_);
+	//		updateCollisionFreePosition();
+	//		collision.findClosePair();
+	//		collision.saveCollisionPairVolume();
+	//		firstOnlyInertialCollision();
+	//	}
 		inner_iteration_number = 0;
 		nearly_not_move = false;
-
+		previous_energy = energy;
 		while (!innerConvergeCondition(inner_iteration_number))
 		{
+			previous_energy = energy;
 			nearly_not_move = true;
 			newtonCDTetBlock();
 			computeCurrentEnergy();
 			inner_iteration_number++;
 
-			std::cout << "finish one itr "<< inner_iteration_number << std::endl;
+			std::cout << "finish one itr " << inner_iteration_number<<" "<< energy << std::endl;
 
 		}
 		outer_itr_num++;
 		//std::cout << inner_iteration_number << std::endl;
 		iteration_number += inner_iteration_number;
-	}
+	//}
 
 	if (perform_collision) {
 		collision.globalCollisionTime();
@@ -484,6 +485,8 @@ bool XPBD_IPC::innerConvergeCondition(unsigned int iteration_num)
 	if (iteration_num > max_iteration_number) {
 		return true;
 	}
+
+	return false;
 
 	//if (!nearly_not_move) {
 	//	return false;
@@ -1151,7 +1154,7 @@ void XPBD_IPC::solveNewtonCD_tetBlock(std::array<double, 3>* vertex_position, do
 	}
 
 
-	ColPivHouseholderQR <MatrixXd> linear(Hessian);
+	LDLT <MatrixXd> linear(Hessian);
 	VectorXd result = linear.solve(grad);
 
 	for (int i = 0; i < unfixed_vertex_num; ++i) {
