@@ -16,8 +16,8 @@ XPBD_IPC::XPBD_IPC()
 	velocity_damp = 0.995;
 	energy_converge_ratio = 1e-3;
 
-	min_inner_iteration = 3;
-	min_outer_iteration = 3;
+	min_inner_iteration = 2;
+	min_outer_iteration = 1;
 
 
 
@@ -358,6 +358,9 @@ void XPBD_IPC::XPBD_IPC_Position_Solve()
 
 void XPBD_IPC::XPBD_IPC_Block_Solve()
 {
+	std::cout << "====" << std::endl;
+
+	record_energy.clear();
 	updateCollisionFreePosition();
 	thread->assignTask(this, SET_POS_PREDICT_);
 	updateSn();
@@ -387,7 +390,11 @@ void XPBD_IPC::XPBD_IPC_Block_Solve()
 		{
 			nearly_not_move = true;
 			newtonCDTetBlock();
+			computeCurrentEnergy();
 			inner_iteration_number++;
+
+			std::cout << "finish one itr "<< inner_iteration_number << std::endl;
+
 		}
 		outer_itr_num++;
 		//std::cout << inner_iteration_number << std::endl;
@@ -403,6 +410,12 @@ void XPBD_IPC::XPBD_IPC_Block_Solve()
 	updateRenderNormal();
 
 	updateRenderVertexNormal();
+
+
+
+	for (int i = 0; i < record_energy.size(); ++i) {
+		std::cout << record_energy[i] << std::endl;
+	}
 }
 
 void XPBD_IPC::XPBD_IPCSolve()
@@ -420,22 +433,23 @@ void XPBD_IPC::XPBD_IPCSolve()
 	computeCurrentEnergy();
 
 	memset(lambda.data(), 0, 8 * lambda.size());
+	previous_energy = energy;
+	//while (!convergeCondition(outer_itr_num)) {
 
-	while (!convergeCondition(outer_itr_num)) {
-
-		if (perform_collision) {
-			collision.globalCollisionTime();
-			thread->assignTask(this, COLLISION_FREE_POSITION_);
-			updateCollisionFreePosition();
-			collision.findClosePair();
-			collision.saveCollisionPairVolume();
-			firstOnlyInertialCollision();
-		}
-		inner_iteration_number = 0;
-		nearly_not_move = false;	
+	//	if (perform_collision) {
+	//		collision.globalCollisionTime();
+	//		thread->assignTask(this, COLLISION_FREE_POSITION_);
+	//		updateCollisionFreePosition();
+	//		collision.findClosePair();
+	//		collision.saveCollisionPairVolume();
+	//		firstOnlyInertialCollision();
+	//	}
+	//	inner_iteration_number = 0;
+	//	nearly_not_move = false;	
 		
 		while (!innerConvergeCondition(inner_iteration_number))
 		{
+			previous_energy = energy;
 			nearly_not_move = true;
 			newtonCDTetWithCollision();
 			inner_iteration_number++;
@@ -443,7 +457,7 @@ void XPBD_IPC::XPBD_IPCSolve()
 		outer_itr_num++;
 		//std::cout << inner_iteration_number << std::endl;
 		iteration_number += inner_iteration_number;
-	}
+	//}
 
 	if (perform_collision) {
 		collision.globalCollisionTime();
@@ -461,13 +475,15 @@ bool XPBD_IPC::innerConvergeCondition(unsigned int iteration_num)
 	if (iteration_num < min_inner_iteration) {//max_iteration_number
 		return false;
 	}
-	else {
+
+	if (abs(energy - previous_energy) / previous_energy < energy_converge_ratio) {
 		return true;
 	}
 
-	//if (iteration_num > max_iteration_number) {
-	//	return true;
-	//}
+
+	if (iteration_num > max_iteration_number) {
+		return true;
+	}
 
 	//if (!nearly_not_move) {
 	//	return false;
@@ -484,7 +500,7 @@ bool XPBD_IPC::convergeCondition(unsigned int iteration_num)
 		return false;
 	}
 
-	return true;
+	//return true;
 
 	if (iteration_num > outer_max_iteration_number - 1) {
 		return true;
@@ -539,7 +555,7 @@ void XPBD_IPC::computeCurrentEnergy()
 	energy = 0.0;
 	energy += 0.5 * computeInertialEnergy();
 	energy += computeCurrentARAPEnergy();
-
+	record_energy.emplace_back(energy);
 }
 
 void XPBD_IPC::firstNewtonCD()
@@ -701,7 +717,7 @@ void XPBD_IPC::newtonCDTetBlock()
 		indices = tetrahedron->data()[i].mesh_struct.indices.data();
 		volume = tetrahedron->data()[i].mesh_struct.volume.data();
 		vertex_pos = vertex_position[i + cloth->size()];
-		stiffness = tetrahedron->data()[i].ARAP_stiffness;
+		stiffness =0.5* tetrahedron->data()[i].ARAP_stiffness;
 		A = tetrahedron->data()[i].mesh_struct.A.data();
 		mass_inv = mesh_struct_->mass_inv.data();
 		mass = mesh_struct_->mass.data();
@@ -1108,6 +1124,10 @@ void XPBD_IPC::solveNewtonCD_tetBlock(std::array<double, 3>* vertex_position, do
 	double* volume, unsigned int tet_index, std::array<double, 3>* sn, unsigned int* common_vertex_in_order,
 	int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num)
 {
+	if (unfixed_vertex_num == 0) {
+		return;
+	}
+
 	MatrixXd Hessian;
 	VectorXd grad;
 	grad.resize(3 * unfixed_vertex_num);

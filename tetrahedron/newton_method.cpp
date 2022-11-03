@@ -1015,6 +1015,8 @@ void NewtonMethod::solveNewtonMethod_()
 	//	system("pause");
 	//}
 
+	std::cout << "===" << std::endl;
+
 	iteration_number = 0;
 	computeEnergy();
 	previous_energy = total_energy;
@@ -1097,7 +1099,7 @@ void NewtonMethod::initialDHatTolerance(double ave_edge_length)
 bool NewtonMethod::convergenceCondition()
 {
 	std::cout << total_energy << std::endl;
-	if (iteration_number <50) {
+	if (iteration_number <8) {
 		return true;
 	}
 

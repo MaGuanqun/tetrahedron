@@ -231,5 +231,7 @@ private:
 		double* volume, unsigned int tet_index, std::array<double, 3>* sn, unsigned int* common_vertex_in_order,
 		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num);
 
+	std::vector<double>record_energy;
+
 };
 
