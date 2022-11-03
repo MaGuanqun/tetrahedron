@@ -16,7 +16,7 @@ XPBD_IPC::XPBD_IPC()
 	velocity_damp = 0.995;
 	energy_converge_ratio = 5e-3;
 
-	min_inner_iteration = 2;
+	min_inner_iteration = 10;
 	min_outer_iteration = 1;
 
 
@@ -373,16 +373,17 @@ void XPBD_IPC::XPBD_IPC_Block_Solve()
 
 	memset(lambda.data(), 0, 8 * lambda.size());
 
-	//while (!convergeCondition(outer_itr_num)) {
-
-	//	if (perform_collision) {
-	//		collision.globalCollisionTime();
-	//		thread->assignTask(this, COLLISION_FREE_POSITION_);
-	//		updateCollisionFreePosition();
-	//		collision.findClosePair();
-	//		collision.saveCollisionPairVolume();
-	//		firstOnlyInertialCollision();
-	//	}
+	while (!convergeCondition(outer_itr_num)) {
+		if (perform_collision) {
+			collision.globalCollisionTime();
+			thread->assignTask(this, COLLISION_FREE_POSITION_);
+			updateCollisionFreePosition();
+			collision.findClosePair();
+			//collision.saveCollisionPairVolume();
+			//if (outer_itr_num == 0) {
+			//	firstOnlyInertialCollision();
+			//}			
+		}
 		inner_iteration_number = 0;
 		nearly_not_move = false;
 		previous_energy = energy;
@@ -400,7 +401,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve()
 		outer_itr_num++;
 		//std::cout << inner_iteration_number << std::endl;
 		iteration_number += inner_iteration_number;
-	//}
+	}
 
 	if (perform_collision) {
 		collision.globalCollisionTime();
