@@ -782,6 +782,20 @@ namespace CCD {
             }
             return d_2;
         }
+
+        template <class T>
+        T pointTriangleNearestDistance(
+            const T* p,
+            const T* t0,
+            const T* t1,
+            const T* t2,
+            const T* triangle_normal,
+            T* barycentric, T d_hat_2)
+        {
+
+        }
+
+
     }
 }
 

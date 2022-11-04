@@ -235,9 +235,12 @@ private:
 
 
 	void getVTCollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, double* vertex_position_, double stiffness,
-		unsigned int* VT, unsigned int num, unsigned int obj_No, unsigned int vertex_index, unsigned int vertex_order_in_matrix,
-		unsigned int vertex_index_on_surface);
+		unsigned int* VT, unsigned int num, unsigned int obj_No, unsigned int vertex_order_in_matrix,
+		unsigned int vertex_index_on_surface, unsigned int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num);
 
+
+	void checkPairIndexInTriangle(int unfixed_tet_vertex_num, unsigned int* tet_unfixed_vertex_indices, int* triangle_indices, std::vector<int>* triangle_vertex_order_in_system,
+		std::vector<int>* triangle_vertex_order_in_pair);
 
 };
 

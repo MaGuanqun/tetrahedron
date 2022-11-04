@@ -1,5 +1,6 @@
 #include"second_order.h"
 #include"FEM_relate.h"
+#include"../collision/distance_gradient_hessian.h"
 
 void SecondOrderConstraint::computeEdgeLengthForce(double* vertex_0, double* vertex_1, double stiffness,
 	double* potential_0, double* potential_1, double rest_length)
@@ -321,6 +322,98 @@ void SecondOrderConstraint::solveCD_ARAP(std::array<double, 3>* vertex_position,
 	SUM_(vertex_position[vertex_index], result);
 	for (unsigned int i = 0; i < tet_indices.size(); ++i) {
 		lambda[tet_indices[i]] += result[3 + i];
+	}
+}
+
+
+void SecondOrderConstraint::computeVTBarrierGradientHessian(MatrixXd& Hessian, VectorXd& grad, double* p, double* t0, double* t1, double* t2)
+{
+	double distance;
+	switch (CCD::internal::pointTriangleDistanceType(p, t0, t1, t2))
+	{
+	case 0:
+		Hessian.resize(6, 6);
+		grad.resize(6);
+		distance = CCD::internal::pointPointDistance(p, t0);
+		distance::point_point_distance_gradient(p, t0, grad.data());
+		distance::point_point_distance_hessian(p, t0, Hessian.data());
+
+
+		break;
+	case 1:
+		Hessian.resize(6, 6);
+		grad.resize(6);
+		distance = CCD::internal::pointPointDistance(p, t1);
+		distance::point_point_distance_gradient(p, t1, grad.data());
+		distance::point_point_distance_hessian(p, t1, Hessian.data());
+
+		break;
+	case 2:
+		Hessian.resize(6, 6);
+		grad.resize(6);
+		distance = CCD::internal::pointPointDistance(p, t2);
+		distance::point_point_distance_gradient(p, t2, grad.data());
+		distance::point_point_distance_hessian(p, t2, Hessian.data());
+		break;
+
+	case 3:
+		Hessian.resize(9, 9);
+		grad.resize(9);
+		distance = CCD::internal::pointEdgeDistance(p, t0, t1);
+
+		distance::point_edge_distance_gradient(p, t0, t1, grad.data());
+		distance::point_edge_distance_hessian(p, t0, t1, Hessian.data());
+		break;
+
+	case 4:
+		Hessian.resize(9, 9);
+		grad.resize(9);
+		distance = CCD::internal::pointEdgeDistance(p, t1, t2);
+
+		distance::point_edge_distance_gradient(p, t1, t2, grad.data());
+		distance::point_edge_distance_hessian(p, t1, t2, Hessian.data());
+		break;
+	case 5:
+		Hessian.resize(9, 9);
+		grad.resize(9);
+		distance = CCD::internal::pointEdgeDistance(p, t2, t0);
+		distance::point_edge_distance_gradient(p, t0, t2, grad.data());
+		distance::point_edge_distance_hessian(p, t0, t2, Hessian.data());
+		break;
+
+	case 6:
+		Hessian.resize(12, 12);
+		grad.resize(12);
+		distance = CCD::internal::pointTriangleDistance(p, t0, t1, t2);
+		distance::point_triangle_distance_gradient(p, t0, t1, t2, grad.data());
+		distance::point_triangle_distance_hessian(p, t0, t1, t2, Hessian.data());
+		break;
+	} 
+
+
+
+}
+
+
+void SecondOrderConstraint::barrierGradHessian(double d, double d_hat, double& gradient, double& hessian)
+{
+	double log_2 = 2.0 * log(d / d_hat);
+	gradient = (d_hat - d) * (log_2 - d_hat / d + 1.0);
+	hessian = -log_2 + (d_hat - d) * (d_hat + 3 * d) / (d * d);
+}
+
+void SecondOrderConstraint::getCollisionHessianVertex(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
+	MatrixXd& Hessian, VectorXd& grad, std::vector<int>& triangle_vertex_order_in_tet, std::vector<int>& triangle_vertex_order_in_collision_pair)
+{
+	Matrix<double, 12, 12>Hessian_;
+	Matrix<double, 12, 1>grad_;
+
+	for (unsigned int i = 0; i < triangle_vertex_order_in_tet.size(); ++i) {
+		for(unsigned int j=0;j< triangle_vertex_order_in_tet.size();++j){
+			Hessian.block<3, 3>(3 * triangle_vertex_order_in_tet[i], 3 * triangle_vertex_order_in_tet[j])
+				+= Hessian_.block<3, 3>(3 * triangle_vertex_order_in_collision_pair[i], 3 * triangle_vertex_order_in_collision_pair[j]);
+		}
+		grad.segment(3 * triangle_vertex_order_in_tet[i], 3) += grad_.segment(3 * triangle_vertex_order_in_collision_pair[i], 3);
 	}
 }
 

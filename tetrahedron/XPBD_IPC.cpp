@@ -1071,15 +1071,46 @@ void XPBD_IPC::getVT_ColiderCollisionHessain(Matrix3d& Hessian, Vector3d& grad, 
 
 
 void XPBD_IPC::getVTCollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, double* vertex_position_, double stiffness,
-	unsigned int* VT, unsigned int num, unsigned int obj_No, unsigned int vertex_index, unsigned int vertex_order_in_matrix,
-	unsigned int vertex_index_on_surface)
+	unsigned int* VT, unsigned int num, unsigned int obj_No,unsigned int vertex_order_in_matrix,
+	unsigned int vertex_index_on_surface, unsigned int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num )
 {
 	collision.vertex_triangle_pair_by_vertex[obj_No] + collision.close_vt_pair_num * vertex_index_on_surface;
 	collision.vertex_triangle_pair_num_record[obj_No][vertex_index_on_surface];
 	int* triangle_vertex;
+	std::vector<int>triangle_vertex_order_in_tet, triangle_vertex_order_in_pair;
+	triangle_vertex_order_in_tet.reserve(4);
+	triangle_vertex_order_in_pair.reserve(4);
+	triangle_vertex_order_in_tet.emplace_back(vertex_order_in_matrix);
+	triangle_vertex_order_in_pair.emplace_back(0);
 	for (unsigned int i = 0; i < num; i += 2) {
 		triangle_vertex = triangle_indices[VT[i]][VT[i + 1]].data();
+		triangle_vertex_order_in_tet.resize(1);
+		triangle_vertex_order_in_pair.resize(1);
+		checkPairIndexInTriangle(unfixed_tet_vertex_num, tet_unfixed_vertex_indices, triangle_vertex, &triangle_vertex_order_in_tet,
+			&triangle_vertex_order_in_pair);
+		second_order_constraint.getCollisionHessianVertex(vertex_position_, vertex_position[VT[i]][triangle_vertex[0]].data(),
+			vertex_position[VT[i]][triangle_vertex[1]].data(), vertex_position[VT[i]][triangle_vertex[2]].data(),
+			Hessian, grad, triangle_vertex_order_in_tet, triangle_vertex_order_in_pair);
+	}
 
+}
+
+
+
+
+
+
+void XPBD_IPC::checkPairIndexInTriangle(int unfixed_tet_vertex_num, unsigned int* tet_unfixed_vertex_indices, int* triangle_indices, std::vector<int>* triangle_vertex_order_in_system,
+	std::vector<int>* triangle_vertex_order_in_pair)
+{
+	for (int i = 0; i < 3; ++i) {
+		for (int j = 0; j < unfixed_tet_vertex_num; ++j) {
+			if (tet_unfixed_vertex_indices[j] == triangle_indices[i]) {
+				triangle_vertex_order_in_system->emplace_back(j);
+				triangle_vertex_order_in_pair->emplace_back(i);
+				break;
+			}
+		}
 	}
 
 }

@@ -48,6 +48,9 @@ public:
 	bool getCollisionPairHessian(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
 		double ori_volume, Matrix3d& Hessian, Vector3d& grad, unsigned int vertex_no);
 
+
+
+
 	void computeEdgeLengthForce(double* vertex_0, double* vertex_1, double stiffness,
 		double* potential_0, double* potential_1, double rest_length);
 	void computeARAPForce(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
@@ -67,13 +70,18 @@ public:
 		Matrix<double, 3, 4>& A, unsigned int*& common_vertex_in_order, int* neighbor_tet_vetex_indices, 
 		MatrixXd& sys_matrix, double volume, VectorXd& grad);
 
+	void getCollisionHessianVertex(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
+		MatrixXd& Hessian, VectorXd& grad, std::vector<int>& triangle_vertex_order_in_tet, std::vector<int>& triangle_vertex_order_in_collision_pair);
+
+	void computeVTBarrierGradientHessian(MatrixXd& Hessian, VectorXd& grad, double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3);
+
 private:
 	double epsilon_for_bending= 1e-10;
 
 	void solveEdgeLengthConstraint(Vector3f& p1, Vector3f& p2, const double d, double mass_0,
 		double mass_1, Vector3f& ori_p1, Vector3f& ori_p2, bool v0_fixed, bool v1_fixed, double& lambda);
 
-
+	void barrierGradHessian(double d, double d_hat, double& gradient, double& hessian);
 };
 
 

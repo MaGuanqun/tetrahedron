@@ -615,3 +615,24 @@ void TetrahedronMeshStruct::getRenderVertexNormalPerThread(int thread_id)
 	}
 
 }
+
+void TetrahedronMeshStruct::recordTriangleIndexOfATet()
+{
+	triangle_index_of_a_tet.resize(indices.size());
+	std::vector<bool>triangle_used(triangle_indices.size(), false);
+	std::vector<unsigned int>* vertex_face;
+	for (unsigned int i = 0; i < triangle_index_of_a_tet.size(); ++i) {
+		std::fill(triangle_used.begin(), triangle_used.end(), false);
+		for (unsigned int j = 0; j < 4; ++j) {
+			if (vertex_on_surface[indices[i][j]]) {
+				vertex_face = &vertices[indices[i][j]].face;
+				for (auto k = vertex_face->begin(); k < vertex_face->end(); ++k) {
+					if (!triangle_used[*k]) {
+						triangle_index_of_a_tet[i].emplace_back(*k);
+						triangle_used[*k] = true;
+					}
+				}
+			}
+		}
+	}
+}

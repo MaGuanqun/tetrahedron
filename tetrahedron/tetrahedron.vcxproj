@@ -249,10 +249,12 @@
     <ClInclude Include="collision\collision_constraint.h" />
     <ClInclude Include="collision\CTCD.h" />
     <ClInclude Include="collision\DCD.h" />
+    <ClInclude Include="collision\distance_gradient_hessian.h" />
     <ClInclude Include="collision\draw_collision.h" />
     <ClInclude Include="collision\draw_spatial_hashing.h" />
     <ClInclude Include="collision\floating.h" />
     <ClInclude Include="collision\primitive_distance.h" />
+    <ClInclude Include="collision\primitive_distance_gradient_hessian.h" />
     <ClInclude Include="collision\root_finder.h" />
     <ClInclude Include="collision\test_draw_collision.h" />
     <ClInclude Include="collision\TightCCD.h" />

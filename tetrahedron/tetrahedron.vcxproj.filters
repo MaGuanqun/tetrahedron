@@ -432,6 +432,12 @@
     <ClInclude Include="basic\draw_triangle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="collision\primitive_distance_gradient_hessian.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="collision\distance_gradient_hessian.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
