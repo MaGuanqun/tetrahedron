@@ -233,5 +233,11 @@ private:
 
 	std::vector<double>record_energy;
 
+
+	void getVTCollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, double* vertex_position_, double stiffness,
+		unsigned int* VT, unsigned int num, unsigned int obj_No, unsigned int vertex_index, unsigned int vertex_order_in_matrix,
+		unsigned int vertex_index_on_surface);
+
+
 };
 

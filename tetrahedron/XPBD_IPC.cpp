@@ -14,7 +14,7 @@ XPBD_IPC::XPBD_IPC()
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
 	velocity_damp = 0.995;
-	energy_converge_ratio = 5e-3;
+	energy_converge_ratio = 2e-3;
 
 	min_inner_iteration = 10;
 	min_outer_iteration = 1;
@@ -1069,6 +1069,20 @@ void XPBD_IPC::getVT_ColiderCollisionHessain(Matrix3d& Hessian, Vector3d& grad, 
 }
 
 
+
+void XPBD_IPC::getVTCollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, double* vertex_position_, double stiffness,
+	unsigned int* VT, unsigned int num, unsigned int obj_No, unsigned int vertex_index, unsigned int vertex_order_in_matrix,
+	unsigned int vertex_index_on_surface)
+{
+	collision.vertex_triangle_pair_by_vertex[obj_No] + collision.close_vt_pair_num * vertex_index_on_surface;
+	collision.vertex_triangle_pair_num_record[obj_No][vertex_index_on_surface];
+	int* triangle_vertex;
+	for (unsigned int i = 0; i < num; i += 2) {
+		triangle_vertex = triangle_indices[VT[i]][VT[i + 1]].data();
+
+	}
+
+}
 
 
 void XPBD_IPC::getVTCollisionHessain(Matrix3d& Hessian, Vector3d& grad, double* vertex_position_, double stiffness, 
