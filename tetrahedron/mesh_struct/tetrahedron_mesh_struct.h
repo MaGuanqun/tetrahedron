@@ -16,6 +16,7 @@ public:
 	std::vector<int>tet_index_of_surface_face;
 
 	std::vector<std::vector<unsigned int>>triangle_index_of_a_tet;//record all surface triangle indices of a tet
+	std::vector<std::vector<unsigned int>>edge_index_of_a_tet;//record all surface edge indices of a tet
 
 	std::vector<std::array<int, 4>> unfixied_indices; //put the unfixed index at first in order between [0,3], the index in that tet
 
@@ -65,7 +66,7 @@ public:
 	void setTetEdges();
 	void updateTetNeighborTetVertexIndex(int thread_id);
 
-	void recordTriangleIndexOfATet();
+	void recordPrimitiveIndexOfATet();
 
 private:
 	struct TetrahedronFace {
@@ -107,6 +108,7 @@ private:
 	void findCommonVertexInOrder(int* tet_0_index, int* tet_1_index, std::vector<unsigned int>* vertex_in_order, double* inv_mass);
 	unsigned int unfixedVertexIndexInATet(int* tet, int index, double* inv_mass);
 	void updateUnfixedTetVertexIndexInfo();
-	
+	void recordTriangleIndexOfATet();
+	void recordEdgeIndexOfATet();
 };
 

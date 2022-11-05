@@ -636,3 +636,31 @@ void TetrahedronMeshStruct::recordTriangleIndexOfATet()
 		}
 	}
 }
+
+
+void TetrahedronMeshStruct::recordPrimitiveIndexOfATet()
+{
+	recordTriangleIndexOfATet();
+	recordEdgeIndexOfATet();
+}
+
+void TetrahedronMeshStruct::recordEdgeIndexOfATet()
+{
+	edge_index_of_a_tet.resize(indices.size());
+	std::vector<bool>edge_used(edge_vertices.size()>>1, false);
+	std::vector<unsigned int>* vertex_edge;
+	for (unsigned int i = 0; i < edge_index_of_a_tet.size(); ++i) {
+		std::fill(edge_used.begin(), edge_used.end(), false);
+		for (unsigned int j = 0; j < 4; ++j) {
+			if (vertex_on_surface[indices[i][j]]) {
+				vertex_edge = &vertices[indices[i][j]].edge;
+				for (auto k = vertex_edge->begin(); k < vertex_edge->end(); ++k) {
+					if (!edge_used[*k]) {
+						edge_index_of_a_tet[i].emplace_back(*k);
+						edge_used[*k] = true;
+					}
+				}
+			}
+		}
+	}
+}

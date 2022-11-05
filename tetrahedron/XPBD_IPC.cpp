@@ -1009,18 +1009,18 @@ void XPBD_IPC::getEECollisionHessian(Matrix3d& Hessian, Vector3d& grad, double* 
 				Hessian_single *= stiffness;
 				grad_single *= stiffness;
 				grad -= grad_single;
-				Hessian += Hessian_single;
+Hessian += Hessian_single;
 			}
 		}
 		else {
-			if (second_order_constraint.getCollisionPairHessian(vertex_position[EE[i]][edge_vertex[0]].data(),
-				vertex_position[EE[i]][edge_vertex[1]].data(), pos0, pos1,
-				volume, Hessian_single, grad_single, vertex_no + 2)) {
-				Hessian_single *= stiffness;
-				grad_single *= stiffness;
-				grad -= grad_single;
-				Hessian += Hessian_single;
-			}
+		if (second_order_constraint.getCollisionPairHessian(vertex_position[EE[i]][edge_vertex[0]].data(),
+			vertex_position[EE[i]][edge_vertex[1]].data(), pos0, pos1,
+			volume, Hessian_single, grad_single, vertex_no + 2)) {
+			Hessian_single *= stiffness;
+			grad_single *= stiffness;
+			grad -= grad_single;
+			Hessian += Hessian_single;
+		}
 		}
 	}
 }
@@ -1034,8 +1034,8 @@ void XPBD_IPC::getTVCollisionHessain(Matrix3d& Hessian, Vector3d& grad,
 	double volume;
 	for (unsigned int i = 0; i < num; i += 2) {
 		volume = (ori_volume[i >> 1] > collision.volume_boundary ? ori_volume[i >> 1] : collision.volume_boundary);
-		if (second_order_constraint.getCollisionPairHessian(pos_0, pos_1,  pos_2,
-			vertex_position[TV[i]][TV[i+1]].data(),
+		if (second_order_constraint.getCollisionPairHessian(pos_0, pos_1, pos_2,
+			vertex_position[TV[i]][TV[i + 1]].data(),
 			volume, Hessian_single, grad_single, vertex_no)) {
 			Hessian_single *= stiffness;
 			grad_single *= stiffness;
@@ -1071,43 +1071,87 @@ void XPBD_IPC::getVT_ColiderCollisionHessain(Matrix3d& Hessian, Vector3d& grad, 
 
 
 void XPBD_IPC::getVTCollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, double* vertex_position_, double stiffness,
-	unsigned int* VT, unsigned int num, unsigned int obj_No,unsigned int vertex_order_in_matrix,
-	unsigned int vertex_index_on_surface, unsigned int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num )
+	unsigned int* VT, unsigned int num, unsigned int vertex_order_in_matrix, unsigned int obj_No,
+	unsigned int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2)
 {
-	collision.vertex_triangle_pair_by_vertex[obj_No] + collision.close_vt_pair_num * vertex_index_on_surface;
-	collision.vertex_triangle_pair_num_record[obj_No][vertex_index_on_surface];
 	int* triangle_vertex;
-	std::vector<int>triangle_vertex_order_in_tet, triangle_vertex_order_in_pair;
-	triangle_vertex_order_in_tet.reserve(4);
-	triangle_vertex_order_in_pair.reserve(4);
-	triangle_vertex_order_in_tet.emplace_back(vertex_order_in_matrix);
-	triangle_vertex_order_in_pair.emplace_back(0);
+	int triangle_vertex_order_in_tet[4];
+	triangle_vertex_order_in_tet[0] = vertex_order_in_matrix;
 	for (unsigned int i = 0; i < num; i += 2) {
 		triangle_vertex = triangle_indices[VT[i]][VT[i + 1]].data();
-		triangle_vertex_order_in_tet.resize(1);
-		triangle_vertex_order_in_pair.resize(1);
-		checkPairIndexInTriangle(unfixed_tet_vertex_num, tet_unfixed_vertex_indices, triangle_vertex, &triangle_vertex_order_in_tet,
-			&triangle_vertex_order_in_pair);
-		second_order_constraint.getCollisionHessianVertex(vertex_position_, vertex_position[VT[i]][triangle_vertex[0]].data(),
+		memset(triangle_vertex_order_in_tet +1, 0xff, 12);
+		if (VT[i] == obj_No) {
+			checkPairIndexInSys(unfixed_tet_vertex_num, tet_unfixed_vertex_indices, triangle_vertex, triangle_vertex_order_in_tet);
+		}
+		second_order_constraint.computeVTBarrierGradientHessian(Hessian, grad, vertex_position_, vertex_position[VT[i]][triangle_vertex[0]].data(),
 			vertex_position[VT[i]][triangle_vertex[1]].data(), vertex_position[VT[i]][triangle_vertex[2]].data(),
-			Hessian, grad, triangle_vertex_order_in_tet, triangle_vertex_order_in_pair);
+			d_hat_2, triangle_vertex_order_in_tet, stiffness);
+	}
+}
+
+
+void XPBD_IPC::getTVCollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, double* t0, double* t1, double* t2, double stiffness,
+	unsigned int* TV, unsigned int num, unsigned int obj_No, int* triangle_indices,
+	unsigned int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2)
+{
+	int triangle_vertex_order_in_tet[4];
+	triangle_vertex_order_in_tet[0] = -1;
+	checkPairIndexInSys(unfixed_tet_vertex_num, tet_unfixed_vertex_indices, triangle_indices, triangle_vertex_order_in_tet);
+	for (unsigned int i = 0; i < num; i += 2) {
+		if (TV[i] == obj_No) {
+			if (vertexInTet(unfixed_tet_vertex_num, TV[i + 1], tet_unfixed_vertex_indices)) {
+				continue;
+			}
+		}
+		second_order_constraint.computeVTBarrierGradientHessian(Hessian, grad, vertex_position[TV[i]][TV[i+1]].data(),
+			t0,t1,t2,
+			d_hat_2, triangle_vertex_order_in_tet, stiffness);
 	}
 
 }
 
 
 
+void XPBD_IPC::getEECollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, unsigned int obj_No, unsigned int* edge_vertex_index,
+	unsigned int* EE, unsigned int num, unsigned int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2)
+{
+	unsigned int* edge_vertex;
+	int vertex_order_in_tet[4];
+	checkPairIndexInSys(unfixed_tet_vertex_num, tet_unfixed_vertex_indices, edge_vertex_index, vertex_order_in_tet);
+	for (unsigned int i = 0; i < num; i += 2) {
+		edge_vertex = edge_vertices[EE[i]] + (EE[i + 1] << 1);
+		memset(vertex_order_in_tet + 2, 0xff, 8);
+		if (EE[i] == obj_No) {
+			if(compareShouldBeSmaller)
 
 
+		}
+		second_order_constraint.computeVTBarrierGradientHessian(Hessian, grad, vertex_position_, vertex_position[VT[i]][triangle_vertex[0]].data(),
+			vertex_position[VT[i]][triangle_vertex[1]].data(), vertex_position[VT[i]][triangle_vertex[2]].data(),
+			d_hat_2, triangle_vertex_order_in_tet, stiffness);
 
-void XPBD_IPC::checkPairIndexInTriangle(int unfixed_tet_vertex_num, unsigned int* tet_unfixed_vertex_indices, int* triangle_indices, std::vector<int>* triangle_vertex_order_in_system,
-	std::vector<int>* triangle_vertex_order_in_pair)
+	}
+}
+
+
+bool XPBD_IPC::vertexInTet(int unfixed_tet_vertex_num, unsigned int vertex_No, unsigned int* tet_unfixed_vertex_indices)
+{
+	for (int i = 0; i < unfixed_tet_vertex_num; ++i) {
+		if (vertex_No == tet_unfixed_vertex_indices[i]) {
+			return true;
+		}
+	}
+	return false;
+}
+
+
+void XPBD_IPC::checkPairIndexInSys(int unfixed_tet_vertex_num, unsigned int* tet_unfixed_vertex_indices, int* element_indices,
+	int* triangle_vertex_order_in_system)
 {
 	for (int i = 0; i < 3; ++i) {
 		for (int j = 0; j < unfixed_tet_vertex_num; ++j) {
-			if (tet_unfixed_vertex_indices[j] == triangle_indices[i]) {
-				triangle_vertex_order_in_system->emplace_back(j);
-				triangle_vertex_order_in_pair->emplace_back(i);
+			if (tet_unfixed_vertex_indices[j] == element_indices[i]) {
+				triangle_vertex_order_in_system[i+1] = j;
 				break;
 			}
 		}
@@ -1115,6 +1159,19 @@ void XPBD_IPC::checkPairIndexInTriangle(int unfixed_tet_vertex_num, unsigned int
 
 }
 
+void XPBD_IPC::checkPairIndexInSys(int unfixed_tet_vertex_num, unsigned int* tet_unfixed_vertex_indices, unsigned int* element_indices,
+	int* triangle_vertex_order_in_system)
+{
+	for (int i = 0; i < 2; ++i) {
+		for (int j = 0; j < unfixed_tet_vertex_num; ++j) {
+			if (tet_unfixed_vertex_indices[j] == element_indices[i]) {
+				triangle_vertex_order_in_system[i] = j;
+				break;
+			}
+		}
+	}
+
+}
 
 void XPBD_IPC::getVTCollisionHessain(Matrix3d& Hessian, Vector3d& grad, double* vertex_position_, double stiffness, 
 	unsigned int* VT, unsigned int num, double* ori_volume, unsigned int obj_No, unsigned int vertex_index)

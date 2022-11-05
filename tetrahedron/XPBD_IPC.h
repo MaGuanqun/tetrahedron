@@ -235,12 +235,22 @@ private:
 
 
 	void getVTCollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, double* vertex_position_, double stiffness,
-		unsigned int* VT, unsigned int num, unsigned int obj_No, unsigned int vertex_order_in_matrix,
-		unsigned int vertex_index_on_surface, unsigned int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num);
+		unsigned int* VT, unsigned int num,unsigned int vertex_order_in_matrix, unsigned int obj_No,
+		unsigned int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2);
 
 
-	void checkPairIndexInTriangle(int unfixed_tet_vertex_num, unsigned int* tet_unfixed_vertex_indices, int* triangle_indices, std::vector<int>* triangle_vertex_order_in_system,
-		std::vector<int>* triangle_vertex_order_in_pair);
+	void checkPairIndexInSys(int unfixed_tet_vertex_num, unsigned int* tet_unfixed_vertex_indices, int* element_indices, 
+		int* triangle_vertex_order_in_system);
+	void checkPairIndexInSys(int unfixed_tet_vertex_num, unsigned int* tet_unfixed_vertex_indices, unsigned int* element_indices,
+		int* triangle_vertex_order_in_system);
 
+	void getTVCollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, double* t0, double* t1, double* t2, double stiffness,
+		unsigned int* TV, unsigned int num, unsigned int obj_No, int* triangle_indices,
+		unsigned int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2);
+
+	bool vertexInTet(int unfixed_tet_vertex_num, unsigned int vertex_No, unsigned int* tet_unfixed_vertex_indices);
+
+	void getEECollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, unsigned int obj_No, unsigned int* edge_vertex_index,
+		unsigned int* EE, unsigned int num, unsigned int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2);
 };
 

@@ -33,7 +33,7 @@ void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mesh_struct.recordTetIndexForVertex();
 	mesh_struct.recordTetIndexForTet();
 	mesh_struct.updateTetNeighborInfo();
-	mesh_struct.recordTriangleIndexOfATet();
+	mesh_struct.recordPrimitiveIndexOfATet();
 }
 
 
