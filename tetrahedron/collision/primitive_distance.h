@@ -6,7 +6,7 @@ namespace CCD {
     namespace internal {
         //For a matrix M(2X3)=(basic0,basis1)^T, here to solve MM^Tx=Mvec    
         template <class T>
-        void solveSyStem(const T* basis0, const T* basis1, const T* vec, T* result)
+        inline void solveSyStem(const T* basis0, const T* basis1, const T* vec, T* result)
         {
             T MMT[3];
             MMT[0] = DOT(basis0, basis0);//MMT(0,0)
@@ -25,7 +25,7 @@ namespace CCD {
 
 
         template <class T>
-        int pointTriangleDistanceType(
+        inline int pointTriangleDistanceType(
             const T* p,
             const T* t0,
             const T* t1,
@@ -83,7 +83,7 @@ namespace CCD {
         }
 
         template <class T>
-        int edgeEdgeDistanceType(
+        inline int edgeEdgeDistanceType(
             const T* ea0,
             const T* ea1,
             const T* eb0,
@@ -164,7 +164,7 @@ namespace CCD {
         }
 
         template <class T>
-        bool edgeEdgeNearestPointOnEdge(
+        inline bool edgeEdgeNearestPointOnEdge(
             const T* ea0,
             const T* ea1,
             const T* eb0,
@@ -202,7 +202,7 @@ namespace CCD {
 
 
         template <class T>
-        int edgeEdgeDistanceType(
+        inline int edgeEdgeDistanceType(
             const T* ea0,
             const T* ea1,
             const T* eb0,
@@ -415,7 +415,7 @@ namespace CCD {
         }
 
         template <class T>
-        T pointEdgeDistanceUnclassified(
+        inline T pointEdgeDistanceUnclassified(
             const T* p,
             const T* e0,
             const T* e1)
@@ -443,7 +443,7 @@ namespace CCD {
             }
         }
         template <class T>
-        T pointEdgeDistanceUnclassified(
+        inline T pointEdgeDistanceUnclassified(
             const T* p,
             const T* e0,
             const T* e1,
@@ -479,7 +479,7 @@ namespace CCD {
         }
 
         template <class T>
-        T pointTriangleDistanceUnclassified(
+        inline T pointTriangleDistanceUnclassified(
             const T* p,
             const T* t0,
             const T* t1,
@@ -507,7 +507,7 @@ namespace CCD {
 
 
         template <class T>
-        T edgeEdgeDistanceUnclassified(
+        inline T edgeEdgeDistanceUnclassified(
             const T* ea0,
             const T* ea1,
             const T* eb0,
@@ -538,7 +538,7 @@ namespace CCD {
         }
 
         template <class T>
-        T edgeEdgeNearestPoint(
+        inline T edgeEdgeNearestPoint(
             const T* ea0,
             const T* ea1,
             const T* eb0,
@@ -570,7 +570,7 @@ namespace CCD {
         }
 
         template <class T>
-        T pointTriangleNearestDistance(
+        inline T pointTriangleNearestDistance(
             const T* p,
             const T* t0,
             const T* t1,
@@ -615,7 +615,7 @@ namespace CCD {
         }
 
         template <class T>
-        void pointTriangleNearestPoint(
+        inline void pointTriangleNearestPoint(
             const T* p,
             const T* t0,
             const T* t1,
@@ -665,7 +665,7 @@ namespace CCD {
 
 
         template <class T>
-        T pointTriangleNearestDistanceTest(
+        inline T pointTriangleNearestDistanceTest(
             const T* p,
             const T* t0,
             const T* t1,
@@ -725,7 +725,7 @@ namespace CCD {
 
 
         template <class T>
-        T pointTriangleNearestDistance(
+        inline T pointTriangleNearestDistance(
             const T* p,
             const T* t0,
             const T* t1,
@@ -782,19 +782,6 @@ namespace CCD {
             }
             return d_2;
         }
-
-        template <class T>
-        T pointTriangleNearestDistance(
-            const T* p,
-            const T* t0,
-            const T* t1,
-            const T* t2,
-            const T* triangle_normal,
-            T* barycentric, T d_hat_2)
-        {
-
-        }
-
 
     }
 }

@@ -74,6 +74,8 @@ public:
 	void computeVTBarrierGradientHessian(MatrixXd& Hessian_, VectorXd& grad_, double* p, double* t0, double* t1, double* t2,
 		double d_hat_2, int* triangle_vertex_order_in_system, double stiffness);
 
+	void computeEEBarrierGradientHessian(double* ea0, double* ea1, double* eb0, double* eb1, MatrixXd& Hessian_, VectorXd& grad_,
+		int* vertex_order_in_system, double stiffness, double d_hat_2);
 
 
 private:
@@ -81,8 +83,6 @@ private:
 
 	void solveEdgeLengthConstraint(Vector3f& p1, Vector3f& p2, const double d, double mass_0,
 		double mass_1, Vector3f& ori_p1, Vector3f& ori_p2, bool v0_fixed, bool v1_fixed, double& lambda);
-
-	void barrierGradHessian(double d, double d_hat, double& gradient, double& hessian);
 
 	void setTetHessianFromBarrierHessian(MatrixXd& Hessian_system, VectorXd& grad_system, MatrixXd& Hessian_, VectorXd& grad_,
 		int* triangle_vertex_order_in_system, int* vertex_in_pair, int vertex_in_use);

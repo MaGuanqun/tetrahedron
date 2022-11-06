@@ -229,28 +229,53 @@ private:
 	void solveNewtonCD_tetBlock(std::array<double, 3>* vertex_position, double stiffness, double dt, double* mass,
 		Matrix<double, 3, 4>* A, std::vector<unsigned int>& neighbor_tet_indices, std::array<int, 4>* indices,
 		double* volume, unsigned int tet_index, std::array<double, 3>* sn, unsigned int* common_vertex_in_order,
-		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num);
+		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num,
+		std::vector<unsigned int>* triangle_of_a_tet, 	std::vector<unsigned int>* edge_of_a_tet, double collision_stiffness,
+		unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
+		int* vertex_index_on_surface);
 
 	std::vector<double>record_energy;
 
 
+
+
+
+	void checkPairIndexInSys(int unfixed_tet_vertex_num, int* tet_unfixed_vertex_indices, int* element_indices, 
+		int* triangle_vertex_order_in_system);
+	void checkPairIndexInSys(int unfixed_tet_vertex_num, int* tet_unfixed_vertex_indices, unsigned int* element_indices,
+		int* triangle_vertex_order_in_system);
+
 	void getVTCollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, double* vertex_position_, double stiffness,
-		unsigned int* VT, unsigned int num,unsigned int vertex_order_in_matrix, unsigned int obj_No,
-		unsigned int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2);
+		unsigned int* VT, unsigned int num, unsigned int vertex_order_in_matrix, unsigned int obj_No,
+		int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2);
 
+	void getVTColliderCollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, double* vertex_position_, double stiffness,
+		unsigned int* VT, unsigned int num, unsigned int vertex_order_in_matrix,	double d_hat_2);
 
-	void checkPairIndexInSys(int unfixed_tet_vertex_num, unsigned int* tet_unfixed_vertex_indices, int* element_indices, 
-		int* triangle_vertex_order_in_system);
-	void checkPairIndexInSys(int unfixed_tet_vertex_num, unsigned int* tet_unfixed_vertex_indices, unsigned int* element_indices,
-		int* triangle_vertex_order_in_system);
 
 	void getTVCollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, double* t0, double* t1, double* t2, double stiffness,
 		unsigned int* TV, unsigned int num, unsigned int obj_No, int* triangle_indices,
-		unsigned int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2);
+		int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2);
 
-	bool vertexInTet(int unfixed_tet_vertex_num, unsigned int vertex_No, unsigned int* tet_unfixed_vertex_indices);
+	bool vertexInTet(int unfixed_tet_vertex_num, int vertex_No, int* tet_unfixed_vertex_indices);
 
 	void getEECollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, unsigned int obj_No, unsigned int* edge_vertex_index,
-		unsigned int* EE, unsigned int num, unsigned int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2);
+		unsigned int* EE, unsigned int num, int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2,
+		int edge_order_in_tet, std::vector<unsigned int>* edge_of_a_tet, double* ea0, double* ea1, double stiffness);
+
+	bool edgeInSameTetDuplicate(int edge_order_in_tet, std::vector<unsigned int>* edge_of_a_tet,
+		unsigned int compare_edge_index);
+
+
+	void getCollisionHessian(MatrixXd& Hessian, VectorXd& grad,std::vector<unsigned int>* triangle_of_a_tet,
+		std::vector<unsigned int>* edge_of_a_tet, 
+		double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
+		int unfixed_tet_vertex_num, double d_hat_2,
+		int* vertex_index_on_surface, std::array<double, 3>* vertex_position);
+
+
+	void getFloorHessianForTet(MatrixXd& Hessian, VectorXd& grad, double* vertex_position, double floor_value,
+		unsigned int dimension, double collision_stiffness, bool direction, double d_hat, unsigned int vertex_order_in_matrix, unsigned int unfixed_vertex_num);
+
 };
 

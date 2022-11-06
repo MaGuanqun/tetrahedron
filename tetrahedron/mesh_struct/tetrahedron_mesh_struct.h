@@ -18,7 +18,12 @@ public:
 	std::vector<std::vector<unsigned int>>triangle_index_of_a_tet;//record all surface triangle indices of a tet
 	std::vector<std::vector<unsigned int>>edge_index_of_a_tet;//record all surface edge indices of a tet
 
+	//std::vector<std::vector<unsigned int>> edge_index_in_a_tet;//record all edge whose vertices all contained in a tet
+
 	std::vector<std::array<int, 4>> unfixied_indices; //put the unfixed index at first in order between [0,3], the index in that tet
+	std::vector<std::array<int, 4>> unfixied_actual_indices; //unfixed index in a tet 
+
+
 
 
 	std::vector<unsigned int> tetrahedron_index_begin_per_thread;
@@ -110,5 +115,8 @@ private:
 	void updateUnfixedTetVertexIndexInfo();
 	void recordTriangleIndexOfATet();
 	void recordEdgeIndexOfATet();
+
+	//void recordEdgeIndexInATet();
+	bool checkEdgeInATet(unsigned int* edge_vertices, int* tet_indices);
 };
 

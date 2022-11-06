@@ -198,10 +198,11 @@ public:
 	std::vector<std::array<double, 3>> draw_target_position;
 
 
-
+	double d_hat_2;
+	double* collision_stiffness;//we assume the initial stiffness of every objects are same
 private:
 
-	double d_hat_2;
+
 
 	void VTCollisionTimeOneVertex(double* initial_pos, double* current_pos, double& collision_time, unsigned int num,
 		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex);
@@ -604,7 +605,7 @@ private:
 
 	void computeEnergy(unsigned int pair_thread_No, int index_start, int index_end, double& energy);
 
-	double* collision_stiffness;//we assume the initial stiffness of every objects are same
+	
 
 	DCD dcd;
 

@@ -397,4 +397,12 @@ inline void getTriangleNormal(double* v0, double* v1, double* v2, double* normal
 	normalize(normal);
 }
 
+inline void barrierGradHessian(double d, double d_hat, double& gradient, double& hessian)
+{
+	double log_2 = 2.0 * log(d / d_hat);
+	gradient = (d_hat - d) * (log_2 - d_hat / d + 1.0);
+	hessian = -log_2 + (d_hat - d) * (d_hat + 3 * d) / (d * d);
+}
+
+
 #endif // !GLOBAL_H

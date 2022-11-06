@@ -306,12 +306,16 @@ void TetrahedronMeshStruct::updateTetNeighborInfo()
 void TetrahedronMeshStruct::updateUnfixedTetVertexIndexInfo()
 {
 	unfixied_indices.resize(indices.size(), {-1,-1,-1,-1});
+	unfixied_actual_indices.resize(indices.size(), {-1,-1,-1,-1});
 	int* vertex_start;
+	int* actual_vertex_start;
 	for (unsigned int i = 0; i < indices.size(); ++i) {
 		vertex_start = unfixied_indices[i].data();
+		actual_vertex_start = unfixied_actual_indices[i].data();
 		for (unsigned int j = 0; j < 4; ++j) {
 			if (mass_inv[indices[i][j]] != 0) {
 				*(vertex_start ++)= j;
+				*(actual_vertex_start++)= indices[i][j];
 			}
 		}
 	}
@@ -642,6 +646,7 @@ void TetrahedronMeshStruct::recordPrimitiveIndexOfATet()
 {
 	recordTriangleIndexOfATet();
 	recordEdgeIndexOfATet();
+	//recordEdgeIndexInATet();
 }
 
 void TetrahedronMeshStruct::recordEdgeIndexOfATet()
@@ -663,4 +668,31 @@ void TetrahedronMeshStruct::recordEdgeIndexOfATet()
 			}
 		}
 	}
+}
+
+//void TetrahedronMeshStruct::recordEdgeIndexInATet()
+//{
+//	edge_index_in_a_tet.resize(indices.size());
+//	for (unsigned int i = 0; i < edge_index_in_a_tet.size(); ++i) {
+//
+//		for (auto j = edge_index_of_a_tet[i].begin(); j < edge_index_of_a_tet[i].end(); ++j) {
+//			if (checkEdgeInATet(edge_vertices.data() + (*j) * 2, indices[i].data())) {
+//				edge_index_in_a_tet[i].emplace_back(*j);
+//			}
+//		}
+//	}
+//}
+
+bool TetrahedronMeshStruct::checkEdgeInATet(unsigned int* edge_vertices, int* tet_indices)
+{
+	for (unsigned int i = 0; i < 4; ++i) {
+		if (edge_vertices[0] == tet_indices[i]) {
+			for (unsigned int j = 0; j < 4; ++j) {
+				if (edge_vertices[1] == tet_indices[j]) {
+					return true;
+				}
+			}
+		}
+	}
+	return false;
 }
