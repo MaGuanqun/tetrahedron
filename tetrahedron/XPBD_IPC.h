@@ -209,12 +209,9 @@ private:
 		double* last_step_position, unsigned int dimension, double collision_stiffness, bool direction, double tolerance);
 	unsigned int min_inner_iteration, min_outer_iteration;
 
-	void newtonCDTetWithCCD();
 
-	void solveNewtonCDTetWithCCD(std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position, double ARAP_stiffness, double dt,
-		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* tet_vertex_indices, double* mass,
-		double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double collision_stiffness, unsigned int obj_No,
-		bool vertex_on_surface, unsigned int vertex_index_on_surface);
+
+
 
 	bool nearly_not_move;//to indicate if the move distance of current itr is far than requirement
 

@@ -14,7 +14,8 @@ public:
 		Thread* thread, double* tolerance_ratio, unsigned int max_cell_count, 
 		unsigned int max_index_number_in_one_cell,
 		unsigned int max_index_number_in_one_cell_collider, unsigned int estimate_coeff_for_vt_pair_num, unsigned int estimate_coeff_for_vt_collider_pair_num,
-		unsigned int estimate_coeff_for_tv_pair_num, unsigned int estimate_coeff_for_ee_pair_num, bool record_pair_by_element);
+		unsigned int estimate_coeff_for_tv_pair_num, unsigned int estimate_coeff_for_ee_pair_num, bool record_pair_by_element,
+		unsigned int estimate_coeff_for_tv_collider_pair_num, unsigned int estimate_coeff_for_ee_collider_pair_num);
 	void getSceneAABB(int thread_No);
 
 	void buildSpatialHashing(double* scene_aabb);
@@ -37,15 +38,17 @@ public:
 
 	unsigned int** vertex_triangle_pair_by_vertex;//store pair by every vertex. (obj_index,triangle_index)
 	unsigned int** vertex_triangle_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
-	unsigned int** triangle_vertex_pair_by_triangle; //store pair by triangle. for every triangle, store vertex: (obj_index,vertex_index)
-	unsigned int** triangle_vertex_pair_num_record;// record the number of vertex pairs for every triangle. For fast initialize, we recoed it in this variable
+	//unsigned int** triangle_vertex_pair_by_triangle; //store pair by triangle. for every triangle, store vertex: (obj_index,vertex_index)
+	//unsigned int** triangle_vertex_pair_num_record;// record the number of vertex pairs for every triangle. For fast initialize, we recoed it in this variable
 	unsigned int** edge_edge_pair_by_edge; //for coordinate descent, we should store both (e1,e2) & (e2,e1)
 	unsigned int** edge_edge_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
 	unsigned int** vertex_obj_triangle_collider_pair_by_vertex;// store pair by every vertex. (obj_index, triangle_index)
-	unsigned int** vertex_obj_triangle_collider_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
+	unsigned int** vertex_obj_triangle_collider_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we record it in this variable
 
-
-
+	unsigned int** triangle_obj_vertex_collider_pair_by_triangle;// store pair by every triangle. (obj_index, triangle_index)
+	unsigned int** triangle_obj_vertex_collider_num_record;//record the number of vertex pairs for every triangle. For fast initialize, we record it in this variable
+	unsigned int** edge_obj_edge_collider_pair_by_edge; //for coordinate descent, we should store both (e1,e2) & (e2,e1)
+	unsigned int** edge_obj_edge_collider_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
 
 	//unsigned int** edge_edge_pair_collider; //first obj, second collider
 
@@ -100,11 +103,18 @@ public:
 
 	void combineHashTable(int thread_No);
 
+	void testColliderPair();
 private:
 	unsigned int total_length_every_element_for_vertex_triange;
 	unsigned int total_length_every_element_for_vertex_triange_collider;
 	unsigned int total_length_every_element_for_triangle_vertex;
 	unsigned int total_length_every_element_for_edge_edge;
+
+	unsigned int total_length_every_element_for_triange_vertex_collider;
+	unsigned int total_length_every_element_for_edge_edge_collider;
+
+
+
 
 	bool record_pair_by_element;//if true, record pairs by vertex, triangle, or edge
 
@@ -178,7 +188,8 @@ private:
 
 	void initialHashCell(unsigned int total_triangle_num, unsigned int max_index_number_in_one_cell,
 		unsigned int max_index_number_in_one_cell_collider, unsigned int estimate_coeff_for_vt_pair_num, unsigned int estimate_coeff_for_vt_collider_pair_num,
-		unsigned int estimate_coeff_for_tv_pair_num, unsigned int estimate_coeff_for_ee_pair_num);
+		unsigned int estimate_coeff_for_tv_pair_num, unsigned int estimate_coeff_for_ee_pair_num,
+		unsigned int estimate_coeff_for_tv_collider_pair_num, unsigned int estimate_coeff_for_ee_collider_pair_num);
 
 
 	unsigned int max_index_number_in_one_cell;
@@ -302,6 +313,7 @@ private:
 
 	void findAllVertexTrianglePairsByPrimitiveByVertex(int thread_No);
 	void findAllEdgeEdgePairsByPrimitiveByEdge(int thread_No);
+	void findAllTriangleVertexPairsByPrimitiveByTriangle(int thread_No);
 
 	void findAllVertexTrianglePairsByPrimitiveSingleObj(int thread_No, int obj_No, unsigned int* &primitive_pair_,
 		unsigned int vertex_start, unsigned int vertex_end, std::array<double, 6>* vertex_aabb, 
@@ -314,7 +326,11 @@ private:
 		unsigned int max_index_number_in_one_cell_triangle_, unsigned int* spatial_hashing_cell_triangle, unsigned int* spatial_hashing_cell_triangle_size,
 		std::vector<std::array<double, 6>*>& obj_tri_aabb, bool is_self, bool is_tet); //this is for vertex_triangle_pair_by_vertex etc
 
-
+	void findAllTriangleVertexColliderPairsByPrimitiveSingleObj_ByTriangle(int thread_No, int obj_No, unsigned int* primitive_pair,
+		unsigned int* primitive_pair_num_record,
+		std::array<double, 6>* triangle_aabb,
+		unsigned int max_index_number_in_one_cell_vertex_, unsigned int* spatial_hashing_cell_vertex, unsigned int* spatial_hashing_cell_vertex_size,
+		std::vector<std::array<double, 6>*>& obj_vertex_aabb);
 
 	void triangleHashValue(double* aabb,
 		std::vector<unsigned int>* spatial_hashing_index, double* scene_aabb, double cell_length,
@@ -324,7 +340,7 @@ private:
 	void findAllEdgeEdgePairsByPrimitiveSingleObjByEdge(int thread_No, int obj_No, unsigned int* primitive_pair, unsigned int* primitive_pair_num_record_,
 		std::vector<std::array<double, 6>*>& obj_edge_aabb_,
 		unsigned int max_index_number_in_one_cell_edge_, unsigned int* spatial_hashing_cell_edge, unsigned int* spatial_hashing_cell_edge_size,
-		bool is_self);
+		bool is_self, unsigned int total_length_every_element_for_edge_edge);
 	void findAllEdgeEdgePairsByPrimitiveSingleObj(int thread_No, int obj_No, unsigned int*& primitive_pair_,
 		std::vector<std::array<double, 6>*>& obj_edge_aabb_,
 		unsigned int max_index_number_in_one_cell_edge_, unsigned int* spatial_hashing_cell_edge, unsigned int* spatial_hashing_cell_edge_size,
@@ -337,10 +353,10 @@ private:
 	void findAllTriangleVertexPairByTriangleSingleObj(int obj_No, unsigned int* vt_pair_initial, unsigned int* vt_pair_num, unsigned int** tv_pair,
 		unsigned int** tv_pair_num, unsigned int total_length_every_element_vt, unsigned int total_length_every_element_tv);
 
-	void findAllTriangleVertexPairByTriangle();
+	//void findAllTriangleVertexPairByTriangle();
 
 	//initial triangle_vertex_pair_num_record
-	void initialPairByElement();
+	//void initialPairByElement();
 
 };
 

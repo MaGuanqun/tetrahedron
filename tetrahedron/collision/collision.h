@@ -70,6 +70,12 @@ public:
 	unsigned int** vertex_obj_triangle_collider_pair_by_vertex;// store pair by every vertex. (obj_index, triangle_index)
 	unsigned int** vertex_obj_triangle_collider_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
 
+	unsigned int** triangle_vertex_collider_pair_by_triangle; //store pair by triangle. for every triangle, store vertex: (obj_index,vertex_index)
+	unsigned int** triangle_vertex_collider_pair_num_record;// record the number of vertex pairs for every triangle. For fast initialize, we recoed it in this variable
+	unsigned int** edge_edge_collider_pair_by_edge; //for coordinate descent, we should store both (e1,e2) & (e2,e1)
+	unsigned int** edge_edge_collider_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
+
+
 	std::vector<std::vector<double>> VT_volume;
 	unsigned int** VT_start_index; //prefix sum start index
 	std::vector<std::vector<double>> TV_volume;
@@ -172,6 +178,9 @@ public:
 	unsigned int close_ee_pair_num;
 	unsigned int close_tv_pair_num;
 
+	unsigned int close_ee_collider_pair_num;
+	unsigned int close_tv_collider_pair_num;
+
 	void computeVolume(int thread_No);
 	void saveCollisionPairVolume();
 
@@ -180,8 +189,8 @@ public:
 	double volume_boundary;
 
 	void updateCollisionTime(unsigned int obj_No, unsigned int vertex);
-	void collisionTimeSingleVertex(unsigned int obj_index, unsigned int vertex_index, unsigned int vertex_index_on_surface,
-		std::array<double, 3>* initial_pos,	std::array<double, 3>* current_pos);
+	//void collisionTimeSingleVertex(unsigned int obj_index, unsigned int vertex_index, unsigned int vertex_index_on_surface,
+	//	std::array<double, 3>* initial_pos,	std::array<double, 3>* current_pos);
 
 	void collisionFreeOneVertex(unsigned int obj_No, unsigned int vertex_No, unsigned int vertex_index_on_surface, double* initial_vertex_pos, double* current_vertex_pos,
 		std::array<double, 3>* initial_pos_this_obj, std::array<double, 3>* current_pos_this_obj,
@@ -218,13 +227,16 @@ public:
 	bool floorCollisionTime(double* initial_position, double* current_pos, unsigned int dimension, bool direction,
 		double floor_value, double& collision_time, double tolerance);
 	double tolerance;
+
+
+
 private:
 
 	void EECollisionTimeOneEdge(double* initial_pos_a0, double* initial_pos_a1, double* current_pos_a0,
 		double* current_pos_a1,
 		double& collision_time,
 		unsigned int edge_index, unsigned int edge_obj_No, unsigned int num, unsigned int* edge_indices,
-		std::array<double, 3>** vertex_for_render, std::array<double, 3>** vertex_pos);
+		std::array<double, 3>** vertex_for_render, std::array<double, 3>** vertex_pos, bool is_self, unsigned int** edge_vertices);
 
 	void storeVolume();
 
@@ -249,6 +261,8 @@ private:
 	unsigned int estimate_coeff_for_ee_pair_num;
 	unsigned int estimate_coeff_for_tv_pair_num;
 
+	unsigned int estimate_coeff_for_ee_collider_pair_num;
+	unsigned int estimate_coeff_for_tv_collider_pair_num;
 
 
 	unsigned int tetrahedron_begin_obj_index;
@@ -711,7 +725,9 @@ private:
 	void findVT_ClosePair();
 	void findVT_ColliderClosePair();
 	void findEE_ClosePair();
+	void findEE_ColliderClosePair();
 	void findTV_ClosePair();
+	void findTV_ColliderClosePair();
 	void findTV_ClosePair(int obj_No, unsigned int* vt_pair_initial, unsigned int* vt_pair_num, unsigned int** tv_pair,
 		unsigned int** tv_pair_num, unsigned int total_length_every_element_vt, unsigned int total_length_every_element_tv, bool is_tet);
 
@@ -723,6 +739,9 @@ private:
 		unsigned int* edge_index, unsigned int edge_num, std::vector<std::array<double, 3>*>& position,
 		std::vector<unsigned int*>& edge_vertex_index,
 		unsigned int* close_edge_index, unsigned int& close_edge_num);
+	void findTV_ClosePairSingleTriangle(double* current_position_a0, double* current_position_a1, double* current_position_a2,
+		unsigned int* vertex_index, unsigned int vertex_num, std::vector<std::array<double, 3>*>& position,
+		unsigned int* close_vertex_index, unsigned int& close_vertex_num);
 
 	void initialPairRecord();
 
@@ -748,5 +767,5 @@ private:
 	void initialCollisionTimeRecord(int thread_No);
 	void initialCollisionTimeRecord();
 
-
+	void testColliderPair();
 };

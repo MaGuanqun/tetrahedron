@@ -580,50 +580,6 @@ void XPBD_IPC::firstNewtonCD()
 }
 
 
-
-void XPBD_IPC::newtonCDTetWithCCD()
-{
-	unsigned int size;
-	std::array<int, 4>* indices;
-	MeshStruct* mesh_struct_;
-	double* volume;
-	std::array<double, 3>* vertex_pos;
-	std::array<double, 3>* initial_vertex_pos;
-	double* mass_inv;
-	double stiffness;
-	Matrix<double, 3, 4>* A;
-	std::array<double, 3>* sn_;
-	double* mass;
-	double colliision_stiffness;
-	int* vertex_index;
-	std::vector<bool>* is_surface_vertex;
-	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
-		mesh_struct_ = mesh_struct[i + cloth->size()];
-		size = tetrahedron->data()[i].mesh_struct.vertex_position.size();
-		indices = tetrahedron->data()[i].mesh_struct.indices.data();
-		volume = tetrahedron->data()[i].mesh_struct.volume.data();
-		vertex_pos = vertex_position[i + cloth->size()];
-		initial_vertex_pos = initial_vertex_position[i + cloth->size()];
-		stiffness = tetrahedron->data()[i].ARAP_stiffness;
-		A = tetrahedron->data()[i].mesh_struct.A.data();
-		mass_inv = mesh_struct_->mass_inv.data();
-		mass = mesh_struct_->mass.data();
-		sn_ = sn[i + cloth->size()].data();
-		vertex_index = tetrahedron->data()[i].mesh_struct.vertex_surface_index.data();
-		is_surface_vertex = &tetrahedron->data()[i].mesh_struct.vertex_on_surface;
-		colliision_stiffness = tetrahedron->data()[i].collision_stiffness[0];
-
-		for (unsigned int j = 0; j < size; ++j) {
-			if (mass_inv[j] != 0.0) {
-				solveNewtonCDTetWithCCD(vertex_pos, initial_vertex_pos, stiffness, sub_time_step, A,
-					mesh_struct_->vertex_tet_index[j], indices, mass, volume, j, sn_,
-					colliision_stiffness, i + cloth->size(), (*is_surface_vertex)[j], vertex_index[j]);
-			}
-		}
-	}
-}
-
-
 void XPBD_IPC::firstOnlyInertialCollision()
 {
 	unsigned int size;
@@ -1046,19 +1002,6 @@ void XPBD_IPC::getCollisionHessian(Matrix3d& Hessian, Vector3d& grad, std::array
 }
 
 
-void XPBD_IPC::solveNewtonCDTetWithCCD(std::array<double, 3>* vertex_position, std::array<double, 3>* initial_vertex_position,
-	double ARAP_stiffness, double dt,
-	Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* tet_vertex_indices, double* mass,
-	double* volume, unsigned int vertex_index, std::array<double, 3>* sn, double collision_stiffness, unsigned int obj_No,
-	bool vertex_on_surface, unsigned int vertex_index_on_surface)
-{
-	if (vertex_on_surface) {
-		collision.collisionTimeSingleVertex(obj_No, vertex_index, vertex_index_on_surface,  initial_vertex_position,
-			vertex_position);
-
-	}
-	
-}
 
 void XPBD_IPC::solveInertialCollision(std::array<double, 3>* vertex_position,
 	double* record_vertex_position_,
