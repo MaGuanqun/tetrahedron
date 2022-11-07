@@ -247,7 +247,7 @@ private:
 
 	void getVTCollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, double* vertex_position_, double stiffness,
 		unsigned int* VT, unsigned int num, unsigned int vertex_order_in_matrix, unsigned int obj_No,
-		int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2);
+		int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2, unsigned int* VT_collider, int num_collider);
 
 
 	//void getVTCollisionHessainForPair(MatrixXd& Hessian, VectorXd& grad, double* vertex_position_, double stiffness,
@@ -255,19 +255,20 @@ private:
 	//	int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2);
 
 
-	void getVTColliderCollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, double* vertex_position_, double stiffness,
-		unsigned int* VT, unsigned int num, unsigned int vertex_order_in_matrix,	double d_hat_2);
+
 
 
 	void getTVCollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, double* t0, double* t1, double* t2, double stiffness,
-		unsigned int* TV, unsigned int num, unsigned int obj_No, int* triangle_indices,
-		int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2);
+		unsigned int* TV, int num, unsigned int obj_No, int* triangle_indices,
+		int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2, 
+		unsigned int* TV_collider, int collider_num);
 
 	bool vertexInTet(int unfixed_tet_vertex_num, int vertex_No, int* tet_unfixed_vertex_indices);
 
 	void getEECollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, unsigned int obj_No, unsigned int* edge_vertex_index,
-		unsigned int* EE, unsigned int num, int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2,
-		int edge_order_in_tet, std::vector<unsigned int>* edge_of_a_tet, double* ea0, double* ea1, double stiffness);
+		unsigned int* EE, int num, int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2,
+		int edge_order_in_tet, std::vector<unsigned int>* edge_of_a_tet, double* ea0, double* ea1, double stiffness,
+		unsigned int* EE_collider, int num_collider);
 
 	bool edgeInSameTetDuplicate(int edge_order_in_tet, std::vector<unsigned int>* edge_of_a_tet,
 		unsigned int compare_edge_index);
@@ -299,5 +300,7 @@ private:
 	//	std::vector<unsigned int>* edge_of_second_primitve,
 	//	double collision_stiffness, int* pair_actual_unfixed_vertex_indices,
 	//	int unfixed_vertex_num, double d_hat_2, int* vertex_index_on_surface);
+
+	bool has_collider;
 };
 

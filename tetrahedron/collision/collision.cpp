@@ -2228,7 +2228,7 @@ void Collision::findClosePair()
 
 	findTV_ClosePair();
 
-	testColliderPair();
+	//testColliderPair();
 }
 
 
