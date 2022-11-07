@@ -913,6 +913,25 @@ double XPBD_IPC::getCollisionTime(std::vector<unsigned int>* triangle_of_a_tet,
 
 }
 
+//void XPBD_IPC::getCollisionBlockHessian(MatrixXd& Hessian, VectorXd& grad, std::vector<unsigned int>* triangle_of_first_primitve,
+//	std::vector<unsigned int>* triangle_of_second_primitve,
+//	std::vector<unsigned int>* edge_of_first_primitve,
+//	std::vector<unsigned int>* edge_of_second_primitve,
+//	double collision_stiffness, int* pair_actual_unfixed_vertex_indices, //pair_actual_unfixed_vertex_indices first obj, second primitive index
+//	int unfixed_vertex_num, double d_hat_2, int* vertex_index_on_surface)//unfixed_vertex_num size double
+//{
+//	for (int i = 0; i < unfixed_vertex_num; i+=2) {
+//		getVTCollisionHessainForPair(Hessian, grad, vertex_position[pair_actual_unfixed_vertex_indices[i]][pair_actual_unfixed_vertex_indices[i+1]].data(),
+//			collision_stiffness, collision.vertex_triangle_pair_by_vertex[pair_actual_unfixed_vertex_indices[i]] + collision.close_vt_pair_num * vertex_index_on_surface[pair_actual_unfixed_vertex_indices[i+1]],
+//			collision.vertex_triangle_pair_num_record[pair_actual_unfixed_vertex_indices[i]][vertex_index_on_surface[pair_actual_unfixed_vertex_indices[i+1]]],
+//			i>>1, pair_actual_unfixed_vertex_indices[i], tet_actual_unfixed_vertex_indices, unfixed_tet_vertex_num, d_hat_2);
+//
+//
+//	}
+//
+//}
+
+
 
 void XPBD_IPC::getCollisionHessian(MatrixXd& Hessian, VectorXd& grad, std::vector<unsigned int>* triangle_of_a_tet,
 	std::vector<unsigned int>* edge_of_a_tet,
@@ -1252,6 +1271,25 @@ void XPBD_IPC::getVTCollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, do
 }
 
 
+//void XPBD_IPC::getVTCollisionHessainForPair(MatrixXd& Hessian, VectorXd& grad, double* vertex_position_, double stiffness,
+//	unsigned int* VT, unsigned int num, unsigned int vertex_order_in_matrix, 
+//	int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2)
+//{
+//	int* triangle_vertex;
+//	int triangle_vertex_order_in_tet[4];
+//	triangle_vertex_order_in_tet[0] = vertex_order_in_matrix;
+//	for (unsigned int i = 0; i < num; i += 2) {
+//		triangle_vertex = triangle_indices[VT[i]][VT[i + 1]].data();
+//		memset(triangle_vertex_order_in_tet + 1, 0xff, 12);
+//		checkPairIndexInSys(unfixed_tet_vertex_num, tet_unfixed_vertex_indices, triangle_vertex, VT[i], triangle_vertex_order_in_tet);		
+//		second_order_constraint.computeVTBarrierGradientHessian(Hessian, grad, vertex_position_, vertex_position[VT[i]][triangle_vertex[0]].data(),
+//			vertex_position[VT[i]][triangle_vertex[1]].data(), vertex_position[VT[i]][triangle_vertex[2]].data(),
+//			d_hat_2, triangle_vertex_order_in_tet, stiffness);
+//	}
+//}
+
+
+
 
 void XPBD_IPC::getFloorHessianForTet(MatrixXd& Hessian, VectorXd& grad, double* vertex_position, double floor_value,
 	unsigned int dimension, double collision_stiffness, bool direction, double d_hat_2, unsigned int vertex_order_in_matrix, unsigned int unfixed_vertex_num)
@@ -1362,6 +1400,21 @@ bool XPBD_IPC::vertexInTet(int unfixed_tet_vertex_num, int vertex_No, int* tet_u
 }
 
 
+void XPBD_IPC::checkPairIndexInSys(int unfixed_tet_vertex_num, int* tet_unfixed_vertex_indices, int* element_indices, int obj_No,
+	int* triangle_vertex_order_in_system)
+{
+	for (int i = 0; i < 3; ++i) {
+		for (int j = 0; j < unfixed_tet_vertex_num; j+=2) {
+			if (tet_unfixed_vertex_indices[j+1] == element_indices[i] && tet_unfixed_vertex_indices[j]==obj_No) {
+				triangle_vertex_order_in_system[i + 1] = (j>>1);
+				break;
+			}
+		}
+	}
+
+}
+
+
 void XPBD_IPC::checkPairIndexInSys(int unfixed_tet_vertex_num, int* tet_unfixed_vertex_indices, int* element_indices,
 	int* triangle_vertex_order_in_system)
 {
@@ -1439,6 +1492,13 @@ void XPBD_IPC::getARAPHessian(Matrix3d& Hessian, Vector3d& grad, std::array<doub
 
 	}
 }
+
+
+
+//void XPBD_IPC::solveNewtonCD_collisionBlock(unsigned int vertex_obj_no, unsigned int vertex_index, unsigned int triangle_obj_No, unsigned int triangle_index)
+//{
+//	int triangle_vertex_index=triangle_indices[triangle_obj_No][]
+//}
 
 
 void XPBD_IPC::solveNewtonCD_tetBlock(std::array<double, 3>* vertex_position, double stiffness, double dt,
