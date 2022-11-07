@@ -200,18 +200,31 @@ public:
 
 	double d_hat_2;
 	double* collision_stiffness;//we assume the initial stiffness of every objects are same
-private:
-
-
 
 	void VTCollisionTimeOneVertex(double* initial_pos, double* current_pos, double& collision_time, unsigned int num,
-		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex);
+		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex,
+		std::array<int, 3>** triangle_indices);
 
 	void TVCollisionTimeOneVertex(double* initial_pos_0, double* initial_pos_1, double* initial_pos_2,
 		double* current_pos_0, double* current_pos_1, double* current_pos_2,
 		double& collision_time, unsigned int num,
 		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex);
 
+	void EECollisionTimeOneEdgeAll(double* initial_pos_a0, double* initial_pos_a1, double* current_pos_a0,
+		double* current_pos_a1,
+		double& collision_time,
+		unsigned int num, unsigned int* edge_indices,
+		std::array<double, 3>** vertex_for_render, std::array<double, 3>** vertex_pos, unsigned int** compare_edge_vertices);
+	bool floorCollisionTime(double* initial_position, double* current_pos, unsigned int dimension, bool direction,
+		double floor_value, double& collision_time, double tolerance);
+	double tolerance;
+private:
+
+	void EECollisionTimeOneEdge(double* initial_pos_a0, double* initial_pos_a1, double* current_pos_a0,
+		double* current_pos_a1,
+		double& collision_time,
+		unsigned int edge_index, unsigned int edge_obj_No, unsigned int num, unsigned int* edge_indices,
+		std::array<double, 3>** vertex_for_render, std::array<double, 3>** vertex_pos);
 
 	void storeVolume();
 
@@ -361,7 +374,7 @@ private:
 		int cloth_No, int edge_vertex_index_0, int edge_vertex_index_1, double* mass, TargetPosition* target_position);
 	void testCulling();
 	void testIfBuildCollisionConstraint();
-	double tolerance;
+
 	double* tolerance_ratio;
 	double tolerance_radius[4];
 	double eta;//for setting gap in ccd
@@ -692,14 +705,6 @@ private:
 	unsigned int use_method;
 	bool CCD_compare=false;
 	void findInSP();
-
-
-
-	void EECollisionTimeOneEdge(double* initial_pos_a0, double* initial_pos_a1, double* current_pos_a0, 
-		double* current_pos_a1, 
-		double& collision_time,
-		unsigned int edge_index, unsigned int edge_obj_No, unsigned int num, unsigned int* edge_indices,
-		std::array<double, 3>** vertex_for_render, std::array<double, 3>** vertex_pos);
 	void collisionTimeByPair(int thread_No);
 	void collisionTimeByElement(int thread_No);
 
@@ -734,8 +739,7 @@ private:
 		unsigned int* vertex_record, double* volume, std::vector<std::array<double, 3>*>& vertex_position);
 	void computeEEVolume(double* vertex_position_0, double* vertex_position_1, unsigned int pair_num,
 		unsigned int* edge_record, double* volume, std::vector<std::array<double, 3>*>& vertex_position, std::vector<unsigned int*>& edge_vertices);
-	bool floorCollisionTime(double* initial_position, double* current_pos, unsigned int dimension, bool direction, 
-		double floor_value, double& collision_time);
+
 
 	std::vector<std::vector<double>>record_VT_collision_time;
 	std::vector<std::vector<double>>record_EE_collision_time;

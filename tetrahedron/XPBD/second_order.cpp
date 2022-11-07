@@ -724,6 +724,13 @@ void SecondOrderConstraint::setTetHessianFromBarrierHessian(MatrixXd& Hessian_sy
 		if (triangle_vertex_order_in_system[vertex_in_pair[i]] != -1) {
 			for (int j = 0; j < vertex_in_use; ++j) {
 				if (triangle_vertex_order_in_system[vertex_in_pair[j]] != -1) {
+
+					if (triangle_vertex_order_in_system[vertex_in_pair[i]]<0 || triangle_vertex_order_in_system[vertex_in_pair[i]]>Hessian_system.cols() / 3 ||
+						triangle_vertex_order_in_system[vertex_in_pair[j]]<0 || triangle_vertex_order_in_system[vertex_in_pair[j]]>Hessian_system.cols() / 3) {
+						std::cout << "error " << triangle_vertex_order_in_system[0] << " " << triangle_vertex_order_in_system[1] << " " << triangle_vertex_order_in_system[2] << " " << triangle_vertex_order_in_system[3] << std::endl;
+						std::cout << vertex_in_use << " " << vertex_in_pair[0] << " " << vertex_in_pair[1] << " " << vertex_in_pair[2] << " " << vertex_in_pair[3] << std::endl;
+					}
+
 					Hessian_system.block<3, 3>(3 * triangle_vertex_order_in_system[vertex_in_pair[i]], 3 * triangle_vertex_order_in_system[vertex_in_pair[j]])
 						+= Hessian_.block<3, 3>(3 * i, 3 * j);
 				}

@@ -396,7 +396,7 @@ void Collision::initialDHatTolerance(double ave_edge_length)
 
 	volume_boundary = 0.5 * d_hat*ave_edge_length;
 
-	tolerance = 1e-3 * d_hat;
+	tolerance = 1e-5 * d_hat;
 
 	eta = 0.01;	
 	tolerance_2 = tolerance * tolerance;
@@ -1676,7 +1676,7 @@ void Collision::globalCollisionTime()
 		std::cout << "attention: collision time equals zero" << std::endl;
 	}
 
-	////std::cout << "--collision time " << collision_time << std::endl;
+	std::cout << "--collision time " << collision_time << std::endl;
 
 }
 
@@ -4870,6 +4870,26 @@ void Collision::vertexTriangleCollisionTimeCompare(int thread_No, unsigned int p
 	}
 }
 
+
+void Collision::EECollisionTimeOneEdgeAll(double* initial_pos_a0, double* initial_pos_a1, double* current_pos_a0, double* current_pos_a1, double& collision_time,
+	unsigned int num, unsigned int* edge_indices,
+	std::array<double, 3>** vertex_for_render, std::array<double, 3>** vertex_pos, unsigned int** compare_edge_vertices)
+{
+	double time;
+	unsigned int* indices;
+
+	for (int i = 0; i < num; i += 2) {
+		indices = compare_edge_vertices[edge_indices[i]] + (edge_indices[i + 1] << 1);
+		time = CCD::edgeEdgeCcd(initial_pos_a0, initial_pos_a1, vertex_for_render[edge_indices[i]][*indices].data(),
+			vertex_for_render[edge_indices[i]][*(indices + 1)].data(),
+			current_pos_a0, current_pos_a1, vertex_pos[edge_indices[i]][*indices].data(),
+			vertex_pos[edge_indices[i]][*(indices + 1)].data(), eta, tolerance);
+		if (time < collision_time) {
+			collision_time = time;
+		}		
+	}
+}
+
 void Collision::EECollisionTimeOneEdge(double* initial_pos_a0, double* initial_pos_a1, double* current_pos_a0, double* current_pos_a1, double& collision_time, 
 	unsigned int edge_index, unsigned int edge_obj_No,  unsigned int num, unsigned int* edge_indices, 
 	std::array<double, 3>** vertex_for_render, std::array<double, 3>** vertex_pos)
@@ -4902,24 +4922,34 @@ void Collision::EECollisionTimeOneEdge(double* initial_pos_a0, double* initial_p
 }
 
 bool Collision::floorCollisionTime(double* initial_position, double* current_pos, unsigned int dimension, bool direction,
-	double floor_value, double& collision_time)
+	double floor_value, double& collision_time, double tolerance)
 {
 	if (direction) {
+		floor_value += tolerance;
 		if (current_pos[dimension] > floor_value) {
 			return false;
 		}
+		floor_value += tolerance;
 	}
 	else {
+		floor_value -= tolerance;
 		if (current_pos[dimension] < floor_value) {
 			return false;
 		}
+		
 	}
 	double time = (initial_position[dimension] - floor_value) / (initial_position[dimension] - current_pos[dimension]);
 	if (collision_time > time) {
 		collision_time = time;
 	}
 	if (time < 0) {
-		//std::cout << "error collision time of floor is negative" << std::endl;
+		std::cout << "error collision time of floor is negative" << std::endl;
+	}
+
+	if (direction) {
+		if (initial_position[dimension] < floor_value) {
+			std::cout << "error exceed floor" << std::endl;
+		}
 	}
 
 	return true;
@@ -4947,7 +4977,7 @@ void Collision::TVCollisionTimeOneVertex(double* initial_pos_0, double* initial_
 
 
 void Collision::VTCollisionTimeOneVertex(double* initial_pos, double* current_pos, double& collision_time, unsigned int num,
-	unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex)
+	unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex, std::array<int, 3>** triangle_indices)
 {
 	double time;
 	int* indices;
@@ -5389,7 +5419,7 @@ void Collision::collisionTimeSingleVertex(unsigned int obj_index, unsigned int v
 	VTCollisionTimeOneVertex(initial_pos[vertex_index].data(), current_pos[vertex_index].data(), collision_time, 
 		spatial_hashing.vertex_triangle_pair_num_record[obj_index][vertex_index_on_surface],
 		spatial_hashing.vertex_triangle_pair_by_vertex[obj_index] + estimate_coeff_for_vt_pair_num * vertex_index_on_surface,
-		vertex_collision_free.data(), vertex_position.data());
+		vertex_collision_free.data(), vertex_position.data(),triangle_indices.data());
 	
 	std::vector<unsigned int>* element = &mesh_struct[obj_index]->vertices[vertex_index].edge;
 	unsigned int* element_;
@@ -5417,6 +5447,7 @@ void Collision::collisionTimeSingleVertex(unsigned int obj_index, unsigned int v
 }
 
 
+
 void Collision::collisionFreeOneVertex(unsigned int obj_No, unsigned int vertex_No, unsigned int vertex_index_on_surface, double* initial_vertex_pos, double* current_vertex_pos,
 	std::array<double, 3>* initial_pos_this_obj, std::array<double, 3>* current_pos_this_obj,
 	std::array<double, 3>**current_pos)
@@ -5428,7 +5459,7 @@ void Collision::collisionFreeOneVertex(unsigned int obj_No, unsigned int vertex_
 	VTCollisionTimeOneVertex(initial_vertex_pos, current_vertex_pos, collision_time,
 		vertex_triangle_pair_num_record[obj_No][vertex_index_on_surface],
 		vertex_triangle_pair_by_vertex[obj_No] + close_vt_pair_num * vertex_index_on_surface, current_pos,
-		current_pos);
+		current_pos,triangle_indices.data());
 	
 	//TV
 	element = &mesh_struct[obj_No]->vertices[vertex_No].face;
@@ -5457,12 +5488,12 @@ void Collision::collisionFreeOneVertex(unsigned int obj_No, unsigned int vertex_
 		VTCollisionTimeOneVertex(initial_vertex_pos, current_vertex_pos, collision_time, 
 			vertex_obj_triangle_collider_num_record[obj_No][vertex_index_on_surface],
 			vertex_obj_triangle_collider_pair_by_vertex[obj_No] + close_vt_collider_pair_num * vertex_index_on_surface,
-			vertex_position_collider.data(), vertex_position_collider.data());	
+			vertex_position_collider.data(), vertex_position_collider.data(),triangle_indices_collider.data());	
 	}
 	//floor
 	if (floor->exist) {	
 		floorCollisionTime(initial_vertex_pos, current_vertex_pos, floor->dimension,
-			floor->normal_direction, floor->value, collision_time);		
+			floor->normal_direction, floor->value, collision_time, tolerance);		
 	}
 
 	if (collision_time < 1.0) {
@@ -5497,7 +5528,8 @@ void Collision::collisionTimeByElement(int thread_No)
 		if(i<cloth->size()){
 			for (int j = vertex_index_start_per_thread[i][thread_No]; j < element_end; ++j) {
 				VTCollisionTimeOneVertex(initial_pos[j].data(), current_pos[j].data(), collision_time, element_num[j],
-					element + estimate_coeff_for_vt_pair_num * j, vertex_collision_free.data(), vertex_position.data());
+					element + estimate_coeff_for_vt_pair_num * j, vertex_collision_free.data(), vertex_position.data(),
+					triangle_indices.data());
 			}
 		}
 		else {
@@ -5506,7 +5538,7 @@ void Collision::collisionTimeByElement(int thread_No)
 			for (int k = vertex_index_start_per_thread[i][thread_No]; k < element_end; ++k) {
 				j = surface_to_normal[k];
 				VTCollisionTimeOneVertex(initial_pos[j].data(), current_pos[j].data(), collision_time, element_num[k],
-					element + estimate_coeff_for_vt_pair_num * k, vertex_collision_free.data(), vertex_position.data());
+					element + estimate_coeff_for_vt_pair_num * k, vertex_collision_free.data(), vertex_position.data(), triangle_indices.data());
 			}
 		}
 	}
@@ -5537,7 +5569,8 @@ void Collision::collisionTimeByElement(int thread_No)
 			if (i < cloth->size()) {
 				for (int j = vertex_index_start_per_thread[i][thread_No]; j < element_end; ++j) {
 					VTCollisionTimeOneVertex(initial_pos[j].data(), current_pos[j].data(), collision_time, element_num[j],
-						element + estimate_coeff_for_vt_collider_pair_num * j, vertex_for_render_collider.data(), vertex_position_collider.data());
+						element + estimate_coeff_for_vt_collider_pair_num * j, vertex_for_render_collider.data(), 
+						vertex_position_collider.data(),triangle_indices.data());
 				}
 			}
 			else {
@@ -5546,7 +5579,8 @@ void Collision::collisionTimeByElement(int thread_No)
 				for (int k = vertex_index_start_per_thread[i][thread_No]; k < element_end; ++k) {
 					j = surface_to_normal[k];
 					VTCollisionTimeOneVertex(initial_pos[j].data(), current_pos[j].data(), collision_time, element_num[k],
-						element + estimate_coeff_for_vt_collider_pair_num * k, vertex_for_render_collider.data(), vertex_position_collider.data());
+						element + estimate_coeff_for_vt_collider_pair_num * k, vertex_for_render_collider.data(), 
+						vertex_position_collider.data(),triangle_indices_collider.data());
 				}
 			}
 		}
@@ -5563,7 +5597,7 @@ void Collision::collisionTimeByElement(int thread_No)
 			if (i < cloth->size()) {
 				for (int j = vertex_index_start_per_thread[i][thread_No]; j < element_end; ++j) {
 					floorCollisionTime(initial_pos[j].data(), current_pos[j].data(), floor->dimension,
-						floor->normal_direction, floor->value, collision_time);
+						floor->normal_direction, floor->value, collision_time,tolerance);
 				}
 			}
 			else {
@@ -5572,7 +5606,7 @@ void Collision::collisionTimeByElement(int thread_No)
 				for (int k = vertex_index_start_per_thread[i][thread_No]; k < element_end; ++k) {
 					j = surface_to_normal[k];
 					floorCollisionTime(initial_pos[j].data(), current_pos[j].data(), floor->dimension,
-						floor->normal_direction, floor->value, collision_time);
+						floor->normal_direction, floor->value, collision_time,tolerance);
 				}
 			}
 
@@ -5580,6 +5614,9 @@ void Collision::collisionTimeByElement(int thread_No)
 	}
 
 	collision_time_thread[thread_No] = collision_time;
+
+	
+
 }
 
 void Collision::collisionTimeByPair(int thread_No)
@@ -5755,7 +5792,7 @@ void Collision::collisionTimeByPair(int thread_No)
 			if (i < cloth->size()) {
 				for (int j = vertex_index_start_per_thread[i][thread_No]; j < element_end; ++j) {
 					floorCollisionTime(initial_pos[j].data(), current_pos[j].data(), floor->dimension,
-						floor->normal_direction, floor->value, collision_time);
+						floor->normal_direction, floor->value, collision_time,tolerance);
 				}
 			}
 			else {
@@ -5764,7 +5801,7 @@ void Collision::collisionTimeByPair(int thread_No)
 				for (int k = vertex_index_start_per_thread[i][thread_No]; k < element_end; ++k) {
 					j = surface_to_normal[k];
 					floorCollisionTime(initial_pos[j].data(), current_pos[j].data(), floor->dimension,
-						floor->normal_direction, floor->value, collision_time);
+						floor->normal_direction, floor->value, collision_time,tolerance);
 				}
 			}
 

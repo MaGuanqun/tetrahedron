@@ -132,6 +132,8 @@ private:
 	bool convergeCondition(unsigned int iteration_num);
 	bool innerConvergeCondition(unsigned int iteration_num);
 
+	std::vector<std::array<double, 3>*>address_of_record_vertex_position;
+
 	std::vector<std::vector<std::array<double, 3>>> record_vertex_position;
 	std::vector<std::vector<std::array<double, 3>>> record_gloabl_CCD_vertex_position;
 	//std::vector<std::vector<std::array<double, 3>>> record_outer_vertex_position;
@@ -232,7 +234,7 @@ private:
 		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num,
 		std::vector<unsigned int>* triangle_of_a_tet, 	std::vector<unsigned int>* edge_of_a_tet, double collision_stiffness,
 		unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
-		int* vertex_index_on_surface);
+		int* vertex_index_on_surface, std::array<double, 3>* record_ori_pos);
 
 	std::vector<double>record_energy;
 
@@ -276,6 +278,13 @@ private:
 
 	void getFloorHessianForTet(MatrixXd& Hessian, VectorXd& grad, double* vertex_position, double floor_value,
 		unsigned int dimension, double collision_stiffness, bool direction, double d_hat, unsigned int vertex_order_in_matrix, unsigned int unfixed_vertex_num);
+
+	double getCollisionTime(std::vector<unsigned int>* triangle_of_a_tet,
+		std::vector<unsigned int>* edge_of_a_tet,
+		unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
+		int unfixed_tet_vertex_num,
+		int* vertex_index_on_surface, std::array<double, 3>* current_vertex_position,
+		std::array<double, 3>* initial_vertex_position);
 
 };
 
