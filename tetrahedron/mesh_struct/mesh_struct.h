@@ -135,6 +135,7 @@ public:
 	// 1 means the two common vertices in this tet's vertex index's order is 1 (Here exclude fixed vertex)
 	std::vector<std::vector<unsigned int>> tet_neighbor_tet_vertex_order; 
 
+	std::vector<bool>is_vertex_fixed;
 
 
 protected:

@@ -32,6 +32,10 @@ void MeshStruct::resetMassInv()
 	for (unsigned int i = 0; i < anchor_vertex.size(); ++i) {
 		mass_inv[anchor_vertex[i]] = 0.0;
 	}
+	std::fill(is_vertex_fixed.begin(), is_vertex_fixed.end(), false);
+	for (unsigned int i = 0; i < anchor_vertex.size(); ++i) {
+		is_vertex_fixed[anchor_vertex[i]] = true;
+	}
 }
 
 void MeshStruct::updateAnchorPerThread(int total_thread_num)
@@ -51,6 +55,7 @@ void MeshStruct::setVertex()
 		vertices[triangle_indices[i][2]].face.push_back(i);
 	}
 
+	is_vertex_fixed.resize(vertex_position.size(), false);
 }
 
 void MeshStruct::setFace()
