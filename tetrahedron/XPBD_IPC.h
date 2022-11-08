@@ -248,11 +248,9 @@ private:
 	void getVTCollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, double* vertex_position_, double stiffness,
 		unsigned int* VT, unsigned int num, unsigned int vertex_order_in_matrix, unsigned int obj_No,
 		int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2, unsigned int* VT_collider, int num_collider);
-
-
-	//void getVTCollisionHessainForPair(MatrixXd& Hessian, VectorXd& grad, double* vertex_position_, double stiffness,
-	//	unsigned int* VT, unsigned int num, unsigned int vertex_order_in_matrix, unsigned int obj_No,
-	//	int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2);
+	void getVTCollisionHessainForPair(MatrixXd& Hessian, VectorXd& grad, double* vertex_position_, double stiffness,
+		unsigned int* VT, unsigned int num, unsigned int vertex_order_in_matrix, unsigned int vertex_obj_No, unsigned int tri_obj_No,
+		int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2, unsigned int* VT_collider, int num_collider);
 
 
 
@@ -294,12 +292,12 @@ private:
 	//void solveNewtonCD_collisionBlock(unsigned int vertex_obj_no, unsigned int vertex_index, 
 	//	unsigned int triangle_obj_No, unsigned int triangle_index);
 
-	//void getCollisionBlockHessian(MatrixXd& Hessian, VectorXd& grad, std::vector<unsigned int>* triangle_of_first_primitve,
-	//	std::vector<unsigned int>* triangle_of_second_primitve,
-	//	std::vector<unsigned int>* edge_of_first_primitve,
-	//	std::vector<unsigned int>* edge_of_second_primitve,
-	//	double collision_stiffness, int* pair_actual_unfixed_vertex_indices,
-	//	int unfixed_vertex_num, double d_hat_2, int* vertex_index_on_surface);
+	void getCollisionBlockCollisionHessian(MatrixXd& Hessian, VectorXd& grad, std::vector<unsigned int>* triangle_of_first_primitve,
+		std::vector<unsigned int>* triangle_of_second_primitve,
+		std::vector<unsigned int>* edge_of_first_primitve,
+		std::vector<unsigned int>* edge_of_second_primitve,
+		double collision_stiffness, int* pair_actual_unfixed_vertex_indices,
+		int unfixed_vertex_num, double d_hat_2, int* vertex_index_on_surface);
 
 	bool has_collider;
 };
