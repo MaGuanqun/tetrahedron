@@ -23,7 +23,8 @@ public:
 
 	void updateUnfixedPointData();
 	void initialUnfixedIndex();
-
+	void sortTriangleAroundElement();
+	void addVertexSurfaceIndex();
 private:
 
 

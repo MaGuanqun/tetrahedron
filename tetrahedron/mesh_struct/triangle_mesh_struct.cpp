@@ -46,6 +46,12 @@ double TriangleMeshStruct::setMass(double density)
 }
 
 
+void TriangleMeshStruct::sortTriangleAroundElement()
+{
+	thread->assignTask(this, SORT_TRIANGLE_AROUND_TRIANGLE);
+	thread->assignTask(this, SORT_TRIANGLE_AROUND_VERTEX);
+}
+
 
 //VERTEX_NORMAL_FROM_RENDER
 void TriangleMeshStruct::getVertexNormalFromRenderPerThread(int thread_id)
@@ -343,6 +349,14 @@ void TriangleMeshStruct::setThreadIndex(int total_thread_num_)
 		edge_index_begin_per_thread.resize(total_thread_num, 0);
 		arrangeIndex(total_thread_num_, edges.size(), edge_index_begin_per_thread.data());
 
+	}
+}
+
+void TriangleMeshStruct::addVertexSurfaceIndex()
+{
+	vertex_surface_index.resize(vertex_position.size());
+	for (unsigned int i = 0; i < vertex_surface_index.size(); ++i) {
+		vertex_surface_index[i] = i;
 	}
 }
 

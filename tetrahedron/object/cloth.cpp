@@ -107,7 +107,7 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 		mesh_struct.getRenderNormal();
 		mesh_struct.getNormal();
 	}
-
+	mesh_struct.addVertexSurfaceIndex();
 
 
 
@@ -129,6 +129,8 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	initialHashAABB();
 	setRepresentativePrimitve();
 	obtainAABBMoveRadius();
+
+	mesh_struct.sortTriangleAroundElement();
 }
 
 

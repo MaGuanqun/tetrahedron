@@ -46,6 +46,11 @@ public:
 	std::vector<Face> faces;
 	std::vector<Edge> edges;
 
+
+	std::vector<std::vector<unsigned int>>face_around_face;
+	std::vector<std::vector<unsigned int>>edge_around_face;
+	
+
 	std::vector<unsigned int>face_edges;// edge indices of every triangle
 	std::vector<double>edge_length;// edge length of every triangle
 	std::vector<unsigned int>edge_vertices;//vertex indices of every edge
@@ -138,13 +143,22 @@ public:
 	std::vector<bool>is_vertex_fixed;
 
 
+	void sortTriangleAroundVertexEdge(int thread_id);
+	void setFaceEdgeAroundFace(int thread_id);
+
+	std::vector<int> vertex_surface_index;//size is the global vertex size, verted index -> surface index
+
 protected:
 	int type;
 	bool isEdgeExist(unsigned int v0, unsigned int v1, unsigned int& edge_index);
 	void addEdge(int v0, int v1, int face, int opposite_vertex, int edge_index_indicator);
 	void addNeighborVertex();
 
+
+
 private:
+
+	bool isCommonUsed(std::vector<bool>* is_common_triangle_used, std::vector<unsigned int>* common_triangle, unsigned int triangle_index);
 
 };
 

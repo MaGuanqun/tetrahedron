@@ -115,6 +115,7 @@ private:
 
 	std::vector<std::vector<bool>*> is_vertex_fixed;
 
+	std::vector<int*>vertex_index_surface;
 
 	void initialClothBending();
 	//void solveBendingConstraint();
@@ -305,16 +306,26 @@ private:
 		int* vertex_index_on_surface, std::array<double, 3>* current_vertex_position,
 		std::array<double, 3>* initial_vertex_position);
 
-	void solveNewtonCD_collisionBlock(unsigned int vertex_obj_no, unsigned int vertex_index, unsigned int triangle_obj_No, unsigned int triangle_index,
-		double stiffness, double dt, double collision_stiffness);
+	void getCollisionPairHessian(MatrixXd& Hessian, VectorXd& grad, unsigned int obj_0,  unsigned int obj_1, 
+		double collision_stiffness, std::vector<unsigned int>* triangle_around_0, std::vector<unsigned int>* triangle_around_1,
+		std::vector<unsigned int>* edge_around_0, std::vector<unsigned int>* edge_around_1, double d_hat_2,
+		int* unfixed_pair_vertex_index, int unfixed_num);
+
+	void solveVT_collisionBlock(unsigned int vertex_obj_no, unsigned int vertex_index, unsigned int triangle_obj_No, unsigned int triangle_index,
+		double stiffness, double dt, double collision_stiffne, std::vector<unsigned int>* triangle_around_vertex, std::vector<unsigned int>* triangle_around_triangle,
+		std::vector<unsigned int>* edge_around_vertex, std::vector<unsigned int>* edge_around_triangle, double d_hat_2);
+
+
 
 	void getCollisionBlockCollisionHessian(MatrixXd& Hessian, VectorXd& grad, std::vector<unsigned int>* triangles,
 		std::vector<unsigned int>* edges,
 		double collision_stiffness, int* pair_actual_unfixed_vertex_indices,
-		int unfixed_vertex_num, double d_hat_2, int* vertex_index_on_surface, unsigned int vertex_obj_No, unsigned int tri_obj_No);
+		int unfixed_vertex_num, double d_hat_2, int** vertex_index_on_surface, unsigned int vertex_obj_No, unsigned int tri_obj_No);
 
 	bool has_collider;
 
+	void comparePrimitiveAroundPrimitveTogether(std::vector<unsigned int>* primitive_around_1, std::vector<unsigned int>* primitive_around_2,
+		unsigned int obj_1, unsigned int obj_2, std::vector<unsigned int>* primitive_together);
 	
 };
 

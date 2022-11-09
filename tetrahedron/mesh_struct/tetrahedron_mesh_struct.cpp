@@ -620,6 +620,14 @@ void TetrahedronMeshStruct::getRenderVertexNormalPerThread(int thread_id)
 
 }
 
+
+void TetrahedronMeshStruct::sortTriangleAroundElement()
+{
+	thread->assignTask(this, SORT_TRIANGLE_AROUND_TRIANGLE);
+	thread->assignTask(this, SORT_TRIANGLE_AROUND_VERTEX_EDGE);
+}
+
+
 void TetrahedronMeshStruct::recordTriangleIndexOfATet()
 {
 	triangle_index_of_a_tet.resize(indices.size());

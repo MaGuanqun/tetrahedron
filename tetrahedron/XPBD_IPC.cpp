@@ -1,4 +1,5 @@
 #include"XPBD_IPC.h"
+#include<algorithm>
 
 XPBD_IPC::XPBD_IPC()
 {
@@ -190,6 +191,8 @@ void XPBD_IPC::reorganzieDataOfObjects()
 	edge_vertices.resize(total_obj_num);
 	is_vertex_fixed.resize(total_obj_num);
 
+	vertex_index_surface.resize(total_obj_num);
+
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		vertex_position[i] = cloth->data()[i].mesh_struct.vertex_position.data();
 		initial_vertex_position[i] = cloth->data()[i].mesh_struct.vertex_for_render.data();
@@ -204,6 +207,7 @@ void XPBD_IPC::reorganzieDataOfObjects()
 
 		address_of_record_vertex_position[i] = record_vertex_position[i].data();
 		is_vertex_fixed[i] = &cloth->data()[i].mesh_struct.is_vertex_fixed;
+		vertex_index_surface[i] = cloth->data()[i].mesh_struct.vertex_surface_index.data();
 	}
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		vertex_position[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_position.data();
@@ -219,6 +223,7 @@ void XPBD_IPC::reorganzieDataOfObjects()
 
 		address_of_record_vertex_position[i + cloth->size()] = record_vertex_position[i + cloth->size()].data();
 		is_vertex_fixed[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct.is_vertex_fixed;
+		vertex_index_surface[i + cloth->size()] = cloth->data()[i].mesh_struct.vertex_surface_index.data();
 	}
 	if (!collider->empty()) {
 		triangle_indices_collider.resize(collider->size());
@@ -878,24 +883,24 @@ double XPBD_IPC::getCollisionTime(std::vector<unsigned int>* triangle_of_a_tet,
 void XPBD_IPC::getCollisionBlockCollisionHessian(MatrixXd& Hessian, VectorXd& grad, std::vector<unsigned int>* triangles,
 	std::vector<unsigned int>* edges,
 	double collision_stiffness, int* pair_actual_unfixed_vertex_indices, //pair_actual_unfixed_vertex_indices first obj, second primitive index
-	int unfixed_vertex_num, double d_hat_2, int* vertex_index_on_surface, unsigned int vertex_obj_No, unsigned int tri_obj_No)//unfixed_vertex_num size double
+	int unfixed_vertex_num, double d_hat_2, int** vertex_index_on_surface, unsigned int vertex_obj_No, unsigned int tri_obj_No)//unfixed_vertex_num size double
 {
 	if (has_collider) {
 		for (int i = 0; i < unfixed_vertex_num; i += 2) {
 			getVTCollisionHessainForPair(Hessian, grad, vertex_position[pair_actual_unfixed_vertex_indices[i]][pair_actual_unfixed_vertex_indices[i + 1]].data(),
-				collision_stiffness, collision.vertex_triangle_pair_by_vertex[pair_actual_unfixed_vertex_indices[i]] + collision.close_vt_pair_num * vertex_index_on_surface[pair_actual_unfixed_vertex_indices[i + 1]],
-				collision.vertex_triangle_pair_num_record[pair_actual_unfixed_vertex_indices[i]][vertex_index_on_surface[pair_actual_unfixed_vertex_indices[i + 1]]],
+				collision_stiffness, collision.vertex_triangle_pair_by_vertex[pair_actual_unfixed_vertex_indices[i]] + collision.close_vt_pair_num * vertex_index_on_surface[pair_actual_unfixed_vertex_indices[i]][pair_actual_unfixed_vertex_indices[i + 1]],
+				collision.vertex_triangle_pair_num_record[pair_actual_unfixed_vertex_indices[i]][vertex_index_on_surface[pair_actual_unfixed_vertex_indices[i]][pair_actual_unfixed_vertex_indices[i + 1]]],
 				i >> 1, vertex_obj_No, tri_obj_No, pair_actual_unfixed_vertex_indices, unfixed_vertex_num, d_hat_2,
-				collision.vertex_obj_triangle_collider_pair_by_vertex[pair_actual_unfixed_vertex_indices[i]] + collision.close_vt_collider_pair_num * vertex_index_on_surface[pair_actual_unfixed_vertex_indices[i + 1]],
-				collision.vertex_obj_triangle_collider_num_record[pair_actual_unfixed_vertex_indices[i]][vertex_index_on_surface[pair_actual_unfixed_vertex_indices[i + 1]]]);
+				collision.vertex_obj_triangle_collider_pair_by_vertex[pair_actual_unfixed_vertex_indices[i]] + collision.close_vt_collider_pair_num * vertex_index_on_surface[pair_actual_unfixed_vertex_indices[i]][pair_actual_unfixed_vertex_indices[i + 1]],
+				collision.vertex_obj_triangle_collider_num_record[pair_actual_unfixed_vertex_indices[i]][vertex_index_on_surface[pair_actual_unfixed_vertex_indices[i]][pair_actual_unfixed_vertex_indices[i + 1]]]);
 		}
 	}
 	else {
 		unsigned int emp[1] = { 0 };
 		for (int i = 0; i < unfixed_vertex_num; i += 2) {
 			getVTCollisionHessainForPair(Hessian, grad, vertex_position[pair_actual_unfixed_vertex_indices[i]][pair_actual_unfixed_vertex_indices[i + 1]].data(),
-				collision_stiffness, collision.vertex_triangle_pair_by_vertex[pair_actual_unfixed_vertex_indices[i]] + collision.close_vt_pair_num * vertex_index_on_surface[pair_actual_unfixed_vertex_indices[i + 1]],
-				collision.vertex_triangle_pair_num_record[pair_actual_unfixed_vertex_indices[i]][vertex_index_on_surface[pair_actual_unfixed_vertex_indices[i + 1]]],
+				collision_stiffness, collision.vertex_triangle_pair_by_vertex[pair_actual_unfixed_vertex_indices[i]] + collision.close_vt_pair_num * vertex_index_on_surface[pair_actual_unfixed_vertex_indices[i]][pair_actual_unfixed_vertex_indices[i + 1]],
+				collision.vertex_triangle_pair_num_record[pair_actual_unfixed_vertex_indices[i]][vertex_index_on_surface[pair_actual_unfixed_vertex_indices[i]][pair_actual_unfixed_vertex_indices[i + 1]]],
 				i >> 1, vertex_obj_No, tri_obj_No, pair_actual_unfixed_vertex_indices, unfixed_vertex_num, d_hat_2,
 				emp, 0);
 		}
@@ -1701,20 +1706,86 @@ void XPBD_IPC::getARAPHessian(Matrix3d& Hessian, Vector3d& grad, std::array<doub
 }
 
 
-
-void XPBD_IPC::solveNewtonCD_collisionBlock(unsigned int vertex_obj_no, unsigned int vertex_index, unsigned int triangle_obj_No, unsigned int triangle_index,
-	double stiffness, double dt, double collision_stiffness)
+void XPBD_IPC::solveVT_collisionBlock(unsigned int vertex_obj_no, unsigned int vertex_index, unsigned int triangle_obj_No, unsigned int triangle_index,
+	double stiffness, double dt, double collision_stiffne, std::vector<unsigned int>* triangle_around_vertex, std::vector<unsigned int>* triangle_around_triangle,
+	std::vector<unsigned int>* edge_around_vertex, std::vector<unsigned int>* edge_around_triangle, double d_hat_2)
 {
 	MatrixXd Hessian;
 	VectorXd grad;
 	int unfixed_pair_vertex_index[8];
 	memset(unfixed_pair_vertex_index, 0xff, 32);
+	int unfixed_num = 0;
+	int* tri_indices = triangle_indices[triangle_obj_No][triangle_index].data();
+	if (!(*is_vertex_fixed[vertex_obj_no])[vertex_index]) {
+		unfixed_pair_vertex_index[unfixed_num] = vertex_obj_no;
+		unfixed_pair_vertex_index[unfixed_num + 1] = vertex_index;
+		unfixed_num += 2;
+	}
+	for (unsigned int i = 0; i < 3; ++i) {
+		if (!(*is_vertex_fixed[triangle_obj_No])[tri_indices[i]]) {
+			unfixed_pair_vertex_index[unfixed_num] = triangle_obj_No;
+			unfixed_pair_vertex_index[unfixed_num + 1] = tri_indices[i];
+			unfixed_num += 2;
+		}
+	}
+	grad.resize(unfixed_num >> 1);
+	grad.setZero();
+	Hessian.resize(unfixed_num >> 1, unfixed_num >> 1);
+	Hessian.setZero();
 
-	getCollisionBlockCollisionHessian()
+	solveCollisionPairBlock(Hessian, grad, vertex_obj_no, triangle_obj_No, collision_stiffne, triangle_around_vertex, triangle_around_triangle,
+		edge_around_vertex, edge_around_triangle,d_hat_2,unfixed_pair_vertex_index, unfixed_num);
+}
+
+
+
+
+
+
+void XPBD_IPC::getCollisionPairHessian(MatrixXd& Hessian, VectorXd& grad, unsigned int obj_0, unsigned int obj_1,
+	double collision_stiffness, std::vector<unsigned int>* triangle_around_0, std::vector<unsigned int>* triangle_around_1,
+	std::vector<unsigned int>* edge_around_0, std::vector<unsigned int>* edge_around_1, double d_hat_2, int* unfixed_pair_vertex_index, int unfixed_num)
+{
+
+	std::vector<unsigned int>around_triangle;
+	comparePrimitiveAroundPrimitveTogether(triangle_around_0, triangle_around_1, obj_0, obj_1,
+		&around_triangle);
+
+	std::vector<unsigned int>around_edge;
+	comparePrimitiveAroundPrimitveTogether(edge_around_0, edge_around_1, obj_0, obj_1,
+		&around_edge);
+
+	getCollisionBlockCollisionHessian(Hessian, grad, &around_triangle, &around_edge, collision_stiffness,
+		unfixed_pair_vertex_index, unfixed_num, d_hat_2, vertex_index_surface.data(), obj_0, obj_1);
 
 }
 
 
+
+void XPBD_IPC::comparePrimitiveAroundPrimitveTogether(std::vector<unsigned int>* primitive_around_1, std::vector<unsigned int>* primitive_around_2,
+	unsigned int obj_1, unsigned int obj_2, std::vector<unsigned int>* primitive_together)
+{
+	primitive_together->reserve((primitive_around_1->size() + primitive_around_2->size()) << 1);
+	if (obj_1 != obj_2) {
+		for (auto i = primitive_around_1->begin(); i < primitive_around_1->end(); ++i) {
+			primitive_together->emplace_back(obj_1);
+			primitive_together->emplace_back(*i);
+		}
+		for (auto i = primitive_around_2->begin(); i < primitive_around_2->end(); ++i) {
+			primitive_together->emplace_back(obj_2);
+			primitive_together->emplace_back(*i);
+		}
+	}
+	else {
+		std::set_union(primitive_around_1->begin(), primitive_around_1->end(),
+			primitive_around_2->begin(), primitive_around_2->end(), std::back_inserter(*primitive_together));
+		primitive_together->resize(primitive_together->size() << 1);
+		for (int i = primitive_together->size() - 1; i > -1; i -= 2) {
+			primitive_together->data()[i] = primitive_together->data()[i >> 1];
+			primitive_together->data()[i - 1] = obj_1;
+		}
+	}
+}
 
 void XPBD_IPC::solveNewtonCD_tetBlock(std::array<double, 3>* vertex_position, double stiffness, double dt,
 	double* mass,
