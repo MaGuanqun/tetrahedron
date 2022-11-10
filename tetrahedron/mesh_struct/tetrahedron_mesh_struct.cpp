@@ -689,6 +689,7 @@ void TetrahedronMeshStruct::sortTriangleAroundElement()
 
 	thread->assignTask(this, SORT_TRIANGLE_EDGE_AROUND_TRIANGLE_EDGE);
 	thread->assignTask(this, SORT_TRIANGLE_AROUND_VERTEX_EDGE);
+
 }
 
 

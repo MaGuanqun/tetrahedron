@@ -17,8 +17,8 @@ XPBD_IPC::XPBD_IPC()
 	velocity_damp = 0.995;
 	energy_converge_ratio = 5e-3;
 
-	min_inner_iteration = 40;
-	min_outer_iteration = 3;
+	min_inner_iteration = 5;
+	min_outer_iteration = 2;
 
 
 
@@ -541,6 +541,10 @@ bool XPBD_IPC::innerConvergeCondition(unsigned int iteration_num)
 		return false;
 	}
 
+	if (energy<1e-13) {
+		return true;
+	}
+
 	if (abs(energy - previous_energy) / previous_energy < energy_converge_ratio) {
 		return true;
 	}
@@ -549,8 +553,6 @@ bool XPBD_IPC::innerConvergeCondition(unsigned int iteration_num)
 	if (iteration_num > max_iteration_number) {
 		return true;
 	}
-
-	std::cout << abs(energy - previous_energy) / previous_energy << std::endl;
 
 	return false;
 
@@ -744,17 +746,17 @@ void XPBD_IPC::newtonVTCollisionBlock()
 	std::vector<unsigned int>* tet_around_vertex_;
 	std::vector<unsigned int>* tet_around_triangle_;
 
-	for (unsigned int i = 0; i <total_obj_num ; ++i) {
+	for (int i = 0; i <total_obj_num ; ++i) {
 		vertex_triangle_pair_by_vertex = collision.vertex_triangle_pair_by_vertex[i];
 		vertex_triangle_pair_num_record = collision.vertex_triangle_pair_num_record[i];
 		vertex = mesh_struct[i]->vertices.data();
 		if (i < cloth->size()) {
 			size = mesh_struct[i]->vertex_position.size();
 			tet_around_vertex_ = &tet_around;
-			for (unsigned int j = 0; j < size; ++j) {
+			for (int j = 0; j < size; ++j) {
 				pair_index = vertex_triangle_pair_by_vertex + collision.close_vt_pair_num * j;
 				pair_num = vertex_triangle_pair_num_record[j];
-				for (unsigned int k = 0; k < pair_num; k += 2) {
+				for (int k = 0; k < pair_num; k += 2) {
 					if(pair_index[k]<cloth->size()){
 						tet_around_triangle_ = &tet_around;;
 					}
@@ -771,12 +773,12 @@ void XPBD_IPC::newtonVTCollisionBlock()
 		else {
 			int j;
 			size = tetrahedron->data()[i-cloth->size()].mesh_struct.vertex_index_on_sureface.size();
-			for (unsigned int m = 0; m < size; ++m) {
+			for (int m = 0; m < size; ++m) {
 				j = vertex_surface_to_global[i][m];
 				tet_around_vertex_ = &tet_around_vertex[i][j];
 				pair_index = vertex_triangle_pair_by_vertex + collision.close_vt_pair_num * m;
 				pair_num = vertex_triangle_pair_num_record[m];
-				for (unsigned int k = 0; k < pair_num; k += 2) {
+				for (int k = 0; k < pair_num; k += 2) {
 					if (pair_index[k] < cloth->size()) {
 						tet_around_triangle_ = &tet_around;;
 					}
@@ -1016,7 +1018,7 @@ void XPBD_IPC::newtonEECollisionBlock()
 
 	std::vector<unsigned int>tet_around;
 
-	for (unsigned int i = 0; i < total_obj_num; ++i) {
+	for (int i = 0; i < total_obj_num; ++i) {
 		edge_edge_pair_by_edge = collision.edge_edge_pair_by_edge[i];
 		edge_edge_pair_num_record = collision.edge_edge_pair_num_record[i];
 		triangle_around_edge_ = triangle_around_edge[i];
@@ -1024,10 +1026,10 @@ void XPBD_IPC::newtonEECollisionBlock()
 		size = mesh_struct[i]->edge_length.size();
 		if (i < cloth->size()) {
 			tet_around_edge_0 = &tet_around;
-			for (unsigned int j = 0; j < size; ++j) {
+			for (int j = 0; j < size; ++j) {
 				pair_index = edge_edge_pair_by_edge + collision.close_ee_pair_num * j;
 				pair_num = edge_edge_pair_num_record[j];
-				for (unsigned int k = 0; k < pair_num; k += 2) {
+				for (int k = 0; k < pair_num; k += 2) {
 					if (i > pair_index[k]) {
 						continue;
 					}
@@ -1050,11 +1052,11 @@ void XPBD_IPC::newtonEECollisionBlock()
 			}
 		}
 		else {
-			for (unsigned int j = 0; j < size; ++j) {
+			for (int j = 0; j < size; ++j) {
 				tet_around_edge_0 = &tet_around_edge[i][j];
 				pair_index = edge_edge_pair_by_edge + collision.close_ee_pair_num * j;
 				pair_num = edge_edge_pair_num_record[j];
-				for (unsigned int k = 0; k < pair_num; k += 2) {
+				for (int k = 0; k < pair_num; k += 2) {
 					if (i > pair_index[k]) {
 						continue;
 					}
@@ -1918,7 +1920,7 @@ void XPBD_IPC::getVTCollisionHessainForPair(MatrixXd& Hessian, VectorXd& grad, d
 	int* triangle_vertex;
 	int triangle_vertex_order_in_tet[4];
 	triangle_vertex_order_in_tet[0] = vertex_order_in_matrix;
-	for (unsigned int i = 0; i < num; i += 2) {
+	for (int i = 0; i < num; i += 2) {
 		triangle_vertex = triangle_indices[VT[i]][VT[i + 1]].data();
 		memset(triangle_vertex_order_in_tet + 1, 0xff, 12);
 		if (VT[i] == tri_obj_No || VT[i] == vertex_obj_No) {
@@ -1931,7 +1933,7 @@ void XPBD_IPC::getVTCollisionHessainForPair(MatrixXd& Hessian, VectorXd& grad, d
 
 	if (has_collider) {
 		memset(triangle_vertex_order_in_tet + 1, 0xff, 12);
-		for (unsigned int i = 0; i < num_collider; i += 2) {
+		for (int i = 0; i < num_collider; i += 2) {
 			triangle_vertex = triangle_indices_collider[VT_collider[i]][VT_collider[i + 1]].data();
 			second_order_constraint.computeVTBarrierGradientHessian(Hessian, grad, vertex_position_, vertex_position_collider[VT_collider[i]][triangle_vertex[0]].data(),
 				vertex_position_collider[VT_collider[i]][triangle_vertex[1]].data(), vertex_position_collider[VT_collider[i]][triangle_vertex[2]].data(),

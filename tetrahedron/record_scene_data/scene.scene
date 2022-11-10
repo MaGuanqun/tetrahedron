@@ -1,7 +1,7 @@
 object
 2
-D:\tetrahedron\tetrahedron\model\bar.ele
-D:\tetrahedron\tetrahedron\model\bar.ele
+D:\tetrahedron\tetrahedron\model\bar.1.ele
+D:\tetrahedron\tetrahedron\model\bar.1.ele
 collider
 0
 stiffness
@@ -27,7 +27,7 @@ friction_coe
 floor_dimension
 2
 floor_value
--0.3
+-0.45
 XPBD_IPC
 substep_num
 1

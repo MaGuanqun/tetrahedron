@@ -1681,7 +1681,10 @@ void Collision::globalCollisionTime()
 	if (collision_time > 1.0) {
 		collision_time = 1.0;
 	}
-	collision_time *= 0.9;
+	//if (collision_time < 1.0) {
+		collision_time *= 0.9;
+	//}
+
 
 	if (collision_time == 0.0) {
 		std::cout << "attention: collision time equals zero" << std::endl;
