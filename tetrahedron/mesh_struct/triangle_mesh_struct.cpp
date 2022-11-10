@@ -48,8 +48,8 @@ double TriangleMeshStruct::setMass(double density)
 
 void TriangleMeshStruct::sortTriangleAroundElement()
 {
-	thread->assignTask(this, SORT_TRIANGLE_AROUND_TRIANGLE);
-	thread->assignTask(this, SORT_TRIANGLE_AROUND_VERTEX);
+	thread->assignTask(this, SORT_TRIANGLE_EDGE_AROUND_TRIANGLE_EDGE);
+	thread->assignTask(this, SORT_TRIANGLE_AROUND_VERTEX_EDGE);
 }
 
 

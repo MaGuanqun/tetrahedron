@@ -57,7 +57,7 @@ void MeshStruct::setVertex()
 	is_vertex_fixed.resize(vertex_position.size(), false);
 }
 
-//SORT_TRIANGLE_AROUND_VERTEX
+//SORT_TRIANGLE_AROUND_VERTEX_EDGE
 void MeshStruct::sortTriangleAroundVertexEdge(int thread_id)
 {
 	auto k = vertices.begin() + vertex_index_begin_per_thread[thread_id + 1];
@@ -105,13 +105,11 @@ void MeshStruct::setEdgeForSpring()
 }
 
 
-//SORT_TRIANGLE_EDGE_AROUND_TRIANGLE
+//SORT_TRIANGLE_EDGE_AROUND_TRIANGLE_EDGE
 void MeshStruct::setFaceEdgeAroundFace(int thread_id)
 {
 	std::vector<unsigned int> commen_triangle;
-	std::vector<bool>is_common_triangle_used;
 	commen_triangle.reserve(4); 
-	is_common_triangle_used.reserve(4);
 	unsigned int* edge_index;
 	int* vertex_index;
 
@@ -131,17 +129,16 @@ void MeshStruct::setFaceEdgeAroundFace(int thread_id)
 			}
 		}
 		face_around_face[i].reserve(6);
-		is_common_triangle_used.resize(commen_triangle.size());
-		std::fill(is_common_triangle_used.begin(), is_common_triangle_used.end(), false);
-		is_common_triangle_used[0] = true;
-
 		for (int j = 0; j < 3; ++j) {
 			for (auto k = vertices[vertex_index[j]].face.begin(); k < vertices[vertex_index[j]].face.end(); ++k) {
-				if (!isCommonUsed(&is_common_triangle_used, &commen_triangle, *k)) {
+				if (!isCommonUsed(*k, &commen_triangle)) {
 					face_around_face[i].emplace_back(*k);
 				}
 			}
 		}
+
+		face_around_face[i].insert(face_around_face[i].end(), commen_triangle.begin() + 1, commen_triangle.end());
+
 		std::sort(face_around_face[i].begin(), face_around_face[i].end());
 
 		//edge
@@ -160,17 +157,54 @@ void MeshStruct::setFaceEdgeAroundFace(int thread_id)
 		std::sort(edge_around_face[i].begin(), edge_around_face[i].end());		
 	}
 
+	unsigned int* edge_vertex_index;
+	for (auto i = edge_index_begin_per_thread[thread_id]; i < edge_index_begin_per_thread[thread_id + 1]; ++i) {
+		//face
+		edge_vertex_index = edge_vertices.data()+i*2;
+		for (auto k = edges[i].face.begin(); k < edges[i].face.end(); ++k) {
+				commen_triangle.emplace_back(*k);			
+		}		
+		face_around_edge[i].reserve(6);
+		for (int j = 0; j < 2; ++j) {
+			for (auto k = vertices[edge_vertex_index[j]].face.begin(); k < vertices[edge_vertex_index[j]].face.end(); ++k) {
+				if (!isCommonUsed(*k, &commen_triangle)) {
+					face_around_edge[i].emplace_back(*k);
+				}
+			}
+		}
+		face_around_edge[i].insert(face_around_edge[i].end(), commen_triangle.begin(), commen_triangle.end());
+		std::sort(face_around_edge[i].begin(), face_around_edge[i].end());
+
+		//edge
+
+		edge_around_edge[i].reserve(8);
+		for (unsigned int j = 0; j < 2; ++j) {
+			vertex_connnect_edge = &vertices[edge_vertex_index[j]].edge;
+			for (auto k = vertex_connnect_edge->begin(); k < vertex_connnect_edge->end(); ++k) {
+				if ((*k) !=i) {
+					edge_around_edge[i].emplace_back(*k);
+				}
+			}
+		}
+		edge_around_edge[i].emplace_back(i);
+		std::sort(edge_around_edge[i].begin(), edge_around_edge[i].end());
+	}
+
+
 }
 
-bool MeshStruct::isCommonUsed(std::vector<bool>* is_common_triangle_used, std::vector<unsigned int>* common_triangle, unsigned int triangle_index)
+
+
+bool MeshStruct::isCommonUsed(unsigned int tet_num, std::vector<unsigned int>* tet_index)
 {
-	for (int i = 0; i < common_triangle->size(); ++i) {
-		if (common_triangle->data()[i] == triangle_index && (*is_common_triangle_used)[i]) {
+	for (auto i = tet_index->begin(); i < tet_index->end(); ++i) {
+		if (*i == tet_num) {
 			return true;
 		}
 	}
 	return false;
 }
+
 
 void MeshStruct::setEdge()
 {
@@ -266,6 +300,11 @@ void MeshStruct::setEdge()
 			}
 		}
 	}
+
+	face_around_edge.resize(edge_length.size());
+	edge_around_edge.resize(edge_length.size());
+	tet_around_edge.resize(edge_length.size());
+
 }
 
 

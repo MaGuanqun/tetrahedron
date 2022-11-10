@@ -221,6 +221,47 @@ void SecondOrderConstraint::solveCD_ARAP_block(MatrixXd& Hessian, VectorXd& grad
 	}
 }
 
+bool SecondOrderConstraint::solveTetCertainVertices(std::array<double, 3>* vertex_position, double stiffness,
+	Matrix<double, 3, 4>& A, int* vertex_in_sys, int* tet_vetex_indices,
+	MatrixXd& sys_matrix, double volume, VectorXd& grad)
+{
+	Matrix<double, 12, 3> Hessian_vertex;
+	Vector3d eigen_value;
+	Vector3d position;
+	Matrix3d deformation_gradient;
+	Matrix3d S, rotation;
+
+	FEM::getDeformationGradient(vertex_position[tet_vetex_indices[0]].data(), vertex_position[tet_vetex_indices[1]].data(),
+		vertex_position[tet_vetex_indices[2]].data(), vertex_position[tet_vetex_indices[3]].data(), A,
+		deformation_gradient);
+	FEM::polarDecomposition(deformation_gradient, eigen_value, S, rotation);
+
+	Matrix<double, 3, 4> grad_C_transpose;
+	grad_C_transpose = (2.0 * stiffness * volume) * (deformation_gradient - rotation) * A;
+
+	for (int i = 0; i < 4; ++i) {
+		if (vertex_in_sys[i] != -1) {
+			grad.segment(3 * vertex_in_sys[i], 3)
+				+= grad_C_transpose.col(i);
+		}
+	}
+	Matrix3d Dm = A.block<3, 3>(0, 1).transpose();
+
+	for (int i = 0; i < 4; ++i) {
+		if (vertex_in_sys[i] != -1) {
+			FEM::getHessianForOneVertex(Hessian_vertex, S, rotation, Dm, A, i);
+			Hessian_vertex *= volume * stiffness;
+			for (int j = 0; j < 4; ++j) {
+				if (vertex_in_sys[j] != -1) {
+					sys_matrix.block<3, 3>(3 * vertex_in_sys[j],
+						3 * vertex_in_sys[i]) +=
+						Hessian_vertex.block<3, 3>(3 * j, 0);
+				}
+			}
+		}
+	}
+	return true;
+}
 
 
 bool SecondOrderConstraint::solveCertainHessianForNeighborTet(std::array<double, 3>* vertex_position, double stiffness,
@@ -725,11 +766,11 @@ void SecondOrderConstraint::setTetHessianFromBarrierHessian(MatrixXd& Hessian_sy
 			for (int j = 0; j < vertex_in_use; ++j) {
 				if (triangle_vertex_order_in_system[vertex_in_pair[j]] != -1) {
 
-					if (triangle_vertex_order_in_system[vertex_in_pair[i]]<0 || triangle_vertex_order_in_system[vertex_in_pair[i]]>Hessian_system.cols() / 3 ||
-						triangle_vertex_order_in_system[vertex_in_pair[j]]<0 || triangle_vertex_order_in_system[vertex_in_pair[j]]>Hessian_system.cols() / 3) {
-						std::cout << "error " << triangle_vertex_order_in_system[0] << " " << triangle_vertex_order_in_system[1] << " " << triangle_vertex_order_in_system[2] << " " << triangle_vertex_order_in_system[3] << std::endl;
-						std::cout << vertex_in_use << " " << vertex_in_pair[0] << " " << vertex_in_pair[1] << " " << vertex_in_pair[2] << " " << vertex_in_pair[3] << std::endl;
-					}
+					//if (triangle_vertex_order_in_system[vertex_in_pair[i]]<0 || triangle_vertex_order_in_system[vertex_in_pair[i]]>Hessian_system.cols() / 3 ||
+					//	triangle_vertex_order_in_system[vertex_in_pair[j]]<0 || triangle_vertex_order_in_system[vertex_in_pair[j]]>Hessian_system.cols() / 3) {
+					//	std::cout << "error " << triangle_vertex_order_in_system[0] << " " << triangle_vertex_order_in_system[1] << " " << triangle_vertex_order_in_system[2] << " " << triangle_vertex_order_in_system[3] << std::endl;
+					//	std::cout << vertex_in_use << " " << vertex_in_pair[0] << " " << vertex_in_pair[1] << " " << vertex_in_pair[2] << " " << vertex_in_pair[3] << std::endl;
+					//}
 
 					Hessian_system.block<3, 3>(3 * triangle_vertex_order_in_system[vertex_in_pair[i]], 3 * triangle_vertex_order_in_system[vertex_in_pair[j]])
 						+= Hessian_.block<3, 3>(3 * i, 3 * j);

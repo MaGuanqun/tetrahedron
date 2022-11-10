@@ -74,7 +74,8 @@ public:
 	void recordPrimitiveIndexOfATet();
 
 	void sortTriangleAroundElement();
-
+	void sortTetAroundVertexEdge(int thread_id);
+	void setTetAroundFace(int thread_id);
 private:
 	struct TetrahedronFace {
 		std::array<int, 3> index;
@@ -120,5 +121,8 @@ private:
 
 	//void recordEdgeIndexInATet();
 	bool checkEdgeInATet(unsigned int* edge_vertices, int* tet_indices);
+
+
+
 };
 

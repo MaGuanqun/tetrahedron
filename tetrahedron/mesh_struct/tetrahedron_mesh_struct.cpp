@@ -209,6 +209,64 @@ void TetrahedronMeshStruct::findSurface()
 //}
 
 
+//SORT_TRIANGLE_AROUND_VERTEX_EDGE
+void TetrahedronMeshStruct::sortTetAroundVertexEdge(int thread_id)
+{
+	auto k = vertex_index_begin_per_thread[thread_id + 1];
+	for (auto i = vertex_index_begin_per_thread[thread_id]; i < k; ++i) {
+		std::sort(vertex_tet_index[i].begin(), vertex_tet_index[i].end());
+
+	}
+
+
+}
+
+
+
+// SORT_TRIANGLE_EDGE_AROUND_TRIANGLE
+void TetrahedronMeshStruct::setTetAroundFace(int thread_id)
+{
+	std::vector<unsigned int> commen_triangle;
+
+	commen_triangle.reserve(4);
+	int* vertex_index;
+
+	std::vector<unsigned int>* vertex_connnect_edge;
+
+	for (auto i = face_index_begin_per_thread[thread_id]; i < face_index_begin_per_thread[thread_id + 1]; ++i) {
+		//face
+		vertex_index = triangle_indices[i].data();
+		tet_around_face[i].reserve(6);
+		for (int j = 0; j < 3; ++j) {
+			for (auto k = vertex_tet_index[vertex_index[j]].begin(); k < vertex_tet_index[vertex_index[j]].end(); ++k) {
+				if (!isCommonUsed(*k, &tet_around_face[i])) {
+					tet_around_face[i].emplace_back(*k);
+				}
+			}
+		}
+		std::sort(tet_around_face[i].begin(), tet_around_face[i].end());
+	}
+
+
+	unsigned int* edge_vertex_index;
+
+	for (auto i = edge_index_begin_per_thread[thread_id]; i < edge_index_begin_per_thread[thread_id + 1]; ++i) {
+		edge_vertex_index = edge_vertices.data() + (i << 1);
+		tet_around_edge[i].reserve(6);
+		for (int j = 0; j < 2; ++j) {
+			for (auto k = vertex_tet_index[edge_vertex_index[j]].begin(); k < vertex_tet_index[edge_vertex_index[j]].end(); ++k) {
+				if (!isCommonUsed(*k, &tet_around_edge[i])) {
+					tet_around_edge[i].emplace_back(*k);
+				}
+			}
+		}
+		std::sort(tet_around_edge[i].begin(), tet_around_edge[i].end());
+	}
+
+}
+
+
+
 void TetrahedronMeshStruct::recordTetIndexForVertex()
 {
 	vertex_tet_index.resize(vertex_position.size());
@@ -325,6 +383,8 @@ void TetrahedronMeshStruct::updateUnfixedTetVertexIndexInfo()
 void TetrahedronMeshStruct::updateTetNeighborTetVertexIndex()
 {
 	tet_neighbor_tet_vertex_order.resize(indices.size());
+	
+
 	thread->assignTask(this, TET_NEIGHBOR_TET_VERTEX_INDEX);
 }
 
@@ -623,7 +683,11 @@ void TetrahedronMeshStruct::getRenderVertexNormalPerThread(int thread_id)
 
 void TetrahedronMeshStruct::sortTriangleAroundElement()
 {
-	thread->assignTask(this, SORT_TRIANGLE_AROUND_TRIANGLE);
+	tet_around_face.resize(triangle_indices.size());
+	tet_around_edge.resize(edge_length.size());
+
+
+	thread->assignTask(this, SORT_TRIANGLE_EDGE_AROUND_TRIANGLE_EDGE);
 	thread->assignTask(this, SORT_TRIANGLE_AROUND_VERTEX_EDGE);
 }
 

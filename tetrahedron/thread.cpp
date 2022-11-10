@@ -147,7 +147,7 @@ job Thread::create_task(TriangleMeshStruct* func, int thread_id, MeshStructFuncS
     case VERTEX_NORMAL_FROM_RENDER:
         k = job([func, thread_id]() {func->getVertexNormalFromRenderPerThread(thread_id); });
         break;
-    case SORT_TRIANGLE_EDGE_AROUND_TRIANGLE:
+    case SORT_TRIANGLE_EDGE_AROUND_TRIANGLE_EDGE:
         k = job([func, thread_id]() {func->setFaceEdgeAroundFace(thread_id); });
         break;
     case SORT_TRIANGLE_AROUND_VERTEX_EDGE:
@@ -196,11 +196,13 @@ job Thread::create_task(TetrahedronMeshStruct* func, int thread_id, MeshStructFu
     case TET_NEIGHBOR_TET_VERTEX_INDEX:
         k = job([func, thread_id]() {func->updateTetNeighborTetVertexIndex(thread_id); });
         break;
-    case SORT_TRIANGLE_EDGE_AROUND_TRIANGLE:
-        k = job([func, thread_id]() {func->setFaceEdgeAroundFace(thread_id); });
+    case SORT_TRIANGLE_EDGE_AROUND_TRIANGLE_EDGE:
+        k = job([func, thread_id]() {func->setFaceEdgeAroundFace(thread_id);
+        func->setTetAroundFace(thread_id); });
         break;
     case SORT_TRIANGLE_AROUND_VERTEX_EDGE:
-        k = job([func, thread_id]() {func->sortTriangleAroundVertexEdge(thread_id); });
+        k = job([func, thread_id]() {func->sortTriangleAroundVertexEdge(thread_id);
+        func->sortTetAroundVertexEdge(thread_id); });
         break;
     }
     return k;

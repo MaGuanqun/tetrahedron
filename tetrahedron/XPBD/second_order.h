@@ -70,6 +70,10 @@ public:
 		Matrix<double, 3, 4>& A, unsigned int*& common_vertex_in_order, int* neighbor_tet_vetex_indices, 
 		MatrixXd& sys_matrix, double volume, VectorXd& grad);
 
+	bool solveTetCertainVertices(std::array<double, 3>* vertex_position, double stiffness,
+		Matrix<double, 3, 4>& A, int* vertex_in_sys, int* tet_vetex_indices,
+		MatrixXd& sys_matrix, double volume, VectorXd& grad);
+
 
 	void computeVTBarrierGradientHessian(MatrixXd& Hessian_, VectorXd& grad_, double* p, double* t0, double* t1, double* t2,
 		double d_hat_2, int* triangle_vertex_order_in_system, double stiffness);

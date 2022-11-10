@@ -49,7 +49,12 @@ public:
 
 	std::vector<std::vector<unsigned int>>face_around_face;
 	std::vector<std::vector<unsigned int>>edge_around_face;
-	
+	std::vector<std::vector<unsigned int>>tet_around_face;
+
+	std::vector<std::vector<unsigned int>>face_around_edge;
+	std::vector<std::vector<unsigned int>>edge_around_edge;
+	std::vector<std::vector<unsigned int>>tet_around_edge;
+
 
 	std::vector<unsigned int>face_edges;// edge indices of every triangle
 	std::vector<double>edge_length;// edge length of every triangle
@@ -154,11 +159,9 @@ protected:
 	void addEdge(int v0, int v1, int face, int opposite_vertex, int edge_index_indicator);
 	void addNeighborVertex();
 
-
+	bool isCommonUsed(unsigned int tet_num, std::vector<unsigned int>* tet_index);
 
 private:
-
-	bool isCommonUsed(std::vector<bool>* is_common_triangle_used, std::vector<unsigned int>* common_triangle, unsigned int triangle_index);
 
 };
 
