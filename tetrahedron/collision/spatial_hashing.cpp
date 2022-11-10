@@ -1520,9 +1520,9 @@ void SpatialHashing::findAllEdgeEdgePairsByPrimitiveSingleObjByEdge(int thread_N
 		}
 		primitive_pair_num_record_[i] = primitive_pair_ - primitive_pair_initial_;
 
-		if (!is_self && primitive_pair_num_record_[i]!=0) {
-			std::cout << "detect ee c " << primitive_pair_num_record_[i] << std::endl;
-		}
+		//if (!is_self && primitive_pair_num_record_[i]!=0) {
+		//	std::cout << "detect ee c " << primitive_pair_num_record_[i] << std::endl;
+		//}
 	}
 }
 
