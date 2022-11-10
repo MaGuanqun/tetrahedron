@@ -17,7 +17,7 @@ XPBD_IPC::XPBD_IPC()
 	velocity_damp = 0.995;
 	energy_converge_ratio = 5e-3;
 
-	min_inner_iteration = 5;
+	min_inner_iteration = 8;
 	min_outer_iteration = 2;
 
 
@@ -418,6 +418,21 @@ void XPBD_IPC::XPBD_IPC_Position_Solve()
 void XPBD_IPC::XPBD_IPC_Block_Solve()
 {
 	//std::cout << "====" << std::endl;
+
+	//for (unsigned int i = 0; i < mesh_struct[0]->edge_vertices.size(); i+=2) {
+	//	if ((mesh_struct[0]->edge_vertices[i] == 0 && mesh_struct[0]->edge_vertices[i + 1] == 2) ||
+	//		(mesh_struct[0]->edge_vertices[i] == 2 && mesh_struct[0]->edge_vertices[i + 1] == 0)) {
+	//		std::cout << "tet edge " << i / 2 << std::endl;
+	//	}
+	//}
+
+	//for (unsigned int i = 0; i < collider_mesh_struct[0]->edge_vertices.size(); i += 2) {
+	//	if ((collider_mesh_struct[0]->edge_vertices[i] == 1 && collider_mesh_struct[0]->edge_vertices[i + 1] == 3) ||
+	//		(collider_mesh_struct[0]->edge_vertices[i] == 3 && collider_mesh_struct[0]->edge_vertices[i + 1] == 1)) {
+	//		std::cout << "collider edge " << i / 2 << std::endl;
+	//	}
+	//}
+
 
 	record_energy.clear();
 	updateCollisionFreePosition();
@@ -963,7 +978,7 @@ void XPBD_IPC::newtonEEColliderCollisionBlock()
 			for (unsigned int j = 0; j < size; ++j) {
 				pair_index = edge_edge_pair_by_edge + collision.close_ee_collider_pair_num * j;
 				pair_num = edge_edge_pair_num_record[j];
-				for (unsigned int k = 0; k < pair_num; k += 2) {
+				for (int k = 0; k < pair_num; k += 2) {
 					solveEE_collisionBlock(i, j, pair_index[k], pair_index[k + 1],
 						stiffness, sub_time_step, collision_stiffness, &triangle_around_edge_[j], &tet_around,
 						&edge_around_edge_[j], &tet_around,
@@ -974,10 +989,20 @@ void XPBD_IPC::newtonEEColliderCollisionBlock()
 		else {
 			tet_around_edge_1 = &tet_around;
 			for (unsigned int j = 0; j < size; ++j) {
+
+				//if (j == 0) {
+				//	for (auto i = edge_around_edge_[j].begin(); i < edge_around_edge_[j].end(); ++j) {
+				//		std::cout << *i << " ";
+				//	}
+				//	std::cout << std::endl;				
+				//}
+
+
+
 				tet_around_edge_0 = &tet_around_edge[i][j];
 				pair_index = edge_edge_pair_by_edge + collision.close_ee_collider_pair_num * j;
 				pair_num = edge_edge_pair_num_record[j];
-				for (unsigned int k = 0; k < pair_num; k += 2) {
+				for (int k = 0; k < pair_num; k += 2) {
 					solveEE_collisionBlock(i, j, pair_index[k], pair_index[k + 1],
 						stiffness, sub_time_step, collision_stiffness, &triangle_around_edge_[j], &tet_around,
 						&edge_around_edge_[j], &tet_around,
@@ -2060,8 +2085,10 @@ void XPBD_IPC::getEECollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, un
 {
 	unsigned int* edge_vertex;
 	int vertex_order_in_tet[4];
-	memset(vertex_order_in_tet, 0xff, 8);
-	checkPairIndexInSys(unfixed_tet_vertex_num, tet_unfixed_vertex_indices, edge_vertex_index,obj_No, vertex_order_in_tet);
+	memset(vertex_order_in_tet, 0xff, 8);	
+
+	checkPairIndexInSys(unfixed_tet_vertex_num, tet_unfixed_vertex_indices, edge_vertex_index, vertex_order_in_tet);
+
 	for (int i = 0; i < num; i += 2) {
 		edge_vertex = edge_vertices[EE[i]] + (EE[i + 1] << 1);
 		memset(vertex_order_in_tet + 2, 0xff, 8);
@@ -2069,7 +2096,7 @@ void XPBD_IPC::getEECollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, un
 			if (edgeInSameTetDuplicate(edge_order_in_tet, edge_of_a_tet, EE[i + 1])) {
 				continue;
 			}
-			checkPairIndexInSys(unfixed_tet_vertex_num, tet_unfixed_vertex_indices, edge_vertex, EE[i], vertex_order_in_tet+2);
+			checkPairIndexInSys(unfixed_tet_vertex_num, tet_unfixed_vertex_indices, edge_vertex, vertex_order_in_tet+2);
 		}
 		second_order_constraint.computeEEBarrierGradientHessian(ea0, ea1,  vertex_position[EE[i]][*edge_vertex].data(), 
 			vertex_position[EE[i]][edge_vertex[1]].data(), Hessian, grad,
@@ -2078,12 +2105,18 @@ void XPBD_IPC::getEECollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, un
 	}
 
 	if (has_collider) {
+		
 		memset(vertex_order_in_tet + 2, 0xff, 8);
 		for (int i = 0; i < num_collider; i += 2) {
+			//std::cout << "test " << std::endl;
+			//std::cout << grad.transpose() << std::endl;
 			edge_vertex = collider_edge_vertices[EE_collider[i]] + (EE_collider[i + 1] << 1);
 			second_order_constraint.computeEEBarrierGradientHessian(ea0, ea1, vertex_position_collider[EE_collider[i]][*edge_vertex].data(),
 				vertex_position_collider[EE_collider[i]][edge_vertex[1]].data(), Hessian, grad,
 				vertex_order_in_tet, stiffness, d_hat_2);
+
+			//std::cout << grad.transpose() << std::endl;
+
 		}
 	}
 }
@@ -2328,6 +2361,7 @@ void XPBD_IPC::solveEE_collisionBlock(unsigned int obj_No_0, unsigned int primit
 		vertex_position.data(), address_of_record_vertex_position.data());
 
 	if (t < 1.0) {
+		t *= 0.9;
 		double* p_c; double* p_i;
 		for (int i = 0; i < unfixed_num; i += 2) {
 			p_i = address_of_record_vertex_position[unfixed_pair_vertex_index[i]][unfixed_pair_vertex_index[i + 1]].data();
@@ -2408,7 +2442,7 @@ void XPBD_IPC::solveVT_collisionBlock(unsigned int vertex_obj_no, unsigned int v
 		grad.data()[3 * i + 2] += mass_dt_2 * (vertex_position[obj_index_][vertex_index_][2] - sn[obj_index_][vertex_index_][2]);
 	}
 
-	LLT <MatrixXd> linear(Hessian);
+	LDLT <MatrixXd> linear(Hessian);
 	VectorXd result = linear.solve(grad);
 	//std::cout << Hessian << std::endl;
 	//std::cout << "++" << std::endl;
@@ -2425,6 +2459,7 @@ void XPBD_IPC::solveVT_collisionBlock(unsigned int vertex_obj_no, unsigned int v
 		vertex_position.data(), address_of_record_vertex_position.data());
 
 	if (t < 1.0) {
+		t *= 0.9;
 		double* p_c; double* p_i;
 		for (int i = 0; i < unfixed_num; i += 2) {
 			p_i = address_of_record_vertex_position[unfixed_pair_vertex_index[i]][unfixed_pair_vertex_index[i + 1]].data();
@@ -2581,6 +2616,7 @@ void XPBD_IPC::solveNewtonCD_tetBlock(std::array<double, 3>* vertex_position, do
 		unfixed_vertex_num, vertex_index_on_surface, vertex_position, record_ori_pos);
 
 	if (t < 1.0) {
+		t *= 0.9;
 		for (int i = 0; i < unfixed_vertex_num; ++i) {
 			vertex_index = tet_actual_unfixed_vertex_indices[i];
 			COLLISION_POS(vertex_position[vertex_index], t, record_ori_pos[vertex_index], vertex_position[vertex_index]);

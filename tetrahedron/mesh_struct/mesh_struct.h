@@ -47,12 +47,12 @@ public:
 	std::vector<Edge> edges;
 
 
-	std::vector<std::vector<unsigned int>>face_around_face;
+	std::vector<std::vector<unsigned int>>face_around_face;//include itself
 	std::vector<std::vector<unsigned int>>edge_around_face;
 	std::vector<std::vector<unsigned int>>tet_around_face;
 
 	std::vector<std::vector<unsigned int>>face_around_edge;
-	std::vector<std::vector<unsigned int>>edge_around_edge;
+	std::vector<std::vector<unsigned int>>edge_around_edge;//include itself
 	std::vector<std::vector<unsigned int>>tet_around_edge;
 
 
@@ -133,7 +133,7 @@ public:
 
 	std::vector<std::vector<unsigned int>> vertex_tet_index;//tet indices that contain the vertex
 
-	std::vector<std::vector<unsigned int>> tet_tet_index;// tet indices that around a tet
+	std::vector<std::vector<unsigned int>> tet_tet_index;// tet indices that around a tet, does not include itself
 
 	std::vector<unsigned int>tet_unfixed_vertex_num;
 	//store common vertex order of tet's neighbor tets. For every tet, 

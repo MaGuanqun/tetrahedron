@@ -566,9 +566,12 @@ void SecondOrderConstraint::computeEEBarrierGradientHessian(double* ea0, double*
 		break;
 	case 8:
 		distance = CCD::internal::edgeEdgeDistance(ea0, ea1, eb0, eb1);
+
 		if (distance >= d_hat_2) {
 			return;
 		}
+
+
 		h.resize(12, 12);
 		g.resize(12);
 
@@ -584,6 +587,7 @@ void SecondOrderConstraint::computeEEBarrierGradientHessian(double* ea0, double*
 		vertex_in_pair[2] = 2;
 		vertex_in_pair[3] = 3;
 
+		
 		setTetHessianFromBarrierHessian(Hessian_, grad_, h, g,
 			vertex_order_in_system, vertex_in_pair, 4);
 

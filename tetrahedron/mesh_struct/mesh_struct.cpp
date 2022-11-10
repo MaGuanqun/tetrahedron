@@ -138,7 +138,7 @@ void MeshStruct::setFaceEdgeAroundFace(int thread_id)
 			}
 		}
 
-		face_around_face[i].insert(face_around_face[i].end(), commen_triangle.begin() + 1, commen_triangle.end());
+		face_around_face[i].insert(face_around_face[i].end(), commen_triangle.begin(), commen_triangle.end());
 
 		std::sort(face_around_face[i].begin(), face_around_face[i].end());
 
@@ -183,6 +183,7 @@ void MeshStruct::setFaceEdgeAroundFace(int thread_id)
 				}
 			}
 		}
+		edge_around_edge[i].emplace_back(i);
 		std::sort(edge_around_edge[i].begin(), edge_around_edge[i].end());
 	}
 

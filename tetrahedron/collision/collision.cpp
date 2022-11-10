@@ -397,7 +397,8 @@ void Collision::initialDHatTolerance(double ave_edge_length)
 		tolerance_radius[i] = tolerance_ratio[i] * ave_edge_length;
 	}	
 
-	d_hat = 2e-2 * ave_edge_length;
+	//d_hat = 2e-2 * ave_edge_length;
+	d_hat = 5e-3;
 	d_hat_2 = d_hat * d_hat;
 
 	std::cout << "d_hat_ " << d_hat << std::endl;
@@ -1283,6 +1284,11 @@ void Collision::collisionCulling()
 	//thread->assignTask(this, FIND_VERTEX_VERTEX_VERTEX_EDGE_PAIRS);
 
 
+	
+	for (int i = 0; i < spatial_hashing.edge_obj_edge_collider_num_record[0][0]; i+=2) {
+		std::cout << spatial_hashing.edge_obj_edge_collider_pair_by_edge[0][i + 1] << " ";
+	}
+	std::cout << std::endl;
 
 
 
@@ -2367,6 +2373,15 @@ void Collision::findEE_ColliderClosePair()
 				edge_edge_collider_pair_num_record[i][j]);
 		}
 	}
+
+	
+	//if (edge_edge_collider_pair_num_record[0][0] != 0) {
+	//	std::cout << "record close edge edge collider num " << edge_edge_collider_pair_num_record[0][0] << std::endl;
+	//	for (int i = 0; i < edge_edge_collider_pair_num_record[0][0]; ++i) {
+	//		std::cout << edge_edge_collider_pair_by_edge[0][i] << " ";
+	//	}
+	//	std::cout << std::endl;
+	//}
 }
 
 
@@ -5737,7 +5752,7 @@ void Collision::collisionTimeByElement(int thread_No)
 				for (int j = vertex_index_start_per_thread[i][thread_No]; j < element_end; ++j) {
 					VTCollisionTimeOneVertex(initial_pos[j].data(), current_pos[j].data(), collision_time, element_num[j],
 						element + estimate_coeff_for_vt_collider_pair_num * j, vertex_for_render_collider.data(), 
-						vertex_position_collider.data(),triangle_indices.data());
+						vertex_position_collider.data(), triangle_indices_collider.data());
 				}
 			}
 			else {
