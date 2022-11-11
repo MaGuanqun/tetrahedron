@@ -559,7 +559,7 @@ void Scene::setGroup()
 
 void Scene::setWireframwColor()
 {
-	double color3[4][3] = { {1.0,1.0,0.0},{0.0,0.0,1.0},{0.0,0.3,0.0},{0.0, 1.0,1.0} };
+	double color3[4][3] = { {1.0,0.0,0.0},{0.0,0.0,1.0},{0.0,0.3,0.0},{0.0, 1.0,1.0} };
 	double** color0;
 	color0 = new double* [collider_num];
 	for (int i = 0; i < collider_num; ++i)
@@ -584,6 +584,10 @@ void Scene::setWireframwColor()
 		tetrahedron[i + cloth_num].setWireframwColor(color1[i + cloth_num]);
 	}
 
+	for (int i = 0; i < cloth_num + tetrahedron_num; ++i)
+	{
+		delete[] color1[i];
+	}
 }
 
 void Scene::initialSceneSetting(Preprocessing& preprocessing)

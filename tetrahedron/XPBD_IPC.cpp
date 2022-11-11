@@ -726,9 +726,11 @@ void XPBD_IPC::newtonCDTetWithCollision()
 double XPBD_IPC::computeBarrierEnergy()
 {
 	double energy = 0.0;
-	//VT
+
 	energy+=computeVTCollisionEnergy(collision.vertex_triangle_pair_by_vertex, collision.vertex_triangle_pair_num_record,
 		vertex_position.data(), vertex_position.data(), collision.close_vt_pair_num, false, triangle_indices.data());
+
+
 	energy += computeEECollisionEnergy(collision.edge_edge_pair_by_edge, collision.edge_edge_pair_num_record, vertex_position.data(),
 		vertex_position.data(), collision.close_ee_pair_num, edge_vertices.data(), edge_vertices.data());
 
@@ -736,8 +738,11 @@ double XPBD_IPC::computeBarrierEnergy()
 		energy += computeVTCollisionEnergy(collision.vertex_obj_triangle_collider_pair_by_vertex, collision.vertex_obj_triangle_collider_num_record,
 			vertex_position_collider.data(), vertex_position.data(), collision.close_vt_collider_pair_num, false, triangle_indices_collider.data());
 
+
 		energy += computeVTCollisionEnergy(collision.triangle_vertex_collider_pair_by_triangle, collision.triangle_vertex_collider_pair_num_record,
 			vertex_position.data(), vertex_position_collider.data(), collision.close_tv_collider_pair_num, true, triangle_indices.data());
+dl;
+
 		energy += computeEECollisionEnergy(collision.edge_edge_collider_pair_by_edge, collision.edge_edge_collider_pair_num_record, vertex_position.data(),
 			vertex_position_collider.data(), collision.close_ee_collider_pair_num, edge_vertices.data(), collider_edge_vertices.data());
 	}
@@ -838,8 +843,8 @@ double XPBD_IPC::computeVTCollisionEnergy(unsigned int** vertex_triangle_pair_by
 				size = tetrahedron->data()[i - cloth->size()].mesh_struct.vertex_index_on_sureface.size();
 				for (int m = 0; m < size; ++m) {
 					j = vertex_surface_to_global[i][m];
-					pair_index = vertex_triangle_pair_by_vertex + close_pair_num * j;
-					pair_num = vertex_triangle_pair_num_record[j];
+					pair_index = vertex_triangle_pair_by_vertex + close_pair_num * m;
+					pair_num = vertex_triangle_pair_num_record[m];
 					for (int k = 0; k < pair_num; k += 2) {
 						triangle_vertex_index = triangle_vertex[pair_index[k]][pair_index[k + 1]].data();
 						energy += compute_energy.computeBarrierEnergy(vertex_position[i][j].data(),

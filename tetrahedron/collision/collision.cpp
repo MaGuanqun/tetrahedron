@@ -28,10 +28,10 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	max_index_number_in_one_cell = 1200;
 	max_index_number_in_one_cell_collider = 400;
 
-	estimate_coeff_for_vt_pair_num = 400;
+	estimate_coeff_for_vt_pair_num = 600;
 	estimate_coeff_for_vt_collider_pair_num =400;
-	estimate_coeff_for_ee_pair_num =800;
-	estimate_coeff_for_tv_pair_num =300;
+	estimate_coeff_for_ee_pair_num =1000;
+	estimate_coeff_for_tv_pair_num =500;
 
 	estimate_coeff_for_ee_collider_pair_num = 400;
 	estimate_coeff_for_tv_collider_pair_num = 300;
