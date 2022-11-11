@@ -7,9 +7,9 @@ collider
 C:\graphics\tetrahedron\model\bar.obj
 stiffness
 200 50000 0 0 0 0 
-2e+06 20000 20000 20 0 0 0 0 
+2e+07 20000 20000 20 0 0 0 0 
 200 50000 0 0 0 0 
-2e+06 20000 20000 20 0 0 0 0 
+2e+07 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
 0 

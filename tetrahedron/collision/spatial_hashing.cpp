@@ -228,7 +228,7 @@ void SpatialHashing::initialHashCell(unsigned int total_triangle_num, unsigned i
 			spatial_hashing_cell_collider_edge[i] = new unsigned int[hash_cell_count * max_index_number_in_one_cell_collider_edge];
 			spatial_hashing_cell_collider_vertex[i] = new unsigned int[hash_cell_count * max_index_number_in_one_cell_collider_vertex];
 			memset(spatial_hashing_cell_collider_edge[i], 0, 4 * hash_cell_count * max_index_number_in_one_cell_collider_edge);
-			memset(spatial_hashing_cell_collider_vertex[i], 0, 4 * max_index_number_in_one_cell_collider_vertex);
+			memset(spatial_hashing_cell_collider_vertex[i], 0, 4 * hash_cell_count * max_index_number_in_one_cell_collider_vertex);
 		}
 	}
 	
@@ -1945,6 +1945,7 @@ void SpatialHashing::triangleHashingSmallerHashTable(int thread_No)
 			spatial_hashing_cell_collider_ = spatial_hashing_cell_collider_vertex[thread_No];
 			spatial_hashing_cell_collider_size_ = spatial_hashing_cell_collider_vertex_size[thread_No];
 			memset(spatial_hashing_cell_collider_size_, 0, hash_cell_count_ << 2);
+			max_index_number_in_one_cell_collider_ = max_index_number_in_one_cell_collider_vertex;
 			for (unsigned int i = 0; i < collider_size; ++i) {
 				aabb = (*collider)[i].vertex_AABB.data();
 				primitive_begin = (*collider)[i].mesh_struct.vertex_index_begin_per_thread[thread_No];
