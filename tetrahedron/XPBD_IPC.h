@@ -200,6 +200,16 @@ private:
 	void computeCurrentEnergy();
 	double computeInertialEnergy();
 	double computeCurrentARAPEnergy();
+	double computeBarrierEnergy();
+
+
+	double computeVTCollisionEnergy(unsigned int** vertex_triangle_pair_by_vertex_, unsigned int** vertex_triangle_pair_num_record_,
+		std::array<double, 3>** triangle_position, std::array<double, 3>** vertex_position, unsigned int close_pair_num, bool is_TV,
+		std::array<int, 3>** triangle_vertex);
+
+	double computeEECollisionEnergy(unsigned int** edge_edge_pair_by_vertex_, unsigned int** edge_edge_pair_num_record_,
+		std::array<double, 3>** edge_0_position, std::array<double, 3>** edge_1_position, unsigned int close_pair_num,
+		unsigned int** edge_vertex, unsigned int** edge_1_vertex);
 
 	std::vector<std::vector<Vector3d>>residual;
 
@@ -386,6 +396,8 @@ private:
 
 	void comparePrimitiveAroundPrimitveTogether(std::vector<unsigned int>* primitive_around_1, std::vector<unsigned int>* primitive_around_2,
 		unsigned int obj_1, unsigned int obj_2, std::vector<unsigned int>* primitive_together);
-	
+	bool checkMaxDisplacement();
+
+	bool displacement_satisfied;
 };
 

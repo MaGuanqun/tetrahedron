@@ -10,14 +10,14 @@ XPBD_IPC::XPBD_IPC()
 	damping_coe = 0.0;
 
 	perform_collision = true;
-	max_iteration_number = 50;
-	outer_max_iteration_number = 30;
+	max_iteration_number = 30;
+	outer_max_iteration_number = 20;
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
 	velocity_damp = 0.995;
 	energy_converge_ratio = 5e-3;
 
-	min_inner_iteration = 8;
+	min_inner_iteration = 3;
 	min_outer_iteration = 2;
 
 
@@ -419,21 +419,6 @@ void XPBD_IPC::XPBD_IPC_Block_Solve()
 {
 	//std::cout << "====" << std::endl;
 
-	//for (unsigned int i = 0; i < mesh_struct[0]->edge_vertices.size(); i+=2) {
-	//	if ((mesh_struct[0]->edge_vertices[i] == 0 && mesh_struct[0]->edge_vertices[i + 1] == 2) ||
-	//		(mesh_struct[0]->edge_vertices[i] == 2 && mesh_struct[0]->edge_vertices[i + 1] == 0)) {
-	//		std::cout << "tet edge " << i / 2 << std::endl;
-	//	}
-	//}
-
-	//for (unsigned int i = 0; i < collider_mesh_struct[0]->edge_vertices.size(); i += 2) {
-	//	if ((collider_mesh_struct[0]->edge_vertices[i] == 1 && collider_mesh_struct[0]->edge_vertices[i + 1] == 3) ||
-	//		(collider_mesh_struct[0]->edge_vertices[i] == 3 && collider_mesh_struct[0]->edge_vertices[i + 1] == 1)) {
-	//		std::cout << "collider edge " << i / 2 << std::endl;
-	//	}
-	//}
-
-
 	record_energy.clear();
 	updateCollisionFreePosition();
 	thread->assignTask(this, SET_POS_PREDICT_);
@@ -443,9 +428,12 @@ void XPBD_IPC::XPBD_IPC_Block_Solve()
 		collision.collisionCulling();
 	}
 	outer_itr_num = 0;
-	computeCurrentEnergy();
+	//computeCurrentEnergy();
 
 	memset(lambda.data(), 0, 8 * lambda.size());
+
+
+	displacement_satisfied = false;
 
 	while (!convergeCondition(outer_itr_num)) {
 		if (perform_collision) {
@@ -453,7 +441,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve()
 			thread->assignTask(this, COLLISION_FREE_POSITION_);
 			updateCollisionFreePosition();
 			collision.findClosePair();
-			//collision.saveCollisionPairVolume();
+
 			//if (outer_itr_num == 0) {
 			//	firstOnlyInertialCollision();
 			//}			
@@ -463,21 +451,20 @@ void XPBD_IPC::XPBD_IPC_Block_Solve()
 		previous_energy = energy;
 		while (!innerConvergeCondition(inner_iteration_number))
 		{
-			//std::cout <<"pos "<< vertex_position[0][1][1]<<" "<< vertex_position[0][1][1] -floor->value<< std::endl;
 			previous_energy = energy;
 			nearly_not_move = true;
 			newtonCDBlock();
-			computeCurrentEnergy();
-			inner_iteration_number++;
 
+			if (inner_iteration_number >= min_inner_iteration - 1) {
+				computeCurrentEnergy();
+			}
+
+			inner_iteration_number++;
 			//std::cout << "finish one itr " << inner_iteration_number<<" "<< energy << std::endl;
 
 		}
 
-
-
 		outer_itr_num++;
-		//std::cout << inner_iteration_number << std::endl;
 		iteration_number += inner_iteration_number;
 	}
 
@@ -556,7 +543,7 @@ bool XPBD_IPC::innerConvergeCondition(unsigned int iteration_num)
 		return false;
 	}
 
-	if (energy<1e-13) {
+	if (abs(energy - previous_energy) <1e-8) {
 		return true;
 	}
 
@@ -579,6 +566,30 @@ bool XPBD_IPC::innerConvergeCondition(unsigned int iteration_num)
 }
 
 
+bool XPBD_IPC::checkMaxDisplacement()
+{
+	unsigned int num;
+	std::array<double, 3>* current_pos;
+	std::array<double, 3>* previous_pos;
+	double* mass_;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		previous_pos = record_gloabl_CCD_vertex_position[i].data();
+		current_pos = vertex_position[i];
+		num = mesh_struct[i]->vertex_position.size();
+		mass_ = mesh_struct[i]->mass_inv.data();
+		for (unsigned int j = 0; j < num; ++j) {
+			if (mass_[j] != 0.0) {
+				for (unsigned int k = 0; k < 3; ++k) {
+					if (abs(previous_pos[j][k] - current_pos[j][k]) > max_move_standard) {
+						return false;
+					}
+				}
+			}
+		}
+	}
+	return true;
+}
+
 
 bool XPBD_IPC::convergeCondition(unsigned int iteration_num)
 {
@@ -592,33 +603,7 @@ bool XPBD_IPC::convergeCondition(unsigned int iteration_num)
 		return true;
 	}
 
-	//if (abs(energy - previous_energy) / previous_energy < energy_converge_ratio) {
-	//	return true;
-	//}
-	//return false;
-
-	unsigned int num;
-	std::array<double, 3>* current_pos;
-	std::array<double, 3>* previous_pos;
-	double* mass_;
-	for (unsigned int i = 0; i < total_obj_num; ++i) {
-		previous_pos = record_gloabl_CCD_vertex_position[i].data();
-		current_pos = vertex_position[i];		
-		num = mesh_struct[i]->vertex_position.size();
-		mass_ = mesh_struct[i]->mass_inv.data();
-		for (unsigned int j = 0; j < num; ++j) {
-			if (mass_[j] != 0.0) {
-				for (unsigned int k = 0; k < 3; ++k) {
-					if (abs(previous_pos[j][k] - current_pos[j][k]) > max_move_standard) {
-						return false;
-					}
-				}
-			}		
-		}
-	}
-	//std::cout << iteration_num << std::endl;
-	//std::cout << abs(energy - previous_energy) / previous_energy << std::endl;
-	return true;
+	return checkMaxDisplacement();
 
 }
 
@@ -641,6 +626,7 @@ void XPBD_IPC::computeCurrentEnergy()
 	energy = 1e-15;
 	energy += 0.5 * computeInertialEnergy();
 	energy += computeCurrentARAPEnergy();
+	energy += computeBarrierEnergy();
 	record_energy.emplace_back(energy);
 }
 
@@ -734,6 +720,160 @@ void XPBD_IPC::newtonCDTetWithCollision()
 		}
 	}
 }
+
+
+
+double XPBD_IPC::computeBarrierEnergy()
+{
+	double energy = 0.0;
+	//VT
+	energy+=computeVTCollisionEnergy(collision.vertex_triangle_pair_by_vertex, collision.vertex_triangle_pair_num_record,
+		vertex_position.data(), vertex_position.data(), collision.close_vt_pair_num, false, triangle_indices.data());
+	energy += computeEECollisionEnergy(collision.edge_edge_pair_by_edge, collision.edge_edge_pair_num_record, vertex_position.data(),
+		vertex_position.data(), collision.close_ee_pair_num, edge_vertices.data(), edge_vertices.data());
+
+	if (has_collider) {
+		energy += computeVTCollisionEnergy(collision.vertex_obj_triangle_collider_pair_by_vertex, collision.vertex_obj_triangle_collider_num_record,
+			vertex_position_collider.data(), vertex_position.data(), collision.close_vt_collider_pair_num, false, triangle_indices_collider.data());
+
+		energy += computeVTCollisionEnergy(collision.triangle_vertex_collider_pair_by_triangle, collision.triangle_vertex_collider_pair_num_record,
+			vertex_position.data(), vertex_position_collider.data(), collision.close_tv_collider_pair_num, true, triangle_indices.data());
+		energy += computeEECollisionEnergy(collision.edge_edge_collider_pair_by_edge, collision.edge_edge_collider_pair_num_record, vertex_position.data(),
+			vertex_position_collider.data(), collision.close_ee_collider_pair_num, edge_vertices.data(), collider_edge_vertices.data());
+	}
+
+	return energy;
+}
+
+
+double XPBD_IPC::computeEECollisionEnergy(unsigned int**edge_edge_pair_by_vertex_, unsigned int** edge_edge_pair_num_record_,
+	std::array<double, 3>** edge_0_position, std::array<double, 3>** edge_1_position, unsigned int close_pair_num,
+	unsigned int** edge_0_vertex, unsigned int** edge_1_vertex)
+{
+	double energy = 0.0;
+	double	collision_stiffness;
+	if (!tetrahedron->empty()) {
+		collision_stiffness = tetrahedron->data()[0].collision_stiffness[0];
+	}
+	else {
+		collision_stiffness = cloth->data()[0].collision_stiffness[0];
+	}
+	int size;
+	unsigned int* edge_edge_pair_by_vertex;
+	unsigned int* edge_edge_pair_num_record;
+
+
+	unsigned int* pair_index;
+	unsigned int pair_num;
+
+	unsigned int* edge_vertex_index;
+	unsigned int* edge_vertex_1_index;
+	
+		for (int i = 0; i < total_obj_num; ++i) {
+			edge_edge_pair_by_vertex = edge_edge_pair_by_vertex_[i];
+			edge_edge_pair_num_record = edge_edge_pair_num_record_[i];
+			size = mesh_struct[i]->triangle_indices.size();
+
+			for (int j = 0; j < size; ++j) {
+				pair_index = edge_edge_pair_by_vertex + close_pair_num * j;
+				pair_num = edge_edge_pair_num_record[j];
+				edge_vertex_index = edge_0_vertex[i] + (j << 1);
+				for (int k = 0; k < pair_num; k += 2) {
+					edge_vertex_1_index = edge_1_vertex[pair_index[k]] + (pair_index[k + 1] << 1);
+					energy+=compute_energy.computeBarrierEnergy(edge_0_position[i][edge_vertex_index[0]].data(),
+						edge_0_position[i][edge_vertex_index[1]].data(),
+						edge_1_position[pair_index[k]][edge_vertex_1_index[0]].data(),
+						edge_1_position[pair_index[k]][edge_vertex_1_index[1]].data(), collision_stiffness, collision.d_hat_2, false);
+				}
+			}
+		}
+		return energy;
+}
+
+
+
+double XPBD_IPC::computeVTCollisionEnergy(unsigned int** vertex_triangle_pair_by_vertex_, unsigned int** vertex_triangle_pair_num_record_,
+	std::array<double,3>** triangle_position, std::array<double,3>** vertex_position, unsigned int close_pair_num, bool is_TV,
+	std::array<int, 3>** triangle_vertex)
+{
+	double energy=0.0;
+	double	collision_stiffness;
+	if (!tetrahedron->empty()) {
+		collision_stiffness = tetrahedron->data()[0].collision_stiffness[0];
+	}
+	else {
+		collision_stiffness = cloth->data()[0].collision_stiffness[0];
+	}
+	int size;
+	unsigned int* vertex_triangle_pair_by_vertex;
+	unsigned int* vertex_triangle_pair_num_record;
+
+
+	unsigned int* pair_index;
+	unsigned int pair_num;
+
+	int* triangle_vertex_index;
+	if (!is_TV) {
+		for (int i = 0; i < total_obj_num; ++i) {
+			vertex_triangle_pair_by_vertex = vertex_triangle_pair_by_vertex_[i];
+			vertex_triangle_pair_num_record = vertex_triangle_pair_num_record_[i];
+			if (i < cloth->size()) {
+				size = mesh_struct[i]->vertex_position.size();
+				for (int j = 0; j < size; ++j) {
+					pair_index = vertex_triangle_pair_by_vertex + close_pair_num * j;
+					pair_num = vertex_triangle_pair_num_record[j];
+					for (int k = 0; k < pair_num; k += 2) {
+						triangle_vertex_index = triangle_vertex[pair_index[k]][pair_index[k + 1]].data();
+						energy+= compute_energy.computeBarrierEnergy(vertex_position[i][j].data(),
+							triangle_position[pair_index[k]][triangle_vertex_index[0]].data(),
+							triangle_position[pair_index[k]][triangle_vertex_index[1]].data(),
+							triangle_position[pair_index[k]][triangle_vertex_index[2]].data(), collision_stiffness, collision.d_hat_2, true);
+					}
+				}
+			}
+			else {
+				vertex_triangle_pair_by_vertex = vertex_triangle_pair_by_vertex_[i];
+				vertex_triangle_pair_num_record = vertex_triangle_pair_num_record_[i];
+				int j;
+				size = tetrahedron->data()[i - cloth->size()].mesh_struct.vertex_index_on_sureface.size();
+				for (int m = 0; m < size; ++m) {
+					j = vertex_surface_to_global[i][m];
+					pair_index = vertex_triangle_pair_by_vertex + close_pair_num * j;
+					pair_num = vertex_triangle_pair_num_record[j];
+					for (int k = 0; k < pair_num; k += 2) {
+						triangle_vertex_index = triangle_vertex[pair_index[k]][pair_index[k + 1]].data();
+						energy += compute_energy.computeBarrierEnergy(vertex_position[i][j].data(),
+							triangle_position[pair_index[k]][triangle_vertex_index[0]].data(),
+							triangle_position[pair_index[k]][triangle_vertex_index[1]].data(),
+							triangle_position[pair_index[k]][triangle_vertex_index[2]].data(), collision_stiffness, collision.d_hat_2, true);
+					}
+				}
+			}
+		}
+	}
+	else {
+		for (int i = 0; i < total_obj_num; ++i) {
+			vertex_triangle_pair_by_vertex = vertex_triangle_pair_by_vertex_[i];
+			vertex_triangle_pair_num_record = vertex_triangle_pair_num_record_[i];
+			size = mesh_struct[i]->triangle_indices.size();
+
+			for (int j = 0; j < size; ++j) {
+				pair_index = vertex_triangle_pair_by_vertex + close_pair_num * j;
+				pair_num = vertex_triangle_pair_num_record[j];
+				triangle_vertex_index = triangle_vertex[i][j].data();
+				for (int k = 0; k < pair_num; k += 2) {
+					energy += compute_energy.computeBarrierEnergy(vertex_position[pair_index[k]][pair_index[k+1]].data(),
+						triangle_position[i][triangle_vertex_index[0]].data(),
+						triangle_position[i][triangle_vertex_index[1]].data(),
+						triangle_position[i][triangle_vertex_index[2]].data(), collision_stiffness, collision.d_hat_2, true);
+				}
+			}
+
+		}
+	}
+	return energy;
+}
+
 
 
 
@@ -2849,6 +2989,10 @@ double XPBD_IPC::computeCurrentARAPEnergy()
 	}
 	return energy;
 }
+
+
+
+
 
 //COLLISION_FREE_POSITION_
 void XPBD_IPC::computeCollisionFreePosition(int thread_No)

@@ -404,5 +404,13 @@ inline void barrierGradHessian(double d, double d_hat, double& gradient, double&
 	hessian = -log_2 + (d_hat - d) * (d_hat + 3 * d) / (d * d);
 }
 
+inline double barrier(double d, double d_hat)
+{
+	if (d < d_hat) {
+		return -(d - d_hat) * (d - d_hat) * log(d / d_hat);
+	}
+	return 0;
+}
+
 
 #endif // !GLOBAL_H

@@ -405,12 +405,11 @@ void Collision::initialDHatTolerance(double ave_edge_length)
 
 	volume_boundary = 0.5 * d_hat*ave_edge_length;
 
-	tolerance = 1e-5 * d_hat;
+	tolerance = 1e-4 * d_hat;
 
 	eta = 0.01;	
 	tolerance_2 = tolerance * tolerance;
 	epsilon = 0.001;
-	//////std::cout << "d_hat_2 " << d_hat_2 << std::endl;
 
 }
 
@@ -590,9 +589,6 @@ void Collision::totalCount()
 		//triangle_triangle_count_total += spatial_hashing.triangle_pair[i][0] >> 2;
 	}
 
-	//////std::cout << "triangle triangle pair " << triangle_triangle_count_total << std::endl;
-	////std::cout << " vertex triangle after cut " << vertex_triangle_count_total_final << std::endl;
-	////std::cout << " edge edge after cut " << edge_edge_count_count_total_final << std::endl;
 
 }
 
@@ -620,12 +616,6 @@ void Collision::testRepeatability()
 			index++;
 		}
 		for (int j = 0; j < spatial_hashing.edge_edge_pair[i][0]; j += 4) {
-			//if (edge_pair_[j] == 12106) {
-			//	////std::cout <<".."<< edge_pair_[j + 2] << std::endl;
-			//}
-			//else if (edge_pair_[j + 2] == 12106) {
-			//	////std::cout << edge_pair_[j] << std::endl;
-			//}
 
 			if (edge_pair_[j + 1] < edge_pair_[j + 3] ||
 				(edge_pair_[j + 1] == edge_pair_[j + 3] &&
@@ -1282,14 +1272,6 @@ void Collision::collisionCulling()
 
 
 	//thread->assignTask(this, FIND_VERTEX_VERTEX_VERTEX_EDGE_PAIRS);
-
-
-	
-	for (int i = 0; i < spatial_hashing.edge_obj_edge_collider_num_record[0][0]; i+=2) {
-		std::cout << spatial_hashing.edge_obj_edge_collider_pair_by_edge[0][i + 1] << " ";
-	}
-	std::cout << std::endl;
-
 
 
 	//}

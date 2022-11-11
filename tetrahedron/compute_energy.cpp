@@ -1,5 +1,6 @@
 #include"compute_energy.h"
 #include"XPBD/FEM_relate.h"
+#include"collision/primitive_distance.h"
 
 double ComputeEnergy::computeMassSpringEnergy(double* position_0, double* position_1, double rest_length, double stiffness)
 {
@@ -19,6 +20,20 @@ double ComputeEnergy::computeMassSpringConstraint(double* position_0, double* po
 		+ (position_0[2] - position_1[2]) * (position_0[2] - position_1[2]));
 	current_length -= rest_length;
 	return -current_length*lambda-0.5/(stiffness*time_step_square)*lambda*lambda;
+}
+
+
+double ComputeEnergy::computeBarrierEnergy(double* position_0, double* position_1, double* position_2, double* position_3, double stiffness, 
+	double d_hat_2, bool VT)
+{
+	double distance;
+	if (VT) {
+		distance = CCD::internal::pointTriangleDistanceUnclassified(position_0, position_1, position_2, position_3);
+	}
+	else {
+		distance = CCD::internal::edgeEdgeDistanceUnclassified(position_0, position_1, position_2, position_3);
+	}
+	return stiffness * barrier(distance, d_hat_2);
 }
 
 double ComputeEnergy::computeARAPEnergy(double* position_0, double* position_1, double* position_2, double* position_3, Matrix<double, 3, 4>& A, double volume, double stiffness)
