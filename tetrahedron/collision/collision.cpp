@@ -398,7 +398,7 @@ void Collision::initialDHatTolerance(double ave_edge_length)
 	}	
 
 	//d_hat = 2e-2 * ave_edge_length;
-	d_hat=5e-3;
+	d_hat=1e-2;
 	d_hat_2 = d_hat * d_hat;
 
 	std::cout << "d_hat_ " << d_hat << std::endl;
@@ -409,7 +409,7 @@ void Collision::initialDHatTolerance(double ave_edge_length)
 
 	eta = 0.01;	
 	tolerance_2 = tolerance * tolerance;
-	epsilon = 0.0;
+	epsilon = 0.001;
 	//////std::cout << "d_hat_2 " << d_hat_2 << std::endl;
 
 }
