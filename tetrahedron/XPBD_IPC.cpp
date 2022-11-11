@@ -741,7 +741,6 @@ double XPBD_IPC::computeBarrierEnergy()
 
 		energy += computeVTCollisionEnergy(collision.triangle_vertex_collider_pair_by_triangle, collision.triangle_vertex_collider_pair_num_record,
 			vertex_position.data(), vertex_position_collider.data(), collision.close_tv_collider_pair_num, true, triangle_indices.data());
-dl;
 
 		energy += computeEECollisionEnergy(collision.edge_edge_collider_pair_by_edge, collision.edge_edge_collider_pair_num_record, vertex_position.data(),
 			vertex_position_collider.data(), collision.close_ee_collider_pair_num, edge_vertices.data(), collider_edge_vertices.data());
