@@ -54,7 +54,9 @@ namespace SaveParameter{
 		std::vector<std::vector<double>>& obj_stiffness, std::vector<std::vector<double>>& collide_stiffness,
 		std::vector<std::vector<int>>& anchor_vertex, double& time_step, unsigned int& use_method, unsigned int& sub_step_num, unsigned int& iteration_num,
 		double& local_conv_rate, double& outer_conv_rate, double& cloth_density, double& tet_density, double& velocity_damp, double* friction_coe,
-		unsigned int& sub_step_per_detection, bool& floor_exist, unsigned int& floor_dimension, bool& floor_normal_direction, double& floor_value)
+		unsigned int& sub_step_per_detection, bool& floor_exist, unsigned int& floor_dimension, bool& floor_normal_direction, double& floor_value,
+		double& d_hat, unsigned int& min_inner_itr, unsigned int& min_outer_itr, double& displacement_standard, double& distance_record_as_collision,
+		glm::vec3& camera_position,	glm::vec3& camera_up, glm::vec3& camera_center, unsigned int& max_inner_itr_num, double& enegy_convege_standard)
 	{
 
 		std::string line;
@@ -197,6 +199,42 @@ namespace SaveParameter{
 		}
 		std::getline(in, line);
 		floor_value = std::stod(line);
+
+		std::getline(in, line);
+		if (line != "camera position") {
+			std::cout << "error read camera position" << std::endl;
+			return;
+		}
+		std::getline(in, line);
+		split(line, " ", vec);
+		camera_position.x= stof(vec[0]);
+		camera_position.y= stof(vec[1]);
+		camera_position.z= stof(vec[2]);
+		
+		std::getline(in, line);
+		if (line != "camera up") {
+			std::cout << "error read camera up" << std::endl;
+			return;
+		}
+		std::getline(in, line);
+		split(line, " ", vec);
+		camera_up.x = stof(vec[0]);
+		camera_up.y = stof(vec[1]);
+		camera_up.z = stof(vec[2]);
+		
+
+		std::getline(in, line);
+		if (line != "camera center") {
+			std::cout << "error read camera center" << std::endl;
+			return;
+		}
+		std::getline(in, line);
+		split(line, " ", vec);
+		camera_center.x = stof(vec[0]);
+		camera_center.y = stof(vec[1]);
+		camera_center.z = stof(vec[2]);
+
+
 		std::getline(in, line);
 		if (line == "XPBD") {
 			use_method = XPBD_;
@@ -229,18 +267,74 @@ namespace SaveParameter{
 			std::getline(in, line);
 			sub_step_num = std::stoi(line);
 			std::getline(in, line);
-			if (line != "iteration_num") {
+			if (line != "out iteration_num") {
 				std::cout << "error read iteration num" << std::endl;
 				return;
 			}
 			std::getline(in, line);
 			iteration_num = std::stoi(line);
 			std::getline(in, line);
+			if (line != "inner iteration_num") {
+				std::cout << "error  read inner iteration num" << std::endl;
+			}
+			std::getline(in, line);
+			max_inner_itr_num = std::stoi(line);
+
+			std::getline(in, line);
 			if (line != "sub_step_per_detection") {
 				std::cout << "error read sub_step per detection" << std::endl;
 			}
 			std::getline(in, line);
 			sub_step_per_detection = std::stoi(line);
+			std::getline(in, line);
+			if (line != "d_hat") {
+				std::cout << "error read d_hat" << std::endl;
+			}
+			std::getline(in, line);
+			d_hat = std::stod(line);
+			std::getline(in, line);
+			if (line != "inner convergence rate") {
+				std::cout << "error read inner convergence rate" << std::endl;
+			}
+			std::getline(in, line);
+			local_conv_rate = std::stod(line);
+			std::getline(in, line);
+			if (line != "min inner itr num") {
+				std::cout << "error read min inner itr num" << std::endl;
+			}
+			std::getline(in, line);
+			min_inner_itr = std::stoi(line);
+			std::getline(in, line);
+			if (line != "min outer itr num") {
+				std::cout << "error read min outer itr num" << std::endl;
+			}
+			std::getline(in, line);
+			min_outer_itr = std::stoi(line);
+
+
+			std::getline(in, line);
+			if (line != "displacement standard") {
+				std::cout << "error read displacement standard" << std::endl;
+			}
+			std::getline(in, line);
+			displacement_standard = std::stod(line);
+
+
+			std::getline(in, line);
+			if (line != "distance record as collision") {
+				std::cout << "error read distance record as collision" << std::endl;
+			}
+			std::getline(in, line);
+			distance_record_as_collision = std::stod(line);
+
+
+			std::getline(in, line);
+			if (line != "energy converge standard") {
+				std::cout << "error read energy converge standard" << std::endl;
+			}
+			std::getline(in, line);
+			enegy_convege_standard = std::stod(line);
+
 		}
 		break;
 		case XPBD_:
@@ -366,8 +460,10 @@ namespace SaveParameter{
 		std::vector<std::array<double, 6>>& tet_stiffness, std::vector<std::array<double, 8>>& cloth_collision_stiffness, std::vector<std::array<double, 8>>& tet_collision_stiffness,
 		unsigned int use_method, std::vector<std::vector<int>*>&anchor_veretx, double time_step, double outer_convergence_rate,
 		double local_convergence_rate,
-		unsigned int sub_step_num, unsigned int iteration_num, double cloth_density, double tet_density, double velocity_damp,
-		double* friction_coe, unsigned int sub_step_per_detection, bool floor_exist, int floor_dimension, bool floor_normal_direction, double floor_value)
+		unsigned int sub_step_num, unsigned int max_outer_iteration_num, double cloth_density, double tet_density, double velocity_damp,
+		double* friction_coe, unsigned int sub_step_per_detection, bool floor_exist, int floor_dimension, bool floor_normal_direction, double floor_value, double d_hat,
+		unsigned int min_inner_itr, unsigned int min_outer_itr, double displacement_standard, double distance_record_as_collision, glm::vec3 camera_position,
+		glm::vec3 camera_up, glm::vec3 camera_center, unsigned int max_inner_itr_num, double enegy_convege_standard)
 	{
 		std::string prefix = "./record_scene_data/";
 		if (_access(prefix.c_str(), 0) == -1)
@@ -378,6 +474,17 @@ namespace SaveParameter{
 		input_file.open(obj_name.c_str(), std::ios::trunc);
 		writeBasicPara(input_file, path, collider_path, use_method, anchor_veretx, time_step,cloth_stiffness,tet_stiffness, cloth_collision_stiffness, 
 			tet_collision_stiffness,cloth_density,tet_density,velocity_damp,friction_coe,floor_exist,floor_dimension,floor_normal_direction,floor_value);
+
+
+		input_file << "camera position" << "\n";
+		input_file << camera_position.x<<" "<< camera_position.y<<" "<< camera_position.z << "\n";
+
+		input_file << "camera up" << "\n";
+		input_file << camera_up.x << " " << camera_up.y << " " << camera_up.z << "\n";
+
+		input_file << "camera center" << "\n";
+		input_file << camera_center.x << " " << camera_center.y << " " << camera_center.z << "\n";
+
 		switch (use_method)
 		{
 		case XPBD_:
@@ -385,7 +492,7 @@ namespace SaveParameter{
 			input_file << "substep_num"<< "\n";
 			input_file << sub_step_num << "\n";
 			input_file << "iteration_num" << "\n";
-			input_file << iteration_num << "\n";
+			input_file << max_outer_iteration_num << "\n";
 			input_file << "sub_step_per_detection" << "\n";
 			input_file << sub_step_per_detection << "\n";
 			break;
@@ -405,10 +512,27 @@ namespace SaveParameter{
 			input_file << "XPBD_IPC" << "\n";
 			input_file << "substep_num" << "\n";
 			input_file << sub_step_num << "\n";
-			input_file << "iteration_num" << "\n";
-			input_file << iteration_num << "\n";
+			input_file << "out iteration_num" << "\n";
+			input_file << max_outer_iteration_num << "\n";
+			input_file << "inner iteration_num" << "\n";
+			input_file << max_inner_itr_num << "\n";
 			input_file << "sub_step_per_detection" << "\n";
 			input_file << sub_step_per_detection << "\n";
+			input_file << "d_hat" << "\n";
+			input_file << d_hat << "\n";
+			input_file << "inner convergence rate" << "\n";
+			input_file << local_convergence_rate << "\n";
+			input_file << "min inner itr num" << "\n";
+			input_file << min_inner_itr << "\n";
+			input_file << "min outer itr num" << "\n";
+			input_file << min_outer_itr << "\n";
+			input_file << "displacement standard" << "\n";
+			input_file << displacement_standard << "\n";
+			input_file << "distance record as collision" << "\n";
+			input_file << distance_record_as_collision << "\n";
+			input_file << "energy converge standard" << "\n";
+			input_file << enegy_convege_standard << "\n";
+
 			break;
 		}		
 	}

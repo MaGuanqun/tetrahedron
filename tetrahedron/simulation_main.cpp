@@ -20,6 +20,9 @@ void simu_main(GLFWwindow* window, Input* input) {
 	glm::vec3 cameraPos = glm::vec3(0.0, 0.0, 1.0);
 	double camera_from_origin = 1.0;
 	Camera camera(cameraPos, normalize(glm::vec3(0.0f, 1.0f, 0.0f)));
+
+	
+
 	float zoom_value = 1.0;
 	CoordinateSystem coordinateSystem;
 	bool control_parameter[32];
@@ -67,7 +70,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool set_stiffness[13];
 	memset(set_stiffness, 0, 13);
 	std::vector<double> temp_stiffness(18);
-	double temp_data[18] = {1e6,2e4,2e4,2e1,1e1,3e-5,2e2,1.0,0.0,
+	double temp_data[18] = {1e6,2e4,2e4,2e1,1e1,3e-5,2e4,1.0,0.0,
 		0.0,0.0,
 	//1e-3, 2e-3,2e-3,2e-3, 1e-3,1e-9,1e-2};
 	0.0, 0.0,0.0,0.0, 0.0,0.0,0.0 };
@@ -121,6 +124,9 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 	double friction_coe[3] = { 0.9,0.8,0.9 };//self, collider, floor
 	unsigned int sub_step_per_detection = 1;
+
+
+	scene.camera = &camera;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -219,11 +225,11 @@ void simu_main(GLFWwindow* window, Input* input) {
 		if (!already_load_model) {
 			if (imgui_windows.loadModel(scene_path, collider_path, object_path)) {
 				already_load_model = true;
-				scene.loadMesh(scene_path, collider_path, object_path, tolerance_ratio, control_parameter,temp_stiffness.data(),friction_coe,&sub_step_per_detection,
-					floor_control,floor_dimension,floor_value);
-				//glm::vec3 camera_pos = glm::vec3(0.6 * scene.shadow.camera_from_origin + scene.camera_center[0], scene.camera_center[1], -0.8 * scene.shadow.camera_from_origin + scene.camera_center[2]);
-				glm::vec3 camera_pos = glm::vec3(scene.camera_center[0], scene.camera_center[1], -scene.shadow.camera_from_origin + scene.camera_center[2]);
-				camera.updateCamera(camera_pos, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(scene.camera_center[0], scene.camera_center[1], scene.camera_center[2]));
+				if (!scene.loadMesh(scene_path, collider_path, object_path, tolerance_ratio, control_parameter, temp_stiffness.data(), friction_coe, &sub_step_per_detection,
+					floor_control, floor_dimension, floor_value)) {
+					glm::vec3 camera_pos = glm::vec3(scene.camera_center[0], scene.camera_center[1], -scene.shadow.camera_from_origin + scene.camera_center[2]);
+					camera.updateCamera(camera_pos, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(scene.camera_center[0], scene.camera_center[1], scene.camera_center[2]));
+				}			
 				scene.getClothInfo(cloth_info, cloth_mass, cloth_stiffness, simulation_parameter, cloth_collision_stiffness);
 				scene.getTetrahedronInfo(tetrahedron_info, tetrahedron_mass, tetrahedron_stiffness, simulation_parameter, tetrahedron_collision_stiffness);
 				camera_from_origin = scene.shadow.camera_from_origin;

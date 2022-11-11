@@ -10,17 +10,20 @@ XPBD_IPC::XPBD_IPC()
 	damping_coe = 0.0;
 
 	perform_collision = true;
-	max_iteration_number = 30;
-	outer_max_iteration_number = 20;
+
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
 	velocity_damp = 0.995;
-	energy_converge_ratio = 5e-3;
+	energy_converge_ratio = 1e-3;
 
 	min_inner_iteration = 3;
 	min_outer_iteration = 2;
 
-
+	max_move_standard = 1e-4;
+	max_move_standard_inner_itr = 1e-4;
+	max_iteration_number = 20;
+	outer_max_iteration_number = 15;
+	energy_converge_standard = 1e-6;
 
 }
 void XPBD_IPC::initial()
@@ -75,18 +78,10 @@ void XPBD_IPC::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* t
 		//collision.setParameter(&lambda_collision,lambda.data()+ constraint_index_start[3], collision_constraint_index_start.data(), damping_coe, sub_time_step);
 	}
 
-	setConvergeCondition();
+
 
 }
 
-void XPBD_IPC::setConvergeCondition()
-{
-	converge_condition_ratio = 1e-2;
-	double edge_length = calEdgeLength();
-	max_move_standard = converge_condition_ratio * edge_length;
-	converge_condition_ratio = 1e-4;
-	max_move_standard_inner_itr = converge_condition_ratio * edge_length;
-}
 
 void XPBD_IPC::initialClothBending()
 {
@@ -460,7 +455,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve()
 			}
 
 			inner_iteration_number++;
-			//std::cout << "finish one itr " << inner_iteration_number<<" "<< energy << std::endl;
+			std::cout << "finish one itr " << inner_iteration_number<<" "<< energy << std::endl;
 
 		}
 
@@ -543,7 +538,7 @@ bool XPBD_IPC::innerConvergeCondition(unsigned int iteration_num)
 		return false;
 	}
 
-	if (abs(energy - previous_energy) <1e-8) {
+	if (abs(energy - previous_energy) < energy_converge_standard) {
 		return true;
 	}
 
@@ -2505,7 +2500,6 @@ void XPBD_IPC::solveEE_collisionBlock(unsigned int obj_No_0, unsigned int primit
 		vertex_position.data(), address_of_record_vertex_position.data());
 
 	if (t < 1.0) {
-		t *= 0.9;
 		double* p_c; double* p_i;
 		for (int i = 0; i < unfixed_num; i += 2) {
 			p_i = address_of_record_vertex_position[unfixed_pair_vertex_index[i]][unfixed_pair_vertex_index[i + 1]].data();
@@ -2603,7 +2597,6 @@ void XPBD_IPC::solveVT_collisionBlock(unsigned int vertex_obj_no, unsigned int v
 		vertex_position.data(), address_of_record_vertex_position.data());
 
 	if (t < 1.0) {
-		t *= 0.9;
 		double* p_c; double* p_i;
 		for (int i = 0; i < unfixed_num; i += 2) {
 			p_i = address_of_record_vertex_position[unfixed_pair_vertex_index[i]][unfixed_pair_vertex_index[i + 1]].data();
@@ -2760,7 +2753,6 @@ void XPBD_IPC::solveNewtonCD_tetBlock(std::array<double, 3>* vertex_position, do
 		unfixed_vertex_num, vertex_index_on_surface, vertex_position, record_ori_pos);
 
 	if (t < 1.0) {
-		t *= 0.9;
 		for (int i = 0; i < unfixed_vertex_num; ++i) {
 			vertex_index = tet_actual_unfixed_vertex_indices[i];
 			COLLISION_POS(vertex_position[vertex_index], t, record_ori_pos[vertex_index], vertex_position[vertex_index]);

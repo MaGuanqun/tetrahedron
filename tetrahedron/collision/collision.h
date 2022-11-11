@@ -24,6 +24,7 @@ using namespace Eigen;
 class Collision
 {
 public:
+	Collision();
 	double collision_time;
 
 	void initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider, std::vector<Tetrahedron>* tetrahedron, Thread* thread, Floor* floor,

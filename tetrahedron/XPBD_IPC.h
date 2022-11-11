@@ -64,9 +64,11 @@ public:
 	bool* has_force;
 	void computeCollisionFreePosition(int thread_No);
 
-
-
-
+	double energy_converge_ratio;
+	unsigned int min_inner_iteration, min_outer_iteration;
+	double max_move_standard;//the max displacement to stop iteration
+	unsigned int outer_max_iteration_number;
+	double energy_converge_standard;
 
 private:
 	void coordinateDescent();
@@ -171,17 +173,15 @@ private:
 	//void recordLastStepVertexPosition();
 
 	//std::vector<std::vector<unsigned int>* >unfixed_vertex;
-	double max_move_standard;//the max displacement to stop iteration
+
 	double max_move_standard_inner_itr;
 
 
-	double converge_condition_ratio;// converge_condition_ratio* edge length
-
 	double calEdgeLength();
-	void setConvergeCondition();
 
 
-	unsigned int outer_max_iteration_number;
+
+
 
 	bool use_bending_based_on_vertex = true;
 
@@ -190,7 +190,7 @@ private:
 	double previous_energy = 1e-15;
 	//std::vector<double>energy_per_thread;
 
-	double energy_converge_ratio;
+
 
 	SaveScene save_scene;
 
@@ -248,7 +248,7 @@ private:
 		unsigned int vertex_index, unsigned int vertex_index_on_surface);
 	bool getFloorHessian(double& Hessian, double& grad, double* vertex_position, double floor_value,
 		double* last_step_position, unsigned int dimension, double collision_stiffness, bool direction, double tolerance);
-	unsigned int min_inner_iteration, min_outer_iteration;
+
 
 
 

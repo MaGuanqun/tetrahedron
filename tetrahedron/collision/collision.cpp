@@ -2,6 +2,13 @@
 #include"../basic/basic_function.h"
 
 
+Collision::Collision()
+{
+	d_hat = 5e-3;
+	d_hat_2 = d_hat * d_hat;
+	tolerance = 1e-3 * d_hat;
+}
+
 void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collider,
 	std::vector<Tetrahedron>* tetrahedron, Thread* thread, Floor* floor,  double* tolerance_ratio, unsigned int use_method, bool record_pair_by_element)
 {
@@ -397,15 +404,9 @@ void Collision::initialDHatTolerance(double ave_edge_length)
 		tolerance_radius[i] = tolerance_ratio[i] * ave_edge_length;
 	}	
 
-	//d_hat = 2e-2 * ave_edge_length;
-	d_hat=1e-2;
-	d_hat_2 = d_hat * d_hat;
-
-	std::cout << "d_hat_ " << d_hat << std::endl;
-
 	volume_boundary = 0.5 * d_hat*ave_edge_length;
 
-	tolerance = 1e-4 * d_hat;
+
 
 	eta = 0.01;	
 	tolerance_2 = tolerance * tolerance;
@@ -1669,9 +1670,9 @@ void Collision::globalCollisionTime()
 	if (collision_time > 1.0) {
 		collision_time = 1.0;
 	}
-	//if (collision_time < 1.0) {
+	if (collision_time < 1.0) {
 		collision_time *= 0.9;
-	//}
+	}
 
 
 	if (collision_time == 0.0) {

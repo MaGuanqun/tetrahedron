@@ -112,14 +112,33 @@ void Scene::saveParameter(std::vector<std::string>& path, std::vector<std::strin
 {
 	double velocity_damp=1.0;
 	unsigned int sub_step_per_detection = 1;
+	double d_hat = 0.0;
+
+	double local_conv_rate = 1e-2;
+
+
+	unsigned int min_inner_itr = 1;
+	unsigned int min_outer_itr = 1;
+	double displacement_standard = 1e-4;
+
+	double distance_record_as_collision = 1e-6;
+
+
+	unsigned int max_outer_iteration_num=10;
+	unsigned int max_inner_iteration_num = 10;
+
+	double energy_converge_standard = 1e-7;
+
 	switch (use_method)
 	{
 	case PD_:
 		velocity_damp = project_dynamic.velocity_damp;
+		local_conv_rate = project_dynamic.local_global_conv_rate;
 		break;
 	case XPBD_:
 		velocity_damp = xpbd.velocity_damp;
 		sub_step_per_detection = *xpbd.sub_step_per_detection;
+		max_outer_iteration_num = xpbd.max_iteration_number;
 		break;
 	case NEWTON_:
 		velocity_damp = 1.0;
@@ -130,11 +149,27 @@ void Scene::saveParameter(std::vector<std::string>& path, std::vector<std::strin
 	case XPBD_IPC_:
 		velocity_damp = xpbd_ipc.velocity_damp;
 		sub_step_per_detection = *xpbd_ipc.sub_step_per_detection;
+		d_hat = xpbd_ipc.collision.d_hat;
+		local_conv_rate = xpbd_ipc.energy_converge_ratio;
+		min_inner_itr = xpbd_ipc.min_inner_iteration;
+		min_outer_itr = xpbd_ipc.min_outer_iteration;
+		displacement_standard = xpbd_ipc.max_move_standard;
+		distance_record_as_collision = xpbd_ipc.collision.tolerance;
+		max_outer_iteration_num = xpbd_ipc.outer_max_iteration_number;
+		max_inner_iteration_num = xpbd_ipc.max_iteration_number;
+		energy_converge_standard = xpbd_ipc.energy_converge_standard;
+
 		break;
 	}
 
-	SaveParameter::writeParameter(path, collider_path, cloth_stiffness, tet_stiffness, cloth_collision_stiffness, tet_collision_stiffness, use_method,	anchor_vertex, time_step,project_dynamic.outer_itr_conv_rate, project_dynamic.local_global_conv_rate, xpbd.sub_step_num, xpbd.max_iteration_number,cloth_density,tetrahedron_density,velocity_damp,
-		friction_coe, sub_step_per_detection,floor.exist,floor.dimension,floor.normal_direction,floor.value);
+	SaveParameter::writeParameter(path, collider_path, cloth_stiffness, tet_stiffness, cloth_collision_stiffness, tet_collision_stiffness, use_method,	
+		anchor_vertex, time_step,project_dynamic.outer_itr_conv_rate, local_conv_rate,
+		xpbd.sub_step_num, max_outer_iteration_num, cloth_density,tetrahedron_density,velocity_damp,
+		friction_coe, sub_step_per_detection,floor.exist,floor.dimension,floor.normal_direction,floor.value, d_hat,min_inner_itr,min_outer_itr,
+		displacement_standard, distance_record_as_collision, camera->position, camera->up,camera->center, max_inner_iteration_num, energy_converge_standard);
+
+
+
 }
 
 void Scene::compareArray()
@@ -224,7 +259,7 @@ void Scene::updateConvRate(double* convergence_rate)
 	// }
 }
 
-void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio, bool* control_parameter,
+bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio, bool* control_parameter,
 	double* initial_stiffness, double* friction_coe, unsigned int* sub_step_per_detection, bool* floor_indicator, unsigned int& floor_dimension, double& floor_value)
 {
 
@@ -258,11 +293,31 @@ void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 	if (!scene_path.empty()) {
 		load_by_scene_file = true;
 	}
+
+	double d_hat=5e-3;
+
 	double velocity_damp = 1.0;
+	double local_global_conv_rate = 1e-2;
+	unsigned int min_inner_itr = 1; 
+	unsigned int min_outer_itr = 1 ;
+	double displacement_standard = 1e-4;
+	double distance_record_as_collision = 1e-6;
+	unsigned int max_outer_itr_num=10;
+
+	unsigned int max_inner_itr_num = 10;
+	double energy_converge_standard = 1e-7;
+
 	if (load_by_scene_file) {
-		SaveParameter::readFile(scene_path, object_path, collider_path, obj_stiffness, collide_stiffness, anchor_vertex, time_step, use_method, xpbd.sub_step_num, xpbd.max_iteration_number,
-			project_dynamic.local_global_conv_rate, project_dynamic.outer_itr_conv_rate,cloth_density,tetrahedron_density, velocity_damp,friction_coe,
-			*sub_step_per_detection, floor_indicator[0], floor_dimension, floor_indicator[2], floor_value);
+		SaveParameter::readFile(scene_path, object_path, collider_path, obj_stiffness, collide_stiffness, anchor_vertex, time_step, use_method, xpbd.sub_step_num, max_outer_itr_num,
+			local_global_conv_rate, project_dynamic.outer_itr_conv_rate,cloth_density,tetrahedron_density, velocity_damp,friction_coe,
+			*sub_step_per_detection, floor_indicator[0], floor_dimension, floor_indicator[2], floor_value,d_hat, min_inner_itr, min_outer_itr,
+			displacement_standard, distance_record_as_collision, camera->ori_position,camera->ori_up,camera->ori_center, max_inner_itr_num,
+			energy_converge_standard	);
+
+		camera->position = camera->ori_position;
+		camera->up = camera->ori_up;
+		camera->center = camera->ori_center;
+
 		control_parameter[USE_XPBD] = false;
 		control_parameter[USE_PD_] = false;
 		control_parameter[USE_NEWTON_] = false;
@@ -272,9 +327,11 @@ void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 		{
 		case XPBD_:
 			control_parameter[USE_XPBD] = true;
+			xpbd.max_iteration_number = max_outer_itr_num;
 			break;
 		case PD_:
 			control_parameter[USE_PD_] = true;
+			project_dynamic.local_global_conv_rate = local_global_conv_rate;
 			break;
 		case NEWTON_:
 			control_parameter[USE_NEWTON_] = true;
@@ -284,6 +341,31 @@ void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 			break;
 		case XPBD_IPC_:
 			control_parameter[USE_XPBD_IPC] = true;
+			xpbd_ipc.collision.d_hat = d_hat;
+			xpbd_ipc.energy_converge_ratio = local_global_conv_rate;
+			xpbd_ipc.min_inner_iteration = min_inner_itr;
+			xpbd_ipc.min_outer_iteration = min_outer_itr;
+			xpbd_ipc.max_move_standard = displacement_standard;
+			xpbd_ipc.collision.tolerance = distance_record_as_collision;
+			xpbd_ipc.outer_max_iteration_number = max_outer_itr_num;
+			xpbd_ipc.max_iteration_number = max_inner_itr_num;
+			xpbd_ipc.energy_converge_standard = energy_converge_standard;
+
+			std::cout << "d_hat " << d_hat << std::endl;
+			std::cout << "energy_converge_ratio " << local_global_conv_rate << std::endl;
+			std::cout << "min_inner_iteration " << min_inner_itr << std::endl;
+			std::cout << "min_outer_itr " << min_outer_itr << std::endl;
+			std::cout << "max_move_standard " << displacement_standard << std::endl;
+			std::cout << "distance_record_as_collision " << distance_record_as_collision << std::endl;
+		
+			std::cout << "camera position " << camera->position.x << " " << camera->position.y << " " << camera->position.z << std::endl;
+			std::cout << "camera up " << camera->up.x << " " << camera->up.y << " " << camera->up.z << std::endl;
+			std::cout << "camera center " << camera->center.x << " " << camera->center.y << " " << camera->center.z << std::endl;
+
+			std::cout << "outer_max_iteration_number " << xpbd_ipc.outer_max_iteration_number << std::endl;
+			std::cout << "max_inner_itr_num " << xpbd_ipc.max_iteration_number << std::endl;
+			std::cout << "energy_converge_standard  " << xpbd_ipc.energy_converge_standard << std::endl;
+
 			break;
 		}
 
@@ -496,6 +578,8 @@ void Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 	// 
 
 	//reflectModel();
+
+	return load_by_scene_file;
 }
 
 void Scene::reflectModel()

@@ -17,11 +17,13 @@ class Camera
 private:
 
     float right;
+
+    glm::vec3 rotationxyz(float angle, glm::vec3& rotate_axe, glm::vec3& vec);
+public:
     glm::vec3 ori_position;
     glm::vec3 ori_up;
     glm::vec3 ori_center;
-    glm::vec3 rotationxyz(float angle, glm::vec3& rotate_axe, glm::vec3& vec);
-public:
+
 	glm::vec3 position;
 	glm::vec3 up;
     glm::vec3 center;

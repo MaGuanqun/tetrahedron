@@ -119,14 +119,20 @@ void SetModel::getAABB()
 void SetModel::regularization(RegularizationInfo& regularization_info)
 {
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
-		SUB(ori_mesh.vertices[i], ori_mesh.vertices[i], regularization_info.body_center);
+		SUB_(ori_mesh.vertices[i], regularization_info.body_center);
 	}
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
-		MULTI(ori_mesh.vertices[i], ori_mesh.vertices[i], regularization_info.scaler);
+		MULTI_(ori_mesh.vertices[i], regularization_info.scaler);
 	}
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
-		SUM(ori_mesh.vertices[i], ori_mesh.vertices[i], regularization_info.move_info);
+		SUM_(ori_mesh.vertices[i], regularization_info.move_info);
 	}
+
+
+	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
+		ori_mesh.vertices[i][1] += 2.0;
+	}
+
 	//std::cout <<"scaler "<< regularization_info.scaler << std::endl;
 }
 

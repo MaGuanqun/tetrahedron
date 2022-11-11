@@ -39,7 +39,7 @@ public:
 	bool* control_parameter;
 	void initial();
 	void reset();
-	void loadMesh(std::string& scene_path, std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio,
+	bool loadMesh(std::string& scene_path, std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio,
 		bool* control_parameter, double* initial_stiffness, double* friction_coe, unsigned int* sub_step_per_detection, bool* floor_indicator, unsigned int& floor_dimension, double& floor_value);
 	void drawScene(Camera* camera, std::vector<std::vector<bool>>& show_element,
 		bool* control_parameter);
@@ -84,7 +84,7 @@ public:
 		std::vector<std::array<double, 8>>& cloth_collision_stiffness, std::vector<std::array<double, 8>>& tet_collision_stiffness, double* tolerance_ratio,
 		double* friction_coe);
 
-
+	Camera* camera;
 
 private:
 	double cloth_density;
