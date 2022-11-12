@@ -208,6 +208,9 @@ dest[2] += coe* v0[2];
 #define SQUARED_LENGTH(v0,v1) ((v0[0]-v1[0])*(v0[0]-v1[0])+ (v0[1]-v1[1])*(v0[1]-v1[1]) + (v0[2]-v1[2])*(v0[2]-v1[2]))
 
 
+
+
+
 inline double gaussian(double x, double sigma) {
 	return std::exp(-x * x / (2.0 * sigma * sigma));
 

@@ -25,6 +25,7 @@ XPBD_IPC::XPBD_IPC()
 	outer_max_iteration_number = 15;
 	energy_converge_standard = 1e-6;
 
+	second_order_constraint.solve_exact_ARAP_hessian = false;
 }
 void XPBD_IPC::initial()
 {

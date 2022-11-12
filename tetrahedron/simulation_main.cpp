@@ -70,7 +70,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	bool set_stiffness[13];
 	memset(set_stiffness, 0, 13);
 	std::vector<double> temp_stiffness(18);
-	double temp_data[18] = {1e6,2e4,2e4,2e1,1e1,3e-5,2e4,1.0,0.0,
+	double temp_data[18] = {1e6,2e4,2e4,2e1,1e1,3e-5,2e2,1.0,0.0,
 		0.0,0.0,
 	//1e-3, 2e-3,2e-3,2e-3, 1e-3,1e-9,1e-2};
 	0.0, 0.0,0.0,0.0, 0.0,0.0,0.0 };
@@ -229,6 +229,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 					floor_control, floor_dimension, floor_value)) {
 					glm::vec3 camera_pos = glm::vec3(scene.camera_center[0], scene.camera_center[1], -scene.shadow.camera_from_origin + scene.camera_center[2]);
 					camera.updateCamera(camera_pos, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(scene.camera_center[0], scene.camera_center[1], scene.camera_center[2]));
+
 				}			
 				scene.getClothInfo(cloth_info, cloth_mass, cloth_stiffness, simulation_parameter, cloth_collision_stiffness);
 				scene.getTetrahedronInfo(tetrahedron_info, tetrahedron_mass, tetrahedron_stiffness, simulation_parameter, tetrahedron_collision_stiffness);

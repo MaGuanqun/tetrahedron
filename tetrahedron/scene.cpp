@@ -1169,6 +1169,9 @@ void Scene::setMove(Camera* camera, Input* input, bool* control_parameter)
 	}
 	if (control_parameter[ROTATION]) {
 		if (intersect_when_rotation) {
+
+			std::cout << input->mouse.angle[0] << " " << input->mouse.angle[1] << std::endl;
+
 			rotate(camera, input->mouse.angle, false);
 			switch (use_method)
 			{
@@ -1494,7 +1497,7 @@ void Scene::pickAxes(double* pos, Camera* camera)
 		mouse_pos[0] = pos[0];
 		mouse_pos[1] = SCR_HEIGHT - pos[1];
 		if (object_chosen_indicator.pickAxes(wireframe_shader, camera, select_dimension_index, mouse_pos)) {
-
+			std::cout <<"pick axe "<<  select_dimension_index << std::endl;
 		}
 	}
 }

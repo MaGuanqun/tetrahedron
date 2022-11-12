@@ -210,10 +210,27 @@ void SecondOrderConstraint::solveCD_ARAP_block(MatrixXd& Hessian, VectorXd& grad
 		for (int i = 0; i < unfixed_vertex_num; ++i) {
 			memcpy(grad.data() + 3 * i, grad_C_transpose.data() + 3 * unfixed_tet_vertex_index[i], 24);
 		}
-		Matrix3d Dm = A[tet_index].block<3, 3>(0, 1).transpose();
-		FEM::getHessianForSeveralVertex(Hessian, S, rotation, Dm, A[tet_index], unfixed_tet_vertex_index,
-			unfixed_vertex_num);
-		Hessian *= volume[tet_index] * stiffness;
+
+
+		if (solve_exact_ARAP_hessian) {
+			Matrix3d Dm = A[tet_index].block<3, 3>(0, 1).transpose();
+			FEM::getHessianForSeveralVertex(Hessian, S, rotation, Dm, A[tet_index], unfixed_tet_vertex_index,
+				unfixed_vertex_num);
+			Hessian *= volume[tet_index] * stiffness;
+		}
+		else {
+			Matrix4d result = A[tet_index].transpose() * (A[tet_index] * (2.0*volume[tet_index] * stiffness));
+			double* address = result.data();
+			for (unsigned int i = 0; i < 144; i += 36) {
+				for (unsigned int j = 0; j < 12; j += 3) {
+					Hessian.data()[i+j] += *address;
+					Hessian.data()[i +j+ 13] += *address;
+					Hessian.data()[i +j+ 26] += *address;
+					address++;
+				}			
+			}
+		}
+
 	//}
 	for (auto i = neighbor_tet_indices.begin(); i < neighbor_tet_indices.end(); ++i) {
 		solveCertainHessianForNeighborTet(vertex_position, stiffness, A[*i], common_vertex_in_order, indices[*i].data(),
@@ -236,8 +253,11 @@ bool SecondOrderConstraint::solveTetCertainVertices(std::array<double, 3>* verte
 		deformation_gradient);
 	FEM::polarDecomposition(deformation_gradient, eigen_value, S, rotation);
 
+
+	stiffness *= volume;
+
 	Matrix<double, 3, 4> grad_C_transpose;
-	grad_C_transpose = (2.0 * stiffness * volume) * (deformation_gradient - rotation) * A;
+	grad_C_transpose = (2.0 * stiffness) * (deformation_gradient - rotation) * A;
 
 	for (int i = 0; i < 4; ++i) {
 		if (vertex_in_sys[i] != -1) {
@@ -245,17 +265,37 @@ bool SecondOrderConstraint::solveTetCertainVertices(std::array<double, 3>* verte
 				+= grad_C_transpose.col(i);
 		}
 	}
-	Matrix3d Dm = A.block<3, 3>(0, 1).transpose();
 
-	for (int i = 0; i < 4; ++i) {
-		if (vertex_in_sys[i] != -1) {
-			FEM::getHessianForOneVertex(Hessian_vertex, S, rotation, Dm, A, i);
-			Hessian_vertex *= volume * stiffness;
-			for (int j = 0; j < 4; ++j) {
-				if (vertex_in_sys[j] != -1) {
-					sys_matrix.block<3, 3>(3 * vertex_in_sys[j],
-						3 * vertex_in_sys[i]) +=
-						Hessian_vertex.block<3, 3>(3 * j, 0);
+	if (solve_exact_ARAP_hessian) {
+		Matrix3d Dm = A.block<3, 3>(0, 1).transpose();
+		for (int i = 0; i < 4; ++i) {
+			if (vertex_in_sys[i] != -1) {
+				FEM::getHessianForOneVertex(Hessian_vertex, S, rotation, Dm, A, i);
+				Hessian_vertex *= stiffness;
+				for (int j = 0; j < 4; ++j) {
+					if (vertex_in_sys[j] != -1) {
+						sys_matrix.block<3, 3>(3 * vertex_in_sys[j],
+							3 * vertex_in_sys[i]) +=
+							Hessian_vertex.block<3, 3>(3 * j, 0);
+					}
+				}
+			}
+		}
+	}
+	else {
+		double value;
+		for (int i = 0; i < 4; ++i) {
+			if (vertex_in_sys[i] != -1) {
+				for (int j = 0; j < 4; ++j) {
+					if (vertex_in_sys[j] != -1) {
+						value = 2.0 * stiffness * DOT((A.data() +j), (A.data() + i));
+						sys_matrix(3 * vertex_in_sys[j],
+							3 * vertex_in_sys[i]) += value;
+						sys_matrix(3 * vertex_in_sys[j]+1,
+							3 * vertex_in_sys[i]+1) += value;
+						sys_matrix(3 * vertex_in_sys[j]+2,
+							3 * vertex_in_sys[i]+2) += value;
+					}
 				}
 			}
 		}
@@ -292,22 +332,45 @@ bool SecondOrderConstraint::solveCertainHessianForNeighborTet(std::array<double,
 		//common_vertex_in_order += (common_vertex_num * 2);
 		//return false;
 	//}
+
+
+	stiffness *= volume;
+
 	Matrix<double, 3, 4> grad_C_transpose;
-	grad_C_transpose = (2.0 * stiffness * volume) * (deformation_gradient - rotation) * A;
+	grad_C_transpose = (2.0 * stiffness) * (deformation_gradient - rotation) * A;
 
 	for (int i = 0; i < common_vertex_num; ++i) {
 		grad.segment(3 * (*(common_vertex_in_order + i + common_vertex_num)), 3)
 			+= grad_C_transpose.col(*(common_vertex_in_order + i));
 	}
 
-	Matrix3d Dm = A.block<3, 3>(0, 1).transpose();
-	for (int i = 0; i < common_vertex_num; ++i) {
-		FEM::getHessianForOneVertex(Hessian_vertex, S, rotation, Dm, A, *(common_vertex_in_order + i));
-		Hessian_vertex *= volume * stiffness;
-		for (int j = 0; j < common_vertex_num; ++j) {
-			sys_matrix.block<3, 3>(3 * (*(common_vertex_in_order + j + common_vertex_num)),
-				3 * (*(common_vertex_in_order + i + common_vertex_num))) +=
-				Hessian_vertex.block<3, 3>(3 * (*(common_vertex_in_order + j)), 0);
+	if (solve_exact_ARAP_hessian) {
+		Matrix3d Dm = A.block<3, 3>(0, 1).transpose();
+		for (int i = 0; i < common_vertex_num; ++i) {
+			FEM::getHessianForOneVertex(Hessian_vertex, S, rotation, Dm, A, *(common_vertex_in_order + i));
+			Hessian_vertex *= stiffness;
+			for (int j = 0; j < common_vertex_num; ++j) {
+				sys_matrix.block<3, 3>(3 * (*(common_vertex_in_order + j + common_vertex_num)),
+					3 * (*(common_vertex_in_order + i + common_vertex_num))) +=
+					Hessian_vertex.block<3, 3>(3 * (*(common_vertex_in_order + j)), 0);
+			}
+		}
+	}
+	else {
+		double value;
+
+		for (int i = 0; i < common_vertex_num; ++i) {
+
+			for (int j = 0; j < common_vertex_num; ++j) {
+				value =2.0*stiffness* DOT((A.data() + *(common_vertex_in_order + j)), (A.data() + *(common_vertex_in_order + i)));
+
+				sys_matrix(3 * (*(common_vertex_in_order + j + common_vertex_num)),
+					3 * (*(common_vertex_in_order + i + common_vertex_num))) += value;
+				sys_matrix(3 * (*(common_vertex_in_order + j + common_vertex_num)+1),
+					3 * (*(common_vertex_in_order + i + common_vertex_num))+1) += value;
+				sys_matrix(3 * (*(common_vertex_in_order + j + common_vertex_num)+2),
+					3 * (*(common_vertex_in_order + i + common_vertex_num))+2) += value;
+			}
 		}
 	}
 
@@ -612,8 +675,19 @@ void SecondOrderConstraint::computeVTBarrierGradientHessian(MatrixXd& Hessian_, 
 		if (distance >= d_hat_2) {
 			return;
 		}
+		vertex_in_pair[0] = 0;
+		vertex_in_pair[1] = 1;
+
 		Hessian.resize(6, 6);
 		grad.resize(6);
+
+		//if (triangle_vertex_order_in_system[vertex_in_pair[0]] != -1) {
+		//	pair_nonzero[0] = true;
+		//}
+		//if (triangle_vertex_order_in_system[vertex_in_pair[1]] != -1) {
+		//	pair_nonzero[1] = true;
+		//}
+
 		
 		distance::point_point_distance_gradient(p, t0, grad.data());
 		distance::point_point_distance_hessian(p, t0, Hessian.data());
@@ -621,8 +695,7 @@ void SecondOrderConstraint::computeVTBarrierGradientHessian(MatrixXd& Hessian_, 
 		b_grad *= stiffness; b_hessian *= stiffness;
 		Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
 		grad *= b_grad;
-		vertex_in_pair[0] = 0;
-		vertex_in_pair[1] = 1;
+
 		setTetHessianFromBarrierHessian(Hessian_, grad_, Hessian, grad,
 			triangle_vertex_order_in_system, vertex_in_pair, 2);
 
@@ -769,12 +842,6 @@ void SecondOrderConstraint::setTetHessianFromBarrierHessian(MatrixXd& Hessian_sy
 		if (triangle_vertex_order_in_system[vertex_in_pair[i]] != -1) {
 			for (int j = 0; j < vertex_in_use; ++j) {
 				if (triangle_vertex_order_in_system[vertex_in_pair[j]] != -1) {
-
-					//if (triangle_vertex_order_in_system[vertex_in_pair[i]]<0 || triangle_vertex_order_in_system[vertex_in_pair[i]]>Hessian_system.cols() / 3 ||
-					//	triangle_vertex_order_in_system[vertex_in_pair[j]]<0 || triangle_vertex_order_in_system[vertex_in_pair[j]]>Hessian_system.cols() / 3) {
-					//	std::cout << "error " << triangle_vertex_order_in_system[0] << " " << triangle_vertex_order_in_system[1] << " " << triangle_vertex_order_in_system[2] << " " << triangle_vertex_order_in_system[3] << std::endl;
-					//	std::cout << vertex_in_use << " " << vertex_in_pair[0] << " " << vertex_in_pair[1] << " " << vertex_in_pair[2] << " " << vertex_in_pair[3] << std::endl;
-					//}
 
 					Hessian_system.block<3, 3>(3 * triangle_vertex_order_in_system[vertex_in_pair[i]], 3 * triangle_vertex_order_in_system[vertex_in_pair[j]])
 						+= Hessian_.block<3, 3>(3 * i, 3 * j);
