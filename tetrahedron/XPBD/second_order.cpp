@@ -211,7 +211,6 @@ void SecondOrderConstraint::solveCD_ARAP_block(MatrixXd& Hessian, VectorXd& grad
 			memcpy(grad.data() + 3 * i, grad_C_transpose.data() + 3 * unfixed_tet_vertex_index[i], 24);
 		}
 
-
 		if (solve_exact_ARAP_hessian) {
 			Matrix3d Dm = A[tet_index].block<3, 3>(0, 1).transpose();
 			FEM::getHessianForSeveralVertex(Hessian, S, rotation, Dm, A[tet_index], unfixed_tet_vertex_index,
@@ -219,15 +218,29 @@ void SecondOrderConstraint::solveCD_ARAP_block(MatrixXd& Hessian, VectorXd& grad
 			Hessian *= volume[tet_index] * stiffness;
 		}
 		else {
+
 			Matrix4d result = A[tet_index].transpose() * (A[tet_index] * (2.0*volume[tet_index] * stiffness));
-			double* address = result.data();
-			for (unsigned int i = 0; i < 144; i += 36) {
-				for (unsigned int j = 0; j < 12; j += 3) {
-					Hessian.data()[i+j] += *address;
-					Hessian.data()[i +j+ 13] += *address;
-					Hessian.data()[i +j+ 26] += *address;
-					address++;
-				}			
+
+			if (unfixed_vertex_num < 4) {
+				for (int i = 0; i < unfixed_vertex_num; ++i) {
+					for (int j = 0; j < unfixed_vertex_num; ++j) {
+						Hessian(3 * i, 3 * j) = result.data()[(unfixed_tet_vertex_index[j] << 2) + unfixed_tet_vertex_index[i]];
+						Hessian(3 * i + 1, 3 * j + 1) = result.data()[(unfixed_tet_vertex_index[j] << 2) + unfixed_tet_vertex_index[i]];
+						Hessian(3 * i + 2, 3 * j + 2) = result.data()[(unfixed_tet_vertex_index[j] << 2) + unfixed_tet_vertex_index[i]];
+					}
+				}
+			}
+			else {
+				double* address = result.data();
+				for(unsigned int i=0;i<4;++i)
+				for (unsigned int i = 0; i < 144; i += 36) {
+					for (unsigned int j = 0; j < 12; j += 3) {
+						Hessian.data()[i + j] += *address;
+						Hessian.data()[i + j + 13] += *address;
+						Hessian.data()[i + j + 26] += *address;
+						address++;
+					}
+				}
 			}
 		}
 
@@ -358,19 +371,36 @@ bool SecondOrderConstraint::solveCertainHessianForNeighborTet(std::array<double,
 	}
 	else {
 		double value;
-
+		double* A_1;
+		double* A_2;
 		for (int i = 0; i < common_vertex_num; ++i) {
-
-			for (int j = 0; j < common_vertex_num; ++j) {
-				value =2.0*stiffness* DOT((A.data() + *(common_vertex_in_order + j)), (A.data() + *(common_vertex_in_order + i)));
-
+			A_1 = A.data() + ((*(common_vertex_in_order + i)) * 3);
+			for (int j = i + 1; j < common_vertex_num; ++j) {
+				A_2 = A.data() + ((*(common_vertex_in_order + j)) * 3);
+				value = 2.0 * stiffness * DOT(A_1, A_2);
 				sys_matrix(3 * (*(common_vertex_in_order + j + common_vertex_num)),
 					3 * (*(common_vertex_in_order + i + common_vertex_num))) += value;
-				sys_matrix(3 * (*(common_vertex_in_order + j + common_vertex_num)+1),
+				sys_matrix(3 * (*(common_vertex_in_order + j + common_vertex_num))+1,
 					3 * (*(common_vertex_in_order + i + common_vertex_num))+1) += value;
-				sys_matrix(3 * (*(common_vertex_in_order + j + common_vertex_num)+2),
+				sys_matrix(3 * (*(common_vertex_in_order + j + common_vertex_num))+2,
 					3 * (*(common_vertex_in_order + i + common_vertex_num))+2) += value;
+
+				sys_matrix(3 * (*(common_vertex_in_order + i + common_vertex_num)),
+					3 * (*(common_vertex_in_order + j + common_vertex_num))) += value;
+				sys_matrix(3 * (*(common_vertex_in_order + i + common_vertex_num)) + 1,
+					3 * (*(common_vertex_in_order + j + common_vertex_num)) + 1) += value;
+				sys_matrix(3 * (*(common_vertex_in_order + i + common_vertex_num)) + 2,
+					3 * (*(common_vertex_in_order + j + common_vertex_num)) + 2) += value;
 			}
+
+			value = 2.0 * stiffness * DOT(A_1, A_1);
+			sys_matrix(3 * (*(common_vertex_in_order + i + common_vertex_num)),
+				3 * (*(common_vertex_in_order + i + common_vertex_num))) += value;
+			sys_matrix(3 * (*(common_vertex_in_order + i + common_vertex_num)) + 1,
+				3 * (*(common_vertex_in_order + i + common_vertex_num)) + 1) += value;
+			sys_matrix(3 * (*(common_vertex_in_order + i + common_vertex_num)) + 2,
+				3 * (*(common_vertex_in_order + i + common_vertex_num)) + 2) += value;
+
 		}
 	}
 

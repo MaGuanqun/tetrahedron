@@ -2740,9 +2740,6 @@ void XPBD_IPC::solveNewtonCD_tetBlock(std::array<double, 3>* vertex_position, do
 	LLT <MatrixXd> linear(Hessian);
 	VectorXd result = linear.solve(grad);
 
-	//std::cout << Hessian << std::endl;
-	//std::cout << "++" << std::endl;
-	//std::cout << grad.transpose() << std::endl;
 
 
 	for (int i = 0; i < unfixed_vertex_num; ++i) {
