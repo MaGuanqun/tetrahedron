@@ -627,7 +627,10 @@ void XPBD_IPC::computeCurrentEnergy()
 	double barrier_energy = computeBarrierEnergy();
 	energy += barrier_energy;
 	record_energy.emplace_back(energy);
-	//std::cout << "inertial " << inertial_energy << " ARAP " << ARAP_energy << " barrier " << barrier_energy << std::endl;
+
+	if (energy > 1e9) {
+		std::cout << "inertial " << inertial_energy << " ARAP " << ARAP_energy << " barrier " << barrier_energy << std::endl;
+	}
 }
 
 void XPBD_IPC::firstNewtonCD()
@@ -1256,14 +1259,13 @@ void XPBD_IPC::newtonEECollisionBlock()
 void XPBD_IPC::newtonCDBlock()
 {
 	newtonCDTetBlock();
-	newtonVTCollisionBlock();
-	newtonEECollisionBlock();
-
-	if (has_collider) {
-		newtonEEColliderCollisionBlock();
-		newtonVTColliderCollisionBlock();
-		newtonTVColliderCollisionBlock();
-	}
+	//newtonVTCollisionBlock();
+	//newtonEECollisionBlock();
+	//if (has_collider) {
+	//	newtonEEColliderCollisionBlock();
+	//	newtonVTColliderCollisionBlock();
+	//	newtonTVColliderCollisionBlock();
+	//}
 
 }
 
@@ -2222,6 +2224,12 @@ void XPBD_IPC::getTVCollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, do
 
 
 
+//void XPBD_IPC::checkIfRight(int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, unsigned int obj_No, int* triangle_vertex_order_in_tet)
+//{
+//
+//}
+
+
 void XPBD_IPC::getEECollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, unsigned int obj_No, unsigned int* edge_vertex_index,
 	unsigned int* EE, int num, int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2,
 	int edge_order_in_tet, std::vector<unsigned int>* edge_of_a_tet, double*ea0, double* ea1, double stiffness,
@@ -2492,7 +2500,7 @@ void XPBD_IPC::solveEE_collisionBlock(unsigned int obj_No_0, unsigned int primit
 		grad.data()[3 * i + 2] += mass_dt_2 * (vertex_position[obj_index_][vertex_index_][2] - sn[obj_index_][vertex_index_][2]);
 	}
 
-	LLT <MatrixXd> linear(Hessian);
+	HouseholderQR <MatrixXd> linear(Hessian);
 	VectorXd result = linear.solve(grad);
 
 	for (int i = 0; i < unfixed_num; i += 2) {
@@ -2585,7 +2593,7 @@ void XPBD_IPC::solveVT_collisionBlock(unsigned int vertex_obj_no, unsigned int v
 		grad.data()[3 * i + 2] += mass_dt_2 * (vertex_position[obj_index_][vertex_index_][2] - sn[obj_index_][vertex_index_][2]);
 	}
 
-	LDLT <MatrixXd> linear(Hessian);
+	HouseholderQR <MatrixXd> linear(Hessian);
 	VectorXd result = linear.solve(grad);
 	//std::cout << Hessian << std::endl;
 	//std::cout << "++" << std::endl;
@@ -2723,10 +2731,15 @@ void XPBD_IPC::solveNewtonCD_tetBlock(std::array<double, 3>* vertex_position, do
 		indices, volume, tet_index, common_vertex_in_order, tet_vertex_index,
 		unfixed_tet_vertex_index, unfixed_vertex_num);
 
+	MatrixXd test = Hessian;
+
 	getCollisionHessian(Hessian, grad, triangle_of_a_tet, edge_of_a_tet, collision_stiffness, obj_No, tet_actual_unfixed_vertex_indices,
 		unfixed_vertex_num,
 		collision.d_hat_2, vertex_index_on_surface, vertex_position);
 
+	//if (tet_index == 11607) {
+	//	std::cout << Hessian - test << std::endl;
+	//}
 	double mass_dt_2;
 	int vertex_index;
 	for (int i = 0; i < unfixed_vertex_num; ++i) {
@@ -2740,10 +2753,16 @@ void XPBD_IPC::solveNewtonCD_tetBlock(std::array<double, 3>* vertex_position, do
 		grad.data()[3 * i + 2] += mass_dt_2 * (vertex_position[vertex_index][2] - sn[vertex_index][2]);
 	}
 
-
-	LLT <MatrixXd> linear(Hessian);
+	ColPivHouseholderQR<MatrixXd> linear(Hessian);
+	//LLT <MatrixXd> linear(Hessian);
 	VectorXd result = linear.solve(grad);
 
+
+	//if (tet_index == 11607) {
+	//	JacobiSVD<MatrixXd > k(Hessian);
+	//	std::cout << "svd "<< k.singularValues().transpose() << std::endl;
+	//
+	//}
 
 
 	for (int i = 0; i < unfixed_vertex_num; ++i) {
@@ -2969,6 +2988,7 @@ double XPBD_IPC::computeCurrentARAPEnergy()
 	double* volume;
 	double stiffness;
 	double* mass_inv_;
+	double tet_energy;
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		size = tetrahedron->data()[i].mesh_struct.indices.size();
 		indices = tetrahedron->data()[i].mesh_struct.indices.data();
@@ -2979,8 +2999,9 @@ double XPBD_IPC::computeCurrentARAPEnergy()
 		mass_inv_ = tetrahedron->data()[i].mesh_struct.mass_inv.data();
 		for (unsigned int j = 0; j < size; ++j) {
 			if (mass_inv_[indices[j][0]] != 0.0 || mass_inv_[indices[j][1]] != 0.0 || mass_inv_[indices[j][2]] != 0.0 || mass_inv_[indices[j][3]] != 0.0) {
-				energy += compute_energy.computeARAPEnergy(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
+				tet_energy = compute_energy.computeARAPEnergy(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
 					vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j], volume[j], stiffness);
+				energy += tet_energy;				
 			}
 		}
 

@@ -82,6 +82,7 @@ namespace FEM {
 		}
 		rotation = U * svd.matrixV().transpose();
 		S = svd.matrixV() * eigen_value.asDiagonal() * svd.matrixV().transpose();
+
 	}
 
 	inline void extractRotation(Matrix3d& deformation_gradient, Vector3d& eigen_value, Matrix3d& U, Matrix3d& V, Matrix3d& rotation)

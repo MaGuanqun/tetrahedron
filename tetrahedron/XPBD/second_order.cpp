@@ -204,6 +204,9 @@ void SecondOrderConstraint::solveCD_ARAP_block(MatrixXd& Hessian, VectorXd& grad
 		deformation_gradient);
 	FEM::polarDecomposition(deformation_gradient, eigen_value, S, rotation);
 
+
+
+
 	//if((deformation_gradient - rotation).squaredNorm()>1e-16){
 		Matrix<double, 3, 4> grad_C_transpose;
 		grad_C_transpose = (2.0 * stiffness * volume[tet_index]) * (deformation_gradient - rotation) * A[tet_index];
@@ -243,6 +246,11 @@ void SecondOrderConstraint::solveCD_ARAP_block(MatrixXd& Hessian, VectorXd& grad
 				}
 			}
 		}
+
+
+		//if (tet_index == 11607) {
+		//	std::cout << "deformation gradient "<< eigen_value.transpose() << std::endl;// deformation_gradient.determinant() << " " << <<
+		//}
 
 	//}
 	for (auto i = neighbor_tet_indices.begin(); i < neighbor_tet_indices.end(); ++i) {

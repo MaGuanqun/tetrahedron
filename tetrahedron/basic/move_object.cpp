@@ -184,15 +184,18 @@ void MoveObject::updateRotationMatrix(double angle_move, unsigned int dimension,
 	{
 	case 0:		
 		memcpy(axis, temp_rotate_matrix, 24);
+		normalize(axis);
 		rotateAroundVector(v, axis, angle_move);
 		break;
 	case 1:		
 		memcpy(axis, (temp_rotate_matrix+3), 24);
+		normalize(axis);
 	//	std::cout << axis[0] << " " << axis[1] << " " << axis[2] << std::endl;
 		rotateAroundVector(v, axis, angle_move);
 		break;
 	case 2:
 		memcpy(axis, (temp_rotate_matrix + 6), 24);
+		normalize(axis);
 		rotateAroundVector(v, axis, angle_move);
 		break;
 	}
@@ -233,14 +236,17 @@ void MoveObject::rotation(double angle_move, unsigned int dimension, bool only_m
 	{
 	case 0:
 		axis[0] = ori_rotation_matrix[0]; axis[1] = ori_rotation_matrix[3]; axis[2] = ori_rotation_matrix[6];
+		normalize(axis);
 		rotateAroundVector(rotation_matrix, axis, angle_move);
 		break;
 	case 1:
 		axis[0] = ori_rotation_matrix[1]; axis[1] = ori_rotation_matrix[4]; axis[2] = ori_rotation_matrix[7];
+		normalize(axis);
 		rotateAroundVector(rotation_matrix, axis, angle_move);
 		break;
 	case 2:
 		axis[0] = ori_rotation_matrix[2]; axis[1] = ori_rotation_matrix[5]; axis[2] = ori_rotation_matrix[8];
+		normalize(axis);
 		rotateAroundVector(rotation_matrix, axis, angle_move);
 		break;
 	}

@@ -124,6 +124,18 @@ void SetModel::regularization(RegularizationInfo& regularization_info)
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
 		MULTI_(ori_mesh.vertices[i], regularization_info.scaler);
 	}
+
+	double rotation_matrix[9];
+	double axe[3] = { 0,1,0 };
+	rotateAroundVectorRowMajor(rotation_matrix, axe, M_PI / 2.0);
+	double pos[3];
+	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
+		pos[0] = DOT(rotation_matrix, ori_mesh.vertices[i]);
+		pos[1] = DOT((rotation_matrix+3), ori_mesh.vertices[i]);
+		pos[2] = DOT((rotation_matrix+6), ori_mesh.vertices[i]);
+		MULTI(ori_mesh.vertices[i], pos, regularization_info.scaler);
+	}
+
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
 		SUM_(ori_mesh.vertices[i], regularization_info.move_info);
 	}
