@@ -1,12 +1,12 @@
 object
 1
-C:\graphics\tetrahedron\model\armadillo_new.ele
+.\model\armadillo_new.ele
 collider
 1
-C:\graphics\tetrahedron\model\U_simu.obj
+.\model\U_simu.obj
 stiffness
 1000 50000 0 0 0 0 
-1e+05 20000 20000 20 0 0 0 0 
+1e+07 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
 0 
@@ -36,13 +36,13 @@ substep_num
 out iteration_num
 15
 inner iteration_num
-20
+50
 sub_step_per_detection
 1
 d_hat
 0.005
 inner convergence rate
-0.001
+0.002
 min inner itr num
 3
 min outer itr num

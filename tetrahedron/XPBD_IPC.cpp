@@ -620,10 +620,14 @@ void XPBD_IPC::updatePosition()
 void XPBD_IPC::computeCurrentEnergy()
 {
 	energy = 1e-15;
-	energy += 0.5 * computeInertialEnergy();
-	energy += computeCurrentARAPEnergy();
-	energy += computeBarrierEnergy();
+	double inertial_energy = 0.5 * computeInertialEnergy();
+	energy += inertial_energy;
+	double ARAP_energy = computeCurrentARAPEnergy();
+	energy += ARAP_energy;
+	double barrier_energy = computeBarrierEnergy();
+	energy += barrier_energy;
 	record_energy.emplace_back(energy);
+	//std::cout << "inertial " << inertial_energy << " ARAP " << ARAP_energy << " barrier " << barrier_energy << std::endl;
 }
 
 void XPBD_IPC::firstNewtonCD()
@@ -1436,7 +1440,7 @@ double XPBD_IPC::getCollisionTime(std::vector<unsigned int>* triangle_of_a_tet,
 
 	for (auto i = triangle_of_a_tet->begin(); i < triangle_of_a_tet->end(); i+=2) {
 		triangle_ = triangle_indices[*i][*(i+1)].data();
-		collision.TVCollisionTimeOneVertex(initial_vertex_position[*i][triangle_[0]].data(), initial_vertex_position[*i][triangle_[1]].data(),
+		collision.TVCollisionTimeOneTriangle(initial_vertex_position[*i][triangle_[0]].data(), initial_vertex_position[*i][triangle_[1]].data(),
 			initial_vertex_position[*i][triangle_[2]].data(),
 			current_vertex_position[*i][triangle_[0]].data(), current_vertex_position[*i][triangle_[1]].data(),
 			current_vertex_position[*i][triangle_[2]].data(), collision_time,
@@ -1444,7 +1448,7 @@ double XPBD_IPC::getCollisionTime(std::vector<unsigned int>* triangle_of_a_tet,
 			collision.triangle_vertex_pair_by_triangle[*i] + collision.close_tv_pair_num * (*(i+1)),
 			address_of_record_vertex_position.data(), vertex_position.data());
 		if (has_collider) {
-			collision.TVCollisionTimeOneVertex(initial_vertex_position[*i][triangle_[0]].data(), initial_vertex_position[*i][triangle_[1]].data(),
+			collision.TVCollisionTimeOneTriangle(initial_vertex_position[*i][triangle_[0]].data(), initial_vertex_position[*i][triangle_[1]].data(),
 				initial_vertex_position[*i][triangle_[2]].data(),
 				current_vertex_position[*i][triangle_[0]].data(), current_vertex_position[*i][triangle_[1]].data(),
 				current_vertex_position[*i][triangle_[2]].data(), collision_time,
@@ -1512,7 +1516,7 @@ double XPBD_IPC::getCollisionTime(std::vector<unsigned int>* triangle_of_a_tet,
 
 		for (auto i = triangle_of_a_tet->begin(); i < triangle_of_a_tet->end(); ++i) {
 			triangle_ = triangle_indices[obj_No][*i].data();
-			collision.TVCollisionTimeOneVertex(initial_vertex_position[triangle_[0]].data(), initial_vertex_position[triangle_[1]].data(),
+			collision.TVCollisionTimeOneTriangle(initial_vertex_position[triangle_[0]].data(), initial_vertex_position[triangle_[1]].data(),
 				initial_vertex_position[triangle_[2]].data(),
 				current_vertex_position[triangle_[0]].data(), current_vertex_position[triangle_[1]].data(),
 				current_vertex_position[triangle_[2]].data(), collision_time,
@@ -1520,7 +1524,7 @@ double XPBD_IPC::getCollisionTime(std::vector<unsigned int>* triangle_of_a_tet,
 				collision.triangle_vertex_pair_by_triangle[obj_No] + collision.close_tv_pair_num * (*i),
 				address_of_record_vertex_position.data(), vertex_position.data());
 			if (has_collider) {
-				collision.TVCollisionTimeOneVertex(initial_vertex_position[triangle_[0]].data(), initial_vertex_position[triangle_[1]].data(),
+				collision.TVCollisionTimeOneTriangle(initial_vertex_position[triangle_[0]].data(), initial_vertex_position[triangle_[1]].data(),
 					initial_vertex_position[triangle_[2]].data(),
 					current_vertex_position[triangle_[0]].data(), current_vertex_position[triangle_[1]].data(),
 					current_vertex_position[triangle_[2]].data(), collision_time,

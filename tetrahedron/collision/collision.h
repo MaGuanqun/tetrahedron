@@ -213,18 +213,32 @@ public:
 
 	void VTCollisionTimeOneVertex(double* initial_pos, double* current_pos, double& collision_time, unsigned int num,
 		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex,
+		std::array<int, 3>** triangle_indices, bool* is_used);
+
+	void VTCollisionTimeOneVertex(double* initial_pos, double* current_pos, double& collision_time, unsigned int num,
+		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex,
 		std::array<int, 3>** triangle_indices);
 
-	void TVCollisionTimeOneVertex(double* initial_pos_0, double* initial_pos_1, double* initial_pos_2,
+
+	void TVCollisionTimeOneTriangle(double* initial_pos_0, double* initial_pos_1, double* initial_pos_2,
+		double* current_pos_0, double* current_pos_1, double* current_pos_2,
+		double& collision_time, unsigned int num,
+		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex, bool* is_used);
+
+	void TVCollisionTimeOneTriangle(double* initial_pos_0, double* initial_pos_1, double* initial_pos_2,
 		double* current_pos_0, double* current_pos_1, double* current_pos_2,
 		double& collision_time, unsigned int num,
 		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex);
+
 
 	void EECollisionTimeOneEdgeAll(double* initial_pos_a0, double* initial_pos_a1, double* current_pos_a0,
 		double* current_pos_a1,
 		double& collision_time,
 		unsigned int num, unsigned int* edge_indices,
 		std::array<double, 3>** vertex_for_render, std::array<double, 3>** vertex_pos, unsigned int** compare_edge_vertices);
+
+
+
 	bool floorCollisionTime(double* initial_position, double* current_pos, unsigned int dimension, bool direction,
 		double floor_value, double& collision_time, double tolerance);
 	double tolerance;
@@ -237,7 +251,15 @@ private:
 		double* current_pos_a1,
 		double& collision_time,
 		unsigned int edge_index, unsigned int edge_obj_No, unsigned int num, unsigned int* edge_indices,
+		std::array<double, 3>** vertex_for_render, std::array<double, 3>** vertex_pos, bool is_self, unsigned int** edge_vertices, bool* is_used);
+
+
+	void EECollisionTimeOneEdge(double* initial_pos_a0, double* initial_pos_a1, double* current_pos_a0,
+		double* current_pos_a1,
+		double& collision_time,
+		unsigned int edge_index, unsigned int edge_obj_No, unsigned int num, unsigned int* edge_indices,
 		std::array<double, 3>** vertex_for_render, std::array<double, 3>** vertex_pos, bool is_self, unsigned int** edge_vertices);
+
 
 	void storeVolume();
 
@@ -264,6 +286,15 @@ private:
 
 	unsigned int estimate_coeff_for_ee_collider_pair_num;
 	unsigned int estimate_coeff_for_tv_collider_pair_num;
+
+
+	unsigned int estimate_coeff_for_vt_pair_num_exist; // estimate_coeff_for_vt_pair_num/2, for bool (max num of pair_exist bool[])
+	unsigned int estimate_coeff_for_vt_collider_pair_num_exist;
+	unsigned int estimate_coeff_for_ee_pair_num_exist;
+	unsigned int estimate_coeff_for_tv_pair_num_exist;
+
+	unsigned int estimate_coeff_for_ee_collider_pair_num_exist;
+	unsigned int estimate_coeff_for_tv_collider_pair_num_exist;
 
 
 	unsigned int tetrahedron_begin_obj_index;
@@ -735,14 +766,14 @@ private:
 	void findVT_ClosePairSingleVertex(double* current_position, unsigned int* trianlge_index,
 		unsigned int triangle_num, std::vector<std::array<double, 3>*>& position, 
 		std::vector<std::array<int, 3>*>& triangle_vertex_index,
-		unsigned int* close_triangle_index, unsigned int& close_triangle_num);
+		unsigned int* close_triangle_index, unsigned int& close_triangle_num, bool* is_pair_exist);
 	void findEE_ClosePairSingleEdge(double* current_position_a0, double* current_position_a1,
 		unsigned int* edge_index, unsigned int edge_num, std::vector<std::array<double, 3>*>& position,
 		std::vector<unsigned int*>& edge_vertex_index,
-		unsigned int* close_edge_index, unsigned int& close_edge_num);
+		unsigned int* close_edge_index, unsigned int& close_edge_num, bool* is_pair_exist);
 	void findTV_ClosePairSingleTriangle(double* current_position_a0, double* current_position_a1, double* current_position_a2,
 		unsigned int* vertex_index, unsigned int vertex_num, std::vector<std::array<double, 3>*>& position,
-		unsigned int* close_vertex_index, unsigned int& close_vertex_num);
+		unsigned int* close_vertex_index, unsigned int& close_vertex_num, bool* is_pair_exist);
 
 	void initialPairRecord();
 
