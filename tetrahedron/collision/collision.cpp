@@ -1687,7 +1687,7 @@ void Collision::globalCollisionTime()
 		std::cout << "attention: collision time equals zero" << std::endl;
 	}
 
-	std::cout << "--collision time " << collision_time << std::endl;
+	//std::cout << "--collision time " << collision_time << std::endl;
 
 }
 

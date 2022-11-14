@@ -456,7 +456,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve()
 			}
 
 			inner_iteration_number++;
-			std::cout << "finish one itr " << inner_iteration_number<<" "<< energy << std::endl;
+			//std::cout << "finish one itr " << inner_iteration_number<<" "<< energy << std::endl;
 
 		}
 
@@ -2500,7 +2500,8 @@ void XPBD_IPC::solveEE_collisionBlock(unsigned int obj_No_0, unsigned int primit
 		grad.data()[3 * i + 2] += mass_dt_2 * (vertex_position[obj_index_][vertex_index_][2] - sn[obj_index_][vertex_index_][2]);
 	}
 
-	HouseholderQR <MatrixXd> linear(Hessian);
+	//HouseholderQR <MatrixXd> linear(Hessian);
+	LLT <MatrixXd> linear(Hessian);
 	VectorXd result = linear.solve(grad);
 
 	for (int i = 0; i < unfixed_num; i += 2) {
@@ -2593,7 +2594,8 @@ void XPBD_IPC::solveVT_collisionBlock(unsigned int vertex_obj_no, unsigned int v
 		grad.data()[3 * i + 2] += mass_dt_2 * (vertex_position[obj_index_][vertex_index_][2] - sn[obj_index_][vertex_index_][2]);
 	}
 
-	HouseholderQR <MatrixXd> linear(Hessian);
+	//HouseholderQR <MatrixXd> linear(Hessian);
+	LLT <MatrixXd> linear(Hessian);
 	VectorXd result = linear.solve(grad);
 	//std::cout << Hessian << std::endl;
 	//std::cout << "++" << std::endl;
@@ -2731,7 +2733,7 @@ void XPBD_IPC::solveNewtonCD_tetBlock(std::array<double, 3>* vertex_position, do
 		indices, volume, tet_index, common_vertex_in_order, tet_vertex_index,
 		unfixed_tet_vertex_index, unfixed_vertex_num);
 
-	MatrixXd test = Hessian;
+	//MatrixXd test = Hessian;
 
 	getCollisionHessian(Hessian, grad, triangle_of_a_tet, edge_of_a_tet, collision_stiffness, obj_No, tet_actual_unfixed_vertex_indices,
 		unfixed_vertex_num,
@@ -2753,8 +2755,8 @@ void XPBD_IPC::solveNewtonCD_tetBlock(std::array<double, 3>* vertex_position, do
 		grad.data()[3 * i + 2] += mass_dt_2 * (vertex_position[vertex_index][2] - sn[vertex_index][2]);
 	}
 
-	ColPivHouseholderQR<MatrixXd> linear(Hessian);
-	//LLT <MatrixXd> linear(Hessian);
+	//ColPivHouseholderQR<MatrixXd> linear(Hessian);
+	LLT <MatrixXd> linear(Hessian);
 	VectorXd result = linear.solve(grad);
 
 

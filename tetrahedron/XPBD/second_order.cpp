@@ -193,28 +193,25 @@ void SecondOrderConstraint::solveCD_ARAP_block(MatrixXd& Hessian, VectorXd& grad
 	int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num)
 {
 
-	Vector3d eigen_value;
+	
 	Matrix3d deformation_gradient;
-	Matrix3d S, rotation;
+	Matrix3d rotation;
 	Hessian.setZero();
 	grad.setZero();
 
 	FEM::getDeformationGradient(vertex_position[tet_vertex_index[0]].data(), vertex_position[tet_vertex_index[1]].data(),
 		vertex_position[tet_vertex_index[2]].data(), vertex_position[tet_vertex_index[3]].data(), A[tet_index], 
 		deformation_gradient);
-	FEM::polarDecomposition(deformation_gradient, eigen_value, S, rotation);
 
-
-
-
-	//if((deformation_gradient - rotation).squaredNorm()>1e-16){
-		Matrix<double, 3, 4> grad_C_transpose;
-		grad_C_transpose = (2.0 * stiffness * volume[tet_index]) * (deformation_gradient - rotation) * A[tet_index];
-		for (int i = 0; i < unfixed_vertex_num; ++i) {
-			memcpy(grad.data() + 3 * i, grad_C_transpose.data() + 3 * unfixed_tet_vertex_index[i], 24);
-		}
 
 		if (solve_exact_ARAP_hessian) {
+			Matrix3d S; Vector3d eigen_value;
+			FEM::polarDecomposition(deformation_gradient, eigen_value, S, rotation);
+			Matrix<double, 3, 4> grad_C_transpose;
+			grad_C_transpose = (2.0 * stiffness * volume[tet_index]) * (deformation_gradient - rotation) * A[tet_index];
+			for (int i = 0; i < unfixed_vertex_num; ++i) {
+				memcpy(grad.data() + 3 * i, grad_C_transpose.data() + 3 * unfixed_tet_vertex_index[i], 24);
+			}
 			Matrix3d Dm = A[tet_index].block<3, 3>(0, 1).transpose();
 			FEM::getHessianForSeveralVertex(Hessian, S, rotation, Dm, A[tet_index], unfixed_tet_vertex_index,
 				unfixed_vertex_num);
@@ -222,26 +219,34 @@ void SecondOrderConstraint::solveCD_ARAP_block(MatrixXd& Hessian, VectorXd& grad
 		}
 		else {
 
+			FEM::extractRotation(deformation_gradient, rotation);
+			Matrix<double, 3, 4> grad_C_transpose;
+			grad_C_transpose = (2.0 * stiffness * volume[tet_index]) * (deformation_gradient - rotation) * A[tet_index];
+			for (int i = 0; i < unfixed_vertex_num; ++i) {
+				memcpy(grad.data() + 3 * i, grad_C_transpose.data() + 3 * unfixed_tet_vertex_index[i], 24);
+			}
+
+
 			Matrix4d result = A[tet_index].transpose() * (A[tet_index] * (2.0*volume[tet_index] * stiffness));
 
-			if (unfixed_vertex_num < 4) {
+			if (unfixed_vertex_num == 4) {
+				double* address = result.data();
+				for (unsigned int i = 0; i < 4; ++i)
+					for (unsigned int i = 0; i < 144; i += 36) {
+						for (unsigned int j = 0; j < 12; j += 3) {
+							Hessian.data()[i + j] += *address;
+							Hessian.data()[i + j + 13] += *address;
+							Hessian.data()[i + j + 26] += *address;
+							address++;
+						}
+					}
+			}
+			else {
 				for (int i = 0; i < unfixed_vertex_num; ++i) {
 					for (int j = 0; j < unfixed_vertex_num; ++j) {
 						Hessian(3 * i, 3 * j) = result.data()[(unfixed_tet_vertex_index[j] << 2) + unfixed_tet_vertex_index[i]];
 						Hessian(3 * i + 1, 3 * j + 1) = result.data()[(unfixed_tet_vertex_index[j] << 2) + unfixed_tet_vertex_index[i]];
 						Hessian(3 * i + 2, 3 * j + 2) = result.data()[(unfixed_tet_vertex_index[j] << 2) + unfixed_tet_vertex_index[i]];
-					}
-				}
-			}
-			else {
-				double* address = result.data();
-				for(unsigned int i=0;i<4;++i)
-				for (unsigned int i = 0; i < 144; i += 36) {
-					for (unsigned int j = 0; j < 12; j += 3) {
-						Hessian.data()[i + j] += *address;
-						Hessian.data()[i + j + 13] += *address;
-						Hessian.data()[i + j + 26] += *address;
-						address++;
 					}
 				}
 			}
@@ -264,30 +269,29 @@ bool SecondOrderConstraint::solveTetCertainVertices(std::array<double, 3>* verte
 	MatrixXd& sys_matrix, double volume, VectorXd& grad)
 {
 	Matrix<double, 12, 3> Hessian_vertex;
-	Vector3d eigen_value;
-	Vector3d position;
+
+
 	Matrix3d deformation_gradient;
-	Matrix3d S, rotation;
+	Matrix3d rotation;
 
 	FEM::getDeformationGradient(vertex_position[tet_vetex_indices[0]].data(), vertex_position[tet_vetex_indices[1]].data(),
 		vertex_position[tet_vetex_indices[2]].data(), vertex_position[tet_vetex_indices[3]].data(), A,
 		deformation_gradient);
-	FEM::polarDecomposition(deformation_gradient, eigen_value, S, rotation);
-
-
 	stiffness *= volume;
 
-	Matrix<double, 3, 4> grad_C_transpose;
-	grad_C_transpose = (2.0 * stiffness) * (deformation_gradient - rotation) * A;
-
-	for (int i = 0; i < 4; ++i) {
-		if (vertex_in_sys[i] != -1) {
-			grad.segment(3 * vertex_in_sys[i], 3)
-				+= grad_C_transpose.col(i);
-		}
-	}
 
 	if (solve_exact_ARAP_hessian) {
+		Matrix3d S;	Vector3d eigen_value;
+		FEM::polarDecomposition(deformation_gradient, eigen_value, S, rotation);
+		Matrix<double, 3, 4> grad_C_transpose;
+		grad_C_transpose = (2.0 * stiffness) * (deformation_gradient - rotation) * A;
+
+		for (int i = 0; i < 4; ++i) {
+			if (vertex_in_sys[i] != -1) {
+				grad.segment(3 * vertex_in_sys[i], 3)
+					+= grad_C_transpose.col(i);
+			}
+		}
 		Matrix3d Dm = A.block<3, 3>(0, 1).transpose();
 		for (int i = 0; i < 4; ++i) {
 			if (vertex_in_sys[i] != -1) {
@@ -304,6 +308,17 @@ bool SecondOrderConstraint::solveTetCertainVertices(std::array<double, 3>* verte
 		}
 	}
 	else {
+		FEM::extractRotation(deformation_gradient, rotation);
+		Matrix<double, 3, 4> grad_C_transpose;
+		grad_C_transpose = (2.0 * stiffness) * (deformation_gradient - rotation) * A;
+
+		for (int i = 0; i < 4; ++i) {
+			if (vertex_in_sys[i] != -1) {
+				grad.segment(3 * vertex_in_sys[i], 3)
+					+= grad_C_transpose.col(i);
+			}
+		}
+
 		double value;
 		for (int i = 0; i < 4; ++i) {
 			if (vertex_in_sys[i] != -1) {
@@ -338,16 +353,17 @@ bool SecondOrderConstraint::solveCertainHessianForNeighborTet(std::array<double,
 
 
 	Matrix<double, 12, 3> Hessian_vertex;
-	Vector3d eigen_value;
-	Vector3d position;
+
 	Matrix3d deformation_gradient;
-	Matrix3d S, rotation;
+	Matrix3d rotation;
 
 
 	FEM::getDeformationGradient(vertex_position[neighbor_tet_vetex_indices[0]].data(), vertex_position[neighbor_tet_vetex_indices[1]].data(),
 		vertex_position[neighbor_tet_vetex_indices[2]].data(), vertex_position[neighbor_tet_vetex_indices[3]].data(), A,
 		deformation_gradient);
-	FEM::polarDecomposition(deformation_gradient, eigen_value, S, rotation);
+
+
+	stiffness *= volume;
 
 	//if ((deformation_gradient - rotation).squaredNorm() < 1e-16) {
 		//common_vertex_in_order += (common_vertex_num * 2);
@@ -355,17 +371,21 @@ bool SecondOrderConstraint::solveCertainHessianForNeighborTet(std::array<double,
 	//}
 
 
-	stiffness *= volume;
 
-	Matrix<double, 3, 4> grad_C_transpose;
-	grad_C_transpose = (2.0 * stiffness) * (deformation_gradient - rotation) * A;
 
-	for (int i = 0; i < common_vertex_num; ++i) {
-		grad.segment(3 * (*(common_vertex_in_order + i + common_vertex_num)), 3)
-			+= grad_C_transpose.col(*(common_vertex_in_order + i));
-	}
 
 	if (solve_exact_ARAP_hessian) {
+		Matrix3d S;	Vector3d eigen_value;
+		FEM::polarDecomposition(deformation_gradient, eigen_value, S, rotation);
+
+		Matrix<double, 3, 4> grad_C_transpose;
+		grad_C_transpose = (2.0 * stiffness) * (deformation_gradient - rotation) * A;
+
+		for (int i = 0; i < common_vertex_num; ++i) {
+			grad.segment(3 * (*(common_vertex_in_order + i + common_vertex_num)), 3)
+				+= grad_C_transpose.col(*(common_vertex_in_order + i));
+		}
+
 		Matrix3d Dm = A.block<3, 3>(0, 1).transpose();
 		for (int i = 0; i < common_vertex_num; ++i) {
 			FEM::getHessianForOneVertex(Hessian_vertex, S, rotation, Dm, A, *(common_vertex_in_order + i));
@@ -378,6 +398,16 @@ bool SecondOrderConstraint::solveCertainHessianForNeighborTet(std::array<double,
 		}
 	}
 	else {
+		FEM::extractRotation(deformation_gradient, rotation);
+
+		Matrix<double, 3, 4> grad_C_transpose;
+		grad_C_transpose = (2.0 * stiffness) * (deformation_gradient - rotation) * A;
+
+		for (int i = 0; i < common_vertex_num; ++i) {
+			grad.segment(3 * (*(common_vertex_in_order + i + common_vertex_num)), 3)
+				+= grad_C_transpose.col(*(common_vertex_in_order + i));
+		}
+
 		double value;
 		double* A_1;
 		double* A_2;

@@ -65,6 +65,22 @@ namespace FEM {
 	}
 
 
+
+	inline void extractRotation(Matrix3d& deformation_gradient, Matrix3d& rotation)
+	{
+		JacobiSVD<Matrix3d> svd;
+		svd.compute(deformation_gradient, ComputeFullU | ComputeFullV);
+		if (deformation_gradient.determinant() > 0) {
+			rotation = svd.matrixU() * svd.matrixV().transpose();
+		}
+		else {
+			Matrix3d U;
+			U = svd.matrixU();
+			U.col(2) *= -1.0;
+			rotation = U * svd.matrixV().transpose();
+		}
+	}
+
 	inline void polarDecomposition(Matrix3d& deformation_gradient, Vector3d& eigen_value, Matrix3d& S, Matrix3d& rotation)
 	{
 		JacobiSVD<Matrix3d> svd;

@@ -1054,6 +1054,10 @@ void Scene::resetIntersectionState()
 void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe, bool& record_matrix,
 	double& ave_iteration)
 {
+	if (time_stamp == 58) {
+		exit(0);
+	}
+
 	if (control_parameter[START_SIMULATION] || control_parameter[ONE_FRAME]) {
 		switch (use_method)
 		{
@@ -1125,17 +1129,20 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 			move_model.updateColliderPosition(collider);
 		}
 		auto t1 = std::chrono::system_clock::now();
-		if (time_stamp % time_record_interval == 0) {
-			time_accumulation = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0);
-		}
-		else if (time_stamp % time_record_interval < (time_record_interval - 1)) {
-			time_accumulation += std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0);;
-		}
-		else {
-			time_accumulation += std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0);
-			*time_per_frame =double(time_accumulation.count())* std::chrono::microseconds::period::num/ std::chrono::microseconds::period::den*1000.0 / (double)time_record_interval;
-		}
+		//if (time_stamp % time_record_interval == 0) {
+		//	time_accumulation = std::chrono::duration_cast<std::chrono::microseconds>(t1-t0);
+		//}
+		//else if (time_stamp % time_record_interval < (time_record_interval - 1)) {
+		//	time_accumulation += std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0);;
+		//}
+		//else {
+		//	time_accumulation += std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0);
+		//	*time_per_frame =double(time_accumulation.count())* std::chrono::microseconds::period::num/ std::chrono::microseconds::period::den*1000.0 / (double)time_record_interval;
+		//}
 
+		*time_per_frame = double(std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count()) * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den * 1000.0;
+
+		std::cout << "time " << time_stamp << " " << *time_per_frame << std::endl;
 
 		//project_dynamic.PD_IPC_solve(record_matrix);
 		//project_dynamic.update_ave_iteration_record(ave_iteration);

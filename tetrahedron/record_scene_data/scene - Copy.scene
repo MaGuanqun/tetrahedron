@@ -6,7 +6,7 @@ collider
 .\model\U_simu.obj
 stiffness
 200 50000 0 0 0 0 
-1e+07 20000 20000 20 0 0 0 0 
+1e+05 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
 0 
@@ -34,7 +34,7 @@ XPBD_IPC
 substep_num
 1
 out iteration_num
-15
+50
 inner iteration_num
 100
 sub_step_per_detection

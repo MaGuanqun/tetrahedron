@@ -128,6 +128,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 	scene.camera = &camera;
 
+	bool read_simu_data = false;
+
 	while (!glfwWindowShouldClose(window))
 	{
 
@@ -223,24 +225,36 @@ void simu_main(GLFWwindow* window, Input* input) {
 			}
 		}
 		if (!already_load_model) {
+
+			already_load_model = true;
+			scene_path = "./record_scene_data/scene.scene";
+			if (!scene.loadMesh(scene_path, collider_path, object_path, tolerance_ratio, control_parameter, temp_stiffness.data(), friction_coe, &sub_step_per_detection,
+				floor_control, floor_dimension, floor_value)) {
+				glm::vec3 camera_pos = glm::vec3(scene.camera_center[0], scene.camera_center[1], -scene.shadow.camera_from_origin + scene.camera_center[2]);
+				camera.updateCamera(camera_pos, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(scene.camera_center[0], scene.camera_center[1], scene.camera_center[2]));
+
+			}
+			scene.getClothInfo(cloth_info, cloth_mass, cloth_stiffness, simulation_parameter, cloth_collision_stiffness);
+			scene.getTetrahedronInfo(tetrahedron_info, tetrahedron_mass, tetrahedron_stiffness, simulation_parameter, tetrahedron_collision_stiffness);
+			camera_from_origin = scene.shadow.camera_from_origin;
+			setHideWireframe(show_element, scene.collider.size(), scene.cloth.size(), scene.tetrahedron.size());
+
+
 			if (imgui_windows.loadModel(scene_path, collider_path, object_path)) {
 				already_load_model = true;
 				if (!scene.loadMesh(scene_path, collider_path, object_path, tolerance_ratio, control_parameter, temp_stiffness.data(), friction_coe, &sub_step_per_detection,
 					floor_control, floor_dimension, floor_value)) {
 					glm::vec3 camera_pos = glm::vec3(scene.camera_center[0], scene.camera_center[1], -scene.shadow.camera_from_origin + scene.camera_center[2]);
 					camera.updateCamera(camera_pos, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(scene.camera_center[0], scene.camera_center[1], scene.camera_center[2]));
-
 				}			
 				scene.getClothInfo(cloth_info, cloth_mass, cloth_stiffness, simulation_parameter, cloth_collision_stiffness);
 				scene.getTetrahedronInfo(tetrahedron_info, tetrahedron_mass, tetrahedron_stiffness, simulation_parameter, tetrahedron_collision_stiffness);
 				camera_from_origin = scene.shadow.camera_from_origin;
 				setHideWireframe(show_element, scene.collider.size(), scene.cloth.size(), scene.tetrahedron.size());
-
 				//scene.testBVH();
 			}
 		}
 		else {
-			//std::cout << camera.position.x<<" "<< camera.position.y<<" "<< camera.position.z << std::endl;
 			if (input->keyboard.keyWasPressedThisFrame(GLFW_KEY_W))
 			{
 				record_matrix = true;
@@ -267,6 +281,13 @@ void simu_main(GLFWwindow* window, Input* input) {
 			scene.selectAnchor(control_parameter, set_anchor, input->mouse.screen_pos, input->mouse.left_press, input->mouse.prev_left_press, &camera, show_element[TETRAHEDRON_]);
 			scene.obtainConvergenceInfo(convergence_rate, iteration_number);
 
+
+			if (!read_simu_data) {
+				read_simu_data = true;
+				load_scene_path = "./record_simulation_data/obj_45.dat";
+				scene.readScene(load_scene_path);
+				control_parameter[START_SIMULATION] = true;
+			}
 
 			if (imgui_windows.loadScene(load_scene_path)) {
 				scene.readScene(load_scene_path);
