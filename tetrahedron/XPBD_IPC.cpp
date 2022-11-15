@@ -456,7 +456,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve()
 			}
 
 			inner_iteration_number++;
-			//std::cout << "finish one itr " << inner_iteration_number<<" "<< energy << std::endl;
+			std::cout << "finish one itr " << inner_iteration_number<<" "<< energy << std::endl;
 
 		}
 
