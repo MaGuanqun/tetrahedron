@@ -1,5 +1,6 @@
 #include"XPBD_IPC.h"
 #include<algorithm>
+#include"XPBD/FEM_relate.h"
 
 XPBD_IPC::XPBD_IPC()
 {
@@ -1259,13 +1260,13 @@ void XPBD_IPC::newtonEECollisionBlock()
 void XPBD_IPC::newtonCDBlock()
 {
 	newtonCDTetBlock();
-	//newtonVTCollisionBlock();
-	//newtonEECollisionBlock();
-	//if (has_collider) {
-	//	newtonEEColliderCollisionBlock();
-	//	newtonVTColliderCollisionBlock();
-	//	newtonTVColliderCollisionBlock();
-	//}
+	newtonVTCollisionBlock();
+	newtonEECollisionBlock();
+	if (has_collider) {
+		newtonEEColliderCollisionBlock();
+		newtonVTColliderCollisionBlock();
+		newtonTVColliderCollisionBlock();
+	}
 
 }
 
@@ -2680,6 +2681,9 @@ void XPBD_IPC::getCollisionPairHessian(MatrixXd& Hessian, VectorXd& grad, unsign
 	}
 	getCollisionBlockCollisionHessian(Hessian, grad, around_triangle, around_edge, collision_stiffness,
 		unfixed_pair_vertex_index, unfixed_num, d_hat_2, vertex_index_surface.data(), obj_0, obj_1);
+
+	FEM::SPDprojection(Hessian);
+
 	getCollisionBlockTetHessian(Hessian, grad, around_tet, arap_stiffness, unfixed_pair_vertex_index, unfixed_num);
 }
 
@@ -2735,9 +2739,15 @@ void XPBD_IPC::solveNewtonCD_tetBlock(std::array<double, 3>* vertex_position, do
 
 	//MatrixXd test = Hessian;
 
-	getCollisionHessian(Hessian, grad, triangle_of_a_tet, edge_of_a_tet, collision_stiffness, obj_No, tet_actual_unfixed_vertex_indices,
+
+	MatrixXd Hessian_collision;
+	Hessian_collision.resize(3 * unfixed_vertex_num, 3 * unfixed_vertex_num);
+	Hessian_collision.setZero();
+	getCollisionHessian(Hessian_collision, grad, triangle_of_a_tet, edge_of_a_tet, collision_stiffness, obj_No, tet_actual_unfixed_vertex_indices,
 		unfixed_vertex_num,
 		collision.d_hat_2, vertex_index_on_surface, vertex_position);
+	FEM::SPDprojection(Hessian_collision);
+	Hessian += Hessian_collision;
 
 	//if (tet_index == 11607) {
 	//	std::cout << Hessian - test << std::endl;
