@@ -1,6 +1,8 @@
 #pragma once
 #include"object.h"
 #include"../mesh_struct/tetrahedron_mesh_struct.h"
+
+
 class Tetrahedron :public Object
 {
 private:

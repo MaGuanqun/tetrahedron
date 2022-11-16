@@ -1262,11 +1262,11 @@ void XPBD_IPC::newtonCDBlock()
 	newtonCDTetBlock();
 	newtonVTCollisionBlock();
 	newtonEECollisionBlock();
-	if (has_collider) {
-		newtonEEColliderCollisionBlock();
-		newtonVTColliderCollisionBlock();
-		newtonTVColliderCollisionBlock();
-	}
+	//if (has_collider) {
+	//	newtonEEColliderCollisionBlock();
+	//	newtonVTColliderCollisionBlock();
+	//	newtonTVColliderCollisionBlock();
+	//}
 
 }
 
@@ -2682,7 +2682,7 @@ void XPBD_IPC::getCollisionPairHessian(MatrixXd& Hessian, VectorXd& grad, unsign
 	getCollisionBlockCollisionHessian(Hessian, grad, around_triangle, around_edge, collision_stiffness,
 		unfixed_pair_vertex_index, unfixed_num, d_hat_2, vertex_index_surface.data(), obj_0, obj_1);
 
-	FEM::SPDprojection(Hessian);
+	//FEM::SPDprojection(Hessian);
 
 	getCollisionBlockTetHessian(Hessian, grad, around_tet, arap_stiffness, unfixed_pair_vertex_index, unfixed_num);
 }

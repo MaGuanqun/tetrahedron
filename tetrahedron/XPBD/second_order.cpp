@@ -522,12 +522,16 @@ void SecondOrderConstraint::computeEEBarrierGradientHessian(double* ea0, double*
 		b_grad *= stiffness; b_hessian *= stiffness;
 
 		h = (b_hessian * g * g.transpose() + b_grad * h).eval();
+
+		FEM::SPDprojection(h);
+
 		g *= b_grad;
 		vertex_in_pair[0] = 0;
 		vertex_in_pair[1] = 2;
 
 		setTetHessianFromBarrierHessian(Hessian_, grad_, h, g,
 			vertex_order_in_system, vertex_in_pair, 2);
+
 
 
 		break;
@@ -547,6 +551,9 @@ void SecondOrderConstraint::computeEEBarrierGradientHessian(double* ea0, double*
 		b_grad *= stiffness; b_hessian *= stiffness;
 
 		h = (b_hessian * g * g.transpose() + b_grad * h).eval();
+
+		FEM::SPDprojection(h);
+
 		g *= b_grad;
 		vertex_in_pair[0] = 0;
 		vertex_in_pair[1] = 3;
@@ -570,6 +577,9 @@ void SecondOrderConstraint::computeEEBarrierGradientHessian(double* ea0, double*
 		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
 		b_grad *= stiffness; b_hessian *= stiffness;
 		h = (b_hessian * g * g.transpose() + b_grad * h).eval();
+
+		FEM::SPDprojection(h);
+
 		g *= b_grad;
 		vertex_in_pair[0] = 0;
 		vertex_in_pair[1] = 2;
@@ -591,8 +601,14 @@ void SecondOrderConstraint::computeEEBarrierGradientHessian(double* ea0, double*
 		distance::point_point_distance_hessian(ea1, eb0, h.data());
 
 		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
+
+
+
 		b_grad *= stiffness; b_hessian *= stiffness;
 		h = (b_hessian * g * g.transpose() + b_grad * h).eval();
+
+		FEM::SPDprojection(h);
+
 		g *= b_grad;
 		vertex_in_pair[0] = 1;
 		vertex_in_pair[1] = 2;
@@ -615,6 +631,9 @@ void SecondOrderConstraint::computeEEBarrierGradientHessian(double* ea0, double*
 		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
 		b_grad *= stiffness; b_hessian *= stiffness;
 		h = (b_hessian * g * g.transpose() + b_grad * h).eval();
+
+		FEM::SPDprojection(h);
+
 		g *= b_grad;
 		vertex_in_pair[0] = 1;
 		vertex_in_pair[1] = 3;
@@ -638,6 +657,10 @@ void SecondOrderConstraint::computeEEBarrierGradientHessian(double* ea0, double*
 		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
 		b_grad *= stiffness; b_hessian *= stiffness;
 		h = (b_hessian * g * g.transpose() + b_grad * h).eval();
+
+		FEM::SPDprojection(h);
+
+
 		g *= b_grad;
 		vertex_in_pair[0] = 1;
 		vertex_in_pair[1] = 2;
@@ -661,6 +684,9 @@ void SecondOrderConstraint::computeEEBarrierGradientHessian(double* ea0, double*
 		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
 		b_grad *= stiffness; b_hessian *= stiffness;
 		h = (b_hessian * g * g.transpose() + b_grad * h).eval();
+
+		FEM::SPDprojection(h);
+
 		g *= b_grad;
 		vertex_in_pair[0] = 2;
 		vertex_in_pair[1] = 0;
@@ -685,6 +711,9 @@ void SecondOrderConstraint::computeEEBarrierGradientHessian(double* ea0, double*
 		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
 		b_grad *= stiffness; b_hessian *= stiffness;
 		h = (b_hessian * g * g.transpose() + b_grad * h).eval();
+
+		FEM::SPDprojection(h);
+
 		g *= b_grad;
 		vertex_in_pair[0] = 3;
 		vertex_in_pair[1] = 0;
@@ -712,6 +741,9 @@ void SecondOrderConstraint::computeEEBarrierGradientHessian(double* ea0, double*
 		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
 		b_grad *= stiffness; b_hessian *= stiffness;
 		h = (b_hessian * g * g.transpose() + b_grad * h).eval();
+
+		FEM::SPDprojection(h);
+
 		g *= b_grad;
 		vertex_in_pair[0] = 0;
 		vertex_in_pair[1] = 1;
@@ -762,6 +794,9 @@ void SecondOrderConstraint::computeVTBarrierGradientHessian(MatrixXd& Hessian_, 
 		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
 		b_grad *= stiffness; b_hessian *= stiffness;
 		Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
+
+		FEM::SPDprojection(Hessian);
+
 		grad *= b_grad;
 
 		setTetHessianFromBarrierHessian(Hessian_, grad_, Hessian, grad,
@@ -782,6 +817,9 @@ void SecondOrderConstraint::computeVTBarrierGradientHessian(MatrixXd& Hessian_, 
 
 		b_grad *= stiffness; b_hessian *= stiffness;
 		Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
+
+		FEM::SPDprojection(Hessian);
+
 		grad *= b_grad;
 		vertex_in_pair[0] = 0;
 		vertex_in_pair[1] = 2;
@@ -802,6 +840,9 @@ void SecondOrderConstraint::computeVTBarrierGradientHessian(MatrixXd& Hessian_, 
 
 		b_grad *= stiffness; b_hessian *= stiffness;
 		Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
+
+		FEM::SPDprojection(Hessian);
+
 		grad *= b_grad;
 		vertex_in_pair[0] = 0;
 		vertex_in_pair[1] = 3;
@@ -823,6 +864,9 @@ void SecondOrderConstraint::computeVTBarrierGradientHessian(MatrixXd& Hessian_, 
 
 		b_grad *= stiffness; b_hessian *= stiffness;
 		Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
+
+		FEM::SPDprojection(Hessian);
+
 		grad *= b_grad;
 		vertex_in_pair[0] = 0;
 		vertex_in_pair[1] = 1;
@@ -845,6 +889,10 @@ void SecondOrderConstraint::computeVTBarrierGradientHessian(MatrixXd& Hessian_, 
 
 		b_grad *= stiffness; b_hessian *= stiffness;
 		Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
+
+		FEM::SPDprojection(Hessian);
+
+
 		grad *= b_grad;
 		vertex_in_pair[0] = 0;
 		vertex_in_pair[1] = 2;
@@ -866,6 +914,9 @@ void SecondOrderConstraint::computeVTBarrierGradientHessian(MatrixXd& Hessian_, 
 
 		b_grad *= stiffness; b_hessian *= stiffness;
 		Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
+
+		FEM::SPDprojection(Hessian);
+
 		grad *= b_grad;
 		vertex_in_pair[0] = 0;
 		vertex_in_pair[1] = 1;
@@ -887,6 +938,9 @@ void SecondOrderConstraint::computeVTBarrierGradientHessian(MatrixXd& Hessian_, 
 
 		b_grad *= stiffness; b_hessian *= stiffness;
 		Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
+
+		FEM::SPDprojection(Hessian);
+
 		grad *= b_grad;
 		vertex_in_pair[0] = 0;
 		vertex_in_pair[1] = 1;

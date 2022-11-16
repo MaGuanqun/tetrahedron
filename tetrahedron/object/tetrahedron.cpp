@@ -34,7 +34,8 @@ void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mesh_struct.recordTetIndexForTet();
 	mesh_struct.updateTetNeighborInfo();
 	mesh_struct.recordPrimitiveIndexOfATet();
-	mesh_struct.sortTriangleAroundElement();
+	mesh_struct.sortTriangleAroundElement();	
+
 }
 
 

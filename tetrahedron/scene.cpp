@@ -506,8 +506,8 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 		tetrahedron[i].recordInitialMesh(single_tetrahedron_info);
 	}
 
-	if (use_method == XPBD_) {
-		//setGroup();
+	if (use_method == XPBD_ || use_method == XPBD_IPC_) {
+		setGroup();
 	}
 
 
@@ -639,6 +639,11 @@ void Scene::setGroup()
 				}
 			}			
 		}
+
+		for (int i = 0; i < tetrahedron.size(); ++i) {
+			graph_color.testEdge(tetrahedron[0].mesh_struct, tetrahedron[0].mesh_struct.indices);
+		}
+
 }
 
 void Scene::setWireframwColor()
@@ -1054,9 +1059,6 @@ void Scene::resetIntersectionState()
 void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* control_parameter, float force_coe, bool& record_matrix,
 	double& ave_iteration)
 {
-	if (time_stamp == 58) {
-		exit(0);
-	}
 
 	if (control_parameter[START_SIMULATION] || control_parameter[ONE_FRAME]) {
 		switch (use_method)

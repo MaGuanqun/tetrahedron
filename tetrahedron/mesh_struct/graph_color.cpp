@@ -224,7 +224,7 @@ void GraphColor::graphColor(std::vector<std::vector<unsigned int>>& element_elem
 	unsigned int max_size = max_degree + 3;
 	unsigned int max_array_size = element_element.size() * max_size;
 	int* palette = new int[max_array_size];
-	memset(palette, -1, 4 * max_array_size);
+	memset(palette, 0, 4 * max_array_size);
 	unsigned int basic_palette_size = max_degree/min_degree;
 	int* palette_unit = new int[basic_palette_size+2]; //here we need to record the actual num & all color number we have used
 	unsigned int unit_size = basic_palette_size+2;
@@ -300,9 +300,11 @@ void GraphColor::graphColor(std::vector<std::vector<unsigned int>>& element_elem
 				if (not_exist) {
 					record_index.emplace_back(i);
 					for (auto j = element_element[i].begin(); j < element_element[i].end(); ++j) {
-						if (U[i]) {
+						if (U[*j]) {
 							if (palette[max_size * (*j) + color[i] + 2] != -1) {
-								palette[max_size * (*j)]--;
+								if (palette[max_size * (*j) + 1] > color[i]) {
+									palette[max_size * (*j)]--;
+								}
 								palette[max_size * (*j) + color[i] + 2] = -1;
 							}
 						}
@@ -324,19 +326,24 @@ void GraphColor::graphColor(std::vector<std::vector<unsigned int>>& element_elem
 				if (palette[max_size * i] == 0) {
 					palette_address = palette + max_size * i;
 					(* palette_address)++;
+
+					while (*(palette_address + (*(palette_address + 1)) + 2) == -1) {
+						( *(palette_address + 1))++;
+					}
 					*(palette_address + (*(palette_address + 1)) + 2) = (*(palette_address + 1));
 					(*(palette_address+1))++;				
-
 				}
 			}
 		}
 	}
+
+	int max_palette_size;
+	getMaxPaletteSize(max_palette_size, palette, max_size, max_array_size);
+
 	delete[] palette;
 	delete[] palette_unit;
 
-	add max 
-
-	decideGroup(basic_palette_size, element_not_connect, color, ori_vertex_number);
+	decideGroup(max_palette_size, element_not_connect, color, ori_vertex_number);
 	delete[] color;
 }
 
@@ -479,6 +486,54 @@ void GraphColor::decideGroup(unsigned int max_color, std::vector<std::vector<uns
 
 
 
+void GraphColor::testEdge(MeshStruct& mesh_struct, std::vector<std::array<int, 4>>& indices)
+{
+	std::vector<std::vector<unsigned int>>element_not_connect;
+	graphColor(mesh_struct.tet_tet_index, element_not_connect);
+
+	std::vector<bool> is_used(mesh_struct.tet_tet_index.size(), false);
+
+	for (unsigned int i = 0; i < element_not_connect.size(); ++i) {
+		for (auto j = element_not_connect[i].begin(); j < element_not_connect[i].end(); ++j) {
+			if (is_used[*j]) {
+				std::cout << "error tet duplicate between different group " << *j << std::endl;
+			}
+			is_used[*j] = true;
+		}
+	}
+
+	is_used.resize(mesh_struct.vertex_position.size());
+	for (unsigned int i = 0; i < element_not_connect.size(); ++i) {
+		std::fill(is_used.begin(), is_used.end(), false);
+		for (auto j = element_not_connect[i].begin(); j < element_not_connect[i].end(); ++j) {
+			for(unsigned int k=0;k<4;++k){
+				if (is_used[indices[*j][k]]) {
+					std::cout << "error tet duplicate vertex in a group " << *j << std::endl;
+				}
+				is_used[is_used[indices[*j][k]]] = true;
+			}			
+		}
+	}
+
+	unsigned int num = 0;
+	for (unsigned int i = 0; i < element_not_connect.size(); ++i) {
+		num += element_not_connect[i].size();
+	}
+	if (num != indices.size()) {
+		std::cout << "lost some element " << std::endl;
+	}
+
+	std::cout << "group of tet " << std::endl;
+	for (unsigned int i = 0; i < element_not_connect.size(); ++i) {
+		for (auto j = element_not_connect[i].begin(); j < element_not_connect[i].end(); ++j) {
+			std::cout << *j << " ";
+		}
+		std::cout << std::endl;
+	}
+}
+
+
+
 void GraphColor::testEdgeGroup(int size, std::vector<std::vector<unsigned int>>& unconnected_vertex_index, MeshStruct& mesh_struct)
 {
 	std::vector<bool> is_used(size, false);
@@ -536,4 +591,16 @@ void GraphColor::testEdgeGroup(int size, std::vector<std::vector<unsigned int>>&
 	}
 
 
+}
+
+
+void GraphColor::getMaxPaletteSize(int& size, int* palette, unsigned int max_size, unsigned int max_array_size)
+{
+	palette++;
+	size = 0;
+	for (unsigned int i = 0; i < max_array_size; i += max_size) {
+		if (palette[i] > size) {
+			size = palette[i];
+		}
+	}
 }
