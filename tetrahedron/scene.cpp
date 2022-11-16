@@ -629,7 +629,7 @@ void Scene::setGroup()
 			if (cloth[i].mesh_struct.edge_length.size() > 3) {
 				graph_color.graphColorEdgeLength(cloth[i].mesh_struct);
 				if (cloth[i].mesh_struct.vertex_position.size() > 2) {
-					graph_color.graphColorBending(cloth[i].mesh_struct);;
+					graph_color.graphColorBending(cloth[i].mesh_struct);
 				}
 			}
 			else {
@@ -638,10 +638,19 @@ void Scene::setGroup()
 					cloth[i].mesh_struct.unconnected_edge_index[j].emplace_back(j);
 				}
 			}			
+			//graph_color.testBend(cloth[i].mesh_struct.unconnected_vertex_index, cloth[i].mesh_struct);
+			//graph_color.testEdge(cloth[i].mesh_struct.unconnected_edge_index, cloth[i].mesh_struct,
+			//	cloth[i].mesh_struct.edge_vertices);
 		}
 
 		for (int i = 0; i < tetrahedron.size(); ++i) {
-			graph_color.testEdge(tetrahedron[0].mesh_struct, tetrahedron[0].mesh_struct.indices);
+			if (tetrahedron[i].mesh_struct.indices.size() > 1) {
+				graph_color.graphColor(tetrahedron[i].mesh_struct.tet_tet_index, tetrahedron[i].mesh_struct.unconnected_tet_index);
+			}
+			else {
+				tetrahedron[i].mesh_struct.unconnected_tet_index.resize(1);
+				tetrahedron[i].mesh_struct.unconnected_tet_index[0].emplace_back(0);
+			}
 		}
 
 }

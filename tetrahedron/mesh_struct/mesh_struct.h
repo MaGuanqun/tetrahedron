@@ -20,7 +20,7 @@ public:
 		std::vector<unsigned int>edge;
 		std::vector<unsigned int>neighbor_vertex;
 		std::vector<unsigned int>around_face;
-		std::vector<int>around_vertex;
+		std::vector<unsigned int>around_vertex;
 		bool on_border = false;
 		std::vector<int>tetrahedron; //only for surface vertex
 
@@ -62,6 +62,8 @@ public:
 
 	std::vector<std::vector<unsigned int>>unconnected_vertex_index; //for bending
 	std::vector<std::vector<unsigned int>>unconnected_edge_index; //for edge_length
+	std::vector<std::vector<unsigned int>>unconnected_tet_index; //for tet (ARAP)
+
 
 	std::vector<std::array<double, 3>> vertex_position;
 	std::vector<std::array<int, 3>> triangle_indices;//if for tetrahedron, store the surface triangle	
