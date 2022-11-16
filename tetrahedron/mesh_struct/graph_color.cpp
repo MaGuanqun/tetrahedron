@@ -35,6 +35,24 @@ void GraphColor::findEdgeLengthMinMaxDegree(MeshStruct& mesh_struct, unsigned in
 }
 
 
+
+void GraphColor::findMinMaxDegree(std::vector<std::vector<unsigned int>>& element_element, unsigned int& max_degree, unsigned int& min_degree)
+{
+	max_degree = 0;
+	min_degree = UINT_MAX;
+	for (auto i = element_element.begin(); i < element_element.end(); ++i) {
+		if (max_degree < i->size()) {
+			max_degree = i->size();
+		}
+		if (min_degree > i->size()) {
+			min_degree = i->size();
+		}
+	}
+}
+
+
+
+
 void GraphColor::graphColorEdgeLength(MeshStruct& mesh_struct)
 {
 	unsigned int max_degree, min_degree;
@@ -195,6 +213,135 @@ void GraphColor::graphColorEdgeLength(MeshStruct& mesh_struct)
 
 	//testEdgeGroup(ori_edge_number, mesh_struct.unconnected_edge_index, mesh_struct);
 }
+
+
+
+void GraphColor::graphColor(std::vector<std::vector<unsigned int>>& element_element, std::vector<std::vector<unsigned int>>& element_not_connect)
+{
+	unsigned int max_degree, min_degree;
+	findMinMaxDegree(element_element, max_degree, min_degree);
+	//initial the palette array
+	unsigned int max_size = max_degree + 3;
+	unsigned int max_array_size = element_element.size() * max_size;
+	int* palette = new int[max_array_size];
+	memset(palette, -1, 4 * max_array_size);
+	unsigned int basic_palette_size = max_degree/min_degree;
+	int* palette_unit = new int[basic_palette_size+2]; //here we need to record the actual num & all color number we have used
+	unsigned int unit_size = basic_palette_size+2;
+	for (unsigned int i = 0; i < basic_palette_size; ++i) {
+		palette_unit[i + 2] = i;
+	}
+	palette_unit[0] = basic_palette_size;
+	palette_unit[1] = basic_palette_size;
+
+	for (unsigned int i = 0; i < max_array_size; i += max_size) {
+		memcpy(palette + i, palette_unit, unit_size << 2);
+	}
+
+	unsigned int vertex_number = element_element.size();
+	unsigned int ori_vertex_number = vertex_number;
+
+	int* color = new int[vertex_number];
+	std::vector<bool> U(vertex_number, true);
+	std::vector<int> record_index;
+	record_index.reserve(vertex_number / 2);
+
+	bool not_exist;
+
+	int* current_vertex_paletee_start;
+	int current_rand;
+
+	bool first_time = true;
+
+
+	int indicate;
+
+	int* palette_address;
+
+	while (vertex_number > 0)
+	{
+		//tentative coloring
+		if (first_time) {
+			for (unsigned int i = 0; i < ori_vertex_number; ++i) {
+				color[i] = palette[max_size * i + (rand() % palette[max_size * i]) + 2];
+			}
+		}
+		else {
+			for (unsigned int i = 0; i < ori_vertex_number; ++i) {
+				if (U[i]) {
+					indicate = -1;
+					current_vertex_paletee_start = palette + max_size * i ;
+					current_rand = rand() % *current_vertex_paletee_start;
+					current_vertex_paletee_start ++;
+					for (unsigned int j = 0; j < *current_vertex_paletee_start; ++j) {
+						if (*(current_vertex_paletee_start+1+ j) > -1) {
+							indicate++;
+						}
+						if (indicate == current_rand) {
+							color[i] = *(current_vertex_paletee_start + 1 + j);
+							break;
+						}
+
+					}
+				}
+			}
+		}
+		record_index.clear();
+		//conflict resolution
+		for (unsigned int i = 0; i < ori_vertex_number; ++i) {
+			if (U[i]) {
+				not_exist = true;
+				for (auto j = element_element[i].begin(); j < element_element[i].end(); ++j) {
+					if (color[i] == color[*j] && i < *j) {
+						not_exist = false;
+						break;						
+					}
+				}
+				if (not_exist) {
+					record_index.emplace_back(i);
+					for (auto j = element_element[i].begin(); j < element_element[i].end(); ++j) {
+						if (U[i]) {
+							if (palette[max_size * (*j) + color[i] + 2] != -1) {
+								palette[max_size * (*j)]--;
+								palette[max_size * (*j) + color[i] + 2] = -1;
+							}
+						}
+					}
+				}
+			}
+		}
+		if (!record_index.empty()) {
+			first_time = false;
+		}
+		for (auto i = record_index.begin(); i < record_index.end(); ++i) {
+			U[*i] = false;
+		}
+		vertex_number -= record_index.size();
+		//feed the hungry
+
+		for (unsigned int i = 0; i < ori_vertex_number; ++i) {
+			if (U[i]) {
+				if (palette[max_size * i] == 0) {
+					palette_address = palette + max_size * i;
+					(* palette_address)++;
+					*(palette_address + (*(palette_address + 1)) + 2) = (*(palette_address + 1));
+					(*(palette_address+1))++;				
+
+				}
+			}
+		}
+	}
+	delete[] palette;
+	delete[] palette_unit;
+
+	add max 
+
+	decideGroup(basic_palette_size, element_not_connect, color, ori_vertex_number);
+	delete[] color;
+}
+
+
+
 
 
 void GraphColor::graphColorBending(MeshStruct& mesh_struct)
