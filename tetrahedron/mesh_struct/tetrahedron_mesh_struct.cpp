@@ -223,6 +223,55 @@ void TetrahedronMeshStruct::sortTetAroundVertexEdge(int thread_id)
 
 
 
+void TetrahedronMeshStruct::testTetAroundFaceEdge()
+{
+	std::vector<unsigned int> commen_triangle;
+	commen_triangle.reserve(4);
+	int* vertex_index;
+
+	std::vector<unsigned int>* vertex_connnect_edge;
+
+	for (auto i = 0; i < triangle_indices.size(); ++i) {
+		//face
+		vertex_index = triangle_indices[i].data();
+		tet_around_face[i].reserve(6);
+		for (int j = 0; j < 3; ++j) {
+			for (auto k = vertex_tet_index[vertex_index[j]].begin(); k < vertex_tet_index[vertex_index[j]].end(); ++k) {
+					tet_around_face[i].emplace_back(*k);				
+			}
+		}
+		std::sort(tet_around_face[i].begin(), tet_around_face[i].end());
+		tet_around_face[i].erase(std::unique(tet_around_face[i].begin(), tet_around_face[i].end()), tet_around_face[i].end());
+	}
+
+
+	unsigned int* edge_vertex_index;
+	for (auto i = 0; i < edge_length.size(); ++i) {
+		edge_vertex_index = edge_vertices.data() + (i << 1);
+		tet_around_edge[i].reserve(6);
+		for (int j = 0; j < 2; ++j) {
+			for (auto k = vertex_tet_index[edge_vertex_index[j]].begin(); k < vertex_tet_index[edge_vertex_index[j]].end(); ++k) {		
+					tet_around_edge[i].emplace_back(*k);				
+			}
+		}
+		std::sort(tet_around_edge[i].begin(), tet_around_edge[i].end());
+		tet_around_edge[i].erase(std::unique(tet_around_edge[i].begin(), tet_around_edge[i].end()), tet_around_edge[i].end());
+	}
+
+	for (unsigned int i = 0; i < triangle_indices.size(); ++i) {
+		if (tet_around_face[i] != this->tet_around_face[i]) {
+			std::cout << "tet_a_face error " << i << std::endl;
+		}
+	}
+	for (auto i = 0; i < edge_length.size(); ++i) {
+		if (tet_around_edge[i] != this->tet_around_edge[i]) {
+			std::cout << "tet_a_edge error " << i << std::endl;
+		}
+	}
+	std::cout << "test right" << std::endl;
+}
+
+
 // SORT_TRIANGLE_EDGE_AROUND_TRIANGLE
 void TetrahedronMeshStruct::setTetAroundFace(int thread_id)
 {
@@ -238,13 +287,10 @@ void TetrahedronMeshStruct::setTetAroundFace(int thread_id)
 		vertex_index = triangle_indices[i].data();
 		tet_around_face[i].reserve(6);
 		for (int j = 0; j < 3; ++j) {
-			for (auto k = vertex_tet_index[vertex_index[j]].begin(); k < vertex_tet_index[vertex_index[j]].end(); ++k) {
-				if (!isCommonUsed(*k, &tet_around_face[i])) {
-					tet_around_face[i].emplace_back(*k);
-				}
-			}
+			tet_around_face[i].insert(tet_around_face[i].end(), vertex_tet_index[vertex_index[j]].begin(),vertex_tet_index[vertex_index[j]].end());
 		}
 		std::sort(tet_around_face[i].begin(), tet_around_face[i].end());
+		tet_around_face[i].erase(std::unique(tet_around_face[i].begin(), tet_around_face[i].end()), tet_around_face[i].end());
 	}
 
 
@@ -254,13 +300,10 @@ void TetrahedronMeshStruct::setTetAroundFace(int thread_id)
 		edge_vertex_index = edge_vertices.data() + (i << 1);
 		tet_around_edge[i].reserve(6);
 		for (int j = 0; j < 2; ++j) {
-			for (auto k = vertex_tet_index[edge_vertex_index[j]].begin(); k < vertex_tet_index[edge_vertex_index[j]].end(); ++k) {
-				if (!isCommonUsed(*k, &tet_around_edge[i])) {
-					tet_around_edge[i].emplace_back(*k);
-				}
-			}
+			tet_around_edge[i].insert(tet_around_edge[i].end(), vertex_tet_index[edge_vertex_index[j]].begin(), vertex_tet_index[edge_vertex_index[j]].end());
 		}
 		std::sort(tet_around_edge[i].begin(), tet_around_edge[i].end());
+		tet_around_edge[i].erase(std::unique(tet_around_edge[i].begin(), tet_around_edge[i].end()), tet_around_edge[i].end());
 	}
 
 }
@@ -689,6 +732,9 @@ void TetrahedronMeshStruct::sortTriangleAroundElement()
 
 	thread->assignTask(this, SORT_TRIANGLE_EDGE_AROUND_TRIANGLE_EDGE);
 	thread->assignTask(this, SORT_TRIANGLE_AROUND_VERTEX_EDGE);
+
+
+	std::cout <<"tet around "<< tet_around_face[0].size() << " " << tet_around_edge[0].size() << std::endl;
 
 }
 

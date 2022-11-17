@@ -155,6 +155,11 @@ public:
 
 	std::vector<int> vertex_surface_index;//size is the global vertex size, verted index -> surface index
 
+
+	void testIfRIght(std::vector<std::vector<unsigned int>>& k);
+
+	void testFaceEdgeAroundFaceEdge();
+
 protected:
 	int type;
 	bool isEdgeExist(unsigned int v0, unsigned int v1, unsigned int& edge_index);

@@ -76,6 +76,9 @@ public:
 	void sortTriangleAroundElement();
 	void sortTetAroundVertexEdge(int thread_id);
 	void setTetAroundFace(int thread_id);
+
+	void testTetAroundFaceEdge();
+
 private:
 	struct TetrahedronFace {
 		std::array<int, 3> index;

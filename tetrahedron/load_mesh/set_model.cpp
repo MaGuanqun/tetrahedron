@@ -123,9 +123,8 @@ void SetModel::regularization(RegularizationInfo& regularization_info)
 	}
 
 	//double coe = regularization_info.scaler * 1.5;
+
 	double coe = 0.00991323;
-
-
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
 		MULTI_(ori_mesh.vertices[i], coe);
 	}

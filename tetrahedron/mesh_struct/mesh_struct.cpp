@@ -105,6 +105,97 @@ void MeshStruct::setEdgeForSpring()
 }
 
 
+void MeshStruct::testFaceEdgeAroundFaceEdge()
+{
+	unsigned int* edge_index;
+	int* vertex_index;
+
+	std::vector<unsigned int>* vertex_connnect_edge;
+
+	std::vector<std::vector<unsigned int>> face_around_face_(triangle_indices.size());
+	std::vector<std::vector<unsigned int>> edge_around_face_(triangle_indices.size());
+
+
+
+
+	for (auto i=0; i <triangle_indices.size(); ++i) {
+		//face
+		vertex_index = triangle_indices[i].data();
+		edge_index = face_edges.data() + 3 * i;
+
+		for (int j = 0; j < 3; ++j) {
+			for (auto k = vertices[vertex_index[j]].face.begin(); k < vertices[vertex_index[j]].face.end(); ++k) {
+				face_around_face_[i].emplace_back(*k);				
+			}
+		}
+		std::sort(face_around_face_[i].begin(), face_around_face_[i].end());
+		face_around_face_[i].erase(std::unique(face_around_face_[i].begin(), face_around_face_[i].end()), face_around_face_[i].end());
+
+		//edge
+		edge_around_face_[i].reserve(8);
+		for (unsigned int j = 0; j < 3; ++j) {
+			vertex_connnect_edge = &vertices[vertex_index[j]].edge;
+			for (auto k = vertex_connnect_edge->begin(); k < vertex_connnect_edge->end(); ++k) {			
+				edge_around_face_[i].emplace_back(*k);				
+			}
+		}
+		std::sort(edge_around_face_[i].begin(), edge_around_face_[i].end());
+		edge_around_face_[i].erase(std::unique(edge_around_face_[i].begin(), edge_around_face_[i].end()), edge_around_face_[i].end());
+	}
+	for (unsigned int i = 0; i < triangle_indices.size(); ++i) {
+		if (face_around_face_[i] != this->face_around_face[i]) {
+			std::cout << "face_a_face error " << i << std::endl;
+		}
+		if (edge_around_face_[i] != this->edge_around_face[i]) {
+			std::cout << "edge_a_face error " << i << std::endl;
+		}
+	}
+
+
+
+	std::vector<std::vector<unsigned int>> face_around_edge_(edge_length.size());
+	std::vector<std::vector<unsigned int>> edge_around_edge_(edge_length.size());
+
+	unsigned int* edge_vertex_index;
+	for (auto i = 0; i < edge_length.size(); ++i) {
+		//face
+		edge_vertex_index = edge_vertices.data() + i * 2;
+		face_around_edge_[i].reserve(6);
+		for (int j = 0; j < 2; ++j) {
+			for (auto k = vertices[edge_vertex_index[j]].face.begin(); k < vertices[edge_vertex_index[j]].face.end(); ++k) {
+					face_around_edge_[i].emplace_back(*k);				
+			}
+		}
+		std::sort(face_around_edge_[i].begin(), face_around_edge_[i].end());
+		face_around_edge_[i].erase(std::unique(face_around_edge_[i].begin(), face_around_edge_[i].end()), face_around_edge_[i].end());
+
+		//edge
+
+		edge_around_edge_[i].reserve(8);
+		for (unsigned int j = 0; j < 2; ++j) {
+			vertex_connnect_edge = &vertices[edge_vertex_index[j]].edge;
+			for (auto k = vertex_connnect_edge->begin(); k < vertex_connnect_edge->end(); ++k) {
+					edge_around_edge_[i].emplace_back(*k);				
+			}
+		}
+		std::sort(edge_around_edge_[i].begin(), edge_around_edge_[i].end());
+		edge_around_edge_[i].erase(std::unique(edge_around_edge_[i].begin(), edge_around_edge_[i].end()), edge_around_edge_[i].end());
+	}
+
+	for (unsigned int i = 0; i < this->face_around_edge.size(); ++i) {
+		if (face_around_edge_[i] != this->face_around_edge[i]) {
+			std::cout << "face_a_face error " << i << std::endl;
+		}
+		if (edge_around_edge_[i] != this->edge_around_edge[i]) {
+			std::cout << "edge_a_face error " << i << std::endl;
+		}
+	}
+
+	std::cout << "test right" << std::endl;
+
+}
+
+
 //SORT_TRIANGLE_EDGE_AROUND_TRIANGLE_EDGE
 void MeshStruct::setFaceEdgeAroundFace(int thread_id)
 {
@@ -415,6 +506,31 @@ void MeshStruct::getRenderFaceNormal()
 		normalize(face_normal_for_render[j].data());
 	}
 }
+
+
+
+
+void MeshStruct::testIfRIght(std::vector<std::vector<unsigned int>>& k)
+{
+	for (auto i = k.begin(); i < k.end(); ++i) {
+		for (auto j = i->begin() + 1; j < i->end(); ++j) {
+			if (*j >= *(j - 1)) {
+				std::cout << "error " << *j << " " << *(j + 1)<<std::endl;
+			}		
+		}
+	}
+
+	for (auto i = k.begin(); i < k.end(); ++i) {
+
+		for (auto j = i->begin() + 1; j < i->end(); ++j) {
+			if (*j >= *(j - 1)) {
+				std::cout << "error " << *j << " " << *(j + 1) << std::endl;
+			}
+		}
+	}
+}
+
+
 
 
 void MeshStruct::getFaceNormal()

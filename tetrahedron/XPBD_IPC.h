@@ -372,6 +372,12 @@ private:
 		std::vector<unsigned int>*around_tet, double arap_stiffness, bool obj_0_collider, bool obj_1_collider);
 
 
+	void getCollisionPairHessianTest(MatrixXd& Hessian_test_record, MatrixXd& Hessian, VectorXd& grad, unsigned int obj_0, unsigned int obj_1,
+		double collision_stiffness, std::vector<unsigned int>* triangle_around_0, std::vector<unsigned int>* triangle_around_1,
+		std::vector<unsigned int>* edge_around_0, std::vector<unsigned int>* edge_around_1,
+		std::vector<unsigned int>* tet_around_0, std::vector<unsigned int>* tet_around_1, double d_hat_2,
+		int* unfixed_pair_vertex_index, int unfixed_num, std::vector<unsigned int>* around_triangle, std::vector<unsigned int>* around_edge,
+		std::vector<unsigned int>* around_tet, double arap_stiffness, bool obj_0_collider, bool obj_1_collider);
 
 	void solveVT_collisionBlock(unsigned int vertex_obj_no, unsigned int vertex_index, unsigned int triangle_obj_No, unsigned int triangle_index,
 		double stiffness, double dt, double collision_stiffne, std::vector<unsigned int>* triangle_around_vertex, std::vector<unsigned int>* triangle_around_triangle,

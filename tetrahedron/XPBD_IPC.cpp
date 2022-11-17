@@ -943,7 +943,7 @@ void XPBD_IPC::newtonVTCollisionBlock()
 				pair_num = vertex_triangle_pair_num_record[m];
 				for (int k = 0; k < pair_num; k += 2) {
 					if (pair_index[k] < cloth->size()) {
-						tet_around_triangle_ = &tet_around;;
+						tet_around_triangle_ = &tet_around;
 					}
 					else {
 						tet_around_triangle_ = &tet_around_triangle[pair_index[k]][pair_index[k + 1]];
@@ -1239,7 +1239,7 @@ void XPBD_IPC::newtonEECollisionBlock()
 						}
 					}
 					if (pair_index[k] < cloth->size()) {
-						tet_around_edge_1 = &tet_around;;
+						tet_around_edge_1 = &tet_around;
 					}
 					else {
 						tet_around_edge_1 = &tet_around_edge[pair_index[k]][pair_index[k + 1]];
@@ -1260,8 +1260,9 @@ void XPBD_IPC::newtonEECollisionBlock()
 void XPBD_IPC::newtonCDBlock()
 {
 	newtonCDTetBlock();
-	newtonVTCollisionBlock();
 	newtonEECollisionBlock();
+	newtonVTCollisionBlock();
+
 	//if (has_collider) {
 	//	newtonEEColliderCollisionBlock();
 	//	newtonVTColliderCollisionBlock();
@@ -2478,7 +2479,9 @@ void XPBD_IPC::solveEE_collisionBlock(unsigned int obj_No_0, unsigned int primit
 
 	std::vector<unsigned int> around_triangle, around_edge, around_tet;
 
-	getCollisionPairHessian(Hessian, grad, obj_No_0, obj_No_1, collision_stiffne, triangle_around_0, triangle_around_1,
+	MatrixXd collision_hessian;
+
+	getCollisionPairHessianTest(collision_hessian, Hessian, grad, obj_No_0, obj_No_1, collision_stiffne, triangle_around_0, triangle_around_1,
 		edge_around_0, edge_around_1,
 		tet_around_0, tet_around_1,
 		d_hat_2, unfixed_pair_vertex_index, unfixed_num, &around_triangle, &around_edge, &around_tet, stiffness,
@@ -2488,6 +2491,9 @@ void XPBD_IPC::solveEE_collisionBlock(unsigned int obj_No_0, unsigned int primit
 	int obj_index_, vertex_index_;
 
 	int i;
+
+	MatrixXd hessen_record = Hessian;
+
 	for (int j = 0; j < unfixed_num; j += 2) {
 		i = (j >> 1);
 		vertex_index_ = unfixed_pair_vertex_index[j + 1];
@@ -2504,6 +2510,14 @@ void XPBD_IPC::solveEE_collisionBlock(unsigned int obj_No_0, unsigned int primit
 	//HouseholderQR <MatrixXd> linear(Hessian);
 	LLT <MatrixXd> linear(Hessian);
 	VectorXd result = linear.solve(grad);
+
+	double tt = result.norm();
+	//if (tt > 1e-2) {
+	//	std::cout << collision_hessian << std::endl;
+
+	//	std::cout <<"displacement ee"<< edge_1_collider<<" "<< primitive_0_index << " " << primitive_0_index << " " << tt << std::endl;
+	//}
+	
 
 	for (int i = 0; i < unfixed_num; i += 2) {
 		vertex_index_ = unfixed_pair_vertex_index[i + 1];
@@ -2602,6 +2616,10 @@ void XPBD_IPC::solveVT_collisionBlock(unsigned int vertex_obj_no, unsigned int v
 	//std::cout << "++" << std::endl;
 	//std::cout << grad.transpose() << std::endl;
 
+	double tt = result.norm();
+	if (tt > 1e-2) {
+		std::cout << "displacement ee" << triangle_collider <<" "<< vertex_collider << " " << vertex_index << " " << triangle_index << " " << tt << std::endl;
+	}
 
 	for (int i = 0; i < unfixed_num; i+=2) {
 		vertex_index_ = unfixed_pair_vertex_index[i + 1];
@@ -2632,6 +2650,60 @@ void XPBD_IPC::solveVT_collisionBlock(unsigned int vertex_obj_no, unsigned int v
 
 
 
+void XPBD_IPC::getCollisionPairHessianTest(MatrixXd& Hessian_test_record, MatrixXd& Hessian, VectorXd& grad, unsigned int obj_0, unsigned int obj_1,
+	double collision_stiffness, std::vector<unsigned int>* triangle_around_0, std::vector<unsigned int>* triangle_around_1,
+	std::vector<unsigned int>* edge_around_0, std::vector<unsigned int>* edge_around_1,
+	std::vector<unsigned int>* tet_around_0, std::vector<unsigned int>* tet_around_1,
+	double d_hat_2, int* unfixed_pair_vertex_index, int unfixed_num, std::vector<unsigned int>* around_triangle, std::vector<unsigned int>* around_edge,
+	std::vector<unsigned int>* around_tet, double arap_stiffness, bool obj_0_collider, bool obj_1_collider)
+{
+	if (obj_0_collider) {
+		for (auto i = triangle_around_1->begin(); i < triangle_around_1->end(); ++i) {
+			around_triangle->emplace_back(obj_1);
+			around_triangle->emplace_back(*i);
+		}
+		for (auto i = edge_around_1->begin(); i < edge_around_1->end(); ++i) {
+			around_edge->emplace_back(obj_1);
+			around_edge->emplace_back(*i);
+		}
+		for (auto i = tet_around_1->begin(); i < tet_around_1->end(); ++i) {
+			around_tet->emplace_back(obj_1);
+			around_tet->emplace_back(*i);
+		}
+	}
+	else if (obj_1_collider) {
+		for (auto i = triangle_around_0->begin(); i < triangle_around_0->end(); ++i) {
+			around_triangle->emplace_back(obj_0);
+			around_triangle->emplace_back(*i);
+		}
+		for (auto i = edge_around_0->begin(); i < edge_around_0->end(); ++i) {
+			around_edge->emplace_back(obj_0);
+			around_edge->emplace_back(*i);
+		}
+		for (auto i = tet_around_0->begin(); i < tet_around_0->end(); ++i) {
+			around_tet->emplace_back(obj_0);
+			around_tet->emplace_back(*i);
+		}
+	}
+	else {
+		comparePrimitiveAroundPrimitveTogether(triangle_around_0, triangle_around_1, obj_0, obj_1,
+			around_triangle);
+
+		comparePrimitiveAroundPrimitveTogether(edge_around_0, edge_around_1, obj_0, obj_1,
+			around_edge);
+
+		comparePrimitiveAroundPrimitveTogether(tet_around_0, tet_around_1, obj_0, obj_1,
+			around_tet);
+	}
+	getCollisionBlockCollisionHessian(Hessian, grad, around_triangle, around_edge, collision_stiffness,
+		unfixed_pair_vertex_index, unfixed_num, d_hat_2, vertex_index_surface.data(), obj_0, obj_1);
+
+	
+	Hessian_test_record = Hessian;
+	//FEM::SPDprojection(Hessian);
+
+	getCollisionBlockTetHessian(Hessian, grad, around_tet, arap_stiffness, unfixed_pair_vertex_index, unfixed_num);
+}
 
 
 void XPBD_IPC::getCollisionPairHessian(MatrixXd& Hessian, VectorXd& grad, unsigned int obj_0, unsigned int obj_1,
