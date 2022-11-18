@@ -119,7 +119,7 @@ namespace CCD {
                 tN = (a * e - b * d);
                 T n[3];
                 CROSS(n, u, v);
-                if (tN > 0.0 && tN < tD && (DOT(n, w) == 0.0 || DOT(n, n) < NEAR_ZERO2 * a * c)) {
+                if (tN > 0.0 && tN < tD && (DOT(n, n) < NEAR_ZERO2 * a * c)) {
                     // if (tN > 0.0 && tN < tD && (u.cross(v).dot(w) == 0.0 || u.cross(v).squaredNorm() == 0.0)) {
                     // std::cout << u.cross(v).squaredNorm() / (a * c) << ": " << sN << " " << D << ", " << tN << " " << tD << std::endl;
                     // avoid coplanar or nearly parallel EE
@@ -331,6 +331,41 @@ namespace CCD {
             }
             return defaultCase;
         }
+
+        template <class T> //squared distance
+        inline bool edgeEdgeMollifier(const T* ea0,
+            const T* ea1,
+            const T* eb0,
+            const T* eb1, const T eps_x, T& mollifier, T& cross_norm_2)
+        {
+            T a[3], b[3], n[3];
+            SUB(a, ea1, ea0);
+            SUB(b, eb1, eb0);
+            CROSS(n, a, b);
+            cross_norm_2 = DOT(n, n);
+            if (cross_norm_2 < eps_x) {
+                double div = cross_norm_2 / eps_x;
+                mollifier = (-div + 2.0) * div;
+                return true;
+            }
+            return false;
+        }
+
+
+        template <typename T> 
+        T edgeEdgeMollifierGradient(const T& x, T eps_x)
+        {
+            T one_div_eps_x = 1.0 / eps_x;
+            return 2.0 * one_div_eps_x * (-one_div_eps_x * x + 1.0);
+        }
+
+        template <typename T> 
+        T edgeEdgeMollifierHessian(const T& x, double eps_x)
+        {
+            return -2.0 / (eps_x * eps_x);
+        }
+
+
 
         template <class T> //squared distance
         inline T pointPointDistance(const T* a, const T* b)

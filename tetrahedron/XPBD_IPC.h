@@ -146,6 +146,12 @@ private:
 	std::vector<unsigned int*>vertex_surface_to_global;
 
 
+	std::vector<double*> rest_edge_length;
+	std::vector<double*> rest_edge_length_collider;
+
+
+
+
 	void initialClothBending();
 	//void solveBendingConstraint();
 	//void solveEdgeLengthConstraint();
@@ -324,14 +330,14 @@ private:
 	void getEECollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, unsigned int obj_No, unsigned int* edge_vertex_index,
 		unsigned int* EE, int num, int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2,
 		int edge_order_in_tet, std::vector<unsigned int>* edge_of_a_tet, double* ea0, double* ea1, double stiffness,
-		unsigned int* EE_collider, int num_collider);
+		unsigned int* EE_collider, int num_collider, double edge_length_0);
 
 
 	void getEECollisionHessainForPair(MatrixXd& Hessian, VectorXd& grad, unsigned int ee_obj_No, unsigned int* edge_vertex_index,
 		unsigned int* EE, int num, int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2,
 		unsigned int obj_No_0, unsigned int obj_No_1,
 		int edge_order_in_tet, std::vector<unsigned int>* edge_of_a_tet, double* ea0, double* ea1, double stiffness,
-		unsigned int* EE_collider, int num_collider);
+		unsigned int* EE_collider, int num_collider, double edge_length_0);
 
 	bool edgeInSameTetDuplicate(int edge_order_in_tet, std::vector<unsigned int>* edge_of_a_tet,
 		unsigned int compare_edge_index);
@@ -364,6 +370,8 @@ private:
 		std::array<double, 3>** current_vertex_position,
 		std::array<double, 3>** initial_vertex_position);
 
+
+
 	void getCollisionPairHessian(MatrixXd& Hessian, VectorXd& grad, unsigned int obj_0,  unsigned int obj_1, 
 		double collision_stiffness, std::vector<unsigned int>* triangle_around_0, std::vector<unsigned int>* triangle_around_1,
 		std::vector<unsigned int>* edge_around_0, std::vector<unsigned int>* edge_around_1, 
@@ -372,13 +380,7 @@ private:
 		std::vector<unsigned int>*around_tet, double arap_stiffness, bool obj_0_collider, bool obj_1_collider);
 
 
-	void getCollisionPairHessianTest(MatrixXd& Hessian_test_record, MatrixXd& Hessian, VectorXd& grad, unsigned int obj_0, unsigned int obj_1,
-		double collision_stiffness, std::vector<unsigned int>* triangle_around_0, std::vector<unsigned int>* triangle_around_1,
-		std::vector<unsigned int>* edge_around_0, std::vector<unsigned int>* edge_around_1,
-		std::vector<unsigned int>* tet_around_0, std::vector<unsigned int>* tet_around_1, double d_hat_2,
-		int* unfixed_pair_vertex_index, int unfixed_num, std::vector<unsigned int>* around_triangle, std::vector<unsigned int>* around_edge,
-		std::vector<unsigned int>* around_tet, double arap_stiffness, bool obj_0_collider, bool obj_1_collider);
-
+	
 	void solveVT_collisionBlock(unsigned int vertex_obj_no, unsigned int vertex_index, unsigned int triangle_obj_No, unsigned int triangle_index,
 		double stiffness, double dt, double collision_stiffne, std::vector<unsigned int>* triangle_around_vertex, std::vector<unsigned int>* triangle_around_triangle,
 		std::vector<unsigned int>* edge_around_vertex, std::vector<unsigned int>* edge_around_triangle, 
@@ -395,6 +397,8 @@ private:
 		double collision_stiffness, int* pair_actual_unfixed_vertex_indices,
 		int unfixed_vertex_num, double d_hat_2, int** vertex_index_on_surface, unsigned int vertex_obj_No, unsigned int tri_obj_No);
 
+
+	
 	void getCollisionBlockTetHessian(MatrixXd& Hessian, VectorXd& grad, std::vector<unsigned int>* tets, double stiffness, int* pair_actual_unfixed_vertex_indices, //pair_actual_unfixed_vertex_indices first obj, second primitive index
 		int unfixed_vertex_num);
 
@@ -405,5 +409,31 @@ private:
 	bool checkMaxDisplacement();
 
 	bool displacement_satisfied;
+
+	void getVTCollisionHessainForPairTest(MatrixXd& Hessian, VectorXd& grad, double* vertex_position_, double stiffness,
+		unsigned int* VT, unsigned int num, unsigned int vertex_order_in_matrix, unsigned int vertex_obj_No, unsigned int tri_obj_No,
+		int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2, unsigned int* VT_collider, int num_collider);
+
+	void getCollisionPairHessianTest(MatrixXd& Hessian, VectorXd& grad, unsigned int obj_0, unsigned int obj_1,
+		double collision_stiffness, std::vector<unsigned int>* triangle_around_0, std::vector<unsigned int>* triangle_around_1,
+		std::vector<unsigned int>* edge_around_0, std::vector<unsigned int>* edge_around_1,
+		std::vector<unsigned int>* tet_around_0, std::vector<unsigned int>* tet_around_1, double d_hat_2,
+		int* unfixed_pair_vertex_index, int unfixed_num, std::vector<unsigned int>* around_triangle, std::vector<unsigned int>* around_edge,
+		std::vector<unsigned int>* around_tet, double arap_stiffness, bool obj_0_collider, bool obj_1_collider);
+
+	void getCollisionBlockCollisionHessianTest(MatrixXd& Hessian, VectorXd& grad, std::vector<unsigned int>* triangles,
+		std::vector<unsigned int>* edges,
+		double collision_stiffness, int* pair_actual_unfixed_vertex_indices,
+		int unfixed_vertex_num, double d_hat_2, int** vertex_index_on_surface, unsigned int vertex_obj_No, unsigned int tri_obj_No);
+	void getTVCollisionHessainForPairTest(MatrixXd& Hessian, VectorXd& grad, double* t0, double* t1, double* t2, double stiffness,
+		unsigned int* TV, int num, unsigned int tri_obj, unsigned int obj_No_0, unsigned int obj_No_1, int* triangle_indices,
+		int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2, unsigned int* TV_collider, int collider_num);
+
+	void getEECollisionHessainForPairTest(MatrixXd& Hessian, VectorXd& grad, unsigned int ee_obj_No, unsigned int* edge_vertex_index,
+		unsigned int* EE, int num, int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, double d_hat_2,
+		unsigned int obj_No_0, unsigned int obj_No_1,
+		int edge_order_in_tet, std::vector<unsigned int>* edge_of_a_tet, double* ea0, double* ea1, double stiffness,
+		unsigned int* EE_collider, int num_collider, double edge_length_0);
+
 };
 
