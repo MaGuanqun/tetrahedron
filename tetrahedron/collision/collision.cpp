@@ -247,14 +247,20 @@ void Collision::initialCollidePairInfo()
 	//}
 }
 
-void Collision::setCollisionFreeVertex(std::vector<std::vector<std::array<double, 3>>>* record_vertex_position)
+void Collision::setCollisionFreeVertex(std::vector<std::array<double, 3>*>* record_vertex_position)
+{
+	vertex_collision_free.resize(total_obj_num);
+	for (int i = 0; i < total_obj_num; ++i) {
+		vertex_collision_free[i] = record_vertex_position->data()[i];
+	}
+}
+void Collision::setCollisionFreeVertex(std::vector< std::vector<std::array<double, 3>>>* record_vertex_position)
 {
 	vertex_collision_free.resize(total_obj_num);
 	for (int i = 0; i < total_obj_num; ++i) {
 		vertex_collision_free[i] = record_vertex_position->data()[i].data();
 	}
 }
-
 
 void Collision::reorganzieDataOfObjects()
 {

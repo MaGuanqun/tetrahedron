@@ -185,7 +185,8 @@ public:
 	void computeVolume(int thread_No);
 	void saveCollisionPairVolume();
 
-	void setCollisionFreeVertex(std::vector<std::vector<std::array<double, 3>>>* record_vertex_position);
+	void setCollisionFreeVertex(std::vector<std::array<double, 3>*>* record_vertex_position);
+	void setCollisionFreeVertex(std::vector< std::vector<std::array<double, 3>>>* record_vertex_position);
 	double d_hat;
 	double volume_boundary;
 
