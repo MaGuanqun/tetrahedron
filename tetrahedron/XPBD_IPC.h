@@ -171,7 +171,7 @@ private:
 	bool convergeCondition(unsigned int iteration_num);
 	bool innerConvergeCondition(unsigned int iteration_num);
 
-	std::vector<std::array<double, 3>*>address_of_record_vertex_position;
+	//std::vector<std::array<double, 3>*>address_of_record_vertex_position;
 
 	std::vector<std::vector<std::array<double, 3>>> record_vertex_position;
 	std::vector<std::vector<std::array<double, 3>>> record_gloabl_CCD_vertex_position;
@@ -248,6 +248,7 @@ private:
 		unsigned int* VT, unsigned int num, double* ori_volume);
 	void newtonCDTetWithCollision();
 	void updateCollisionFreePosition();
+	void recordInitialPosition();
 	void getCollisionHessian(Matrix3d& Hessian, Vector3d& grad, std::array<double, 3>* vertex_position, 
 		double* last_step_vertex_position,
 		double collision_stiffness, unsigned int obj_No,

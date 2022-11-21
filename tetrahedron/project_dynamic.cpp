@@ -249,6 +249,7 @@ void ProjectDynamic::initialPDvariable()
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		record_collision_free_vertex_position[i + cloth->size()].resize(tetrahedron->data()[i].mesh_struct.vertex_position.size());
 	}
+
 	collision.setCollisionFreeVertex(&record_collision_free_vertex_position);
 }
 

@@ -76,7 +76,7 @@ void XPBD_IPC::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* t
 	if (perform_collision) {
 		//collision.energy = energy_per_thread.data();
 		collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio, XPBD_,true);
-		collision.setCollisionFreeVertex(&record_gloabl_CCD_vertex_position);
+		collision.setCollisionFreeVertex(&initial_vertex_position);
 		//collision.setParameter(&lambda_collision,lambda.data()+ constraint_index_start[3], collision_constraint_index_start.data(), damping_coe, sub_time_step);
 	}
 
@@ -179,7 +179,6 @@ void XPBD_IPC::reorganzieDataOfObjects()
 	mesh_struct.resize(total_obj_num);
 	vertex_index_begin_per_thread.resize(total_obj_num);
 	record_vertex_position.resize(total_obj_num);
-	address_of_record_vertex_position.resize(total_obj_num);
 	record_gloabl_CCD_vertex_position.resize(total_obj_num);
 
 	//record_outer_vertex_position.resize(total_obj_num);
@@ -222,7 +221,6 @@ void XPBD_IPC::reorganzieDataOfObjects()
 		//unfixed_vertex[i] = &cloth->data()[i].mesh_struct.unfixed_point_index;
 		edge_vertices[i] = cloth->data()[i].mesh_struct.edge_vertices.data();
 
-		address_of_record_vertex_position[i] = record_vertex_position[i].data();
 		is_vertex_fixed[i] = &cloth->data()[i].mesh_struct.is_vertex_fixed;
 		vertex_index_surface[i] = cloth->data()[i].mesh_struct.vertex_surface_index.data();
 		mass[i] = cloth->data()[i].mesh_struct.mass.data();
@@ -252,7 +250,6 @@ void XPBD_IPC::reorganzieDataOfObjects()
 		//unfixed_vertex[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct.unfixed_point_index;
 		edge_vertices[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.edge_vertices.data();
 
-		address_of_record_vertex_position[i + cloth->size()] = record_vertex_position[i + cloth->size()].data();
 		is_vertex_fixed[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct.is_vertex_fixed;
 		vertex_index_surface[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_surface_index.data();
 		mass[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.mass.data();
@@ -360,11 +357,18 @@ double XPBD_IPC::calEdgeLength()
 	return ave_length / (double)edge_num;
 }
 
+void XPBD_IPC::recordInitialPosition()
+{
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		memcpy(record_gloabl_CCD_vertex_position[i][0].data(), vertex_position[i][0].data(), 24 * record_gloabl_CCD_vertex_position[i].size());
+	}
+}
+
 void XPBD_IPC::updateCollisionFreePosition()
 {
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		memcpy(record_vertex_position[i][0].data(), vertex_position[i][0].data(), 24 * record_vertex_position[i].size());
-		memcpy(record_gloabl_CCD_vertex_position[i][0].data(), vertex_position[i][0].data(), 24 * record_gloabl_CCD_vertex_position[i].size());
+		memcpy(initial_vertex_position[i][0].data(), vertex_position[i][0].data(), 24 * record_vertex_position[i].size());
 	}
 }
 
@@ -427,6 +431,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve()
 	//std::cout << "====" << std::endl;
 
 	record_energy.clear();
+	recordInitialPosition();
 	updateCollisionFreePosition();
 	thread->assignTask(this, SET_POS_PREDICT_);
 	updateSn();
@@ -442,6 +447,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve()
 
 	while (!convergeCondition(outer_itr_num)) {
 		if (perform_collision) {
+			collision.collisionCulling();
 			collision.globalCollisionTime();
 			thread->assignTask(this, COLLISION_FREE_POSITION_);
 			updateCollisionFreePosition();
@@ -578,7 +584,7 @@ bool XPBD_IPC::checkMaxDisplacement()
 	std::array<double, 3>* previous_pos;
 	double* mass_;
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
-		previous_pos = record_gloabl_CCD_vertex_position[i].data();
+		previous_pos = initial_vertex_position[i];
 		current_pos = vertex_position[i];
 		num = mesh_struct[i]->vertex_position.size();
 		mass_ = mesh_struct[i]->mass_inv.data();
@@ -1318,7 +1324,7 @@ void XPBD_IPC::newtonCDTetBlock()
 		edge_of_a_tet = tetrahedron->data()[i].mesh_struct.edge_index_of_a_tet.data();
 		obj_No = i + cloth->size();
 		vertex_index_on_surface = tetrahedron->data()[i].mesh_struct.vertex_surface_index.data();
-		ori_vertex_pos = address_of_record_vertex_position[i + cloth->size()];
+		ori_vertex_pos = initial_vertex_position[i + cloth->size()];
 		for (unsigned int j = 0; j < size; ++j) {
 			solveNewtonCD_tetBlock(vertex_pos, stiffness, sub_time_step, mass, A, tet_neightbor_tet[j],
 				indices, volume, j, sn_, tet_neightbor_tet_common_vertex[j].data(), indices[j].data(),
@@ -1422,7 +1428,7 @@ double XPBD_IPC::getCollisionTime(std::vector<unsigned int>* triangle_of_a_tet,
 			current_vertex_position[tet_actual_unfixed_vertex_indices[i]][tet_actual_unfixed_vertex_indices[i+1]].data(), collision_time,
 			collision.vertex_triangle_pair_num_record[tet_actual_unfixed_vertex_indices[i]][surface_index],
 			collision.vertex_triangle_pair_by_vertex[tet_actual_unfixed_vertex_indices[i]] + collision.close_vt_pair_num * surface_index,
-			address_of_record_vertex_position.data(), vertex_position.data(), triangle_indices.data());
+			initial_vertex_position, vertex_position.data(), triangle_indices.data());
 
 		if (has_collider) {
 			collision.VTCollisionTimeOneVertex(initial_vertex_position[tet_actual_unfixed_vertex_indices[i]][tet_actual_unfixed_vertex_indices[i+1]].data(),
@@ -1447,7 +1453,7 @@ double XPBD_IPC::getCollisionTime(std::vector<unsigned int>* triangle_of_a_tet,
 			current_vertex_position[*i][triangle_[2]].data(), collision_time,
 			collision.triangle_vertex_pair_num_record[*i][*(i+1)],
 			collision.triangle_vertex_pair_by_triangle[*i] + collision.close_tv_pair_num * (*(i+1)),
-			address_of_record_vertex_position.data(), vertex_position.data());
+			initial_vertex_position, vertex_position.data());
 		if (has_collider) {
 			collision.TVCollisionTimeOneTriangle(initial_vertex_position[*i][triangle_[0]].data(), initial_vertex_position[*i][triangle_[1]].data(),
 				initial_vertex_position[*i][triangle_[2]].data(),
@@ -1467,7 +1473,7 @@ double XPBD_IPC::getCollisionTime(std::vector<unsigned int>* triangle_of_a_tet,
 			current_vertex_position[*i][*(edge_ + 1)].data(), collision_time,
 			collision.edge_edge_pair_num_record[*i][*(i+1)],
 			collision.edge_edge_pair_by_edge[*i] + collision.close_ee_pair_num * (*(i+1)),
-			address_of_record_vertex_position.data(), vertex_position.data(), edge_vertices.data());
+			initial_vertex_position, vertex_position.data(), edge_vertices.data());
 		if (has_collider) {
 			collision.EECollisionTimeOneEdgeAll(initial_vertex_position[*i][*edge_].data(),
 				initial_vertex_position[*i][*(edge_ + 1)].data(),
@@ -1500,7 +1506,7 @@ double XPBD_IPC::getCollisionTime(std::vector<unsigned int>* triangle_of_a_tet,
 				current_vertex_position[tet_actual_unfixed_vertex_indices[i]].data(), collision_time,
 				collision.vertex_triangle_pair_num_record[obj_No][vertex_index_on_surface[tet_actual_unfixed_vertex_indices[i]]],
 				collision.vertex_triangle_pair_by_vertex[obj_No] + collision.close_vt_pair_num * vertex_index_on_surface[tet_actual_unfixed_vertex_indices[i]],
-				address_of_record_vertex_position.data(), vertex_position.data(), triangle_indices.data());
+				this->initial_vertex_position.data(), vertex_position.data(), triangle_indices.data());
 			if (has_collider) {
 				collision.VTCollisionTimeOneVertex(initial_vertex_position[tet_actual_unfixed_vertex_indices[i]].data(),
 					current_vertex_position[tet_actual_unfixed_vertex_indices[i]].data(), collision_time,
@@ -1523,7 +1529,7 @@ double XPBD_IPC::getCollisionTime(std::vector<unsigned int>* triangle_of_a_tet,
 				current_vertex_position[triangle_[2]].data(), collision_time,
 				collision.triangle_vertex_pair_num_record[obj_No][*i],
 				collision.triangle_vertex_pair_by_triangle[obj_No] + collision.close_tv_pair_num * (*i),
-				address_of_record_vertex_position.data(), vertex_position.data());
+				this->initial_vertex_position.data(), vertex_position.data());
 			if (has_collider) {
 				collision.TVCollisionTimeOneTriangle(initial_vertex_position[triangle_[0]].data(), initial_vertex_position[triangle_[1]].data(),
 					initial_vertex_position[triangle_[2]].data(),
@@ -1543,7 +1549,7 @@ double XPBD_IPC::getCollisionTime(std::vector<unsigned int>* triangle_of_a_tet,
 				current_vertex_position[*(edge_ + 1)].data(), collision_time,
 				collision.edge_edge_pair_num_record[obj_No][*i],
 				collision.edge_edge_pair_by_edge[obj_No] + collision.close_ee_pair_num * (*i),
-				address_of_record_vertex_position.data(), vertex_position.data(), edge_vertices.data());
+				this->initial_vertex_position.data(), vertex_position.data(), edge_vertices.data());
 			if (has_collider) {
 				collision.EECollisionTimeOneEdgeAll(initial_vertex_position[*edge_].data(),
 					initial_vertex_position[*(edge_ + 1)].data(),
@@ -2734,13 +2740,13 @@ void XPBD_IPC::solveEE_collisionBlock(unsigned int obj_No_0, unsigned int primit
 	}
 
 	double t = getCollisionTime(&around_triangle, &around_edge, unfixed_pair_vertex_index, unfixed_num, vertex_index_surface.data(),
-		vertex_position.data(), address_of_record_vertex_position.data());
+		vertex_position.data(), initial_vertex_position.data());
 
 	if (t < 1.0) {
 		t *= 0.9;
 		double* p_c; double* p_i;
 		for (int i = 0; i < unfixed_num; i += 2) {
-			p_i = address_of_record_vertex_position[unfixed_pair_vertex_index[i]][unfixed_pair_vertex_index[i + 1]].data();
+			p_i = initial_vertex_position[unfixed_pair_vertex_index[i]][unfixed_pair_vertex_index[i + 1]].data();
 			p_c = vertex_position[unfixed_pair_vertex_index[i]][unfixed_pair_vertex_index[i + 1]].data();
 			COLLISION_POS(p_c, t, p_i, p_c);
 			memcpy(p_i, p_c, 24);
@@ -2748,7 +2754,7 @@ void XPBD_IPC::solveEE_collisionBlock(unsigned int obj_No_0, unsigned int primit
 	}
 	else {
 		for (int i = 0; i < unfixed_num; i += 2) {
-			memcpy(address_of_record_vertex_position[unfixed_pair_vertex_index[i]][unfixed_pair_vertex_index[i + 1]].data(),
+			memcpy(initial_vertex_position[unfixed_pair_vertex_index[i]][unfixed_pair_vertex_index[i + 1]].data(),
 				vertex_position[unfixed_pair_vertex_index[i]][unfixed_pair_vertex_index[i + 1]].data(), 24);
 		}
 	}
@@ -2827,9 +2833,9 @@ void XPBD_IPC::solveVT_collisionBlock(unsigned int vertex_obj_no, unsigned int v
 
 	double tt = result.norm();
 
-	if (tt > 1e-2) {
-		std::cout << "displacement vt" << triangle_collider <<" "<< vertex_collider << " " << vertex_index << " " << triangle_index << " " << tt << std::endl;
-	}
+	//if (tt > 1e-2) {
+	//	std::cout << "displacement vt" << triangle_collider <<" "<< vertex_collider << " " << vertex_index << " " << triangle_index << " " << tt << std::endl;
+	//}
 
 	for (int i = 0; i < unfixed_num; i+=2) {
 		vertex_index_ = unfixed_pair_vertex_index[i + 1];
@@ -2838,13 +2844,13 @@ void XPBD_IPC::solveVT_collisionBlock(unsigned int vertex_obj_no, unsigned int v
 	}
 
 	double t = getCollisionTime(&around_triangle, &around_edge, unfixed_pair_vertex_index, unfixed_num, vertex_index_surface.data(),
-		vertex_position.data(), address_of_record_vertex_position.data());
+		vertex_position.data(), initial_vertex_position.data());
 
 	if (t < 1.0) {
 		t *= 0.9;
 		double* p_c; double* p_i;
 		for (int i = 0; i < unfixed_num; i += 2) {
-			p_i = address_of_record_vertex_position[unfixed_pair_vertex_index[i]][unfixed_pair_vertex_index[i + 1]].data();
+			p_i = initial_vertex_position[unfixed_pair_vertex_index[i]][unfixed_pair_vertex_index[i + 1]].data();
 			p_c = vertex_position[unfixed_pair_vertex_index[i]][unfixed_pair_vertex_index[i + 1]].data();
 			COLLISION_POS(p_c, t, p_i, p_c);
 			memcpy(p_i, p_c, 24);
@@ -2852,7 +2858,7 @@ void XPBD_IPC::solveVT_collisionBlock(unsigned int vertex_obj_no, unsigned int v
 	}
 	else {
 		for (int i = 0; i < unfixed_num; i += 2) {
-			memcpy(address_of_record_vertex_position[unfixed_pair_vertex_index[i]][unfixed_pair_vertex_index[i+1]].data(), 
+			memcpy(initial_vertex_position[unfixed_pair_vertex_index[i]][unfixed_pair_vertex_index[i+1]].data(),
 				vertex_position[unfixed_pair_vertex_index[i]][unfixed_pair_vertex_index[i+1]].data(), 24);
 		}
 	}
@@ -3120,7 +3126,7 @@ void XPBD_IPC::computeVelocity(int thread_No)
 	double delta_t = sub_time_step / damp_coe;
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		vertex_pos = vertex_position[i];
-		initial_vertex_pos = initial_vertex_position[i];
+		initial_vertex_pos = record_gloabl_CCD_vertex_position[i].data();
 		vertex_end = vertex_index_begin_per_thread[i][thread_No + 1];
 		velocity_ = velocity[i].data();
 		for (unsigned int j = vertex_index_begin_per_thread[i][thread_No]; j < vertex_end; ++j) {
@@ -3317,7 +3323,7 @@ void XPBD_IPC::computeCollisionFreePosition(int thread_No)
 	for (unsigned int i = 0; i <total_obj_num; ++i) {
 		index_end = vertex_index_begin_per_thread[i][thread_No + 1];
 		q_end = vertex_position[i];
-		q_pre = record_gloabl_CCD_vertex_position[i].data();
+		q_pre = initial_vertex_position[i];
 		for (unsigned int j = vertex_index_begin_per_thread[i][thread_No]; j < index_end; ++j) {
 			q_end[j][0] = q_pre[j][0] + collision_time * (q_end[j][0] - q_pre[j][0]);
 			q_end[j][1] = q_pre[j][1] + collision_time * (q_end[j][1] - q_pre[j][1]);
