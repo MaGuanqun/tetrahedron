@@ -14,7 +14,7 @@
 #include"primitive_distance.h"
 #include"DCD.h"
 #include"../basic/floor.h"
-
+#include"../XPBD/second_order.h"
 
 
 //#include"mesh_patch.h"
@@ -75,6 +75,28 @@ public:
 	unsigned int** triangle_vertex_collider_pair_num_record;// record the number of vertex pairs for every triangle. For fast initialize, we recoed it in this variable
 	unsigned int** edge_edge_collider_pair_by_edge; //for coordinate descent, we should store both (e1,e2) & (e2,e1)
 	unsigned int** edge_edge_collider_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
+
+
+
+
+	std::vector<std::vector<std::vector<int>>>vt_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 3 0 1 3 or 4 0 1 2 3, every element 5 number
+	std::vector < std::vector<std::vector<double>>> vt_hessian_record; //size 12x12
+	std::vector < std::vector<std::vector<int>>>ee_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 3 0 1 3 or 4 0 1 2 3
+	std::vector < std::vector<std::vector<double>>>ee_hessian_record;//every hessian is a 12x12 hessian
+
+	std::vector <std::vector<double>>vt_colldier_hessian_record;//every hessian is a 3x3 hessian, here sum all hessian around one vertex together.
+	bool** vt_colldier_hessian_record_is_not_empty;//if false, means the hessian is zero, just skip it
+
+	std::vector < std::vector<std::vector<int>>>ee_collider_hessian_record_index; //record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 1  0  or 2 0 1. First can only be 1 or 2
+	std::vector < std::vector<std::vector<double>>>ee_collider_hessian_record;//every hessian is at most  6x6 hessian
+
+	std::vector < std::vector<std::vector<double>>>tv_colldier_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 3 0 1 3 or 4 0 1 2 3   for consistant, wo rescord the vertex_index as 0, though it will never be used
+	std::vector < std::vector<std::vector<double>>>tv_colldier_hessian_record;//every hessian is at most a 12x12 hessian
+
+	std::vector<std::vector<std::vector<int*>>> tv_hessian_record_index;
+	std::vector<std::vector<std::vector<double*>>> tv_hessian_record;
+
+
 
 
 	std::vector<std::vector<double>> VT_volume;
@@ -244,8 +266,13 @@ public:
 	double tolerance;
 
 
+	void computeHessian();
+
+	void computeHessianPerThread(int thread_No);
 
 private:
+
+	void computeVTHessian(unsigned int* VT, unsigned int num, double d_hat_2, double* vertex_position_, double* hessian_record, int* hessian_record_index, double stiffness, double* grad_record);
 
 	void EECollisionTimeOneEdge(double* initial_pos_a0, double* initial_pos_a1, double* current_pos_a0,
 		double* current_pos_a1,
@@ -777,6 +804,8 @@ private:
 
 	void initialPairRecord();
 
+	void initialHessianRecord();
+
 	void initialPairByElement();
 	void initialVolume();
 	void computeVTVolume(int thread_No);
@@ -800,4 +829,5 @@ private:
 	void initialCollisionTimeRecord();
 
 	void testColliderPair();
+	SecondOrderConstraint second_order_constraint;
 };

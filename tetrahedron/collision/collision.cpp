@@ -79,6 +79,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	//testPairEven();
 	if (record_pair_by_element) {
 		initialPairRecord();
+		initialHessianRecord();
 	}
 	else {
 		initialPair();
@@ -2230,6 +2231,38 @@ void Collision::findClosePair()
 
 	//testColliderPair();
 }
+
+
+
+void Collision::computeHessian()
+{
+
+}
+
+
+void Collision::computeHessianPerThread(int thread_No)
+{
+
+}
+
+
+void Collision::computeVTHessian(unsigned int* VT, unsigned int num, double d_hat_2, double* vertex_position_,  double* hessian_record, int* hessian_record_index, double stiffness,  double* grad_record)
+{
+	int* triangle_vertex;
+	MatrixXd Hessian; VectorXd grad;
+	for (unsigned int i = 0; i < num; ++i) {
+		triangle_vertex = triangle_indices[VT[i]][VT[i + 1]].data();
+		second_order_constraint.computeBarrierVTGradientHessian(Hessian, grad, vertex_position_, vertex_position[VT[i]][triangle_vertex[0]].data(),
+			vertex_position[VT[i]][triangle_vertex[1]].data(), vertex_position[VT[i]][triangle_vertex[2]].data(), d_hat_2, hessian_record_index, stiffness);
+		memcpy(hessian_record, Hessian.data(), Hessian.size() << 3);
+		memcpy(grad_record, grad.data(), grad.size() << 3);
+		hessian_record += 1152;
+		grad_record += 96;
+		hessian_record_index += 5;
+	}	
+}
+
+computeVTColliderHessian
 
 
 
@@ -7849,6 +7882,68 @@ void Collision::initialVolume()
 }
 
 
+
+void Collision::initialHessianRecord()
+{
+
+	vt_hessian_record_index.resize(total_obj_num);
+	vt_hessian_record.resize(total_obj_num);
+	ee_hessian_record_index.resize(total_obj_num);
+	ee_hessian_record.resize(total_obj_num);
+
+	vt_colldier_hessian_record.resize(total_obj_num);
+	vt_colldier_hessian_record_is_not_empty=new bool*[total_obj_num];
+
+	ee_collider_hessian_record_index.resize(total_obj_num);
+	ee_collider_hessian_record.resize(total_obj_num);
+
+	tv_colldier_hessian_record_index.resize(total_obj_num);
+	tv_colldier_hessian_record.resize(total_obj_num);
+
+	tv_hessian_record_index.resize(total_obj_num);
+	tv_hessian_record.resize(total_obj_num);
+
+
+	for (int i = 0; i < total_obj_num; ++i) {
+
+		vt_hessian_record_index[i].resize(vertex_index_start_per_thread[i][thread_num]);
+		vt_hessian_record[i].resize(vertex_index_start_per_thread[i][thread_num]);
+
+		ee_hessian_record_index[i].resize(mesh_struct[i]->edge_length.size());
+		ee_hessian_record[i].resize(mesh_struct[i]->edge_length.size());
+
+		tv_hessian_record_index.resize(triangle_index_start_per_thread[i][thread_num]);
+		tv_hessian_record.resize(triangle_index_start_per_thread[i][thread_num]);
+
+		for (int j = 0; j < vertex_index_start_per_thread[i][thread_num]; ++j) {
+			vt_hessian_record_index[i][j].reserve(50);
+			vt_hessian_record[i][j].reserve(1440);
+		}
+
+		for (int j = 0; j < ee_hessian_record_index[i].size(); ++j) {
+			ee_hessian_record_index[i][j].reserve(50);
+			ee_hessian_record[i][j].reserve(1440);
+		}
+
+		if (has_collider) {
+
+			vt_colldier_hessian_record[i].resize(vertex_index_start_per_thread[i][thread_num]);
+			vt_colldier_hessian_record_is_not_empty[i] = new bool[vertex_index_start_per_thread[i][thread_num]];
+
+			ee_collider_hessian_record_index[i].resize(mesh_struct[i]->edge_length.size());
+			ee_collider_hessian_record[i].resize(mesh_struct[i]->edge_length.size());
+
+			tv_colldier_hessian_record_index[i].resize(triangle_index_start_per_thread[i][thread_num]);
+			tv_colldier_hessian_record[i].resize(triangle_index_start_per_thread[i][thread_num]);
+
+
+		}
+	}
+}
+
+
+
+
 void Collision::initialPairRecord()
 {
 	vertex_triangle_pair_by_vertex = new unsigned int* [total_obj_num];
@@ -7888,6 +7983,12 @@ void Collision::initialPairRecord()
 		triangle_vertex_pair_num_record[i] = new unsigned int[mesh_struct[i]->triangle_indices.size()];// 
 		memset(triangle_vertex_pair_num_record[i], 0, 4 * mesh_struct[i]->triangle_indices.size());
 
+	
+
+
+
+
+
 		if (has_collider) {
 			vertex_obj_triangle_collider_pair_by_vertex[i] = new unsigned int[close_vt_collider_pair_num * vertex_index_start_per_thread[i][thread_num]];
 			memset(vertex_obj_triangle_collider_pair_by_vertex[i], 0, 4 * (close_vt_collider_pair_num * vertex_index_start_per_thread[i][thread_num]));
@@ -7907,6 +8008,10 @@ void Collision::initialPairRecord()
 
 			edge_edge_collider_pair_num_record[i] = new unsigned int[edge_index_start_per_thread[i][thread_num]];// 
 			memset(edge_edge_collider_pair_num_record[i], 0, 4 * edge_index_start_per_thread[i][thread_num]);
+
+
+		
+
 
 
 		}

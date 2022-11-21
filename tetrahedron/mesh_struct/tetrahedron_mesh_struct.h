@@ -25,6 +25,14 @@ public:
 
 
 
+	std::vector<std::vector<unsigned int>> triangle_index_of_a_tet_color;// record surface triangle index which contains by a tet color group
+	std::vector<std::vector<unsigned int>> edge_index_of_a_tet_color;// record edge index which contains by a tet color group
+	std::vector<std::vector<unsigned int>> vertex_index_of_a_tet_color;// record vertex index which contains by a tet color group
+
+	std::vector<std::vector<unsigned int>> triangle_index_of_a_tet_color_per_thread_start;
+	std::vector<std::vector<unsigned int>> edge_index_of_a_tet_color_per_thread_start;
+	std::vector<std::vector<unsigned int>> vertex_index_of_a_tet_color_per_thread_start;
+
 
 	std::vector<unsigned int> tetrahedron_index_begin_per_thread;
 	void setVolume(int thread_No);
@@ -79,7 +87,11 @@ public:
 
 	void testTetAroundFaceEdge();
 
+	void obtainVETofColors();
+
+
 private:
+	void obtainVETofAColor(int color);
 	struct TetrahedronFace {
 		std::array<int, 3> index;
 		int sorted_index[3];

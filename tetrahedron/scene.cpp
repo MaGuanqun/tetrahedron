@@ -646,6 +646,7 @@ void Scene::setGroup()
 		for (int i = 0; i < tetrahedron.size(); ++i) {
 			if (tetrahedron[i].mesh_struct.indices.size() > 1) {
 				graph_color.graphColor(tetrahedron[i].mesh_struct.tet_tet_index, tetrahedron[i].mesh_struct.unconnected_tet_index);
+				tetrahedron[i].mesh_struct.obtainVETofColors();
 			}
 			else {
 				tetrahedron[i].mesh_struct.unconnected_tet_index.resize(1);

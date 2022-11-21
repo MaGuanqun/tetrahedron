@@ -1258,13 +1258,13 @@ void XPBD_IPC::newtonEECollisionBlock()
 
 void XPBD_IPC::newtonCDBlock()
 {
-	newtonEECollisionBlock();
-	newtonVTCollisionBlock();
-	if (has_collider) {
-		newtonEEColliderCollisionBlock();
-		newtonVTColliderCollisionBlock();
-		newtonTVColliderCollisionBlock();
-	}
+	//newtonEECollisionBlock();
+	//newtonVTCollisionBlock();
+	//if (has_collider) {
+	//	newtonEEColliderCollisionBlock();
+	//	newtonVTColliderCollisionBlock();
+	//	newtonTVColliderCollisionBlock();
+	//}
 	newtonCDTetBlock();
 }
 
