@@ -744,11 +744,11 @@ void TetrahedronMeshStruct::obtainVETofColors()
 {
 	triangle_index_of_a_tet_color.resize(unconnected_tet_index.size());
 	edge_index_of_a_tet_color.resize(unconnected_tet_index.size());
-	vertex_index_of_a_tet_color.resize(unconnected_tet_index.size());
+	surface_vertex_index_of_a_tet_color.resize(unconnected_tet_index.size());
 
 	triangle_index_of_a_tet_color_per_thread_start.resize(unconnected_tet_index.size());
 	edge_index_of_a_tet_color_per_thread_start.resize(unconnected_tet_index.size());
-	vertex_index_of_a_tet_color_per_thread_start.resize(unconnected_tet_index.size());
+	surface_vertex_index_of_a_tet_color_per_thread_start.resize(unconnected_tet_index.size());
 
 
 	for (unsigned int i = 0; i < unconnected_tet_index.size(); ++i) {
@@ -761,7 +761,7 @@ void TetrahedronMeshStruct::obtainVETofColors()
 
 void TetrahedronMeshStruct::obtainVETofAColor(int color)
 {
-	std::vector<unsigned int>* element_index_of_a_tet_color = &this->vertex_index_of_a_tet_color[color];
+	std::vector<unsigned int>* element_index_of_a_tet_color = &this->surface_vertex_index_of_a_tet_color[color];
 	element_index_of_a_tet_color->reserve(unconnected_tet_index.size() * 4);
 	std::vector<bool> is_used((std::max)((std::max)(edge_length.size(), triangle_indices.size()), vertex_position.size()),false);
 	//vertex
@@ -817,11 +817,11 @@ void TetrahedronMeshStruct::obtainVETofAColor(int color)
 	element_index_of_a_tet_color->shrink_to_fit();
 
 
-	vertex_index_of_a_tet_color_per_thread_start[color].resize(thread->thread_num + 1,0);
+	surface_vertex_index_of_a_tet_color_per_thread_start[color].resize(thread->thread_num + 1,0);
 	edge_index_of_a_tet_color_per_thread_start[color].resize(thread->thread_num + 1,0);
 	triangle_index_of_a_tet_color_per_thread_start[color].resize(thread->thread_num + 1,0);
 
-	arrangeIndex(thread->thread_num, vertex_index_of_a_tet_color[color].size(), vertex_index_of_a_tet_color_per_thread_start[color].data());
+	arrangeIndex(thread->thread_num, surface_vertex_index_of_a_tet_color[color].size(), surface_vertex_index_of_a_tet_color_per_thread_start[color].data());
 	arrangeIndex(thread->thread_num, edge_index_of_a_tet_color[color].size(), edge_index_of_a_tet_color_per_thread_start[color].data());
 	arrangeIndex(thread->thread_num, triangle_index_of_a_tet_color[color].size(), triangle_index_of_a_tet_color_per_thread_start[color].data());
 

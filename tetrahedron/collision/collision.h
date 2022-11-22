@@ -81,21 +81,31 @@ public:
 
 	std::vector<std::vector<std::vector<int>>>vt_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 3 0 1 3 or 4 0 1 2 3, every element 5 number
 	std::vector < std::vector<std::vector<double>>> vt_hessian_record; //size 12x12
+	std::vector < std::vector<std::vector<double>>> vt_grad_record;
+
 	std::vector < std::vector<std::vector<int>>>ee_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 3 0 1 3 or 4 0 1 2 3
 	std::vector < std::vector<std::vector<double>>>ee_hessian_record;//every hessian is a 12x12 hessian
+	std::vector < std::vector<std::vector<double>>>ee_grad_record;//every grad is a 12 hessian
 
 	std::vector <std::vector<double>>vt_colldier_hessian_record;//every hessian is a 3x3 hessian, here sum all hessian around one vertex together.
-	bool** vt_colldier_hessian_record_is_not_empty;//if false, means the hessian is zero, just skip it
+	std::vector <std::vector<double>>vt_colldier_grad_record;//every hessian is a 3x3 hessian, here sum all hessian around one vertex together.
+	//bool** vt_colldier_hessian_record_is_not_empty;//if false, means the hessian is zero, just skip it
 
 	std::vector < std::vector<std::vector<int>>>ee_collider_hessian_record_index; //record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 1  0  or 2 0 1. First can only be 1 or 2
 	std::vector < std::vector<std::vector<double>>>ee_collider_hessian_record;//every hessian is at most  6x6 hessian
+	std::vector < std::vector<std::vector<double>>>ee_collider_grad_record;//every grad is at most  6 
 
-	std::vector < std::vector<std::vector<double>>>tv_colldier_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 3 0 1 3 or 4 0 1 2 3   for consistant, wo rescord the vertex_index as 0, though it will never be used
-	std::vector < std::vector<std::vector<double>>>tv_colldier_hessian_record;//every hessian is at most a 12x12 hessian
+	std::vector < std::vector<std::vector<int>>>tv_colldier_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 2 0 2 or 3 0 1 2   the collider vertex 0 has been removed, every triangle vertex index -1, consistent with the matrix order
+	std::vector < std::vector<std::vector<double>>>tv_colldier_hessian_record;//every hessian is at most a 9x9 hessian
+	std::vector < std::vector<std::vector<double>>>tv_colldier_grad_record;//every hessian is at most a 9 vector
 
-	std::vector<std::vector<std::vector<int*>>> tv_hessian_record_index;
-	std::vector<std::vector<std::vector<double*>>> tv_hessian_record;
+	std::vector<std::vector<std::vector<int>>> tv_hessian_record_index;
+	std::vector<std::vector<std::vector<double>>> tv_hessian_record;
+	std::vector<std::vector<std::vector<double>>> tv_grad_record;
 
+
+
+	bool** vertex_belong_to_color_group;
 
 
 
@@ -269,11 +279,38 @@ public:
 
 	void computeHessian();
 
-	void computeHessianPerThread(int thread_No);
+	void computeHessianPerThread(int thread_No, int color_No);
 
 private:
 
 	void computeVTHessian(unsigned int* VT, unsigned int num, double d_hat_2, double* vertex_position_, double* hessian_record, int* hessian_record_index, double stiffness, double* grad_record);
+	void computeVTColliderHessian(unsigned int* VT, unsigned int num, double d_hat_2, double* vertex_position_, double* hessian_record,
+		double stiffness, double* grad_record);
+
+	void computeTVHessian(unsigned int* TV, unsigned int num, double d_hat_2, double* vertex_position_0,
+		double* vertex_position_1, double* vertex_position_2,
+		double* hessian_record, double stiffness, double* grad_record, int* hessian_record_index, unsigned int obj_No,
+		bool* vertex_belong_color_group);
+
+
+
+	void computeTVColliderHessian(unsigned int* TV, unsigned int num, double d_hat_2, double* vertex_position_0,
+		double* vertex_position_1, double* vertex_position_2,
+		double* hessian_record, double stiffness, double* grad_record, int* hessian_record_index);
+
+	void computeEEHessian(unsigned int* EE, unsigned int num, double d_hat_2, double* ea0_, double* ea1,
+		double* hessian_record, int* hessian_record_index, double stiffness, double* grad_record,
+		double edge_length_0);
+
+	void computeEEColliderHessian(unsigned int* EE, unsigned int num, double d_hat_2, double* ea0_, double* ea1,
+		double* hessian_record, int* hessian_record_index, double stiffness, double* grad_record, 
+		double edge_length_0);
+
+	void setEEColliderHessianFix(MatrixXd& Hessian, VectorXd& grad, double* hessian_record,
+		int* curent_hessian_record_local , double* grad_record, int* hessian_record_index);
+
+	void setTVColliderHessianFix(MatrixXd& Hessian, VectorXd& grad, double* hessian_record,
+		int* curent_hessian_record_local, double* grad_record, int* hessian_record_index);
 
 	void EECollisionTimeOneEdge(double* initial_pos_a0, double* initial_pos_a1, double* current_pos_a0,
 		double* current_pos_a1,
@@ -340,6 +377,10 @@ private:
 	Thread* thread;
 	PredictiveContact predictive_contact;
 
+
+
+	std::vector<double*> rest_edge_length;
+	std::vector<double*> rest_edge_length_collider;
 
 	bool use_BVH;
 
@@ -543,6 +584,17 @@ private:
 
 	std::vector<double*>mass;
 	std::vector<double*>mass_inv;
+
+
+	std::vector<std::vector<unsigned int>*> triangle_index_of_a_tet_color;
+	std::vector<std::vector<unsigned int>*> edge_index_of_a_tet_color;
+	std::vector<std::vector<unsigned int>*> vertex_index_of_a_tet_color;
+
+	std::vector<std::vector<unsigned int>*> triangle_index_of_a_tet_color_per_thread_start;
+	std::vector<std::vector<unsigned int>*> edge_index_of_a_tet_color_per_thread_start;
+	std::vector<std::vector<unsigned int>*> vertex_index_of_a_tet_color_per_thread_start;
+
+	std::vector<int>total_vertex_num;
 
 	void reorganzieDataOfObjects();
 	bool has_collider;
@@ -794,7 +846,7 @@ private:
 	void findVT_ClosePairSingleVertex(double* current_position, unsigned int* trianlge_index,
 		unsigned int triangle_num, std::vector<std::array<double, 3>*>& position, 
 		std::vector<std::array<int, 3>*>& triangle_vertex_index,
-		unsigned int* close_triangle_index, unsigned int& close_triangle_num, bool* is_pair_exist);
+		unsigned int* close_triangle_index, unsigned int& computeEEVolume, bool* is_pair_exist);
 	void findEE_ClosePairSingleEdge(double* current_position_a0, double* current_position_a1,
 		unsigned int* edge_index, unsigned int edge_num, std::vector<std::array<double, 3>*>& position,
 		std::vector<unsigned int*>& edge_vertex_index,
@@ -831,4 +883,8 @@ private:
 
 	void testColliderPair();
 	SecondOrderConstraint second_order_constraint;
+
+	void updateVertexBelongColorGroup(int color_No);
+
+
 };

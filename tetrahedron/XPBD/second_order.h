@@ -77,7 +77,7 @@ public:
 		Matrix<double, 3, 4>& A, int* vertex_in_sys, int* tet_vetex_indices,
 		MatrixXd& sys_matrix, double volume, VectorXd& grad);
 
-	void computeBarrierVTGradientHessian(MatrixXd& Hessian, VectorXd& grad, double* p, double* t0,
+	bool computeBarrierVTGradientHessian(MatrixXd& Hessian, VectorXd& grad, double* p, double* t0,
 		double* t1, double* t2, double d_hat_2, int* vertex_in_pair, double  stiffness);
 
 
@@ -86,6 +86,10 @@ public:
 
 	void computeEEBarrierGradientHessian(double* ea0, double* ea1, double* eb0, double* eb1, MatrixXd& Hessian_, VectorXd& grad_,
 		int* vertex_order_in_system, double stiffness, double d_hat_2, double rest_length_0, double rest_length_1);
+
+	bool computeBarrierEEGradientHessian(double* ea0, double* ea1, double* eb0, double* eb1, MatrixXd& h, VectorXd& g,
+		int* vertex_in_pair, double stiffness, double d_hat_2, double rest_length_0, double rest_length_1);
+
 
 	void computeVTBarrierGradientHessianTest(MatrixXd& Hessian_, VectorXd& grad_, double* p, double* t0, double* t1, double* t2,
 		double d_hat_2, int* triangle_vertex_order_in_system, double stiffness, double& barrier);
@@ -102,9 +106,9 @@ private:
 	void setTetHessianFromBarrierHessian(MatrixXd& Hessian_system, VectorXd& grad_system, MatrixXd& Hessian_, VectorXd& grad_,
 		int* triangle_vertex_order_in_system, int* vertex_in_pair, int vertex_in_use);
 
-	void 	setBarrierGHWithMollifier(double barrier_, MatrixXd& Hessian_, VectorXd& grad_,  MatrixXd& dis_h, VectorXd& dis_g,
+	void 	setBarrierGHWithMollifier(double barrier_, MatrixXd& dis_h, VectorXd& dis_g,
 		double* ea0, double* ea1, double* eb0, double* eb1,double eps_x, 
-		double ee_cross_norm_2, double mollifier, double b_grad, double b_hessian, int* vertex_order_in_system);
+		double ee_cross_norm_2, double mollifier, double b_grad, double b_hessian);
 
 
 	void setFourVertexHessianFromBarrierHessian(MatrixXd& Hessian_system, VectorXd& grad_system, MatrixXd& Hessian_, VectorXd& grad_,
