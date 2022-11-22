@@ -602,6 +602,21 @@ bool XPBD_IPC::checkMaxDisplacement()
 }
 
 
+void XPBD_IPC::computeTetHessianInAdvance(int thread_No, int color_No)
+{
+	for (int i = 0; i < tetrahedron->size(); ++i) {
+		for (int j = 0; j < tetrahedron->data()[i].mesh_struct.unconnected_tet_index.size(); ++j) {
+			if (j != color_No) {
+				// I should compute tet around one group (exclude the group it self)
+			}
+
+		}
+
+	}
+}
+
+
+
 bool XPBD_IPC::convergeCondition(unsigned int iteration_num)
 {
 	if (iteration_num < min_outer_iteration) {//max_iteration_number

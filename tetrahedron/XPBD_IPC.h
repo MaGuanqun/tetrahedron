@@ -70,8 +70,10 @@ public:
 	unsigned int outer_max_iteration_number;
 	double energy_converge_standard;
 
+	void computeTetHessianInAdvance(int thread_No, int color_No);
+
 private:
-	void coordinateDescent();
+
 	Floor* floor;
 	double gravity[3];
 

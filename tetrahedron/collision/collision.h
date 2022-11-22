@@ -62,51 +62,52 @@ public:
 	std::vector<std::vector<double>>edge_edge_target_pos_record;
 
 
-	unsigned int** vertex_triangle_pair_by_vertex;//store pair by every vertex. (obj_index,triangle_index)
+	unsigned int** vertex_triangle_pair_by_vertex;//store pair by every vertex. (obj_index,triangle_index, )
 	unsigned int** vertex_triangle_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
-	unsigned int** triangle_vertex_pair_by_triangle; //store pair by triangle. for every triangle, store vertex: (obj_index,vertex_index)
+	unsigned int** triangle_vertex_pair_by_triangle; //store 3 items, store pair by triangle. for every triangle, store vertex: (obj_index,vertex_index, index in vertex_triangle_pair_by_vertex,)
 	unsigned int** triangle_vertex_pair_num_record;// record the number of vertex pairs for every triangle. For fast initialize, we recoed it in this variable
-	unsigned int** edge_edge_pair_by_edge; //for coordinate descent, we should store both (e1,e2) & (e2,e1)
+	unsigned int** edge_edge_pair_by_edge; //for coordinate descent, we should store both (e1,e2) & (e2,e1), store 
 	unsigned int** edge_edge_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
 	unsigned int** vertex_obj_triangle_collider_pair_by_vertex;// store pair by every vertex. (obj_index, triangle_index)
 	unsigned int** vertex_obj_triangle_collider_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
 
-	unsigned int** triangle_vertex_collider_pair_by_triangle; //store pair by triangle. for every triangle, store vertex: (obj_index,vertex_index)
+	unsigned int** triangle_vertex_collider_pair_by_triangle; //store pair by triangle. for every triangle, store vertex: (obj_index,vertex_index, )
 	unsigned int** triangle_vertex_collider_pair_num_record;// record the number of vertex pairs for every triangle. For fast initialize, we recoed it in this variable
-	unsigned int** edge_edge_collider_pair_by_edge; //for coordinate descent, we should store both (e1,e2) & (e2,e1)
+	unsigned int** edge_edge_collider_pair_by_edge; //for coordinate descent, we should store both (e1,e2) & (e2,e1),
 	unsigned int** edge_edge_collider_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
 
 
 
+	unsigned int** vertex_triangle_pair_num_record_prefix_sum;
+	unsigned int** edge_edge_pair_num_record_prefix_sum;
+	unsigned int** triangle_vertex_collider_num_record_prefix_sum;
+	unsigned int** edge_edge_collider_num_record_prefix_sum;
 
-	std::vector<std::vector<std::vector<int>>>vt_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 3 0 1 3 or 4 0 1 2 3, every element 5 number
-	std::vector < std::vector<std::vector<double>>> vt_hessian_record; //size 12x12
-	std::vector < std::vector<std::vector<double>>> vt_grad_record;
 
-	std::vector < std::vector<std::vector<int>>>ee_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 3 0 1 3 or 4 0 1 2 3
-	std::vector < std::vector<std::vector<double>>>ee_hessian_record;//every hessian is a 12x12 hessian
-	std::vector < std::vector<std::vector<double>>>ee_grad_record;//every grad is a 12 hessian
+	std::vector<int>vt_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 3 0 1 3 or 4 0 1 2 3, every element 5 number
+	std::vector<double> vt_hessian_record; //size 12x12
+	std::vector<double> vt_grad_record;
 
-	std::vector <std::vector<double>>vt_colldier_hessian_record;//every hessian is a 3x3 hessian, here sum all hessian around one vertex together.
-	std::vector <std::vector<double>>vt_colldier_grad_record;//every hessian is a 3x3 hessian, here sum all hessian around one vertex together.
+	std::vector<int>ee_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 3 0 1 3 or 4 0 1 2 3
+	std::vector<double>ee_hessian_record;//every hessian is a 12x12 hessian
+	std::vector<double>ee_grad_record;//every grad is a 12 hessian
+
+	std::vector<double>vt_colldier_hessian_record;//every hessian is a 3x3 hessian, here sum all hessian around one vertex together.
+	std::vector<double>vt_colldier_grad_record;//every hessian is a 3x3 hessian, here sum all hessian around one vertex together.
 	//bool** vt_colldier_hessian_record_is_not_empty;//if false, means the hessian is zero, just skip it
 
-	std::vector < std::vector<std::vector<int>>>ee_collider_hessian_record_index; //record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 1  0  or 2 0 1. First can only be 1 or 2
-	std::vector < std::vector<std::vector<double>>>ee_collider_hessian_record;//every hessian is at most  6x6 hessian
-	std::vector < std::vector<std::vector<double>>>ee_collider_grad_record;//every grad is at most  6 
+	std::vector<int>ee_collider_hessian_record_index; //record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 1  0  or 2 0 1. First can only be 1 or 2
+	std::vector<double>ee_collider_hessian_record;//every hessian is at most  6x6 hessian
+	std::vector<double>ee_collider_grad_record;//every grad is at most  6 
 
-	std::vector < std::vector<std::vector<int>>>tv_colldier_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 2 0 2 or 3 0 1 2   the collider vertex 0 has been removed, every triangle vertex index -1, consistent with the matrix order
-	std::vector < std::vector<std::vector<double>>>tv_colldier_hessian_record;//every hessian is at most a 9x9 hessian
-	std::vector < std::vector<std::vector<double>>>tv_colldier_grad_record;//every hessian is at most a 9 vector
-
-	std::vector<std::vector<std::vector<int>>> tv_hessian_record_index;
-	std::vector<std::vector<std::vector<double>>> tv_hessian_record;
-	std::vector<std::vector<std::vector<double>>> tv_grad_record;
-
-
+	std::vector<int>tv_colldier_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 2 0 2 or 3 0 1 2   the collider vertex 0 has been removed, every triangle vertex index -1, consistent with the matrix order
+	std::vector<double>tv_colldier_hessian_record;//every hessian is at most a 9x9 hessian
+	std::vector<double>tv_colldier_grad_record;//every hessian is at most a 9 vector
 
 	bool** vertex_belong_to_color_group;
 
+
+	std::vector<int> vertex_num_on_surface_prefix_sum;
 
 
 	std::vector<std::vector<double>> VT_volume;
@@ -281,16 +282,21 @@ public:
 
 	void computeHessianPerThread(int thread_No, int color_No);
 
+
+
+	void prefixSumAllPair(int thread_No);
+
+
 private:
+
+	void resizeHessianRecordIndex();
 
 	void computeVTHessian(unsigned int* VT, unsigned int num, double d_hat_2, double* vertex_position_, double* hessian_record, int* hessian_record_index, double stiffness, double* grad_record);
 	void computeVTColliderHessian(unsigned int* VT, unsigned int num, double d_hat_2, double* vertex_position_, double* hessian_record,
 		double stiffness, double* grad_record);
 
 	void computeTVHessian(unsigned int* TV, unsigned int num, double d_hat_2, double* vertex_position_0,
-		double* vertex_position_1, double* vertex_position_2,
-		double* hessian_record, double stiffness, double* grad_record, int* hessian_record_index, unsigned int obj_No,
-		bool* vertex_belong_color_group);
+		double* vertex_position_1, double* vertex_position_2,	double stiffness);
 
 
 
@@ -580,7 +586,7 @@ private:
 	std::vector<unsigned int*> edge_index_start_per_thread;
 	std::vector<MeshStruct*> mesh_struct;
 
-	std::vector<int*> surface_index_to_general_index;
+	std::vector<int*>general_index_to_surface_index;
 
 	std::vector<double*>mass;
 	std::vector<double*>mass_inv;
@@ -886,5 +892,7 @@ private:
 
 	void updateVertexBelongColorGroup(int color_No);
 
+
+	void prefixSumRecordPairNum(unsigned int* num_record, unsigned int* prefix_sum, int num, unsigned int& start_index);
 
 };
