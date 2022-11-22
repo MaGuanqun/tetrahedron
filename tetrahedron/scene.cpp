@@ -647,10 +647,12 @@ void Scene::setGroup()
 			if (tetrahedron[i].mesh_struct.indices.size() > 1) {
 				graph_color.graphColor(tetrahedron[i].mesh_struct.tet_tet_index, tetrahedron[i].mesh_struct.unconnected_tet_index);
 				tetrahedron[i].mesh_struct.obtainVETofColors();
+				tetrahedron[i].mesh_struct.setTetColorStartPerThread();
 			}
 			else {
 				tetrahedron[i].mesh_struct.unconnected_tet_index.resize(1);
 				tetrahedron[i].mesh_struct.unconnected_tet_index[0].emplace_back(0);
+				tetrahedron[i].mesh_struct.setTetColorStartPerThread();
 			}
 		}
 

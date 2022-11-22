@@ -204,6 +204,9 @@ job Thread::create_task(TetrahedronMeshStruct* func, int thread_id, MeshStructFu
         k = job([func, thread_id]() {func->sortTriangleAroundVertexEdge(thread_id);
         func->sortTetAroundVertexEdge(thread_id); });
         break;
+    case TET_AROUND_TET_COLOR_GROUP:
+        k = job([func, thread_id]() {func->setTetAroundTetColor(thread_id); });
+        break;
     }
     return k;
 }

@@ -34,6 +34,8 @@ public:
 	std::vector<std::vector<unsigned int>> surface_vertex_index_of_a_tet_color_per_thread_start;
 
 
+	std::vector<std::vector<unsigned int>>tet_around_tet_color_group;//excluede tet in the group
+
 	std::vector<unsigned int> tetrahedron_index_begin_per_thread;
 	void setVolume(int thread_No);
 	double setMass(double density);
@@ -89,7 +91,13 @@ public:
 
 	void obtainVETofColors();
 
+	void setTetAroundTetColor(int thread_No);
 
+	std::vector<unsigned int> tet_color_index_start_per_thread;
+	std::vector<std::vector<unsigned int>> tet_around_tet_color_group_start_per_thread; //with tet_around_tet_color_group
+	
+
+	void setTetColorStartPerThread();
 private:
 	void obtainVETofAColor(int color);
 	struct TetrahedronFace {
@@ -137,7 +145,8 @@ private:
 	//void recordEdgeIndexInATet();
 	bool checkEdgeInATet(unsigned int* edge_vertices, int* tet_indices);
 
-
+	void setTetAroundTetColor(std::vector<bool>& is_used, std::vector<unsigned int>* unconnected_tet_index,
+		std::vector<unsigned int>* tet_around_tet_color_group);
 
 };
 

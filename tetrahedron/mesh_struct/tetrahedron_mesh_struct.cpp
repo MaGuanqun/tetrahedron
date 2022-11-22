@@ -759,6 +759,59 @@ void TetrahedronMeshStruct::obtainVETofColors()
 
 }
 
+
+
+void TetrahedronMeshStruct::setTetColorStartPerThread()
+{
+	tet_color_index_start_per_thread.resize(thread->thread_num + 1);
+	arrangeIndex(thread->thread_num, unconnected_tet_index.size(), tet_color_index_start_per_thread.data());
+
+	tet_around_tet_color_group.resize(unconnected_tet_index.size());
+	for (int i = 0; i < tet_around_tet_color_group.size(); ++i) {
+		tet_around_tet_color_group[i].reserve(unconnected_tet_index[i].size());
+	}
+
+	tet_around_tet_color_group_start_per_thread.resize(unconnected_tet_index.size());
+	thread->assignTask(this, TET_AROUND_TET_COLOR_GROUP);
+	
+}
+
+
+//TET_AROUND_TET_COLOR_GROUP
+void TetrahedronMeshStruct::setTetAroundTetColor(int thread_No)
+{
+	std::vector<bool>is_used(indices.size());
+	for (int i = tet_color_index_start_per_thread[thread_No]; i < tet_color_index_start_per_thread[thread_No + 1]; ++i) {
+		setTetAroundTetColor(is_used, &unconnected_tet_index[i], &tet_around_tet_color_group[i]);
+		tet_around_tet_color_group_start_per_thread[i].resize(thread->thread_num + 1);
+		arrangeIndex(thread->thread_num, tet_around_tet_color_group[i].size(), 
+			tet_around_tet_color_group_start_per_thread[i].data());
+	}
+}
+
+
+
+void TetrahedronMeshStruct::setTetAroundTetColor(std::vector<bool>& is_used, std::vector<unsigned int>* unconnected_tet_index,
+	std::vector<unsigned int>* tet_around_tet_color_group)
+{
+	std::fill(is_used.begin(), is_used.end(), false);
+
+	for (auto i = unconnected_tet_index->begin(); i < unconnected_tet_index->end(); ++i) {
+		is_used[*i] = true;
+	}
+
+	for (auto i = unconnected_tet_index->begin(); i < unconnected_tet_index->end(); ++i) {
+		for (auto j = tet_tet_index[*i].begin(); j < tet_tet_index[*i].end(); ++j) {
+			if (!is_used[*j]) {
+				tet_around_tet_color_group->emplace_back(*j);
+				is_used[*j] = true;
+			}
+		}
+	}
+}
+
+
+
 void TetrahedronMeshStruct::obtainVETofAColor(int color)
 {
 	std::vector<unsigned int>* element_index_of_a_tet_color = &this->surface_vertex_index_of_a_tet_color[color];
