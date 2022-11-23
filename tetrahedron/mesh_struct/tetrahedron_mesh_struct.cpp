@@ -771,7 +771,10 @@ void TetrahedronMeshStruct::setTetColorStartPerThread()
 		tet_around_tet_color_group[i].reserve(unconnected_tet_index[i].size());
 	}
 
+
+	tet_in_a_group_start_per_thread.resize(unconnected_tet_index.size());
 	tet_around_tet_color_group_start_per_thread.resize(unconnected_tet_index.size());
+
 	thread->assignTask(this, TET_AROUND_TET_COLOR_GROUP);
 	
 }
@@ -786,6 +789,9 @@ void TetrahedronMeshStruct::setTetAroundTetColor(int thread_No)
 		tet_around_tet_color_group_start_per_thread[i].resize(thread->thread_num + 1);
 		arrangeIndex(thread->thread_num, tet_around_tet_color_group[i].size(), 
 			tet_around_tet_color_group_start_per_thread[i].data());
+
+		tet_in_a_group_start_per_thread[i].resize(thread->thread_num + 1);
+		arrangeIndex(thread->thread_num, unconnected_tet_index[i].size(), tet_in_a_group_start_per_thread[i].data());
 	}
 }
 

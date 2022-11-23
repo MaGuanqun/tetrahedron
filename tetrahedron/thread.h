@@ -109,6 +109,7 @@ private:
     job create_task(BVH* func, int thread_id, BVHFunc function_type);
     job create_task(TetrahedronMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);
     job create_task(Collision* func, int thread_id, CollisionFuncSendToThread function_type);
+    job create_task(Collision* func, int thread_id, CollisionFuncSendToThread function_type, int para);
     job create_task(RadixSort* func, int thread_id, RadixSortFunc function_type, unsigned int key_id);
 
     job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type);
@@ -126,6 +127,7 @@ private:
     //job create_task(DrawCulling* func, int thread_id, DrawCullingFunc function_type, unsigned int key_id);
     job create_task(XPBD* func, int thread_id, XPBDFunc function_type);
     job create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_type);
+    job create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_type, int para);
     job create_task(NewtonMethod* func, int thread_id, NewtonMethodFunc function_type);
     job create_task(SecondOrderLargeSystem* func, int thread_id, NewtonMethodFunc function_type);
     job create_task(MoveObject* func, int thread_id, MoveObjectFunc function_type, unsigned int key_id);

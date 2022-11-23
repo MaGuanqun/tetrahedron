@@ -319,6 +319,20 @@ job Thread::create_task(BVH* func, int thread_id, BVHFunc function_type)// int j
     return k;
 }
 
+
+job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThread function_type, int para)
+{
+    job k;
+    switch (function_type)
+    {
+    case UPDATE_COLLISION_HESSIAN_COLOR:
+        k = job([func, thread_id, para]() {func->computeHessianPerThread(thread_id, para); });
+        break;      
+    }
+}
+
+
+
 job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThread function_type)// int jobNumber
 {
     job k;
@@ -372,6 +386,9 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
         break;
     case RE_COLLISION_CONSTRAINT:
         k = job([func, thread_id]() {func->re_collisionConstraint(thread_id); });
+        break;
+    case PREFIX_SUM_ALL_PAIRS:
+        k = job([func, thread_id]() {func->prefixSumAllPair(thread_id); });
         break;
     }
     return k;
@@ -766,6 +783,20 @@ job Thread::create_task(XPBD* func, int thread_id, XPBDFunc function_type)
         break;
     case XPBD_VELOCITY:
         k = job([func, thread_id]() {func->computeVelocity(thread_id); });
+        break;
+    }
+    return k;
+}
+
+
+
+job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_type, int para)
+{
+    job k;
+    switch (function_type)
+    {
+    case UPDATE_TET_HESSIAN_SHARED:
+        k = job([func, thread_id,para]() {func->computeTetHessianInAdvance(thread_id,para); });
         break;
     }
     return k;

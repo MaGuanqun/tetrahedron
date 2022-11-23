@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include"./external/Eigen/Dense"
 #include"./basic/eigenDenseOperation.h"
 #include"./external/Eigen/Sparse"
@@ -72,7 +72,20 @@ public:
 
 	void computeTetHessianInAdvance(int thread_No, int color_No);
 
+	void XPBD_IPC_Block_Solve_Multithread();
+
+	void newtonCDTetBlockAGroup(int thread_No, int color);
 private:
+
+
+	std::vector<std::vector<std::vector<unsigned int>>*>unconnected_tet_index;
+
+
+	void setColorNum();
+
+	void solveNewtonCD_tetBlock();
+
+	int max_tet_color_num;//the max number of different objects tet color
 
 	Floor* floor;
 	double gravity[3];
@@ -187,9 +200,13 @@ private:
 
 	double calEdgeLength();
 
+	std::vector<double> store_tet_arap_hessian; //for every 12*12, we only store 4*4 as every block is a diagonal matrix
+	std::vector<double> store_tet_arap_grad;
+	std::vector<unsigned int> prefix_sum_of_every_tet_index;
 
 
-
+	std::vector<std::array<int, 4>*> unfix_tet_index;
+	std::vector<unsigned int*> unfixed_tet_vertex_num;
 
 	bool use_bending_based_on_vertex = true;
 
@@ -295,6 +312,13 @@ private:
 
 	std::vector<double>record_energy;
 
+	void solveTetBlock(std::array<double, 3>* vertex_position, double stiffness, double dt,
+		double* mass,
+		Matrix<double, 3, 4>* A, std::vector<unsigned int>& neighbor_tet_indices, std::array<int, 4>* indices,
+		double* volume, unsigned int tet_index, std::array<double, 3>* sn, unsigned int* common_vertex_in_order,
+		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num, std::vector<unsigned int>* triangle_of_a_tet,
+		std::vector<unsigned int>* edge_of_a_tet, double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
+		int* vertex_index_on_surface, std::array<double, 3>* record_ori_pos, double* hessian_record, double* grad_record);
 
 
 	void checkPairIndexInSys(int unfixed_tet_vertex_num, int* tet_unfixed_vertex_indices, int* element_indices,
@@ -437,6 +461,24 @@ private:
 		unsigned int obj_No_0, unsigned int obj_No_1,
 		int edge_order_in_tet, std::vector<unsigned int>* edge_of_a_tet, double* ea0, double* ea1, double stiffness,
 		unsigned int* EE_collider, int num_collider, double edge_length_0);
+
+
+	void initalARAPHessianStorages();
+
+	void getVTCollisionHessainForTetFromRecord(MatrixXd& Hessian, VectorXd& grad,
+		unsigned int* VT, unsigned int num, unsigned int vertex_order_in_matrix, unsigned int obj_No, int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num,
+		unsigned int* VT_collider, int num_collider, double* vt_hessian_record, double* vt_grad_record, int* vt_hessian_record_index,
+		double* vt_collider_hessian_record, double* vt_collider_grad_record);
+
+
+	void setTetHessianFromBarrierHessian(MatrixXd& Hessian_system, double* grad_system, double* Hessian_, double* grad_,
+		int* triangle_vertex_order_in_system, int* vertex_in_pair, int vertex_in_use);
+
+
+	void getTVCollisionHessainForTetFromRecord(MatrixXd& Hessian, VectorXd& grad,
+		unsigned int* TV, int num, unsigned int obj_No, int* triangle_indices,
+		int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, unsigned int* TV_collider, int collider_num,
+		int* tv_collider_hessian_record_index, double* tv_collider_hessian_record, double* tv_collider_grad_record);
 
 };
 

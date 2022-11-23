@@ -97,8 +97,12 @@ public:
 	std::vector<std::vector<unsigned int>> tet_around_tet_color_group_start_per_thread; //with tet_around_tet_color_group
 	
 
+	std::vector<std::vector<unsigned int>>tet_in_a_group_start_per_thread;
+
 	void setTetColorStartPerThread();
 private:
+
+
 	void obtainVETofAColor(int color);
 	struct TetrahedronFace {
 		std::array<int, 3> index;

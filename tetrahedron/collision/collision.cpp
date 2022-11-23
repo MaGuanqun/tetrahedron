@@ -2265,21 +2265,18 @@ void Collision::findClosePair()
 
 	findTV_ClosePair();
 
-
-	prefixSumAllPair();
+	thread->assignTask(this, PREFIX_SUM_ALL_PAIRS);
 	resizeHessianRecordIndex();
 	//testColliderPair();
 }
 
 
 
-void Collision::computeHessian()
+void Collision::computeHessian(int color_No)
 {
 
-	updateVertexBelongColorGroup();
-
-
-	computeHessianPerThread();
+	updateVertexBelongColorGroup(color_No);
+	thread->assignTask(this, UPDATE_COLLISION_HESSIAN_COLOR, color_No);
 }
 
 
@@ -2289,9 +2286,12 @@ void Collision::updateVertexBelongColorGroup(int color_No)
 	std::vector<unsigned int>*index_group;
 	bool* belong;
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
-		index_group = &tetrahedron->data()[i].mesh_struct.surface_vertex_index_of_a_tet_color[color_No];
 		belong = vertex_belong_to_color_group[i];
 		memset(belong, 0, total_vertex_num[i + cloth->size()]);
+		if (color_No >= tetrahedron->data()[i].mesh_struct.unconnected_tet_index.size()) {
+			continue;
+		}
+		index_group = &tetrahedron->data()[i].mesh_struct.surface_vertex_index_of_a_tet_color[color_No];
 		for (auto j = index_group->begin(); j < index_group->end(); ++j) {
 			belong[*j] = true;
 		}
@@ -2326,7 +2326,7 @@ void Collision::resizeHessianRecordIndex()
 
 
 
-
+//UPDATE_COLLISION_HESSIAN_COLOR
 void Collision::computeHessianPerThread(int thread_No, int color_No)
 {
 	int i;
@@ -2351,6 +2351,9 @@ void Collision::computeHessianPerThread(int thread_No, int color_No)
 	unsigned int* prefix_sum_collider;
 
 	for (int tet_obj_no = 0; tet_obj_no < tetrahedron->size(); ++tet_obj_no) {
+		if (color_No >= tetrahedron->data()[tet_obj_no].mesh_struct.unconnected_tet_index.size()) {
+			continue;
+		}
 		i = tet_obj_no + cloth->size();
 		vertex_pos = vertex_position[i];
 		stiffness = tetrahedron->data()[0].collision_stiffness[0];
@@ -2473,6 +2476,10 @@ void Collision::computeTVHessian(unsigned int* TV, unsigned int num, double d_ha
 		}
 	}
 }
+
+
+
+
 
 
 void Collision::computeTVColliderHessian(unsigned int* TV, unsigned int num, double d_hat_2, double* vertex_position_0,
@@ -8504,7 +8511,7 @@ void Collision::testPointPair()
 
 
 
-
+//PREFIX_SUM_ALL_PAIRS
 void Collision::prefixSumAllPair(int thread_No)
 {
 	unsigned int vt_start = 0, ee_start = 0, tv_collider_start = 0, ee_collider_start = 0;

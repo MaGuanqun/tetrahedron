@@ -278,7 +278,7 @@ public:
 	double tolerance;
 
 
-	void computeHessian();
+	void computeHessian(int color_No);
 
 	void computeHessianPerThread(int thread_No, int color_No);
 
