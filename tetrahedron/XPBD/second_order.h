@@ -117,10 +117,8 @@ private:
 		double* ea0, double* ea1, double* eb0, double* eb1,double eps_x, 
 		double ee_cross_norm_2, double mollifier, double b_grad, double b_hessian);
 
-
 	void setFourVertexHessianFromBarrierHessian(MatrixXd& Hessian_system, VectorXd& grad_system, MatrixXd& Hessian_, VectorXd& grad_,
 		int* vertex_in_pair, int vertex_in_use);
-
 	void setTetHessianFromHessian(MatrixXd& Hessian_system, VectorXd& grad_system, MatrixXd& Hessian_, VectorXd& grad_,
 		int* vertex_order_in_system);
 

@@ -314,11 +314,11 @@ private:
 
 	void solveTetBlock(std::array<double, 3>* vertex_position, double stiffness, double dt,
 		double* mass,
-		Matrix<double, 3, 4>* A, std::vector<unsigned int>& neighbor_tet_indices, std::array<int, 4>* indices,
+		Matrix<double, 3, 4>* A, std::vector<unsigned int>& neighbor_tet_indices,
 		double* volume, unsigned int tet_index, std::array<double, 3>* sn, unsigned int* common_vertex_in_order,
 		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num, std::vector<unsigned int>* triangle_of_a_tet,
 		std::vector<unsigned int>* edge_of_a_tet, double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
-		int* vertex_index_on_surface, std::array<double, 3>* record_ori_pos, double* hessian_record, double* grad_record);
+		int* vertex_index_on_surface,  double* hessian_record, double* grad_record);
 
 
 	void checkPairIndexInSys(int unfixed_tet_vertex_num, int* tet_unfixed_vertex_indices, int* element_indices,
@@ -479,6 +479,20 @@ private:
 		unsigned int* TV, int num, unsigned int obj_No, int* triangle_indices,
 		int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, unsigned int* TV_collider, int collider_num,
 		int* tv_collider_hessian_record_index, double* tv_collider_hessian_record, double* tv_collider_grad_record);
+
+
+	void getEECollisionHessainForTetFromRecord(MatrixXd& Hessian, VectorXd& grad, unsigned int obj_No, unsigned int* edge_vertex_index,
+		unsigned int* EE, int num, int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, 
+		int edge_order_in_tet, std::vector<unsigned int>* edge_of_a_tet,
+		unsigned int* EE_collider, int num_collider, 
+		double* ee_hessian_record, double* ee_grad_record, int* ee_hessian_record_index,
+		int* ee_collider_hessian_record_index, double* ee_collider_hessian_record, double* ee_collider_grad_record);
+
+	void getCollisionHessianFromRecord(MatrixXd& Hessian, VectorXd& grad, std::vector<unsigned int>* triangle_of_a_tet,
+		std::vector<unsigned int>* edge_of_a_tet,
+		double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
+		int unfixed_tet_vertex_num, 
+		int* vertex_index_on_surface, unsigned int* vt_prefix_sum, unsigned int* ee_prefix_sum, unsigned int* tv_collider_prefix_sum, unsigned int* ee_collider_prefix_sum, std::array<double, 3>* vertex_position);
 
 };
 

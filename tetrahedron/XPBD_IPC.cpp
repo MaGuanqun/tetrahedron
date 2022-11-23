@@ -1406,8 +1406,11 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 		thread->assignTask(this, UPDATE_TET_HESSIAN_SHARED, i);
 		collision.computeHessian(i);
 		
+		
 		//loop over all tet in this color
+		thread->assignTask(this, SOLVE_TET_BLOCK, i);
 
+		//local ccd
 
 	}
 	
@@ -1417,20 +1420,74 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 
 
 
-
+//SOLVE_TET_BLOCK
 void XPBD_IPC::newtonCDTetBlockAGroup(int thread_No, int color)
 {
 	unsigned int* tet_group;
 	int start, end;
+
+	std::array<int, 4>* indices;
+	MeshStruct* mesh_struct_;
+	double* volume;
+	std::array<double, 3>* vertex_pos;
+
+	double stiffness;
+	double collision_stiffness;;
+	Matrix<double, 3, 4>* A;
+	std::array<double, 3>* sn_;
+	double* mass;
+	unsigned int* unfixed_vertex_num;
+	std::vector<unsigned int>* tet_neightbor_tet;
+	std::vector<unsigned int>* tet_neightbor_tet_common_vertex;
+	std::array<int, 4>* unfixed_vertex_index;
+	std::array<int, 4>* unfixed_actual_vertex_index;
+
+
+	std::vector<unsigned int>* triangle_of_a_tet;
+	std::vector<unsigned int>* edge_of_a_tet;
+	unsigned int obj_No;
+	collision_stiffness = collision.collision_stiffness[0];
+	int* vertex_index_on_surface;
+	int j;
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+
+		if (color >= tetrahedron->data()[i].mesh_struct.unconnected_tet_index.size()) {
+			continue;
+		}
+
+
 		tet_group = mesh_struct[i + cloth->size()]->unconnected_tet_index[color].data();
 		end = tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread[color][thread_No + 1];
 		start = tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread[color][thread_No];
-		for (int j = start; j < end; ++j) {
-			tet_group[j]
 
+		mesh_struct_ = mesh_struct[i + cloth->size()];
+		indices = tetrahedron->data()[i].mesh_struct.indices.data();
+		volume = tetrahedron->data()[i].mesh_struct.volume.data();
+		vertex_pos = vertex_position[i + cloth->size()];
+		stiffness = 0.5 * tetrahedron->data()[i].ARAP_stiffness;
+
+		A = tetrahedron->data()[i].mesh_struct.A.data();
+		mass = mesh_struct_->mass.data();
+		sn_ = sn[i + cloth->size()].data();
+		unfixed_vertex_num = tetrahedron->data()[i].mesh_struct.tet_unfixed_vertex_num.data();
+		tet_neightbor_tet = tetrahedron->data()[i].mesh_struct.tet_tet_index.data();
+		tet_neightbor_tet_common_vertex = tetrahedron->data()[i].mesh_struct.tet_neighbor_tet_vertex_order.data();
+		unfixed_vertex_index = tetrahedron->data()[i].mesh_struct.unfixied_indices.data();
+		unfixed_actual_vertex_index = tetrahedron->data()[i].mesh_struct.unfixied_actual_indices.data();
+		triangle_of_a_tet = tetrahedron->data()[i].mesh_struct.triangle_index_of_a_tet.data();
+		edge_of_a_tet = tetrahedron->data()[i].mesh_struct.edge_index_of_a_tet.data();
+		obj_No = i + cloth->size();
+		vertex_index_on_surface = tetrahedron->data()[i].mesh_struct.vertex_surface_index.data();
+
+
+		for (int k = start; k < end; ++k) {
+			j = tet_group[k];
+			solveTetBlock(vertex_pos, stiffness, sub_time_step, mass, A, tet_neightbor_tet[j],
+				volume, j, sn_, tet_neightbor_tet_common_vertex[j].data(), indices[j].data(),
+				unfixed_vertex_index[j].data(), unfixed_vertex_num[j], &(triangle_of_a_tet[j]), &(edge_of_a_tet[j]), collision_stiffness,
+				obj_No, unfixed_actual_vertex_index[j].data(), vertex_index_on_surface, store_tet_arap_hessian.data() + prefix_sum_of_every_tet_index[i] * 16,
+				store_tet_arap_grad.data() + prefix_sum_of_every_tet_index[i] * 12);	
 		}
-
 	}
 }
 
@@ -1912,6 +1969,129 @@ void XPBD_IPC::getCollisionBlockCollisionHessian(MatrixXd& Hessian, VectorXd& gr
 	}
 }
 
+
+
+void XPBD_IPC::getCollisionHessianFromRecord(MatrixXd& Hessian, VectorXd& grad, std::vector<unsigned int>* triangle_of_a_tet,
+	std::vector<unsigned int>* edge_of_a_tet,
+	double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
+	int unfixed_tet_vertex_num, 
+	int* vertex_index_on_surface, unsigned int* vt_prefix_sum, unsigned int* ee_prefix_sum, unsigned int* tv_collider_prefix_sum, unsigned int* ee_collider_prefix_sum, std::array<double, 3>* vertex_position)
+{
+	int surface_index;
+	if (has_collider) {
+		for (int i = 0; i < unfixed_tet_vertex_num; ++i) {
+			if (vertex_index_on_surface[tet_actual_unfixed_vertex_indices[i]] == -1) {
+				continue;
+			}
+			surface_index = vertex_index_on_surface[tet_actual_unfixed_vertex_indices[i]];
+			getVTCollisionHessainForTetFromRecord(Hessian, grad, collision.vertex_triangle_pair_by_vertex[obj_No] + collision.close_vt_pair_num * surface_index,
+				collision.vertex_triangle_pair_num_record[obj_No][surface_index],
+				i, obj_No, tet_actual_unfixed_vertex_indices, unfixed_tet_vertex_num,
+				collision.vertex_obj_triangle_collider_pair_by_vertex[obj_No] + collision.close_vt_collider_pair_num * surface_index,
+				collision.vertex_obj_triangle_collider_num_record[obj_No][surface_index],
+				collision.vt_hessian_record.data() + 144 * vt_prefix_sum[surface_index],
+				collision.vt_grad_record.data() + 12 * vt_prefix_sum[surface_index],
+				collision.vt_hessian_record_index.data() + 5 * vt_prefix_sum[surface_index],
+				collision.vt_colldier_hessian_record.data() + (collision.vertex_num_on_surface_prefix_sum[obj_No] + surface_index) * 9,
+				collision.vt_colldier_grad_record.data() + (collision.vertex_num_on_surface_prefix_sum[obj_No] + surface_index) * 3);
+		}
+	}
+	else {
+		unsigned int emp[1] = { 0 }; 
+		double temp_double[1] = { 0.0 };
+		for (int i = 0; i < unfixed_tet_vertex_num; ++i) {
+			if (vertex_index_on_surface[tet_actual_unfixed_vertex_indices[i]] == -1) {
+				continue;
+			}
+			surface_index = vertex_index_on_surface[tet_actual_unfixed_vertex_indices[i]];
+			getVTCollisionHessainForTetFromRecord(Hessian, grad, collision.vertex_triangle_pair_by_vertex[obj_No] + collision.close_vt_pair_num * surface_index,
+				collision.vertex_triangle_pair_num_record[obj_No][surface_index],
+				i, obj_No, tet_actual_unfixed_vertex_indices, unfixed_tet_vertex_num,
+				emp, 0,
+				collision.vt_hessian_record.data() + 144 * vt_prefix_sum[surface_index],
+				collision.vt_grad_record.data() + 12 * vt_prefix_sum[surface_index],
+				collision.vt_hessian_record_index.data() + 5 * vt_prefix_sum[surface_index],
+				temp_double, temp_double);
+		}
+	}
+
+	int* triangle_;
+	if (has_collider) {
+		for (auto i = triangle_of_a_tet->begin(); i < triangle_of_a_tet->end(); ++i) {
+			triangle_ = triangle_indices[obj_No][*i].data();
+			getTVCollisionHessainForTetFromRecord(Hessian, grad,
+				collision.triangle_vertex_pair_by_triangle[obj_No] + collision.close_tv_pair_num * (*i),
+				collision.triangle_vertex_pair_num_record[obj_No][*i], obj_No, triangle_, tet_actual_unfixed_vertex_indices, unfixed_tet_vertex_num,
+				collision.triangle_vertex_collider_pair_by_triangle[obj_No] + collision.close_tv_collider_pair_num * (*i),
+				collision.triangle_vertex_collider_pair_num_record[obj_No][*i],
+				collision.tv_colldier_hessian_record_index.data() + 4 * tv_collider_prefix_sum[*i],
+				collision.tv_colldier_hessian_record.data() + 81 * tv_collider_prefix_sum[*i],
+				collision.tv_colldier_grad_record.data() + 9 * tv_collider_prefix_sum[*i]);
+		}
+	}
+	else {
+		unsigned int emp[1] = { 0 };
+		double temp_double[1] = { 0.0 }; int temp_int[1] = { 0 };
+		for (auto i = triangle_of_a_tet->begin(); i < triangle_of_a_tet->end(); ++i) {
+			triangle_ = triangle_indices[obj_No][*i].data();
+			getTVCollisionHessainForTetFromRecord(Hessian, grad,
+				collision.triangle_vertex_pair_by_triangle[obj_No] + collision.close_tv_pair_num * (*i),
+				collision.triangle_vertex_pair_num_record[obj_No][*i], obj_No, triangle_, tet_actual_unfixed_vertex_indices, unfixed_tet_vertex_num,
+				emp,0,
+				temp_int,temp_double, temp_double);
+		}
+	}
+
+
+	unsigned int* edge_;
+	if (has_collider) {
+		for (auto i = edge_of_a_tet->begin(); i < edge_of_a_tet->end(); ++i) {
+			edge_ = edge_vertices[obj_No] + ((*i) << 1);
+			getEECollisionHessainForTetFromRecord(Hessian, grad, obj_No, edge_,
+				collision.edge_edge_pair_by_edge[obj_No] + collision.close_ee_pair_num * (*i),
+				collision.edge_edge_pair_num_record[obj_No][*i],
+				tet_actual_unfixed_vertex_indices, unfixed_tet_vertex_num, 
+				i - edge_of_a_tet->begin(), edge_of_a_tet, collision.edge_edge_collider_pair_by_edge[obj_No] + collision.close_ee_collider_pair_num * (*i),
+				collision.edge_edge_collider_pair_num_record[obj_No][*i],
+				collision.ee_hessian_record.data()+144*ee_prefix_sum[*i], collision.ee_grad_record.data()+12*ee_prefix_sum[*i],
+				collision.ee_hessian_record_index.data()+5*ee_prefix_sum[*i],
+				collision.ee_collider_hessian_record_index.data()+3*ee_collider_prefix_sum[*i],
+				collision.ee_collider_hessian_record.data()+36*ee_collider_prefix_sum[*i],
+				collision.ee_grad_record.data()+6*ee_collider_prefix_sum[*i]	);
+		}
+	}
+	else {
+		unsigned int emp[1] = { 0 };
+		double temp_double[1] = { 0.0 }; int temp_int[1] = { 0 };
+		for (auto i = edge_of_a_tet->begin(); i < edge_of_a_tet->end(); ++i) {
+			edge_ = edge_vertices[obj_No] + ((*i) << 1);
+
+			getEECollisionHessainForTetFromRecord(Hessian, grad, obj_No, edge_,
+				collision.edge_edge_pair_by_edge[obj_No] + collision.close_ee_pair_num * (*i),
+				collision.edge_edge_pair_num_record[obj_No][*i],
+				tet_actual_unfixed_vertex_indices, unfixed_tet_vertex_num,
+				i - edge_of_a_tet->begin(), edge_of_a_tet, emp,0,
+				collision.ee_hessian_record.data() + 144 * ee_prefix_sum[*i], collision.ee_grad_record.data() + 12 * ee_prefix_sum[*i],
+				collision.ee_hessian_record_index.data() + 5 * ee_prefix_sum[*i],
+				temp_int, temp_double,temp_double);
+		}
+	}
+
+	if (floor->exist) {
+		for (int i = 0; i < unfixed_tet_vertex_num; ++i) {
+			if (vertex_index_on_surface[tet_actual_unfixed_vertex_indices[i]] == -1) {
+				continue;
+			}
+			getFloorHessianForTet(Hessian, grad, vertex_position[tet_actual_unfixed_vertex_indices[i]].data(), floor->value,
+				floor->dimension, collision_stiffness, floor->normal_direction, collision.d_hat_2, i, unfixed_tet_vertex_num);
+		}
+	}
+
+}
+
+
+
+
 void XPBD_IPC::getCollisionHessian(MatrixXd& Hessian, VectorXd& grad, std::vector<unsigned int>* triangle_of_a_tet,
 	std::vector<unsigned int>* edge_of_a_tet,
 	double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
@@ -2297,6 +2477,9 @@ void XPBD_IPC::getEECollisionHessainForPairTest(MatrixXd& Hessian, VectorXd& gra
 		}
 	}
 }
+
+
+
 
 
 void XPBD_IPC::getEECollisionHessainForPair(MatrixXd& Hessian, VectorXd& grad, unsigned int ee_obj_No, unsigned int* edge_vertex_index,
@@ -2721,6 +2904,56 @@ void XPBD_IPC::getTVCollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, do
 //{
 //
 //}
+
+
+
+void XPBD_IPC ::getEECollisionHessainForTetFromRecord(MatrixXd& Hessian, VectorXd& grad, unsigned int obj_No, unsigned int* edge_vertex_index,
+	unsigned int* EE, int num, int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, 
+	int edge_order_in_tet, std::vector<unsigned int>* edge_of_a_tet, 
+	unsigned int* EE_collider, int num_collider, 
+	double* ee_hessian_record, double* ee_grad_record, int* ee_hessian_record_index,
+	int* ee_collider_hessian_record_index, double* ee_collider_hessian_record, double* ee_collider_grad_record)
+{
+	unsigned int* edge_vertex;
+	int vertex_order_in_tet[4];
+	memset(vertex_order_in_tet, 0xff, 8);
+
+	checkPairIndexInSys(unfixed_tet_vertex_num, tet_unfixed_vertex_indices, edge_vertex_index, vertex_order_in_tet);
+
+	for (int i = 0; i < num; i += 2) {
+		edge_vertex = edge_vertices[EE[i]] + (EE[i + 1] << 1);
+		memset(vertex_order_in_tet + 2, 0xff, 8);
+		if (EE[i] == obj_No) {
+			if (edgeInSameTetDuplicate(edge_order_in_tet, edge_of_a_tet, EE[i + 1])) {
+				continue;
+			}
+			checkPairIndexInSys(unfixed_tet_vertex_num, tet_unfixed_vertex_indices, edge_vertex, vertex_order_in_tet + 2);
+		}
+
+		if ((*ee_hessian_record_index) != 0) {
+			setTetHessianFromBarrierHessian(Hessian, grad.data(), ee_hessian_record, ee_grad_record, vertex_order_in_tet,
+				ee_hessian_record_index + 1, *ee_hessian_record_index);
+		}
+		ee_hessian_record_index += 5;
+		ee_grad_record += 12;
+		ee_hessian_record += 144;
+	}
+
+	if (has_collider) {
+		memset(vertex_order_in_tet + 2, 0xff, 8);
+		for (int i = 0; i < num_collider; i += 2) {
+			if ((*ee_collider_hessian_record_index) != 0) {
+				setTetHessianFromBarrierHessian(Hessian, grad.data(), ee_collider_hessian_record, ee_collider_grad_record, vertex_order_in_tet,
+					ee_collider_hessian_record_index + 1, *ee_collider_hessian_record_index);
+			}
+			ee_collider_hessian_record_index += 3;
+			ee_collider_grad_record += 6;
+			ee_collider_hessian_record += 36;
+		}
+
+	}
+
+}
 
 
 void XPBD_IPC::getEECollisionHessainForTet(MatrixXd& Hessian, VectorXd& grad, unsigned int obj_No, unsigned int* edge_vertex_index,
@@ -3289,11 +3522,11 @@ void XPBD_IPC::comparePrimitiveAroundPrimitveTogether(std::vector<unsigned int>*
 
 void XPBD_IPC::solveTetBlock(std::array<double, 3>* vertex_position, double stiffness, double dt,
 	double* mass,
-	Matrix<double, 3, 4>* A, std::vector<unsigned int>& neighbor_tet_indices, std::array<int, 4>* indices,
+	Matrix<double, 3, 4>* A, std::vector<unsigned int>& neighbor_tet_indices, 
 	double* volume, unsigned int tet_index, std::array<double, 3>* sn, unsigned int* common_vertex_in_order,
 	int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num, std::vector<unsigned int>* triangle_of_a_tet,
 	std::vector<unsigned int>* edge_of_a_tet, double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
-	int* vertex_index_on_surface, std::array<double, 3>* record_ori_pos, double* hessian_record, double* grad_record)
+	int* vertex_index_on_surface, double* hessian_record, double* grad_record)
 {
 	if (unfixed_vertex_num == 0) {
 		return;
@@ -3312,12 +3545,33 @@ void XPBD_IPC::solveTetBlock(std::array<double, 3>* vertex_position, double stif
 		second_order_constraint.solveHessianForNeighborTet(common_vertex_in_order,
 			Hessian, grad, hessian_record+16*(*i), grad_record + 12*(*i));
 	}
-	getCollisionHessian(Hessian_collision, grad, triangle_of_a_tet, edge_of_a_tet, collision_stiffness, obj_No, tet_actual_unfixed_vertex_indices,
+	getCollisionHessianFromRecord(Hessian, grad, triangle_of_a_tet, edge_of_a_tet, collision_stiffness, obj_No, tet_actual_unfixed_vertex_indices,
 		unfixed_vertex_num,
-		collision.d_hat_2, vertex_index_on_surface, vertex_position);
-	//FEM::SPDprojection(Hessian_collision);
-	Hessian += Hessian_collision;
+		vertex_index_on_surface,collision.vertex_triangle_pair_num_record_prefix_sum[obj_No], collision.edge_edge_pair_num_record_prefix_sum[obj_No],
+		collision.triangle_vertex_collider_num_record_prefix_sum[obj_No], collision.edge_edge_collider_num_record_prefix_sum[obj_No],	vertex_position);
+	
 
+	double mass_dt_2;
+	int vertex_index;
+	for (int i = 0; i < unfixed_vertex_num; ++i) {
+		vertex_index = tet_actual_unfixed_vertex_indices[i];
+		mass_dt_2 = mass[vertex_index] / (dt * dt);
+		Hessian(3 * i, 3 * i) += mass_dt_2;
+		Hessian(3 * i + 1, 3 * i + 1) += mass_dt_2;
+		Hessian(3 * i + 2, 3 * i + 2) += mass_dt_2;
+		grad.data()[3 * i] += mass_dt_2 * (vertex_position[vertex_index][0] - sn[vertex_index][0]);
+		grad.data()[3 * i + 1] += mass_dt_2 * (vertex_position[vertex_index][1] - sn[vertex_index][1]);
+		grad.data()[3 * i + 2] += mass_dt_2 * (vertex_position[vertex_index][2] - sn[vertex_index][2]);
+	}
+
+	//ColPivHouseholderQR<MatrixXd> linear(Hessian);
+	LLT <MatrixXd> linear(Hessian);
+	VectorXd result = linear.solve(grad);
+
+	for (int i = 0; i < unfixed_vertex_num; ++i) {
+		vertex_index = tet_actual_unfixed_vertex_indices[i];
+		SUB_(vertex_position[vertex_index], (result.data() + 3 * i));
+	}
 
 }
 

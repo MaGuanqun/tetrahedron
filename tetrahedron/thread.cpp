@@ -798,6 +798,9 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
     case UPDATE_TET_HESSIAN_SHARED:
         k = job([func, thread_id,para]() {func->computeTetHessianInAdvance(thread_id,para); });
         break;
+    case SOLVE_TET_BLOCK:
+        k = job([func, thread_id, para]() {func->newtonCDTetBlockAGroup(thread_id, para); });
+        break;
     }
     return k;
 }

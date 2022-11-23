@@ -100,7 +100,7 @@ public:
 	std::vector<double>ee_collider_hessian_record;//every hessian is at most  6x6 hessian
 	std::vector<double>ee_collider_grad_record;//every grad is at most  6 
 
-	std::vector<int>tv_colldier_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 2 0 2 or 3 0 1 2   the collider vertex 0 has been removed, every triangle vertex index -1, consistent with the matrix order
+	std::vector<int>tv_colldier_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 2 1 2 or 3 1 2 3   the collider vertex 0 has been removed, 
 	std::vector<double>tv_colldier_hessian_record;//every hessian is at most a 9x9 hessian
 	std::vector<double>tv_colldier_grad_record;//every hessian is at most a 9 vector
 

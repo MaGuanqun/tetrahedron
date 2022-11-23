@@ -2553,9 +2553,8 @@ void Collision::setTVColliderHessianFix(MatrixXd& Hessian, VectorXd& grad, doubl
 		memcpy(hessian_record + i * size, Hessian.data() + grad.size()* (i+3)  + 3, size << 3);
 	}
 	memcpy(grad_record, grad.data() + 3, size << 3);
-	for (int i = 1; i < curent_hessian_record_local[0]; ++i) {
-		hessian_record_index[i] = curent_hessian_record_local[i + 1];
-	}
+
+	memcpy(hessian_record_index + 1, curent_hessian_record_local + 2, (curent_hessian_record_local[0] - 1) << 2);
 	hessian_record_index[0]=curent_hessian_record_local[0] - 1;
 }
 
