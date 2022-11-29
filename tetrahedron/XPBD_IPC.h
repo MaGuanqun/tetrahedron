@@ -214,6 +214,9 @@ private:
 	std::vector<double> store_tet_arap_grad;
 	std::vector<unsigned int> prefix_sum_of_every_tet_index;
 
+	std::vector<int> vertex_num_on_surface_prefix_sum;
+
+
 
 	std::vector<std::array<int, 4>*> unfix_tet_index;
 	std::vector<unsigned int*> unfixed_tet_vertex_num;

@@ -163,7 +163,12 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	record_EE_collision_time.resize(thread_num);
 	record_VTCollider_collision_time.resize(thread_num);
 
-
+	if (use_method == XPBD_IPC_)
+	{
+		if (record_pair_by_element) {
+			resizeFloorCollisionHessianRecord();
+		}
+	}
 }
 
 
@@ -176,6 +181,13 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 //	//this->damp_stiffness= damp_stiffness;
 //	this->dt = dt;
 //}
+
+void Collision::resizeFloorCollisionHessianRecord()
+{
+	floor_hessian_record.resize(vertex_num_on_surface_prefix_sum[total_obj_num]);
+	floor_grad_record.resize(vertex_num_on_surface_prefix_sum[total_obj_num]);
+	//is_vertex_collide_with_floor = new bool[vertex_num_on_surface_prefix_sum[total_obj_num]];	
+}
 
 void Collision::updateEigenPosition()
 {
@@ -2336,12 +2348,12 @@ void Collision::getCollisionPair(int thread_No)
 void Collision::findClosePair()
 {
 	initialPairByElement();
-	findVT_ClosePair();
-	findEE_ClosePair();
+	//findVT_ClosePair();
+	//findEE_ClosePair();
 	if (has_collider) {
-		findVT_ColliderClosePair();
+		//findVT_ColliderClosePair();
 		findEE_ColliderClosePair();
-		findTV_ColliderClosePair();
+		//findTV_ColliderClosePair();
 	}
 
 	findTV_ClosePair();
@@ -2432,7 +2444,10 @@ void Collision::computeHessianPerThread(int thread_No, int color_No)
 	unsigned int* prefix_sum_collider;
 
 	bool has_collider = this->has_collider;
-
+	bool has_floor = floor->exist;
+	double floor_value = floor->value;
+	int floor_dimension = floor->dimension;
+	int vertex_prefix_sum_this_obj;
 
 	for (int tet_obj_no = 0; tet_obj_no < tetrahedron->size(); ++tet_obj_no) {
 		if (color_No >= tetrahedron->data()[tet_obj_no].mesh_struct.unconnected_tet_index.size()) {
@@ -2448,7 +2463,9 @@ void Collision::computeHessianPerThread(int thread_No, int color_No)
 
 		prefix_sum = vertex_triangle_pair_num_record_prefix_sum[i];
 
-		//vt vt_collider
+		vertex_prefix_sum_this_obj = vertex_num_on_surface_prefix_sum[i];
+
+		//vt vt_collider floor
 		for (int j = surface_vertex_index_of_a_tet_color_per_thread_start[i][color_No][thread_No]; j < end_per_thread; ++j) {
 			surface_index = vertex_index_on_surface[index_of_a_tet_color[j]];
 			computeVTHessian(vertex_triangle_pair_by_vertex[i] + close_vt_pair_num * surface_index,
@@ -2459,9 +2476,14 @@ void Collision::computeHessianPerThread(int thread_No, int color_No)
 				computeVTColliderHessian(vertex_obj_triangle_collider_pair_by_vertex[i]
 					+ close_vt_collider_pair_num * surface_index,
 					vertex_obj_triangle_collider_num_record[i][surface_index], d_hat_2,
-					vertex_pos[index_of_a_tet_color[j]].data(), vt_colldier_hessian_record.data() + (vertex_num_on_surface_prefix_sum[i] + surface_index) * 9,
-					stiffness, vt_colldier_grad_record.data() + 3 * (surface_index + vertex_num_on_surface_prefix_sum[i]));
+					vertex_pos[index_of_a_tet_color[j]].data(), vt_colldier_hessian_record.data() + (vertex_prefix_sum_this_obj + surface_index) * 9,
+					stiffness, vt_colldier_grad_record.data() + 3 * (surface_index + vertex_prefix_sum_this_obj));
 			}
+			if (has_floor) {
+				computeFloorHessian(d_hat_2, stiffness, floor_value, floor_hessian_record[vertex_prefix_sum_this_obj + surface_index], floor_grad_record[vertex_prefix_sum_this_obj + surface_index],
+					vertex_pos[index_of_a_tet_color[j]][floor_dimension]);
+			}
+
 		}
 		//ee ee_collider
 		end_per_thread = edge_index_of_a_tet_color_per_thread_start[i][color_No][thread_No + 1];
@@ -2579,6 +2601,24 @@ void Collision::computeTVColliderHessian(unsigned int* TV, unsigned int num, dou
 		grad_record += 9;
 		hessian_record_index += 4;
 	}
+}
+
+
+void Collision::computeFloorHessian(double d_hat, double stiffness, double floor_value, double& hessian, double& grad,  double position)
+{
+	double distance = (position- floor_value) * (position - floor_value);
+	if (distance > d_hat_2) {
+		grad = 0.0;
+		hessian = 0.0;
+		return;
+	}
+	double h, g;
+	barrierGradHessian(distance, d_hat_2, g, h);
+	double grad_d;
+	grad_d = 2 * (position - floor_value);
+
+	grad = stiffness * g * grad_d;
+	hessian = stiffness * (h * grad_d * grad_d + g+g);
 }
 
 
@@ -6342,6 +6382,8 @@ void Collision::colorCollisionTime(int thread_No, int color_No)
 
 	bool has_collider = this->has_collider;
 
+	bool has_floor = floor->exist;
+
 	for (int tet_obj_no = 0; tet_obj_no < tetrahedron->size(); ++tet_obj_no) {
 		if (color_No >= tetrahedron->data()[tet_obj_no].mesh_struct.unconnected_tet_index.size()) {
 			continue;
@@ -6353,7 +6395,7 @@ void Collision::colorCollisionTime(int thread_No, int color_No)
 		index_of_a_tet_color = surface_vertex_index_of_a_tet_color[i][color_No].data();
 		vertex_index_on_surface = this->general_index_to_surface_index[i];
 		end_per_thread = surface_vertex_index_of_a_tet_color_per_thread_start[i][color_No][thread_No + 1];
-		//vt vt_collider
+		//vt vt_collider floor
 		for (int j = surface_vertex_index_of_a_tet_color_per_thread_start[i][color_No][thread_No]; j < end_per_thread; ++j) {
 			surface_index = vertex_index_on_surface[index_of_a_tet_color[j]];
 
@@ -6370,6 +6412,12 @@ void Collision::colorCollisionTime(int thread_No, int color_No)
 					vertex_obj_triangle_collider_pair_by_vertex[i] + close_vt_collider_pair_num * surface_index,
 					vertex_position_collider.data(), vertex_position_collider.data(), triangle_indices_collider.data());
 			}
+			if (has_floor) {
+				floorCollisionTime(ini_vertex_pos[index_of_a_tet_color[j]].data(),
+					vertex_pos[index_of_a_tet_color[j]].data(), floor->dimension,
+					floor->normal_direction, floor->value, collision_time, tolerance);
+			}
+			
 		}
 		//ee ee_collider
 		end_per_thread = edge_index_of_a_tet_color_per_thread_start[i][color_No][thread_No + 1];
@@ -8465,12 +8513,12 @@ void Collision::initialHessianRecord()
 {
 	int total_vertex_num=0;
 
-	vertex_num_on_surface_prefix_sum.resize(total_obj_num);
+	vertex_num_on_surface_prefix_sum.resize(total_obj_num+1);
 	vertex_num_on_surface_prefix_sum[0] = 0;
 	for (int i = 0; i < total_obj_num; ++i) {
 		total_vertex_num += vertex_index_start_per_thread[i][thread_num];
 	}
-	for (int i = 1; i < total_obj_num; ++i) {
+	for (int i = 1; i <= total_obj_num; ++i) {
 		vertex_num_on_surface_prefix_sum[i] = vertex_num_on_surface_prefix_sum[i - 1] + vertex_index_start_per_thread[i - 1][thread_num];
 	}
 

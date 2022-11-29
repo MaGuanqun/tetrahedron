@@ -104,6 +104,10 @@ public:
 	std::vector<double>tv_colldier_hessian_record;//every hessian is at most a 9x9 hessian
 	std::vector<double>tv_colldier_grad_record;//every hessian is at most a 9 vector
 
+	std::vector<double>floor_hessian_record;// record hessian for floor collision size is 1x1
+	std::vector<double>floor_grad_record;//record grad for floor collision size is 1x1
+	//bool* is_vertex_collide_with_floor;//
+
 	bool** vertex_belong_to_color_group;
 
 
@@ -912,4 +916,6 @@ private:
 
 	void prefixSumRecordPairNum(unsigned int* num_record, unsigned int* prefix_sum, int num, unsigned int& start_index);
 
+	void resizeFloorCollisionHessianRecord();
+	void computeFloorHessian(double d_hat, double stiffness, double floor_value, double& hessian, double& grad, double position);
 };
