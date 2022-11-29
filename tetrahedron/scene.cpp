@@ -903,20 +903,20 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 
 	}
 
-	std::vector<std::array<double, 3>> pos;
-	pos.push_back(tetrahedron[0].mesh_struct.vertex_position[tetrahedron[0].mesh_struct.edge_vertices[6302 * 2]]);
-	pos.push_back(tetrahedron[0].mesh_struct.vertex_position[tetrahedron[0].mesh_struct.edge_vertices[6302 * 2+1]]);
+	//std::vector<std::array<double, 3>> pos;
+	//pos.push_back(tetrahedron[0].mesh_struct.vertex_position[tetrahedron[0].mesh_struct.edge_vertices[6302 * 2]]);
+	//pos.push_back(tetrahedron[0].mesh_struct.vertex_position[tetrahedron[0].mesh_struct.edge_vertices[6302 * 2+1]]);
 
-	pos.push_back(tetrahedron[0].mesh_struct.vertex_position[tetrahedron[0].mesh_struct.edge_vertices[3533 * 2]]);
-	pos.push_back(tetrahedron[0].mesh_struct.vertex_position[tetrahedron[0].mesh_struct.edge_vertices[3533 * 2 + 1]]);
+	//pos.push_back(tetrahedron[0].mesh_struct.vertex_position[tetrahedron[0].mesh_struct.edge_vertices[3533 * 2]]);
+	//pos.push_back(tetrahedron[0].mesh_struct.vertex_position[tetrahedron[0].mesh_struct.edge_vertices[3533 * 2 + 1]]);
 
 
 
-	draw_vertex.setVertex(pos,//collision.draw_target_position,
-		0.005);
-	//draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[project_dynamic.collision.chosen_show_vertex].data(),
+	//draw_vertex.setVertex(pos,//collision.draw_target_position,
 	//	0.005);
-	draw_vertex.draw(camera, glm::vec3(1.0, 0.0, 0.0));
+	////draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[project_dynamic.collision.chosen_show_vertex].data(),
+	////	0.005);
+	//draw_vertex.draw(camera, glm::vec3(1.0, 0.0, 0.0));
 
 	//draw_vertex.setVertex(project_dynamic.collision.draw_target_position, //
 	//	0.005);
@@ -1144,7 +1144,8 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 			break;
 		case XPBD_IPC_:
 			//xpbd_ipc.XPBD_IPCSolve();
-			xpbd_ipc.XPBD_IPC_Block_Solve();
+			//xpbd_ipc.XPBD_IPC_Block_Solve();
+			xpbd_ipc.XPBD_IPC_Block_Solve_Multithread();
 			break;
 		}
 

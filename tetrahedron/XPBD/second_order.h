@@ -63,11 +63,20 @@ public:
 		Matrix<double, 3, 4>* A, std::vector<unsigned int>& tet_indices, std::array<int, 4>* indices, double* mass,
 		double* volume, unsigned int vertex_index, std::array<double, 3>* sn);
 
+	void solveCD_ARAP_blockTest(MatrixXd& Hessian, VectorXd& grad, std::array<double, 3>* vertex_position, double stiffness,
+		Matrix<double, 3, 4>& A,
+		double volume,
+		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num);
 
 	void solveCD_ARAP_block(MatrixXd& Hessian, VectorXd& grad, std::array<double, 3>* vertex_position, double stiffness,
 		Matrix<double, 3, 4>& A,
 		double volume,
-		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num);
+		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num, double* hessian_record);
+
+
+	void solveCertainHessianForNeighborTetTest(std::array<double, 3>* vertex_position, double stiffness,
+		Matrix<double, 3, 4>& A, unsigned int*& common_vertex_in_order, int* neighbor_tet_vetex_indices,
+		MatrixXd& sys_matrix, double volume, VectorXd& grad, double* hessian_record, double* grad_record);
 
 	bool solveCertainHessianForNeighborTet(std::array<double, 3>* vertex_position, double stiffness,
 		Matrix<double, 3, 4>& A, unsigned int*& common_vertex_in_order, int* neighbor_tet_vetex_indices, 
@@ -100,11 +109,14 @@ public:
 	void computeEEBarrierGradientHessianTest(double* ea0, double* ea1, double* eb0, double* eb1, MatrixXd& Hessian_, VectorXd& grad_,
 		int* vertex_order_in_system, double stiffness, double d_hat_2, double rest_length_0, double rest_length_1, double& barrier_);
 
-	void setARAPHessianGrad(MatrixXd& Hessian, Matrix<double, 3, 4>& grad, std::array<double, 3>* vertex_position, double stiffness,
+	void setARAPHessian(MatrixXd& Hessian,double stiffness,
+		Matrix<double, 3, 4>& A, double volume);
+	void setARAPGrad(MatrixXd& grad, std::array<double, 3>* vertex_position, double stiffness,
 		Matrix<double, 3, 4>& A, double volume, int* tet_vertex_index);
-
 	void setTetHessianFromBarrierHessian(MatrixXd& Hessian_system, VectorXd& grad_system, MatrixXd& Hessian_, VectorXd& grad_,
 		int* triangle_vertex_order_in_system, int* vertex_in_pair, int vertex_in_use);
+
+
 private:
 	double epsilon_for_bending= 1e-10;
 

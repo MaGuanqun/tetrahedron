@@ -218,12 +218,17 @@ public:
 	void computeVolume(int thread_No);
 	void saveCollisionPairVolume();
 
-	void setCollisionFreeVertex(std::vector<std::array<double, 3>*>* record_vertex_position);
+	void setCollisionFreeVertex(std::vector<std::array<double, 3>*>* record_vertex_position, std::vector<std::vector<std::array<double, 3>>>* record_vertex_for_this_color);
 	void setCollisionFreeVertex(std::vector< std::vector<std::array<double, 3>>>* record_vertex_position);
 	double d_hat;
 	double volume_boundary;
 
-	void updateCollisionTime(unsigned int obj_No, unsigned int vertex);
+
+	void collisionTimeColor(int color);
+
+	void updatePositionColor(int thread_No, int color);
+
+
 	//void collisionTimeSingleVertex(unsigned int obj_index, unsigned int vertex_index, unsigned int vertex_index_on_surface,
 	//	std::array<double, 3>* initial_pos,	std::array<double, 3>* current_pos);
 
@@ -257,12 +262,19 @@ public:
 	void TVCollisionTimeOneTriangle(double* initial_pos_0, double* initial_pos_1, double* initial_pos_2,
 		double* current_pos_0, double* current_pos_1, double* current_pos_2,
 		double& collision_time, unsigned int num,
-		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex, bool* is_used);
+		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex, bool* is_used,
+		int size_of_a_pair); //size_of_a_pair vt collider 2 vt 3
 
 	void TVCollisionTimeOneTriangle(double* initial_pos_0, double* initial_pos_1, double* initial_pos_2,
 		double* current_pos_0, double* current_pos_1, double* current_pos_2,
 		double& collision_time, unsigned int num,
-		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex);
+		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex,
+		int size_of_a_pair);//for pair in this class size_of_a_pair vt collider 2 vt 3
+
+	void TVCollisionTimeOneTriangleSelfColor(double* initial_pos_0, double* initial_pos_1, double* initial_pos_2,
+		double* current_pos_0, double* current_pos_1, double* current_pos_2,
+		double& collision_time, unsigned int num,
+		unsigned int* vertex_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex, int size_of_a_pair);
 
 
 	void EECollisionTimeOneEdgeAll(double* initial_pos_a0, double* initial_pos_a1, double* current_pos_a0,
@@ -285,6 +297,8 @@ public:
 
 
 	void prefixSumAllPair(int thread_No);
+
+	void colorCollisionTime(int thread_No, int color_No);
 
 
 private:
@@ -548,6 +562,7 @@ private:
 
 
 	std::vector<std::array<double, 3>*> vertex_collision_free;
+	std::vector<std::array<double, 3>*> vertex_record_for_this_color;
 
 	std::vector<std::array<double, 3>*> vertex_for_render_collider;
 	std::vector<std::array<double, 3>*> vertex_position_collider;
@@ -594,10 +609,12 @@ private:
 
 	std::vector<std::vector<unsigned int>*> triangle_index_of_a_tet_color;
 	std::vector<std::vector<unsigned int>*> edge_index_of_a_tet_color;
+	std::vector<std::vector<unsigned int>*> surface_vertex_index_of_a_tet_color;
 	std::vector<std::vector<unsigned int>*> vertex_index_of_a_tet_color;
 
 	std::vector<std::vector<unsigned int>*> triangle_index_of_a_tet_color_per_thread_start;
 	std::vector<std::vector<unsigned int>*> edge_index_of_a_tet_color_per_thread_start;
+	std::vector<std::vector<unsigned int>*> surface_vertex_index_of_a_tet_color_per_thread_start;
 	std::vector<std::vector<unsigned int>*> vertex_index_of_a_tet_color_per_thread_start;
 
 	std::vector<int>total_vertex_num;

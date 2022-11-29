@@ -1,19 +1,14 @@
 object
-2
-C:\graphics\tetrahedron\model\bar.ele
+1
 C:\graphics\tetrahedron\model\bar.ele
 collider
 0
 stiffness
-200 50000 0 0 0 0 
-1e+06 20000 20000 20 0 0 0 0 
-200 50000 0 0 0 0 
+20 50000 0 0 0 0 
 1e+06 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
-0 
-1
-0 
+55 1 2 3 4 28 29 32 33 34 35 36 37 38 39 40 41 42 43 44 45 48 49 371 372 373 374 375 376 383 384 386 387 388 389 392 395 398 399 400 401 402 403 404 405 406 408 409 411 412 414 415 447 470 471 482 
 time_step
 0.01
 cloth_density
@@ -25,22 +20,22 @@ velocity_damp
 friction_coe
 0.9 0.8 0.9
 floor_dimension
-2
+4
 floor_value
-0.5
+-0.55
 camera position
--0.804228 0.793994 -2.47647
+2.17269 0.459084 0.260613
 camera up
--0.00832124 0.999903 0.0111637
+0.0131019 0.999874 0.00893876
 camera center
--0.14221 0.771887 -0.00293667
+-0.00848852 0.489837 0.0176477
 XPBD_IPC
 substep_num
 1
 out iteration_num
-15
+40
 inner iteration_num
-20
+50
 sub_step_per_detection
 1
 d_hat
@@ -52,8 +47,8 @@ min inner itr num
 min outer itr num
 2
 displacement standard
-0.0001
+0.001
 distance record as collision
 5e-06
 energy converge standard
-1e-06
+1e-11

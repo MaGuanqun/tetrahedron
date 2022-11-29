@@ -20,7 +20,7 @@
 
 Thread::Thread()
 {
-    thread_num = 1;// std::thread::hardware_concurrency();//
+    thread_num =std::thread::hardware_concurrency();//
     initial();
 }
 
@@ -328,7 +328,14 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     case UPDATE_COLLISION_HESSIAN_COLOR:
         k = job([func, thread_id, para]() {func->computeHessianPerThread(thread_id, para); });
         break;      
+    case COLOR_COLLISION_TIME:
+        k = job([func, thread_id, para]() {func->colorCollisionTime(thread_id, para); });
+        break;
+    case UPDATE_COLOR_POSITION:
+        k = job([func, thread_id, para]() {func->updatePositionColor(thread_id, para); });
+        break;
     }
+    return k;
 }
 
 
@@ -790,16 +797,17 @@ job Thread::create_task(XPBD* func, int thread_id, XPBDFunc function_type)
 
 
 
-job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_type, int para)
+job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_type, unsigned int para)
 {
     job k;
     switch (function_type)
     {
-    case UPDATE_TET_HESSIAN_SHARED:
-        k = job([func, thread_id,para]() {func->computeTetHessianInAdvance(thread_id,para); });
-        break;
     case SOLVE_TET_BLOCK:
+        //k = job([func, thread_id, para]() {func->newtonCDTetBlockAGroupTest(thread_id, para);});
         k = job([func, thread_id, para]() {func->newtonCDTetBlockAGroup(thread_id, para); });
+         break;
+    case UPDATE_TET_GRAD_SHARED:
+        k = job([func, thread_id, para]() {func->tetGradForColor(thread_id, para); });
         break;
     }
     return k;
@@ -818,6 +826,9 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
         break;
     case XPBD_IPC_VELOCITY:
         k = job([func, thread_id]() {func->computeVelocity(thread_id); });
+        break;
+    case UPDATE_TET_HESSIAN:
+        k = job([func, thread_id]() {func->tetHessian(thread_id); });
         break;
     }
     return k;

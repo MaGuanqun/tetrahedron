@@ -75,10 +75,17 @@ public:
 	void XPBD_IPC_Block_Solve_Multithread();
 
 	void newtonCDTetBlockAGroup(int thread_No, int color);
+
+
+	void tetHessian(int thread_No);
+	void tetGradForColor(int thread_No, unsigned int color_No);
+	//void newtonCDTetBlockAGroupTest(int thread_No, int color);
 private:
 
 
 	std::vector<std::vector<std::vector<unsigned int>>*>unconnected_tet_index;
+
+
 
 
 	void setColorNum();
@@ -190,6 +197,9 @@ private:
 
 	std::vector<std::vector<std::array<double, 3>>> record_vertex_position;
 	std::vector<std::vector<std::array<double, 3>>> record_gloabl_CCD_vertex_position;
+
+	std::vector<std::array<double, 3>*> record_vertex_position_address;
+
 	//std::vector<std::vector<std::array<double, 3>>> record_outer_vertex_position;
 	//void recordLastStepVertexPosition();
 
@@ -291,6 +301,7 @@ private:
 		bool vertex_on_surface, unsigned int vertex_index_on_surface);
 
 	void newtonCDTetBlock();
+	void newtonCDTetBlockTest(int color_No);
 	void newtonVTCollisionBlock();
 	void newtonEECollisionBlock();
 
@@ -308,7 +319,7 @@ private:
 		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num,
 		std::vector<unsigned int>* triangle_of_a_tet, 	std::vector<unsigned int>* edge_of_a_tet, double collision_stiffness,
 		unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
-		int* vertex_index_on_surface, std::array<double, 3>* record_ori_pos);
+		int* vertex_index_on_surface, std::array<double, 3>* record_ori_pos, double* hessian_record);
 
 	std::vector<double>record_energy;
 
@@ -318,7 +329,7 @@ private:
 		double* volume, unsigned int tet_index, std::array<double, 3>* sn, unsigned int* common_vertex_in_order,
 		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num, std::vector<unsigned int>* triangle_of_a_tet,
 		std::vector<unsigned int>* edge_of_a_tet, double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
-		int* vertex_index_on_surface,  double* hessian_record, double* grad_record);
+		int* vertex_index_on_surface, double* hessian_record, double* grad_record);//,  double* hessian_record, double* grad_record
 
 
 	void checkPairIndexInSys(int unfixed_tet_vertex_num, int* tet_unfixed_vertex_indices, int* element_indices,
@@ -494,5 +505,8 @@ private:
 		int unfixed_tet_vertex_num, 
 		int* vertex_index_on_surface, unsigned int* vt_prefix_sum, unsigned int* ee_prefix_sum, unsigned int* tv_collider_prefix_sum, unsigned int* ee_collider_prefix_sum, std::array<double, 3>* vertex_position);
 
+	std::vector<std::vector<std::array<double, 3>>> temp_save_pos;
+	void tempSavePos();
+	void tempRestorePos();
 };
 
