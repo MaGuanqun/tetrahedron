@@ -18,7 +18,7 @@ public:
 	OriMesh ori_mesh;
 	RegularizationInfo regularization_info;
 	void load_getAABB(std::string& path, int& index, int obj_index, bool collider);
-	void regularization(RegularizationInfo& regularization_info);
+	void regularization(RegularizationInfo& regularization_info, int obj_index);
 
 private:
 

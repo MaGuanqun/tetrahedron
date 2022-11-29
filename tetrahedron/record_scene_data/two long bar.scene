@@ -1,0 +1,59 @@
+object
+2
+.\model\bar.ele
+.\model\bar.ele
+collider
+0
+stiffness
+200 50000 0 0 0 0 
+1e+06 20000 20000 20 0 0 0 0 
+200 50000 0 0 0 0 
+1e+06 20000 20000 20 0 0 0 0 
+anchor_vertex
+0
+0 
+1
+0 
+time_step
+0.01
+cloth_density
+1
+tet_density
+1
+velocity_damp
+0.995
+friction_coe
+0.9 0.8 0.9
+floor_dimension
+2
+floor_value
+-0.2
+camera position
+0.31476 -0.0351977 -2.90931
+camera up
+5.60963e-06 0.999927 -0.0120967
+camera center
+0 0 0
+XPBD_IPC
+substep_num
+1
+out iteration_num
+40
+inner iteration_num
+50
+sub_step_per_detection
+1
+d_hat
+0.005
+inner convergence rate
+0.001
+min inner itr num
+3
+min outer itr num
+2
+displacement standard
+0.001
+distance record as collision
+5e-06
+energy converge standard
+1e-11

@@ -2348,12 +2348,12 @@ void Collision::getCollisionPair(int thread_No)
 void Collision::findClosePair()
 {
 	initialPairByElement();
-	//findVT_ClosePair();
-	//findEE_ClosePair();
+	findVT_ClosePair();
+	findEE_ClosePair();
 	if (has_collider) {
-		//findVT_ColliderClosePair();
+		findVT_ColliderClosePair();
 		findEE_ColliderClosePair();
-		//findTV_ColliderClosePair();
+		findTV_ColliderClosePair();
 	}
 
 	findTV_ClosePair();
@@ -2398,6 +2398,8 @@ void Collision::resizeHessianRecordIndex()
 	vt_hessian_record_index.resize(5 * size);
 	vt_hessian_record.resize(144 * size);
 	vt_grad_record.resize(12 * size);
+
+
 
 	size = edge_edge_pair_num_record_prefix_sum[total_obj_num - 1][edge_index_start_per_thread[total_obj_num - 1][thread_num]];
 	ee_hessian_record_index.resize(5 * size);
@@ -2748,6 +2750,9 @@ void Collision::computeEEColliderHessian(unsigned int* EE, unsigned int num, dou
 
 			setEEColliderHessianFix(Hessian, grad, hessian_record, hessian_record_, 
 				grad_record, hessian_record_index);
+		}
+		else {
+			hessian_record_index[0] = 0;
 		}
 		hessian_record += 36;
 		grad_record += 6;

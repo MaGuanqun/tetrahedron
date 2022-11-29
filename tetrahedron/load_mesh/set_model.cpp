@@ -116,7 +116,7 @@ void SetModel::getAABB()
 	//std::cout << 0.5*(aabb[3]+aabb[0]) << " " << 0.5*(aabb[4] + aabb[1]) << " " << 0.5*(aabb[5] + aabb[2]) << std::endl;
 }
 
-void SetModel::regularization(RegularizationInfo& regularization_info)
+void SetModel::regularization(RegularizationInfo& regularization_info, int obj_index)
 {
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
 		SUB_(ori_mesh.vertices[i], regularization_info.body_center);
@@ -129,16 +129,18 @@ void SetModel::regularization(RegularizationInfo& regularization_info)
 		MULTI_(ori_mesh.vertices[i], coe);
 	}
 
-	double rotation_matrix[9];
-	double axe[3] = { 0,1,0 };
-	rotateAroundVectorRowMajor(rotation_matrix, axe, -M_PI /2.0);
-	double pos[3];
+	if (obj_index == 1) {
+		double rotation_matrix[9];
+		double axe[3] = { 0,1,0 };
+		rotateAroundVectorRowMajor(rotation_matrix, axe, -M_PI / 2.0);
+		double pos[3];
 
-	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
-		pos[0] = DOT(rotation_matrix, ori_mesh.vertices[i]);
-		pos[1] = DOT((rotation_matrix+3), ori_mesh.vertices[i]);
-		pos[2] = DOT((rotation_matrix+6), ori_mesh.vertices[i]);
-		memcpy(ori_mesh.vertices[i].data(), pos, 24);
+		for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
+			pos[0] = DOT(rotation_matrix, ori_mesh.vertices[i]);
+			pos[1] = DOT((rotation_matrix + 3), ori_mesh.vertices[i]);
+			pos[2] = DOT((rotation_matrix + 6), ori_mesh.vertices[i]);
+			memcpy(ori_mesh.vertices[i].data(), pos, 24);
+		}
 	}
 
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
@@ -148,9 +150,12 @@ void SetModel::regularization(RegularizationInfo& regularization_info)
 
 	std::cout << "scale " << coe<<" "<< regularization_info.move_info[0]<<" "<< regularization_info.move_info[1]<<" "<< regularization_info.move_info[2] << std::endl;
 
-	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
-		ori_mesh.vertices[i][1] += 0.8;
+	if (obj_index == 1) {
+		for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
+			ori_mesh.vertices[i][1] += 0.4;
+		}
 	}
+
 
 	//std::cout <<"scaler "<< regularization_info.scaler << std::endl;
 }

@@ -652,6 +652,7 @@ void Scene::setGroup()
 			else {
 				tetrahedron[i].mesh_struct.unconnected_tet_index.resize(1);
 				tetrahedron[i].mesh_struct.unconnected_tet_index[0].emplace_back(0);
+				tetrahedron[i].mesh_struct.obtainVETofColors();
 				tetrahedron[i].mesh_struct.setTetColorStartPerThread();
 			}
 		}

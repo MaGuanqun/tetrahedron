@@ -16,7 +16,7 @@ void Preprocessing::load_all_model(std::vector<std::string>& body_path, std::vec
 	getRegularizationInfo();
 	//getPresetRegularizationInfo();
 	for (int i = 0; i < object_path.size(); ++i) {
-		simulation_model[i].regularization(regularization_info);
+		simulation_model[i].regularization(regularization_info,i);
 	}
 	//if (!body_path.empty()) {
 	//	for (int i = 0; i < body_path.size(); ++i) {
