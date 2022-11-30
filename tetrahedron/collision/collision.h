@@ -278,7 +278,7 @@ public:
 	void TVCollisionTimeOneTriangleSelfColor(double* initial_pos_0, double* initial_pos_1, double* initial_pos_2,
 		double* current_pos_0, double* current_pos_1, double* current_pos_2,
 		double& collision_time, unsigned int num,
-		unsigned int* vertex_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex, int size_of_a_pair, int triangle_index);
+		unsigned int* vertex_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex, int size_of_a_pair);
 
 
 	void EECollisionTimeOneEdgeAll(double* initial_pos_a0, double* initial_pos_a1, double* current_pos_a0,
@@ -871,7 +871,7 @@ private:
 	void findVT_ClosePairSingleVertex(double* current_position, unsigned int* trianlge_index,
 		unsigned int triangle_num, std::vector<std::array<double, 3>*>& position, 
 		std::vector<std::array<int, 3>*>& triangle_vertex_index,
-		unsigned int* close_triangle_index, unsigned int& computeEEVolume, bool* is_pair_exist, int vertex_index);
+		unsigned int* close_triangle_index, unsigned int& computeEEVolume, bool* is_pair_exist);
 	void findEE_ClosePairSingleEdge(double* current_position_a0, double* current_position_a1,
 		unsigned int* edge_index, unsigned int edge_num, std::vector<std::array<double, 3>*>& position,
 		std::vector<unsigned int*>& edge_vertex_index,
