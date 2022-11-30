@@ -44,7 +44,7 @@ d_hat
 inner convergence rate
 0.002
 min inner itr num
-3
+5
 min outer itr num
 2
 displacement standard
@@ -52,4 +52,4 @@ displacement standard
 distance record as collision
 1e-06
 energy converge standard
-1e-06
+1e-08

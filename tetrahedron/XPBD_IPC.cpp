@@ -76,7 +76,7 @@ void XPBD_IPC::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* t
 	if (perform_collision) {
 		//collision.energy = energy_per_thread.data();
 		collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio, XPBD_IPC_,true);
-		collision.setCollisionFreeVertex(&initial_vertex_position, &record_vertex_position);
+		collision.setCollisionFreeVertex(&record_collision_free_vertex_position_address, &record_vertex_position);
 		//collision.setParameter(&lambda_collision,lambda.data()+ constraint_index_start[3], collision_constraint_index_start.data(), damping_coe, sub_time_step);
 	}
 
@@ -188,12 +188,13 @@ void XPBD_IPC::initialVariable()
 void XPBD_IPC::reorganzieDataOfObjects()
 {
 	vertex_position.resize(total_obj_num);
-	initial_vertex_position.resize(total_obj_num);
+	vertex_position_render.resize(total_obj_num);
 	mesh_struct.resize(total_obj_num);
 	vertex_index_begin_per_thread.resize(total_obj_num);
 	record_vertex_position.resize(total_obj_num);
 	record_vertex_position_address.resize(total_obj_num);
-	record_gloabl_CCD_vertex_position.resize(total_obj_num);
+	record_collision_free_vertex_position_address.resize(total_obj_num);
+	record_collision_free_vertex_position.resize(total_obj_num);
 
 	//record_outer_vertex_position.resize(total_obj_num);
 	//unfixed_vertex.resize(total_obj_num);
@@ -226,12 +227,13 @@ void XPBD_IPC::reorganzieDataOfObjects()
 
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		vertex_position[i] = cloth->data()[i].mesh_struct.vertex_position.data();
-		initial_vertex_position[i] = cloth->data()[i].mesh_struct.vertex_for_render.data();
+		vertex_position_render[i] = cloth->data()[i].mesh_struct.vertex_for_render.data();
 		mesh_struct[i] = &cloth->data()[i].mesh_struct;
 		vertex_index_begin_per_thread[i] = cloth->data()[i].mesh_struct.vertex_index_begin_per_thread.data();
 		record_vertex_position[i].resize(cloth->data()[i].mesh_struct.vertex_position.size());
 		record_vertex_position_address[i]= record_vertex_position[i].data();
-		record_gloabl_CCD_vertex_position[i].resize(cloth->data()[i].mesh_struct.vertex_position.size());
+		record_collision_free_vertex_position[i] = cloth->data()[i].mesh_struct.vertex_position;
+		record_collision_free_vertex_position_address[i] = record_collision_free_vertex_position[i].data();
 		triangle_indices[i] = cloth->data()[i].mesh_struct.triangle_indices.data();
 		//record_outer_vertex_position[i].resize(cloth->data()[i].mesh_struct.vertex_position.size());
 		//unfixed_vertex[i] = &cloth->data()[i].mesh_struct.unfixed_point_index;
@@ -259,12 +261,13 @@ void XPBD_IPC::reorganzieDataOfObjects()
 
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		vertex_position[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_position.data();
-		initial_vertex_position[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_for_render.data();
+		vertex_position_render[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_for_render.data();
 		mesh_struct[i + cloth->size()] = &tetrahedron->data()[i].mesh_struct;
 		vertex_index_begin_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_index_begin_per_thread.data();
 		record_vertex_position[i + cloth->size()].resize(tetrahedron->data()[i].mesh_struct.vertex_position.size());
 		record_vertex_position_address[i + cloth->size()] = record_vertex_position[i + cloth->size()].data();
-		record_gloabl_CCD_vertex_position[i + cloth->size()].resize(tetrahedron->data()[i].mesh_struct.vertex_position.size());
+		record_collision_free_vertex_position[i + cloth->size()]=tetrahedron->data()[i].mesh_struct.vertex_position;
+		record_collision_free_vertex_position_address[i + cloth->size()] = record_collision_free_vertex_position[i + cloth->size()].data();
 		triangle_indices[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.triangle_indices.data();
 		tet_indices[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.indices.data();
 		tet_A[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.A.data();
@@ -431,7 +434,7 @@ double XPBD_IPC::calEdgeLength()
 void XPBD_IPC::recordInitialPosition()
 {
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
-		memcpy(record_gloabl_CCD_vertex_position[i][0].data(), vertex_position[i][0].data(), 24 * record_gloabl_CCD_vertex_position[i].size());
+		memcpy(vertex_position_render[i][0].data(), vertex_position[i][0].data(), 24 * record_vertex_position[i].size());
 	}
 }
 
@@ -439,7 +442,7 @@ void XPBD_IPC::updateCollisionFreePosition()
 {
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		memcpy(record_vertex_position[i][0].data(), vertex_position[i][0].data(), 24 * record_vertex_position[i].size());
-		memcpy(initial_vertex_position[i][0].data(), vertex_position[i][0].data(), 24 * record_vertex_position[i].size());
+		memcpy(record_collision_free_vertex_position[i][0].data(), vertex_position[i][0].data(), 24 * record_vertex_position[i].size());
 	}
 }
 
@@ -516,21 +519,21 @@ void XPBD_IPC::XPBD_IPC_Position_Solve()
 
 void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 {
-	recordInitialPosition();
+	//recordInitialPosition();
 	updateCollisionFreePosition();
 	thread->assignTask(this, SET_POS_PREDICT_);
 	updateSn();
 	iteration_number = 0;
-	if (perform_collision) {
-		collision.collisionCulling();
-	}
+	//if (perform_collision) {
+	//	collision.collisionCulling();
+	//}
 	outer_itr_num = 0;
 	displacement_satisfied = false;
-	vertex_trace.clear();
-	vertex_trace.push_back(vertex_position[0][6]);
+	//vertex_trace.clear();
+	//vertex_trace.push_back(vertex_position[0][6]);
 	while (!convergeCondition(outer_itr_num)) {
 		if (perform_collision) {
-			//collision.collisionCulling();
+			collision.collisionCulling();
 			collision.globalCollisionTime();
 			thread->assignTask(this, COLLISION_FREE_POSITION_);
 			updateCollisionFreePosition();
@@ -546,12 +549,12 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 			solveNewtonCD_tetBlock();
 			//newtonCDBlock();
 
-			//if (inner_iteration_number >= min_inner_iteration - 1) {
-			//	computeCurrentEnergy();
-			//}
-			std::cout << "finish one itr " << inner_iteration_number << " " << energy << std::endl;
+			if (inner_iteration_number >= min_inner_iteration - 1) {
+				computeCurrentEnergy();
+			}
+			//std::cout << "finish one itr " << inner_iteration_number << " " << energy << std::endl;
 			inner_iteration_number++;
-			vertex_trace.push_back(vertex_position[0][6]);
+			//vertex_trace.push_back(vertex_position[0][6]);
 		}
 
 		//std::cout << "outer " << outer_itr_num << std::endl;
@@ -569,6 +572,8 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 	updateRenderNormal();
 
 	updateRenderVertexNormal();
+
+	std::cout <<"time stamp "<< * time_stamp << std::endl;
 }
 
 
@@ -697,22 +702,22 @@ bool XPBD_IPC::innerConvergeCondition(unsigned int iteration_num)
 		return false;
 	}
 
-	//if (abs(energy - previous_energy) < energy_converge_standard) {
-	//	return true;
-	//}
-	//if (abs(energy - previous_energy) / previous_energy < energy_converge_ratio) {
-	//	return true;
-	//}
-	//if (iteration_num > max_iteration_number) {
-	//	return true;
-	//}
-	//return false;
+	if (abs(energy - previous_energy) < energy_converge_standard) {
+		return true;
+	}
+	if (abs(energy - previous_energy) / previous_energy < energy_converge_ratio) {
+		return true;
+	}
+	if (iteration_num > max_iteration_number) {
+		return true;
+	}
+	return false;
 
 	//if (!nearly_not_move) {
 	//	return false;
 	//}
 
-	return true;
+	//return true;
 }
 
 
@@ -723,7 +728,7 @@ bool XPBD_IPC::checkMaxDisplacement()
 	std::array<double, 3>* previous_pos;
 	double* mass_;
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
-		previous_pos = initial_vertex_position[i];
+		previous_pos = record_collision_free_vertex_position[i].data();
 		current_pos = vertex_position[i];
 		num = mesh_struct[i]->vertex_position.size();
 		mass_ = mesh_struct[i]->mass_inv.data();
@@ -918,7 +923,7 @@ void XPBD_IPC::updatePosition()
 	unsigned int vertex_num;
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		vertex_num = mesh_struct[i]->vertex_position.size();
-		memcpy(initial_vertex_position[i][0].data(), vertex_position[i][0].data(), 24 * vertex_num);
+		memcpy(vertex_position_render[i][0].data(), vertex_position[i][0].data(), 24 * vertex_num);
 	}
 
 	for (unsigned int i = 0; i < collider->size(); ++i) {
@@ -952,43 +957,43 @@ void XPBD_IPC::firstNewtonCD()
 }
 
 
-void XPBD_IPC::firstOnlyInertialCollision()
-{
-	unsigned int size;
-	MeshStruct* mesh_struct_;
-	double* volume;
-	std::array<double, 3>* vertex_pos;
-	std::array<double, 3>* last_step_vertex_pos;
-	std::array<double, 3>* initial_vertex_pos;
-	double* mass_inv;
-	std::array<double, 3>* sn_;
-	double* mass;
-	double colliision_stiffness;
-	int* vertex_index;
-	std::vector<bool>* is_surface_vertex;
-	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
-		mesh_struct_ = mesh_struct[i + cloth->size()];
-		size = tetrahedron->data()[i].mesh_struct.vertex_position.size();
-		volume = tetrahedron->data()[i].mesh_struct.volume.data();
-		vertex_pos = vertex_position[i + cloth->size()];
-		last_step_vertex_pos = initial_vertex_position[i + cloth->size()];
-		initial_vertex_pos = record_vertex_position[i + cloth->size()].data();
-		mass_inv = mesh_struct_->mass_inv.data();
-		mass = mesh_struct_->mass.data();
-		sn_ = sn[i + cloth->size()].data();
-		vertex_index = tetrahedron->data()[i].mesh_struct.vertex_surface_index.data();
-		is_surface_vertex = &tetrahedron->data()[i].mesh_struct.vertex_on_surface;
-		colliision_stiffness = tetrahedron->data()[i].collision_stiffness[0];
-		//std::cout << "=== " << std::endl;
-		for (unsigned int j = 0; j < size; ++j) {
-			if (mass_inv[j] != 0.0) {
-				solveInertialCollision(vertex_pos, initial_vertex_pos[j].data(),
-					last_step_vertex_pos[j].data(), sub_time_step, mass, volume, j, sn_,
-					colliision_stiffness, i + cloth->size(), (*is_surface_vertex)[j], vertex_index[j]);
-			}
-		}
-	}
-}
+//void XPBD_IPC::firstOnlyInertialCollision()
+//{
+//	unsigned int size;
+//	MeshStruct* mesh_struct_;
+//	double* volume;
+//	std::array<double, 3>* vertex_pos;
+//	std::array<double, 3>* last_step_vertex_pos;
+//	std::array<double, 3>* initial_vertex_pos;
+//	double* mass_inv;
+//	std::array<double, 3>* sn_;
+//	double* mass;
+//	double colliision_stiffness;
+//	int* vertex_index;
+//	std::vector<bool>* is_surface_vertex;
+//	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
+//		mesh_struct_ = mesh_struct[i + cloth->size()];
+//		size = tetrahedron->data()[i].mesh_struct.vertex_position.size();
+//		volume = tetrahedron->data()[i].mesh_struct.volume.data();
+//		vertex_pos = vertex_position[i + cloth->size()];
+//		last_step_vertex_pos = initial_vertex_position[i + cloth->size()];
+//		initial_vertex_pos = record_vertex_position[i + cloth->size()].data();
+//		mass_inv = mesh_struct_->mass_inv.data();
+//		mass = mesh_struct_->mass.data();
+//		sn_ = sn[i + cloth->size()].data();
+//		vertex_index = tetrahedron->data()[i].mesh_struct.vertex_surface_index.data();
+//		is_surface_vertex = &tetrahedron->data()[i].mesh_struct.vertex_on_surface;
+//		colliision_stiffness = tetrahedron->data()[i].collision_stiffness[0];
+//		//std::cout << "=== " << std::endl;
+//		for (unsigned int j = 0; j < size; ++j) {
+//			if (mass_inv[j] != 0.0) {
+//				solveInertialCollision(vertex_pos, initial_vertex_pos[j].data(),
+//					last_step_vertex_pos[j].data(), sub_time_step, mass, volume, j, sn_,
+//					colliision_stiffness, i + cloth->size(), (*is_surface_vertex)[j], vertex_index[j]);
+//			}
+//		}
+//	}
+//}
 
 
 void XPBD_IPC::newtonCDTetWithCollision()
@@ -1014,7 +1019,7 @@ void XPBD_IPC::newtonCDTetWithCollision()
 		indices = tetrahedron->data()[i].mesh_struct.indices.data();
 		volume = tetrahedron->data()[i].mesh_struct.volume.data();
 		vertex_pos = vertex_position[i + cloth->size()];
-		last_step_vertex_pos = initial_vertex_position[i + cloth->size()];
+		last_step_vertex_pos = record_collision_free_vertex_position[i + cloth->size()].data();
 		initial_vertex_pos = record_vertex_position[i + cloth->size()].data();
 		stiffness = tetrahedron->data()[i].ARAP_stiffness;
 		A = tetrahedron->data()[i].mesh_struct.A.data();
@@ -2107,7 +2112,7 @@ double XPBD_IPC::getCollisionTime(std::vector<unsigned int>* triangle_of_a_tet,
 				current_vertex_position[tet_actual_unfixed_vertex_indices[i]].data(), collision_time,
 				collision.vertex_triangle_pair_num_record[obj_No][vertex_index_on_surface[tet_actual_unfixed_vertex_indices[i]]],
 				collision.vertex_triangle_pair_by_vertex[obj_No] + collision.close_vt_pair_num * vertex_index_on_surface[tet_actual_unfixed_vertex_indices[i]],
-				this->initial_vertex_position.data(), vertex_position.data(), triangle_indices.data());
+				this->record_collision_free_vertex_position_address.data(), vertex_position.data(), triangle_indices.data());
 			if (has_collider) {
 				collision.VTCollisionTimeOneVertex(initial_vertex_position[tet_actual_unfixed_vertex_indices[i]].data(),
 					current_vertex_position[tet_actual_unfixed_vertex_indices[i]].data(), collision_time,
@@ -2130,7 +2135,7 @@ double XPBD_IPC::getCollisionTime(std::vector<unsigned int>* triangle_of_a_tet,
 				current_vertex_position[triangle_[2]].data(), collision_time,
 				collision.triangle_vertex_pair_num_record[obj_No][*i],
 				collision.triangle_vertex_pair_by_triangle[obj_No] + collision.close_tv_pair_num * (*i),
-				this->initial_vertex_position.data(), vertex_position.data(),3);
+				this->record_collision_free_vertex_position_address.data(), vertex_position.data(),3);
 			if (has_collider) {
 				collision.TVCollisionTimeOneTriangle(initial_vertex_position[triangle_[0]].data(), initial_vertex_position[triangle_[1]].data(),
 					initial_vertex_position[triangle_[2]].data(),
@@ -2150,7 +2155,7 @@ double XPBD_IPC::getCollisionTime(std::vector<unsigned int>* triangle_of_a_tet,
 				current_vertex_position[*(edge_ + 1)].data(), collision_time,
 				collision.edge_edge_pair_num_record[obj_No][*i],
 				collision.edge_edge_pair_by_edge[obj_No] + collision.close_ee_pair_num * (*i),
-				this->initial_vertex_position.data(), vertex_position.data(), edge_vertices.data());
+				this->record_collision_free_vertex_position_address.data(), vertex_position.data(), edge_vertices.data());
 			if (has_collider) {
 				collision.EECollisionTimeOneEdgeAll(initial_vertex_position[*edge_].data(),
 					initial_vertex_position[*(edge_ + 1)].data(),
@@ -4177,7 +4182,7 @@ void XPBD_IPC::computeVelocity(int thread_No)
 	double delta_t = sub_time_step / damp_coe;
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		vertex_pos = vertex_position[i];
-		initial_vertex_pos = record_gloabl_CCD_vertex_position[i].data();
+		initial_vertex_pos = vertex_position_render[i];
 		vertex_end = vertex_index_begin_per_thread[i][thread_No + 1];
 		velocity_ = velocity[i].data();
 		for (unsigned int j = vertex_index_begin_per_thread[i][thread_No]; j < vertex_end; ++j) {
@@ -4374,7 +4379,7 @@ void XPBD_IPC::computeCollisionFreePosition(int thread_No)
 	for (unsigned int i = 0; i <total_obj_num; ++i) {
 		index_end = vertex_index_begin_per_thread[i][thread_No + 1];
 		q_end = vertex_position[i];
-		q_pre = initial_vertex_position[i];
+		q_pre = record_collision_free_vertex_position[i].data();
 		for (unsigned int j = vertex_index_begin_per_thread[i][thread_No]; j < index_end; ++j) {
 			q_end[j][0] = q_pre[j][0] + collision_time * (q_end[j][0] - q_pre[j][0]);
 			q_end[j][1] = q_pre[j][1] + collision_time * (q_end[j][1] - q_pre[j][1]);

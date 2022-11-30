@@ -118,7 +118,7 @@ private:
 	std::vector<std::array<double, 3>*> vertex_position_collider;
 
 	std::vector<std::array<double, 3>*> vertex_position;
-	std::vector<std::array<double, 3>*> initial_vertex_position;
+	std::vector<std::array<double, 3>*> vertex_position_render;
 	std::vector<MeshStruct*> mesh_struct;
 	std::vector<MeshStruct*> collider_mesh_struct;
 	std::vector<unsigned int*> vertex_index_begin_per_thread;
@@ -200,8 +200,9 @@ private:
 	//std::vector<std::array<double, 3>*>address_of_record_vertex_position;
 
 	std::vector<std::vector<std::array<double, 3>>> record_vertex_position;
-	std::vector<std::vector<std::array<double, 3>>> record_gloabl_CCD_vertex_position;
+	std::vector<std::vector<std::array<double, 3>>> record_collision_free_vertex_position;
 
+	std::vector<std::array<double, 3>*> record_collision_free_vertex_position_address;
 	std::vector<std::array<double, 3>*> record_vertex_position_address;
 
 	//std::vector<std::vector<std::array<double, 3>>> record_outer_vertex_position;
@@ -299,7 +300,7 @@ private:
 
 	bool nearly_not_move;//to indicate if the move distance of current itr is far than requirement
 
-	void firstOnlyInertialCollision();
+	//void firstOnlyInertialCollision();
 	void solveInertialCollision(std::array<double, 3>* vertex_position,
 		double* record_vertex_position_,
 		double* last_step_vertex_position,

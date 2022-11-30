@@ -4,7 +4,7 @@
 
 Collision::Collision()
 {
-	d_hat = 5e-3;
+	d_hat = 1e-2;
 	d_hat_2 = d_hat * d_hat;
 	tolerance = 1e-3 * d_hat;
 }
@@ -279,7 +279,6 @@ void Collision::setCollisionFreeVertex(std::vector< std::vector<std::array<doubl
 	for (int i = 0; i < total_obj_num; ++i) {
 		vertex_collision_free[i] = record_vertex_position->data()[i].data();
 	}
-
 }
 
 void Collision::reorganzieDataOfObjects()
@@ -5781,7 +5780,7 @@ void Collision::TVCollisionTimeOneTriangle(double* initial_pos_0, double* initia
 void Collision::TVCollisionTimeOneTriangleSelfColor(double* initial_pos_0, double* initial_pos_1, double* initial_pos_2,
 	double* current_pos_0, double* current_pos_1, double* current_pos_2,
 	double& collision_time, unsigned int num,
-	unsigned int* vertex_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex, int size_of_a_pair)
+	unsigned int* vertex_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex, int size_of_a_pair, int triangle_index)
 {
 	double time;
 	for (int i = 0; i < num; i += size_of_a_pair) {
@@ -5791,6 +5790,11 @@ void Collision::TVCollisionTimeOneTriangleSelfColor(double* initial_pos_0, doubl
 				current_vertex[vertex_index[i]][vertex_index[i + 1]].data(),
 				current_pos_0, current_pos_1, current_pos_2, eta, tolerance);
 			if (time < collision_time) {
+
+				//if (time == 0.0) {
+				//	std::cout << "the zero collision " << triangle_index << " " << vertex_index[i + 1] << std::endl;
+				//}
+
 				collision_time = time;
 			}
 		}
@@ -6455,6 +6459,7 @@ void Collision::colorCollisionTime(int thread_No, int color_No)
 					edge_edge_collider_pair_num_record[i][index_of_a_tet_color[j]],
 					edge_edge_collider_pair_by_edge[i] + close_ee_collider_pair_num * index_of_a_tet_color[j],
 					vertex_position_collider.data(), vertex_position_collider.data(), this->collider_edge_vertices.data());
+
 			}
 		}
 
@@ -6471,8 +6476,7 @@ void Collision::colorCollisionTime(int thread_No, int color_No)
 				vertex_pos[triangle_vertex[2]].data(), collision_time,
 				triangle_vertex_pair_num_record[i][index_of_a_tet_color[j]],
 				triangle_vertex_pair_by_triangle[i] + close_tv_pair_num * index_of_a_tet_color[j], vertex_record_for_this_color.data(),
-				vertex_position.data(), 3);
-
+				vertex_position.data(), 3, index_of_a_tet_color[j]);
 			if (has_collider) {
 				TVCollisionTimeOneTriangle(ini_vertex_pos[triangle_vertex[0]].data(), ini_vertex_pos[triangle_vertex[1]].data(),
 					ini_vertex_pos[triangle_vertex[2]].data(),
