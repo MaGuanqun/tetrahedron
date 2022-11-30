@@ -526,7 +526,8 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 	}
 	outer_itr_num = 0;
 	displacement_satisfied = false;
-
+	vertex_trace.clear();
+	vertex_trace.push_back(vertex_position[0][6]);
 	while (!convergeCondition(outer_itr_num)) {
 		if (perform_collision) {
 			//collision.collisionCulling();
@@ -548,10 +549,9 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 			//if (inner_iteration_number >= min_inner_iteration - 1) {
 			//	computeCurrentEnergy();
 			//}
-			//std::cout << "finish one itr " << inner_iteration_number << " " << energy << std::endl;
+			std::cout << "finish one itr " << inner_iteration_number << " " << energy << std::endl;
 			inner_iteration_number++;
-
-
+			vertex_trace.push_back(vertex_position[0][6]);
 		}
 
 		//std::cout << "outer " << outer_itr_num << std::endl;

@@ -303,8 +303,6 @@ public:
 	void prefixSumAllPair(int thread_No);
 
 	void colorCollisionTime(int thread_No, int color_No);
-
-
 private:
 
 	void resizeHessianRecordIndex();
@@ -873,7 +871,7 @@ private:
 	void findVT_ClosePairSingleVertex(double* current_position, unsigned int* trianlge_index,
 		unsigned int triangle_num, std::vector<std::array<double, 3>*>& position, 
 		std::vector<std::array<int, 3>*>& triangle_vertex_index,
-		unsigned int* close_triangle_index, unsigned int& computeEEVolume, bool* is_pair_exist);
+		unsigned int* close_triangle_index, unsigned int& computeEEVolume, bool* is_pair_exist, int vertex_index);
 	void findEE_ClosePairSingleEdge(double* current_position_a0, double* current_position_a1,
 		unsigned int* edge_index, unsigned int edge_num, std::vector<std::array<double, 3>*>& position,
 		std::vector<unsigned int*>& edge_vertex_index,

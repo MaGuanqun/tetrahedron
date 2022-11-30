@@ -80,6 +80,10 @@ public:
 	void tetHessian(int thread_No);
 	void tetGradForColor(int thread_No, unsigned int color_No);
 	//void newtonCDTetBlockAGroupTest(int thread_No, int color);
+
+
+	std::vector<std::array<double, 3>>vertex_trace;
+
 private:
 
 

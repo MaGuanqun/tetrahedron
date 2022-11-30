@@ -919,12 +919,15 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 	////	0.005);
 	//draw_vertex.draw(camera, glm::vec3(1.0, 0.0, 0.0));
 
-	//draw_vertex.setVertex(project_dynamic.collision.draw_target_position, //
-	//	0.005);
-	//draw_vertex.draw(camera, glm::vec3(0.0, 1.0, 0.0));
+	draw_vertex.setVertex(xpbd_ipc.vertex_trace, //
+		0.002);
+	draw_vertex.draw(camera, glm::vec3(0.0, 1.0, 0.0));
+
+	//std::vector<unsigned int> indices;
+	//indices.push_back(228);
 	//draw_triangle.drawTriangle(camera, object_shader_front, collider[0].mesh_struct.vertex_for_render,
 	//	collider[0].mesh_struct.triangle_indices, collider[0].mesh_struct.face_normal_for_render,
-	//	project_dynamic.collision.test_triangle_index, glm::vec3(0.0, 1.0, 0.0));
+	//	indices, glm::vec3(0.0, 1.0, 0.0));
 
 
 

@@ -129,7 +129,7 @@ void SetModel::regularization(RegularizationInfo& regularization_info, int obj_i
 		MULTI_(ori_mesh.vertices[i], coe);
 	}
 
-	if (obj_index == 1) {
+	//if (obj_index == 1) {
 		double rotation_matrix[9];
 		double axe[3] = { 0,1,0 };
 		rotateAroundVectorRowMajor(rotation_matrix, axe, -M_PI / 2.0);
@@ -141,7 +141,7 @@ void SetModel::regularization(RegularizationInfo& regularization_info, int obj_i
 			pos[2] = DOT((rotation_matrix + 6), ori_mesh.vertices[i]);
 			memcpy(ori_mesh.vertices[i].data(), pos, 24);
 		}
-	}
+	//}
 
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
 		SUM_(ori_mesh.vertices[i], regularization_info.move_info);
@@ -150,11 +150,11 @@ void SetModel::regularization(RegularizationInfo& regularization_info, int obj_i
 
 	std::cout << "scale " << coe<<" "<< regularization_info.move_info[0]<<" "<< regularization_info.move_info[1]<<" "<< regularization_info.move_info[2] << std::endl;
 
-	if (obj_index == 1) {
+	//if (obj_index == 1) {
 		for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
-			ori_mesh.vertices[i][1] += 0.4;
+			ori_mesh.vertices[i][1] += 0.8;
 		}
-	}
+	//}
 
 
 	//std::cout <<"scaler "<< regularization_info.scaler << std::endl;

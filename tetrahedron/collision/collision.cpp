@@ -2781,7 +2781,7 @@ void Collision::findVT_ClosePair()
 			for (int j = 0; j < vertex_num; ++j) {
 				findVT_ClosePairSingleVertex(vertex_position[i][j].data(), vertex_triangle + estimate_coeff_for_vt_pair_num * j,
 					vertex_triangle_num[j], vertex_position, triangle_indices, vertex_triangle_pair_by_vertex[i] + j * close_vt_pair_num,
-					vertex_triangle_pair_num_record[i][j], pair_exist + estimate_coeff_for_vt_pair_num_exist * j);
+					vertex_triangle_pair_num_record[i][j], pair_exist + estimate_coeff_for_vt_pair_num_exist * j,j);
 			}
 		}
 		else {
@@ -2789,7 +2789,7 @@ void Collision::findVT_ClosePair()
 			for (int j = 0; j < vertex_num; ++j) {				
 				findVT_ClosePairSingleVertex(vertex_position[i][vertex_index_on_surface_[j]].data(), vertex_triangle + estimate_coeff_for_vt_pair_num * j,
 					vertex_triangle_num[j], vertex_position, triangle_indices, vertex_triangle_pair_by_vertex[i] + j * close_vt_pair_num,
-					vertex_triangle_pair_num_record[i][j], pair_exist + estimate_coeff_for_vt_pair_num_exist * j);
+					vertex_triangle_pair_num_record[i][j], pair_exist + estimate_coeff_for_vt_pair_num_exist * j, vertex_index_on_surface_[j]);
 			}
 		}
 
@@ -3026,7 +3026,7 @@ void Collision::findVT_ColliderClosePair()
 					vertex_triangle_num[j], vertex_position_collider, triangle_indices_collider,
 					vertex_obj_triangle_collider_pair_by_vertex[i] + j * close_vt_collider_pair_num,
 					vertex_obj_triangle_collider_num_record[i][j],
-					pair_exist + estimate_coeff_for_vt_collider_pair_num_exist * j);
+					pair_exist + estimate_coeff_for_vt_collider_pair_num_exist * j,j);
 			}
 		}
 		else {
@@ -3036,7 +3036,7 @@ void Collision::findVT_ColliderClosePair()
 					vertex_triangle_num[j], vertex_position_collider, triangle_indices_collider,
 					vertex_obj_triangle_collider_pair_by_vertex[i] + j * close_vt_collider_pair_num,
 					vertex_obj_triangle_collider_num_record[i][j],
-					pair_exist + estimate_coeff_for_vt_collider_pair_num_exist * j);
+					pair_exist + estimate_coeff_for_vt_collider_pair_num_exist * j, vertex_index_on_surface_[j]);
 			}
 		}
 	}
@@ -3046,21 +3046,33 @@ void Collision::findVT_ColliderClosePair()
 void Collision::findVT_ClosePairSingleVertex(double* current_position, unsigned int* trianlge_index, 
 	unsigned int triangle_num, std::vector<std::array<double,3>*>& position, 
 	std::vector<std::array<int, 3>*>& triangle_vertex_index,
-	unsigned int* close_triangle_index, unsigned int& close_triangle_num, bool* is_pair_exist)
+	unsigned int* close_triangle_index, unsigned int& close_triangle_num, bool* is_pair_exist, int vertex_index)
 {
 	int* triangle_vertex;
 	for (int i = 0; i < triangle_num; i+=2) {
 		triangle_vertex = triangle_vertex_index[trianlge_index[i]][trianlge_index[i + 1]].data();
-		if (CCD::internal::pointTriangleDistanceUnclassified(current_position, position[trianlge_index[i]][triangle_vertex[0]].data(),
-			position[trianlge_index[i]][triangle_vertex[1]].data(), position[trianlge_index[i]][triangle_vertex[2]].data()) < d_hat_2) {
+
+		if (vertex_index == 6 && trianlge_index[i + 1]==228) {
+			std::cout << "has test "<< std::endl;
+		}
+		double distance = CCD::internal::pointTriangleDistanceUnclassified(current_position, position[trianlge_index[i]][triangle_vertex[0]].data(),
+			position[trianlge_index[i]][triangle_vertex[1]].data(), position[trianlge_index[i]][triangle_vertex[2]].data());
+
+		if (distance < d_hat_2) {
 			memcpy(close_triangle_index, trianlge_index + i, 8);
 			close_triangle_index += 2;
 			close_triangle_num += 2;			
+
 			if (!*is_pair_exist) {
 				*is_pair_exist = true;
 			}
 		}
 		is_pair_exist++;
+
+		if (vertex_index == 6 && trianlge_index[i + 1] == 228) {
+			std::cout <<  distance<<" "<<d_hat_2 << std::endl;
+		}
+
 	}
 }
 
