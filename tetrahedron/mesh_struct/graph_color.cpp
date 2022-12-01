@@ -18,6 +18,7 @@ void GraphColor::findMinMaxDegree(std::vector<std::vector<unsigned int>>& elemen
 }
 
 
+
 void GraphColor::graphColor(std::vector<std::vector<unsigned int>>& element_element, std::vector<std::vector<unsigned int>>& element_not_connect)
 {
 	unsigned int max_degree, min_degree;

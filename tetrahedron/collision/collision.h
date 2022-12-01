@@ -84,6 +84,15 @@ public:
 	unsigned int** edge_edge_collider_num_record_prefix_sum;
 
 
+	std::vector<std::vector<unsigned int>> triangle_index_collide_with_collider;
+	std::vector<std::vector<unsigned int>> edge_index_collide_with_collider;
+	std::vector<std::vector<unsigned int>> vertex_index_collide_with_collider;
+
+
+	std::vector<unsigned int>triangle_index_collide_with_collider_prefix_sum;
+	std::vector<unsigned int>edge_index_collide_with_collider_prefix_sum;
+	std::vector<unsigned int>vertex_index_collide_with_collider_prefix_sum;
+
 	std::vector<int>vt_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 3 0 1 3 or 4 0 1 2 3, every element 5 number
 	std::vector<double> vt_hessian_record; //size 12x12
 	std::vector<double> vt_grad_record;
@@ -303,7 +312,20 @@ public:
 	void prefixSumAllPair(int thread_No);
 
 	void colorCollisionTime(int thread_No, int color_No);
+
+	void setElementCollideWithCollider(int thread_No);
+
+	void recordPairCompress(int thread_No);
+
+
 private:
+
+	void recordVTCollisionPairCompress(int thread_No, unsigned int** start_per_thread, unsigned int** pair_num_record, unsigned int** pair, unsigned int** prefix_sum,
+		unsigned int* pair_compress_record, unsigned int** vertex_surface_to_global);
+	void recordEECollisionPairCompress(int thread_No, unsigned int** start_per_thread, unsigned int** pair_num_record, unsigned int** pair,
+		std::vector<unsigned int>* pair_compres_record);
+
+	unsigned int prefix_sum_of_different_type_pair[6];//0:VT, 1:EE, 2: TV_collider, 3: EE collider 4: VT_collider
 
 	void resizeHessianRecordIndex();
 
@@ -916,4 +938,38 @@ private:
 
 	void resizeFloorCollisionHessianRecord();
 	void computeFloorHessian(double d_hat, double stiffness, double floor_value, double& hessian, double& grad, double position);
+
+	void graphColorCollision();
+	void setTriangleCollideWithCollider();
+	void setEdgeCollideWithCollider();
+	void setVertexCollideWithCollider();
+
+	void setCollisionPairPrefixSumDifferentType();
+	void findMinMaxDegreeOfCollisionPair(unsigned int& max_degree, unsigned int& min_degree);
+
+
+	std::vector<int> collision_pair_around_pair;
+	std::vector<int> collision_pair_around_pair_size;
+	
+	int collision_pair_around_pair_size_per_pair;
+
+	void findPairAroundPair();
+
+
+	std::vector<unsigned int> vt_per_thread_start_index;//recrod obj_index, vertex_index,  start index in that vertex
+	std::vector<unsigned int> ee_per_thread_start_index;//recrod obj_index, vertex_index,  start index in that vertex
+	std::vector<unsigned int> vt_collider_per_thread_start_index; //recrod obj_index, vertex_index,
+	std::vector<unsigned int> tv_collider_per_thread_start_index;//recrod obj_index, tri_index,
+	std::vector<unsigned int>ee_collider_per_thread_start_index;//recrod obj_index, edge_index,
+
+	void setPairStartPerThread(unsigned int** prefix_sum_record, unsigned int** element_index_start_per_thread,
+		int* pair_per_thread_start_index);
+
+	void recordPairCompress();
+
+	std::vector<unsigned int> vt_pair_compress_record; //obj0, v0, obj1, t1
+	std::vector<unsigned int>ee_pair_compress_record; //obj0, v0, obj1, t1
+
+	std::vector<std::vector<unsigned int>> temp_save_ee_pair_compress_per_thread; // thread num-1, thread 0 just store in ee_pair_compress_record
+	void initialPairCompress();
 };

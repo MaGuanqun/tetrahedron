@@ -397,6 +397,12 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     case PREFIX_SUM_ALL_PAIRS:
         k = job([func, thread_id]() {func->prefixSumAllPair(thread_id); });
         break;
+    case SET_ELEMENT_COLLIDE_WITH_COLLIDER:
+        k = job([func, thread_id]() {func->setElementCollideWithCollider(thread_id); });
+        break;
+    case RECORD_PAIR_COMPRESS:
+        k = job([func, thread_id]() {func->recordPairCompress(thread_id); });
+        break;
     }
     return k;
 }
