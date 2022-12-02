@@ -87,7 +87,7 @@ public:
 private:
 
 
-	std::vector<std::vector<std::vector<unsigned int>>*>unconnected_tet_index;
+	std::vector<std::vector<std::vector<std::vector<unsigned int>>>*>tet_color_groups;
 
 
 
@@ -214,8 +214,7 @@ private:
 
 
 	double calEdgeLength();
-
-	std::vector<double> store_tet_arap_hessian; //for every 12*12, we only store 4*4 as every block is a diagonal matrix
+	std::vector<double> store_tet_arap_hessian; //for every 12*12, we only store 4*4 as every block is a diagonal matrix 
 	std::vector<double> store_tet_arap_grad;
 	std::vector<unsigned int> prefix_sum_of_every_tet_index;
 

@@ -90,8 +90,8 @@ void XPBD_IPC::setColorNum()
 {
 	int color_num = 1;
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
-		if (color_num < tetrahedron->data()[i].mesh_struct.unconnected_tet_index.size()) {
-			color_num = tetrahedron->data()[i].mesh_struct.unconnected_tet_index.size();
+		if (color_num < tetrahedron->data()[i].mesh_struct.tet_color_group[0].size()) {
+			color_num = tetrahedron->data()[i].mesh_struct.tet_color_group[0].size();
 		}
 	}
 	max_tet_color_num = color_num;
@@ -257,7 +257,7 @@ void XPBD_IPC::reorganzieDataOfObjects()
 	unfix_tet_index.resize(tetrahedron->size());
 	unfixed_tet_vertex_num.resize(tetrahedron->size());
 
-	unconnected_tet_index.resize(tetrahedron->size());
+	tet_color_groups.resize(tetrahedron->size());
 
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		vertex_position[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_position.data();
@@ -296,7 +296,7 @@ void XPBD_IPC::reorganzieDataOfObjects()
 		unfix_tet_index[i] = tetrahedron->data()[i].mesh_struct.unfixied_indices.data();
 		unfixed_tet_vertex_num[i] = tetrahedron->data()[i].mesh_struct.tet_unfixed_vertex_num.data();
 
-		unconnected_tet_index[i] =&tetrahedron->data()[i].mesh_struct.unconnected_tet_index;
+		tet_color_groups[i] =&tetrahedron->data()[i].mesh_struct.tet_color_group;
 	}
 	if (!collider->empty()) {
 		triangle_indices_collider.resize(collider->size());
@@ -802,7 +802,13 @@ void XPBD_IPC::tetGradForColor(int thread_No, unsigned int color_No)
 	unsigned int prefix_sum_start;
 
 	int k=0;
+
+	int color_group_index;
+
 	for (int i = 0; i < tetrahedron->size(); ++i) {
+
+		color_group_index = inner_iteration_number % tet_color_groups[i]->size();
+
 		stiffness =0.5* tetrahedron->data()[0].ARAP_stiffness;
 		prefix_sum_start = prefix_sum_of_every_tet_index[i];
 

@@ -779,17 +779,29 @@ void TetrahedronMeshStruct::obtainVETofColors()
 
 void TetrahedronMeshStruct::setTetColorStartPerThread()
 {
-	tet_color_index_start_per_thread.resize(thread->thread_num + 1);
-	arrangeIndex(thread->thread_num, unconnected_tet_index.size(), tet_color_index_start_per_thread.data());
+	tet_color_index_start_per_thread_groups.resize(tet_color_group.size());
+	for (int i = 0; i < tet_color_index_start_per_thread_groups.size(); ++i)
+	{
+		tet_color_index_start_per_thread_groups[i].resize(thread->thread_num + 1);
+		arrangeIndex(thread->thread_num, tet_color_group[i].size(), tet_color_index_start_per_thread_groups[i].data());
+	}
+	
 
-	tet_around_tet_color_group.resize(unconnected_tet_index.size());
-	for (int i = 0; i < tet_around_tet_color_group.size(); ++i) {
-		tet_around_tet_color_group[i].reserve(unconnected_tet_index[i].size());
+	tet_around_tet_color_groups.resize(tet_color_group.size());
+	for (int i = 0; i < tet_around_tet_color_groups.size(); ++i) {
+		tet_around_tet_color_groups[i].resize(tet_color_group[i].size());
+		for (int j = 0; j < tet_around_tet_color_groups[i].size(); ++i) {
+			tet_around_tet_color_groups[i][j].reserve(tet_color_group[i][j].size());
+		}
 	}
 
 
-	tet_in_a_group_start_per_thread.resize(unconnected_tet_index.size());
-	tet_around_tet_color_group_start_per_thread.resize(unconnected_tet_index.size());
+	tet_in_a_group_start_per_thread_groups.resize(tet_color_group.size());
+	tet_around_tet_color_groups_start_per_thread.resize(tet_color_group.size());
+	for (int i = 0; i < tet_color_group.size(); ++i) {
+		tet_in_a_group_start_per_thread_groups[i].resize(tet_color_group[i].size());
+		tet_around_tet_color_groups_start_per_thread[i].resize(tet_color_group[i].size());
+	}
 
 	thread->assignTask(this, TET_AROUND_TET_COLOR_GROUP);
 
@@ -803,57 +815,60 @@ void TetrahedronMeshStruct::setTetColorStartPerThread()
 void TetrahedronMeshStruct::setTetAroundTetColor(int thread_No)
 {
 	std::vector<bool>is_used(indices.size());
-	for (int i = tet_color_index_start_per_thread[thread_No]; i < tet_color_index_start_per_thread[thread_No + 1]; ++i) {
-		setTetAroundTetColor(is_used, &unconnected_tet_index[i], &tet_around_tet_color_group[i]);
-		tet_around_tet_color_group_start_per_thread[i].resize(thread->thread_num + 1);
-		arrangeIndex(thread->thread_num, tet_around_tet_color_group[i].size(), 
-			tet_around_tet_color_group_start_per_thread[i].data());
+	for (int j = 0; j < tet_color_group.size(); ++j) {
+		for (int i = tet_color_index_start_per_thread_groups[j][thread_No]; i < tet_color_index_start_per_thread_groups[j][thread_No + 1]; ++i) {
+			setTetAroundTetColor(is_used, &tet_color_group[j][i], &tet_around_tet_color_groups[j][i]);
+			tet_around_tet_color_groups_start_per_thread[j][i].resize(thread->thread_num + 1);
+			arrangeIndex(thread->thread_num, tet_around_tet_color_groups[j][i].size(),
+				tet_around_tet_color_groups_start_per_thread[j][i].data());
 
-		tet_in_a_group_start_per_thread[i].resize(thread->thread_num + 1);
-		arrangeIndex(thread->thread_num, unconnected_tet_index[i].size(), tet_in_a_group_start_per_thread[i].data());
+			tet_in_a_group_start_per_thread_groups[j][i].resize(thread->thread_num + 1);
+			arrangeIndex(thread->thread_num, tet_color_group[j][i].size(), tet_in_a_group_start_per_thread_groups[j][i].data());
+		}
 	}
 }
 
 
 void TetrahedronMeshStruct::testTetAroundAGroup()
 {
-	std::cout << "color size " << unconnected_tet_index.size() << std::endl;
-	std::cout << "color start per thread ";
-	for (int i = 0; i < thread->thread_num; ++i) {
-		std::cout << tet_color_index_start_per_thread[i] << " ";
-	}
-	std::cout << std::endl;
-	for (int i = 0; i < unconnected_tet_index.size(); ++i) {
-		std::cout << "tet in a color ";
-		for (int j = 0; j < unconnected_tet_index[i].size(); ++j) {
-			std::cout << unconnected_tet_index[i][j] << " ";
+	for (int k = 0; k < tet_color_group.size(); ++k) {
+		std::cout << "color size " << tet_color_group[k].size() << std::endl;
+		std::cout << "color start per thread ";
+		for (int i = 0; i < thread->thread_num; ++i) {
+			std::cout << tet_color_index_start_per_thread_groups[k][i] << " ";
 		}
 		std::cout << std::endl;
-		std::cout << "tet around a color ";
-		for (int j = 0; j < tet_around_tet_color_group[i].size(); ++j) {
-			std::cout << tet_around_tet_color_group[i][j] << " ";
-		}
-		std::cout << std::endl;
-	}
-
-	std::vector<bool> is_used(indices.size(),false);
-	for(int i=0;i<unconnected_tet_index.size();++i){
-		for (int j = 0; j < unconnected_tet_index[i].size(); ++j) {
-			if (!is_used[unconnected_tet_index[i][j]]) {
-				is_used[unconnected_tet_index[i][j]] = true;
+		for (int i = 0; i < tet_color_group[k].size(); ++i) {
+			std::cout << "tet in a color ";
+			for (int j = 0; j < tet_color_group[k][i].size(); ++j) {
+				std::cout << tet_color_group[k][i][j] << " ";
 			}
-			else {
-				std::cout << "duplicate " << i << " " << j << " " << unconnected_tet_index[i][j];
+			std::cout << std::endl;
+			std::cout << "tet around a color ";
+			for (int j = 0; j < tet_around_tet_color_groups[k][i].size(); ++j) {
+				std::cout << tet_around_tet_color_groups[k][i][j] << " ";
+			}
+			std::cout << std::endl;
+		}
+
+		std::vector<bool> is_used(indices.size(), false);
+		for (int i = 0; i < tet_color_group[k].size(); ++i) {
+			for (int j = 0; j < tet_color_group[k][i].size(); ++j) {
+				if (!is_used[tet_color_group[k][i][j]]) {
+					is_used[tet_color_group[k][i][j]] = true;
+				}
+				else {
+					std::cout << "duplicate " << i << " " << j << " " << tet_color_group[k][i][j];
+				}
 			}
 		}
-	}
-	for (int i = 0; i < indices.size(); ++i) {
-		if (!is_used[i]) {
-			std::cout << "lost one tet " << i << std::endl;
+		for (int i = 0; i < indices.size(); ++i) {
+			if (!is_used[i]) {
+				std::cout << "lost one tet " << i << std::endl;
+			}
 		}
+
 	}
-
-
 
 }
 

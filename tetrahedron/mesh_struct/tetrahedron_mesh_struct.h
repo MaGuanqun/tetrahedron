@@ -38,7 +38,7 @@ public:
 
 
 
-	std::vector<std::vector<unsigned int>>tet_around_tet_color_group;//excluede tet in the group
+	std::vector < std::vector<std::vector<unsigned int>>>tet_around_tet_color_groups;//excluede tet in the group
 
 	std::vector<unsigned int> tetrahedron_index_begin_per_thread;
 	void setVolume(int thread_No);
@@ -97,11 +97,11 @@ public:
 
 	void setTetAroundTetColor(int thread_No);
 
-	std::vector<unsigned int> tet_color_index_start_per_thread;
-	std::vector<std::vector<unsigned int>> tet_around_tet_color_group_start_per_thread; //with tet_around_tet_color_group
+	std::vector<std::vector<unsigned int>> tet_color_index_start_per_thread_groups;
+	std::vector < std::vector<std::vector<unsigned int>>> tet_around_tet_color_groups_start_per_thread; //with tet_around_tet_color_group
 	
 
-	std::vector<std::vector<unsigned int>>tet_in_a_group_start_per_thread;
+	std::vector<std::vector<std::vector<unsigned int>>>tet_in_a_group_start_per_thread_groups;
 
 	void setTetColorStartPerThread();
 	void setTetInfoInGroup();
