@@ -9151,7 +9151,7 @@ void Collision::setPairStartPerThread(unsigned int** prefix_sum_record, unsigned
 				}
 			}
 		}
-		next_loop:
+	next_loop:;
 	}
 }
 

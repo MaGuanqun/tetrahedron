@@ -18,13 +18,110 @@ void GraphColor::findMinMaxDegree(std::vector<std::vector<unsigned int>>& elemen
 }
 
 
+void GraphColor::graphColorTet(MeshStruct& mesh_struct, int different_color_strategy_num)
+{
+	mesh_struct.tet_color_group.resize(different_color_strategy_num);
+	unsigned int max_degree, min_degree;
+	findMinMaxDegree(mesh_struct.tet_tet_index, max_degree, min_degree);
+	std::cout << "max degree " << max_degree << " min degree " << min_degree << std::endl;
+
+	std::vector<int>element_order(mesh_struct.tet_tet_index.size());
+
+	int max_color_num = max_degree / 3;
+
+	for (int i =0; i < element_order.size(); ++i) {
+		element_order[i] = i;
+	}
+	std::shuffle(element_order.begin(), element_order.end(), std::default_random_engine(1));
+	graphColorLoopNode(mesh_struct.tet_tet_index, max_color_num, mesh_struct.tet_color_group[0],
+		element_order.data());
+
+	if (different_color_strategy_num > 1) {
+		memcpy(element_order.data(), mesh_struct.tet_color_group[0].back().data(), 4 * mesh_struct.tet_color_group[0].back().size());
+
+		int* addre = element_order.data() + mesh_struct.tet_color_group[0].back().size();
+		for (int i = 0; i < mesh_struct.tet_color_group[0].size() - 1; ++i) {
+			memcpy(addre, mesh_struct.tet_color_group[0][i].data(), 4 * mesh_struct.tet_color_group[0][i].size());
+			addre += mesh_struct.tet_color_group[0][i].size();
+		}
+		std::shuffle(element_order.begin(), element_order.begin() + mesh_struct.tet_color_group[0].back().size(), std::default_random_engine(111));
+		std::shuffle(element_order.begin() + mesh_struct.tet_color_group[0].back().size(), element_order.end(), std::default_random_engine(111));
+		graphColorLoopNode(mesh_struct.tet_tet_index, max_color_num, mesh_struct.tet_color_group[1],
+			element_order.data());
+
+		for (int i = 2; i < different_color_strategy_num; ++i) {
+			std::shuffle(element_order.begin(), element_order.end(), std::default_random_engine(111*i));
+			graphColorLoopNode(mesh_struct.tet_tet_index, max_color_num, mesh_struct.tet_color_group[i],
+				element_order.data());
+		}
+	}
+
+
+
+
+}
+
+
+void GraphColor::graphColorLoopNode(std::vector<std::vector<unsigned int>>& element_element, int max_color_number,
+	std::vector<std::vector<unsigned int>>& element_not_connect, int* element_order)
+{
+	unsigned int element_number = element_element.size();
+	std::vector<int>color(element_number, -1);
+	unsigned int unique_color_number = max_color_number - 1;
+
+	std::vector<int> palette_unit_0(max_color_number);
+	std::vector<int> palette_unit_1(max_color_number);
+	for (int i = 0; i < unique_color_number; ++i) {
+		palette_unit_0[i] = i;
+		palette_unit_1[i] = unique_color_number - 1 - i;
+	}
+	palette_unit_0[unique_color_number] = unique_color_number;
+	palette_unit_1[unique_color_number] = unique_color_number;	
+	int* palette_unit= palette_unit_0.data();
+	std::vector<bool>is_color_used(max_color_number, false);
+
+	int i;
+	color[element_order[0]] = 0;
+	for (int k = 1; k < element_number; ++k) {
+		i = element_order[k];
+		if (k % max_color_number == 0) {
+			if ((k / max_color_number) % 2 == 0) {
+				palette_unit = palette_unit_0.data();
+			}
+			else {
+				palette_unit = palette_unit_1.data();
+			}
+		}
+
+		std::fill(is_color_used.begin(), is_color_used.end(), false);
+		for (auto j = element_element[i].begin(); j < element_element[i].end(); ++j) {
+			if (color[*j] != -1) {
+				is_color_used[color[*j]] = true;
+			}
+		}
+		for (int j = 0; j < unique_color_number; ++j) {
+			if (!is_color_used[palette_unit[j]]) {
+				color[i] = palette_unit[j];
+				goto color_assigned;
+			}
+		}
+		color[i] = palette_unit[unique_color_number];
+	color_assigned:;
+
+	}
+
+	decideGroup(max_color_number, element_not_connect, color.data(), element_number);
+}
+
+
+
 
 void GraphColor::graphColor(std::vector<std::vector<unsigned int>>& element_element, std::vector<std::vector<unsigned int>>& element_not_connect)
 {
 	unsigned int max_degree, min_degree;
 	findMinMaxDegree(element_element, max_degree, min_degree);
 
-	std::cout << "max degree " << max_degree << std::endl;
+	std::cout << "max degree " << max_degree<<" min degree "<<min_degree << std::endl;
 
 	//initial the palette array
 	unsigned int max_size = max_degree + 3;
@@ -292,12 +389,14 @@ void GraphColor::testEdge(std::vector<std::vector<unsigned int>>&element_not_con
 
 
 
-void GraphColor::testTet(MeshStruct& mesh_struct, std::vector<std::array<int, 4>>& indices)
+void GraphColor::testTet(MeshStruct& mesh_struct,std::vector<std::vector<unsigned int>>&element_not_connect, std::vector<std::array<int, 4>>& indices)
 {
-	std::vector<std::vector<unsigned int>>element_not_connect;
-	graphColor(mesh_struct.tet_tet_index, element_not_connect);
+	//graphColor(mesh_struct.tet_tet_index, element_not_connect);
+	//graphColorLoopNode(mesh_struct.tet_tet_index,25, element_not_connect);
 
 	std::vector<bool> is_used(mesh_struct.tet_tet_index.size(), false);
+
+	std::cout << "test "<< mesh_struct.tet_tet_index.size() << std::endl;
 
 	for (unsigned int i = 0; i < element_not_connect.size(); ++i) {
 		for (auto j = element_not_connect[i].begin(); j < element_not_connect[i].end(); ++j) {
@@ -309,7 +408,7 @@ void GraphColor::testTet(MeshStruct& mesh_struct, std::vector<std::array<int, 4>
 	}
 
 	is_used.resize(mesh_struct.vertex_position.size());
-	for (unsigned int i = 0; i < element_not_connect.size(); ++i) {
+	for (unsigned int i = 0; i < element_not_connect.size()-1; ++i) {
 		std::fill(is_used.begin(), is_used.end(), false);
 		for (auto j = element_not_connect[i].begin(); j < element_not_connect[i].end(); ++j) {
 			for(unsigned int k=0;k<4;++k){
@@ -330,12 +429,12 @@ void GraphColor::testTet(MeshStruct& mesh_struct, std::vector<std::array<int, 4>
 	}
 
 	std::cout << "group of tet "<< element_not_connect.size() << std::endl;
-	//for (unsigned int i = 0; i < element_not_connect.size(); ++i) {
-	//	//for (auto j = element_not_connect[i].begin(); j < element_not_connect[i].end(); ++j) {
-	//	//	std::cout << *j << " ";
-	//	//}
-	//	std::cout<< element_not_connect[i].size() << std::endl;
-	//}
+	for (unsigned int i = 0; i < element_not_connect.size(); ++i) {
+		//for (auto j = element_not_connect[i].begin(); j < element_not_connect[i].end(); ++j) {
+		//	std::cout << *j << " ";
+		//}
+		std::cout<< element_not_connect[i].size() << std::endl;
+	}
 }
 
 

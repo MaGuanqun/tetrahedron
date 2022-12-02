@@ -1,5 +1,7 @@
 #pragma once
 #include"mesh_struct.h"
+#include<algorithm>
+#include<random>
 
 class GraphColor
 {
@@ -10,12 +12,19 @@ public:
 	void graphColor(std::vector<std::vector<unsigned int>>& element_element, std::vector<std::vector<unsigned int>>& element_not_connect);
 
 
-	void testTet(MeshStruct& mesh_struct, std::vector<std::array<int, 4>>& indices);
+
+	void testTet(MeshStruct& mesh_struct, std::vector<std::vector<unsigned int>>& element_not_connect, std::vector<std::array<int, 4>>& indices);
 	void testEdge(std::vector<std::vector<unsigned int>>&element_not_connect, MeshStruct& mesh_struct, 
 		std::vector<unsigned int>& edge_vertices);
 	void testBend(std::vector<std::vector<unsigned int>>& element_not_connect, MeshStruct& mesh_struct);
 
+
+	void graphColorTet(MeshStruct& mesh_struct, int different_color_strategy_num);
+
 private:
+
+	void graphColorLoopNode(std::vector<std::vector<unsigned int>>& element_element, int max_color_number,
+		std::vector<std::vector<unsigned int>>& element_not_connect, int* element_order);
 	
 	void decideGroup(unsigned int max_color, std::vector<std::vector<unsigned int>>& unconnected_vertex_index, int* color, int size);
 	void testEdgeGroup(int size, std::vector<std::vector<unsigned int>>& unconnected_vertex_index, MeshStruct& mesh_struct);

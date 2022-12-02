@@ -62,7 +62,11 @@ public:
 
 	std::vector<std::vector<unsigned int>>unconnected_vertex_index; //for bending
 	std::vector<std::vector<unsigned int>>unconnected_edge_index; //for edge_length
-	std::vector<std::vector<unsigned int>>unconnected_tet_index; //for tet (ARAP)
+	//std::vector<std::vector<unsigned int>>unconnected_tet_index; 
+
+	std::vector<std::vector<std::vector<unsigned int>>>tet_color_group; //for tet (ARAP)
+	std::vector<std::vector<std::vector<char>>> tet_in_collision;//record if the tet is involved in collision
+	std::vector<int>tet_order_in_color_group;// for every tet, we store group_0_color, index_in_this_color, group_1_color, index_in_this_color, ...
 
 
 	std::vector<std::array<double, 3>> vertex_position;
@@ -159,6 +163,7 @@ public:
 	void testIfRIght(std::vector<std::vector<unsigned int>>& k);
 
 	void testFaceEdgeAroundFaceEdge();
+
 
 protected:
 	int type;

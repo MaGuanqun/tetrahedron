@@ -645,13 +645,28 @@ void Scene::setGroup()
 
 		for (int i = 0; i < tetrahedron.size(); ++i) {
 			if (tetrahedron[i].mesh_struct.indices.size() > 1) {
-				graph_color.graphColor(tetrahedron[i].mesh_struct.tet_tet_index, tetrahedron[i].mesh_struct.unconnected_tet_index);
+
+				//graph_color.graphColor(tetrahedron[i].mesh_struct.tet_tet_index, tetrahedron[i].mesh_struct.unconnected_tet_index);
+				graph_color.graphColorTet(tetrahedron[i].mesh_struct, 3);
+				tetrahedron[i].mesh_struct.setTetInfoInGroup();
 				tetrahedron[i].mesh_struct.obtainVETofColors();
 				tetrahedron[i].mesh_struct.setTetColorStartPerThread();
+
+
+				//std::cout << tetrahedron[i].mesh_struct.tet_tet_index.size() << std::endl;
+
+
+
+/*				for (int j = 0; j < 3; ++j) {
+					graph_color.testTet(tetrahedron[i].mesh_struct, tetrahedron[i].mesh_struct.tet_color_group[j], tetrahedron[i].mesh_struct.indices);
+				}	*/		
+
 			}
 			else {
-				tetrahedron[i].mesh_struct.unconnected_tet_index.resize(1);
-				tetrahedron[i].mesh_struct.unconnected_tet_index[0].emplace_back(0);
+				tetrahedron[i].mesh_struct.tet_color_group.resize(1);
+				tetrahedron[i].mesh_struct.tet_color_group[0].resize(1);
+				tetrahedron[i].mesh_struct.tet_color_group[0][0].emplace_back(0);
+				tetrahedron[i].mesh_struct.setTetInfoInGroup();
 				tetrahedron[i].mesh_struct.obtainVETofColors();
 				tetrahedron[i].mesh_struct.setTetColorStartPerThread();
 			}

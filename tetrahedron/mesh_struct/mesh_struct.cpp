@@ -593,3 +593,5 @@ void MeshStruct::getFaceNormalPerThread(int thread_id)
 		SUM_(current_face_normal, f_cross);
 	}
 }
+
+
