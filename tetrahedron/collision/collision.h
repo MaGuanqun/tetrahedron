@@ -317,7 +317,7 @@ public:
 
 	void recordPairCompress(int thread_No);
 
-
+	unsigned int* inner_iteration_number;
 private:
 
 	void recordVTCollisionPairCompress(int thread_No, unsigned int** start_per_thread, unsigned int** pair_num_record, unsigned int** pair, unsigned int** prefix_sum,
@@ -325,7 +325,7 @@ private:
 	void recordEECollisionPairCompress(int thread_No, unsigned int** start_per_thread, unsigned int** pair_num_record, unsigned int** pair,
 		std::vector<unsigned int>* pair_compres_record);
 
-	unsigned int prefix_sum_of_different_type_pair[6];//0:VT, 1:EE, 2: TV_collider, 3: EE collider 4: VT_collider
+	//unsigned int prefix_sum_of_different_type_pair[6];//0:VT, 1:EE, 2: TV_collider, 3: EE collider 4: VT_collider
 
 	void resizeHessianRecordIndex();
 
@@ -631,15 +631,15 @@ private:
 	std::vector<double*>mass_inv;
 
 
-	std::vector<std::vector<unsigned int>*> triangle_index_of_a_tet_color;
-	std::vector<std::vector<unsigned int>*> edge_index_of_a_tet_color;
-	std::vector<std::vector<unsigned int>*> surface_vertex_index_of_a_tet_color;
-	std::vector<std::vector<unsigned int>*> vertex_index_of_a_tet_color;
+	std::vector< std::vector<std::vector<unsigned int>>*> triangle_index_of_a_tet_color_group;
+	std::vector<std::vector<std::vector<unsigned int>>*> edge_index_of_a_tet_color_group;
+	std::vector< std::vector<std::vector<unsigned int>>*> surface_vertex_index_of_a_tet_color_group;
+	std::vector< std::vector<std::vector<unsigned int>>*> vertex_index_of_a_tet_color_group;
 
-	std::vector<std::vector<unsigned int>*> triangle_index_of_a_tet_color_per_thread_start;
-	std::vector<std::vector<unsigned int>*> edge_index_of_a_tet_color_per_thread_start;
-	std::vector<std::vector<unsigned int>*> surface_vertex_index_of_a_tet_color_per_thread_start;
-	std::vector<std::vector<unsigned int>*> vertex_index_of_a_tet_color_per_thread_start;
+	std::vector< std::vector<std::vector<unsigned int>>*> triangle_index_of_a_tet_color_per_thread_start_group;
+	std::vector< std::vector<std::vector<unsigned int>>*> edge_index_of_a_tet_color_per_thread_start_group;
+	std::vector< std::vector<std::vector<unsigned int>>*> surface_vertex_index_of_a_tet_color_per_thread_start_group;
+	std::vector< std::vector<std::vector<unsigned int>>*> vertex_index_of_a_tet_color_per_thread_start_group;
 
 	std::vector<int>total_vertex_num;
 
@@ -944,12 +944,12 @@ private:
 	void setEdgeCollideWithCollider();
 	void setVertexCollideWithCollider();
 
-	void setCollisionPairPrefixSumDifferentType();
+	//void setCollisionPairPrefixSumDifferentType();
 	void findMinMaxDegreeOfCollisionPair(unsigned int& max_degree, unsigned int& min_degree);
 
 
-	std::vector<int> collision_pair_around_pair;
-	std::vector<int> collision_pair_around_pair_size;
+	//std::vector<int> collision_pair_around_pair;
+	//std::vector<int> collision_pair_around_pair_size;
 	
 	int collision_pair_around_pair_size_per_pair;
 
@@ -970,6 +970,33 @@ private:
 	std::vector<unsigned int> vt_pair_compress_record; //obj0, v0, obj1, t1
 	std::vector<unsigned int>ee_pair_compress_record; //obj0, v0, obj1, t1
 
+
+
+	std::vector<std::vector<std::vector<unsigned int>>>tet_involved_in_collision; // obj -> color group -> tet_involved
+
 	std::vector<std::vector<unsigned int>> temp_save_ee_pair_compress_per_thread; // thread num-1, thread 0 just store in ee_pair_compress_record
 	void initialPairCompress();
+
+
+	void 	addFlagToColorGroup();
+	
+	void addFlagToColorGroup(std::vector<unsigned int>& pair_compress_record,std::vector<unsigned int>** tet_around_element0, std::vector<unsigned int>** tet_around_element1);
+
+	void addFlagToColorGroup(std::vector<unsigned int>* element_collide_with_collider, std::vector<unsigned int>** tet_around_element);
+
+	std::vector<std::vector<std::vector<std::vector<unsigned int>>>*>tet_color_groups;
+	std::vector<std::vector<std::vector<char>>*>tet_color_groups_label;
+
+
+	std::vector<std::vector<unsigned int>*>triangle_around_triangle;
+	std::vector<std::vector<unsigned int>*>edge_around_triangle;
+
+	std::vector<std::vector<unsigned int>*>tet_around_vertex;
+	std::vector<std::vector<unsigned int>*>tet_around_triangle;
+
+	std::vector<std::vector<unsigned int>*>triangle_around_edge;
+	std::vector<std::vector<unsigned int>*>edge_around_edge;
+	std::vector<std::vector<unsigned int>*>tet_around_edge;
+
+	std::vector<int*> tet_order_in_color_group;
 };

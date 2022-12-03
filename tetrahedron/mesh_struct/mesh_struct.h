@@ -164,7 +164,6 @@ public:
 
 	void testFaceEdgeAroundFaceEdge();
 
-
 protected:
 	int type;
 	bool isEdgeExist(unsigned int v0, unsigned int v1, unsigned int& edge_index);

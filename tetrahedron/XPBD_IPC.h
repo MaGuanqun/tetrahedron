@@ -70,7 +70,7 @@ public:
 	unsigned int outer_max_iteration_number;
 	double energy_converge_standard;
 
-	void computeTetHessianInAdvance(int thread_No, int color_No);
+	//void computeTetHessianInAdvance(int thread_No, int color_No);
 
 	void XPBD_IPC_Block_Solve_Multithread();
 
@@ -88,6 +88,7 @@ private:
 
 
 	std::vector<std::vector<std::vector<std::vector<unsigned int>>>*>tet_color_groups;
+	std::vector<std::vector<std::vector<char>>*>tet_color_groups_label;
 
 
 
@@ -216,6 +217,9 @@ private:
 	double calEdgeLength();
 	std::vector<double> store_tet_arap_hessian; //for every 12*12, we only store 4*4 as every block is a diagonal matrix 
 	std::vector<double> store_tet_arap_grad;
+
+	int max_tet_size_of_a_color_group;
+
 	std::vector<unsigned int> prefix_sum_of_every_tet_index;
 
 	std::vector<int> vertex_num_on_surface_prefix_sum;
