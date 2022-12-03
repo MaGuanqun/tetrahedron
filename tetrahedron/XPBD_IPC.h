@@ -217,6 +217,7 @@ private:
 	double calEdgeLength();
 	std::vector<double> store_tet_arap_hessian; //for every 12*12, we only store 4*4 as every block is a diagonal matrix 
 	std::vector<double> store_tet_arap_grad;
+	bool* is_tet_arap_hessain_compute;
 
 	int max_tet_size_of_a_color_group;
 

@@ -349,6 +349,9 @@ void XPBD_IPC::initalARAPHessianStorages()
 	store_tet_arap_hessian.resize(16 * prefix_sum_of_every_tet_index[tetrahedron->size()],0.0);
 	store_tet_arap_grad.resize(12 * prefix_sum_of_every_tet_index[tetrahedron->size()],0.0);
 
+	is_tet_arap_hessain_compute = new bool[prefix_sum_of_every_tet_index[tetrahedron->size()]];
+	memset(is_tet_arap_hessain_compute, 0, prefix_sum_of_every_tet_index[tetrahedron->size()]);
+
 	max_tet_size_of_a_color_group = prefix_sum_of_every_tet_index[tetrahedron->size()];
 	//auto t0 = std::chrono::system_clock::now();
 
@@ -809,27 +812,12 @@ void XPBD_IPC::tetGradForColor(int thread_No, unsigned int color_No)
 
 	int color_group_index;
 
+	//solve all colors except the last color
 	for (int i = 0; i < tetrahedron->size(); ++i) {
-
 		color_group_index = inner_iteration_number % tet_color_groups[i]->size();
 		if (color_No >= tetrahedron->data()[i].mesh_struct.tet_color_group[color_group_index].size() - 1) {
 			continue;
 		}
-
-
-
-		stiffness =0.5* tetrahedron->data()[0].ARAP_stiffness;
-		prefix_sum_start = max_tet_size_of_a_color_group * color_group_index + prefix_sum_of_every_tet_index[i];
-
-		vertex_pos = vertex_position[i + cloth->size()];
-		A = tetrahedron->data()[i].mesh_struct.A.data();
-
-		volume = tet_volume[i + cloth->size()];
-		tet_indices_ = tet_indices[i + cloth->size()];
-
-		tet_around_a_group = tetrahedron->data()[i].mesh_struct.tet_around_tet_color_groups[color_group_index][color_No].data();
-		tet_around_tet_color_group_end = tetrahedron->data()[i].mesh_struct.tet_around_tet_color_groups_start_per_thread[color_group_index][color_No][thread_No + 1];
-
 
 		for (auto j = tetrahedron->data()[i].mesh_struct.tet_around_tet_color_groups_start_per_thread[color_group_index][color_No][thread_No];
 			j < tet_around_tet_color_group_end; ++j) {
@@ -838,6 +826,18 @@ void XPBD_IPC::tetGradForColor(int thread_No, unsigned int color_No)
 			memcpy(store_tet_arap_grad.data() + 12 * (prefix_sum_start + tet_around_a_group[j]), grad.data(), 96);//
 		}
 	}
+
+	//solve last color
+	for (int i = 0; i < tetrahedron->size(); ++i) {
+		color_group_index = inner_iteration_number % tet_color_groups[i]->size();
+		if (color_No != tetrahedron->data()[i].mesh_struct.tet_color_group[color_group_index].size() - 1) {
+			continue;
+		}
+
+
+
+	}
+
 }
 
 
