@@ -1526,6 +1526,7 @@ void SpatialHashing::findAllEdgeEdgePairsByPrimitiveSingleObjByEdge(int thread_N
 
 		primitive_pair_ = primitive_pair + i * total_length_every_element_for_edge_edge;
 		primitive_pair_initial_ = primitive_pair_;
+
 		if (is_self) {
 			flag = exist_flag + i * total_length_every_element_for_edge_edge_exist;
 			neighbor_edge = &vertices[obj_No][edge_vertex_index_[i << 1]].edge;
@@ -1540,26 +1541,55 @@ void SpatialHashing::findAllEdgeEdgePairsByPrimitiveSingleObjByEdge(int thread_N
 				primitive_index_record_.emplace_back(obj_No);
 				primitive_index_record_.emplace_back(neighbor_edge->data()[j]);
 			}
+			for (unsigned int j = 0; j < spatial_hash_index.size(); ++j) {
+				cell_edge_index = spatial_hashing_cell_edge + spatial_hash_index[j] * max_index_number_in_one_cell_edge_;
+				edge_size = spatial_hashing_cell_edge_size[spatial_hash_index[j]];
+				for (unsigned int k = 0; k < edge_size; k += 2) {
+					if (!obj_is_used_[cell_edge_index[k + 1]][cell_edge_index[k]]) {
+						obj_is_used_[cell_edge_index[k + 1]][cell_edge_index[k]] = true;
+						primitive_index_record_.emplace_back(cell_edge_index[k + 1]);
+						primitive_index_record_.emplace_back(cell_edge_index[k]);
+
+						if (cell_edge_index[k + 1] == obj_No) {
+							if (i < cell_edge_index[k]) {
+								if (AABB::AABB_intersection(edge_aabb[i].data(),
+									obj_edge_aabb_[cell_edge_index[k + 1]][cell_edge_index[k]].data())) {
+									*(primitive_pair_++) = cell_edge_index[k + 1];
+									*(primitive_pair_++) = cell_edge_index[k];
+								}
+							}
+						}
+						else if(cell_edge_index[k + 1] > obj_No) {
+							if (AABB::AABB_intersection(edge_aabb[i].data(),
+								obj_edge_aabb_[cell_edge_index[k + 1]][cell_edge_index[k]].data())) {
+								*(primitive_pair_++) = cell_edge_index[k + 1];
+								*(primitive_pair_++) = cell_edge_index[k];
+							}
+						}
+					}
+				}
+			}
 		}		
 		else{
 			flag = exist_flag + i * total_length_every_element_for_edge_edge_collider_exist;
-		}
-		for (unsigned int j = 0; j < spatial_hash_index.size(); ++j) {
-			cell_edge_index = spatial_hashing_cell_edge + spatial_hash_index[j] * max_index_number_in_one_cell_edge_;
-			edge_size = spatial_hashing_cell_edge_size[spatial_hash_index[j]];
-			for (unsigned int k = 0; k < edge_size; k += 2) {
-				if (!obj_is_used_[cell_edge_index[k + 1]][cell_edge_index[k]]) {
-					obj_is_used_[cell_edge_index[k + 1]][cell_edge_index[k]] = true;
-					primitive_index_record_.emplace_back(cell_edge_index[k + 1]);
-					primitive_index_record_.emplace_back(cell_edge_index[k]);
-					if (AABB::AABB_intersection(edge_aabb[i].data(),
-						obj_edge_aabb_[cell_edge_index[k + 1]][cell_edge_index[k]].data())) {
-						*(primitive_pair_++) = cell_edge_index[k + 1];
-						*(primitive_pair_++) = cell_edge_index[k];
+			for (unsigned int j = 0; j < spatial_hash_index.size(); ++j) {
+				cell_edge_index = spatial_hashing_cell_edge + spatial_hash_index[j] * max_index_number_in_one_cell_edge_;
+				edge_size = spatial_hashing_cell_edge_size[spatial_hash_index[j]];
+				for (unsigned int k = 0; k < edge_size; k += 2) {
+					if (!obj_is_used_[cell_edge_index[k + 1]][cell_edge_index[k]]) {
+						obj_is_used_[cell_edge_index[k + 1]][cell_edge_index[k]] = true;
+						primitive_index_record_.emplace_back(cell_edge_index[k + 1]);
+						primitive_index_record_.emplace_back(cell_edge_index[k]);
+						if (AABB::AABB_intersection(edge_aabb[i].data(),
+							obj_edge_aabb_[cell_edge_index[k + 1]][cell_edge_index[k]].data())) {
+							*(primitive_pair_++) = cell_edge_index[k + 1];
+							*(primitive_pair_++) = cell_edge_index[k];
+						}
 					}
 				}
 			}
 		}
+
 
 		for (unsigned int j = 0; j < primitive_index_record_.size(); j += 2) {
 			obj_is_used_[primitive_index_record_[j]][primitive_index_record_[j + 1]] = false;

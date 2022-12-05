@@ -66,8 +66,8 @@ public:
 	unsigned int** vertex_triangle_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
 	unsigned int** triangle_vertex_pair_by_triangle; //store 3 items, store pair by triangle. for every triangle, store vertex: (obj_index,vertex_index, index in vertex_triangle_pair_by_vertex,)
 	unsigned int** triangle_vertex_pair_num_record;// record the number of vertex pairs for every triangle. For fast initialize, we recoed it in this variable
-	unsigned int** edge_edge_pair_by_edge; //for coordinate descent, we should store both (e1,e2) & (e2,e1), store 
-	unsigned int** edge_edge_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
+	unsigned int** edge_edge_pair_by_edge; //store 3 iterms, store the index of the pair of e1 if (e1<e2) in e2, to locate the pair fast, for coordinate descent, we should store both (e1,e2) & (e2,e1), store 
+	unsigned int** edge_edge_pair_number_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
 	unsigned int** vertex_obj_triangle_collider_pair_by_vertex;// store pair by every vertex. (obj_index, triangle_index)
 	unsigned int** vertex_obj_triangle_collider_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
 
@@ -88,10 +88,28 @@ public:
 	std::vector<std::vector<unsigned int>> edge_index_collide_with_collider;
 	std::vector<std::vector<unsigned int>> vertex_index_collide_with_collider;
 
+	std::vector<unsigned int>triangle_index_collide_with_collider_start_per_thread;//we add differet objects together, total size is (thread_num+1)*obj_num
+	std::vector<unsigned int>edge_index_collide_with_collider_start_per_thread;//we add differet objects together, total size is (thread_num+1)*obj_num
+	std::vector<unsigned int>vertex_index_collide_with_collider_start_per_thread;//we add differet objects together, total size is (thread_num+1)*obj_num
 
-	std::vector<unsigned int>triangle_index_collide_with_collider_prefix_sum;
-	std::vector<unsigned int>edge_index_collide_with_collider_prefix_sum;
-	std::vector<unsigned int>vertex_index_collide_with_collider_prefix_sum;
+	//std::vector<unsigned int>triangle_index_collide_with_collider_prefix_sum; //prefix sum of every object 
+	//std::vector<unsigned int>edge_index_collide_with_collider_prefix_sum;//prefix sum of every object 
+	//std::vector<unsigned int>vertex_index_collide_with_collider_prefix_sum;//prefix sum of every object 
+
+	std::vector<std::vector<unsigned int>>triangle_index_has_TV_pair;
+	std::vector<std::vector<unsigned int>>edge_index_has_EE_pair;
+	std::vector<std::vector<unsigned int>>vertex_index_has_VT_pair;
+	
+	std::vector<std::vector<std::vector<unsigned int>>>temp_save_element_in_collision_pair;//T, E, V all use this repsectively
+
+	std::vector<unsigned int>triangle_index_has_TV_pair_start_per_thread;//we add differet objects together, total size is (thread_num+1)*obj_num
+	std::vector<unsigned int>edge_index_has_EE_pair_start_per_thread;//we add differet objects together, total size is (thread_num+1)*obj_num
+	std::vector<unsigned int>vertex_index_has_VT_pair_start_per_thread;//we add differet objects together, total size is (thread_num+1)*obj_num
+
+
+
+
+
 
 	std::vector<int>vt_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 3 0 1 3 or 4 0 1 2 3, every element 5 number
 	std::vector<double> vt_hessian_record; //size 12x12
@@ -117,7 +135,7 @@ public:
 	std::vector<double>floor_grad_record;//record grad for floor collision size is 1x1
 	//bool* is_vertex_collide_with_floor;//
 
-	bool** vertex_belong_to_color_group;
+	//bool** vertex_belong_to_color_group;
 
 
 	std::vector<int> vertex_num_on_surface_prefix_sum;
@@ -294,7 +312,7 @@ public:
 		double* current_pos_a1,
 		double& collision_time,
 		unsigned int num, unsigned int* edge_indices,
-		std::array<double, 3>** vertex_for_render, std::array<double, 3>** vertex_pos, unsigned int** compare_edge_vertices);
+		std::array<double, 3>** vertex_for_render, std::array<double, 3>** vertex_pos, unsigned int** compare_edge_vertices, int move_size);
 
 
 
@@ -315,15 +333,20 @@ public:
 
 	void setElementCollideWithCollider(int thread_No);
 
-	void recordPairCompress(int thread_No);
+	void recordVTPairCompress(int thread_No);
+	void recordEEPairCompress(int thread_No);
+	void recordTriangleHasTVPair(int thread_No);
 
 	unsigned int* inner_iteration_number;
 private:
 
 	void recordVTCollisionPairCompress(int thread_No, unsigned int** start_per_thread, unsigned int** pair_num_record, unsigned int** pair, unsigned int** prefix_sum,
-		unsigned int* pair_compress_record, unsigned int** vertex_surface_to_global);
+		unsigned int* pair_compress_record, unsigned int** vertex_surface_to_global, std::vector<unsigned int>* has_pair);
 	void recordEECollisionPairCompress(int thread_No, unsigned int** start_per_thread, unsigned int** pair_num_record, unsigned int** pair,
-		std::vector<unsigned int>* pair_compres_record);
+		std::vector<unsigned int>* pair_compres_record, std::vector<unsigned int>* has_pair);
+
+	void recordTriangleHasTVPair(int thread_No, unsigned int** start_per_thread, unsigned int** pair_num_record,
+		std::vector<unsigned int>* has_pair);
 
 	//unsigned int prefix_sum_of_different_type_pair[6];//0:VT, 1:EE, 2: TV_collider, 3: EE collider 4: VT_collider
 
@@ -884,6 +907,8 @@ private:
 	void findVT_ClosePair();
 	void findVT_ColliderClosePair();
 	void findEE_ClosePair();
+	void findEE_ClosePair_ReverseOrder();
+
 	void findEE_ColliderClosePair();
 	void findTV_ClosePair();
 	void findTV_ColliderClosePair();
@@ -897,10 +922,12 @@ private:
 	void findEE_ClosePairSingleEdge(double* current_position_a0, double* current_position_a1,
 		unsigned int* edge_index, unsigned int edge_num, std::vector<std::array<double, 3>*>& position,
 		std::vector<unsigned int*>& edge_vertex_index,
-		unsigned int* close_edge_index, unsigned int& close_edge_num, bool* is_pair_exist);
+		unsigned int* close_edge_index, unsigned int& close_edge_num, bool* is_pair_exist, int move_size);
 	void findTV_ClosePairSingleTriangle(double* current_position_a0, double* current_position_a1, double* current_position_a2,
 		unsigned int* vertex_index, unsigned int vertex_num, std::vector<std::array<double, 3>*>& position,
 		unsigned int* close_vertex_index, unsigned int& close_vertex_num, bool* is_pair_exist);
+	void findEE_ClosePairSingleEdgeByReverse(int obj_index, int edge_index, unsigned int* close_edge_index, unsigned int& close_edge_num);
+
 
 	void initialPairRecord();
 
@@ -909,7 +936,7 @@ private:
 	void initialPairByElement();
 	void initialVolume();
 	void computeVTVolume(int thread_No);
-	void computeEEVolume(int thread_No);
+	//void computeEEVolume(int thread_No);
 	void computeTVVolume(int thread_No);
 	void computeVTColliderVolume(int thread_No);
 
@@ -917,8 +944,8 @@ private:
 		std::vector<std::array<double, 3>*>& vertex_position);
 	void computeTVVolume(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, unsigned int pair_num,
 		unsigned int* vertex_record, double* volume, std::vector<std::array<double, 3>*>& vertex_position);
-	void computeEEVolume(double* vertex_position_0, double* vertex_position_1, unsigned int pair_num,
-		unsigned int* edge_record, double* volume, std::vector<std::array<double, 3>*>& vertex_position, std::vector<unsigned int*>& edge_vertices);
+	//void computeEEVolume(double* vertex_position_0, double* vertex_position_1, unsigned int pair_num,
+	//	unsigned int* edge_record, double* volume, std::vector<std::array<double, 3>*>& vertex_position, std::vector<unsigned int*>& edge_vertices);
 
 
 	std::vector<std::vector<double>>record_VT_collision_time;
@@ -931,10 +958,10 @@ private:
 	void testColliderPair();
 	SecondOrderConstraint second_order_constraint;
 
-	void updateVertexBelongColorGroup(int color_No);
+	//void updateVertexBelongColorGroup(int color_No);
 
 
-	void prefixSumRecordPairNum(unsigned int* num_record, unsigned int* prefix_sum, int num, unsigned int& start_index);
+	void prefixSumRecordPairNum(unsigned int* num_record, unsigned int* prefix_sum, int num, unsigned int& start_index, int move_size);
 
 	void resizeFloorCollisionHessianRecord();
 	void computeFloorHessian(double d_hat, double stiffness, double floor_value, double& hessian, double& grad, double position);
@@ -944,7 +971,7 @@ private:
 	void setEdgeCollideWithCollider();
 	void setVertexCollideWithCollider();
 
-	//void setCollisionPairPrefixSumDifferentType();
+	void setCollisionPairPrefixSumDifferentType();
 	void findMinMaxDegreeOfCollisionPair(unsigned int& max_degree, unsigned int& min_degree);
 
 
@@ -956,20 +983,20 @@ private:
 	void findPairAroundPair();
 
 
-	std::vector<unsigned int> vt_per_thread_start_index;//recrod obj_index, vertex_index,  start index in that vertex
-	std::vector<unsigned int> ee_per_thread_start_index;//recrod obj_index, vertex_index,  start index in that vertex
-	std::vector<unsigned int> vt_collider_per_thread_start_index; //recrod obj_index, vertex_index,
-	std::vector<unsigned int> tv_collider_per_thread_start_index;//recrod obj_index, tri_index,
-	std::vector<unsigned int>ee_collider_per_thread_start_index;//recrod obj_index, edge_index,
+	std::vector<unsigned int> vt_per_thread_start_index;//recrod start index for every thread in vt_pair_compress_record
+	std::vector<unsigned int> ee_per_thread_start_index;// recrod start index for every thread in ee_pair_compress_record
+
+	//std::vector<unsigned int> vt_collider_per_thread_start_index; //
+	//std::vector<unsigned int> tv_collider_per_thread_start_index;//recrod obj_index, tri_index,
+	//std::vector<unsigned int>ee_collider_per_thread_start_index;//recrod obj_index, edge_index,
 
 	void setPairStartPerThread(unsigned int** prefix_sum_record, unsigned int** element_index_start_per_thread,
 		int* pair_per_thread_start_index);
 
 	void recordPairCompress();
 
-	std::vector<unsigned int> vt_pair_compress_record; //obj0, v0, obj1, t1
-	std::vector<unsigned int>ee_pair_compress_record; //obj0, v0, obj1, t1
-
+	std::vector<unsigned int> vt_pair_compressed_record; //obj0, v0, obj1, t1,order in vertex_triangle_pair_by_vertex
+	std::vector<unsigned int>ee_pair_compressed_record; //obj0, v0, obj1, t1,order in edge_edge_pair_by_edge
 
 
 	std::vector<std::vector<std::vector<unsigned int>>>tet_involved_in_collision; // obj -> color group -> tet_involved

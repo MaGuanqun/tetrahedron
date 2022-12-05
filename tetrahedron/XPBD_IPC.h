@@ -81,6 +81,12 @@ public:
 	void tetGradForColor(int thread_No, unsigned int color_No);
 	//void newtonCDTetBlockAGroupTest(int thread_No, int color);
 
+	void tetGradForColorCollision(int thread_No, unsigned int color_No);
+	//void tetGradForColorCollisionEECollider(int thread_No, unsigned int color_No);
+	//void tetGradForColorCollisionTVCollider(int thread_No, unsigned int color_No);
+	//void tetGradForColorCollisionVT(int thread_No, unsigned int color_No);
+	//void tetGradForColorCollisionEE(int thread_No, unsigned int color_No);
+	//void tetGradForColorCollisionTV(int thread_No, unsigned int color_No);
 
 	std::vector<std::array<double, 3>>vertex_trace;
 
@@ -217,11 +223,11 @@ private:
 	double calEdgeLength();
 	std::vector<double> store_tet_arap_hessian; //for every 12*12, we only store 4*4 as every block is a diagonal matrix 
 	std::vector<double> store_tet_arap_grad;
-	bool* is_tet_arap_hessain_compute;
+	bool* is_tet_arap_grad_compute;
 
 	int max_tet_size_of_a_color_group;
 
-	std::vector<unsigned int> prefix_sum_of_every_tet_index;
+	std::vector<unsigned int> prefix_sum_of_every_tet_index; //size is tet_num+1
 
 	std::vector<int> vertex_num_on_surface_prefix_sum;
 
@@ -256,7 +262,7 @@ private:
 
 	double computeEECollisionEnergy(unsigned int** edge_edge_pair_by_vertex_, unsigned int** edge_edge_pair_num_record_,
 		std::array<double, 3>** edge_0_position, std::array<double, 3>** edge_1_position, unsigned int close_pair_num,
-		unsigned int** edge_vertex, unsigned int** edge_1_vertex);
+		unsigned int** edge_vertex, unsigned int** edge_1_vertex, bool is_self);
 
 	std::vector<std::vector<Vector3d>>residual;
 
@@ -520,5 +526,9 @@ private:
 	std::vector<std::vector<std::array<double, 3>>> temp_save_pos;
 	void tempSavePos();
 	void tempRestorePos();
+
+	void setCollisionPairTetGrad(int tet_obj_No, unsigned int start, unsigned int end, unsigned int* element, std::vector<unsigned int>* tet_around_an_element);
+
+
 };
 

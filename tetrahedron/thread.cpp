@@ -400,8 +400,14 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     case SET_ELEMENT_COLLIDE_WITH_COLLIDER:
         k = job([func, thread_id]() {func->setElementCollideWithCollider(thread_id); });
         break;
-    case RECORD_PAIR_COMPRESS:
-        k = job([func, thread_id]() {func->recordPairCompress(thread_id); });
+    case RECORD_VT_PAIR_COMPRESS:
+        k = job([func, thread_id]() {func->recordVTPairCompress(thread_id); });
+        break;
+    case RECORD_EE_PAIR_COMPRESS:
+        k = job([func, thread_id]() {func->recordEEPairCompress(thread_id); });
+        break;
+    case RECORD_TRIANGLE_HAS_COLLISION_PAIR:
+        k = job([func, thread_id]() {func->recordTriangleHasTVPair(thread_id); });
         break;
     }
     return k;
@@ -814,6 +820,9 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
          break;
     case UPDATE_TET_GRAD_SHARED:
         k = job([func, thread_id, para]() {func->tetGradForColor(thread_id, para); });
+        break;
+    case UPDATE_TET_GRAD_SHARED_COLLISION:
+        k = job([func, thread_id, para]() {func->tetGradForColorCollision(thread_id, para); });
         break;
     }
     return k;
