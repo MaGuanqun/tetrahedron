@@ -64,6 +64,8 @@ public:
 	bool* has_force;
 	void computeCollisionFreePosition(int thread_No);
 
+	void computeCollisionFreePositionForColor(int thread_No);
+
 	double energy_converge_ratio;
 	unsigned int min_inner_iteration, min_outer_iteration;
 	double max_move_standard;//the max displacement to stop iteration
@@ -75,6 +77,8 @@ public:
 	void XPBD_IPC_Block_Solve_Multithread();
 
 	void newtonCDTetBlockAGroup(int thread_No, int color);
+	void newtonCDTetBlockAGroupCollision(int thread_No, int color);
+	
 
 
 	void tetHessian(int thread_No);
@@ -82,6 +86,7 @@ public:
 	//void newtonCDTetBlockAGroupTest(int thread_No, int color);
 
 	void tetGradForColorCollision(int thread_No, unsigned int color_No);
+	void tetGradForColorCollisionNeighbor(int thread_No, unsigned int color_No);
 	//void tetGradForColorCollisionEECollider(int thread_No, unsigned int color_No);
 	//void tetGradForColorCollisionTVCollider(int thread_No, unsigned int color_No);
 	//void tetGradForColorCollisionVT(int thread_No, unsigned int color_No);
@@ -89,6 +94,7 @@ public:
 	//void tetGradForColorCollisionTV(int thread_No, unsigned int color_No);
 
 	std::vector<std::array<double, 3>>vertex_trace;
+	void updatePositionAverage(int thread_No);
 
 private:
 
@@ -96,7 +102,7 @@ private:
 	std::vector<std::vector<std::vector<std::vector<unsigned int>>>*>tet_color_groups;
 	std::vector<std::vector<std::vector<char>>*>tet_color_groups_label;
 
-
+	std::vector<std::vector<unsigned int>*>tet_around_tet; //size is tet num
 
 
 	void setColorNum();
@@ -208,6 +214,13 @@ private:
 
 	std::vector<std::vector<std::array<double, 3>>> record_vertex_position;
 	std::vector<std::vector<std::array<double, 3>>> record_collision_free_vertex_position;
+
+
+	std::vector<std::vector<std::vector<std::array<double, 3>>>> record_vertex_position_every_thread; // obj_no -> thread_No ->vertex_No
+	std::vector<std::vector<std::vector<int>>> record_vertex_position_num_every_thread;
+
+
+
 
 	std::vector<std::array<double, 3>*> record_collision_free_vertex_position_address;
 	std::vector<std::array<double, 3>*> record_vertex_position_address;
@@ -349,6 +362,16 @@ private:
 		std::vector<unsigned int>* edge_of_a_tet, double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
 		int* vertex_index_on_surface, double* hessian_record, double* grad_record);//,  double* hessian_record, double* grad_record
 
+	void solveTetBlockCollision(std::array<double, 3>* vertex_position, double stiffness, double dt,
+		double* mass,
+		Matrix<double, 3, 4>* A, std::vector<unsigned int>& neighbor_tet_indices,
+		double* volume, unsigned int tet_index, std::array<double, 3>* sn, unsigned int* common_vertex_in_order,
+		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num, std::vector<unsigned int>* triangle_of_a_tet,
+		std::vector<unsigned int>* edge_of_a_tet, double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
+		int* vertex_index_on_surface, double* hessian_record, double* grad_record, std::array<double, 3>* record_vertex_position,
+		int* record_vertex_num);
+
+
 
 	void checkPairIndexInSys(int unfixed_tet_vertex_num, int* tet_unfixed_vertex_indices, int* element_indices,
 		int obj_No,int* triangle_vertex_order_in_system, int size_num);
@@ -410,6 +433,12 @@ private:
 
 	void getFloorHessianForTet(MatrixXd& Hessian, VectorXd& grad, double* vertex_position, double floor_value,
 		unsigned int dimension, double collision_stiffness, bool direction, double d_hat, unsigned int vertex_order_in_matrix, unsigned int unfixed_vertex_num);
+
+
+	void getFloorHessian(MatrixXd& Hessian, VectorXd& grad, int* tet_actual_unfixed_vertex_indices,
+		int unfixed_tet_vertex_num, double d_hat_2,
+		int* vertex_index_on_surface, std::array<double, 3>* vertex_position, double collision_stiffness);
+
 
 	double getCollisionTime(std::vector<unsigned int>* triangle_of_a_tet,
 		std::vector<unsigned int>* edge_of_a_tet,
@@ -510,11 +539,13 @@ private:
 		int* tv_collider_hessian_record_index, double* tv_collider_hessian_record, double* tv_collider_grad_record);
 
 
-	void getEECollisionHessainForTetFromRecord(MatrixXd& Hessian, VectorXd& grad, unsigned int obj_No, unsigned int* edge_vertex_index,
+	void getEECollisionHessainForTetFromRecord(MatrixXd& Hessian, VectorXd& grad, unsigned int obj_No, 
+		unsigned int edge_index,
+		unsigned int* edge_vertex_index,
 		unsigned int* EE, int num, int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, 
 		int edge_order_in_tet, std::vector<unsigned int>* edge_of_a_tet,
 		unsigned int* EE_collider, int num_collider, 
-		double* ee_hessian_record, double* ee_grad_record, int* ee_hessian_record_index,
+		double* ee_hessian_record_, double* ee_grad_record_, int* ee_hessian_record_index_,
 		int* ee_collider_hessian_record_index, double* ee_collider_hessian_record, double* ee_collider_grad_record);
 
 	void getCollisionHessianFromRecord(MatrixXd& Hessian, VectorXd& grad, std::vector<unsigned int>* triangle_of_a_tet,
@@ -523,11 +554,15 @@ private:
 		int unfixed_tet_vertex_num, 
 		int* vertex_index_on_surface, unsigned int* vt_prefix_sum, unsigned int* ee_prefix_sum, unsigned int* tv_collider_prefix_sum, unsigned int* ee_collider_prefix_sum, std::array<double, 3>* vertex_position);
 
-	std::vector<std::vector<std::array<double, 3>>> temp_save_pos;
-	void tempSavePos();
-	void tempRestorePos();
+	//std::vector<std::vector<std::array<double, 3>>> temp_save_pos;
+	//void tempSavePos();
+	//void tempRestorePos();
 
 	void setCollisionPairTetGrad(int tet_obj_No, unsigned int start, unsigned int end, unsigned int* element, std::vector<unsigned int>* tet_around_an_element);
+	void setCollisionPairTetGrad(int tet_obj_No, int start, int end, unsigned int* tet_involved, unsigned int prefix_sum_start);
+	void setCollisionPairTetNeighborGrad(int tet_obj_No, int start, int end, unsigned int* tet_involved, unsigned int prefix_sum_start);
+
+	void initialRecordPositionForThread();
 
 
 };

@@ -74,6 +74,11 @@ public:
 		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num, double* hessian_record);
 
 
+	void solveCD_ARAP_block_fromRecord(MatrixXd& Hessian, VectorXd& grad,int* unfixed_tet_vertex_index, 
+		unsigned int unfixed_vertex_num, double* hessian_record, double* grad_record);
+
+
+
 	void solveCertainHessianForNeighborTetTest(std::array<double, 3>* vertex_position, double stiffness,
 		Matrix<double, 3, 4>& A, unsigned int*& common_vertex_in_order, int* neighbor_tet_vetex_indices,
 		MatrixXd& sys_matrix, double volume, VectorXd& grad, double* hessian_record, double* grad_record);

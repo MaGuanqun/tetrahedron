@@ -409,6 +409,9 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     case RECORD_TRIANGLE_HAS_COLLISION_PAIR:
         k = job([func, thread_id]() {func->recordTriangleHasTVPair(thread_id); });
         break;
+    case CLOSE_PAIR_COLLISION_TIME:
+        k = job([func, thread_id]() {func->collisionTimeAllClosePair(thread_id); });
+        break;
     }
     return k;
 }
@@ -824,6 +827,12 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
     case UPDATE_TET_GRAD_SHARED_COLLISION:
         k = job([func, thread_id, para]() {func->tetGradForColorCollision(thread_id, para); });
         break;
+    case SOLVE_TET_BLOCK_COLLISION:
+        k = job([func, thread_id, para]() {func->newtonCDTetBlockAGroupCollision(thread_id, para); });
+        break;
+    case UPDATE_TET_GRAD_SHARED_COLLISION_NEIGHBOR:
+        k = job([func, thread_id, para]() {func->tetGradForColorCollisionNeighbor(thread_id, para); });
+        break;
     }
     return k;
 }
@@ -844,6 +853,12 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
         break;
     case UPDATE_TET_HESSIAN:
         k = job([func, thread_id]() {func->tetHessian(thread_id); });
+        break;
+    case UPDATE_POSITION_AVERAGE:
+        k = job([func, thread_id]() {func->updatePositionAverage(thread_id); });
+       break;
+    case COLLISION_FREE_POSITION_LAST_COLOR:
+        k = job([func, thread_id]() {func->computeCollisionFreePositionForColor(thread_id); });
         break;
     }
     return k;

@@ -46,6 +46,7 @@ public:
 	void test();
 	void collisionCulling();
 	void globalCollisionTime();
+	void closePairCollisionTime();
 	//void findAllPatchPairs(int thread_No);
 
 	//std::vector<std::vector<double>> target_position_and_stiffness; //thus, the actual number is 4*target_position_index[0]
@@ -299,7 +300,7 @@ public:
 	void TVCollisionTimeOneTriangle(double* initial_pos_0, double* initial_pos_1, double* initial_pos_2,
 		double* current_pos_0, double* current_pos_1, double* current_pos_2,
 		double& collision_time, unsigned int num,
-		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex,
+		unsigned int* vertex_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex,
 		int size_of_a_pair);//for pair in this class size_of_a_pair vt collider 2 vt 3
 
 	void TVCollisionTimeOneTriangleSelfColor(double* initial_pos_0, double* initial_pos_1, double* initial_pos_2,
@@ -327,6 +328,9 @@ public:
 
 
 
+	void computeFloorHessian(int color_No);
+
+
 	void prefixSumAllPair(int thread_No);
 
 	void colorCollisionTime(int thread_No, int color_No);
@@ -338,6 +342,15 @@ public:
 	void recordTriangleHasTVPair(int thread_No);
 
 	unsigned int* inner_iteration_number;
+
+	std::vector<std::vector<std::vector<unsigned int>>>tet_involved_in_collision; // obj -> color group -> tet_involved
+	std::vector<std::vector<std::vector<unsigned int>>>tet_involved_in_collision_start_per_thread; // obj -> color group ->start_index_per_thread
+
+	void collisionTimeAllClosePair(int thread_No);
+
+	//void computeFloorHessian(int thread_No, int color_No);
+
+
 private:
 
 	void recordVTCollisionPairCompress(int thread_No, unsigned int** start_per_thread, unsigned int** pair_num_record, unsigned int** pair, unsigned int** prefix_sum,
@@ -998,8 +1011,6 @@ private:
 	std::vector<unsigned int> vt_pair_compressed_record; //obj0, v0, obj1, t1,order in vertex_triangle_pair_by_vertex
 	std::vector<unsigned int>ee_pair_compressed_record; //obj0, v0, obj1, t1,order in edge_edge_pair_by_edge
 
-
-	std::vector<std::vector<std::vector<unsigned int>>>tet_involved_in_collision; // obj -> color group -> tet_involved
 
 	std::vector<std::vector<unsigned int>> temp_save_ee_pair_compress_per_thread; // thread num-1, thread 0 just store in ee_pair_compress_record
 	void initialPairCompress();

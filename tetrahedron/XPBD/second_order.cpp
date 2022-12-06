@@ -208,6 +208,38 @@ void SecondOrderConstraint::setARAPGrad(MatrixXd& grad, std::array<double, 3>* v
 	grad = (2.0 * stiffness * volume) * (deformation_gradient - rotation) * A;
 }
 
+void SecondOrderConstraint::solveCD_ARAP_block_fromRecord(MatrixXd& Hessian, VectorXd& grad, int* unfixed_tet_vertex_index,
+	unsigned int unfixed_vertex_num, double* hessian_record, double* grad_record)
+{
+	Hessian.setZero();
+	grad.setZero();
+
+	for (int i = 0; i < unfixed_vertex_num; ++i) {
+		memcpy(grad.data() + 3 * i, grad_record + 3 * unfixed_tet_vertex_index[i], 24);
+	}
+
+	if (unfixed_vertex_num == 4) {
+		for (unsigned int i = 0; i < 144; i += 36) {
+			for (unsigned int j = 0; j < 12; j += 3) {
+				Hessian.data()[i + j] += *hessian_record;
+				Hessian.data()[i + j + 13] += *hessian_record;
+				Hessian.data()[i + j + 26] += *hessian_record;
+				hessian_record++;
+			}
+		}
+	}
+	else {
+		for (int i = 0; i < unfixed_vertex_num; ++i) {
+			for (int j = 0; j < unfixed_vertex_num; ++j) {
+				Hessian(3 * i, 3 * j) = hessian_record[(unfixed_tet_vertex_index[j] << 2) + unfixed_tet_vertex_index[i]];
+				Hessian(3 * i + 1, 3 * j + 1) = hessian_record[(unfixed_tet_vertex_index[j] << 2) + unfixed_tet_vertex_index[i]];
+				Hessian(3 * i + 2, 3 * j + 2) = hessian_record[(unfixed_tet_vertex_index[j] << 2) + unfixed_tet_vertex_index[i]];
+			}
+		}
+	}
+}
+
+
 void SecondOrderConstraint::solveCD_ARAP_block(MatrixXd& Hessian, VectorXd& grad, std::array<double, 3>* vertex_position, double stiffness,
 	Matrix<double, 3, 4>& A,
 	double volume,
