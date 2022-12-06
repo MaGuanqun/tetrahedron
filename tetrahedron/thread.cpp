@@ -334,6 +334,12 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     case UPDATE_COLOR_POSITION:
         k = job([func, thread_id, para]() {func->updatePositionColor(thread_id, para); });
         break;
+    case FLOOR_COLLISION_TIME:
+        k = job([func, thread_id, para]() {func->floorCollisionTime(thread_id, para); });
+        break;
+    case UPDATE_POSITION_FOR_FLOOR_COLLISION:
+        k = job([func, thread_id, para]() {func->updatePositionForFloor(thread_id, para); });
+        break;
     }
     return k;
 }
@@ -411,6 +417,9 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
         break;
     case CLOSE_PAIR_COLLISION_TIME:
         k = job([func, thread_id]() {func->collisionTimeAllClosePair(thread_id); });
+        break;
+    case COLLISION_FREE_POSITION_LAST_COLOR:
+        k = job([func, thread_id]() {func->computeCollisionFreePositionForColor(thread_id); });
         break;
     }
     return k;
@@ -857,9 +866,6 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
     case UPDATE_POSITION_AVERAGE:
         k = job([func, thread_id]() {func->updatePositionAverage(thread_id); });
        break;
-    case COLLISION_FREE_POSITION_LAST_COLOR:
-        k = job([func, thread_id]() {func->computeCollisionFreePositionForColor(thread_id); });
-        break;
     }
     return k;
 }

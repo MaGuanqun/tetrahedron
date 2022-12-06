@@ -63,6 +63,9 @@ public:
 	std::vector<std::vector<double>>edge_edge_target_pos_record;
 
 
+
+
+
 	unsigned int** vertex_triangle_pair_by_vertex;//store pair by every vertex. (obj_index,triangle_index, )
 	unsigned int** vertex_triangle_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
 	unsigned int** triangle_vertex_pair_by_triangle; //store 3 items, store pair by triangle. for every triangle, store vertex: (obj_index,vertex_index, index in vertex_triangle_pair_by_vertex,)
@@ -349,6 +352,19 @@ public:
 	void collisionTimeAllClosePair(int thread_No);
 
 	//void computeFloorHessian(int thread_No, int color_No);
+
+
+	void floorCollisionTime(int thread_No, int color);
+	void floorCollisionTime(int color);
+	void updatePositionForFloor(int thread_No, int color);
+
+	std::vector<std::vector<int>>* indicate_if_involved_in_last_color;
+	void computeCollisionFreePositionForColor(int thread_No);
+
+	std::vector<unsigned int> vt_pair_compressed_record; //obj0, v0, obj1, t1,order in vertex_triangle_pair_by_vertex
+	std::vector<unsigned int>ee_pair_compressed_record; //obj0, v0, obj1, t1,order in edge_edge_pair_by_edge
+	std::vector<unsigned int> vt_per_thread_start_index;//recrod start index for every thread in vt_pair_compress_record
+	std::vector<unsigned int> ee_per_thread_start_index;// recrod start index for every thread in ee_pair_compress_record
 
 
 private:
@@ -656,6 +672,8 @@ private:
 	std::vector<double*>collider_triangle_normal_magnitude_reciprocal;
 
 
+
+	std::vector<unsigned int*> all_vertex_index_start_per_thread;
 	std::vector<unsigned int*> vertex_index_start_per_thread;
 	std::vector<unsigned int*>triangle_index_start_per_thread;
 	std::vector<unsigned int*> edge_index_start_per_thread;
@@ -996,8 +1014,6 @@ private:
 	void findPairAroundPair();
 
 
-	std::vector<unsigned int> vt_per_thread_start_index;//recrod start index for every thread in vt_pair_compress_record
-	std::vector<unsigned int> ee_per_thread_start_index;// recrod start index for every thread in ee_pair_compress_record
 
 	//std::vector<unsigned int> vt_collider_per_thread_start_index; //
 	//std::vector<unsigned int> tv_collider_per_thread_start_index;//recrod obj_index, tri_index,
@@ -1008,8 +1024,7 @@ private:
 
 	void recordPairCompress();
 
-	std::vector<unsigned int> vt_pair_compressed_record; //obj0, v0, obj1, t1,order in vertex_triangle_pair_by_vertex
-	std::vector<unsigned int>ee_pair_compressed_record; //obj0, v0, obj1, t1,order in edge_edge_pair_by_edge
+
 
 
 	std::vector<std::vector<unsigned int>> temp_save_ee_pair_compress_per_thread; // thread num-1, thread 0 just store in ee_pair_compress_record

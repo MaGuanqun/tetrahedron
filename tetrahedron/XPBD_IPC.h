@@ -64,7 +64,7 @@ public:
 	bool* has_force;
 	void computeCollisionFreePosition(int thread_No);
 
-	void computeCollisionFreePositionForColor(int thread_No);
+
 
 	double energy_converge_ratio;
 	unsigned int min_inner_iteration, min_outer_iteration;
@@ -358,9 +358,9 @@ private:
 		double* mass,
 		Matrix<double, 3, 4>* A, std::vector<unsigned int>& neighbor_tet_indices,
 		double* volume, unsigned int tet_index, std::array<double, 3>* sn, unsigned int* common_vertex_in_order,
-		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num, std::vector<unsigned int>* triangle_of_a_tet,
-		std::vector<unsigned int>* edge_of_a_tet, double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
-		int* vertex_index_on_surface, double* hessian_record, double* grad_record);//,  double* hessian_record, double* grad_record
+		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num, 
+		double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
+		double* hessian_record, double* grad_record);//,  double* hessian_record, double* grad_record
 
 	void solveTetBlockCollision(std::array<double, 3>* vertex_position, double stiffness, double dt,
 		double* mass,
@@ -564,6 +564,10 @@ private:
 
 	void initialRecordPositionForThread();
 
-
+	void solveVT_Block(unsigned int vertex_obj_no, unsigned int vertex_index, unsigned int triangle_obj_No, unsigned int triangle_index,
+		double stiffness, double dt, double collision_stiffne, std::vector<unsigned int>* triangle_around_vertex, std::vector<unsigned int>* triangle_around_triangle,
+		std::vector<unsigned int>* edge_around_vertex, std::vector<unsigned int>* edge_around_triangle,
+		std::vector<unsigned int>* tet_around_vertex, std::vector<unsigned int>* tet_around_triangle,
+		double d_hat_2);
 };
 
