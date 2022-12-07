@@ -113,6 +113,7 @@ private:
 		std::vector<unsigned int>* triangle_index_of_a_tet_color,
 		std::vector<unsigned int>* edge_index_of_a_tet_color,
 		std::vector<unsigned int>* unconnected_tet_index,
+		int color_size,
 		std::vector<unsigned int>* surface_vertex_index_of_a_tet_color_per_thread_start,
 		std::vector<unsigned int>* vertex_index_of_a_tet_color_per_thread_start,
 		std::vector<unsigned int>* edge_index_of_a_tet_color_per_thread_start,

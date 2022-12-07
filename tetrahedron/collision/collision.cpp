@@ -1840,6 +1840,11 @@ void Collision::computeCollisionFreePositionForColor(int thread_No)
 
 void Collision::floorCollisionTime(int color)
 {
+	if (!floor->exist) {
+		return;
+	}
+
+
 	thread->assignTask(this, FLOOR_COLLISION_TIME,color);
 	collision_time = collision_time_thread[0];
 	for (int i = 1; i < thread_num; ++i) {
@@ -3040,6 +3045,12 @@ void Collision::computeHessianPerThread(int thread_No, int color_No)
 	//vt
 	start = vt_per_thread_start_index[thread_No];
 	end = vt_per_thread_start_index[thread_No+1];
+
+
+	i = vt_pair_compressed_record[start];
+	vertex_pos = vertex_position[i];
+	vertex_index_on_surface = this->general_index_to_surface_index[i];
+	prefix_sum = vertex_triangle_pair_num_record_prefix_sum[i];
 	
 	for (int index = start; index < end; index += 5) {
 		if (i != vt_pair_compressed_record[index]) {
@@ -3062,7 +3073,13 @@ void Collision::computeHessianPerThread(int thread_No, int color_No)
 	//ee
 	start = ee_per_thread_start_index[thread_No];
 	end = ee_per_thread_start_index[thread_No + 1];
-	i = -1;
+
+	i = ee_pair_compressed_record[start];
+	vertex_pos = vertex_position[i];
+	prefix_sum = edge_edge_pair_num_record_prefix_sum[i];
+	edge_vertex = this->edge_vertices[i];
+	edge_length = rest_edge_length[i];
+
 	for (int index = start; index < end; index += 5) {
 		if (i != ee_pair_compressed_record[index]) {
 			i = ee_pair_compressed_record[index];

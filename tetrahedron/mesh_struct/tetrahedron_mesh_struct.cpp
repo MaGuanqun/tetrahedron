@@ -753,6 +753,7 @@ void TetrahedronMeshStruct::obtainVETofColors()
 	vertex_index_of_a_tet_color_per_thread_start_group.resize(tet_color_group.size());
 
 	for (int i = 0; i < vertex_index_of_a_tet_color_per_thread_start_group.size(); ++i) {
+		std::cout << "group " << i << " " << tet_color_group[i].size() << std::endl;
 		triangle_index_of_a_tet_color_group[i].resize(tet_color_group[i].size());
 		edge_index_of_a_tet_color_group[i].resize(tet_color_group[i].size());
 		surface_vertex_index_of_a_tet_color_group[i].resize(tet_color_group[i].size());
@@ -765,9 +766,11 @@ void TetrahedronMeshStruct::obtainVETofColors()
 	}
 
 
+
+
 	for (unsigned int i = 0; i < tet_color_group.size(); ++i) {
 		obtainVETofAColor(surface_vertex_index_of_a_tet_color_group[i].data(), vertex_index_of_a_tet_color_group[i].data(),
-			triangle_index_of_a_tet_color_group[i].data(), edge_index_of_a_tet_color_group[i].data(), tet_color_group[i].data(),
+			triangle_index_of_a_tet_color_group[i].data(), edge_index_of_a_tet_color_group[i].data(), tet_color_group[i].data(), tet_color_group[i].size(),
 			surface_vertex_index_of_a_tet_color_per_thread_start_group[i].data(), vertex_index_of_a_tet_color_per_thread_start_group[i].data(), 
 			edge_index_of_a_tet_color_per_thread_start_group[i].data(), triangle_index_of_a_tet_color_per_thread_start_group[i].data());
 	}
@@ -790,7 +793,7 @@ void TetrahedronMeshStruct::setTetColorStartPerThread()
 	tet_around_tet_color_groups.resize(tet_color_group.size());
 	for (int i = 0; i < tet_around_tet_color_groups.size(); ++i) {
 		tet_around_tet_color_groups[i].resize(tet_color_group[i].size());
-		for (int j = 0; j < tet_around_tet_color_groups[i].size(); ++i) {
+		for (int j = 0; j < tet_around_tet_color_groups[i].size(); ++j) {
 			tet_around_tet_color_groups[i][j].reserve(tet_color_group[i][j].size());
 		}
 	}
@@ -904,15 +907,16 @@ void TetrahedronMeshStruct::obtainVETofAColor(std::vector<unsigned int>* surface
 	std::vector<unsigned int>* triangle_index_of_a_tet_color,
 	std::vector<unsigned int>* edge_index_of_a_tet_color,
 	std::vector<unsigned int>* unconnected_tet_index,
+	int color_size,
 	std::vector<unsigned int>* surface_vertex_index_of_a_tet_color_per_thread_start,
 	std::vector<unsigned int>* vertex_index_of_a_tet_color_per_thread_start,
 	std::vector<unsigned int>* edge_index_of_a_tet_color_per_thread_start,
 	std::vector<unsigned int>* triangle_index_of_a_tet_color_per_thread_start)
 {
-	for (int color = 0; color < unconnected_tet_index->size(); ++color) {
+	for (int color = 0; color < color_size; ++color) {
 
 		std::vector<unsigned int>* element_index_of_a_tet_color = &surface_vertex_index_of_a_tet_color[color];
-		element_index_of_a_tet_color->reserve(unconnected_tet_index->size() * 4);
+		element_index_of_a_tet_color->reserve(unconnected_tet_index[color].size() * 4);
 		std::vector<bool> is_used((std::max)((std::max)(edge_length.size(), triangle_indices.size()), vertex_position.size()), false);
 		//surface vertex
 		for (auto i = unconnected_tet_index[color].begin(); i < unconnected_tet_index[color].end(); ++i) {
@@ -932,7 +936,7 @@ void TetrahedronMeshStruct::obtainVETofAColor(std::vector<unsigned int>* surface
 
 		//vertex
 		element_index_of_a_tet_color = &vertex_index_of_a_tet_color[color];
-		element_index_of_a_tet_color->reserve(unconnected_tet_index->size() * 4);
+		element_index_of_a_tet_color->reserve(unconnected_tet_index[color].size() * 4);
 		std::fill(is_used.begin(), is_used.end(), false);
 		for (auto i = unconnected_tet_index[color].begin(); i < unconnected_tet_index[color].end(); ++i) {
 			for (unsigned int j = 0; j < 4; ++j) {
@@ -957,7 +961,7 @@ void TetrahedronMeshStruct::obtainVETofAColor(std::vector<unsigned int>* surface
 			}
 		}
 		element_index_of_a_tet_color = &triangle_index_of_a_tet_color[color];
-		element_index_of_a_tet_color->reserve(unconnected_tet_index->size() * 4);
+		element_index_of_a_tet_color->reserve(unconnected_tet_index[color].size() * 4);
 		for (unsigned int i = 0; i < triangle_indices.size(); ++i) {
 			if (is_used[i]) {
 				element_index_of_a_tet_color->emplace_back(i);
@@ -975,7 +979,7 @@ void TetrahedronMeshStruct::obtainVETofAColor(std::vector<unsigned int>* surface
 			}
 		}
 		element_index_of_a_tet_color = &edge_index_of_a_tet_color[color];
-		element_index_of_a_tet_color->reserve(unconnected_tet_index->size() * 4);
+		element_index_of_a_tet_color->reserve(unconnected_tet_index[color].size() * 4);
 		for (unsigned int i = 0; i < edge_length.size(); ++i) {
 			if (is_used[i]) {
 				element_index_of_a_tet_color->emplace_back(i);
