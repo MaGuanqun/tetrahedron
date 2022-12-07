@@ -1787,7 +1787,7 @@ void Collision::globalCollisionTime()
 
 
 
-void Collision::closePairCollisionTime() //do not handle floor
+void Collision::closePairCollisionTime()
 {	
 	thread->assignTask(this, CLOSE_PAIR_COLLISION_TIME);
 	collision_time = collision_time_thread[0];

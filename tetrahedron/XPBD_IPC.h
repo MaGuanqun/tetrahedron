@@ -189,7 +189,8 @@ private:
 	std::vector<double*> rest_edge_length_collider;
 
 
-
+	std::vector<std::vector<std::array<double, 3>*>> record_vertex_by_thread;//record_vertex_position_every_thread in thread->no, obj_no, vertex_No
+	std::vector<std::vector<int*>> record_vertex_update_num_by_thread;//record_vertex_position_num_every_thread in thread->no, obj_no, vertex_No
 
 	void initialClothBending();
 	//void solveBendingConstraint();
@@ -565,9 +566,65 @@ private:
 	void initialRecordPositionForThread();
 
 	void solveVT_Block(unsigned int vertex_obj_no, unsigned int vertex_index, unsigned int triangle_obj_No, unsigned int triangle_index,
-		double stiffness, double dt, double collision_stiffne, std::vector<unsigned int>* triangle_around_vertex, std::vector<unsigned int>* triangle_around_triangle,
+		double dt, std::vector<unsigned int>* triangle_around_vertex, std::vector<unsigned int>* triangle_around_triangle,
 		std::vector<unsigned int>* edge_around_vertex, std::vector<unsigned int>* edge_around_triangle,
 		std::vector<unsigned int>* tet_around_vertex, std::vector<unsigned int>* tet_around_triangle,
-		double d_hat_2);
+		std::array<double, 3>** record_vertex_position,
+		int** record_vertex_num);
+
+	void getVTCollisionHessainForPairFromRecord(MatrixXd& Hessian, VectorXd& grad,
+		unsigned int* VT, unsigned int num, unsigned int vertex_order_in_matrix, unsigned int vertex_obj_No, unsigned int tri_obj_No,
+		int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num,
+		double* vt_hessian_record, double* vt_grad_record, int* vt_hessian_record_index,
+		double* vt_collider_hessian_record, double* vt_collider_grad_record);
+
+	void getTVCollisionHessainForPairFromRecord(MatrixXd& Hessian, VectorXd& grad,
+		unsigned int* TV, int num, unsigned int tri_obj, unsigned int obj_No_0, unsigned int obj_No_1, int* triangle_indices,
+		int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, int collider_num,
+		int* tv_collider_hessian_record_index, double* tv_collider_hessian_record, double* tv_collider_grad_record);
+
+
+	void getCollisionBlockCollisionHessianFromRecord(MatrixXd& Hessian, VectorXd& grad, std::vector<unsigned int>* triangle_of_a_tet,
+		std::vector<unsigned int>* edge_of_a_tet,
+		unsigned int obj_No_0, unsigned int obj_No_1, int* pair_actual_unfixed_vertex_indices,
+		int unfixed_vertex_num);
+
+	void getEECollisionHessainForPairFromRecord(MatrixXd& Hessian, VectorXd& grad, unsigned int ee_obj_No,
+		unsigned int edge_index,
+		unsigned int* edge_vertex_index,
+		unsigned int* EE, int num, int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num,
+		unsigned int obj_No_0, unsigned int obj_No_1,
+		int edge_order_in_tet, std::vector<unsigned int>* edge_of_a_tet, unsigned int* EE_collider, int num_collider,
+		double* ee_hessian_record_, double* ee_grad_record_, int* ee_hessian_record_index_,
+		int* ee_collider_hessian_record_index, double* ee_collider_hessian_record, double* ee_collider_grad_record);
+
+
+	void getHessianForCollisionBlock(MatrixXd& Hessian, VectorXd& grad, unsigned int obj_0, unsigned int obj_1,
+		std::vector<unsigned int>* triangle_around_0, std::vector<unsigned int>* triangle_around_1,
+		std::vector<unsigned int>* edge_around_0, std::vector<unsigned int>* edge_around_1,
+		std::vector<unsigned int>* tet_around_0, std::vector<unsigned int>* tet_around_1,
+		int* unfixed_pair_vertex_index, int unfixed_num, std::vector<unsigned int>* around_triangle, std::vector<unsigned int>* around_edge,
+		std::vector<unsigned int>* around_tet);
+
+	void getARAPCollisionHessianForPairFromRecord(MatrixXd& Hessian, VectorXd& grad, int tet_obj,int* tet_vertex, int* tet_unfixed_vertex_indices,
+		int unfixed_tet_vertex_num, double* Hessian_, double* grad_);
+
+	void setHessianFromTetHessian(MatrixXd& Hessian_system, double* grad_system, double* Hessian_, double* grad_, int* vertex_in_sys);
+
+	void solveEE_Block(unsigned int obj_No_0, unsigned int primitive_0_index, unsigned int obj_No_1, unsigned int primitive_1_index,
+		double dt, std::vector<unsigned int>* triangle_around_0, std::vector<unsigned int>* triangle_around_1,
+		std::vector<unsigned int>* edge_around_0, std::vector<unsigned int>* edge_around_1,
+		std::vector<unsigned int>* tet_around_0, std::vector<unsigned int>* tet_around_1,
+		std::array<double, 3>** record_vertex_position,
+		int** record_vertex_num);
+
+	void solveBlockWithPair(unsigned int vertex_obj_no, unsigned int triangle_obj_No, 
+		double dt, std::vector<unsigned int>* triangle_around_vertex, std::vector<unsigned int>* triangle_around_triangle,
+		std::vector<unsigned int>* edge_around_vertex, std::vector<unsigned int>* edge_around_triangle,
+		std::vector<unsigned int>* tet_around_vertex, std::vector<unsigned int>* tet_around_triangle,
+		std::array<double, 3>** record_vertex_position,
+		int** record_vertex_num, int* unfixed_pair_vertex_index, int unfixed_num);
+
+
 };
 
