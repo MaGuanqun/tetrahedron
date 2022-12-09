@@ -129,10 +129,15 @@ void SetModel::regularization(RegularizationInfo& regularization_info, int obj_i
 		MULTI_(ori_mesh.vertices[i], coe);
 	}
 
-	//if (obj_index == 1) {
+	if (obj_index > 0) {
 		double rotation_matrix[9];
 		double axe[3] = { 0,1,0 };
-		rotateAroundVectorRowMajor(rotation_matrix, axe, -M_PI / 2.0);
+		if (obj_index == 1) {
+			rotateAroundVectorRowMajor(rotation_matrix, axe, -M_PI / 1.8);
+		}
+		else {
+			rotateAroundVectorRowMajor(rotation_matrix, axe, -M_PI / 2.2);
+		}
 		double pos[3];
 
 		for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
@@ -141,7 +146,7 @@ void SetModel::regularization(RegularizationInfo& regularization_info, int obj_i
 			pos[2] = DOT((rotation_matrix + 6), ori_mesh.vertices[i]);
 			memcpy(ori_mesh.vertices[i].data(), pos, 24);
 		}
-	//}
+	}
 
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
 		SUM_(ori_mesh.vertices[i], regularization_info.move_info);
@@ -150,10 +155,28 @@ void SetModel::regularization(RegularizationInfo& regularization_info, int obj_i
 
 	std::cout << "scale " << coe<<" "<< regularization_info.move_info[0]<<" "<< regularization_info.move_info[1]<<" "<< regularization_info.move_info[2] << std::endl;
 
-	//if (obj_index == 1) {
+	if (obj_index == 1) {
 		for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
 			ori_mesh.vertices[i][1] += 0.8;
+			ori_mesh.vertices[i][0] += 0.2; //0.3
 		}
+	}
+	else if(obj_index ==0) {
+		for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
+			ori_mesh.vertices[i][1] += 0.4;
+		}
+	}
+	else {
+		for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
+			ori_mesh.vertices[i][0] -= 0.2; //0.3
+		}
+	}
+
+	//if (obj_index == 1) {
+		//double move_info[3] = { -0.213267, -0.0693193, -0.250224 };
+		//for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
+		//	SUM_(ori_mesh.vertices[i], move_info);
+		//}
 	//}
 
 
@@ -181,10 +204,16 @@ void SetModel::setTetFrontMaterial(OriMesh& ori_mesh, int& index)
 		Ka = { 0.15, 0.05, 0.3 };
 		Ks = { 0.12, 0.04, 0.24 };
 		break;
+	case 2:
+		Kd = { 0.5, 0.1, 0.2 };
+		Ka = { 0.25, 0.05, 0.1 };
+		Ks = { 0.20, 0.04, 0.08 };
+		break;
 	default:
-		Kd = { 0.5, 0.5, 0.5 };
-		Ka = { 0.02, 0.02, 0.02 };
-		Ks = { 0.24, 0.24, 0.24 };
+		Kd = { 0.6, 0.3, 0.5 };
+		Ka = { 0.024, 0.012, 0.02 };
+		Ks = { 0.288, 0.144, 0.24 };
+		break;
 	}
 	memcpy(ori_mesh.front_material.Ka, Ka.data(), 12);
 	memcpy(ori_mesh.front_material.Kd, Kd.data(), 12);

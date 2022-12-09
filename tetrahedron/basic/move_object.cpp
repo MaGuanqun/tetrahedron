@@ -87,11 +87,11 @@ void MoveObject::move(unsigned int obj_No, double* displacement, bool only_move_
 				24* collider->data()[obj_No - tetrahedron_end_index].mesh_struct.vertex_for_render.size());
 		}
 	}
-	//SUM_(total_displacement[obj_No], displacement);
-	//std::cout << "======" << std::endl;
-	//for (unsigned int i = 0; i < total_obj_num; ++i) {
-	//	std::cout << total_displacement[i][0] << ", " << total_displacement[i][1] << ", " << total_displacement[i][2] << std::endl;
-	//}
+	SUM_(total_displacement[obj_No], displacement);
+	std::cout << "======" << std::endl;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		std::cout << total_displacement[i][0] << ", " << total_displacement[i][1] << ", " << total_displacement[i][2] << std::endl;
+	}
 }
 
 //MOVE_OBJECT2

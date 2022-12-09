@@ -503,11 +503,11 @@ public:
 	{
 		int col_num = 34;
 		int row_num = 34;
-		double r = 0.3;
-		int globe_row =9;
-		int globe_num_2 = 17;
+		double r = 0.15;
+		int globe_row =7;
+		int globe_num_2 = 13;
 
-		double half_capsule_length = 1.2;
+		double half_capsule_length = 0.6;
 		double capsule_length = 2.0 * half_capsule_length;
 
 		mesh.vertices.push_back(std::array<double, 3>{half_capsule_length + r, 0.0, 0.0});

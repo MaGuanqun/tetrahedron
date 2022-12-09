@@ -526,7 +526,7 @@ private:
 
 	void getVTCollisionHessainForTetFromRecord(MatrixXd& Hessian, VectorXd& grad,
 		unsigned int* VT, unsigned int num, unsigned int vertex_order_in_matrix, unsigned int obj_No, int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num,
-		unsigned int* VT_collider, int num_collider, double* vt_hessian_record, double* vt_grad_record, int* vt_hessian_record_index,
+		int num_collider, double* vt_hessian_record, double* vt_grad_record, int* vt_hessian_record_index,
 		double* vt_collider_hessian_record, double* vt_collider_grad_record);
 
 
@@ -618,12 +618,33 @@ private:
 		std::array<double, 3>** record_vertex_position,
 		int** record_vertex_num);
 
-	void solveBlockWithPair(unsigned int vertex_obj_no, unsigned int triangle_obj_No, 
+	void solveBlockWithPair(unsigned int vertex_obj_no, unsigned int triangle_obj_No,
 		double dt, std::vector<unsigned int>* triangle_around_vertex, std::vector<unsigned int>* triangle_around_triangle,
 		std::vector<unsigned int>* edge_around_vertex, std::vector<unsigned int>* edge_around_triangle,
 		std::vector<unsigned int>* tet_around_vertex, std::vector<unsigned int>* tet_around_triangle,
 		std::array<double, 3>** record_vertex_position,
 		int** record_vertex_num, int* unfixed_pair_vertex_index, int unfixed_num);
+
+	void testPrintOut()
+	{
+		for (int i = 0; i < tetrahedron->size(); ++i) {
+			for (int j = 0; j < tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups.size(); ++j) {
+				for (int k = 0; k < tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[j].size(); ++k) {
+					std::cout << "print tet_in_a_group_start_per_thread_groups "<<i << std::endl;
+					for (int m = 0; m < total_thread_num; ++m) {
+						std::cout << tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[j][k][m] << " ";
+					}
+					std::cout << std::endl;
+				}
+			}
+		}
+		std::cout << "print vt_pair_compressed_record " << collision.vt_pair_compressed_record.size() << std::endl;
+		for (int i = 0; i <= total_thread_num; ++i) {
+			std::cout << collision.vt_per_thread_start_index[i] << " ";
+		}
+		std::cout << std::endl;
+	}
+
 
 
 };
