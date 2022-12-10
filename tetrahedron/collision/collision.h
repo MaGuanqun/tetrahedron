@@ -997,12 +997,10 @@ private:
 	void resizeFloorCollisionHessianRecord();
 	void computeFloorHessian(double d_hat, double stiffness, double floor_value, double& hessian, double& grad, double position);
 
-	void graphColorCollision();
 	void setTriangleCollideWithCollider();
 	void setEdgeCollideWithCollider();
 	void setVertexCollideWithCollider();
 
-	void setCollisionPairPrefixSumDifferentType();
 	void findMinMaxDegreeOfCollisionPair(unsigned int& max_degree, unsigned int& min_degree);
 
 
@@ -1011,7 +1009,7 @@ private:
 	
 	int collision_pair_around_pair_size_per_pair;
 
-	void findPairAroundPair();
+	void setSelfCollisionPairPerThread();
 
 
 
@@ -1052,4 +1050,5 @@ private:
 	std::vector<std::vector<unsigned int>*>tet_around_edge;
 
 	std::vector<int*> tet_order_in_color_group;
+
 };

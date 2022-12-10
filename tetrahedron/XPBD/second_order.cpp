@@ -844,7 +844,6 @@ void SecondOrderConstraint::setBarrierGHWithMollifier(double barrier_,MatrixXd& 
 }
 
 
-
 void SecondOrderConstraint::computeEEBarrierGradientHessian(double* ea0, double* ea1, double* eb0, double* eb1, MatrixXd& Hessian_, VectorXd& grad_,
 	int* vertex_order_in_system, double stiffness, double d_hat_2, double rest_length_0, double rest_length_1)
 {
@@ -917,7 +916,7 @@ void SecondOrderConstraint::computeEEBarrierGradientHessian(double* ea0, double*
 			MatrixXd dis_h(12, 12); VectorXd dis_g(12);
 			dis_h.setZero(); dis_g.setZero();
 			setFourVertexHessianFromBarrierHessian(dis_h, dis_g, h, g,
-				 vertex_in_pair, 2);
+				vertex_in_pair, 2);
 			double barrier_ = stiffness * barrier(distance, d_hat_2);
 			setBarrierGHWithMollifier(barrier_, dis_h, dis_g, ea0, ea1, eb0, eb1, eps_x, ee_cross_norm_2, mollifier,
 				b_grad, b_hessian);
@@ -954,7 +953,7 @@ void SecondOrderConstraint::computeEEBarrierGradientHessian(double* ea0, double*
 			MatrixXd dis_h(12, 12); VectorXd dis_g(12);
 			dis_h.setZero(); dis_g.setZero();
 			setFourVertexHessianFromBarrierHessian(dis_h, dis_g, h, g,
-				 vertex_in_pair, 3);
+				vertex_in_pair, 3);
 			double barrier_ = stiffness * barrier(distance, d_hat_2);
 			setBarrierGHWithMollifier(barrier_, dis_h, dis_g, ea0, ea1, eb0, eb1, eps_x, ee_cross_norm_2, mollifier,
 				b_grad, b_hessian);
@@ -1191,6 +1190,416 @@ void SecondOrderConstraint::computeEEBarrierGradientHessian(double* ea0, double*
 		break;
 
 	}
+}
+
+
+
+void SecondOrderConstraint::computeEEBarrierGradientHessianTest(double* ea0, double* ea1, double* eb0, double* eb1, MatrixXd& Hessian_, VectorXd& grad_,
+	int* vertex_order_in_system, double stiffness, double d_hat_2, double rest_length_0, 
+	double rest_length_1, int num_record, int* vertex_in_pair_, int type,
+	int obj_0, int edge_index_0, int obj_1, int edge_index_1)
+{
+	double distance;
+	double b_grad, b_hessian;
+	MatrixXd h; VectorXd g;
+	int vertex_in_pair[4];
+	memset(vertex_in_pair, 0, 16);
+
+
+	double eps_x = 1e-3 * rest_length_0 * rest_length_0 * rest_length_1 * rest_length_1;
+	double mollifier;
+	double ee_cross_norm_2;
+	bool need_mollifier = CCD::internal::edgeEdgeMollifier(ea0, ea1, eb0, eb1, eps_x, mollifier, ee_cross_norm_2);
+
+	int use_pair_num = 0;
+
+	switch (CCD::internal::edgeEdgeDistanceType(ea0, ea1, eb0, eb1)) {
+	case 0:
+		distance = CCD::internal::pointPointDistance(ea0, eb0);
+		if (distance >= d_hat_2) {
+			return;
+		}
+		h.resize(6, 6);
+		g.resize(6);
+
+		distance::point_point_distance_gradient(ea0, eb0, g.data());
+		distance::point_point_distance_hessian(ea0, eb0, h.data());
+		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
+		b_grad *= stiffness; b_hessian *= stiffness;
+		vertex_in_pair[0] = 0;
+		vertex_in_pair[1] = 2;
+
+		if (need_mollifier) {
+			MatrixXd dis_h(12, 12); VectorXd dis_g(12);
+			dis_h.setZero(); dis_g.setZero();
+			setFourVertexHessianFromBarrierHessian(dis_h, dis_g, h, g,
+				vertex_in_pair, 2);
+			double barrier_ = stiffness * barrier(distance, d_hat_2);
+			setBarrierGHWithMollifier(barrier_, dis_h, dis_g, ea0, ea1, eb0, eb1, eps_x, ee_cross_norm_2, mollifier,
+				b_grad, b_hessian);
+
+			setTetHessianFromHessian(Hessian_, grad_, dis_h, dis_g, vertex_order_in_system);
+		}
+		else {
+			h = (b_hessian * g * g.transpose() + b_grad * h).eval();
+			FEM::SPDprojection(h);
+			g *= b_grad;
+			setTetHessianFromBarrierHessian(Hessian_, grad_, h, g,
+				vertex_order_in_system, vertex_in_pair, 2);
+		}
+
+		use_pair_num = 2;
+
+		break;
+
+	case 1:
+		distance = CCD::internal::pointPointDistance(ea0, eb1);
+		if (distance >= d_hat_2) {
+			return;
+		}
+		h.resize(6, 6);
+		g.resize(6);
+
+		distance::point_point_distance_gradient(ea0, eb1, g.data());
+		distance::point_point_distance_hessian(ea0, eb1, h.data());
+
+		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
+		b_grad *= stiffness; b_hessian *= stiffness;
+		vertex_in_pair[0] = 0;
+		vertex_in_pair[1] = 3;
+
+
+		if (need_mollifier) {
+			MatrixXd dis_h(12, 12); VectorXd dis_g(12);
+			dis_h.setZero(); dis_g.setZero();
+			setFourVertexHessianFromBarrierHessian(dis_h, dis_g, h, g,
+				 vertex_in_pair, 2);
+			double barrier_ = stiffness * barrier(distance, d_hat_2);
+			setBarrierGHWithMollifier(barrier_, dis_h, dis_g, ea0, ea1, eb0, eb1, eps_x, ee_cross_norm_2, mollifier,
+				b_grad, b_hessian);
+			setTetHessianFromHessian(Hessian_, grad_, dis_h, dis_g, vertex_order_in_system);
+		}
+		else {
+			h = (b_hessian * g * g.transpose() + b_grad * h).eval();
+			FEM::SPDprojection(h);
+			g *= b_grad;
+			setTetHessianFromBarrierHessian(Hessian_, grad_, h, g,
+				vertex_order_in_system, vertex_in_pair, 2);
+		}
+
+		use_pair_num = 2;
+		break;
+	case 2:
+
+		distance = CCD::internal::pointEdgeDistance(ea0, eb0, eb1);
+		if (distance >= d_hat_2) {
+			return;
+		}
+		h.resize(9, 9);
+		g.resize(9);
+
+		distance::point_edge_distance_gradient(ea0, eb0, eb1, g.data());
+		distance::point_edge_distance_hessian(ea0, eb0, eb1, h.data());
+
+		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
+		b_grad *= stiffness; b_hessian *= stiffness;
+		vertex_in_pair[0] = 0;
+		vertex_in_pair[1] = 2;
+		vertex_in_pair[2] = 3;
+
+
+		if (need_mollifier) {
+			MatrixXd dis_h(12, 12); VectorXd dis_g(12);
+			dis_h.setZero(); dis_g.setZero();
+			setFourVertexHessianFromBarrierHessian(dis_h, dis_g, h, g,
+				 vertex_in_pair, 3);
+			double barrier_ = stiffness * barrier(distance, d_hat_2);
+			setBarrierGHWithMollifier(barrier_, dis_h, dis_g, ea0, ea1, eb0, eb1, eps_x, ee_cross_norm_2, mollifier,
+				b_grad, b_hessian);
+
+			setTetHessianFromHessian(Hessian_, grad_, dis_h, dis_g, vertex_order_in_system);
+		}
+		else {
+			h = (b_hessian * g * g.transpose() + b_grad * h).eval();
+			FEM::SPDprojection(h);
+			g *= b_grad;
+			setTetHessianFromBarrierHessian(Hessian_, grad_, h, g,
+				vertex_order_in_system, vertex_in_pair, 3);
+		}
+
+
+		use_pair_num = 3;
+
+		break;
+
+	case 3:
+		distance = CCD::internal::pointPointDistance(ea1, eb0);
+		if (distance >= d_hat_2) {
+			return;
+		}
+		h.resize(6, 6);
+		g.resize(6);
+
+		distance::point_point_distance_gradient(ea1, eb0, g.data());
+		distance::point_point_distance_hessian(ea1, eb0, h.data());
+
+		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
+		b_grad *= stiffness; b_hessian *= stiffness;
+		vertex_in_pair[0] = 1;
+		vertex_in_pair[1] = 2;
+
+		if (need_mollifier) {
+			MatrixXd dis_h(12, 12); VectorXd dis_g(12);
+			dis_h.setZero(); dis_g.setZero();
+			setFourVertexHessianFromBarrierHessian(dis_h, dis_g, h, g,
+				vertex_in_pair, 2);
+			double barrier_ = stiffness * barrier(distance, d_hat_2);
+			setBarrierGHWithMollifier(barrier_, dis_h, dis_g, ea0, ea1, eb0, eb1, eps_x, ee_cross_norm_2, mollifier,
+				b_grad, b_hessian);
+			setTetHessianFromHessian(Hessian_, grad_, dis_h, dis_g, vertex_order_in_system);
+		}
+		else {
+			h = (b_hessian * g * g.transpose() + b_grad * h).eval();
+			FEM::SPDprojection(h);
+			g *= b_grad;
+			setTetHessianFromBarrierHessian(Hessian_, grad_, h, g,
+				vertex_order_in_system, vertex_in_pair, 2);
+		}
+
+		use_pair_num = 2;
+
+		break;
+	case 4:
+		distance = CCD::internal::pointPointDistance(ea1, eb1);
+		if (distance >= d_hat_2) {
+			return;
+		}
+		h.resize(6, 6);
+		g.resize(6);
+
+		distance::point_point_distance_gradient(ea1, eb1, g.data());
+		distance::point_point_distance_hessian(ea1, eb1, h.data());
+
+		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
+		b_grad *= stiffness; b_hessian *= stiffness;
+		vertex_in_pair[0] = 1;
+		vertex_in_pair[1] = 3;
+
+		if (need_mollifier) {
+			MatrixXd dis_h(12, 12); VectorXd dis_g(12);
+			dis_h.setZero(); dis_g.setZero();
+			setFourVertexHessianFromBarrierHessian(dis_h, dis_g, h, g,
+				vertex_in_pair, 2);
+			double barrier_ = stiffness * barrier(distance, d_hat_2);
+			setBarrierGHWithMollifier(barrier_, dis_h, dis_g, ea0, ea1, eb0, eb1, eps_x, ee_cross_norm_2, mollifier,
+				b_grad, b_hessian);
+			setTetHessianFromHessian(Hessian_, grad_, dis_h, dis_g, vertex_order_in_system);
+		}
+		else {
+			h = (b_hessian * g * g.transpose() + b_grad * h).eval();
+			FEM::SPDprojection(h);
+			g *= b_grad;
+			setTetHessianFromBarrierHessian(Hessian_, grad_, h, g,
+				vertex_order_in_system, vertex_in_pair, 2);
+		}
+
+		use_pair_num = 2;
+
+		break;
+	case 5:
+
+		distance = CCD::internal::pointEdgeDistance(ea1, eb0, eb1);
+		if (distance >= d_hat_2) {
+			return;
+		}
+		h.resize(9, 9);
+		g.resize(9);
+
+		distance::point_edge_distance_gradient(ea1, eb0, eb1, g.data());
+		distance::point_edge_distance_hessian(ea1, eb0, eb1, h.data());
+
+		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
+		b_grad *= stiffness; b_hessian *= stiffness;
+		vertex_in_pair[0] = 1;
+		vertex_in_pair[1] = 2;
+		vertex_in_pair[2] = 3;
+
+
+		if (need_mollifier) {
+			MatrixXd dis_h(12, 12); VectorXd dis_g(12);
+			dis_h.setZero(); dis_g.setZero();
+			setFourVertexHessianFromBarrierHessian(dis_h, dis_g, h, g,
+				vertex_in_pair, 3);
+			double barrier_ = stiffness * barrier(distance, d_hat_2);
+			setBarrierGHWithMollifier(barrier_, dis_h, dis_g, ea0, ea1, eb0, eb1, eps_x, ee_cross_norm_2, mollifier,
+				b_grad, b_hessian);
+
+			setTetHessianFromHessian(Hessian_, grad_, dis_h, dis_g, vertex_order_in_system);
+		}
+		else {
+			h = (b_hessian * g * g.transpose() + b_grad * h).eval();
+			FEM::SPDprojection(h);
+			g *= b_grad;
+			setTetHessianFromBarrierHessian(Hessian_, grad_, h, g,
+				vertex_order_in_system, vertex_in_pair, 3);
+		}
+
+		use_pair_num = 3;
+
+		break;
+	case 6:
+		distance = CCD::internal::pointEdgeDistance(eb0, ea0, ea1);
+		if (distance >= d_hat_2) {
+			return;
+		}
+		h.resize(9, 9);
+		g.resize(9);
+
+		distance::point_edge_distance_gradient(eb0, ea0, ea1, g.data());
+		distance::point_edge_distance_hessian(eb0, ea0, ea1, h.data());
+
+		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
+		b_grad *= stiffness; b_hessian *= stiffness;
+		vertex_in_pair[0] = 2;
+		vertex_in_pair[1] = 0;
+		vertex_in_pair[2] = 1;
+
+		if (need_mollifier) {
+			MatrixXd dis_h(12, 12); VectorXd dis_g(12);
+			dis_h.setZero(); dis_g.setZero();
+			setFourVertexHessianFromBarrierHessian(dis_h, dis_g, h, g,
+				vertex_in_pair, 3);
+			double barrier_ = stiffness * barrier(distance, d_hat_2);
+			setBarrierGHWithMollifier(barrier_, dis_h, dis_g, ea0, ea1, eb0, eb1, eps_x, ee_cross_norm_2, mollifier,
+				b_grad, b_hessian);
+
+			setTetHessianFromHessian(Hessian_, grad_, dis_h, dis_g, vertex_order_in_system);
+		}
+		else {
+			h = (b_hessian * g * g.transpose() + b_grad * h).eval();
+			FEM::SPDprojection(h);
+			g *= b_grad;
+			setTetHessianFromBarrierHessian(Hessian_, grad_, h, g,
+				vertex_order_in_system, vertex_in_pair, 3);
+		}
+
+		use_pair_num = 3;
+
+		break;
+	case 7:
+
+		distance = CCD::internal::pointEdgeDistance(eb1, ea0, ea1);
+		if (distance >= d_hat_2) {
+			return;
+		}
+		h.resize(9, 9);
+		g.resize(9);
+
+		distance::point_edge_distance_gradient(eb1, ea0, ea1, g.data());
+		distance::point_edge_distance_hessian(eb1, ea0, ea1, h.data());
+
+		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
+		b_grad *= stiffness; b_hessian *= stiffness;
+		vertex_in_pair[0] = 3;
+		vertex_in_pair[1] = 0;
+		vertex_in_pair[2] = 1;
+
+
+		if (need_mollifier) {
+			MatrixXd dis_h(12, 12); VectorXd dis_g(12);
+			dis_h.setZero(); dis_g.setZero();
+			setFourVertexHessianFromBarrierHessian(dis_h, dis_g, h, g,
+				vertex_in_pair, 3);
+			double barrier_ = stiffness * barrier(distance, d_hat_2);
+			setBarrierGHWithMollifier(barrier_, dis_h, dis_g, ea0, ea1, eb0, eb1, eps_x, ee_cross_norm_2, mollifier,
+				b_grad, b_hessian);
+
+			setTetHessianFromHessian(Hessian_, grad_, dis_h, dis_g, vertex_order_in_system);
+		}
+		else {
+			h = (b_hessian * g * g.transpose() + b_grad * h).eval();
+			FEM::SPDprojection(h);
+			g *= b_grad;
+			setTetHessianFromBarrierHessian(Hessian_, grad_, h, g,
+				vertex_order_in_system, vertex_in_pair, 3);
+		}
+
+		use_pair_num = 3;
+
+		break;
+	case 8:
+		distance = CCD::internal::edgeEdgeDistance(ea0, ea1, eb0, eb1);
+
+		if (distance >= d_hat_2) {
+			return;
+		}
+
+
+		h.resize(12, 12);
+		g.resize(12);
+
+		distance::edge_edge_distance_gradient(ea0, ea1, eb0, eb1, g.data());
+		distance::edge_edge_distance_hessian(ea0, ea1, eb0, eb1, h.data());
+
+		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
+		b_grad *= stiffness; b_hessian *= stiffness;
+		vertex_in_pair[0] = 0;
+		vertex_in_pair[1] = 1;
+		vertex_in_pair[2] = 2;
+		vertex_in_pair[3] = 3;
+
+
+		if (need_mollifier) {
+			double barrier_ = stiffness * barrier(distance, d_hat_2);
+			setBarrierGHWithMollifier(barrier_, h, g, ea0, ea1, eb0, eb1, eps_x, ee_cross_norm_2, mollifier,
+				b_grad, b_hessian);
+			setTetHessianFromHessian(Hessian_, grad_, h, g, vertex_order_in_system);
+		}
+		else {
+			h = (b_hessian * g * g.transpose() + b_grad * h).eval();
+			FEM::SPDprojection(h);
+			g *= b_grad;
+			setTetHessianFromBarrierHessian(Hessian_, grad_, h, g,
+				vertex_order_in_system, vertex_in_pair, 4);
+		}
+
+		use_pair_num = 4;
+
+		break;
+
+	}
+	if (type ==0) {
+		int num_sued=0;
+		int record[4];
+		for (int i = 0; i < use_pair_num; ++i) {
+			if (vertex_in_pair[i] < 2) {
+				record[num_sued] = vertex_in_pair[i];
+				num_sued++;
+			}
+		}
+		if (num_record != num_sued) {
+			std::cout << type << " ee collider  use_pair_num wrong, right: " << num_sued << " " << num_record << std::endl;
+			std::cout << obj_0 << " " << edge_index_0 << " " << obj_1 << " " << edge_index_1 << std::endl;
+		}
+		for (int i = 0; i < num_record; ++i) {
+			if (record[i] != vertex_in_pair_[i]) {
+				std::cout << "ee collider record_vertex_in_use wrong , right " << record[i] << " " << vertex_in_pair_[i] << std::endl;
+			}
+		}
+	}
+	else {
+		if (num_record != use_pair_num) {
+			std::cout <<type<< " ee use_pair_num wrong, right: " << use_pair_num << " " << num_record << std::endl;
+			std::cout << obj_0 << " " << edge_index_0 << " " << obj_1 << " " << edge_index_1 << std::endl;
+		}
+		for (int i = 0; i < num_record; ++i) {
+			if (vertex_in_pair[i] != vertex_in_pair_[i]) {
+				std::cout << "ee record_vertex_in_use wrong , right " << vertex_in_pair[i] << " " << vertex_in_pair_[i] << std::endl;
+			}
+		}		
+	}
+
+
 }
 
 
@@ -2364,6 +2773,212 @@ bool SecondOrderConstraint::computeBarrierVTGradientHessian(MatrixXd& Hessian, V
 	return true;
 
 }
+
+
+
+
+void SecondOrderConstraint::computeVTBarrierGradientHessianTest(MatrixXd& Hessian_, VectorXd& grad_, double* p, double* t0,
+	double* t1, double* t2, double d_hat_2, int* triangle_vertex_order_in_system, double stiffness, int* record_vertex_in_pair, int record_vertex_in_use)
+{
+	int compute_num=0;
+
+	double distance;
+	double b_grad, b_hessian;
+	MatrixXd Hessian; VectorXd grad;
+	int vertex_in_pair[4];
+	memset(vertex_in_pair, 0, 16);
+	switch (CCD::internal::pointTriangleDistanceType(p, t0, t1, t2))
+	{
+	case 0:
+		distance = CCD::internal::pointPointDistance(p, t0);
+		if (distance >= d_hat_2) {
+			return;
+		}
+		vertex_in_pair[0] = 0;
+		vertex_in_pair[1] = 1;
+
+		Hessian.resize(6, 6);
+		grad.resize(6);
+
+
+		distance::point_point_distance_gradient(p, t0, grad.data());
+		distance::point_point_distance_hessian(p, t0, Hessian.data());
+		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
+		b_grad *= stiffness; b_hessian *= stiffness;
+		Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
+
+		FEM::SPDprojection(Hessian);
+
+		grad *= b_grad;
+
+		setTetHessianFromBarrierHessian(Hessian_, grad_, Hessian, grad,
+			triangle_vertex_order_in_system, vertex_in_pair, 2);
+		compute_num = 1;
+		break;
+	case 1:
+		distance = CCD::internal::pointPointDistance(p, t1);
+		if (distance >= d_hat_2) {
+			return;
+		}
+		Hessian.resize(6, 6);
+		grad.resize(6);
+
+		distance::point_point_distance_gradient(p, t1, grad.data());
+		distance::point_point_distance_hessian(p, t1, Hessian.data());
+		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
+
+		b_grad *= stiffness; b_hessian *= stiffness;
+		Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
+
+		FEM::SPDprojection(Hessian);
+
+		grad *= b_grad;
+		vertex_in_pair[0] = 0;
+		vertex_in_pair[1] = 2;
+		setTetHessianFromBarrierHessian(Hessian_, grad_, Hessian, grad,
+			triangle_vertex_order_in_system, vertex_in_pair, 2);
+		compute_num = 1;
+		break;
+	case 2:
+		distance = CCD::internal::pointPointDistance(p, t2);
+		if (distance >= d_hat_2) {
+			return;
+		}
+		Hessian.resize(6, 6);
+		grad.resize(6);
+		distance::point_point_distance_gradient(p, t2, grad.data());
+		distance::point_point_distance_hessian(p, t2, Hessian.data());
+		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
+
+		b_grad *= stiffness; b_hessian *= stiffness;
+		Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
+
+		FEM::SPDprojection(Hessian);
+
+		grad *= b_grad;
+		vertex_in_pair[0] = 0;
+		vertex_in_pair[1] = 3;
+		setTetHessianFromBarrierHessian(Hessian_, grad_, Hessian, grad,
+			triangle_vertex_order_in_system, vertex_in_pair, 2);
+		compute_num = 1;
+		break;
+
+	case 3:
+		distance = CCD::internal::pointEdgeDistance(p, t0, t1);
+		if (distance >= d_hat_2) {
+			return;
+		}
+		Hessian.resize(9, 9);
+		grad.resize(9);
+		distance::point_edge_distance_gradient(p, t0, t1, grad.data());
+		distance::point_edge_distance_hessian(p, t0, t1, Hessian.data());
+		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
+
+		b_grad *= stiffness; b_hessian *= stiffness;
+		Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
+
+		FEM::SPDprojection(Hessian);
+
+		grad *= b_grad;
+		vertex_in_pair[0] = 0;
+		vertex_in_pair[1] = 1;
+		vertex_in_pair[2] = 2;
+		setTetHessianFromBarrierHessian(Hessian_, grad_, Hessian, grad,
+			triangle_vertex_order_in_system, vertex_in_pair, 3);
+		compute_num = 2;
+		break;
+
+	case 4:
+		distance = CCD::internal::pointEdgeDistance(p, t1, t2);
+		if (distance >= d_hat_2) {
+			return;
+		}
+		Hessian.resize(9, 9);
+		grad.resize(9);
+		distance::point_edge_distance_gradient(p, t1, t2, grad.data());
+		distance::point_edge_distance_hessian(p, t1, t2, Hessian.data());
+		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
+
+		b_grad *= stiffness; b_hessian *= stiffness;
+		Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
+
+		FEM::SPDprojection(Hessian);
+
+
+		grad *= b_grad;
+		vertex_in_pair[0] = 0;
+		vertex_in_pair[1] = 2;
+		vertex_in_pair[2] = 3;
+		setTetHessianFromBarrierHessian(Hessian_, grad_, Hessian, grad,
+			triangle_vertex_order_in_system, vertex_in_pair, 3);
+		compute_num = 2;
+		break;
+	case 5:
+		distance = CCD::internal::pointEdgeDistance(p, t0, t2);
+		if (distance >= d_hat_2) {
+			return;
+		}
+		Hessian.resize(9, 9);
+		grad.resize(9);
+		distance::point_edge_distance_gradient(p, t0, t2, grad.data());
+		distance::point_edge_distance_hessian(p, t0, t2, Hessian.data());
+		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
+
+		b_grad *= stiffness; b_hessian *= stiffness;
+		Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
+
+		FEM::SPDprojection(Hessian);
+
+		grad *= b_grad;
+		vertex_in_pair[0] = 0;
+		vertex_in_pair[1] = 1;
+		vertex_in_pair[2] = 3;
+		setTetHessianFromBarrierHessian(Hessian_, grad_, Hessian, grad,
+			triangle_vertex_order_in_system, vertex_in_pair, 3);
+		compute_num = 2;
+		break;
+
+	case 6:
+		distance = CCD::internal::pointTriangleDistance(p, t0, t1, t2);
+		if (distance >= d_hat_2) {
+			return;
+		}
+		Hessian.resize(12, 12);
+		grad.resize(12);
+		distance::point_triangle_distance_gradient(p, t0, t1, t2, grad.data());
+		distance::point_triangle_distance_hessian(p, t0, t1, t2, Hessian.data());
+		barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
+
+		b_grad *= stiffness; b_hessian *= stiffness;
+		Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
+
+		FEM::SPDprojection(Hessian);
+
+		grad *= b_grad;
+		vertex_in_pair[0] = 0;
+		vertex_in_pair[1] = 1;
+		vertex_in_pair[2] = 2;
+		vertex_in_pair[3] = 3;
+		setTetHessianFromBarrierHessian(Hessian_, grad_, Hessian, grad,
+			triangle_vertex_order_in_system, vertex_in_pair, 4);
+		compute_num = 3;
+		break;
+	}
+
+
+	if (record_vertex_in_use != compute_num+1) {
+		std::cout << "record_vertex_in_use wrong, right: "<< compute_num+1<<" "<< record_vertex_in_use << std::endl;
+	}
+	for (int i = 0; i < record_vertex_in_use; ++i) {
+		if (vertex_in_pair[i] != record_vertex_in_pair[i]) {
+			std::cout << "record_vertex_in_use wrong , right " << vertex_in_pair[i] << " " << record_vertex_in_pair[i] << std::endl;
+		}
+	}
+
+}
+
+
+
 
 
 

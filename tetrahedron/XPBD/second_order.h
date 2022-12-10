@@ -98,11 +98,21 @@ public:
 		double* t1, double* t2, double d_hat_2, int* vertex_in_pair, double  stiffness);
 
 
+	void computeVTBarrierGradientHessianTest(MatrixXd& Hessian_, VectorXd& grad_, double* p, double* t0, double* t1, double* t2,
+		double d_hat_2, int* triangle_vertex_order_in_system, double stiffness, int* record_vertex_in_pair, int record_vertex_in_use);
+
 	void computeVTBarrierGradientHessian(MatrixXd& Hessian_, VectorXd& grad_, double* p, double* t0, double* t1, double* t2,
 		double d_hat_2, int* triangle_vertex_order_in_system, double stiffness);
 
+
 	void computeEEBarrierGradientHessian(double* ea0, double* ea1, double* eb0, double* eb1, MatrixXd& Hessian_, VectorXd& grad_,
 		int* vertex_order_in_system, double stiffness, double d_hat_2, double rest_length_0, double rest_length_1);
+
+	void computeEEBarrierGradientHessianTest(double* ea0, double* ea1, double* eb0, double* eb1, MatrixXd& Hessian_, VectorXd& grad_,
+		int* vertex_order_in_system, double stiffness, double d_hat_2, double rest_length_0, double rest_length_1, int num_record, int* vertex_in_pair_, int type,
+		int obj_0, int edge_index_0, int obj_1, int edge_index_1);
+
+
 
 	bool computeBarrierEEGradientHessian(double* ea0, double* ea1, double* eb0, double* eb1, MatrixXd& h, VectorXd& g,
 		int* vertex_in_pair, double stiffness, double d_hat_2, double rest_length_0, double rest_length_1);
