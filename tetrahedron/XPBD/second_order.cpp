@@ -436,7 +436,7 @@ bool SecondOrderConstraint::solveTetCertainVertices(std::array<double, 3>* verte
 			if (vertex_in_sys[i] != -1) {
 				for (int j = 0; j < 4; ++j) {
 					if (vertex_in_sys[j] != -1) {
-						value = 2.0 * stiffness * DOT((A.data() +j), (A.data() + i));
+						value = 2.0 * stiffness * DOT((A.data() +3*j), (A.data() + 3*i));
 						sys_matrix(3 * vertex_in_sys[j],
 							3 * vertex_in_sys[i]) += value;
 						sys_matrix(3 * vertex_in_sys[j]+1,

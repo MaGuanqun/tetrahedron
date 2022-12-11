@@ -1,10 +1,10 @@
 object
 2
-C:\graphics\tetrahedron\model\bar.ele
-C:\graphics\tetrahedron\model\bar.ele
+.\model\bar.ele
+.\model\bar.ele
 collider
 1
-C:\graphics\tetrahedron\model\capsule.obj
+.\model\capsule.obj
 stiffness
 200 50000 0 0 0 0 
 1e+06 20000 20000 20 0 0 0 0 

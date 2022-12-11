@@ -524,7 +524,7 @@ private:
 
 	void initalARAPHessianStorages();
 
-	void getVTCollisionHessainForTetFromRecord(MatrixXd& Hessian, VectorXd& grad, double* vertex_pos_, double stiffness,
+	void getVTCollisionHessainForTetFromRecord(MatrixXd& Hessian, VectorXd& grad,
 		unsigned int* VT, unsigned int num, unsigned int vertex_order_in_matrix, unsigned int obj_No, int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num,
 		int num_collider, double* vt_hessian_record, double* vt_grad_record, int* vt_hessian_record_index,
 		double* vt_collider_hessian_record, double* vt_collider_grad_record, unsigned int* vt_collider);
@@ -534,14 +534,13 @@ private:
 		int* triangle_vertex_order_in_system, int* vertex_in_pair, int vertex_in_use);
 
 
-	void getTVCollisionHessainForTetFromRecord(MatrixXd& Hessian, VectorXd& grad, double* t0, double* t1, double* t2, double stiffness,
+	void getTVCollisionHessainForTetFromRecord(MatrixXd& Hessian, VectorXd& grad, 
 		unsigned int* TV, int num, unsigned int obj_No, int* triangle_indices,
 		int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, unsigned int* TV_collider, int collider_num,
 		int* tv_collider_hessian_record_index, double* tv_collider_hessian_record, double* tv_collider_grad_record);
 
 
 	void getEECollisionHessainForTetFromRecord(MatrixXd& Hessian, VectorXd& grad, 
-		double* ea0, double* ea1, double stiffness, double rest_edge,
 		unsigned int obj_No, 
 		unsigned int edge_index,
 		unsigned int* edge_vertex_index,
@@ -589,7 +588,7 @@ private:
 	void getCollisionBlockCollisionHessianFromRecord(MatrixXd& Hessian, VectorXd& grad, std::vector<unsigned int>* triangle_of_a_tet,
 		std::vector<unsigned int>* edge_of_a_tet,
 		unsigned int obj_No_0, unsigned int obj_No_1, int* pair_actual_unfixed_vertex_indices,
-		int unfixed_vertex_num);
+		int unfixed_vertex_num,MatrixXd& test_m, VectorXd& grad_m);
 
 	void getEECollisionHessainForPairFromRecord(MatrixXd& Hessian, VectorXd& grad, unsigned int ee_obj_No,
 		unsigned int edge_index,
