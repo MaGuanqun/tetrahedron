@@ -139,7 +139,7 @@ public:
 	std::vector<double>floor_grad_record;//record grad for floor collision size is 1x1
 	//bool* is_vertex_collide_with_floor;//
 
-	//bool** vertex_belong_to_color_group;
+	bool** vertex_belong_to_color_group;
 
 
 	std::vector<int> vertex_num_on_surface_prefix_sum;
@@ -370,6 +370,8 @@ public:
 
 
 private:
+
+	void computeHessianPreviousThread(int thread_No, int color_No);
 
 	void recordVTCollisionPairCompress(int thread_No, unsigned int** start_per_thread, unsigned int** pair_num_record, unsigned int** pair, unsigned int** prefix_sum,
 		unsigned int* pair_compress_record, unsigned int** vertex_surface_to_global, std::vector<unsigned int>* has_pair);
@@ -993,7 +995,7 @@ private:
 	void testColliderPair();
 	SecondOrderConstraint second_order_constraint;
 
-	//void updateVertexBelongColorGroup(int color_No);
+	void updateVertexBelongColorGroup(int color_No);
 
 
 	void prefixSumRecordPairNum(unsigned int* num_record, unsigned int* prefix_sum, int num, unsigned int& start_index, int move_size);

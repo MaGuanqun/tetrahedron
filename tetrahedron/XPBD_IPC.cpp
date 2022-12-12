@@ -1966,8 +1966,9 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 	for (int i = 0; i < max_tet_color_num-1; ++i) {		//
 		//update shared tet, collision hessian 
 		thread->assignTask(this, UPDATE_TET_GRAD_SHARED, i);	
+		collision.computeHessian(i);
 		thread->assignTask(this, SOLVE_TET_BLOCK, i);
-
+	
 		if (perform_collision) {
 			 collision.floorCollisionTime(i);			
 		}
