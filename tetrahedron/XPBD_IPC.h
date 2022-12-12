@@ -96,6 +96,18 @@ public:
 	std::vector<std::array<double, 3>>vertex_trace;
 	void updatePositionAverage(int thread_No);
 
+	//std::vector<std::array<double, 3>> e0_0;
+	//std::vector<std::array<double, 3>> e0_1;
+	//std::vector<std::array<double, 3>> e1_0;
+	//std::vector<std::array<double, 3>> e1_1;
+
+
+	//std::vector<std::array<double, 3>> e0_0_;
+	//std::vector<std::array<double, 3>> e0_1_;
+	//std::vector<std::array<double, 3>> e1_0_;
+	//std::vector<std::array<double, 3>> e1_1_;
+
+
 private:
 
 
@@ -571,7 +583,7 @@ private:
 		std::vector<unsigned int>* edge_around_vertex, std::vector<unsigned int>* edge_around_triangle,
 		std::vector<unsigned int>* tet_around_vertex, std::vector<unsigned int>* tet_around_triangle,
 		std::array<double, 3>** record_vertex_position,
-		int** record_vertex_num);
+		int** record_vertex_num, int* hessian_record_index);
 
 	void getVTCollisionHessainForPairFromRecord(MatrixXd& Hessian, VectorXd& grad,
 		unsigned int* VT, unsigned int num, unsigned int vertex_order_in_matrix, unsigned int vertex_obj_No, unsigned int tri_obj_No,
@@ -617,7 +629,7 @@ private:
 		std::vector<unsigned int>* edge_around_0, std::vector<unsigned int>* edge_around_1,
 		std::vector<unsigned int>* tet_around_0, std::vector<unsigned int>* tet_around_1,
 		std::array<double, 3>** record_vertex_position,
-		int** record_vertex_num);
+		int** record_vertex_num, int* hessian_record_index);
 
 	void solveBlockWithPair(unsigned int vertex_obj_no, unsigned int triangle_obj_No,
 		double dt, std::vector<unsigned int>* triangle_around_vertex, std::vector<unsigned int>* triangle_around_triangle,

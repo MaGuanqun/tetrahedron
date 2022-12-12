@@ -122,31 +122,49 @@ void SetModel::regularization(RegularizationInfo& regularization_info, int obj_i
 		SUB_(ori_mesh.vertices[i], regularization_info.body_center);
 	}
 
-	double coe = regularization_info.scaler * 1.5;
+	//double coe = regularization_info.scaler * 1.5;
 
-	//double coe = 0.00991323;
+	double coe = 0.00991323;
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
 		MULTI_(ori_mesh.vertices[i], coe);
 	}
 
-	if (obj_index > 0) {
-		double rotation_matrix[9];
-		double axe[3] = { 0,1,0 };
-		if (obj_index == 1) {
-			rotateAroundVectorRowMajor(rotation_matrix, axe, -M_PI / 1.8);
-		}
-		else {
-			rotateAroundVectorRowMajor(rotation_matrix, axe, -M_PI / 2.2);
-		}
-		double pos[3];
 
-		for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
-			pos[0] = DOT(rotation_matrix, ori_mesh.vertices[i]);
-			pos[1] = DOT((rotation_matrix + 3), ori_mesh.vertices[i]);
-			pos[2] = DOT((rotation_matrix + 6), ori_mesh.vertices[i]);
-			memcpy(ori_mesh.vertices[i].data(), pos, 24);
-		}
+
+	double rotation_matrix[9];
+	double axe[3] = { 0,1,0 };
+
+		rotateAroundVectorRowMajor(rotation_matrix, axe, -M_PI/2);
+
+	double pos[3];
+
+	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
+		pos[0] = DOT(rotation_matrix, ori_mesh.vertices[i]);
+		pos[1] = DOT((rotation_matrix + 3), ori_mesh.vertices[i]);
+		pos[2] = DOT((rotation_matrix + 6), ori_mesh.vertices[i]);
+		memcpy(ori_mesh.vertices[i].data(), pos, 24);
 	}
+	
+
+
+	//if (obj_index > 0) {
+	//	double rotation_matrix[9];
+	//	double axe[3] = { 0,1,0 };
+	//	if (obj_index == 1) {
+	//		rotateAroundVectorRowMajor(rotation_matrix, axe, -M_PI / 1.8);
+	//	}
+	//	else {
+	//		rotateAroundVectorRowMajor(rotation_matrix, axe, -M_PI / 2.2);
+	//	}
+	//	double pos[3];
+
+	//	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
+	//		pos[0] = DOT(rotation_matrix, ori_mesh.vertices[i]);
+	//		pos[1] = DOT((rotation_matrix + 3), ori_mesh.vertices[i]);
+	//		pos[2] = DOT((rotation_matrix + 6), ori_mesh.vertices[i]);
+	//		memcpy(ori_mesh.vertices[i].data(), pos, 24);
+	//	}
+	//}
 
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
 		SUM_(ori_mesh.vertices[i], regularization_info.move_info);
@@ -163,7 +181,7 @@ void SetModel::regularization(RegularizationInfo& regularization_info, int obj_i
 	}
 	else if(obj_index ==0) {
 		for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
-			ori_mesh.vertices[i][1] += 0.2;
+			ori_mesh.vertices[i][1] += 0.8;
 		}
 	}
 	else {

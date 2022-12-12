@@ -421,6 +421,9 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     case COLLISION_FREE_POSITION_LAST_COLOR:
         k = job([func, thread_id]() {func->computeCollisionFreePositionForColor(thread_id); });
         break;
+    case FIND_CLOSE_PAIR:
+        k = job([func, thread_id]() {func->findClosePair(thread_id); });
+        break;
     }
     return k;
 }

@@ -366,6 +366,8 @@ public:
 	std::vector<unsigned int> vt_per_thread_start_index;//recrod start index for every thread in vt_pair_compress_record
 	std::vector<unsigned int> ee_per_thread_start_index;// recrod start index for every thread in ee_pair_compress_record
 
+	void findClosePair(int thread_No);
+
 
 private:
 
@@ -935,14 +937,16 @@ private:
 	void collisionTimeByPair(int thread_No);
 	void collisionTimeByElement(int thread_No);
 
-	void findVT_ClosePair();
-	void findVT_ColliderClosePair();
-	void findEE_ClosePair();
-	void findEE_ClosePair_ReverseOrder();
 
-	void findEE_ColliderClosePair();
+	void findVT_ClosePair(int thread_No);
+	void findEE_ClosePair(int thread_No);
+	void findEE_ColliderClosePair(int thread_No);
 	void findTV_ClosePair();
-	void findTV_ColliderClosePair();
+	void findTV_ColliderClosePair(int thread_No);
+
+	void findEE_ClosePair_ReverseOrder();
+	void findVT_ColliderClosePair(int thread_No);
+
 	void findTV_ClosePair(int obj_No, unsigned int* vt_pair_initial, unsigned int* vt_pair_num, unsigned int** tv_pair,
 		unsigned int** tv_pair_num, unsigned int total_length_every_element_vt, unsigned int total_length_every_element_tv, bool is_tet);
 

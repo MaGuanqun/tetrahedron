@@ -571,21 +571,40 @@ void XPBD_IPC::XPBD_IPC_Position_Solve()
 
 void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 {
+	//e0_0.clear();
+	//e0_1.clear();
+	//e1_0.clear();
+	//e1_1.clear();
+
+	//e0_0_.clear();
+	//e0_1_.clear();
+	//e1_0_.clear();
+	//e1_1_.clear();
+
+	//e0_0.push_back(mesh_struct[0]->vertex_position[43]);
+	//e0_1.push_back(mesh_struct[0]->vertex_position[44]);
+	//e1_0.push_back(mesh_struct[1]->vertex_position[40]);
+	//e1_1.push_back(mesh_struct[1]->vertex_position[39]);
+
 	//recordInitialPosition();
 	updateCollisionFreePosition();
 	thread->assignTask(this, SET_POS_PREDICT_);
 	updateSn();
 	iteration_number = 0;
-	if (perform_collision) {
-		collision.collisionCulling();
-	}
+	//if (perform_collision) {
+	//	collision.collisionCulling();
+	//}
 	outer_itr_num = 0;
 	displacement_satisfied = false;
 	//vertex_trace.clear();
 	//vertex_trace.push_back(vertex_position[0][6]);
+
+
+
 	while (!convergeCondition(outer_itr_num)) {
+		//std::cout << "outer itr num "<<outer_itr_num << std::endl;
 		if (perform_collision) {
-			//collision.collisionCulling();
+			collision.collisionCulling();
 			collision.globalCollisionTime();
 			thread->assignTask(this, COLLISION_FREE_POSITION_);
 		}
@@ -598,6 +617,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 		previous_energy = energy;
 		while (!innerConvergeCondition(inner_iteration_number))
 		{
+			//std::cout << "inner iteration number " << inner_iteration_number << std::endl;
 			previous_energy = energy;
 			nearly_not_move = true;
 			solveNewtonCD_tetBlock();
@@ -609,15 +629,35 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 			//std::cout << "finish one itr " << inner_iteration_number << " " << energy << std::endl;
 			inner_iteration_number++;
 			//vertex_trace.push_back(vertex_position[0][6]);
+
+
+			//if (outer_itr_num == 1) {
+			//	e0_0_.push_back(mesh_struct[0]->vertex_position[43]);
+			//	e0_1_.push_back(mesh_struct[0]->vertex_position[44]);
+			//	e1_0_.push_back(mesh_struct[1]->vertex_position[40]);
+			//	e1_1_.push_back(mesh_struct[1]->vertex_position[39]);
+			//}
+
+
 		}
 
 		//std::cout << "outer " << outer_itr_num << std::endl;
+		//e0_0.push_back(mesh_struct[0]->vertex_position[43]);
+		//e0_1.push_back(mesh_struct[0]->vertex_position[44]);
+		//e1_0.push_back(mesh_struct[1]->vertex_position[40]);
+		//e1_1.push_back(mesh_struct[1]->vertex_position[39]);
+
+
+
 
 		outer_itr_num++;
 		iteration_number += inner_iteration_number;
+
+
 	}
 
 	if (perform_collision) {
+		collision.collisionCulling();
 		collision.globalCollisionTime();
 		thread->assignTask(this, COLLISION_FREE_POSITION_);
 	}
@@ -2126,18 +2166,36 @@ void XPBD_IPC::newtonCDTetBlockAGroupCollision(int thread_No, int color)
 		//vertex_triangle_pair
 		end = collision.vt_per_thread_start_index[thread_No + 1];
 		start = collision.vt_per_thread_start_index[thread_No];
+
+		int surface_index;
+
+		int* record_index;
+
 		for (int k = start; k < end; k += 5) {
 			obj_No_0 = collision.vt_pair_compressed_record[k];
 			obj_No_1 = collision.vt_pair_compressed_record[k + 2];
 			index_0 = collision.vt_pair_compressed_record[k + 1];
 			index_1 = collision.vt_pair_compressed_record[k + 3];
+
+			if (obj_No_0 < cloth->size()) {
+				surface_index = index_0;
+			}
+			else {
+				surface_index = vertex_index_surface[obj_No_0][index_0];					
+			}
+
+			record_index = collision.vt_hessian_record_index.data() + 5 * (collision.vertex_triangle_pair_num_record_prefix_sum[obj_No_0][surface_index] + collision.vt_pair_compressed_record[k + 4]);
+			if (*record_index	==0	) {
+				continue;
+			}
+		
 			solveVT_Block(obj_No_0, index_0,
 				obj_No_1, index_1, sub_time_step,
 				&vertices[obj_No_0][index_0].face, &triangle_around_triangle[obj_No_1][index_1], &vertices[obj_No_0][index_0].edge,
 				&edge_around_triangle[obj_No_1][index_1], &tet_around_vertex[obj_No_0][index_0], &tet_around_triangle[obj_No_1][index_1],
-				record_vertex_position, record_vertex_num);
+				record_vertex_position, record_vertex_num, record_index);
 		}
-		//edge_edge_pair
+	//	//edge_edge_pair
 		end = collision.ee_per_thread_start_index[thread_No + 1];
 		start = collision.ee_per_thread_start_index[thread_No];
 		for (int k = start; k < end; k += 5) {
@@ -2145,11 +2203,17 @@ void XPBD_IPC::newtonCDTetBlockAGroupCollision(int thread_No, int color)
 			obj_No_1 = collision.ee_pair_compressed_record[k + 2];
 			index_0 = collision.ee_pair_compressed_record[k + 1];
 			index_1 = collision.ee_pair_compressed_record[k + 3];
+
+			record_index = collision.ee_hessian_record_index.data() + 5 * (collision.edge_edge_pair_num_record_prefix_sum[obj_No_0][index_0] + collision.ee_pair_compressed_record[k + 4]);
+			if (*record_index	== 0) {
+				continue;
+			}
+
 			solveEE_Block(obj_No_0, index_0,
 				obj_No_1, index_1, sub_time_step, &triangle_around_edge[obj_No_0][index_0], &triangle_around_edge[obj_No_1][index_1],
 				&edge_around_edge[obj_No_0][index_0], &edge_around_edge[obj_No_1][index_1],
 				&tet_around_edge[obj_No_0][index_0], &tet_around_edge[obj_No_1][index_1],
-				record_vertex_position, record_vertex_num);
+				record_vertex_position, record_vertex_num, record_index);
 		}
 	}
 }
@@ -4593,7 +4657,7 @@ void XPBD_IPC::solveVT_Block(unsigned int vertex_obj_no, unsigned int vertex_ind
 	std::vector<unsigned int>* edge_around_vertex, std::vector<unsigned int>* edge_around_triangle,
 	std::vector<unsigned int>* tet_around_vertex, std::vector<unsigned int>* tet_around_triangle,
 	std::array<double, 3>** record_vertex_position,
-	int** record_vertex_num)
+	int** record_vertex_num, int* hessian_record_index)
 {
 
 	int unfixed_pair_vertex_index[8];
@@ -4605,7 +4669,12 @@ void XPBD_IPC::solveVT_Block(unsigned int vertex_obj_no, unsigned int vertex_ind
 		unfixed_pair_vertex_index[unfixed_num + 1] = vertex_index;
 		unfixed_num += 2;
 	}	
-	for (unsigned int i = 0; i < 3; ++i) {
+
+	int total_used_num = *hessian_record_index - 1;
+
+	unsigned int i;
+	for (unsigned int k = 0; k < total_used_num; ++k) {
+		i = *(hessian_record_index + 2 + k) - 1;
 		if (!(*is_vertex_fixed[triangle_obj_No])[tri_indices[i]]) {
 			unfixed_pair_vertex_index[unfixed_num] = triangle_obj_No;
 			unfixed_pair_vertex_index[unfixed_num + 1] = tri_indices[i];
@@ -4630,7 +4699,7 @@ void XPBD_IPC::solveEE_Block(unsigned int obj_No_0, unsigned int primitive_0_ind
 	std::vector<unsigned int>* edge_around_0, std::vector<unsigned int>* edge_around_1,
 	std::vector<unsigned int>* tet_around_0, std::vector<unsigned int>* tet_around_1,
 	std::array<double, 3>** record_vertex_position,
-	int** record_vertex_num)
+	int** record_vertex_num, int* hessian_record_index)
 {
 	MatrixXd Hessian;
 	VectorXd grad;
@@ -4639,12 +4708,18 @@ void XPBD_IPC::solveEE_Block(unsigned int obj_No_0, unsigned int primitive_0_ind
 	int unfixed_num = 0;
 
 	unsigned int* edge_vertex_0 = edge_vertices[obj_No_0] + (primitive_0_index << 1);
-	if (!(*is_vertex_fixed[obj_No_0])[*edge_vertex_0]) {
+
+	bool has[4];
+	memset(has, 0, 4);
+	for (int i = 0; i < *hessian_record_index; ++i) {
+		has[hessian_record_index[i + 1]] = true;
+	}
+	if (has[0] &&(!(*is_vertex_fixed[obj_No_0])[*edge_vertex_0])) {
 		unfixed_pair_vertex_index[unfixed_num] = obj_No_0;
 		unfixed_pair_vertex_index[unfixed_num + 1] = *edge_vertex_0;
 		unfixed_num += 2;
 	}
-	if (!(*is_vertex_fixed[obj_No_0])[edge_vertex_0[1]]) {
+	if (has[1] && (!(*is_vertex_fixed[obj_No_0])[edge_vertex_0[1]])) {
 		unfixed_pair_vertex_index[unfixed_num] = obj_No_0;
 		unfixed_pair_vertex_index[unfixed_num + 1] = edge_vertex_0[1];
 		unfixed_num += 2;
@@ -4652,12 +4727,13 @@ void XPBD_IPC::solveEE_Block(unsigned int obj_No_0, unsigned int primitive_0_ind
 
 
 	unsigned int* edge_vertex_1 = edge_vertices[obj_No_1] + (primitive_1_index << 1);
-	if (!(*is_vertex_fixed[obj_No_1])[*edge_vertex_1]) {
+
+	if (has[2] && (!(*is_vertex_fixed[obj_No_1])[*edge_vertex_1])) {
 		unfixed_pair_vertex_index[unfixed_num] = obj_No_1;
 		unfixed_pair_vertex_index[unfixed_num + 1] = *edge_vertex_1;
 		unfixed_num += 2;
 	}
-	if (!(*is_vertex_fixed[obj_No_1])[edge_vertex_1[1]]) {
+	if (has[3] &&(!(*is_vertex_fixed[obj_No_1])[edge_vertex_1[1]])) {
 		unfixed_pair_vertex_index[unfixed_num] = obj_No_1;
 		unfixed_pair_vertex_index[unfixed_num + 1] = edge_vertex_1[1];
 		unfixed_num += 2;

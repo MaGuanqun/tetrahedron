@@ -933,19 +933,49 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 	//////	0.005);
 	////draw_vertex.draw(camera, glm::vec3(1.0, 0.0, 0.0));
 	//
-	////draw_vertex.setVertex(xpbd_ipc.vertex_trace, //
-	////	0.002);
-	//draw_vertex.draw(camera, glm::vec3(0.0, 1.0, 0.0));
 
+	//if (xpbd_ipc.e0_0_.size() > 3) {
+	//	draw_vertex.setVertex(xpbd_ipc.e0_0_, //
+	//		0.002);
+	//	draw_vertex.draw(camera, glm::vec3(1.0, 0.0, 0.0));
+
+	//	draw_vertex.setVertex(xpbd_ipc.e0_1_, //
+	//		0.002);
+	//	draw_vertex.draw(camera, glm::vec3(1.0, 0.0, 0.0));
+
+	//	draw_vertex.setVertex(xpbd_ipc.e1_0_, //
+	//		0.002);
+	//	draw_vertex.draw(camera, glm::vec3(0.0, 1.0, 0.0));
+
+	//	draw_vertex.setVertex(xpbd_ipc.e1_1_, //
+	//		0.002);
+	//	draw_vertex.draw(camera, glm::vec3(0.0, 1.0, 0.0));
+	//}
 	//std::vector<unsigned int> indices;
 	//indices.push_back(5983);
 	//draw_triangle.drawTriangle(camera, object_shader_front, tetrahedron[0].mesh_struct.vertex_for_render,
 	//	tetrahedron[0].mesh_struct.triangle_indices, tetrahedron[0].mesh_struct.face_normal_for_render,
 	//	indices, glm::vec3(0.0, 1.0, 0.0));
 
+	//if (xpbd_ipc.e0_0.size() > 3) {
+	//	std::vector<std::array<double, 3>> pos;
+	//	std::vector<std::array<double, 3>> pos_2;
+	//	int order = 0;
+	//	pos.emplace_back(xpbd_ipc.e0_0[order]);
+	//	pos.emplace_back(xpbd_ipc.e0_1[order]);
+	//	pos_2.emplace_back(xpbd_ipc.e1_0[order]);
+	//	pos_2.emplace_back(xpbd_ipc.e1_1[order]);
 
+	//	std::vector<unsigned int>edge_ver;
+	//	edge_ver.emplace_back(0);
+	//	edge_ver.emplace_back(1);
 
-	//draw_edge_.drawEdge(camera, wireframe_shader, cloth[0].mesh_struct.vertex_position, cloth[0].mesh_struct.unconnected_edge_index[0], glm::vec3(1.0, 0.0, 0.0), cloth[0].mesh_struct.edge_vertices);
+	//	draw_edge_.drawEdge(camera, wireframe_shader, pos,
+	//		edge_ver, glm::vec3(1.0, 0.0, 0.0));
+	//	draw_edge_.drawEdge(camera, wireframe_shader, pos_2,
+	//		edge_ver, glm::vec3(0.0, 1.0, 0.0));
+	//}
+
 }
 
 void Scene::saveScene()

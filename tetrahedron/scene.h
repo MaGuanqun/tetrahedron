@@ -23,7 +23,7 @@
 #include"basic/draw_triangle.h"
 
 //#include<windows.h>
-//#include"basic/drawEdge.h"
+#include"basic/drawEdge.h"
 
 class Scene
 {
@@ -194,7 +194,7 @@ private:
 	double force_direction[3];
 	bool read_force;
 	void addExternalForce();
-	//Draw_Edge draw_edge_;
+	Draw_Edge draw_edge_;
 
 	DrawVertex draw_vertex;
 	DrawTriangle draw_triangle;

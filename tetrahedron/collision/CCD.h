@@ -66,7 +66,7 @@ namespace CCD {
             toc += toc_lower_bound;
 
             if (toc < 0.0) {
-                std::cout << "warning: the vt distance is less than the thickness " << std::endl;
+                std::cout << "warning: the vt distance is less than the thickness "<< dist2_cur << std::endl;
                 return 0.0;
             }
 
