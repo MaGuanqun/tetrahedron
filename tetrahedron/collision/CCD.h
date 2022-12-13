@@ -47,6 +47,8 @@ namespace CCD {
         int itr = 0;
 
         T ori_dist2_cur = dist2_cur;
+        
+        double dis_recrod;
 
         while (true) {
            // T toc_lower_bound = (1 - eta) * (dist_cur - thickness) / max_disp_mag;
@@ -55,6 +57,8 @@ namespace CCD {
             ACCUMULATE_SUM_WITH_COE(t0, toc_lower_bound, dt0);
             ACCUMULATE_SUM_WITH_COE(t1, toc_lower_bound, dt1);
             ACCUMULATE_SUM_WITH_COE(t2, toc_lower_bound, dt2);
+
+            dis_recrod = dist2_cur;
 
             dist2_cur = internal::pointTriangleDistanceUnclassified(p, t0, t1, t2);
             dist_cur = std::sqrt(dist2_cur);
@@ -66,7 +70,7 @@ namespace CCD {
             toc += toc_lower_bound;
 
             if (toc < 0.0) {
-                std::cout << "warning: the vt distance is less than the thickness "<< dist2_cur << std::endl;
+                std::cout << "warning: the vt distance is less than the thickness "<< dis_recrod<<" "<< dist2_cur - thickness * thickness <<" "<<thickness << std::endl;
                 return 0.0;
             }
 

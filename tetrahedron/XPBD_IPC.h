@@ -112,7 +112,7 @@ private:
 
 
 	std::vector<std::vector<std::vector<std::vector<unsigned int>>>*>tet_color_groups;
-	std::vector<std::vector<std::vector<char>>*>tet_color_groups_label;
+	//std::vector<std::vector<std::vector<char>>*>tet_color_groups_label;
 
 	std::vector<std::vector<unsigned int>*>tet_around_tet; //size is tet num
 
@@ -373,7 +373,8 @@ private:
 		double* volume, unsigned int tet_index, std::array<double, 3>* sn, unsigned int* common_vertex_in_order,
 		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num, 
 		double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
-		double* hessian_record, double* grad_record);//,  double* hessian_record, double* grad_record
+		double* hessian_record, double* grad_record, std::vector<unsigned int>* triangle_of_a_tet,
+		std::vector<unsigned int>* edge_of_a_tet, int* vertex_index_on_surface);//,  double* hessian_record, double* grad_record
 
 	void solveTetBlockCollision(std::array<double, 3>* vertex_position, double stiffness, double dt, std::array<int, 4>* indices,
 		double* mass,

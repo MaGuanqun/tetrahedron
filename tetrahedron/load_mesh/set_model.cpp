@@ -171,7 +171,7 @@ void SetModel::regularization(RegularizationInfo& regularization_info, int obj_i
 	}
 
 
-	std::cout << "scale " << coe<<" "<< regularization_info.move_info[0]<<" "<< regularization_info.move_info[1]<<" "<< regularization_info.move_info[2] << std::endl;
+	//std::cout << "scale " << coe<<" "<< regularization_info.move_info[0]<<" "<< regularization_info.move_info[1]<<" "<< regularization_info.move_info[2] << std::endl;
 
 	if (obj_index == 1) {
 		for (int i = 0; i < ori_mesh.vertices.size(); ++i) {

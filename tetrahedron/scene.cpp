@@ -646,7 +646,8 @@ void Scene::setGroup()
 		for (int i = 0; i < tetrahedron.size(); ++i) {
 			if (tetrahedron[i].mesh_struct.indices.size() > 1) {
 
-				//graph_color.graphColor(tetrahedron[i].mesh_struct.tet_tet_index, tetrahedron[i].mesh_struct.unconnected_tet_index);
+				//tetrahedron[i].mesh_struct.tet_color_group.resize(1);
+				//graph_color.graphColor(tetrahedron[i].mesh_struct.tet_tet_index, tetrahedron[i].mesh_struct.tet_color_group[0]);
 				graph_color.graphColorTet(tetrahedron[i].mesh_struct, 3);
 				tetrahedron[i].mesh_struct.setTetInfoInGroup();
 				tetrahedron[i].mesh_struct.obtainVETofColors();
@@ -927,11 +928,11 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 
 
 
-	//draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[3042].data(),//collision.draw_target_position,
+	//draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[2962].data(),//collision.draw_target_position,
 	//	0.002);
-	//////draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[project_dynamic.collision.chosen_show_vertex].data(),
-	//////	0.005);
-	////draw_vertex.draw(camera, glm::vec3(1.0, 0.0, 0.0));
+	////////draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[project_dynamic.collision.chosen_show_vertex].data(),
+	////////	0.005);
+	//draw_vertex.draw(camera, glm::vec3(1.0, 0.0, 0.0));
 	//
 
 	//if (xpbd_ipc.e0_0_.size() > 3) {
@@ -952,7 +953,7 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 	//	draw_vertex.draw(camera, glm::vec3(0.0, 1.0, 0.0));
 	//}
 	//std::vector<unsigned int> indices;
-	//indices.push_back(5983);
+	//indices.push_back(2771);
 	//draw_triangle.drawTriangle(camera, object_shader_front, tetrahedron[0].mesh_struct.vertex_for_render,
 	//	tetrahedron[0].mesh_struct.triangle_indices, tetrahedron[0].mesh_struct.face_normal_for_render,
 	//	indices, glm::vec3(0.0, 1.0, 0.0));

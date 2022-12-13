@@ -291,7 +291,7 @@ public:
 
 	void VTCollisionTimeOneVertex(double* initial_pos, double* current_pos, double& collision_time, unsigned int num,
 		unsigned int* triangle_index, std::array<double, 3>** initial_vertex, std::array<double, 3>** current_vertex,
-		std::array<int, 3>** triangle_indices);
+		std::array<int, 3>** triangle_indices, bool is_collider, int vertex_index);
 
 
 	void TVCollisionTimeOneTriangle(double* initial_pos_0, double* initial_pos_1, double* initial_pos_2,
@@ -370,6 +370,8 @@ public:
 
 
 private:
+
+	void computeLastColorHessianPerThread(int thread_No, int color_No);
 
 	void computeHessianPreviousThread(int thread_No, int color_No);
 
