@@ -36,7 +36,7 @@ substep_num
 out iteration_num
 50
 inner iteration_num
-300
+200
 sub_step_per_detection
 1
 d_hat
@@ -44,12 +44,12 @@ d_hat
 inner convergence rate
 0.0005
 min inner itr num
-12
+9
 min outer itr num
 2
 displacement standard
 0.002
 distance record as collision
-1e-20
+1e-6
 energy converge standard
 1e-08

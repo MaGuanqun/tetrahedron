@@ -56,6 +56,12 @@ void GraphColor::graphColorTet(MeshStruct& mesh_struct, int different_color_stra
 		}
 	}
 
+	//for (int j = 0; j < 3; ++j) {
+	//	for (unsigned int i = 0; i < mesh_struct.tet_color_group[j].size(); ++i) {
+	//		std::cout << mesh_struct.tet_color_group[j][i].size() << " ";
+	//	}
+	//	std::cout << std::endl;
+	//}
 
 
 
@@ -248,6 +254,7 @@ void GraphColor::graphColor(std::vector<std::vector<unsigned int>>& element_elem
 
 	decideGroup(max_palette_size, element_not_connect, color, ori_vertex_number);
 	delete[] color;
+
 }
 
 

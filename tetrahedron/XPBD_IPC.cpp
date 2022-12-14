@@ -624,7 +624,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 			if (inner_iteration_number >= min_inner_iteration - 1) {
 				computeCurrentEnergy();
 			}
-			//std::cout << "finish one itr " << inner_iteration_number << " " << energy << std::endl;
+			std::cout << "itration number " <<outer_itr_num<<" "<< inner_iteration_number << std::endl;
 			inner_iteration_number++;
 			//vertex_trace.push_back(vertex_position[0][6]);
 			//if (outer_itr_num == 1) {
@@ -816,8 +816,9 @@ bool XPBD_IPC::checkMaxDisplacement()
 	double* mass_;
 
 
-	//double max = 0.0;
-
+	double max = 0.0;
+	int vertex_ = -1;
+	int obj_ = -1;
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		previous_pos = record_collision_free_vertex_position[i].data();
 		current_pos = vertex_position[i];
@@ -827,19 +828,47 @@ bool XPBD_IPC::checkMaxDisplacement()
 			if (mass_[j] != 0.0) {
 				for (unsigned int k = 0; k < 3; ++k) {
 
-					//max = (std::max)(abs(previous_pos[j][k] - current_pos[j][k]), max);
-					if (abs(previous_pos[j][k] - current_pos[j][k]) > max_move_standard) {
-						//std::cout << outer_itr_num<<" "<< abs(previous_pos[j][k] - current_pos[j][k]) << std::endl;
-						return false;
+					if (max < abs(previous_pos[j][k] - current_pos[j][k])) {
+						max = abs(previous_pos[j][k] - current_pos[j][k]);
+						vertex_ = j;
+						obj_ = i;
 					}
+
+					//max = (std::max)(abs(previous_pos[j][k] - current_pos[j][k]), max);
+					//if (abs(previous_pos[j][k] - current_pos[j][k]) > max_move_standard) {
+						//std::cout << outer_itr_num<<" "<< abs(previous_pos[j][k] - current_pos[j][k]) << std::endl;
+						//return false;
+					//}
 				}
 			}
 		}
 	}
-	//std::cout << "max in checkMaxDisplacement" << max << std::endl;
-	//if (max > max_move_standard) {
-	//	return false;
-	//}
+
+	if (record_max_displacement.size() > 4) {
+		record_max_displacement.clear();
+		record_max_displace_vertex.clear();
+	}
+
+
+	std::cout << "outer itr num " << outer_itr_num<< " max in checkMaxDisplacement "<< vertex_ <<" " << max << std::endl;
+
+	if (max > max_move_standard) {
+
+		for (int i = 0; i < record_max_displacement.size(); ++i) {
+			if (abs(record_max_displacement[i]- max)<1e-5 && record_max_displace_vertex[i << 1] == obj_ && record_max_displace_vertex[i + i + 1] == vertex_) {
+				return true;
+			}
+		}
+
+		record_max_displacement.emplace_back(max);
+		record_max_displace_vertex.emplace_back(obj_);
+		record_max_displace_vertex.emplace_back(vertex_);
+
+		return false;
+	}
+
+	record_max_displacement.clear();
+	record_max_displace_vertex.clear();
 	return true;
 }
 
@@ -1990,8 +2019,8 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 
 	//here first perform without collision pair ,should use collision.collisionTimeColor(i);
 	if (perform_collision) {
-		collision.collisionTimeColor(max_tet_color_num - 1);
-		//collision.closePairCollisionTime();
+		//collision.collisionTimeColor(max_tet_color_num - 1);
+		collision.closePairCollisionTime();
 	}
 	
 	//for (int i = 0; i < time.size(); ++i) {
@@ -2153,57 +2182,57 @@ void XPBD_IPC::newtonCDTetBlockAGroupCollision(int thread_No, int color)
 		//}
 	}
 
-	//if (perform_collision) {
-	//	int obj_No_0, obj_No_1, index_0, index_1;
-	//	std::array<double, 3>** record_vertex_position = record_vertex_by_thread[thread_No].data();
-	//	int** record_vertex_num = record_vertex_update_num_by_thread[thread_No].data();
-	//	//all self collision pair
-	//	//vertex_triangle_pair
-	//	end = collision.vt_per_thread_start_index[thread_No + 1];
-	//	start = collision.vt_per_thread_start_index[thread_No];
-	//	int surface_index;
-	//	int* record_index;
-	//	for (int k = start; k < end; k += 5) {
-	//		obj_No_0 = collision.vt_pair_compressed_record[k];
-	//		obj_No_1 = collision.vt_pair_compressed_record[k + 2];
-	//		index_0 = collision.vt_pair_compressed_record[k + 1];
-	//		index_1 = collision.vt_pair_compressed_record[k + 3];
-	//		if (obj_No_0 < cloth->size()) {
-	//			surface_index = index_0;
-	//		}
-	//		else {
-	//			surface_index = vertex_index_surface[obj_No_0][index_0];					
-	//		}
-	//		record_index = collision.vt_hessian_record_index.data() + 5 * (collision.vertex_triangle_pair_num_record_prefix_sum[obj_No_0][surface_index] + collision.vt_pair_compressed_record[k + 4]);
-	//		if (*record_index	==0	) {
-	//			continue;
-	//		}
-	//	
-	//		solveVT_Block(obj_No_0, index_0,
-	//			obj_No_1, index_1, sub_time_step,
-	//			&vertices[obj_No_0][index_0].face, &triangle_around_triangle[obj_No_1][index_1], &vertices[obj_No_0][index_0].edge,
-	//			&edge_around_triangle[obj_No_1][index_1], &tet_around_vertex[obj_No_0][index_0], &tet_around_triangle[obj_No_1][index_1],
-	//			record_vertex_position, record_vertex_num, record_index);
-	//	}
-	////	//edge_edge_pair
-	//	end = collision.ee_per_thread_start_index[thread_No + 1];
-	//	start = collision.ee_per_thread_start_index[thread_No];
-	//	for (int k = start; k < end; k += 5) {
-	//		obj_No_0 = collision.ee_pair_compressed_record[k];
-	//		obj_No_1 = collision.ee_pair_compressed_record[k + 2];
-	//		index_0 = collision.ee_pair_compressed_record[k + 1];
-	//		index_1 = collision.ee_pair_compressed_record[k + 3];
-	//		record_index = collision.ee_hessian_record_index.data() + 5 * (collision.edge_edge_pair_num_record_prefix_sum[obj_No_0][index_0] + collision.ee_pair_compressed_record[k + 4]);
-	//		if (*record_index	== 0) {
-	//			continue;
-	//		}
-	//		solveEE_Block(obj_No_0, index_0,
-	//			obj_No_1, index_1, sub_time_step, &triangle_around_edge[obj_No_0][index_0], &triangle_around_edge[obj_No_1][index_1],
-	//			&edge_around_edge[obj_No_0][index_0], &edge_around_edge[obj_No_1][index_1],
-	//			&tet_around_edge[obj_No_0][index_0], &tet_around_edge[obj_No_1][index_1],
-	//			record_vertex_position, record_vertex_num, record_index);
-	//	}
-	//}
+	if (perform_collision) {
+		int obj_No_0, obj_No_1, index_0, index_1;
+		std::array<double, 3>** record_vertex_position = record_vertex_by_thread[thread_No].data();
+		int** record_vertex_num = record_vertex_update_num_by_thread[thread_No].data();
+		//all self collision pair
+		//vertex_triangle_pair
+		end = collision.vt_per_thread_start_index[thread_No + 1];
+		start = collision.vt_per_thread_start_index[thread_No];
+		int surface_index;
+		int* record_index;
+		for (int k = start; k < end; k += 5) {
+			obj_No_0 = collision.vt_pair_compressed_record[k];
+			obj_No_1 = collision.vt_pair_compressed_record[k + 2];
+			index_0 = collision.vt_pair_compressed_record[k + 1];
+			index_1 = collision.vt_pair_compressed_record[k + 3];
+			if (obj_No_0 < cloth->size()) {
+				surface_index = index_0;
+			}
+			else {
+				surface_index = vertex_index_surface[obj_No_0][index_0];					
+			}
+			record_index = collision.vt_hessian_record_index.data() + 5 * (collision.vertex_triangle_pair_num_record_prefix_sum[obj_No_0][surface_index] + collision.vt_pair_compressed_record[k + 4]);
+			if (*record_index	==0	) {
+				continue;
+			}
+		
+			solveVT_Block(obj_No_0, index_0,
+				obj_No_1, index_1, sub_time_step,
+				&vertices[obj_No_0][index_0].face, &triangle_around_triangle[obj_No_1][index_1], &vertices[obj_No_0][index_0].edge,
+				&edge_around_triangle[obj_No_1][index_1], &tet_around_vertex[obj_No_0][index_0], &tet_around_triangle[obj_No_1][index_1],
+				record_vertex_position, record_vertex_num, record_index);
+		}
+	//	//edge_edge_pair
+		end = collision.ee_per_thread_start_index[thread_No + 1];
+		start = collision.ee_per_thread_start_index[thread_No];
+		for (int k = start; k < end; k += 5) {
+			obj_No_0 = collision.ee_pair_compressed_record[k];
+			obj_No_1 = collision.ee_pair_compressed_record[k + 2];
+			index_0 = collision.ee_pair_compressed_record[k + 1];
+			index_1 = collision.ee_pair_compressed_record[k + 3];
+			record_index = collision.ee_hessian_record_index.data() + 5 * (collision.edge_edge_pair_num_record_prefix_sum[obj_No_0][index_0] + collision.ee_pair_compressed_record[k + 4]);
+			if (*record_index	== 0) {
+				continue;
+			}
+			solveEE_Block(obj_No_0, index_0,
+				obj_No_1, index_1, sub_time_step, &triangle_around_edge[obj_No_0][index_0], &triangle_around_edge[obj_No_1][index_1],
+				&edge_around_edge[obj_No_0][index_0], &edge_around_edge[obj_No_1][index_1],
+				&tet_around_edge[obj_No_0][index_0], &tet_around_edge[obj_No_1][index_1],
+				record_vertex_position, record_vertex_num, record_index);
+		}
+	}
 }
 
 

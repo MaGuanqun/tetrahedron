@@ -659,7 +659,8 @@ private:
 		std::cout << std::endl;
 	}
 
-
+	std::vector<unsigned int> record_max_displace_vertex;
+	std::vector<double> record_max_displacement;
 
 };
 

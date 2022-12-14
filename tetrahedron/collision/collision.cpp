@@ -1751,8 +1751,9 @@ void Collision::globalCollisionTime()
 		std::cout << "attention: collision time equals zero" << std::endl;
 	}
 
-	//std::cout << "--collision time " << collision_time << std::endl;
-
+	if (collision_time != 1.0) {
+		std::cout << "--collision time " << collision_time << std::endl;
+	}
 }
 
 
@@ -1775,7 +1776,16 @@ void Collision::closePairCollisionTime()
 	if (collision_time == 0.0) {
 		std::cout << "attention: collision time equals zero, color num inner itr "<<*inner_iteration_number << std::endl;
 	}
+	if (collision_time != 1.0) {
+		std::cout << "last color collision time " << collision_time << " " << std::endl;
+	}
+
+
 	thread->assignTask(this, COLLISION_FREE_POSITION_LAST_COLOR);
+
+	//double dist2_cur = CCD::internal::pointTriangleDistanceUnclassified(vertex_position[0][4048].data(), vertex_position[0][triangle_indices[0][7842][0]].data(),
+	//	vertex_position[0][triangle_indices[0][7842][1]].data(), vertex_position[0][triangle_indices[0][7842][2]].data());
+	//std::cout << "distance of the chosen VT " << dist2_cur << " " << tolerance * tolerance << std::endl;
 }
 
 
@@ -1970,8 +1980,17 @@ void Collision::collisionTimeColor(int color)
 	if (collision_time == 0.0) {
 		std::cout << "attention: color collision time equals zero, color num "<<color << std::endl;
 	}
+	if (collision_time != 1.0) {
+		std::cout << "color collision time " << collision_time << " " << color << std::endl;
+	}
+
 
 	thread->assignTask(this, UPDATE_COLOR_POSITION, color);
+
+	//double dist2_cur = CCD::internal::pointTriangleDistanceUnclassified(vertex_position[0][4048].data(), vertex_position[0][triangle_indices[0][7842][0]].data(),
+	//	vertex_position[0][triangle_indices[0][7842][1]].data(), vertex_position[0][triangle_indices[0][7842][2]].data());
+	//std::cout <<"distance of the chosen VT "<<  dist2_cur << " " << tolerance * tolerance << std::endl;
+
 }
 
 
