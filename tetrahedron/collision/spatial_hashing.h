@@ -32,9 +32,9 @@ public:
 
 	unsigned int** vertex_triangle_pair; //except collider, inner vector store vertex_1 index, obj_1_index, tri_2_index, obj_2_index
 	unsigned int** vertex_obj_triangle_collider_pair; //inner vector store vertex_1 index, obj_1_index, tri_2_index, obj_2_index
-	//unsigned int** vertex_collider_triangle_obj_pair; //inner vector store vertex_1 index, obj_1_index, tri_2_index, obj_2_index
+	unsigned int** vertex_collider_triangle_obj_pair; //inner vector store vertex_1 index, obj_1_index, tri_2_index, obj_2_index
 	unsigned int** edge_edge_pair; 
-
+	unsigned int** edge_edge_pair_collider; //
 
 	unsigned int** vertex_triangle_pair_by_vertex;//store pair by every vertex. (obj_index,triangle_index)
 	unsigned int** vertex_triangle_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
@@ -57,7 +57,7 @@ public:
 	bool** is_used_triangle_obj_vertex_collider_pair_by_triangle;
 	bool** is_used_edge_obj_edge_collider_pair_by_edge;
 
-	//unsigned int** edge_edge_pair_collider; //first obj, second collider
+
 
 
 

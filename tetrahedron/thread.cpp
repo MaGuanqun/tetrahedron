@@ -354,6 +354,9 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
         //case FIND_PATCH_PAIRS:
         //    k = job([func, thread_id]() {func->findAllPatchPairs(thread_id); });
         //    break;  
+    case GLOBAL_COLLISION_TIME_ADD_PAIR:
+        k = job([func, thread_id]() {func->collisionTimeWithPair(thread_id); });
+        break;
     case FIND_COLLISION_PAIR:
         k = job([func, thread_id]() {func->getCollisionPair(thread_id); });
         break;

@@ -39,6 +39,7 @@ public:
 	void resumTargetPositionPerThread(int thread_id);
 	void updateCollisionPosition();
 	void collisionTime(int thread_No);
+
 	void collisionConstraint(int thread_No);
 	void collisionConstraintIPC(int thread_No);
 	void re_collisionConstraint(int thread_No);
@@ -46,6 +47,9 @@ public:
 	void test();
 	void collisionCulling();
 	void globalCollisionTime();
+	void collisionTimeWithPair();
+	void collisionTimeWithPair(int thread_No);
+
 	void closePairCollisionTime();
 	//void findAllPatchPairs(int thread_No);
 
@@ -367,9 +371,57 @@ public:
 	std::vector<unsigned int> ee_per_thread_start_index;// recrod start index for every thread in ee_pair_compress_record
 
 	void findClosePair(int thread_No);
-
+	void initialPairRecordInfo();
 
 private:
+	void recordPair();
+
+
+
+
+
+	std::vector<unsigned int>vertex_index_prefix_sum_obj;
+	std::vector<unsigned int>triangle_index_prefix_sum_obj;
+	std::vector<unsigned int>edge_index_prefix_sum_obj;
+
+
+	std::vector<unsigned int>vertex_index_prefix_sum_obj_collider;
+	std::vector<unsigned int>triangle_index_prefix_sum_obj_collider;
+	std::vector<unsigned int>edge_index_prefix_sum_obj_collider;
+
+
+	std::vector<std::vector<unsigned int>>record_vt_pair;
+	std::vector<std::vector<unsigned int>>record_ee_pair;
+	std::vector<std::vector<unsigned int>>record_vt_collider_pair;
+	std::vector<std::vector<unsigned int>>record_tv_collider_pair; //store collider vertex, obj triangle in order
+	std::vector<std::vector<unsigned int>>record_ee_collider_pair;
+
+	std::vector<std::vector<char>>indicate_vertex_collide_with_floor; //size is surfacel vertex number 
+	std::vector<std::vector<double>>record_vertex_collide_with_floor_d_hat;
+	std::vector<std::vector<unsigned int>>record_vertex_collide_with_floor;
+
+
+	std::vector<std::vector<double>>record_vt_pair_d_hat;
+	std::vector<std::vector<double>>record_ee_pair_d_hat;
+	std::vector<std::vector<double>>record_vt_collider_pair_d_hat;
+	std::vector<std::vector<double>>record_tv_collider_pair_d_hat;
+	std::vector<std::vector<double>>record_ee_collider_pair_d_hat;
+
+	int pair_hash_table_size;
+	int pair_hash_table_cell_size;
+
+
+	std::vector<unsigned int> vt_hash_size_record;
+	std::vector<unsigned int> vt_hash_record;
+	std::vector<unsigned int> ee_hash_size_record;
+	std::vector<unsigned int> ee_hash_record;
+
+	std::vector<unsigned int> vt_collider_hash_size_record;
+	std::vector<unsigned int> vt_collider_hash_record;
+	std::vector<unsigned int> tv_collider_hash_size_record;
+	std::vector<unsigned int> tv_collider_hash_record;
+	std::vector<unsigned int> ee_collider_hash_size_record;
+	std::vector<unsigned int> ee_collider_hash_record;
 
 	void computeLastColorHessianPerThread(int thread_No, int color_No);
 
@@ -610,7 +662,7 @@ private:
 	double scene_aabb[6];
 
 
-	void initialCollidePairInfo();
+	void initialFloorPairInfo();
 
 	//unsigned int** point_triangle_pair; //except collider, inner vector store vertex_1 index, obj_1_index, tri_2_index, obj_2_index
 	//unsigned int** point_collider_triangle_obj_pair;  //, inner vector store vertex_1 index, obj_1_index, tri_2_index, obj_2_index
@@ -764,6 +816,17 @@ private:
 
 	void vertexTriangleCollisionTime(int thread_No, unsigned int pair_thread_No, int start_pair_index, int end_pair_index,
 		double& collision_time);
+
+	void vertexTriangleCollisionTimePair(int start_pair_index,
+		int end_pair_index, double& collision_time, std::array<int, 3>** triangle_indices,
+		std::array<double, 3>** vertex_for_render_0, std::array<double, 3>** vertex_for_render_1, 
+		std::array<double, 3>** vertex_position_0,
+		std::array<double, 3>** vertex_position_1,
+		unsigned int* pair, std::vector<unsigned int>* record_index,
+		std::vector<double>* record_d_hat, unsigned int* hash_size_record, unsigned int* hash_record,
+		unsigned int* vertex_index_prefix_sum, unsigned int* triangle_index_prefix_sum,
+		std::array<double, 3>** ori_pos_0, std::array<double, 3>** ori_pos_1);
+
 	void edgeEdgeCollisionTime(int thread_No, unsigned int pair_thread_No, int start_pair_index,
 		int end_pair_index, double& collision_time);
 	void vertexColliderTriangleCollisionTime(int thread_No, unsigned int pair_thread_No, int start_pair_index,
@@ -773,6 +836,16 @@ private:
 	void edgeEdgeColliderCollisionTime(int thread_No, unsigned int pair_thread_No, int start_pair_index,
 		int end_pair_index, double& collision_time);
 	double conservative_rescaling;
+
+	void edgeEdgeCollisionTimePair(int start_pair_index,
+		int end_pair_index, double& collision_time, 
+		unsigned int* pair, std::array<double, 3>** vertex_for_render_0, std::array<double, 3>** vertex_position_0,
+		std::array<double, 3>** vertex_for_render_1, std::array<double, 3>** vertex_position_1,
+		std::array<double, 3>** ori_pos_0, std::array<double, 3>** ori_pos_1,
+		unsigned int** edge_vertices_0, unsigned int** edge_vertices_1, std::vector<unsigned int>* record_index,
+		std::vector<double>* record_d_hat, unsigned int* hash_size_record, unsigned int* hash_record,
+		unsigned int* edge_0_index_prefix_sum, unsigned int* edge_1_index_prefix_sum);
+
 
 	void initialPair();
 	void findAllVertexEdgePairs(int thread_No);
@@ -987,12 +1060,12 @@ private:
 	//	unsigned int* edge_record, double* volume, std::vector<std::array<double, 3>*>& vertex_position, std::vector<unsigned int*>& edge_vertices);
 
 
-	std::vector<std::vector<double>>record_VT_collision_time;
-	std::vector<std::vector<double>>record_EE_collision_time;
-	std::vector<std::vector<double>>record_VTCollider_collision_time;
+	//std::vector<std::vector<double>>record_VT_collision_time;
+	//std::vector<std::vector<double>>record_EE_collision_time;
+	//std::vector<std::vector<double>>record_VTCollider_collision_time;
 
-	void initialCollisionTimeRecord(int thread_No);
-	void initialCollisionTimeRecord();
+	//void initialCollisionTimeRecord(int thread_No);
+	//void initialCollisionTimeRecord();
 
 	void testColliderPair();
 	SecondOrderConstraint second_order_constraint;
@@ -1058,5 +1131,5 @@ private:
 	std::vector<std::vector<unsigned int>*>tet_around_edge;
 
 	std::vector<int*> tet_order_in_color_group;
-
+	unsigned int P1, P2;
 };

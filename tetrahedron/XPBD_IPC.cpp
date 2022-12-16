@@ -589,9 +589,12 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 	thread->assignTask(this, SET_POS_PREDICT_);
 	updateSn();
 	iteration_number = 0;
-	//if (perform_collision) {
-	//	collision.collisionCulling();
-	//}
+	if (perform_collision) {
+		collision.initialPairRecordInfo();
+		collision.collisionCulling();
+		collision.collisionTimeWithPair();
+		thread->assignTask(this, COLLISION_FREE_POSITION_);
+	}
 	outer_itr_num = 0;
 	displacement_satisfied = false;
 	//vertex_trace.clear();
@@ -603,7 +606,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 		//std::cout << "outer itr num "<<outer_itr_num << std::endl;
 		if (perform_collision) {
 			collision.collisionCulling();
-			collision.globalCollisionTime();
+			collision.collisionTimeWithPair();
 			thread->assignTask(this, COLLISION_FREE_POSITION_);
 		}
 		updateCollisionFreePosition();

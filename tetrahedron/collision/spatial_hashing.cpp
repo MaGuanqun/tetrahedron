@@ -102,26 +102,26 @@ void SpatialHashing::initialHashCell(unsigned int total_triangle_num, unsigned i
 	if (!record_pair_by_element) {
 		vertex_triangle_pair = new unsigned int* [thread_num];
 		vertex_obj_triangle_collider_pair = new unsigned int* [thread_num];
-		//vertex_collider_triangle_obj_pair = new unsigned int* [thread_num];
+		vertex_collider_triangle_obj_pair = new unsigned int* [thread_num];
 		edge_edge_pair = new unsigned int* [thread_num];
-		//edge_edge_pair_collider = new unsigned int* [thread_num];
+		edge_edge_pair_collider = new unsigned int* [thread_num];
 		for (unsigned int i = 0; i < thread_num; ++i) {
 			edge_edge_pair[i] = new unsigned int[2 * estimate_coeff_for_ee_pair_num * total_triangle_num];// 
 			memset(edge_edge_pair[i], 0, 4 * 2 * estimate_coeff_for_ee_pair_num * total_triangle_num);
 			vertex_triangle_pair[i] = new unsigned int[estimate_coeff_for_ee_pair_num * total_triangle_num / 2];// 
 			memset(vertex_triangle_pair[i], 0, 4 * (estimate_coeff_for_ee_pair_num * total_triangle_num / 2));
 			if (has_collider) {
-				//edge_edge_pair_collider[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num];
-				//memset(edge_edge_pair_collider[i], 0, 4 * estimate_coeff_for_pair_num * total_triangle_num);
-				vertex_obj_triangle_collider_pair[i] = new unsigned int[estimate_coeff_for_ee_pair_num * total_triangle_num / 2];
-				memset(vertex_obj_triangle_collider_pair[i], 0, 4 * (estimate_coeff_for_ee_pair_num * total_triangle_num / 2));
-				//vertex_collider_triangle_obj_pair[i] = new unsigned int[estimate_coeff_for_pair_num * total_triangle_num / 2];
-				//memset(vertex_collider_triangle_obj_pair[i], 0, 4 * (estimate_coeff_for_pair_num * total_triangle_num / 2));			
+				edge_edge_pair_collider[i] = new unsigned int[estimate_coeff_for_ee_collider_pair_num * total_triangle_num];
+				memset(edge_edge_pair_collider[i], 0, 4 * estimate_coeff_for_ee_collider_pair_num * total_triangle_num);
+				vertex_obj_triangle_collider_pair[i] = new unsigned int[estimate_coeff_for_vt_collider_pair_num * total_triangle_num / 2];
+				memset(vertex_obj_triangle_collider_pair[i], 0, 4 * (estimate_coeff_for_vt_collider_pair_num * total_triangle_num / 2));
+				vertex_collider_triangle_obj_pair[i] = new unsigned int[estimate_coeff_for_tv_collider_pair_num * total_triangle_num / 2];
+				memset(vertex_collider_triangle_obj_pair[i], 0, 4 * (estimate_coeff_for_tv_collider_pair_num * total_triangle_num / 2));
 			}
 			else {
-				//edge_edge_pair_collider[i] = new unsigned int[1];
+				edge_edge_pair_collider[i] = new unsigned int[1];
 				vertex_obj_triangle_collider_pair[i] = new unsigned int[1];
-				//vertex_collider_triangle_obj_pair[i] = new unsigned int[1];
+				vertex_collider_triangle_obj_pair[i] = new unsigned int[1];
 			}
 		}
 	}
@@ -888,13 +888,13 @@ void SpatialHashing::findAllVertexTrianglePairsByPrimitive(int thread_No)
 		vertex_obj_triangle_collider_pair[thread_No][0] = primitive_pair_ - vertex_obj_triangle_collider_pair[thread_No] - 1;
 
 		//collider vertex obj triangle
-		//primitive_pair_ = vertex_collider_triangle_obj_pair[thread_No] + 1;
-		//for (unsigned int i = 0; i < collider->size(); ++i) {
-		//	findAllVertexTrianglePairsByPrimitiveSingleObj(thread_No, i, primitive_pair_, collider_vertex_index_begin_per_thread[i][thread_No],
-		//		collider_vertex_index_begin_per_thread[i][thread_No + 1], collider_vertex_aabb[i], max_index_number_in_one_cell, spatial_hashing_cell_triangle[0],
-		//		spatial_hashing_cell_triangle_size[0], obj_tri_aabb, false,false);
-		//}
-		//vertex_collider_triangle_obj_pair[thread_No][0] = primitive_pair_ - vertex_collider_triangle_obj_pair[thread_No] - 1;
+		primitive_pair_ = vertex_collider_triangle_obj_pair[thread_No] + 1;
+		for (unsigned int i = 0; i < collider->size(); ++i) {
+			findAllVertexTrianglePairsByPrimitiveSingleObj(thread_No, i, primitive_pair_, collider_vertex_index_begin_per_thread[i][thread_No],
+				collider_vertex_index_begin_per_thread[i][thread_No + 1], collider_vertex_aabb[i], max_index_number_in_one_cell, spatial_hashing_cell_triangle[0],
+				spatial_hashing_cell_triangle_size[0], obj_tri_aabb, false,false);
+		}
+		vertex_collider_triangle_obj_pair[thread_No][0] = primitive_pair_ - vertex_collider_triangle_obj_pair[thread_No] - 1;
 	}
 }
 
@@ -1042,13 +1042,13 @@ void SpatialHashing::findAllEdgeEdgePairsByPrimitive(int thread_No)
 
 	//obj edge collider edge
 	if (has_collider) {
-		//primitive_pair_ = edge_edge_pair_collider[thread_No] + 1;
-		//for (unsigned int i = 0; i < collider_begin_obj_index; ++i) {
-		//	findAllEdgeEdgePairsByPrimitiveSingleObj(thread_No, i, primitive_pair_, representative_edge_num_collider,
-		//		face_edge_collider, collider_edge_aabb, max_index_number_in_one_cell_collider, spatial_hashing_cell_collider_triangle[0],
-		//		spatial_hashing_cell_collider_triangle_size[0], false);
-		//}
-		//edge_edge_pair_collider[thread_No][0] = primitive_pair_ - edge_edge_pair_collider[thread_No] - 1;
+		primitive_pair_ = edge_edge_pair_collider[thread_No] + 1;
+		for (unsigned int i = 0; i < collider_begin_obj_index; ++i) {
+			findAllEdgeEdgePairsByPrimitiveSingleObj(thread_No, i, primitive_pair_, 
+				collider_edge_aabb, max_index_number_in_one_cell_collider_edge, spatial_hashing_cell_collider_edge[0], 
+				spatial_hashing_cell_collider_edge_size[0], false);
+		}
+		edge_edge_pair_collider[thread_No][0] = primitive_pair_ - edge_edge_pair_collider[thread_No] - 1;
 	}
 }
 
