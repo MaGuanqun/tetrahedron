@@ -16,10 +16,15 @@
 #include"../basic/floor.h"
 #include"../XPBD/second_order.h"
 
+#include<unordered_map>
 
 //#include"mesh_patch.h"
 
 using namespace Eigen;
+
+
+
+
 
 class Collision
 {
@@ -373,7 +378,12 @@ public:
 	void findClosePair(int thread_No);
 	void initialPairRecordInfo();
 
-private:
+
+
+private:		
+	
+
+
 	void recordPair();
 
 

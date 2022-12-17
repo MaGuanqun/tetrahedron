@@ -7203,6 +7203,8 @@ void Collision::vertexTriangleCollisionTimePair(int start_pair_index,
 }
 
 
+
+
 void Collision::vertexTriangleCollisionTime(int thread_No, unsigned int pair_thread_No, int start_pair_index, 
 	int end_pair_index, double& collision_time)
 {
@@ -8418,8 +8420,8 @@ void Collision::collisionTimeWithPair(int thread_No)
 							with_floor[j] = '\1';
 							record_with_floor->emplace_back(i);
 							record_with_floor->emplace_back(j);
-							d_hat_with_floor->emplace_back((vertex_for_render[i][j][floor->dimension] - floor->value)*
-								vertex_for_render[i][j][floor->dimension] - floor->value);
+							d_hat_with_floor->emplace_back((std::max)((vertex_for_render[i][j][floor->dimension] - floor->value)*
+								(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2));
 						}
 					}
 				}

@@ -76,7 +76,7 @@ void XPBD_IPC::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* t
 	if (perform_collision) {
 		collision.inner_iteration_number = &inner_iteration_number;
 		//collision.energy = energy_per_thread.data();
-		collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio, XPBD_IPC_,true);
+		collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio, XPBD_IPC_,false);
 		collision.setCollisionFreeVertex(&record_collision_free_vertex_position_address, &record_vertex_position);
 		//collision.setParameter(&lambda_collision,lambda.data()+ constraint_index_start[3], collision_constraint_index_start.data(), damping_coe, sub_time_step);
 	}
@@ -381,6 +381,13 @@ void XPBD_IPC::initialRecordPositionForThread()
 			memset(record_vertex_position_num_every_thread[i][j].data(), 0, record_vertex_position_num_every_thread[i][j].size() << 2);
 		}
 	}
+}
+
+
+
+void XPBD_IPC::initialHessianMap()
+{
+	common_hessian.reserve()
 }
 
 
