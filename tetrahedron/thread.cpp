@@ -325,9 +325,9 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     job k;
     switch (function_type)
     {
-    case UPDATE_COLLISION_HESSIAN_COLOR:
-        k = job([func, thread_id, para]() {func->computeHessianPerThread(thread_id, para); });
-        break;      
+    //case UPDATE_COLLISION_HESSIAN_COLOR:
+    //    k = job([func, thread_id, para]() {func->computeHessianPerThread(thread_id, para); });
+    //    break;      
     case COLOR_COLLISION_TIME:
         k = job([func, thread_id, para]() {func->colorCollisionTime(thread_id, para); });
         break;

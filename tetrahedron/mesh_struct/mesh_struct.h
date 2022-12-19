@@ -65,7 +65,7 @@ public:
 	//std::vector<std::vector<unsigned int>>unconnected_tet_index; 
 
 	std::vector<std::vector<std::vector<unsigned int>>>tet_color_group; //for tet (ARAP)
-	std::vector<std::vector<std::vector<char>>> tet_in_collision;//record if the tet is involved in collision;// group size->color_num->tet
+	//std::vector<std::vector<std::vector<char>>> tet_in_collision;//record if the tet is involved in collision;// group size->color_num->tet
 	std::vector<int>tet_order_in_color_group;// for every tet, we store group_0_color, index_in_this_color, group_1_color, index_in_this_color, ...
 
 

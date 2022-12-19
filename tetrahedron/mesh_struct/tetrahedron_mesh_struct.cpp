@@ -1081,13 +1081,13 @@ bool TetrahedronMeshStruct::checkEdgeInATet(unsigned int* edge_vertices, int* te
 
 void TetrahedronMeshStruct::setTetInfoInGroup()
 {
-	tet_in_collision.resize(tet_color_group.size());
-	for (int i = 0; i < tet_color_group.size(); ++i) {
-		tet_in_collision[i].resize(tet_color_group[i].size());
-		for (int j = 0; j < tet_color_group[i].size(); ++j) {
-			tet_in_collision[i][j].resize(tet_color_group[i][j].size(), '\0');
-		}
-	}
+	//tet_in_collision.resize(tet_color_group.size());
+	//for (int i = 0; i < tet_color_group.size(); ++i) {
+	//	tet_in_collision[i].resize(tet_color_group[i].size());
+	//	for (int j = 0; j < tet_color_group[i].size(); ++j) {
+	//		tet_in_collision[i][j].resize(tet_color_group[i][j].size(), '\0');
+	//	}
+	//}
 
 	tet_order_in_color_group.resize(indices.size() * 2 * tet_color_group.size());
 	int basic_size = 2 * tet_color_group.size();

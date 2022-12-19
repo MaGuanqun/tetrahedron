@@ -81,8 +81,8 @@ public:
 	
 
 
-	void tetHessian(int thread_No);
-	void tetGradForColor(int thread_No, unsigned int color_No);
+	void tetHessian();
+	void tetGradForColor(unsigned int color_No);
 	//void newtonCDTetBlockAGroupTest(int thread_No, int color);
 
 	void tetGradForColorCollision(int thread_No, unsigned int color_No);
@@ -112,14 +112,12 @@ private:
 
 	void initialHessianMap();
 
-	struct pair_hash {
-		size_t operator()(const std::array<unsigned int, 2>& p) const {
-			return ((p[0] * 2147483647) ^ (500000003 * p[1])) % 99990001;//909091//999999000001
-		}
-	};
+	void 	initialRecordHessian();
 
-	std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash> common_hessian;
+	std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash> common_hessian;//only include collision
+	std::vector<std::unordered_map<std::array<unsigned int, 2>,double, pair_hash>> tet_hessian;//size is total obj num
 
+	std::vector<double>common_grad;
 
 
 	std::vector<std::vector<std::vector<std::vector<unsigned int>>>*>tet_color_groups;
@@ -258,8 +256,8 @@ private:
 
 
 	double calEdgeLength();
-	std::vector<double> store_tet_arap_hessian; //for every 12*12, we only store 4*4 as every block is a diagonal matrix 
-	std::vector<double> store_tet_arap_grad;
+	//std::vector<double> store_tet_arap_hessian; //for every 12*12, we only store 4*4 as every block is a diagonal matrix 
+	//std::vector<double> store_tet_arap_grad;
 	bool* is_tet_arap_grad_compute;
 
 	int max_tet_size_of_a_color_group;
@@ -650,25 +648,25 @@ private:
 		std::array<double, 3>** record_vertex_position,
 		int** record_vertex_num, int* unfixed_pair_vertex_index, int unfixed_num);
 
-	void testPrintOut()
-	{
-		for (int i = 0; i < tetrahedron->size(); ++i) {
-			for (int j = 0; j < tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups.size(); ++j) {
-				for (int k = 0; k < tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[j].size(); ++k) {
-					std::cout << "print tet_in_a_group_start_per_thread_groups "<<i << std::endl;
-					for (int m = 0; m < total_thread_num; ++m) {
-						std::cout << tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[j][k][m] << " ";
-					}
-					std::cout << std::endl;
-				}
-			}
-		}
-		std::cout << "print vt_pair_compressed_record " << collision.vt_pair_compressed_record.size() << std::endl;
-		for (int i = 0; i <= total_thread_num; ++i) {
-			std::cout << collision.vt_per_thread_start_index[i] << " ";
-		}
-		std::cout << std::endl;
-	}
+	//void testPrintOut()
+	//{
+	//	for (int i = 0; i < tetrahedron->size(); ++i) {
+	//		for (int j = 0; j < tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups.size(); ++j) {
+	//			for (int k = 0; k < tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[j].size(); ++k) {
+	//				std::cout << "print tet_in_a_group_start_per_thread_groups "<<i << std::endl;
+	//				for (int m = 0; m < total_thread_num; ++m) {
+	//					std::cout << tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[j][k][m] << " ";
+	//				}
+	//				std::cout << std::endl;
+	//			}
+	//		}
+	//	}
+	//	std::cout << "print vt_pair_compressed_record " << collision.vt_pair_compressed_record.size() << std::endl;
+	//	for (int i = 0; i <= total_thread_num; ++i) {
+	//		std::cout << collision.vt_per_thread_start_index[i] << " ";
+	//	}
+	//	std::cout << std::endl;
+	//}
 
 	std::vector<unsigned int> record_max_displace_vertex;
 	std::vector<double> record_max_displacement;

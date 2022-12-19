@@ -436,4 +436,10 @@ inline double barrier(double d, double d_hat)
 }
 
 
+struct pair_hash {
+	size_t operator()(const std::array<unsigned int, 2>& p) const {
+		return ((p[0] * 2147483647) ^ (500000003 * p[1])) % 99990001;//909091//999999000001
+	}
+};
+
 #endif // !GLOBAL_H

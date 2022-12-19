@@ -97,55 +97,51 @@ public:
 	unsigned int** edge_edge_collider_num_record_prefix_sum;
 
 
-	std::vector<std::vector<unsigned int>> triangle_index_collide_with_collider;
-	std::vector<std::vector<unsigned int>> edge_index_collide_with_collider;
-	std::vector<std::vector<unsigned int>> vertex_index_collide_with_collider;
-
-	std::vector<unsigned int>triangle_index_collide_with_collider_start_per_thread;//we add differet objects together, total size is (thread_num+1)*obj_num
-	std::vector<unsigned int>edge_index_collide_with_collider_start_per_thread;//we add differet objects together, total size is (thread_num+1)*obj_num
-	std::vector<unsigned int>vertex_index_collide_with_collider_start_per_thread;//we add differet objects together, total size is (thread_num+1)*obj_num
+	//std::vector<unsigned int>triangle_index_collide_with_collider_start_per_thread;//we add differet objects together, total size is (thread_num+1)*obj_num
+	//std::vector<unsigned int>edge_index_collide_with_collider_start_per_thread;//we add differet objects together, total size is (thread_num+1)*obj_num
+	//std::vector<unsigned int>vertex_index_collide_with_collider_start_per_thread;//we add differet objects together, total size is (thread_num+1)*obj_num
 
 	//std::vector<unsigned int>triangle_index_collide_with_collider_prefix_sum; //prefix sum of every object 
 	//std::vector<unsigned int>edge_index_collide_with_collider_prefix_sum;//prefix sum of every object 
 	//std::vector<unsigned int>vertex_index_collide_with_collider_prefix_sum;//prefix sum of every object 
 
-	std::vector<std::vector<unsigned int>>triangle_index_has_TV_pair;
-	std::vector<std::vector<unsigned int>>edge_index_has_EE_pair;
-	std::vector<std::vector<unsigned int>>vertex_index_has_VT_pair;
+	//std::vector<std::vector<unsigned int>>triangle_index_has_TV_pair;
+	//std::vector<std::vector<unsigned int>>edge_index_has_EE_pair;
+	//std::vector<std::vector<unsigned int>>vertex_index_has_VT_pair;
 	
-	std::vector<std::vector<std::vector<unsigned int>>>temp_save_element_in_collision_pair;//T, E, V all use this repsectively
+	//std::vector<std::vector<std::vector<unsigned int>>>temp_save_element_in_collision_pair;//T, E, V all use this repsectively
 
-	std::vector<unsigned int>triangle_index_has_TV_pair_start_per_thread;//we add differet objects together, total size is (thread_num+1)*obj_num
-	std::vector<unsigned int>edge_index_has_EE_pair_start_per_thread;//we add differet objects together, total size is (thread_num+1)*obj_num
-	std::vector<unsigned int>vertex_index_has_VT_pair_start_per_thread;//we add differet objects together, total size is (thread_num+1)*obj_num
-
-
+	//std::vector<unsigned int>triangle_index_has_TV_pair_start_per_thread;//we add differet objects together, total size is (thread_num+1)*obj_num
+	//std::vector<unsigned int>edge_index_has_EE_pair_start_per_thread;//we add differet objects together, total size is (thread_num+1)*obj_num
+	//std::vector<unsigned int>vertex_index_has_VT_pair_start_per_thread;//we add differet objects together, total size is (thread_num+1)*obj_num
 
 
 
 
-	std::vector<int>vt_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 3 0 1 3 or 4 0 1 2 3, every element 5 number
-	std::vector<double> vt_hessian_record; //size 12x12
-	std::vector<double> vt_grad_record;
 
-	std::vector<int>ee_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 3 0 1 3 or 4 0 1 2 3
-	std::vector<double>ee_hessian_record;//every hessian is a 12x12 hessian
-	std::vector<double>ee_grad_record;//every grad is a 12 hessian
 
-	std::vector<double>vt_colldier_hessian_record;//every hessian is a 3x3 hessian, here sum all hessian around one vertex together.
-	std::vector<double>vt_colldier_grad_record;//every hessian is a 3x3 hessian, here sum all hessian around one vertex together.
-	//bool** vt_colldier_hessian_record_is_not_empty;//if false, means the hessian is zero, just skip it
+	//std::vector<int>vt_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 3 0 1 3 or 4 0 1 2 3, every element 5 number
+	//std::vector<double> vt_hessian_record; //size 12x12
+	//std::vector<double> vt_grad_record;
 
-	std::vector<int>ee_collider_hessian_record_index; //record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 1  0  or 2 0 1. First can only be 1 or 2
-	std::vector<double>ee_collider_hessian_record;//every hessian is at most  6x6 hessian
-	std::vector<double>ee_collider_grad_record;//every grad is at most  6 
+	//std::vector<int>ee_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 3 0 1 3 or 4 0 1 2 3
+	//std::vector<double>ee_hessian_record;//every hessian is a 12x12 hessian
+	//std::vector<double>ee_grad_record;//every grad is a 12 hessian
 
-	std::vector<int>tv_colldier_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 2 1 2 or 3 1 2 3   the collider vertex 0 has been removed, 
-	std::vector<double>tv_colldier_hessian_record;//every hessian is at most a 9x9 hessian
-	std::vector<double>tv_colldier_grad_record;//every hessian is at most a 9 vector
+	//std::vector<double>vt_colldier_hessian_record;//every hessian is a 3x3 hessian, here sum all hessian around one vertex together.
+	//std::vector<double>vt_colldier_grad_record;//every hessian is a 3x3 hessian, here sum all hessian around one vertex together.
+	////bool** vt_colldier_hessian_record_is_not_empty;//if false, means the hessian is zero, just skip it
 
-	std::vector<double>floor_hessian_record;// record hessian for floor collision size is 1x1
-	std::vector<double>floor_grad_record;//record grad for floor collision size is 1x1
+	//std::vector<int>ee_collider_hessian_record_index; //record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 1  0  or 2 0 1. First can only be 1 or 2
+	//std::vector<double>ee_collider_hessian_record;//every hessian is at most  6x6 hessian
+	//std::vector<double>ee_collider_grad_record;//every grad is at most  6 
+
+	//std::vector<int>tv_colldier_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 2 1 2 or 3 1 2 3   the collider vertex 0 has been removed, 
+	//std::vector<double>tv_colldier_hessian_record;//every hessian is at most a 9x9 hessian
+	//std::vector<double>tv_colldier_grad_record;//every hessian is at most a 9 vector
+
+	//std::vector<double>floor_hessian_record;// record hessian for floor collision size is 1x1
+	//std::vector<double>floor_grad_record;//record grad for floor collision size is 1x1
 	//bool* is_vertex_collide_with_floor;//
 
 	bool** vertex_belong_to_color_group;
@@ -336,11 +332,9 @@ public:
 
 	void computeHessian(int color_No);
 
-	void computeHessianPerThread(int thread_No, int color_No);
+	void computeHessianPerThread( int color_No);
 
 
-
-	void computeFloorHessian(int color_No);
 
 
 	void prefixSumAllPair(int thread_No);
@@ -349,14 +343,14 @@ public:
 
 	void setElementCollideWithCollider(int thread_No);
 
-	void recordVTPairCompress(int thread_No);
-	void recordEEPairCompress(int thread_No);
-	void recordTriangleHasTVPair(int thread_No);
+	//void recordVTPairCompress(int thread_No);
+	//void recordEEPairCompress(int thread_No);
+	//void recordTriangleHasTVPair(int thread_No);
 
 	unsigned int* inner_iteration_number;
 
-	std::vector<std::vector<std::vector<unsigned int>>>tet_involved_in_collision; // obj -> color group -> tet_involved
-	std::vector<std::vector<std::vector<unsigned int>>>tet_involved_in_collision_start_per_thread; // obj -> color group ->start_index_per_thread
+	//std::vector<std::vector<std::vector<unsigned int>>>tet_involved_in_collision; // obj -> color group -> tet_involved
+	//std::vector<std::vector<std::vector<unsigned int>>>tet_involved_in_collision_start_per_thread; // obj -> color group ->start_index_per_thread
 
 	void collisionTimeAllClosePair(int thread_No);
 
@@ -370,27 +364,31 @@ public:
 	std::vector<std::vector<int>>* indicate_if_involved_in_last_color;
 	void computeCollisionFreePositionForColor(int thread_No);
 
-	std::vector<unsigned int> vt_pair_compressed_record; //obj0, v0, obj1, t1,order in vertex_triangle_pair_by_vertex
-	std::vector<unsigned int>ee_pair_compressed_record; //obj0, v0, obj1, t1,order in edge_edge_pair_by_edge
-	std::vector<unsigned int> vt_per_thread_start_index;//recrod start index for every thread in vt_pair_compress_record
-	std::vector<unsigned int> ee_per_thread_start_index;// recrod start index for every thread in ee_pair_compress_record
+	//std::vector<unsigned int> vt_pair_compressed_record; //obj0, v0, obj1, t1,order in vertex_triangle_pair_by_vertex
+	//std::vector<unsigned int>ee_pair_compressed_record; //obj0, v0, obj1, t1,order in edge_edge_pair_by_edge
+	//std::vector<unsigned int> vt_per_thread_start_index;//recrod start index for every thread in vt_pair_compress_record
+	//std::vector<unsigned int> ee_per_thread_start_index;// recrod start index for every thread in ee_pair_compress_record
 
 	void findClosePair(int thread_No);
 	void initialPairRecordInfo();
 
+	std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>* common_hessian;
+	double* common_grad;
 
-
+	std::vector<unsigned int>vertex_index_prefix_sum_obj;
 private:		
 	
 
 
 	void recordPair();
 
+	void setHessian(int* record_index, unsigned int* vertex_index_total, MatrixXd& Hessian, VectorXd& grad, 
+		std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>* common_hessian, double* common_grad);
+
+	void setHessian(int* record_index, unsigned int* vertex_index_total, MatrixXd& Hessian, VectorXd& grad,
+		std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>* common_hessian, double* common_grad, bool* not_collider);
 
 
-
-
-	std::vector<unsigned int>vertex_index_prefix_sum_obj;
 	std::vector<unsigned int>triangle_index_prefix_sum_obj;
 	std::vector<unsigned int>edge_index_prefix_sum_obj;
 
@@ -406,6 +404,31 @@ private:
 	std::vector<std::vector<unsigned int>>record_tv_collider_pair; //store collider vertex, obj triangle in order
 	std::vector<std::vector<unsigned int>>record_ee_collider_pair;
 
+	std::vector<std::vector<char>> indicate_triangle_with_collider;
+	std::vector<std::vector<char>> indicate_vertex_with_collider;
+	std::vector<std::vector<char>> indicate_edge_with_collider;
+
+	std::vector<std::vector<char>> indicate_tet_has_been_used;
+
+	std::vector<unsigned int>record_previous_vt_collider_pair_size;
+	std::vector<unsigned int>record_previous_ee_collider_pair_size;
+	std::vector<unsigned int>record_previous_tv_collider_pair_size;
+
+	std::vector<std::vector<unsigned int>> triangle_index_collide_with_collider;
+	std::vector<std::vector<unsigned int>> edge_index_collide_with_collider;
+	std::vector<std::vector<unsigned int>> vertex_index_collide_with_collider;
+
+	std::vector<unsigned int>record_previous_triangle_index_with_collider;
+	std::vector<unsigned int>record_previous_edge_index_with_collider;
+	std::vector<unsigned int>record_previous_vertex_index_with_collider;
+
+
+
+	void recordCollideWithCollider();
+	void extractElementCollideWithCollider(std::vector<std::vector<char>>& indicate, unsigned int previous_size, std::vector<unsigned int>* record_pair,
+		std::vector<std::vector<unsigned int>>& element_record, unsigned int bias);
+	void extractElementCollideWithCollider();
+
 	std::vector<std::vector<char>>indicate_vertex_collide_with_floor; //size is surfacel vertex number 
 	std::vector<std::vector<double>>record_vertex_collide_with_floor_d_hat;
 	std::vector<std::vector<unsigned int>>record_vertex_collide_with_floor;
@@ -416,6 +439,9 @@ private:
 	std::vector<std::vector<double>>record_vt_collider_pair_d_hat;
 	std::vector<std::vector<double>>record_tv_collider_pair_d_hat;
 	std::vector<std::vector<double>>record_ee_collider_pair_d_hat;
+
+
+
 
 	int pair_hash_table_size;
 	int pair_hash_table_cell_size;
@@ -433,9 +459,9 @@ private:
 	std::vector<unsigned int> ee_collider_hash_size_record;
 	std::vector<unsigned int> ee_collider_hash_record;
 
-	void computeLastColorHessianPerThread(int thread_No, int color_No);
+	void computeLastColorHessianPerThread(int color_No);
 
-	void computeHessianPreviousThread(int thread_No, int color_No);
+	void computeHessianPreviousThread(int color_No);
 
 	void recordVTCollisionPairCompress(int thread_No, unsigned int** start_per_thread, unsigned int** pair_num_record, unsigned int** pair, unsigned int** prefix_sum,
 		unsigned int* pair_compress_record, unsigned int** vertex_surface_to_global, std::vector<unsigned int>* has_pair);
@@ -447,14 +473,14 @@ private:
 
 	//unsigned int prefix_sum_of_different_type_pair[6];//0:VT, 1:EE, 2: TV_collider, 3: EE collider 4: VT_collider
 
-	void resizeHessianRecordIndex();
+	//void resizeHessianRecordIndex();
 
 	void computeVTHessian(unsigned int* VT, unsigned int num, double d_hat_2, double* vertex_position_, double* hessian_record, int* hessian_record_index, double stiffness, double* grad_record);
 	void computeVTColliderHessian(unsigned int* VT, unsigned int num, double d_hat_2, double* vertex_position_, double* hessian_record,
 		double stiffness, double* grad_record);
 
-	void computeTVHessian(unsigned int* TV, unsigned int num, double d_hat_2, double* vertex_position_0,
-		double* vertex_position_1, double* vertex_position_2,	double stiffness);
+	//void computeTVHessian(unsigned int* TV, unsigned int num, double d_hat_2, double* vertex_position_0,
+	//	double* vertex_position_1, double* vertex_position_2,	double stiffness);
 
 
 
@@ -555,11 +581,18 @@ private:
 	std::vector<unsigned int> edge_edge_pair_collider_index_start_per_thread;//thread_No, index, respectively
 
 
-	std::vector<unsigned int> vertex_edge_pair_index_start_per_thread;//thread_No, index, respectively
-	std::vector<unsigned int> vertex_obj_edge_collider_pair_index_start_per_thread;//thread_No, index, respectively
-	std::vector<unsigned int> vertex_collider_edge_obj_pair_index_start_per_thread;//thread_No, index, respectively
-	std::vector<unsigned int> vertex_vertex_pair_index_start_per_thread;//thread_No, index, respectively
-	std::vector<unsigned int> vertex_vertex_pair_collider_index_start_per_thread;//thread_No, index, respectively
+	std::vector<unsigned int> record_vertex_triangle_pair_index_start_per_thread;//thread_No, index, respectively
+	std::vector<unsigned int> record_vertex_obj_triangle_collider_pair_index_start_per_thread;//thread_No, index, respectively
+	std::vector<unsigned int> record_vertex_collider_triangle_obj_pair_index_start_per_thread;//thread_No, index, respectively
+	std::vector<unsigned int> record_edge_edge_pair_index_start_per_thread;//thread_No, index, respectively
+	std::vector<unsigned int> record_edge_edge_pair_collider_index_start_per_thread;//thread_No, index, respectively
+
+
+	//std::vector<unsigned int> vertex_edge_pair_index_start_per_thread;//thread_No, index, respectively
+	//std::vector<unsigned int> vertex_obj_edge_collider_pair_index_start_per_thread;//thread_No, index, respectively
+	//std::vector<unsigned int> vertex_collider_edge_obj_pair_index_start_per_thread;//thread_No, index, respectively
+	//std::vector<unsigned int> vertex_vertex_pair_index_start_per_thread;//thread_No, index, respectively
+	//std::vector<unsigned int> vertex_vertex_pair_collider_index_start_per_thread;//thread_No, index, respectively
 
 	//std::vector<unsigned int> target_position_element_start_per_thread;
 	std::vector<unsigned int> point_triangle_target_position_element_start_per_thread;
@@ -570,11 +603,15 @@ private:
 	std::vector<unsigned int> point_triangle_collider_target_position_element_start_per_thread;
 	//std::vector<unsigned int> target_position_start_per_thread;
 
+	void setPairIndexEveryThread(std::vector<std::vector<unsigned int>>& pair, std::vector<unsigned int>& pair_index_start_per_thread,
+		unsigned int& ave_pair_num);
+
 
 	void setPairIndexEveryThread(unsigned int** pair, std::vector<unsigned int>& pair_index_start_per_thread,
 		unsigned int& ave_pair_num);
 	void setPairIndexEveryThread();
-	void setVertexVertexEdgePairIndexEveryThread();
+	void setRecordPairIndexEveryThread();
+	//void setVertexVertexEdgePairIndexEveryThread();
 
 	std::vector<double>collision_time_thread;
 
@@ -837,6 +874,12 @@ private:
 		unsigned int* vertex_index_prefix_sum, unsigned int* triangle_index_prefix_sum,
 		std::array<double, 3>** ori_pos_0, std::array<double, 3>** ori_pos_1);
 
+	void computeVTHessian(std::vector<std::vector<unsigned int>>& record_pair, std::vector<std::vector<double>>& record_d_hat, int type, bool is_last_color);
+	void computeVTHessian(int start, int end, unsigned int* pair, double* d_hat, int type, bool is_last_color);
+	void computeEEHessian(int start, int end, unsigned int* pair, double* d_hat, bool is_collider, bool is_last_color);
+	void computeEEHessian(std::vector<std::vector<unsigned int>>& record_pair, std::vector<std::vector<double>>& record_d_hat, bool is_collider, bool is_last_color);
+
+
 	void edgeEdgeCollisionTime(int thread_No, unsigned int pair_thread_No, int start_pair_index,
 		int end_pair_index, double& collision_time);
 	void vertexColliderTriangleCollisionTime(int thread_No, unsigned int pair_thread_No, int start_pair_index,
@@ -1085,12 +1128,11 @@ private:
 
 	void prefixSumRecordPairNum(unsigned int* num_record, unsigned int* prefix_sum, int num, unsigned int& start_index, int move_size);
 
-	void resizeFloorCollisionHessianRecord();
-	void computeFloorHessian(double d_hat, double stiffness, double floor_value, double& hessian, double& grad, double position);
+	bool computeFloorHessian(double d_hat, double stiffness, double floor_value, double* hessian, double* grad, double position);
 
-	void setTriangleCollideWithCollider();
-	void setEdgeCollideWithCollider();
-	void setVertexCollideWithCollider();
+	//void setTriangleCollideWithCollider();
+	//void setEdgeCollideWithCollider();
+	//void setVertexCollideWithCollider();
 
 	void findMinMaxDegreeOfCollisionPair(unsigned int& max_degree, unsigned int& min_degree);
 
@@ -1100,7 +1142,7 @@ private:
 	
 	int collision_pair_around_pair_size_per_pair;
 
-	void setSelfCollisionPairPerThread();
+	//void setSelfCollisionPairPerThread();
 
 
 
@@ -1111,23 +1153,23 @@ private:
 	void setPairStartPerThread(unsigned int** prefix_sum_record, unsigned int** element_index_start_per_thread,
 		int* pair_per_thread_start_index);
 
-	void recordPairCompress();
+	//void recordPairCompress();
 
 
 
 
-	std::vector<std::vector<unsigned int>> temp_save_ee_pair_compress_per_thread; // thread num-1, thread 0 just store in ee_pair_compress_record
-	void initialPairCompress();
+	//std::vector<std::vector<unsigned int>> temp_save_ee_pair_compress_per_thread; // thread num-1, thread 0 just store in ee_pair_compress_record
+	//void initialPairCompress();
 
 
-	void 	addFlagToColorGroup();
+	void 	addTetInvolvedInCollision();
 	
 	void addFlagToColorGroup(std::vector<unsigned int>& pair_compress_record,std::vector<unsigned int>** tet_around_element0, std::vector<unsigned int>** tet_around_element1);
 
 	void addFlagToColorGroup(std::vector<unsigned int>* element_collide_with_collider, std::vector<unsigned int>** tet_around_element);
 
 	std::vector<std::vector<std::vector<std::vector<unsigned int>>>*>tet_color_groups;
-	std::vector<std::vector<std::vector<char>>*>tet_color_groups_label;
+	//std::vector<std::vector<std::vector<char>>*>tet_color_groups_label;
 
 
 	std::vector<std::vector<unsigned int>*>triangle_around_triangle;
