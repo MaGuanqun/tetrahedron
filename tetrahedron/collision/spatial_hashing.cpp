@@ -1302,11 +1302,17 @@ void SpatialHashing::findAllEdgeEdgePairsByPrimitiveSingleObj(int thread_No, int
 			for (unsigned int j = 0; j < spatial_hash_index.size(); ++j) {
 				cell_edge_index = spatial_hashing_cell_edge + spatial_hash_index[j] * max_index_number_in_one_cell_edge_;
 				edge_size = spatial_hashing_cell_edge_size[spatial_hash_index[j]];
+
+
 				for (unsigned int k = 0; k < edge_size; k += 2) {
 					if (!obj_is_used_[cell_edge_index[k + 1]][cell_edge_index[k]]) {
 						obj_is_used_[cell_edge_index[k + 1]][cell_edge_index[k]] = true;
 						primitive_index_record_.emplace_back(cell_edge_index[k + 1]);
 						primitive_index_record_.emplace_back(cell_edge_index[k]);
+
+						if (cell_edge_index[k + 1] < obj_No) {
+							continue;
+						}
 						if (cell_edge_index[k + 1] == obj_No) {
 							//	for (unsigned int m = 0; m < representative_edge_num[cell_edge_index[k + 1]][cell_edge_index[k]]; ++m) {
 							if (i < cell_edge_index[k]) {

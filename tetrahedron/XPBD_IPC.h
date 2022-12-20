@@ -77,7 +77,7 @@ public:
 	void XPBD_IPC_Block_Solve_Multithread();
 
 	void newtonCDTetBlockAGroup(int thread_No, int color);
-	void newtonCDTetBlockAGroupCollision(int thread_No, int color);
+	void newtonCDTetBlockAGroupCollision(int color);
 	
 
 
@@ -85,8 +85,8 @@ public:
 	void tetGradForColor(unsigned int color_No);
 	//void newtonCDTetBlockAGroupTest(int thread_No, int color);
 
-	void tetGradForColorCollision(int thread_No, unsigned int color_No);
-	void tetGradForColorCollisionNeighbor(int thread_No, unsigned int color_No);
+	//void tetGradForColorCollision(unsigned int color_No);
+	void tetGradForColorCollisionNeighbor(unsigned int color_No);
 	//void tetGradForColorCollisionEECollider(int thread_No, unsigned int color_No);
 	//void tetGradForColorCollisionTVCollider(int thread_No, unsigned int color_No);
 	//void tetGradForColorCollisionVT(int thread_No, unsigned int color_No);
@@ -110,12 +110,19 @@ public:
 
 private:
 
+	void solveVT_BlockPerThread(std::array<double, 3>** record_vertex_position, int** record_vertex_num, unsigned int* pair, unsigned int start, unsigned int end,
+		int* vt_hessian_record_index);
+
+	void solveEE_BlockPerThread(std::array<double, 3>** record_vertex_position, int** record_vertex_num, unsigned int* pair, unsigned int start, unsigned int end,
+		int* ee_hessian_record_index);
+
 	void initialHessianMap();
 
 	void 	initialRecordHessian();
 
 	std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash> common_hessian;//only include collision
-	std::vector<std::unordered_map<std::array<unsigned int, 2>,double, pair_hash>> tet_hessian;//size is total obj num
+	std::vector<std::unordered_map<std::array<int, 2>,double, pair_hash>> tet_hessian;//size is total obj num
+	std::unordered_map<unsigned int, double> floor_hessian;
 
 	std::vector<double>common_grad;
 
@@ -380,10 +387,13 @@ private:
 		double* mass,
 		Matrix<double, 3, 4>* A, std::vector<unsigned int>& neighbor_tet_indices,
 		double* volume, unsigned int tet_index, std::array<double, 3>* sn, unsigned int* common_vertex_in_order,
-		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num, 
+		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num,
 		double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
-		double* hessian_record, double* grad_record, std::vector<unsigned int>* triangle_of_a_tet,
-		std::vector<unsigned int>* edge_of_a_tet, int* vertex_index_on_surface);//,  double* hessian_record, double* grad_record
+		std::unordered_map<std::array<int, 2>, double, pair_hash>& tet_hessian,
+		std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>& collision_hessian,
+		double* common_grad, std::vector<unsigned int>* triangle_of_a_tet,
+		std::vector<unsigned int>* edge_of_a_tet, int* vertex_index_on_surface, unsigned int prefix_sum_vetex_obj,
+		std::unordered_map<unsigned int, double>& floor_map);
 
 	void solveTetBlockCollision(std::array<double, 3>* vertex_position, double stiffness, double dt, std::array<int, 4>* indices,
 		double* mass,
@@ -391,8 +401,10 @@ private:
 		double* volume, unsigned int tet_index, std::array<double, 3>* sn, unsigned int* common_vertex_in_order,
 		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num, std::vector<unsigned int>* triangle_of_a_tet,
 		std::vector<unsigned int>* edge_of_a_tet, double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
-		int* vertex_index_on_surface, double* hessian_record, double* grad_record, std::array<double, 3>* record_vertex_position,
-		int* record_vertex_num);
+		int* vertex_index_on_surface, std::unordered_map<std::array<int, 2>, double, pair_hash>& tet_hessian,
+		std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>& collision_hessian,
+		double* common_grad, std::array<double, 3>* record_vertex_position,
+		int* record_vertex_num, unsigned int prefix_sum_vetex_obj, std::unordered_map<unsigned int, double>& floor_map);
 
 
 
@@ -582,9 +594,10 @@ private:
 	//void tempSavePos();
 	//void tempRestorePos();
 
-	void setCollisionPairTetGrad(int tet_obj_No, unsigned int start, unsigned int end, unsigned int* element, std::vector<unsigned int>* tet_around_an_element);
-	void setCollisionPairTetGrad(int tet_obj_No, int start, int end, unsigned int* tet_involved, unsigned int prefix_sum_start);
-	void setCollisionPairTetNeighborGrad(int tet_obj_No, int start, int end, unsigned int* tet_involved, unsigned int prefix_sum_start);
+	//void setCollisionPairTetGrad(int tet_obj_No, unsigned int start, unsigned int end, unsigned int* element, std::vector<unsigned int>* tet_around_an_element);
+
+	void setCollisionPairTetNeighborGrad(int tet_obj_No, int start, int end, unsigned int* tet_involved, unsigned int prefix_sum_start,
+		unsigned int vertex_prefix_sum_start);
 
 	void initialRecordPositionForThread();
 
@@ -646,7 +659,9 @@ private:
 		std::vector<unsigned int>* edge_around_vertex, std::vector<unsigned int>* edge_around_triangle,
 		std::vector<unsigned int>* tet_around_vertex, std::vector<unsigned int>* tet_around_triangle,
 		std::array<double, 3>** record_vertex_position,
-		int** record_vertex_num, int* unfixed_pair_vertex_index, int unfixed_num);
+		int** record_vertex_num, int* unfixed_pair_vertex_index, int unfixed_num, double* common_grad,
+		std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>& collision_hessian,
+		std::unordered_map<unsigned int, double>& floor_map);
 
 	//void testPrintOut()
 	//{
