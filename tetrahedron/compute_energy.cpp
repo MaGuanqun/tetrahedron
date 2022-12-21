@@ -23,6 +23,13 @@ double ComputeEnergy::computeMassSpringConstraint(double* position_0, double* po
 }
 
 
+
+double ComputeEnergy::computeFloorBarrierEnergy(double pos, double d_hat_2, double stiffness, double floor_value)
+{
+	double distance = (pos - floor_value) * (pos - floor_value);
+	return stiffness * barrier(distance, d_hat_2);
+}
+
 double ComputeEnergy::computeBarrierEnergy(double* position_0, double* position_1, double* position_2, double* position_3, double stiffness, 
 	double d_hat_2, bool VT)
 {

@@ -292,11 +292,39 @@ private:
 	SecondOrderConstraint second_order_constraint;
 	void updateSn();
 
-	void computeCurrentEnergy();
+	double computeBlockCurrentEnergy(std::array<double, 3>* vertex_position, double stiffness, double dt,
+		double* mass,
+		Matrix<double, 3, 4>* A, std::vector<unsigned int>& neighbor_tet_indices,
+		double* volume, unsigned int tet_index, std::array<double, 3>* sn, 
+		int* tet_vertex_index, unsigned int unfixed_vertex_num,
+		double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
+		std::vector<unsigned int>* triangle_of_a_tet,
+		std::vector<unsigned int>* edge_of_a_tet, int* vertex_index_on_surface,
+		double* mass_inv_,  std::array<int, 4>*tet_vertex_indices,
+		char* indicate_vertex_collide_with_floor, double* record_vertex_collide_with_floor_d_hat);
+
+	double computeVTCollisionEnergyPerElement(double* pos0, unsigned int* triangle_index, std::array<double, 3>** pos_t, std::array<int, 3>** triangle_indices,
+		unsigned int num, double* d_hat, double collision_stiffness);
+
 	double computeInertialEnergy();
 	double computeCurrentARAPEnergy();
 	double computeBarrierEnergy();
 
+
+	double computeEECollisionEnergyPerElement(double* pos0, double* pos1, unsigned int* edge_index,
+		unsigned int num, double* d_hat, double collision_stiffness,
+		int edge_order_in_tet, std::vector<unsigned int>* edge_of_a_tet, std::array<double, 3>** pos_e, unsigned int obj_No,
+		unsigned int** edge_1_vertex);
+
+	double computeTVColliderCollisionEnergyPerElement(double* pos0, double* pos1, double* pos2, unsigned int* vertex_index_,
+		unsigned int num, double* d_hat, double collision_stiffness, std::array<double, 3>** pos_v);
+
+	double computeEEColliderCollisionEnergyPerElement(double* pos0, double* pos1, unsigned int* edge_index,
+		unsigned int num, double* d_hat, double collision_stiffness, std::array<double, 3>** pos_e, unsigned int** edge_1_vertex);
+
+	double computeTVCollisionEnergyPerElement(double* pos0, double* pos1, double* pos2, unsigned int* vertex_index_,
+		unsigned int num, double* d_hat, double collision_stiffness,
+		int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num, std::array<double, 3>** pos_v, unsigned int obj_No);
 
 	double computeVTCollisionEnergy(unsigned int** vertex_triangle_pair_by_vertex_, unsigned int** vertex_triangle_pair_num_record_,
 		std::array<double, 3>** triangle_position, std::array<double, 3>** vertex_position, unsigned int close_pair_num, bool is_TV,
@@ -384,7 +412,7 @@ private:
 	std::vector<double>record_energy;
 
 	void solveTetBlock(std::array<double, 3>* vertex_position, double stiffness, double dt,
-		double* mass,
+		double* mass, double* mass_inv,
 		Matrix<double, 3, 4>* A, std::vector<unsigned int>& neighbor_tet_indices,
 		double* volume, unsigned int tet_index, std::array<double, 3>* sn, unsigned int* common_vertex_in_order,
 		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num,
@@ -393,7 +421,7 @@ private:
 		std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>& collision_hessian,
 		double* common_grad, std::vector<unsigned int>* triangle_of_a_tet,
 		std::vector<unsigned int>* edge_of_a_tet, int* vertex_index_on_surface, unsigned int prefix_sum_vetex_obj,
-		std::unordered_map<unsigned int, double>& floor_map);
+		std::unordered_map<unsigned int, double>& floor_map, std::array<double, 3>* record_ori_pos);
 
 	void solveTetBlockCollision(std::array<double, 3>* vertex_position, double stiffness, double dt, std::array<int, 4>* indices,
 		double* mass,

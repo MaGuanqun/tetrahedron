@@ -15,6 +15,7 @@ public:
 	double computeInertial(double time_step, unsigned int index_start, unsigned int index_end, double* vertex_pos, double* mass_, VectorXd& Sn, unsigned int vertex_start,
 		unsigned int* unfixed_index_to_normal_index);
 	double computeBarrierEnergy(double* position_0, double* position_1, double* position_2, double* position_3, double stiffness, double d_hat_2, bool VT);
+	double computeFloorBarrierEnergy(double pos, double d_hat_2, double stiffness, double floor_value);
 private:
 
 };
