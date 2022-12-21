@@ -110,6 +110,15 @@ public:
 
 private:
 
+	double computeEEEnergy(std::vector<std::vector<unsigned int>>* record_pair, unsigned int** edge_v_0, unsigned int** edge_v_1,
+		std::array<double, 3>** e0_current_pos, std::array<double, 3>** e1_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, bool** belong_to_this, bool** belong_to_color_group, int type);
+
+	double computeVTEnergy(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
+		std::array<double, 3>** v_current_pos, std::array<double, 3>** t_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, bool** belong_to_this, bool** belong_to_color_group, int type);
+
+	double computeLastColorEnergy();
+	double computeLastColorInertialEnergy();
+
 	void solveVT_BlockPerThread(std::array<double, 3>** record_vertex_position, int** record_vertex_num, unsigned int* pair, unsigned int start, unsigned int end,
 		int* vt_hessian_record_index);
 

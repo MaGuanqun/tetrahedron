@@ -5576,6 +5576,162 @@ void XPBD_IPC::solveTetBlock(std::array<double, 3>* vertex_position, double stif
 
 
 
+double XPBD_IPC::computeLastColorEnergy()
+{
+	double energy = 0.0;
+	energy += computeLastColorInertialEnergy();
+	//ARAP
+	
+
+
+	//vt
+	if (perform_collision) {
+		double stiffness = 0.0;
+		if (!tetrahedron->empty()) {
+			stiffness = tetrahedron->data()[0].collision_stiffness[0];
+		}
+		else {
+			stiffness = cloth->data()[0].collision_stiffness[0];
+		}
+		energy += computeVTEnergy(&collision.record_vt_pair, triangle_indices.data(), vertex_position.data(),
+			vertex_position.data(), stiffness, &collision.record_vt_pair_d_hat, collision.vertex_used_in_self_collision, collision.vertex_belong_to_color_group, 0);
+		energy += computeEEEnergy(&collision.record_ee_pair, edge_vertices.data(), edge_vertices.data(), vertex_position.data(),
+			vertex_position.data(),stiffness, &collision.record_ee_pair_d_hat, collision.vertex_used_in_self_collision, collision.vertex_belong_to_color_group, 0);
+
+		if (has_collider) {
+			//vt_c
+			energy += computeVTEnergy(&collision.record_vt_collider_pair, triangle_indices_collider.data(), vertex_position.data(),
+				vertex_position_collider.data(), stiffness, &collision.record_vt_collider_pair_d_hat, collision.vertex_used_in_self_collision, collision.vertex_belong_to_color_group, 1);
+
+			energy += computeVTEnergy(&collision.record_tv_collider_pair, triangle_indices.data(), vertex_position_collider.data(),
+				vertex_position.data(), stiffness, &collision.record_tv_collider_pair_d_hat, collision.vertex_used_in_self_collision, collision.vertex_belong_to_color_group, 2);
+
+			energy += computeEEEnergy(&collision.record_ee_collider_pair, edge_vertices.data(), collider_edge_vertices.data(), vertex_position.data(),
+				vertex_position_collider.data(), stiffness, &collision.record_ee_collider_pair_d_hat, 
+				collision.vertex_used_in_self_collision, collision.vertex_belong_to_color_group, 1);
+		}
+	}
+	return energy;
+}
+
+
+double XPBD_IPC::computeEEEnergy(std::vector<std::vector<unsigned int>>* record_pair, unsigned int** edge_v_0, unsigned int** edge_v_1,
+	 std::array<double, 3>** e0_current_pos, std::array<double, 3>** e1_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, bool** belong_to_this, bool** belong_to_color_group, int type)
+{
+	double energy = 0.0;
+	unsigned int* edge_0_vertex;
+	unsigned int* edge_1_vertex;
+	double* d_hat_;
+	if (type == 0) {
+		for (auto j = record_pair->begin(); j < record_pair->end(); ++j) {
+			d_hat_ = d_hat->data()[j - record_pair->begin()].data();
+			for (auto i = j->begin(); i < j->end(); i += 4) {
+				edge_0_vertex = edge_v_0[*i] + ((*(i + 1)) << 1);
+				edge_1_vertex = edge_v_1[*(i + 2)] + ((*(i + 3)) << 1);
+				energy += compute_energy.computeBarrierEnergy(e0_current_pos[*i][*edge_0_vertex].data(),
+					e0_current_pos[*i][*(edge_0_vertex + 1)].data(), e1_current_pos[*(i + 2)][*edge_1_vertex].data(),
+					e1_current_pos[*(i + 2)][*(edge_1_vertex + 1)].data(), collision_stiffness, d_hat_[(i - j->begin()) >> 2], false);
+			}
+		}
+	}
+	else {
+		for (auto j = record_pair->begin(); j < record_pair->end(); ++j) {
+			d_hat_ = d_hat->data()[j - record_pair->begin()].data();
+			for (auto i = j->begin(); i < j->end(); i += 4) {
+				edge_0_vertex = edge_v_0[*i] + ((*(i + 1)) << 1);
+				if (belong_to_this[*i][edge_0_vertex[0]] || belong_to_this[*i][edge_0_vertex[1]] || belong_to_color_group[*i][edge_0_vertex[0]] || belong_to_color_group[*i][edge_0_vertex[1]]) {
+					edge_1_vertex = edge_v_1[*(i + 2)] + ((*(i + 3)) << 1);
+					energy += compute_energy.computeBarrierEnergy(e0_current_pos[*i][*edge_0_vertex].data(),
+						e0_current_pos[*i][*(edge_0_vertex + 1)].data(), e1_current_pos[*(i + 2)][*edge_1_vertex].data(),
+						e1_current_pos[*(i + 2)][*(edge_1_vertex + 1)].data(), collision_stiffness, d_hat_[(i - j->begin()) >> 2], false);
+				}
+			}
+		}
+	}
+}
+
+
+//type 0: vt, 1: vt_c, 2: tv_c
+double XPBD_IPC::computeVTEnergy(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
+	std::array<double, 3>** v_current_pos,	std::array<double, 3>** t_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, bool** belong_to_this, bool** belong_to_color_group,int type)
+{
+	double energy = 0.0;
+	int* indices;
+	double* d_hat_;
+	if (type == 0) {
+		for (auto j = record_vt_pair->begin(); j < record_vt_pair->end(); ++j) {
+			d_hat_ = d_hat->data()[j - record_vt_pair->begin()].data();
+			for (auto i = j->begin(); i < j->end(); i += 4) {
+				indices = triangle_indices[*(i + 2)][*(i + 3)].data();
+				energy += compute_energy.computeBarrierEnergy(v_current_pos[*i][*(i + 1)].data(),
+					t_current_pos[*(i + 2)][indices[0]].data(),
+					t_current_pos[*(i + 2)][indices[1]].data(),
+					t_current_pos[*(i + 2)][indices[2]].data(), collision_stiffness, d_hat_[(i - j->begin()) >> 2], true);
+			}
+		}
+	}
+	else if (type == 1) {
+		for (auto j = record_vt_pair->begin(); j < record_vt_pair->end(); ++j) {
+			d_hat_ = d_hat->data()[j - record_vt_pair->begin()].data();
+			for (auto i = j->begin(); i < j->end(); i += 4) {
+				if (belong_to_this[*i][*(i + 1)] || belong_to_color_group[*i][*(i + 1)]) {
+					indices = triangle_indices[*(i + 2)][*(i + 3)].data();
+					energy += compute_energy.computeBarrierEnergy(v_current_pos[*i][*(i + 1)].data(),
+						t_current_pos[*(i + 2)][indices[0]].data(),
+						t_current_pos[*(i + 2)][indices[1]].data(),
+						t_current_pos[*(i + 2)][indices[2]].data(), collision_stiffness, d_hat_[(i - j->begin()) >> 2], true);
+
+				}
+			}
+		}
+	 }
+	else
+	{
+		for (auto j = record_vt_pair->begin(); j < record_vt_pair->end(); ++j) {
+			d_hat_ = d_hat->data()[j - record_vt_pair->begin()].data();
+			for (auto i = j->begin(); i < j->end(); i += 4) {
+				if (belong_to_this[*(i + 2)][indices[0]] || belong_to_this[*(i + 2)][indices[1]] || belong_to_this[*(i + 2)][indices[2]] ||
+					belong_to_color_group[*(i + 2)][indices[0]] || belong_to_color_group[*(i + 2)][indices[1]] || belong_to_color_group[*(i + 2)][indices[2]]) {
+					indices = triangle_indices[*(i + 2)][*(i + 3)].data();
+					energy += compute_energy.computeBarrierEnergy(v_current_pos[*i][*(i + 1)].data(),
+						t_current_pos[*(i + 2)][indices[0]].data(),
+						t_current_pos[*(i + 2)][indices[1]].data(),
+						t_current_pos[*(i + 2)][indices[2]].data(), collision_stiffness, d_hat_[(i - j->begin()) >> 2], true);
+				}
+			}
+		}
+	}
+	return energy;
+}
+
+
+double XPBD_IPC::computeLastColorInertialEnergy()
+{
+	double energy = 0.0;
+	std::array<double, 3>* vertex_pos;
+	std::array<double, 3>* sn_;
+	unsigned int vertex_end;
+	double* mass;
+	bool* belong_color_group;
+	bool* belong_;
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		vertex_pos = vertex_position[i];
+		sn_ = sn[i].data();
+		vertex_end = vertex_index_begin_per_thread[i][total_thread_num];
+		mass = mesh_struct[i]->mass.data();
+		belong_color_group = collision.vertex_belong_to_color_group[i];
+		belong_ = collision.vertex_used_in_self_collision[i];
+		for (unsigned int j = 0; j < vertex_end; ++j) {
+			if (belong_color_group[j] || belong_[j]) {
+				energy += mass[j] * (EDGE_LENGTH(vertex_pos[j], sn_[j]));
+			}
+		}
+	}
+	return 0.5*energy / (sub_time_step * sub_time_step);
+}
+
+
+
 double XPBD_IPC::computeBlockCurrentEnergy(std::array<double, 3>* vertex_position, double stiffness, double dt,
 	double* mass,
 	Matrix<double, 3, 4>* A, std::vector<unsigned int>& neighbor_tet_indices,

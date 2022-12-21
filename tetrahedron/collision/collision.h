@@ -152,6 +152,8 @@ public:
 
 	bool** vertex_belong_to_color_group;
 
+	bool** vertex_used_in_self_collision;
+
 
 	std::vector<int> vertex_num_on_surface_prefix_sum;
 
@@ -338,8 +340,9 @@ public:
 
 
 
-	bool floorCollisionTime(double* initial_position, double* current_pos, unsigned int dimension, bool direction,
+	bool floorCollisionTime(double initial_position, double current_pos, bool direction,
 		double floor_value, double& collision_time, double tolerance);
+
 	double tolerance;
 
 
@@ -397,20 +400,44 @@ public:
 
 	std::vector<std::vector<unsigned int>>record_vt_pair;
 	std::vector<std::vector<unsigned int>>record_ee_pair;
+	std::vector<std::vector<unsigned int>>record_vt_collider_pair;
+	std::vector<std::vector<unsigned int>>record_tv_collider_pair; //store collider vertex, obj triangle in order
+	std::vector<std::vector<unsigned int>>record_ee_collider_pair;
+
+
+	std::vector<std::vector<double>>record_vt_pair_d_hat;
+	std::vector<std::vector<double>>record_ee_pair_d_hat;
+	std::vector<std::vector<double>>record_vt_collider_pair_d_hat;
+	std::vector<std::vector<double>>record_tv_collider_pair_d_hat;
+	std::vector<std::vector<double>>record_ee_collider_pair_d_hat;
+
 	std::vector<unsigned int> record_vertex_triangle_pair_index_start_per_thread;//thread_No, index, respectively
 	std::vector<unsigned int> record_edge_edge_pair_index_start_per_thread;//thread_No, index, respectively
 
 	std::vector<std::vector<int>>vt_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 3 0 1 3 or 4 0 1 2 3, every element 5 number
 	std::vector < std::vector<int>>ee_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 3 0 1 3 or 4 0 1 2 3
 	
-	std::vector<std::vector<char>>indicate_vertex_collide_with_floor; //size is surfacel vertex number 
-	std::vector<std::vector<double>>record_vertex_collide_with_floor_d_hat;
+	std::vector<std::vector<char>>indicate_vertex_collide_with_floor; //size is vertex number 
+	std::vector<std::vector<double>>record_vertex_collide_with_floor_d_hat;//size is vertex number 
 
 private:		
+
+	double VTColliderCollisionTime(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
+		std::array<double, 3>** v_initial_pos, std::array<double, 3>** v_current_pos,
+		std::array<double, 3>** t_initial_pos, std::array<double, 3>** t_current_pos, bool** belong_to_this, bool** belong_to_color_group);
+
+	double TVColliderCollisionTime(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
+		std::array<double, 3>** v_initial_pos, std::array<double, 3>** v_current_pos,
+		std::array<double, 3>** t_initial_pos, std::array<double, 3>** t_current_pos, bool** belong_to_this, bool** belong_to_color_group);
 
 	double VTCollisionTime(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
 		std::array<double, 3>** v_initial_pos, std::array<double, 3>** v_current_pos,
 		std::array<double, 3>** t_initial_pos, std::array<double, 3>** t_current_pos);
+
+	double EEColliderCollisionTime(std::vector<std::vector<unsigned int>>* record_pair, unsigned int** edge_v_0, unsigned int** edge_v_1,
+		std::array<double, 3>** e0_initial_pos, std::array<double, 3>** e0_current_pos,
+		std::array<double, 3>** e1_initial_pos, std::array<double, 3>** e1_current_pos, bool** belong_to_this, bool** belong_to_color_group);
+
 	double EECollisionTime(std::vector<std::vector<unsigned int>>* record_pair, unsigned int** edge_v_0, unsigned int** edge_v_1,
 		std::array<double, 3>** e0_initial_pos, std::array<double, 3>** e0_current_pos,
 		std::array<double, 3>** e1_initial_pos, std::array<double, 3>** e1_current_pos);
@@ -442,16 +469,6 @@ private:
 
 
 
-	std::vector<std::vector<unsigned int>>record_vt_collider_pair;
-	std::vector<std::vector<unsigned int>>record_tv_collider_pair; //store collider vertex, obj triangle in order
-	std::vector<std::vector<unsigned int>>record_ee_collider_pair;
-
-
-	std::vector<std::vector<double>>record_vt_pair_d_hat;
-	std::vector<std::vector<double>>record_ee_pair_d_hat;
-	std::vector<std::vector<double>>record_vt_collider_pair_d_hat;
-	std::vector<std::vector<double>>record_tv_collider_pair_d_hat;
-	std::vector<std::vector<double>>record_ee_collider_pair_d_hat;
 
 
 	std::vector<unsigned int> record_vertex_obj_triangle_collider_pair_index_start_per_thread;//thread_No, index, respectively
@@ -1173,6 +1190,7 @@ private:
 
 	void updateVertexBelongColorGroup(int color_No);
 
+	void vertexUsedInSelfCollision();
 
 	void prefixSumRecordPairNum(unsigned int* num_record, unsigned int* prefix_sum, int num, unsigned int& start_index, int move_size);
 
