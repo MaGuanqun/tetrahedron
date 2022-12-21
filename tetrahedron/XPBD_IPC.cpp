@@ -650,7 +650,6 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 			previous_energy = energy;
 			nearly_not_move = true;
 			solveNewtonCD_tetBlock();
-			//newtonCDBlock();
 
 			if (inner_iteration_number >= min_inner_iteration - 1) {
 				computeCurrentEnergy();
@@ -2102,12 +2101,6 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 	//		//std::cout << "error hessian not equal to zero " << std::endl;
 	//	}
 	//}
-
-	//for (int i = 0; i < store_tet_arap_grad.size(); ++i) {
-	//	if (store_tet_arap_grad[i] != 0.0) {
-	//		system("pause");
-	//	}
-	//}
 	//for (int i = 0; i < max_tet_color_num; ++i) {		//
 	//	newtonCDTetBlockTest(i);
 	//}
@@ -2146,14 +2139,34 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 	newtonCDTetBlockAGroupCollision(max_tet_color_num - 1);
 	//thread->assignTask(this, SOLVE_TET_BLOCK_COLLISION, max_tet_color_num-1);
 
+	double ori_energy=0.0, current_energy=0.0;
+	if (perform_collision) {
+		ori_energy = computeLastColorEnergy();
+	}
 	thread->assignTask(this, UPDATE_POSITION_AVERAGE);
-
 	//here first perform without collision pair ,should use collision.collisionTimeColor(i);
 	if (perform_collision) {
 		//collision.collisionTimeColor(max_tet_color_num - 1);
-		collision.closePairCollisionTime();
+		if (collision.collision_time > 0.0) {
+			collision.closePairCollisionTime();
+			current_energy = computeLastColorEnergy();
+			double record_collision_time = collision.collision_time;
+			collision.collision_time = 0.5;
+			//line search, make sure energy is decrease
+			while (current_energy > ori_energy)
+			{
+				record_collision_time *= 0.5;
+				thread->assignTask(&collision, COLLISION_FREE_POSITION_LAST_COLOR);
+				if (record_collision_time < 1e-6) {
+					break;
+				}
+			}
+			//update record position
+			thread->assignTask(&collision, UPDATE_RECORD_VERTEX_POSITION);
+		}	
 	}
-	
+
+	// 
 	//for (int i = 0; i < time.size(); ++i) {
 	//	std::cout << time[i] << " ";
 	//}
@@ -2163,7 +2176,6 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 	//newtonCDTetBlockAGroupTest();
 
 }
-
 
 
 
@@ -5575,15 +5587,71 @@ void XPBD_IPC::solveTetBlock(std::array<double, 3>* vertex_position, double stif
 }
 
 
+double XPBD_IPC::computeLastColorARAPEnergy()
+{
+	int obj_No, size;
+	double energy = 0.0;
+
+	std::array<int, 4>* indices;
+	std::array<double, 3>* vertex_pos;
+	Matrix<double, 3, 4>* A;
+	double* volume;
+	double stiffness;
+	double* mass_inv_;
+
+	for (int i = 0; i < tetrahedron->size(); ++i) {
+		obj_No = i + cloth->size();
+		size = tetrahedron->data()[i].mesh_struct.indices.size();
+		indices = tetrahedron->data()[i].mesh_struct.indices.data();
+		vertex_pos = vertex_position[i + cloth->size()];
+		A = tetrahedron->data()[i].mesh_struct.A.data();
+		volume = tetrahedron->data()[i].mesh_struct.volume.data();
+		stiffness = tetrahedron->data()[i].ARAP_stiffness;
+		mass_inv_ = tetrahedron->data()[i].mesh_struct.mass_inv.data();
+
+		for (int j = 0; j < size; ++j) {
+			if (is_tet_arap_grad_compute[prefix_sum_of_every_tet_index[i] + j]) {
+				if (mass_inv_[indices[j][0]] != 0.0 || mass_inv_[indices[j][1]] != 0.0 || mass_inv_[indices[j][2]] != 0.0 || mass_inv_[indices[j][3]] != 0.0) {
+					energy += compute_energy.computeARAPEnergy(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
+						vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j], volume[j], stiffness);
+				}
+			}
+		}
+	}
+
+	return energy;
+}
+
+
+double XPBD_IPC::computeFloorEnergy()
+{
+	double stiffness = 0.0;
+	if (!tetrahedron->empty()) {
+		stiffness = tetrahedron->data()[0].collision_stiffness[0];
+	}
+	else {
+		stiffness = cloth->data()[0].collision_stiffness[0];
+	}
+	double energy = 0.0;
+	for (auto j = collision.record_vertex_collide_with_floor.begin(); j < collision.record_vertex_collide_with_floor.end(); ++j) {
+		for (auto i = j->begin(); i < j->end(); i += 2) {
+			if (collision.vertex_used_in_self_collision[*i][*(i + 1)] || collision.vertex_belong_to_color_group[*i][*(i + 1)]) {
+				energy += compute_energy.computeFloorBarrierEnergy(vertex_position[*i][*(i + 1)][floor->dimension], collision.record_vertex_collide_with_floor_d_hat[*i][*(i + 1)],
+					stiffness, floor->value);
+			}
+		}
+	}
+	return energy;
+}
+
+
 
 double XPBD_IPC::computeLastColorEnergy()
 {
 	double energy = 0.0;
 	energy += computeLastColorInertialEnergy();
 	//ARAP
-	
-
-
+	energy += computeLastColorARAPEnergy();
 	//vt
 	if (perform_collision) {
 		double stiffness = 0.0;
@@ -5609,6 +5677,10 @@ double XPBD_IPC::computeLastColorEnergy()
 			energy += computeEEEnergy(&collision.record_ee_collider_pair, edge_vertices.data(), collider_edge_vertices.data(), vertex_position.data(),
 				vertex_position_collider.data(), stiffness, &collision.record_ee_collider_pair_d_hat, 
 				collision.vertex_used_in_self_collision, collision.vertex_belong_to_color_group, 1);
+		}
+
+		if (floor->exist) {
+			energy += computeFloorEnergy();
 		}
 	}
 	return energy;

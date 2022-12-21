@@ -409,6 +409,9 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     case SET_ELEMENT_COLLIDE_WITH_COLLIDER:
         k = job([func, thread_id]() {func->setElementCollideWithCollider(thread_id); });
         break;
+    case UPDATE_RECORD_VERTEX_POSITION:
+        k = job([func, thread_id]() {func->updateVertexRecordForColor(thread_id); });
+        break;
     case RECORD_VT_PAIR_COMPRESS:
         k = job([func, thread_id]() {func->recordVTPairCompress(thread_id); });
         break;

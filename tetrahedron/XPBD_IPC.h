@@ -110,6 +110,13 @@ public:
 
 private:
 
+	void computeCurrentEnergy();
+
+	double computeLastColorARAPEnergy();
+
+	double computeFloorEnergy();
+
+
 	double computeEEEnergy(std::vector<std::vector<unsigned int>>* record_pair, unsigned int** edge_v_0, unsigned int** edge_v_1,
 		std::array<double, 3>** e0_current_pos, std::array<double, 3>** e1_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, bool** belong_to_this, bool** belong_to_color_group, int type);
 
@@ -269,6 +276,7 @@ private:
 	//std::vector<std::vector<unsigned int>* >unfixed_vertex;
 
 	double max_move_standard_inner_itr;
+
 
 
 	double calEdgeLength();

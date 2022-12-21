@@ -379,6 +379,7 @@ public:
 
 	std::vector<std::vector<int>>* indicate_if_involved_in_last_color;
 	void computeCollisionFreePositionForColor(int thread_No);
+	void updateVertexRecordForColor(int thread_No);
 
 	//std::vector<unsigned int> vt_pair_compressed_record; //obj0, v0, obj1, t1,order in vertex_triangle_pair_by_vertex
 	//std::vector<unsigned int>ee_pair_compressed_record; //obj0, v0, obj1, t1,order in edge_edge_pair_by_edge
@@ -419,6 +420,7 @@ public:
 	
 	std::vector<std::vector<char>>indicate_vertex_collide_with_floor; //size is vertex number 
 	std::vector<std::vector<double>>record_vertex_collide_with_floor_d_hat;//size is vertex number 
+	std::vector<std::vector<unsigned int>>record_vertex_collide_with_floor;// size is thread num, record obj, vertex_index
 
 private:		
 
@@ -442,7 +444,7 @@ private:
 		std::array<double, 3>** e0_initial_pos, std::array<double, 3>** e0_current_pos,
 		std::array<double, 3>** e1_initial_pos, std::array<double, 3>** e1_current_pos);
 
-	std::vector<std::vector<unsigned int>>record_vertex_collide_with_floor;// size is thread num, record obj, vertex_index
+
 
 	void setPairByElement();
 	void findPairBySingleElement(unsigned int* pair, int start, int end, unsigned int** pair_by_element, unsigned int** pair_num_record, 
@@ -1228,7 +1230,7 @@ private:
 	//void initialPairCompress();
 
 
-	void 	addTetInvolvedInCollision();
+	void 	addTetInvolvedInSelfCollision();
 	
 	void addTetToCollision(std::vector<unsigned int>& pair_compress_record,std::vector<unsigned int>** tet_around_element0,
 		std::vector<unsigned int>** tet_around_element1, unsigned int previous_size, std::vector<unsigned int>* tet_involved_in_collision);
