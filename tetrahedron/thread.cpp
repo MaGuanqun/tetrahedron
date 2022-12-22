@@ -875,6 +875,9 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
     case UPDATE_POSITION_AVERAGE:
         k = job([func, thread_id]() {func->updatePositionAverage(thread_id); });
        break;
+    case UPDATE_LAST_COLOR_VERTEX_BELONG:
+        k = job([func, thread_id]() {func->lastColorVertexBelongToGroup(thread_id); });
+        break;
     }
     return k;
 }

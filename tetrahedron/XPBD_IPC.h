@@ -79,7 +79,7 @@ public:
 	void newtonCDTetBlockAGroup(int thread_No, int color);
 	void newtonCDTetBlockAGroupCollision(int color);
 	
-
+	void warmStart();
 
 	void tetHessian();
 	void tetGradForColor(unsigned int color_No);
@@ -95,7 +95,7 @@ public:
 
 	std::vector<std::array<double, 3>>vertex_trace;
 	void updatePositionAverage(int thread_No);
-
+	void lastColorVertexBelongToGroup(int thread_No);
 	//std::vector<std::array<double, 3>> e0_0;
 	//std::vector<std::array<double, 3>> e0_1;
 	//std::vector<std::array<double, 3>> e1_0;
@@ -114,23 +114,33 @@ private:
 
 	double computeLastColorARAPEnergy();
 
-	double computeFloorEnergy();
+	double computeFloorEnergy(int type);
 
 
 	double computeEEEnergy(std::vector<std::vector<unsigned int>>* record_pair, unsigned int** edge_v_0, unsigned int** edge_v_1,
-		std::array<double, 3>** e0_current_pos, std::array<double, 3>** e1_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, bool** belong_to_this, bool** belong_to_color_group, int type);
+		std::array<double, 3>** e0_current_pos, std::array<double, 3>** e1_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, bool** belong_to_color_group, int type);
 
 	double computeVTEnergy(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
-		std::array<double, 3>** v_current_pos, std::array<double, 3>** t_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, bool** belong_to_this, bool** belong_to_color_group, int type);
+		std::array<double, 3>** v_current_pos, std::array<double, 3>** t_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, bool** belong_to_color_group, int type);
 
 	double computeLastColorEnergy();
 	double computeLastColorInertialEnergy();
 
+	double computeCollisionEnergy();
+
+	double computeWarmStartEnergy();
+
 	void solveVT_BlockPerThread(std::array<double, 3>** record_vertex_position, int** record_vertex_num, unsigned int* pair, unsigned int start, unsigned int end,
-		int* vt_hessian_record_index);
+		int* vt_hessian_record_index, bool only_solve_collision_pair);
+
+	void solvecollider_BlockPerThread(std::array<double, 3>** record_vertex_position, int** record_vertex_num, 
+		std::vector<std::vector<unsigned int>>* pair,  bool only_solve_collision_pair, int type);
+
+	void solveFloor_BlockPerThread(std::array<double, 3>** record_vertex_position, int** record_vertex_num, std::vector<std::vector<unsigned int>>* pair,
+		bool only_solve_collision_pair);
 
 	void solveEE_BlockPerThread(std::array<double, 3>** record_vertex_position, int** record_vertex_num, unsigned int* pair, unsigned int start, unsigned int end,
-		int* ee_hessian_record_index);
+		int* ee_hessian_record_index, bool only_solve_collision_pair);
 
 	void initialHessianMap();
 
@@ -647,11 +657,12 @@ private:
 	void initialRecordPositionForThread();
 
 	void solveVT_Block(unsigned int vertex_obj_no, unsigned int vertex_index, unsigned int triangle_obj_No, unsigned int triangle_index,
-		double dt, std::vector<unsigned int>* triangle_around_vertex, std::vector<unsigned int>* triangle_around_triangle,
-		std::vector<unsigned int>* edge_around_vertex, std::vector<unsigned int>* edge_around_triangle,
-		std::vector<unsigned int>* tet_around_vertex, std::vector<unsigned int>* tet_around_triangle,
-		std::array<double, 3>** record_vertex_position,
-		int** record_vertex_num, int* hessian_record_index);
+		double dt, std::array<double, 3>** record_vertex_position,
+		int** record_vertex_num, bool only_solve_collision_pair);
+
+	void solveCollisionWithColliderBlock(double dt, unsigned int obj_no, unsigned int index, int type, std::array<double, 3>** record_vertex_position,
+		int** record_vertex_num, bool only_solve_collision_pair);
+
 
 	void getVTCollisionHessainForPairFromRecord(MatrixXd& Hessian, VectorXd& grad,
 		unsigned int* VT, unsigned int num, unsigned int vertex_order_in_matrix, unsigned int vertex_obj_No, unsigned int tri_obj_No,
@@ -693,20 +704,24 @@ private:
 	void setHessianFromTetHessian(MatrixXd& Hessian_system, double* grad_system, double* Hessian_, double* grad_, int* vertex_in_sys);
 
 	void solveEE_Block(unsigned int obj_No_0, unsigned int primitive_0_index, unsigned int obj_No_1, unsigned int primitive_1_index,
-		double dt, std::vector<unsigned int>* triangle_around_0, std::vector<unsigned int>* triangle_around_1,
-		std::vector<unsigned int>* edge_around_0, std::vector<unsigned int>* edge_around_1,
-		std::vector<unsigned int>* tet_around_0, std::vector<unsigned int>* tet_around_1,
+		double dt,
 		std::array<double, 3>** record_vertex_position,
-		int** record_vertex_num, int* hessian_record_index);
+		int** record_vertex_num, bool only_solve_collision_pair);
 
-	void solveBlockWithPair(unsigned int vertex_obj_no, unsigned int triangle_obj_No,
-		double dt, std::vector<unsigned int>* triangle_around_vertex, std::vector<unsigned int>* triangle_around_triangle,
-		std::vector<unsigned int>* edge_around_vertex, std::vector<unsigned int>* edge_around_triangle,
-		std::vector<unsigned int>* tet_around_vertex, std::vector<unsigned int>* tet_around_triangle,
+	void getEEUnfixedPairIndex(int* unfixed_pair_vertex_index, int& unfixed_num, unsigned int obj_No_0,
+		unsigned int primitive_0_index, unsigned int obj_No_1, unsigned int primitive_1_index);
+	void getVTUnfixedPairIndex(int* unfixed_pair_vertex_index, int& unfixed_num, unsigned int vertex_obj_no,
+		unsigned int vertex_index, unsigned int triangle_obj_No, unsigned int triangle_index);
+
+	void solveBlockWithPair(
+		double dt,
 		std::array<double, 3>** record_vertex_position,
 		int** record_vertex_num, int* unfixed_pair_vertex_index, int unfixed_num, double* common_grad,
 		std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>& collision_hessian,
-		std::unordered_map<unsigned int, double>& floor_map);
+		std::unordered_map<unsigned int, double>& floor_map, bool only_solve_collision_pair);
+
+
+
 
 	//void testPrintOut()
 	//{

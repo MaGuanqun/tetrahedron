@@ -152,7 +152,9 @@ public:
 
 	bool** vertex_belong_to_color_group;
 
-	bool** vertex_used_in_self_collision;
+	void initialVertexBelongColorGroup();
+
+	//bool** vertex_used_in_self_collision;
 
 
 	std::vector<int> vertex_num_on_surface_prefix_sum;
@@ -422,23 +424,27 @@ public:
 	std::vector<std::vector<double>>record_vertex_collide_with_floor_d_hat;//size is vertex number 
 	std::vector<std::vector<unsigned int>>record_vertex_collide_with_floor;// size is thread num, record obj, vertex_index
 
+	std::vector<std::vector<unsigned int>> triangle_index_collide_with_collider;
+	std::vector<std::vector<unsigned int>> edge_index_collide_with_collider;
+	std::vector<std::vector<unsigned int>> vertex_index_collide_with_collider;
+
 private:		
 
-	double VTColliderCollisionTime(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
-		std::array<double, 3>** v_initial_pos, std::array<double, 3>** v_current_pos,
-		std::array<double, 3>** t_initial_pos, std::array<double, 3>** t_current_pos, bool** belong_to_this, bool** belong_to_color_group);
+	//double VTColliderCollisionTime(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
+	//	std::array<double, 3>** v_initial_pos, std::array<double, 3>** v_current_pos,
+	//	std::array<double, 3>** t_initial_pos, std::array<double, 3>** t_current_pos, bool** belong_to_this, bool** belong_to_color_group);
 
-	double TVColliderCollisionTime(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
-		std::array<double, 3>** v_initial_pos, std::array<double, 3>** v_current_pos,
-		std::array<double, 3>** t_initial_pos, std::array<double, 3>** t_current_pos, bool** belong_to_this, bool** belong_to_color_group);
+	//double TVColliderCollisionTime(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
+	//	std::array<double, 3>** v_initial_pos, std::array<double, 3>** v_current_pos,
+	//	std::array<double, 3>** t_initial_pos, std::array<double, 3>** t_current_pos, bool** belong_to_this, bool** belong_to_color_group);
 
 	double VTCollisionTime(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
 		std::array<double, 3>** v_initial_pos, std::array<double, 3>** v_current_pos,
 		std::array<double, 3>** t_initial_pos, std::array<double, 3>** t_current_pos);
 
-	double EEColliderCollisionTime(std::vector<std::vector<unsigned int>>* record_pair, unsigned int** edge_v_0, unsigned int** edge_v_1,
-		std::array<double, 3>** e0_initial_pos, std::array<double, 3>** e0_current_pos,
-		std::array<double, 3>** e1_initial_pos, std::array<double, 3>** e1_current_pos, bool** belong_to_this, bool** belong_to_color_group);
+	//double EEColliderCollisionTime(std::vector<std::vector<unsigned int>>* record_pair, unsigned int** edge_v_0, unsigned int** edge_v_1,
+	//	std::array<double, 3>** e0_initial_pos, std::array<double, 3>** e0_current_pos,
+	//	std::array<double, 3>** e1_initial_pos, std::array<double, 3>** e1_current_pos, bool** belong_to_this, bool** belong_to_color_group);
 
 	double EECollisionTime(std::vector<std::vector<unsigned int>>* record_pair, unsigned int** edge_v_0, unsigned int** edge_v_1,
 		std::array<double, 3>** e0_initial_pos, std::array<double, 3>** e0_current_pos,
@@ -493,9 +499,7 @@ private:
 	std::vector<unsigned int>record_previous_ee_collider_pair_size;
 	std::vector<unsigned int>record_previous_tv_collider_pair_size;
 
-	std::vector<std::vector<unsigned int>> triangle_index_collide_with_collider;
-	std::vector<std::vector<unsigned int>> edge_index_collide_with_collider;
-	std::vector<std::vector<unsigned int>> vertex_index_collide_with_collider;
+
 
 	std::vector<unsigned int>record_previous_triangle_index_with_collider;
 	std::vector<unsigned int>record_previous_edge_index_with_collider;
@@ -1192,7 +1196,7 @@ private:
 
 	void updateVertexBelongColorGroup(int color_No);
 
-	void vertexUsedInSelfCollision();
+	//void vertexUsedInSelfCollision();
 
 	void prefixSumRecordPairNum(unsigned int* num_record, unsigned int* prefix_sum, int num, unsigned int& start_index, int move_size);
 
