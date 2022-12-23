@@ -840,6 +840,25 @@ bool XPBD_IPC::innerConvergeCondition(unsigned int iteration_num)
 }
 
 
+bool XPBD_IPC::convCondition(unsigned int iteration_num, unsigned int min_itr, double energy, double previous_energy, unsigned int max_itr, double energy_converge_standard,
+	double energy_converge_ratio)
+{
+	if (iteration_num < min_itr) {//max_iteration_number
+		return false;
+	}
+
+	if (abs(energy - previous_energy) < energy_converge_standard) {
+		return true;
+	}
+	if (abs(energy - previous_energy) / previous_energy < energy_converge_ratio) {
+		return true;
+	}
+	if (iteration_num > max_itr) {
+		return true;
+	}
+	return false;
+}
+
 bool XPBD_IPC::checkMaxDisplacement()
 {
 	unsigned int num;
@@ -1410,6 +1429,21 @@ void XPBD_IPC::updatePosition()
 		memcpy(collider->data()[i].mesh_struct.vertex_for_render[0].data(), collider->data()[i].mesh_struct.vertex_position[0].data(), 24 * collider->data()[i].mesh_struct.vertex_position.size());
 	}
 }
+
+
+double XPBD_IPC::computeWarmStartEnergy()
+{
+	energy = 1e-15;
+	double inertial_energy = 0.5 * computeInertialEnergy();
+	energy += inertial_energy;
+	if (perform_collision) {
+		double barrier_energy = 0.0;
+		barrier_energy = computeBarrierEnergy();
+		energy += barrier_energy;
+	}
+	return energy;
+}
+
 
 void XPBD_IPC::computeCurrentEnergy()
 {
@@ -2264,7 +2298,15 @@ void XPBD_IPC::updatePositionAverage(int thread_No)
 //WARM START
 void XPBD_IPC::warmStart()
 {
-	while (energy)
+	//collision.initialVertexBelongColorGroup();
+	unsigned itr_num = 0;
+	double initial_energy = 0.0;
+
+	//thread->assignTask(this, UPDATE_LAST_COLOR_VERTEX_BELONG);
+	previous_energy = computeWarmStartEnergy();
+	energy = previous_energy;
+
+	while (convCondition(itr_num,1,energy,previous_energy,50, energy_converge_standard, energy_converge_ratio))
 	{
 		initialRecordHessian();
 		collision.computeHessian(max_tet_color_num - 1);
@@ -2289,18 +2331,13 @@ void XPBD_IPC::warmStart()
 			solvecollider_BlockPerThread(record_vertex_position, record_vertex_num, &collision.edge_index_collide_with_collider, true, 1);
 			solvecollider_BlockPerThread(record_vertex_position, record_vertex_num, &collision.triangle_index_collide_with_collider, true, 2);
 		}
-		thread->assignTask(this, UPDATE_LAST_COLOR_VERTEX_BELONG);
 
-		if (first) {
-			collision.initialVertexBelongColorGroup();
-			thread->assignTask(this, UPDATE_POSITION_AVERAGE);
-		}
-
-		//collision time, prevent inversion
+		thread->assignTask(this, UPDATE_POSITION_AVERAGE);
 		collision.closePairCollisionTime();
 		thread->assignTask(&collision, COLLISION_FREE_POSITION_LAST_COLOR);
-
 		thread->assignTask(&collision, UPDATE_RECORD_VERTEX_POSITION);
+		previous_energy=energy;
+		energy = computeWarmStartEnergy();
 	}
 }
 
@@ -5865,17 +5902,6 @@ double XPBD_IPC::computeCollisionEnergy()
 }
 
 
-
-double XPBD_IPC::computeWarmStartEnergy()
-{
-	double energy = 0.0;
-	energy += computeLastColorInertialEnergy();
-	//vt
-	if (perform_collision) {
-		energy += computeCollisionEnergy();
-	}
-	return energy;
-}
 
 double XPBD_IPC::computeLastColorEnergy()
 {

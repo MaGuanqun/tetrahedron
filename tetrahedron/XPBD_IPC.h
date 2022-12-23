@@ -112,6 +112,8 @@ private:
 
 	void computeCurrentEnergy();
 
+	double computeWarmStartEnergy();
+
 	double computeLastColorARAPEnergy();
 
 	double computeFloorEnergy(int type);
@@ -128,7 +130,6 @@ private:
 
 	double computeCollisionEnergy();
 
-	double computeWarmStartEnergy();
 
 	void solveVT_BlockPerThread(std::array<double, 3>** record_vertex_position, int** record_vertex_num, unsigned int* pair, unsigned int start, unsigned int end,
 		int* vt_hessian_record_index, bool only_solve_collision_pair);
@@ -264,6 +265,8 @@ private:
 
 	bool convergeCondition(unsigned int iteration_num);
 	bool innerConvergeCondition(unsigned int iteration_num);
+	bool convCondition(unsigned int iteration_num, unsigned int min_itr, double energy, double previous_energy, unsigned int max_itr, double energy_converge_standard,
+		double energy_converge_ratio);
 
 	//std::vector<std::array<double, 3>*>address_of_record_vertex_position;
 
