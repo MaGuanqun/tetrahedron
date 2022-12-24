@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -254,6 +254,7 @@
     <ClInclude Include="basic\object_chosen_indicator.h" />
     <ClInclude Include="basic\opengl_input.h" />
     <ClInclude Include="basic\pick_triangle.h" />
+    <ClInclude Include="basic\root_finding.h" />
     <ClInclude Include="basic\save_scene.h" />
     <ClInclude Include="basic\save_simulate_parameter.h" />
     <ClInclude Include="basic\set_tetrahedron_anchor.h" />
@@ -306,6 +307,7 @@
     <ClInclude Include="testHessian.h" />
     <ClInclude Include="test_assemble_matrix_newton.h" />
     <ClInclude Include="test_simu.h" />
+    <ClInclude Include="tet_inversion.h" />
     <ClInclude Include="thread.h" />
     <ClInclude Include="XPBD\second_order.h" />
     <ClInclude Include="XPBD\FEM_relate.h" />

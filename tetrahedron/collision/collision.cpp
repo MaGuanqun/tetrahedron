@@ -2001,7 +2001,7 @@ void Collision::setPairByElement()
 			//ee c
 			findPairBySingleElement(record_ee_collider_pair[i].data(), record_previous_ee_collider_pair_size[i], record_ee_collider_pair[i].size(),
 				edge_edge_collider_pair_by_edge, edge_edge_collider_pair_num_record, close_ee_collider_pair_num,
-				edge_edge_collider_pair_d_hat, ee_collider_d_hat_num, record_ee_collider_pair_d_hat[i].data()));
+				edge_edge_collider_pair_d_hat, ee_collider_d_hat_num, record_ee_collider_pair_d_hat[i].data());
 
 			//vc t
 			findPairBySingleElementReverse(record_tv_collider_pair[i].data(), record_previous_tv_collider_pair_size[i], record_tv_collider_pair[i].size(),
@@ -2138,7 +2138,7 @@ void Collision::globalCollisionTime()
 
 
 
-void Collision::closePairCollisionTime()
+void Collision::allPairCollisionTime()
 {	
 	//thread->assignTask(this, CLOSE_PAIR_COLLISION_TIME);
 	collisionTimeAllClosePair();
@@ -2161,9 +2161,7 @@ void Collision::closePairCollisionTime()
 		std::cout << "last color collision time " << collision_time << " " << std::endl;
 	}
 
-	if (collision_time < 1.0) {
-		thread->assignTask(this, COLLISION_FREE_POSITION_LAST_COLOR);
-	}
+
 	//double dist2_cur = CCD::internal::pointTriangleDistanceUnclassified(vertex_position[0][4048].data(), vertex_position[0][triangle_indices[0][7842][0]].data(),
 	//	vertex_position[0][triangle_indices[0][7842][1]].data(), vertex_position[0][triangle_indices[0][7842][2]].data());
 	//std::cout << "distance of the chosen VT " << dist2_cur << " " << tolerance * tolerance << std::endl;

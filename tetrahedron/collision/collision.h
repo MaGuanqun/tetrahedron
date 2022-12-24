@@ -55,7 +55,7 @@ public:
 	void collisionTimeWithPair();
 	void collisionTimeWithPair(int thread_No);
 
-	void closePairCollisionTime();
+	void allPairCollisionTime();
 	//void findAllPatchPairs(int thread_No);
 
 	//std::vector<std::vector<double>> target_position_and_stiffness; //thus, the actual number is 4*target_position_index[0]

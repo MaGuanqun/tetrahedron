@@ -82,6 +82,8 @@ public:
 	void warmStart();
 
 	void tetHessian();
+
+	void inversionTest();
 	void tetGradForColor(unsigned int color_No);
 	//void newtonCDTetBlockAGroupTest(int thread_No, int color);
 
@@ -110,11 +112,19 @@ public:
 
 private:
 
+
+	void allPairCollisionInversionTime();
+	void allPairCollisionTimeWarmStart();
+
+
 	void computeCurrentEnergy();
 
 	double computeWarmStartEnergy();
 
 	double computeLastColorARAPEnergy();
+
+	void computeInversionForWarmStart();
+	void computeLastColorInversion();
 
 	double computeFloorEnergy(int type);
 
@@ -336,7 +346,9 @@ private:
 	double computeVTCollisionEnergyPerElement(double* pos0, unsigned int* triangle_index, std::array<double, 3>** pos_t, std::array<int, 3>** triangle_indices,
 		unsigned int num, double* d_hat, double collision_stiffness);
 
+
 	double computeInertialEnergy();
+	double computeInertialEnergyWarmStart();
 	double computeCurrentARAPEnergy();
 	double computeBarrierEnergy();
 
@@ -531,6 +543,11 @@ private:
 	void getFloorHessian(MatrixXd& Hessian, VectorXd& grad, int* tet_actual_unfixed_vertex_indices,
 		int unfixed_tet_vertex_num, double d_hat_2,
 		int* vertex_index_on_surface, std::array<double, 3>* vertex_position, double collision_stiffness);
+
+
+	double getInversionTime(unsigned int tet_index, std::vector<unsigned int>* neighbor_tet_index,
+		std::array<int, 4>* tet_vertex, std::array<double, 3>* current_vertex_position,
+		std::array<double, 3>* initial_vertex_position);
 
 
 	double getCollisionTime(std::vector<unsigned int>* triangle_of_a_tet,
