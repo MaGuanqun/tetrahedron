@@ -130,6 +130,13 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	edge_edge_pair_index_start_per_thread.resize(2 * (thread_num + 1),0);
 	edge_edge_pair_collider_index_start_per_thread.resize(2 * (thread_num + 1),0);
 
+
+	record_vertex_triangle_pair_index_start_per_thread.resize(2 * (thread_num + 1), 0);
+	record_vertex_obj_triangle_collider_pair_index_start_per_thread.resize(2 * (thread_num + 1), 0);
+	record_vertex_collider_triangle_obj_pair_index_start_per_thread.resize(2 * (thread_num + 1), 0);
+	record_edge_edge_pair_index_start_per_thread.resize(2 * (thread_num + 1), 0);
+	record_edge_edge_pair_collider_index_start_per_thread.resize(2 * (thread_num + 1), 0);
+
 	//vertex_edge_pair_index_start_per_thread.resize(2 * (thread_num + 1), 0);
 	//vertex_obj_edge_collider_pair_index_start_per_thread.resize(2 * (thread_num + 1), 0);
 	//vertex_collider_edge_obj_pair_index_start_per_thread.resize(2 * (thread_num + 1), 0);
@@ -294,7 +301,7 @@ void Collision::recordPair()
 	indicate_vertex_collide_with_floor.resize(total_obj_num);
 	record_vertex_collide_with_floor_d_hat.resize(total_obj_num);
 	record_vertex_collide_with_floor.resize(thread_num);
-	if (floor->exist) {
+	//if (floor->exist) {
 		for (int i = 0; i < total_obj_num; ++i) {
 			indicate_vertex_collide_with_floor[i].resize(all_vertex_index_start_per_thread[i][thread_num]);
 			record_vertex_collide_with_floor_d_hat[i].resize(all_vertex_index_start_per_thread[i][thread_num]);
@@ -302,7 +309,7 @@ void Collision::recordPair()
 		for (int i = 0; i < thread_num; ++i) {
 			record_vertex_collide_with_floor[i].reserve(vertex_index_prefix_sum_obj[total_obj_num] / thread_num / 20);
 		}
-	}
+	//}
 	indicate_tet_has_been_used.resize(total_obj_num);
 	for (int i = 0; i < tetrahedron->size(); ++i) {
 		indicate_tet_has_been_used[i + cloth->size()].resize(tetrahedron->data()[i].mesh_struct.indices.size());
@@ -613,6 +620,7 @@ void Collision::reorganzieDataOfObjects()
 		triangle_normal_magnitude_reciprocal[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.triangle_normal_magnitude_reciprocal.data();
 		vertex_index_start_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_index_on_surface_begin_per_thread.data();
 		all_vertex_index_start_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_index_begin_per_thread.data();
+
 		edge_index_start_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.edge_index_begin_per_thread.data();
 		triangle_index_start_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.face_index_begin_per_thread.data();
 		damp_collision[i + cloth->size()] = tetrahedron->data()[i].damp_collision_stiffness;
@@ -8601,8 +8609,8 @@ void Collision::collisionTimeWithPair(int thread_No)
 							with_floor[j] = '\1';
 							record_with_floor->emplace_back(i);
 							record_with_floor->emplace_back(j);
-							d_hat_with_floor[j] = (std::max)((vertex_for_render[i][j][floor->dimension] - floor->value) *
-								(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);
+							d_hat_with_floor[j] = d_hat_2;// (std::max)((vertex_for_render[i][j][floor->dimension] - floor->value)*
+								//(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);
 						}
 					}
 				}
@@ -8618,9 +8626,16 @@ void Collision::collisionTimeWithPair(int thread_No)
 							with_floor[j] = '\1';
 							record_with_floor->emplace_back(i);
 							record_with_floor->emplace_back(j);
-							d_hat_with_floor[j] = (std::max)((vertex_for_render[i][j][floor->dimension] - floor->value) *
+							d_hat_with_floor[j] =(std::max)((vertex_for_render[i][j][floor->dimension] - floor->value)*
 								(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);
-						}						
+						}				
+						else if ((current_pos[j].data()[floor->dimension] - floor->value) * (current_pos[j].data()[floor->dimension] - floor->value) < d_hat_2) {
+							with_floor[j] = '\1';
+							record_with_floor->emplace_back(i);
+							record_with_floor->emplace_back(j);
+							d_hat_with_floor[j] = (std::max)((vertex_for_render[i][j][floor->dimension] - floor->value)*
+							(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);
+						}
 					}
 				}
 			}

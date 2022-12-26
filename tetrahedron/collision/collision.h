@@ -399,7 +399,7 @@ public:
 
 	double* common_grad;
 
-	std::vector<unsigned int>vertex_index_prefix_sum_obj;
+
 
 	std::vector<std::vector<unsigned int>>tet_involved_in_collision;//size is total obj num
 
@@ -431,6 +431,7 @@ public:
 	std::vector<std::vector<unsigned int>> vertex_index_collide_with_collider;
 
 private:		
+	std::vector<unsigned int>vertex_index_prefix_sum_obj;
 
 	//double VTColliderCollisionTime(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
 	//	std::array<double, 3>** v_initial_pos, std::array<double, 3>** v_current_pos,

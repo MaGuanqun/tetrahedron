@@ -928,11 +928,11 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 
 
 
-	draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[4048].data(),//collision.draw_target_position,
-		0.002);
-	//////draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[project_dynamic.collision.chosen_show_vertex].data(),
-	//////	0.005);
-	draw_vertex.draw(camera, glm::vec3(1.0, 0.0, 0.0));
+	//draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[4048].data(),//collision.draw_target_position,
+	//	0.002);
+	////////draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[project_dynamic.collision.chosen_show_vertex].data(),
+	////////	0.005);
+	//draw_vertex.draw(camera, glm::vec3(1.0, 0.0, 0.0));
 	//
 
 	//if (xpbd_ipc.e0_0_.size() > 3) {
@@ -952,11 +952,11 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 	//		0.002);
 	//	draw_vertex.draw(camera, glm::vec3(0.0, 1.0, 0.0));
 	//}
-	std::vector<unsigned int> indices;
-	indices.push_back(7842);
-	draw_triangle.drawTriangle(camera, object_shader_front, tetrahedron[0].mesh_struct.vertex_for_render,
-		tetrahedron[0].mesh_struct.triangle_indices, tetrahedron[0].mesh_struct.face_normal_for_render,
-		indices, glm::vec3(0.0, 1.0, 0.0));
+	//std::vector<unsigned int> indices;
+	//indices.push_back(7842);
+	//draw_triangle.drawTriangle(camera, object_shader_front, tetrahedron[0].mesh_struct.vertex_for_render,
+	//	tetrahedron[0].mesh_struct.triangle_indices, tetrahedron[0].mesh_struct.face_normal_for_render,
+	//	indices, glm::vec3(0.0, 1.0, 0.0));
 
 	//if (xpbd_ipc.e0_0.size() > 3) {
 	//	std::vector<std::array<double, 3>> pos;

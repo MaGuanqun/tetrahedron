@@ -101,14 +101,14 @@ private:
     std::vector<std::future<void>> futures;
 
     void thread_func(ThreadData* pData);
+    job create_task(Collision* func, int thread_id, CollisionFuncSendToThread function_type);//
+    job create_task(Collision* func, int thread_id, CollisionFuncSendToThread function_type, int para);
     job create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncSendToThread function_type);//
     job create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncSendToThread function_type, unsigned int key_id);
     job create_task(Cloth* func, int thread_id, ObjectFunc function_type);//
     job create_task(Collider* func, int thread_id, ObjectFunc function_type);//
     job create_task(BVH* func, int thread_id, BVHFunc function_type);//
     job create_task(TetrahedronMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);//
-    job create_task(Collision* func, int thread_id, CollisionFuncSendToThread function_type);//
-    job create_task(Collision* func, int thread_id, CollisionFuncSendToThread function_type, int para);
     job create_task(RadixSort* func, int thread_id, RadixSortFunc function_type, unsigned int key_id);
 
     job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type);//

@@ -680,8 +680,8 @@ void SpatialHashing::buildSpatialHashing(double* scene_aabb)
 		thread->assignTask(this, FIND_ALL_PAIRS_HASH_TABLE_BY_ELEMENT);
 
 		for (unsigned int i = 0; i < thread_num; ++i) {
-			//vertex_triangle_pair[i][0] = 0;
-			//edge_edge_pair[i][0] = 0;
+			vertex_triangle_pair[i][0] = 0;
+			edge_edge_pair[i][0] = 0;
 		}
 		//if (record_pair_by_element) {
 		//	findAllTriangleVertexPairByTriangle();
@@ -1193,6 +1193,7 @@ void SpatialHashing::findAllPairsByPrimitive(int thread_No)
 	else {
 		findAllVertexTrianglePairsByPrimitive(thread_No);
 		findAllEdgeEdgePairsByPrimitive(thread_No);
+		std::cout << "by pair " << std::endl;
 	}
 }
 

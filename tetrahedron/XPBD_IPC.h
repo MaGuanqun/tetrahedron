@@ -213,7 +213,7 @@ private:
 	std::vector<std::array<int, 3>*> triangle_indices;
 	std::vector<std::array<int, 3>*> triangle_indices_collider;
 
-	std::vector<std::array<int, 4>*> tet_indices;
+	std::vector<std::array<int, 4>*> tet_indices; //size is total obj num
 
 	std::vector<Matrix<double, 3, 4>*>tet_A;
 	std::vector<double*>tet_volume;
@@ -766,6 +766,8 @@ private:
 
 	std::vector<unsigned int> record_max_displace_vertex;
 	std::vector<double> record_max_displacement;
+
+	std::vector<unsigned int>vertex_index_prefix_sum_obj;
 
 };
 
