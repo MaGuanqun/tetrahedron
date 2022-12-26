@@ -101,18 +101,17 @@ private:
     std::vector<std::future<void>> futures;
 
     void thread_func(ThreadData* pData);
-    job create_task(TriangleMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);// int jobNumber
-    job create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncSendToThread function_type);
+    job create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncSendToThread function_type);//
     job create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncSendToThread function_type, unsigned int key_id);
-    job create_task(Cloth* func, int thread_id, ObjectFunc function_type);
-    job create_task(Collider* func, int thread_id, ObjectFunc function_type);
-    job create_task(BVH* func, int thread_id, BVHFunc function_type);
-    job create_task(TetrahedronMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);
-    job create_task(Collision* func, int thread_id, CollisionFuncSendToThread function_type);
+    job create_task(Cloth* func, int thread_id, ObjectFunc function_type);//
+    job create_task(Collider* func, int thread_id, ObjectFunc function_type);//
+    job create_task(BVH* func, int thread_id, BVHFunc function_type);//
+    job create_task(TetrahedronMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);//
+    job create_task(Collision* func, int thread_id, CollisionFuncSendToThread function_type);//
     job create_task(Collision* func, int thread_id, CollisionFuncSendToThread function_type, int para);
     job create_task(RadixSort* func, int thread_id, RadixSortFunc function_type, unsigned int key_id);
 
-    job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type);
+    job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type);//
     job create_task(IterationMethod* func, int thread_id, std::vector<int>* vertex_index, std::vector<double>* coefficient,
         double* x, double* b, double* result, int* vertex_index_thread_begin, int sys_size);
     job create_task(IterationMethod* func, IterationMethodFunc function_type, int thread_id, int* vertex_index, double* coefficient, int* vertex_index_start,
@@ -120,17 +119,18 @@ private:
         Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous);
     job create_task(IterationMethod* func, int thread_id, IterationMethodFunc function_type, Eigen::VectorXd* u, Eigen::VectorXd* b, double* residual_norm,
         double omega_chebyshev, Eigen::VectorXd* u_last, Eigen::VectorXd* u_previous);
-    job create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread function_type);
-    job create_task(Tetrahedron* func, int thread_id, ObjectFunc function_type);// int jobNumber
-    job create_task(Scene* func, int thread_id, SceneFuc function_type);// int jobNumber
+    job create_task(ProjectDynamic* func, int thread_id, PDFuncSendToThread function_type);//
+    job create_task(Tetrahedron* func, int thread_id, ObjectFunc function_type);// int jobNumber//
+    job create_task(Scene* func, int thread_id, SceneFuc function_type);// int jobNumber//
     //job create_task(MeshPatch* func, int thread_id, MeshPatchFunc function_type);
     //job create_task(DrawCulling* func, int thread_id, DrawCullingFunc function_type, unsigned int key_id);
-    job create_task(XPBD* func, int thread_id, XPBDFunc function_type);
-    job create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_type);
+    job create_task(XPBD* func, int thread_id, XPBDFunc function_type);//
+    job create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_type);//
     job create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_type, unsigned int para);
-    job create_task(NewtonMethod* func, int thread_id, NewtonMethodFunc function_type);
-    job create_task(SecondOrderLargeSystem* func, int thread_id, NewtonMethodFunc function_type);
+    job create_task(NewtonMethod* func, int thread_id, NewtonMethodFunc function_type);//
+    job create_task(SecondOrderLargeSystem* func, int thread_id, NewtonMethodFunc function_type);//
     job create_task(MoveObject* func, int thread_id, MoveObjectFunc function_type, unsigned int key_id);
+    job create_task(TriangleMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);// int jobNumber
 };
 
 

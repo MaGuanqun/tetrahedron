@@ -63,6 +63,7 @@ public:
 
 	bool* has_force;
 	void computeCollisionFreePosition(int thread_No);
+	void computeCollisionFreePositionFromRecord(int thread_No);
 
 
 
@@ -431,7 +432,7 @@ private:
 		bool vertex_on_surface, unsigned int vertex_index_on_surface);
 
 	void newtonCDTetBlock();
-	void newtonCDTetBlockTest(int color_No);
+	//void newtonCDTetBlockTest(int color_No);
 	void newtonVTCollisionBlock();
 	void newtonEECollisionBlock();
 

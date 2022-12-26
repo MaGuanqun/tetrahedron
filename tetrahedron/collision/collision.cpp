@@ -2226,148 +2226,148 @@ void Collision::computeCollisionFreePositionForColor(int thread_No)
 }
 
 
-void Collision::floorCollisionTime(int color)
-{
-	if (!floor->exist) {
-		return;
-	}
+//void Collision::floorCollisionTime(int color)
+//{
+//	if (!floor->exist) {
+//		return;
+//	}
+//
+//
+//	thread->assignTask(this, FLOOR_COLLISION_TIME,color);
+//	collision_time = collision_time_thread[0];
+//	for (int i = 1; i < thread_num; ++i) {
+//		if (collision_time > collision_time_thread[i]) {
+//			collision_time = collision_time_thread[i];
+//		}
+//	}
+//	if (collision_time > 1.0) {
+//		collision_time = 1.0;
+//	}
+//	if (collision_time < 1.0) {
+//		collision_time *= 0.9;
+//	}
+//	if (collision_time == 0.0) {
+//		std::cout << "attention: floor collision time equals zero, color num " << std::endl;
+//	}
+//
+//	thread->assignTask(this, UPDATE_POSITION_FOR_FLOOR_COLLISION, color);
+//	
+//}
+
+////FLOOR_COLLISION_TIME
+//void Collision::floorCollisionTime(int thread_No, int color)
+//{
+//	unsigned int* tet_group;
+//	int color_group_index;
+//	int start, end;
+//	int j;
+//
+//	char* is_tet_involved_in_collision;
+//	int* tet_vertex;
+//
+//	std::array<int, 4>* tet_indices;
+//	unsigned int* unfixed_vertex_num;
+//
+//	int num;
+//
+//	int* global_to_normal;
+//
+//	std::array<double, 3>* initial_pos;
+//	std::array<double, 3>* current_pos;
+//
+//	double collision_time = 2.0;
+//
+//	for (int i = 0; i < tetrahedron->size(); ++i) {
+//		color_group_index = *inner_iteration_number % tet_color_groups[i]->size();
+//		end = tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[color_group_index][color][thread_No + 1];
+//		start = tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[color_group_index][color][thread_No];
+//
+//		tet_group = tet_color_groups[i]->data()[color_group_index][color].data();
+//
+//		is_tet_involved_in_collision = tet_color_groups_label[i][color_group_index][color].data();
+//
+//		tet_indices = tetrahedron->data()[i].mesh_struct.unfixied_actual_indices.data();
+//		unfixed_vertex_num = tetrahedron->data()[i].mesh_struct.tet_unfixed_vertex_num.data();
+//		global_to_normal = general_index_to_surface_index[i + cloth->size()];
+//		initial_pos = vertex_record_for_this_color[i + cloth->size()];
+//		current_pos = vertex_position[i + cloth->size()];
+//
+//		for (int k = start; k < end; ++k) {			
+//			if (!is_tet_involved_in_collision[k]) {
+//				j = tet_group[k];
+//				tet_vertex = tet_indices[j].data();
+//				num = unfixed_vertex_num[j];
+//				for (int m = 0; m < num; ++m) {
+//					if (global_to_normal[tet_vertex[m]] != -1) {
+//						floorCollisionTime(initial_pos[tet_vertex[m]].data()[floor->dimension], current_pos[tet_vertex[m]].data()[floor->dimension],
+//							floor->normal_direction, floor->value, collision_time, tolerance);
+//					}
+//				}
+//			}
+//		}
+//	}
+//
+//	collision_time_thread[thread_No] = collision_time;
+//}
 
 
-	thread->assignTask(this, FLOOR_COLLISION_TIME,color);
-	collision_time = collision_time_thread[0];
-	for (int i = 1; i < thread_num; ++i) {
-		if (collision_time > collision_time_thread[i]) {
-			collision_time = collision_time_thread[i];
-		}
-	}
-	if (collision_time > 1.0) {
-		collision_time = 1.0;
-	}
-	if (collision_time < 1.0) {
-		collision_time *= 0.9;
-	}
-	if (collision_time == 0.0) {
-		std::cout << "attention: floor collision time equals zero, color num " << std::endl;
-	}
-
-	thread->assignTask(this, UPDATE_POSITION_FOR_FLOOR_COLLISION, color);
-	
-}
-
-//FLOOR_COLLISION_TIME
-void Collision::floorCollisionTime(int thread_No, int color)
-{
-	unsigned int* tet_group;
-	int color_group_index;
-	int start, end;
-	int j;
-
-	char* is_tet_involved_in_collision;
-	int* tet_vertex;
-
-	std::array<int, 4>* tet_indices;
-	unsigned int* unfixed_vertex_num;
-
-	int num;
-
-	int* global_to_normal;
-
-	std::array<double, 3>* initial_pos;
-	std::array<double, 3>* current_pos;
-
-	double collision_time = 2.0;
-
-	for (int i = 0; i < tetrahedron->size(); ++i) {
-		color_group_index = *inner_iteration_number % tet_color_groups[i]->size();
-		end = tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[color_group_index][color][thread_No + 1];
-		start = tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[color_group_index][color][thread_No];
-
-		tet_group = tet_color_groups[i]->data()[color_group_index][color].data();
-
-		is_tet_involved_in_collision = tet_color_groups_label[i][color_group_index][color].data();
-
-		tet_indices = tetrahedron->data()[i].mesh_struct.unfixied_actual_indices.data();
-		unfixed_vertex_num = tetrahedron->data()[i].mesh_struct.tet_unfixed_vertex_num.data();
-		global_to_normal = general_index_to_surface_index[i + cloth->size()];
-		initial_pos = vertex_record_for_this_color[i + cloth->size()];
-		current_pos = vertex_position[i + cloth->size()];
-
-		for (int k = start; k < end; ++k) {			
-			if (!is_tet_involved_in_collision[k]) {
-				j = tet_group[k];
-				tet_vertex = tet_indices[j].data();
-				num = unfixed_vertex_num[j];
-				for (int m = 0; m < num; ++m) {
-					if (global_to_normal[tet_vertex[m]] != -1) {
-						floorCollisionTime(initial_pos[tet_vertex[m]].data(), current_pos[tet_vertex[m]].data(), floor->dimension,
-							floor->normal_direction, floor->value, collision_time, tolerance);
-					}
-				}
-			}
-		}
-	}
-
-	collision_time_thread[thread_No] = collision_time;
-}
-
-
-//UPDATE_POSITION_FOR_FLOOR_COLLISION
-void Collision::updatePositionForFloor(int thread_No, int color)
-{
-	unsigned int* tet_group;
-	int color_group_index;
-	int start, end;
-	int j;
-
-	char* is_tet_involved_in_collision;
-	int* tet_vertex;
-
-	std::array<int, 4>* tet_indices;
-	unsigned int* unfixed_vertex_num;
-
-	int num;
-
-	int* global_to_normal;
-
-	std::array<double, 3>* initial_pos;
-	std::array<double, 3>* current_pos;
-
-	int vertex_index;
-	double collision_time = this->collision_time;
-
-	for (int i = 0; i < tetrahedron->size(); ++i) {
-		color_group_index = *inner_iteration_number % tet_color_groups[i]->size();
-		end = tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[color_group_index][color][thread_No + 1];
-		start = tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[color_group_index][color][thread_No];
-
-		tet_group = tet_color_groups[i]->data()[color_group_index][color].data();
-
-		is_tet_involved_in_collision = tet_color_groups_label[i][color_group_index][color].data();
-
-		tet_indices = tetrahedron->data()[i].mesh_struct.unfixied_actual_indices.data();
-		unfixed_vertex_num = tetrahedron->data()[i].mesh_struct.tet_unfixed_vertex_num.data();
-
-		initial_pos = vertex_record_for_this_color[i + cloth->size()];
-		current_pos = vertex_position[i + cloth->size()];
-
-		for (int k = start; k < end; ++k) {
-			if (!is_tet_involved_in_collision[k]) {
-				j = tet_group[k];
-				tet_vertex = tet_indices[j].data();
-				num = unfixed_vertex_num[j];
-				for (int m = 0; m < num; ++m) {
-					vertex_index = tet_vertex[m];
-					current_pos[vertex_index][0] = initial_pos[vertex_index][0] + collision_time * (current_pos[vertex_index][0] - initial_pos[vertex_index][0]);
-					current_pos[vertex_index][1] = initial_pos[vertex_index][1] + collision_time * (current_pos[vertex_index][1] - initial_pos[vertex_index][1]);
-					current_pos[vertex_index][2] = initial_pos[vertex_index][2] + collision_time * (current_pos[vertex_index][2] - initial_pos[vertex_index][2]);
-					
-					memcpy(initial_pos[vertex_index].data(), current_pos[vertex_index].data(), 24);
-
-				}
-			}
-		}
-	}
-}
+////UPDATE_POSITION_FOR_FLOOR_COLLISION
+//void Collision::updatePositionForFloor(int thread_No, int color)
+//{
+//	unsigned int* tet_group;
+//	int color_group_index;
+//	int start, end;
+//	int j;
+//
+//	char* is_tet_involved_in_collision;
+//	int* tet_vertex;
+//
+//	std::array<int, 4>* tet_indices;
+//	unsigned int* unfixed_vertex_num;
+//
+//	int num;
+//
+//	int* global_to_normal;
+//
+//	std::array<double, 3>* initial_pos;
+//	std::array<double, 3>* current_pos;
+//
+//	int vertex_index;
+//	double collision_time = this->collision_time;
+//
+//	for (int i = 0; i < tetrahedron->size(); ++i) {
+//		color_group_index = *inner_iteration_number % tet_color_groups[i]->size();
+//		end = tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[color_group_index][color][thread_No + 1];
+//		start = tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[color_group_index][color][thread_No];
+//
+//		tet_group = tet_color_groups[i]->data()[color_group_index][color].data();
+//
+//		is_tet_involved_in_collision = tet_color_groups_label[i][color_group_index][color].data();
+//
+//		tet_indices = tetrahedron->data()[i].mesh_struct.unfixied_actual_indices.data();
+//		unfixed_vertex_num = tetrahedron->data()[i].mesh_struct.tet_unfixed_vertex_num.data();
+//
+//		initial_pos = vertex_record_for_this_color[i + cloth->size()];
+//		current_pos = vertex_position[i + cloth->size()];
+//
+//		for (int k = start; k < end; ++k) {
+//			if (!is_tet_involved_in_collision[k]) {
+//				j = tet_group[k];
+//				tet_vertex = tet_indices[j].data();
+//				num = unfixed_vertex_num[j];
+//				for (int m = 0; m < num; ++m) {
+//					vertex_index = tet_vertex[m];
+//					current_pos[vertex_index][0] = initial_pos[vertex_index][0] + collision_time * (current_pos[vertex_index][0] - initial_pos[vertex_index][0]);
+//					current_pos[vertex_index][1] = initial_pos[vertex_index][1] + collision_time * (current_pos[vertex_index][1] - initial_pos[vertex_index][1]);
+//					current_pos[vertex_index][2] = initial_pos[vertex_index][2] + collision_time * (current_pos[vertex_index][2] - initial_pos[vertex_index][2]);
+//					
+//					memcpy(initial_pos[vertex_index].data(), current_pos[vertex_index].data(), 24);
+//
+//				}
+//			}
+//		}
+//	}
+//}
 
 
 void Collision::collisionTimeColor(int color)
@@ -7809,7 +7809,7 @@ void Collision::collisionFreeOneVertex(unsigned int obj_No, unsigned int vertex_
 			current_pos_this_obj[*(triangle_ + 2)].data(), collision_time,
 			triangle_vertex_pair_num_record[obj_No][*i],
 			triangle_vertex_pair_by_triangle[obj_No] + close_tv_pair_num * (*i),
-			current_pos, current_pos,3);
+			current_pos, current_pos);
 	}
 	element = &mesh_struct[obj_No]->vertices[vertex_No].edge;
 	unsigned int* element_;
@@ -7829,7 +7829,7 @@ void Collision::collisionFreeOneVertex(unsigned int obj_No, unsigned int vertex_
 	}
 	//floor
 	if (floor->exist) {	
-		floorCollisionTime(initial_vertex_pos, current_vertex_pos, floor->dimension,
+		floorCollisionTime(initial_vertex_pos[floor->dimension], current_vertex_pos[floor->dimension],
 			floor->normal_direction, floor->value, collision_time, tolerance);		
 	}
 
@@ -7903,8 +7903,8 @@ void Collision::colorCollisionTime(int thread_No, int color_No)
 					vertex_position_collider.data(), vertex_position_collider.data(), triangle_indices_collider.data(),true, index_of_a_tet_color[j]);
 			}
 			if (has_floor) {
-				floorCollisionTime(ini_vertex_pos[index_of_a_tet_color[j]].data(),
-					vertex_pos[index_of_a_tet_color[j]].data(), floor->dimension,
+				floorCollisionTime(ini_vertex_pos[index_of_a_tet_color[j]].data()[floor->dimension],
+					vertex_pos[index_of_a_tet_color[j]].data()[floor->dimension],
 					floor->normal_direction, floor->value, collision_time, tolerance);
 			}
 			
@@ -7920,14 +7920,14 @@ void Collision::colorCollisionTime(int thread_No, int color_No)
 				vertex_pos[*edge_vertex].data(), vertex_pos[*(edge_vertex + 1)].data(), collision_time,
 				edge_edge_pair_number_record[i][index_of_a_tet_color[j]],
 				edge_edge_pair_by_edge[i] + close_ee_pair_num * index_of_a_tet_color[j],
-				vertex_record_for_this_color.data(), vertex_position.data(), this->edge_vertices.data(),3);
+				vertex_record_for_this_color.data(), vertex_position.data(), this->edge_vertices.data());
 
 			if (has_collider) {
 				EECollisionTimeOneEdgeAll(ini_vertex_pos[*edge_vertex].data(), ini_vertex_pos[*(edge_vertex + 1)].data(),
 					vertex_pos[*edge_vertex].data(), vertex_pos[*(edge_vertex + 1)].data(), collision_time,
 					edge_edge_collider_pair_num_record[i][index_of_a_tet_color[j]],
 					edge_edge_collider_pair_by_edge[i] + close_ee_collider_pair_num * index_of_a_tet_color[j],
-					vertex_position_collider.data(), vertex_position_collider.data(), this->collider_edge_vertices.data(),2);
+					vertex_position_collider.data(), vertex_position_collider.data(), this->collider_edge_vertices.data());
 
 			}
 		}
@@ -7953,7 +7953,7 @@ void Collision::colorCollisionTime(int thread_No, int color_No)
 					vertex_pos[triangle_vertex[2]].data(), collision_time,
 					triangle_vertex_collider_pair_num_record[i][index_of_a_tet_color[j]],
 					triangle_vertex_collider_pair_by_triangle[i] + close_tv_collider_pair_num * index_of_a_tet_color[j],
-					vertex_position_collider.data(), vertex_position_collider.data(), 2);
+					vertex_position_collider.data(), vertex_position_collider.data());
 			}
 		}
 	}
@@ -8335,7 +8335,7 @@ void Collision::collisionTimeByElement(int thread_No)
 			element_num = spatial_hashing.vertex_obj_triangle_collider_num_record[i];
 			if (i < cloth->size()) {
 				for (int j = vertex_index_start_per_thread[i][thread_No]; j < element_end; ++j) {
-					floorCollisionTime(initial_pos[j].data(), current_pos[j].data(), floor->dimension,
+					floorCollisionTime(initial_pos[j].data()[floor->dimension], current_pos[j].data()[floor->dimension],
 						floor->normal_direction, floor->value, collision_time,tolerance);
 				}
 			}
@@ -8344,7 +8344,7 @@ void Collision::collisionTimeByElement(int thread_No)
 				surface_to_normal = vertex_index_on_surface[i];
 				for (int k = vertex_index_start_per_thread[i][thread_No]; k < element_end; ++k) {
 					j = surface_to_normal[k];
-					floorCollisionTime(initial_pos[j].data(), current_pos[j].data(), floor->dimension,
+					floorCollisionTime(initial_pos[j].data()[floor->dimension], current_pos[j].data()[floor->dimension],
 						floor->normal_direction, floor->value, collision_time,tolerance);
 				}
 			}
@@ -8804,7 +8804,7 @@ void Collision::collisionTimeByPair(int thread_No)
 			current_pos = vertex_position[i];
 			if (i < cloth->size()) {
 				for (int j = vertex_index_start_per_thread[i][thread_No]; j < element_end; ++j) {
-					floorCollisionTime(initial_pos[j].data(), current_pos[j].data(), floor->dimension,
+					floorCollisionTime(initial_pos[j].data()[floor->dimension], current_pos[j].data()[floor->dimension],
 						floor->normal_direction, floor->value, collision_time,tolerance);
 				}
 			}
@@ -8813,7 +8813,7 @@ void Collision::collisionTimeByPair(int thread_No)
 				surface_to_normal = vertex_index_on_surface[i];
 				for (int k = vertex_index_start_per_thread[i][thread_No]; k < element_end; ++k) {
 					j = surface_to_normal[k];
-					floorCollisionTime(initial_pos[j].data(), current_pos[j].data(), floor->dimension,
+					floorCollisionTime(initial_pos[j].data()[floor->dimension], current_pos[j].data()[floor->dimension],
 						floor->normal_direction, floor->value, collision_time,tolerance);
 				}
 			}
@@ -8855,57 +8855,57 @@ void Collision::collisionTime(int thread_No)
 //	record_VTCollider_collision_time[thread_No].resize(spatial_hashing.vertex_obj_triangle_collider_pair[thread_No][0]>>2);
 //}
 
-void Collision::collisionTime(int thread_No)
-{
-	int thread_test = 2;
-	double* collision_time = &collision_time_thread[thread_No];
-	(*collision_time) = 2.0;
-	TriangleMeshStruct* mesh_struct;
-	std::vector<std::vector<int>>* neighbor_primitve;
-	int index_begin;
-	int index_end;
-	for (int cloth_No = 0; cloth_No < cloth->size(); ++cloth_No) {
-		mesh_struct = &(*cloth)[cloth_No].mesh_struct;
-		index_begin = mesh_struct->vertex_index_begin_per_thread[thread_No];
-		index_end = mesh_struct->vertex_index_begin_per_thread[thread_No + 1];
-		neighbor_primitve = (*cloth)[cloth_No].vertex_neighbor_obj_triangle.data();
-		for (int i = index_begin; i < index_end; ++i) {
-			pointSelfTriangleCollisionTime(collision_time, neighbor_primitve[i].data(), mesh_struct->vertex_for_render[i].data(), mesh_struct->vertex_position[i].data(), i);
-		}
-	}
-	std::array<double, 3>* initial_pos;
-	std::array<double, 3>* current_pos;
-	for (int collider_No = 0; collider_No < collider->size(); ++collider_No) {
-		mesh_struct = &(*collider)[collider_No].mesh_struct;
-		index_begin = mesh_struct->face_index_begin_per_thread[thread_No];
-		index_end = mesh_struct->face_index_begin_per_thread[thread_No + 1];
-		initial_pos = mesh_struct->vertex_for_render.data();
-		current_pos = mesh_struct->vertex_position.data();
-		neighbor_primitve = (*collider)[collider_No].triangle_neighbor_obj_vertex.data();
-		for (int i = index_begin; i < index_end; ++i) {
-			pointColliderTriangleCollisionTime(collision_time, mesh_struct->triangle_indices[i].data(), neighbor_primitve[i].data(), initial_pos, current_pos,
-				mesh_struct->ori_face_normal_for_render[i].data(), mesh_struct->ori_face_normal[i].data(), mesh_struct->cross_for_approx_CCD[i].data(),
-				mesh_struct->f_face_normal_for_render[i].data(), mesh_struct->f_face_normal[i].data(), mesh_struct->f_cross_for_approx_CCD[i].data(), i);
-
-		}
-
-	}
-
-	unsigned int* edge_vertex_index;
-	for (int cloth_No = 0; cloth_No < cloth->size(); ++cloth_No) {
-		mesh_struct = &(*cloth)[cloth_No].mesh_struct;
-		index_begin = mesh_struct->edge_index_begin_per_thread[thread_No];
-		index_end = mesh_struct->edge_index_begin_per_thread[thread_No + 1];
-		neighbor_primitve = (*cloth)[cloth_No].edge_neighbor_obj_edge.data();
-		initial_pos = mesh_struct->vertex_for_render.data();
-		current_pos = mesh_struct->vertex_position.data();
-		for (int i = index_begin; i < index_end; ++i) {
-			edge_vertex_index = mesh_struct->edge_vertices.data() + (i << 1);//edges[i].vertex;
-			edgeEdgeCollisionTime(collision_time, neighbor_primitve[i].data(), initial_pos[edge_vertex_index[0]].data(), initial_pos[edge_vertex_index[1]].data(),
-				current_pos[edge_vertex_index[0]].data(), current_pos[edge_vertex_index[1]].data());
-		}
-	}
-}
+//void Collision::collisionTime(int thread_No)
+//{
+//	int thread_test = 2;
+//	double* collision_time = &collision_time_thread[thread_No];
+//	(*collision_time) = 2.0;
+//	TriangleMeshStruct* mesh_struct;
+//	std::vector<std::vector<int>>* neighbor_primitve;
+//	int index_begin;
+//	int index_end;
+//	for (int cloth_No = 0; cloth_No < cloth->size(); ++cloth_No) {
+//		mesh_struct = &(*cloth)[cloth_No].mesh_struct;
+//		index_begin = mesh_struct->vertex_index_begin_per_thread[thread_No];
+//		index_end = mesh_struct->vertex_index_begin_per_thread[thread_No + 1];
+//		neighbor_primitve = (*cloth)[cloth_No].vertex_neighbor_obj_triangle.data();
+//		for (int i = index_begin; i < index_end; ++i) {
+//			pointSelfTriangleCollisionTime(collision_time, neighbor_primitve[i].data(), mesh_struct->vertex_for_render[i].data(), mesh_struct->vertex_position[i].data(), i);
+//		}
+//	}
+//	std::array<double, 3>* initial_pos;
+//	std::array<double, 3>* current_pos;
+//	for (int collider_No = 0; collider_No < collider->size(); ++collider_No) {
+//		mesh_struct = &(*collider)[collider_No].mesh_struct;
+//		index_begin = mesh_struct->face_index_begin_per_thread[thread_No];
+//		index_end = mesh_struct->face_index_begin_per_thread[thread_No + 1];
+//		initial_pos = mesh_struct->vertex_for_render.data();
+//		current_pos = mesh_struct->vertex_position.data();
+//		neighbor_primitve = (*collider)[collider_No].triangle_neighbor_obj_vertex.data();
+//		for (int i = index_begin; i < index_end; ++i) {
+//			pointColliderTriangleCollisionTime(collision_time, mesh_struct->triangle_indices[i].data(), neighbor_primitve[i].data(), initial_pos, current_pos,
+//				mesh_struct->ori_face_normal_for_render[i].data(), mesh_struct->ori_face_normal[i].data(), mesh_struct->cross_for_approx_CCD[i].data(),
+//				mesh_struct->f_face_normal_for_render[i].data(), mesh_struct->f_face_normal[i].data(), mesh_struct->f_cross_for_approx_CCD[i].data(), i);
+//
+//		}
+//
+//	}
+//
+//	unsigned int* edge_vertex_index;
+//	for (int cloth_No = 0; cloth_No < cloth->size(); ++cloth_No) {
+//		mesh_struct = &(*cloth)[cloth_No].mesh_struct;
+//		index_begin = mesh_struct->edge_index_begin_per_thread[thread_No];
+//		index_end = mesh_struct->edge_index_begin_per_thread[thread_No + 1];
+//		neighbor_primitve = (*cloth)[cloth_No].edge_neighbor_obj_edge.data();
+//		initial_pos = mesh_struct->vertex_for_render.data();
+//		current_pos = mesh_struct->vertex_position.data();
+//		for (int i = index_begin; i < index_end; ++i) {
+//			edge_vertex_index = mesh_struct->edge_vertices.data() + (i << 1);//edges[i].vertex;
+//			edgeEdgeCollisionTime(collision_time, neighbor_primitve[i].data(), initial_pos[edge_vertex_index[0]].data(), initial_pos[edge_vertex_index[1]].data(),
+//				current_pos[edge_vertex_index[0]].data(), current_pos[edge_vertex_index[1]].data());
+//		}
+//	}
+//}
 
 
 void Collision::testCollision()
@@ -10540,11 +10540,11 @@ void Collision::initialHessianRecord()
 	//}
 
 	vertex_belong_to_color_group = new bool* [total_obj_num];
-	vertex_used_in_self_collision = new bool* [total_obj_num];
+	//vertex_used_in_self_collision = new bool* [total_obj_num];
 	for (int i = 0; i < total_obj_num; ++i) {
 		vertex_belong_to_color_group[i] = new bool[mesh_struct[i]->vertex_position.size()];
-		vertex_used_in_self_collision[i] = new bool[mesh_struct[i]->vertex_position.size()];
-		memset(vertex_used_in_self_collision[i], 0, all_vertex_index_start_per_thread[i][thread_num]);
+		//vertex_used_in_self_collision[i] = new bool[mesh_struct[i]->vertex_position.size()];
+		//memset(vertex_used_in_self_collision[i], 0, all_vertex_index_start_per_thread[i][thread_num]);
 	}
 
 	
@@ -10599,7 +10599,6 @@ void Collision::initialPairPrefixSumRecord()
 		edge_edge_pair_num_record_prefix_sum[i] = new unsigned int[mesh_struct[i]->edge_length.size() + 1];// 
 		vertex_triangle_pair_num_record_prefix_sum[i] = new unsigned int[vertex_index_start_per_thread[i][thread_num] + 1];// 
 		if (has_collider) {
-
 			triangle_vertex_collider_num_record_prefix_sum[i] = new unsigned int[mesh_struct[i]->triangle_indices.size() + 1];
 			edge_edge_collider_num_record_prefix_sum[i] = new unsigned int[edge_index_start_per_thread[i][thread_num] + 1];
 		}

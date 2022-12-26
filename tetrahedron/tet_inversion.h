@@ -16,7 +16,7 @@ namespace inversionTest {
 
 	template <class T>
 	inline bool TetInversionTest(T* a0, T* b0, T* c0, T* d0,
-		T* a1, T* b1, T* c1, T* d1, T& time_) 
+		T* a1, T* b1, T* c1, T* d1, T* time_) 
 	{
 
 		T bd0[3], cd0[3],BD[3],CD[3];
@@ -74,15 +74,15 @@ namespace inversionTest {
 
 		T time[3];
 		if (reducedDegree == 3) {
-			if (find_root::solveCubicEquation(op[0], op[1], op[2], op[3], time[0], time[1], time[2]) {
-				time_= time[0];
+			if (find_root::solveCubicEquation(op[0], op[1], op[2], op[3], time[0], time[1], time[2])) {
+				*time_= time[0];
 				return true;
 			}
 			return false;
 		}
 		else if (reducedDegree == 2) {
 			if (find_root::quad(op[0], op[1], op[2], time[0], time[1])) {
-				time_=time[0];
+				*time_=time[0];
 				return true;
 			}
 			return false;
@@ -90,7 +90,7 @@ namespace inversionTest {
 		else if (reducedDegree == 1) {
 			time[0] = -op[1] / op[0];
 			if (time[0] > 0.0 && time[0]<1.0) {
-				time_ = time[0];
+				*time_ = time[0];
 				return true;
 			}
 			return false;

@@ -375,8 +375,10 @@ public:
 	//void computeFloorHessian(int thread_No, int color_No);
 
 
-	void floorCollisionTime(int thread_No, int color);
-	void floorCollisionTime(int color);
+	//void floorCollisionTime(int thread_No, int color);
+
+	//void floorCollisionTime(int color);
+
 	void updatePositionForFloor(int thread_No, int color);
 
 	std::vector<std::vector<int>>* indicate_if_involved_in_last_color;

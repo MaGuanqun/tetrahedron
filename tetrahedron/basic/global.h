@@ -5,6 +5,7 @@
 #include <iostream>
 #include <cmath>
 #include <random>
+#include<array>
 
 #undef BUFSIZ
 #define BUFSIZ 256
@@ -445,7 +446,8 @@ inline double barrier(double d, double d_hat)
 
 
 struct pair_hash {
-	size_t operator()(const std::array<unsigned int, 2>& p) const {
+	template <typename T>
+	size_t operator()(const std::array<T, 2>& p) const {
 		return ((p[0] * 2147483647) ^ (500000003 * p[1])) % 99990001;//909091//999999000001
 	}
 };
