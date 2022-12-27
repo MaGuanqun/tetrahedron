@@ -6,9 +6,9 @@ collider
 0
 stiffness
 200 50000 0 0 0 0 
-1e+06 20000 20000 20 0 0 0 0 
+1e+08 20000 20000 20 0 0 0 0 
 200 50000 0 0 0 0 
-1e+06 20000 20000 20 0 0 0 0 
+1e+08 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
 0 
@@ -27,7 +27,7 @@ friction_coe
 floor_dimension
 2
 floor_value
--0.25
+-2.25
 camera position
 3.28162 -0.0882847 -6.44114
 camera up

@@ -181,7 +181,7 @@ void SetModel::regularization(RegularizationInfo& regularization_info, int obj_i
 	}
 	else if(obj_index ==0) {
 		for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
-			ori_mesh.vertices[i][1] += 0.8;
+			ori_mesh.vertices[i][1] -= 0.8;
 		}
 	}
 	else {

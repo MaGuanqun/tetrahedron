@@ -3517,7 +3517,7 @@ void Collision::computeEEHessian(int start, int end, unsigned int* pair, double*
 	int hessian_record_index[5];
 	if (!is_last_color) {
 		if (is_collider) {
-			bool not_collider[4] = { true,true,true,true };
+			bool not_collider[4] = { true,true,false, false };
 			for (int i = start; i < end; i += 4) {
 				edge_0_vertex = edge_vertices[pair[i]] + (pair[i + 1] << 1);
 				obj_2 = pair[i + 2];
@@ -3530,11 +3530,6 @@ void Collision::computeEEHessian(int start, int end, unsigned int* pair, double*
 						vertex_position_collider[obj_2][edge_1_vertex[0]].data(), vertex_position_collider[obj_2][edge_1_vertex[1]].data(), Hessian, grad,
 						hessian_record_index, stiffness, d_hat[i >> 2], rest_edge_length[pair[i]][pair[i + 1]],
 						rest_edge_length_collider[obj_2][pair[i + 3]])) {
-						for (int k = 0; k < hessian_record_index[0]; k++) {
-							if (hessian_record_index[k + 1] > 1) {
-								not_collider[k] = false;
-							}
-						}
 						setHessian(hessian_record_index, vertex_index_in_sum, Hessian, grad, common_hessian, common_grad, not_collider);
 					}
 				}
@@ -3565,7 +3560,7 @@ void Collision::computeEEHessian(int start, int end, unsigned int* pair, double*
 	}
 	else {
 		if (is_collider) {
-			bool not_collider[4] = { true,true,true,true };
+			bool not_collider[4] = { true,true,false, false };
 			for (int i = start; i < end; i += 4) {
 				edge_0_vertex = edge_vertices[pair[i]] + (pair[i + 1] << 1);
 				obj_2 = pair[i + 2];
@@ -3577,12 +3572,8 @@ void Collision::computeEEHessian(int start, int end, unsigned int* pair, double*
 					vertex_position_collider[obj_2][edge_1_vertex[0]].data(), vertex_position_collider[obj_2][edge_1_vertex[1]].data(), Hessian, grad,
 					hessian_record_index, stiffness, d_hat[i >> 2], rest_edge_length[pair[i]][pair[i + 1]],
 					rest_edge_length_collider[obj_2][pair[i + 3]])) {
-					for (int k = 0; k < hessian_record_index[0]; k++) {
-						if (hessian_record_index[k + 1] > 1) {
-							not_collider[k] = false;
-						}
-					}
 					setHessian(hessian_record_index, vertex_index_in_sum, Hessian, grad, common_hessian, common_grad, not_collider);
+
 				}				
 			}
 		}
@@ -3685,7 +3676,6 @@ void Collision::computeVTHessian(int start, int end, unsigned int* pair, double*
 		}
 		else {
 			bool not_collider[4] = { false,true,true,true };
-			memset(not_collider, 0, 4);
 			for (int i = start; i < end; i += 4) {
 				vertex_index = pair[i + 1];
 				obj_2 = pair[i + 2];
@@ -3718,7 +3708,6 @@ void Collision::computeVTHessian(int start, int end, unsigned int* pair, double*
 					hessian_record_index_ + (i >> 2) * 5, stiffness)) {
 					setHessian(hessian_record_index_ + (i >> 2) * 5, vertex_index_in_sum, Hessian, grad, common_hessian, common_grad);
 				}				
-				
 			}
 		}
 		else if (type == 1) {
@@ -3737,7 +3726,6 @@ void Collision::computeVTHessian(int start, int end, unsigned int* pair, double*
 		}
 		else {
 			bool not_collider[4] = { false,true,true,true };
-			memset(not_collider, 0, 4);
 			for (int i = start; i < end; i += 4) {
 				vertex_index = pair[i + 1];
 				obj_2 = pair[i + 2];
@@ -3748,6 +3736,10 @@ void Collision::computeVTHessian(int start, int end, unsigned int* pair, double*
 				if (second_order_constraint.computeBarrierVTGradientHessian(Hessian, grad, vertex_position_collider[pair[i]][vertex_index].data(), vertex_position[obj_2][triangle_vertex[0]].data(),
 					vertex_position[obj_2][triangle_vertex[1]].data(), vertex_position[obj_2][triangle_vertex[2]].data(), d_hat[i >> 2],
 					hessian_record_index, stiffness)) {
+
+					//std::cout << "----" << std::endl;
+					//std::cout << Hessian << std::endl;
+
 					setHessian(hessian_record_index, vertex_index_in_sum, Hessian, grad, common_hessian, common_grad, not_collider);
 				}				
 			}
@@ -3767,10 +3759,11 @@ void Collision::setHessian(int* record_index, unsigned int* vertex_index_total, 
 	double* grad_locate;
 
 	double* grad_in_global;
+
 	for (int i = 0; i < size; ++i) {
-		if (not_collider[i]) {
+		if (not_collider[record_index[i]]) {
 			for (int j = 0; j < size; ++j) {
-				if (not_collider[j]) {
+				if (not_collider[record_index[j]]) {
 					k = common_hessian->find(std::array{ vertex_index_total[record_index[i]],vertex_index_total[record_index[j]] });
 					hessian_locate = Hessian.data() + 3 * (Hessian.cols() * j + i);
 					if (k != common_hessian->end()) {
@@ -3961,8 +3954,10 @@ void Collision::computeLastColorHessianPerThread(int color_No)
 					vertex_position[record_vertex[j]][record_vertex[j + 1]][floor_dimension])) {
 					global_index = vertex_index_prefix_sum_obj[record_vertex[j]] + record_vertex[j + 1];
 					k = floor_hessian->find(global_index);
+
 					if (k != floor_hessian->end()) {
 						k->second += hessian;
+						std::cout << "error: last color duplicate when compute floor hessian" << std::endl;
 					}
 					else {
 						floor_hessian->emplace(global_index, hessian);
@@ -4069,8 +4064,13 @@ bool Collision::computeFloorHessian(double d_hat, double stiffness, double floor
 	double grad_d;
 	grad_d = 2 * (position - floor_value);
 
-	*grad += stiffness * g * grad_d;
-	*hessian += stiffness * (h * grad_d * grad_d + g+g);
+	*grad = stiffness * g * grad_d;
+	*hessian = stiffness * (h * grad_d * grad_d + g+g);
+
+	//std::cout << "compute d_hat " <<
+	//	*hessian << " " << stiffness << " " << floor_value<<" "<< stiffness * (h * grad_d * grad_d + g + g)<<" "<< std::endl;
+
+
 	return true;
 }
 
@@ -7279,6 +7279,8 @@ void Collision::edgeEdgeCollisionTimePair(int start_pair_index,
 	unsigned int actual_ele_0, actual_ele_1;
 	unsigned int* address;
 
+	double current_distance=1.0;
+
 	for (int i = start_pair_index; i < end_pair_index; i += 4) {
 		indices_0 = edge_vertices_0[pair[i + 1]] + (pair[i] << 1);
 		indices_1 = edge_vertices_1[pair[i + 3]] + (pair[i + 2] << 1);
@@ -7292,7 +7294,17 @@ void Collision::edgeEdgeCollisionTimePair(int start_pair_index,
 			vertex_position_1[pair[i + 3]][indices_1[0]].data(),
 			vertex_position_1[pair[i + 3]][indices_1[1]].data(), eta, tolerance);
 
-		if (time < 1.0) {
+		current_distance = 1.0;
+
+		if (time >= 1.0) {
+			current_distance = CCD::internal::edgeEdgeDistanceUnclassified(vertex_position_0[pair[i + 1]][indices_0[0]].data(),
+				vertex_position_0[pair[i + 1]][indices_0[1]].data(),
+				vertex_position_1[pair[i + 3]][indices_1[0]].data(),
+				vertex_position_1[pair[i + 3]][indices_1[1]].data());
+		}
+
+
+		if (time < 1.0 || current_distance <d_hat_2) {
 			actual_ele_0 = edge_0_index_prefix_sum[pair[i + 1]] + pair[i];
 			actual_ele_1 = edge_1_index_prefix_sum[pair[i + 3]] + pair[i + 2];
 			hash_value = ((actual_ele_0 * P1) ^ (P2 * actual_ele_1)) % pair_hash_table_size;
@@ -7306,12 +7318,6 @@ void Collision::edgeEdgeCollisionTimePair(int start_pair_index,
 				hash_size_record[hash_value] = 2;
 				hash_record[hash_value * pair_hash_table_cell_size] = actual_ele_0;
 				hash_record[hash_value * pair_hash_table_cell_size + 1] = actual_ele_1;
-
-				record_index->emplace_back(pair[i + 1]);
-				record_index->emplace_back(pair[i]);
-				record_index->emplace_back(pair[i + 3]);
-				record_index->emplace_back(pair[i + 2]);
-				record_d_hat->emplace_back((std::max)(distance, d_hat_2));
 			}
 			else {
 				address = hash_record + hash_value * pair_hash_table_cell_size;
@@ -7329,14 +7335,13 @@ void Collision::edgeEdgeCollisionTimePair(int start_pair_index,
 				address[hash_size_record[hash_value]] = actual_ele_0;
 				address[hash_size_record[hash_value] + 1] = actual_ele_1;
 				hash_size_record[hash_value] += 2;
-
-				record_index->emplace_back(pair[i + 1]);
-				record_index->emplace_back(pair[i]);
-				record_index->emplace_back(pair[i + 3]);
-				record_index->emplace_back(pair[i + 2]);
-				record_d_hat->emplace_back((std::max)(distance, d_hat_2));
-
 			}
+			record_index->emplace_back(pair[i + 1]);
+			record_index->emplace_back(pair[i]);
+			record_index->emplace_back(pair[i + 3]);
+			record_index->emplace_back(pair[i + 2]);
+			record_d_hat->emplace_back(d_hat_2);
+			//record_d_hat->emplace_back((std::max)(distance, d_hat_2));
 
 			if (time < collision_time) {
 				collision_time = time;
@@ -7366,6 +7371,7 @@ void Collision::vertexTriangleCollisionTimePair(int start_pair_index,
 
 	unsigned int* address;
 
+	double current_distance;
 		//need to check if the pair already exist in the list
 	for (int i = start_pair_index; i < end_pair_index; i += 4) {
 		indices = triangle_indices[pair[i + 3]][pair[i + 2]].data();
@@ -7377,7 +7383,14 @@ void Collision::vertexTriangleCollisionTimePair(int start_pair_index,
 			vertex_position_1[pair[i + 3]][indices[0]].data(),
 			vertex_position_1[pair[i + 3]][indices[1]].data(),
 			vertex_position_1[pair[i + 3]][indices[2]].data(), eta, tolerance);
-		if (time < 1.0) {
+
+		current_distance = 1.0;
+		if (time >= 1.0) {
+			current_distance = CCD::internal::pointTriangleDistanceUnclassified(vertex_position_0[pair[i + 1]][pair[i]].data(),
+				vertex_position_1[pair[i + 3]][indices[0]].data(), vertex_position_1[pair[i + 3]][indices[1]].data(), vertex_position_1[pair[i + 3]][indices[2]].data());
+		}
+
+		if (time < 1.0 || current_distance <d_hat_2) {
 
 			actual_ele_0 = vertex_index_prefix_sum[pair[i + 1]] + pair[i];
 			actual_ele_1 = triangle_index_prefix_sum[pair[i + 3]] + pair[i + 2];
@@ -7410,7 +7423,8 @@ void Collision::vertexTriangleCollisionTimePair(int start_pair_index,
 			record_index->emplace_back(pair[i]);
 			record_index->emplace_back(pair[i + 3]);
 			record_index->emplace_back(pair[i + 2]);
-			record_d_hat->emplace_back((std::max)(distance, d_hat_2));
+			record_d_hat->emplace_back((d_hat_2));
+			//record_d_hat->emplace_back((std::max)(distance, d_hat_2));
 			if (time < collision_time) {
 				collision_time = time;
 			}
@@ -8609,8 +8623,15 @@ void Collision::collisionTimeWithPair(int thread_No)
 							with_floor[j] = '\1';
 							record_with_floor->emplace_back(i);
 							record_with_floor->emplace_back(j);
-							d_hat_with_floor[j] = d_hat_2;// (std::max)((vertex_for_render[i][j][floor->dimension] - floor->value)*
-								//(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);
+							d_hat_with_floor[j] =(std::max)((vertex_for_render[i][j][floor->dimension] - floor->value)*
+								(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);
+						}
+						else if ((current_pos[j].data()[floor->dimension] - floor->value) * (current_pos[j].data()[floor->dimension] - floor->value) < d_hat_2) {
+							with_floor[j] = '\1';
+							record_with_floor->emplace_back(i);
+							record_with_floor->emplace_back(j);
+							d_hat_with_floor[j] = (std::max)((vertex_for_render[i][j][floor->dimension] - floor->value) *
+								(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);
 						}
 					}
 				}
@@ -8626,15 +8647,17 @@ void Collision::collisionTimeWithPair(int thread_No)
 							with_floor[j] = '\1';
 							record_with_floor->emplace_back(i);
 							record_with_floor->emplace_back(j);
-							d_hat_with_floor[j] =(std::max)((vertex_for_render[i][j][floor->dimension] - floor->value)*
-								(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);
+							d_hat_with_floor[j] = d_hat_2;
+							//d_hat_with_floor[j] =(std::max)((vertex_for_render[i][j][floor->dimension] - floor->value)*
+							//	(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);
 						}				
 						else if ((current_pos[j].data()[floor->dimension] - floor->value) * (current_pos[j].data()[floor->dimension] - floor->value) < d_hat_2) {
 							with_floor[j] = '\1';
 							record_with_floor->emplace_back(i);
 							record_with_floor->emplace_back(j);
-							d_hat_with_floor[j] = (std::max)((vertex_for_render[i][j][floor->dimension] - floor->value)*
-							(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);
+							d_hat_with_floor[j] = d_hat_2;
+							//d_hat_with_floor[j] = (std::max)((vertex_for_render[i][j][floor->dimension] - floor->value)*
+							//(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);
 						}
 					}
 				}

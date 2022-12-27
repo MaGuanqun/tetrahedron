@@ -348,7 +348,7 @@ void SecondOrderConstraint::solveCD_ARAP_blockTest(MatrixXd& Hessian, VectorXd& 
 
 		if (unfixed_vertex_num == 4) {
 			double* address = result.data();
-			for (unsigned int i = 0; i < 4; ++i)
+
 				for (unsigned int i = 0; i < 144; i += 36) {
 					for (unsigned int j = 0; j < 12; j += 3) {
 						Hessian.data()[i + j] += *address;
@@ -361,15 +361,15 @@ void SecondOrderConstraint::solveCD_ARAP_blockTest(MatrixXd& Hessian, VectorXd& 
 		else {
 			for (int i = 0; i < unfixed_vertex_num; ++i) {
 				for (int j = 0; j < unfixed_vertex_num; ++j) {
-					Hessian(3 * i, 3 * j) = result.data()[(unfixed_tet_vertex_index[j] << 2) + unfixed_tet_vertex_index[i]];
-					Hessian(3 * i + 1, 3 * j + 1) = result.data()[(unfixed_tet_vertex_index[j] << 2) + unfixed_tet_vertex_index[i]];
-					Hessian(3 * i + 2, 3 * j + 2) = result.data()[(unfixed_tet_vertex_index[j] << 2) + unfixed_tet_vertex_index[i]];
+					Hessian(3 * i, 3 * j) += result.data()[(unfixed_tet_vertex_index[j] << 2) + unfixed_tet_vertex_index[i]];
+					Hessian(3 * i + 1, 3 * j + 1) += result.data()[(unfixed_tet_vertex_index[j] << 2) + unfixed_tet_vertex_index[i]];
+					Hessian(3 * i + 2, 3 * j + 2) += result.data()[(unfixed_tet_vertex_index[j] << 2) + unfixed_tet_vertex_index[i]];
 				}
 			}
 		}
 	}
 
-	std::cout <<"this tet "<< deformation_gradient.determinant() << " " << rotation.determinant() << std::endl;
+	//std::cout <<"this tet "<< deformation_gradient.determinant() << " " << rotation.determinant() << std::endl;
 
 }
 
@@ -3167,7 +3167,8 @@ void SecondOrderConstraint::computeVTBarrierGradientHessian(MatrixXd& Hessian_, 
 		break;
 	} 
 
-
+	//std::cout << "-=-=-==-" << std::endl;
+	//std::cout << Hessian << std::endl;
 
 }
 
