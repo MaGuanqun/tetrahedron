@@ -180,7 +180,7 @@ private:
 	std::vector<std::array<double, 6>*> collider_edge_aabb;
 
 	std::vector<unsigned int*> obj_triangle_index_begin_per_thread;
-	std::vector<unsigned int*> obj_vertex_index_begin_per_thread;
+	std::vector<unsigned int*> obj_vertex_index_begin_per_thread;// for tet, size is surface vertex size
 	std::vector<unsigned int*> obj_edge_index_begin_per_thread;
 
 

@@ -679,11 +679,11 @@ void SpatialHashing::buildSpatialHashing(double* scene_aabb)
 		thread->assignTask(this, COMBINE_HASH_TABLE);
 		thread->assignTask(this, FIND_ALL_PAIRS_HASH_TABLE_BY_ELEMENT);
 
-		for (unsigned int i = 0; i < thread_num; ++i) {
+		//for (unsigned int i = 0; i < thread_num; ++i) {
 			//vertex_triangle_pair[i][0] = 0;
-			edge_edge_pair[i][0] = 0;
-			edge_edge_pair_collider[i][0] = 0;
-		}
+			//edge_edge_pair[i][0] = 0;
+			//edge_edge_pair_collider[i][0] = 0;
+		//}
 		//if (record_pair_by_element) {
 		//	findAllTriangleVertexPairByTriangle();
 		//}
@@ -1558,13 +1558,11 @@ void SpatialHashing::findAllEdgeEdgePairsByPrimitiveSingleObjByEdge(int thread_N
 						primitive_index_record_.emplace_back(cell_edge_index[k]);
 
 						if (cell_edge_index[k + 1] == obj_No) {
-							if (i < cell_edge_index[k]) {
-								if (AABB::AABB_intersection(edge_aabb[i].data(),
+								if (i < cell_edge_index[k] && AABB::AABB_intersection(edge_aabb[i].data(),
 									obj_edge_aabb_[cell_edge_index[k + 1]][cell_edge_index[k]].data())) {
 									*(primitive_pair_++) = cell_edge_index[k + 1];
 									*(primitive_pair_++) = cell_edge_index[k];
-								}
-							}
+								}							
 						}
 						else if(cell_edge_index[k + 1] > obj_No) {
 							if (AABB::AABB_intersection(edge_aabb[i].data(),

@@ -1,24 +1,18 @@
 object
-3
-C:\graphics\tetrahedron\model\single_tet.ele
-C:\graphics\tetrahedron\model\single_tet.ele
-C:\graphics\tetrahedron\model\single_tet.ele
+2
+C:\graphics\tetrahedron\model\bar.1.ele
+C:\graphics\tetrahedron\model\bar.1.ele
 collider
-1
-C:\graphics\tetrahedron\model\single_tet.obj
+0
 stiffness
 200 50000 0 0 0 0 
-1e+06 20000 20000 20 0 0 0 0 
+1e+03 20000 20000 20 0 0 0 0 
 200 50000 0 0 0 0 
-1e+06 20000 20000 20 0 0 0 0 
-200 50000 0 0 0 0 
-1e+06 20000 20000 20 0 0 0 0 
+1e+03 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
 0 
 1
-0 
-2
 0 
 time_step
 0.01
@@ -31,13 +25,13 @@ velocity_damp
 friction_coe
 0.9 0.8 0.9
 floor_dimension
-4
+2
 floor_value
--0.55
+-0.25
 camera position
--0.331807 -1.68887 -5.37478
+0.579354 0.0430195 -2.6411
 camera up
--0.0198004 0.954173 -0.2986
+-0.0327583 0.999422 0.00909297
 camera center
 0 0 0
 XPBD_IPC

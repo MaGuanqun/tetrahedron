@@ -109,7 +109,7 @@ public:
 	//std::vector<std::array<double, 3>> e0_1_;
 	//std::vector<std::array<double, 3>> e1_0_;
 	//std::vector<std::array<double, 3>> e1_1_;
-
+	void computePreviousColorARAPEnergy(int thread_No, unsigned int color_No);
 
 private:
 
@@ -121,6 +121,7 @@ private:
 	void computeCurrentEnergy();
 
 	double computeWarmStartEnergy();
+
 
 	double computeLastColorARAPEnergy();
 
@@ -136,8 +137,11 @@ private:
 	double computeVTEnergy(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
 		std::array<double, 3>** v_current_pos, std::array<double, 3>** t_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, bool** belong_to_color_group, int type);
 
+
+	double computePreviousColorEnergy(unsigned int color_no);
+
 	double computeLastColorEnergy();
-	double computeLastColorInertialEnergy();
+	double computeColorInertialEnergy();
 
 	double computeCollisionEnergy();
 
@@ -286,7 +290,7 @@ private:
 
 
 	std::vector<std::vector<std::vector<std::array<double, 3>>>> record_vertex_position_every_thread; // obj_no -> thread_No ->vertex_No
-	std::vector<std::vector<std::vector<int>>> record_vertex_position_num_every_thread;
+	std::vector<std::vector<std::vector<int>>> record_vertex_position_num_every_thread;// obj_no -> thread_No ->vertex_No
 
 
 
@@ -450,7 +454,7 @@ private:
 		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num,
 		std::vector<unsigned int>* triangle_of_a_tet, 	std::vector<unsigned int>* edge_of_a_tet, double collision_stiffness,
 		unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
-		int* vertex_index_on_surface, std::array<double, 3>* record_ori_pos, double* hessian_record);
+		int* vertex_index_on_surface, std::array<double, 3>* record_ori_pos, double* hessian_record, char* indicate_collide_with_floor);
 
 	std::vector<double>record_energy;
 
@@ -464,7 +468,7 @@ private:
 		std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>& collision_hessian,
 		double* common_grad, std::vector<unsigned int>* triangle_of_a_tet,
 		std::vector<unsigned int>* edge_of_a_tet, int* vertex_index_on_surface, unsigned int prefix_sum_vetex_obj,
-		std::unordered_map<unsigned int, double>& floor_map, std::array<double, 3>* record_ori_pos);
+		std::unordered_map<unsigned int, double>& floor_map, std::array<double, 3>* record_ori_pos, char* indicate_collide_with_floor);
 
 	void solveTetBlockCollision(std::array<double, 3>* vertex_position, double stiffness, double dt, std::array<int, 4>* indices,
 		double* mass,
@@ -556,7 +560,7 @@ private:
 		unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
 		int unfixed_tet_vertex_num,
 		int* vertex_index_on_surface, std::array<double, 3>* current_vertex_position,
-		std::array<double, 3>* initial_vertex_position);
+		std::array<double, 3>* initial_vertex_position, char* indicate_collide_with_floor);
 
 	double getCollisionTime(std::vector<unsigned int>* triangle_of_a_tet,
 		std::vector<unsigned int>* edge_of_a_tet,
@@ -769,5 +773,7 @@ private:
 
 	std::vector<unsigned int>vertex_index_prefix_sum_obj;
 
+	void checkExceedFloor();
+	std::vector<double>energy_per_thread;
 };
 

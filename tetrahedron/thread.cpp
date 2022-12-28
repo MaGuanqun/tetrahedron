@@ -821,6 +821,9 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
         //k = job([func, thread_id, para]() {func->newtonCDTetBlockAGroupTest(thread_id, para);});
         k = job([func, thread_id, para]() {func->newtonCDTetBlockAGroup(thread_id, para); });
          break;
+    case FIRST_COLOR_ARAP_ENERGY:
+        k = job([func, thread_id, para]() {func->computePreviousColorARAPEnergy(thread_id, para); });
+        break;
     //case UPDATE_TET_GRAD_SHARED:
     //    k = job([func, thread_id, para]() {func->tetGradForColor(thread_id, para); });
     //    break;

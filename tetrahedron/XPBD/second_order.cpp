@@ -2589,6 +2589,8 @@ bool SecondOrderConstraint::computeBarrierVTGradientHessian(MatrixXd& Hessian, V
 	double b_grad, b_hessian;
 	switch (CCD::internal::pointTriangleDistanceType(p, t0, t1, t2))
 	{
+
+
 	case 0:
 		distance = CCD::internal::pointPointDistance(p, t0);
 		if (distance >= d_hat_2) {
