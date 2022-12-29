@@ -19,9 +19,9 @@ void Preprocessing::load_all_model(std::vector<std::string>& body_path, std::vec
 		simulation_model[i].regularization(regularization_info,i);
 	}
 	//if (!body_path.empty()) {
-	//	for (int i = 0; i < body_path.size(); ++i) {
-	//		collider_model[i].regularization(regularization_info);
-	//	}
+		//for (int i = 0; i < body_path.size(); ++i) {
+		//	collider_model[i].regularization(regularization_info);
+		//}
 	//}
 	scene_info.max_dis_from_center = regularization_info.max_dis_from_center;
 	memcpy(scene_info.camera_center, regularization_info.move_info, 24);

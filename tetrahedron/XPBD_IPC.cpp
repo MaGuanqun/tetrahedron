@@ -85,6 +85,7 @@ void XPBD_IPC::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* t
 	initalARAPHessianStorages();
 	setColorNum();
 	initialHessianMap();
+
 }
 
 
@@ -226,7 +227,7 @@ void XPBD_IPC::reorganzieDataOfObjects()
 
 
 	rest_edge_length.resize(total_obj_num);
-
+	vertex_index_of_a_tet_color_group.resize(total_obj_num);
 
 
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
@@ -307,7 +308,7 @@ void XPBD_IPC::reorganzieDataOfObjects()
 		//tet_color_groups_label[i] =tetrahedron->data()[i].mesh_struct.tet_in_collision.data();
 
 		tet_around_tet[i] = tetrahedron->data()[i].mesh_struct.tet_tet_index.data();
-
+		vertex_index_of_a_tet_color_group[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_index_of_a_tet_color_group.data();
 	}
 	if (!collider->empty()) {
 		triangle_indices_collider.resize(collider->size());
@@ -619,7 +620,6 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 	//vertex_trace.push_back(vertex_position[0][6]);
 
 	while (!convergeCondition(outer_itr_num)) {
-		std::cout << "time stamp " << *time_stamp<<" outer itr num "<<outer_itr_num << std::endl;
 		if (perform_collision) {
 			collision.collisionCulling();
 			collision.collisionTimeWithPair();
@@ -635,17 +635,22 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 		updateCollisionFreePosition();
 
 		if (outer_itr_num == 0) {
-			//if (perform_collision) {
-			//	warmStart();
-			//}
+			if (perform_collision) {
+				warmStart();
+			}
 		}
+
+
+		std::cout << "time stamp " << *time_stamp << " outer itr num " << outer_itr_num << " " << inner_iteration_number << std::endl;
 
 		inner_iteration_number = 0;
 		nearly_not_move = false;
 		previous_energy = energy;
+
 		while (!innerConvergeCondition(inner_iteration_number))
 		{
-			//std::cout << "inner iteration number " << inner_iteration_number << std::endl;
+			std::cout << "inner iteration number " << inner_iteration_number<< " "<<energy << std::endl;
+
 			previous_energy = energy;
 			nearly_not_move = true;
 			solveNewtonCD_tetBlock();
@@ -1010,10 +1015,17 @@ void XPBD_IPC::computeInversionForWarmStart()
 		collision_time *= 0.9;
 	}
 
+
+	if (collision_time <= 0.0) {
+		std::cout << "error for inversion test time warm start()" << std::endl;
+	}
+
+
 	if (collision_time < collision.collision_time) {
 		collision.collision_time = collision_time;
 	}
 }
+
 
 
 
@@ -1057,6 +1069,11 @@ void XPBD_IPC::computeLastColorInversion()
 	}
 	if (collision_time < collision.collision_time) {
 		collision.collision_time = collision_time;
+	}
+
+
+	if (collision_time <= 0.0) {
+		std::cout << "error for inversion test time last color ()" << std::endl;
 	}
 
 }
@@ -1119,10 +1136,13 @@ void XPBD_IPC::inversionTest()
 		collision_time *= 0.9;
 	}
 
+	if (collision_time <= 0.0) {
+		std::cout << "error for inversion test time inversionTest()" << std::endl;
+	}
+
 	if(collision.collision_time>collision_time){
 		collision.collision_time = collision_time;
 	}
-
 }
 
 
@@ -1604,7 +1624,7 @@ void XPBD_IPC::computeCurrentEnergy()
 		barrier_energy = computeBarrierEnergy();
 		energy += barrier_energy;		
 	}
-	record_energy.emplace_back(energy);
+	//record_energy.emplace_back(energy);
 
 	//if (energy > 1e9) {
 	//	std::cout <<inner_iteration_number<<" "<< outer_itr_num<<"  inertial " << inertial_energy << " ARAP " << ARAP_energy << " barrier " << barrier_energy << std::endl;
@@ -1703,6 +1723,39 @@ void XPBD_IPC::newtonCDTetWithCollision()
 }
 
 
+double XPBD_IPC::computePreviousColorCollisionEnergy()
+{
+	double energy = 0.0;
+	double stiffness = 0.0;
+	if (!tetrahedron->empty()) {
+		stiffness = tetrahedron->data()[0].collision_stiffness[0];
+	}
+	else {
+		stiffness = cloth->data()[0].collision_stiffness[0];
+	}
+	energy += computeVTEnergy(&collision.record_vt_pair, triangle_indices.data(), vertex_position.data(),
+		vertex_position.data(), stiffness, &collision.record_vt_pair_d_hat, collision.vertex_belong_to_color_group,1);
+	energy += computeEEEnergy(&collision.record_ee_pair, edge_vertices.data(), edge_vertices.data(), vertex_position.data(),
+		vertex_position.data(), stiffness, &collision.record_ee_pair_d_hat, collision.vertex_belong_to_color_group,1);
+
+	if (has_collider) {
+		//vt_c
+		energy += computeVTEnergy(&collision.record_vt_collider_pair, triangle_indices_collider.data(), vertex_position.data(),
+			vertex_position_collider.data(), stiffness, &collision.record_vt_collider_pair_d_hat, collision.vertex_belong_to_color_group,2);
+
+		energy += computeVTEnergy(&collision.record_tv_collider_pair, triangle_indices.data(), vertex_position_collider.data(),
+			vertex_position.data(), stiffness, &collision.record_tv_collider_pair_d_hat, collision.vertex_belong_to_color_group,3);
+
+		energy += computeEEEnergy(&collision.record_ee_collider_pair, edge_vertices.data(), collider_edge_vertices.data(), vertex_position.data(),
+			vertex_position_collider.data(), stiffness, &collision.record_ee_collider_pair_d_hat,
+			collision.vertex_belong_to_color_group,2);
+	}
+	if (floor->exist) {
+		energy += computeFloorEnergy(1);
+	}
+	return energy;
+}
+
 
 double XPBD_IPC::computeBarrierEnergy()
 {
@@ -1716,20 +1769,20 @@ double XPBD_IPC::computeBarrierEnergy()
 	}
 
 	energy += computeVTEnergy(&collision.record_vt_pair, triangle_indices.data(), vertex_position.data(),
-		vertex_position.data(), stiffness, &collision.record_vt_pair_d_hat, collision.vertex_belong_to_color_group, 0);
+		vertex_position.data(), stiffness, &collision.record_vt_pair_d_hat, collision.vertex_belong_to_color_group,0);
 	energy += computeEEEnergy(&collision.record_ee_pair, edge_vertices.data(), edge_vertices.data(), vertex_position.data(),
-		vertex_position.data(), stiffness, &collision.record_ee_pair_d_hat, collision.vertex_belong_to_color_group, 0);
+		vertex_position.data(), stiffness, &collision.record_ee_pair_d_hat, collision.vertex_belong_to_color_group,0);
 
 	if (has_collider) {
 		energy += computeVTEnergy(&collision.record_vt_collider_pair, triangle_indices_collider.data(), vertex_position.data(),
-			vertex_position_collider.data(), stiffness, &collision.record_vt_collider_pair_d_hat, collision.vertex_belong_to_color_group, 0);
+			vertex_position_collider.data(), stiffness, &collision.record_vt_collider_pair_d_hat, collision.vertex_belong_to_color_group,0);
 
 		energy += computeVTEnergy(&collision.record_tv_collider_pair, triangle_indices.data(), vertex_position_collider.data(),
-			vertex_position.data(), stiffness, &collision.record_tv_collider_pair_d_hat, collision.vertex_belong_to_color_group, 0);
+			vertex_position.data(), stiffness, &collision.record_tv_collider_pair_d_hat, collision.vertex_belong_to_color_group,0);
 
 		energy += computeEEEnergy(&collision.record_ee_collider_pair, edge_vertices.data(), collider_edge_vertices.data(), vertex_position.data(),
 			vertex_position_collider.data(), stiffness, &collision.record_ee_collider_pair_d_hat,
-			collision.vertex_belong_to_color_group, 0);
+			collision.vertex_belong_to_color_group,0);
 	}
 
 	if (floor->exist) {
@@ -2298,7 +2351,9 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 	//}
 	//newtonCDTetBlock();
 
-	std::vector<double>time;
+	//std::vector<double>time;
+
+	double ori_energy = 0.0;
 
 	for (int i = 0; i < max_tet_color_num-1; ++i) {		//
 		initialRecordHessian();
@@ -2308,11 +2363,11 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 		if (perform_collision) {
 			collision.computeHessian(i);
 		}
+
+		ori_energy = computePreviousColorEnergy(i);
+
 		thread->assignTask(this, SOLVE_TET_BLOCK, i);	
-		//if (perform_collision) {
-			//collision.collisionTimeColor(i);
-		//}
-		//compute energy line search
+		lineSearchFirstColor(i, ori_energy);
 
 	}
 
@@ -2333,37 +2388,8 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 	newtonCDTetBlockAGroupCollision(max_tet_color_num - 1);
 	//thread->assignTask(this, SOLVE_TET_BLOCK_COLLISION, max_tet_color_num-1);
 
+	lineSearchLastColor();
 
-
-	double ori_energy=0.0, current_energy=0.0;	
-	thread->assignTask(this, UPDATE_LAST_COLOR_VERTEX_BELONG);
-	if (perform_collision) {
-		ori_energy = computeLastColorEnergy();
-	}
-	thread->assignTask(this, UPDATE_POSITION_AVERAGE);
-	if (perform_collision) {
-		//if (collision.collision_time > 0.0) {
-		allPairCollisionInversionTime();
-		current_energy = computeLastColorEnergy();
-		if (current_energy> energy_converge_standard) {
-			double record_collision_time = collision.collision_time;
-			collision.collision_time = 0.5;
-			//line search, make sure energy is decrease
-			while (current_energy > ori_energy)
-			{
-				record_collision_time *= 0.5;
-				thread->assignTask(&collision, COLLISION_FREE_POSITION_LAST_COLOR);
-				if (record_collision_time < 1e-6) {
-					std::cout << "last color record_collision_time is too small "<< ori_energy << " " << current_energy << std::endl;
-					break;
-				}
-				current_energy = computeLastColorEnergy();
-			}
-		}
-		//update record position
-		thread->assignTask(&collision, UPDATE_RECORD_VERTEX_POSITION);
-		//}	
-	}
 	// 
 	//for (int i = 0; i < time.size(); ++i) {
 	//	std::cout << time[i] << " ";
@@ -2373,6 +2399,81 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 	//system("pause");
 	//newtonCDTetBlockAGroupTest();
 
+}
+
+
+void XPBD_IPC::lineSearchFirstColor(unsigned int color_No, double ori_energy)
+{
+	//compute energy line search
+	previousColorCollisionInversionTime(color_No);
+	double current_energy = 0.0;
+	current_energy = computePreviousColorEnergy(color_No);
+	if (current_energy > energy_converge_standard) {
+
+		double record_collision_time = collision.collision_time;
+		collision.collision_time = 0.5;
+		ori_energy += energy_converge_standard;
+		while (current_energy > ori_energy)
+		{
+			record_collision_time *= 0.5;
+			thread->assignTask(&collision, UPDATE_COLOR_POSITION, color_No);
+			if (record_collision_time < 1e-6) {
+				collision.collision_time = 0.0;
+				thread->assignTask(&collision, UPDATE_COLOR_POSITION, color_No);
+				std::cout << "previous color very close " << color_No << std::endl;
+				//for (int k = 0; k < mesh_struct[0]->vertex_for_render.size(); ++k) {
+				//	for (int kk = 0; kk < 3; ++kk) {
+				//		if (abs(record_vertex_position[0][k][kk] - vertex_position[0][k][kk])>1e-6) {
+				//			std::cout << abs(record_vertex_position[0][k][kk] - vertex_position[0][k][kk])<<" "<<k << std::endl;
+				//		}
+		
+				//	}
+				//}
+				break;
+			}
+			current_energy = computePreviousColorEnergy(color_No);
+
+		}
+	}
+	collision.upodateRecordPositionFirstColor(color_No);
+}
+
+void XPBD_IPC::lineSearchLastColor()
+{
+	double ori_energy = 0.0, current_energy = 0.0;
+
+	ori_energy = 0.0, current_energy = 0.0;
+	thread->assignTask(this, UPDATE_LAST_COLOR_VERTEX_BELONG);
+	if (perform_collision) {
+		ori_energy = computeLastColorEnergy();
+	}
+	thread->assignTask(this, UPDATE_POSITION_AVERAGE);
+	if (perform_collision) {
+		//if (collision.collision_time > 0.0) {
+		allPairCollisionInversionTime();
+
+		current_energy = computeLastColorEnergy();
+		if (current_energy > energy_converge_standard) {
+			double record_collision_time = collision.collision_time;
+			collision.collision_time = 0.5;
+			//line search, make sure energy is decrease
+			ori_energy += energy_converge_standard;
+			while (current_energy > ori_energy)
+			{
+				record_collision_time *= 0.5;
+				thread->assignTask(&collision, COLLISION_FREE_POSITION_LAST_COLOR);
+				if (record_collision_time < 1e-6) {
+					std::cout << "last color record_collision_time is too small " << ori_energy << " " << current_energy << std::endl;
+					break;
+				}
+				current_energy = computeLastColorEnergy();
+			}
+		}
+		
+		//update record position
+		thread->assignTask(&collision, UPDATE_RECORD_VERTEX_POSITION);
+		//}	
+	}
 }
 
 double XPBD_IPC::computeInertialEnergyWarmStart()
@@ -2493,7 +2594,7 @@ void XPBD_IPC::warmStart()
 	previous_energy = 1e-15;
 	energy = previous_energy;
 
-	while (convCondition(itr_num,2,energy,previous_energy,50, energy_converge_standard, energy_converge_ratio))
+	while (!convCondition(itr_num,4,energy,previous_energy,50, energy_converge_standard, energy_converge_ratio))
 	{
 		initialRecordHessian();
 		collision.computeHessian(max_tet_color_num - 1);
@@ -2535,12 +2636,30 @@ void XPBD_IPC::warmStart()
 		itr_num++;
 	}
 
+	//std::cout << "warm start itr " << itr_num << std::endl;
+
 	collision.collision_time = 1.0;
 	inversionTest();
 	thread->assignTask(this, COLLISION_FREE_POSITION_);
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		memcpy(this->record_vertex_position[i][0].data(), vertex_position[i][0].data(), this->record_vertex_position[i].size() * 24);
+	}
+	//if need to update record position
 
-	//move position:
 }
+
+
+void XPBD_IPC::previousColorCollisionInversionTime(unsigned int color_No)
+{
+	
+	collision.collisionTimeColor(color_No);
+	computePreviousColorInversion(color_No);
+	if (collision.collision_time < 1.0) {
+		thread->assignTask(&collision, UPDATE_COLOR_POSITION, color_No);
+	}
+}
+
+
 
 
 void XPBD_IPC::allPairCollisionInversionTime()
@@ -2555,7 +2674,7 @@ void XPBD_IPC::allPairCollisionInversionTime()
 void XPBD_IPC::allPairCollisionTimeWarmStart()
 {
 	collision.allPairCollisionTime();
-	
+	//std::cout << "warm start collision time " << collision.collision_time << std::endl;
 	if (collision.collision_time < 1.0) {
 		thread->assignTask(this, COLLISION_FREE_POSITION_FROM_RECORD);
 	}
@@ -2830,7 +2949,7 @@ void XPBD_IPC::newtonCDTetBlockAGroup(int thread_No, int color)
 				unfixed_vertex_index[j].data(), unfixed_vertex_num[j],  collision_stiffness,
 				obj_No, unfixed_actual_vertex_index[j].data(), tet_hessian[obj_No], common_hessian,
 				common_grad.data(),& (triangle_of_a_tet[j]), &(edge_of_a_tet[j]), vertex_index_on_surface, prefix_vertex, floor_hessian, 
-				record_vertex_pos, indicate_collide_with_floor_);
+				record_vertex_pos, indicate_collide_with_floor_,color);
 		}
 	}
 }
@@ -5944,7 +6063,8 @@ void XPBD_IPC::solveTetBlock(std::array<double, 3>* vertex_position, double stif
 	std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>& collision_hessian,
 	double* common_grad, std::vector<unsigned int>* triangle_of_a_tet,
 	std::vector<unsigned int>* edge_of_a_tet, int* vertex_index_on_surface, unsigned int prefix_sum_vetex_obj,
-	std::unordered_map<unsigned int, double>& floor_map, std::array<double, 3>* record_ori_pos, char* indicate_collide_with_floor)//
+	std::unordered_map<unsigned int, double>& floor_map, std::array<double, 3>* record_ori_pos, char* indicate_collide_with_floor,
+	int color_No)//
 {
 	if (unfixed_vertex_num == 0) {
 		return;
@@ -6033,20 +6153,21 @@ void XPBD_IPC::solveTetBlock(std::array<double, 3>* vertex_position, double stif
 		SUB_(vertex_position[vertex_index], (result.data() + 3 * i));
 	}
 
-	if (perform_collision) {
+	//if (perform_collision) {
 
-		double t = getCollisionTime(triangle_of_a_tet, edge_of_a_tet, obj_No, tet_actual_unfixed_vertex_indices,
-			unfixed_vertex_num, vertex_index_on_surface, vertex_position, record_ori_pos, indicate_collide_with_floor);
-		double t1 = getInversionTime(tet_index, &neighbor_tet_indices, tet_indices[obj_No], vertex_position, record_ori_pos);
-		if (t1 < t) {
-			t = t1;
-		}
-		if (t < 1.0) {
-			for (int i = 0; i < unfixed_vertex_num; ++i) {
-				vertex_index = tet_actual_unfixed_vertex_indices[i];
-				COLLISION_POS(vertex_position[vertex_index], t, record_ori_pos[vertex_index], vertex_position[vertex_index]);
-			}
-		}
+		//double t = getCollisionTime(triangle_of_a_tet, edge_of_a_tet, obj_No, tet_actual_unfixed_vertex_indices,
+		//	unfixed_vertex_num, vertex_index_on_surface, vertex_position, record_ori_pos, indicate_collide_with_floor);
+		//double t1 = getInversionTime(tet_index, &neighbor_tet_indices, tet_indices[obj_No], vertex_position, record_ori_pos);
+		//if (t1 < t) {
+		//	t = t1;
+		//}
+		//if (t < 1.0) {
+		//	for (int i = 0; i < unfixed_vertex_num; ++i) {
+		//		vertex_index = tet_actual_unfixed_vertex_indices[i];
+		//		COLLISION_POS(vertex_position[vertex_index], t, record_ori_pos[vertex_index], vertex_position[vertex_index]);
+		//	}
+		//}
+		
 		//if (energy_initial > energy_converge_standard) {
 		//	double energy_current = computeBlockCurrentEnergy(vertex_position, stiffness, dt, mass, A, neighbor_tet_indices, volume, tet_index, sn, tet_vertex_index, unfixed_vertex_num,
 		//		collision_stiffness, obj_No, tet_actual_unfixed_vertex_indices, triangle_of_a_tet, edge_of_a_tet, vertex_index_on_surface, mass_inv, tet_indices[obj_No],
@@ -6068,12 +6189,12 @@ void XPBD_IPC::solveTetBlock(std::array<double, 3>* vertex_position, double stif
 		//		}
 		//	}
 		//}
-		// 
+		
 		//compute energy
-		for (int i = 0; i < unfixed_vertex_num; ++i) {
-			memcpy(record_ori_pos[tet_actual_unfixed_vertex_indices[i]].data(), vertex_position[tet_actual_unfixed_vertex_indices[i]].data(), 24);
-		}
-	}
+		//for (int i = 0; i < unfixed_vertex_num; ++i) {
+		//	memcpy(record_ori_pos[tet_actual_unfixed_vertex_indices[i]].data(), vertex_position[tet_actual_unfixed_vertex_indices[i]].data(), 24);
+		//}
+	//}
 	////if (result.norm() > 1e-1) {
 	////	std::cout << result.norm() << std::endl;
 	////	second_order_constraint.solveCD_ARAP_blockTest(Hessian, grad, vertex_position, stiffness, A[tet_index],
@@ -6091,6 +6212,91 @@ void XPBD_IPC::solveTetBlock(std::array<double, 3>* vertex_position, double stif
 
 
 
+
+void XPBD_IPC::computePreviousColorInversion(int color_No)
+{
+	int obj_No, size;
+	unsigned int start, end;
+	unsigned int* tet_around_a_group;
+	std::array<int, 4>* indices;
+	std::array<double, 3>* vertex_pos;
+	std::array<double, 3>* ori_vertex_pos;
+	double* mass_inv_;
+	int* tet_vertex;
+	double inversion_time = 1.0;
+	double collision_time = 1.0;
+	int color_group_index;
+	unsigned int* tet_in_a_group;
+	int j;
+	for (int i = 0; i < tetrahedron->size(); ++i) {
+		obj_No = i + cloth->size();
+		size = tetrahedron->data()[i].mesh_struct.indices.size();
+		indices = tetrahedron->data()[i].mesh_struct.indices.data();
+		vertex_pos = vertex_position[i + cloth->size()];
+		ori_vertex_pos = record_vertex_position[i + cloth->size()].data();
+		mass_inv_ = tetrahedron->data()[i].mesh_struct.mass_inv.data();
+		color_group_index = inner_iteration_number % tet_color_groups[i]->size();
+
+		tet_around_a_group = tetrahedron->data()[i].mesh_struct.tet_around_tet_color_groups[color_group_index][color_No].data();
+		start = tetrahedron->data()[i].mesh_struct.tet_around_tet_color_groups_start_per_thread[color_group_index][color_No][0];
+		end = tetrahedron->data()[i].mesh_struct.tet_around_tet_color_groups_start_per_thread[color_group_index][color_No][total_thread_num];
+		for (auto k = start; k < end; ++k) {
+			j = tet_around_a_group[k];
+			tet_vertex = indices[j].data();
+			if (mass_inv_[tet_vertex[0]] != 0.0 || mass_inv_[tet_vertex[1]] != 0.0 || mass_inv_[tet_vertex[2]] != 0.0 || mass_inv_[tet_vertex[3]] != 0.0) {
+				if (inversionTest::TetInversionTest(ori_vertex_pos[tet_vertex[0]].data(), ori_vertex_pos[tet_vertex[1]].data(),
+					ori_vertex_pos[tet_vertex[2]].data(), ori_vertex_pos[tet_vertex[3]].data(), vertex_pos[tet_vertex[0]].data(),
+					vertex_pos[tet_vertex[1]].data(), vertex_pos[tet_vertex[2]].data(), vertex_pos[tet_vertex[3]].data(), &inversion_time)) {
+					if (inversion_time < collision_time) {
+						collision_time = inversion_time;
+					}
+
+					//if (inversion_time == 0.0) {
+					//	inversionTest::TetInversionTestTest(ori_vertex_pos[tet_vertex[0]].data(), ori_vertex_pos[tet_vertex[1]].data(),
+					//		ori_vertex_pos[tet_vertex[2]].data(), ori_vertex_pos[tet_vertex[3]].data(), vertex_pos[tet_vertex[0]].data(),
+					//		vertex_pos[tet_vertex[1]].data(), vertex_pos[tet_vertex[2]].data(), vertex_pos[tet_vertex[3]].data(), &inversion_time);
+					//	std::cout <<"volume "<< inversionTest::volume(ori_vertex_pos[tet_vertex[0]].data(), ori_vertex_pos[tet_vertex[1]].data(),
+					//		ori_vertex_pos[tet_vertex[2]].data(), ori_vertex_pos[tet_vertex[3]].data()) << std::endl;
+					//}
+
+				}
+
+			}
+		}
+
+		end = tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[color_group_index][color_No][total_thread_num];
+		start = tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[color_group_index][color_No][0];
+		tet_in_a_group = tetrahedron->data()[i].mesh_struct.tet_color_group[color_group_index][color_No].data();
+		for (auto k = start; k < end; ++k) {
+			j = tet_in_a_group[k];
+			tet_vertex = indices[j].data();
+			if (mass_inv_[tet_vertex[0]] != 0.0 || mass_inv_[tet_vertex[1]] != 0.0 || mass_inv_[tet_vertex[2]] != 0.0 || mass_inv_[tet_vertex[3]] != 0.0) {
+				if (inversionTest::TetInversionTest(ori_vertex_pos[tet_vertex[0]].data(), ori_vertex_pos[tet_vertex[1]].data(),
+					ori_vertex_pos[tet_vertex[2]].data(), ori_vertex_pos[tet_vertex[3]].data(), vertex_pos[tet_vertex[0]].data(),
+					vertex_pos[tet_vertex[1]].data(), vertex_pos[tet_vertex[2]].data(), vertex_pos[tet_vertex[3]].data(), &inversion_time)) {
+					if (inversion_time < collision_time) {
+						collision_time = inversion_time;
+					}
+					//if (inversion_time == 0.0) {
+					//	std::cout << "volume " << inversionTest::volume(ori_vertex_pos[tet_vertex[0]].data(), ori_vertex_pos[tet_vertex[1]].data(),
+					//		ori_vertex_pos[tet_vertex[2]].data(), ori_vertex_pos[tet_vertex[3]].data()) << std::endl;
+					//}
+				}
+			}
+		}
+	}
+	if (collision_time < 1.0) {
+		collision_time *= 0.9;
+	}
+
+	if (collision_time <= 0.0) {
+		std::cout << "error for inversion test time previous color()" << std::endl;
+	}
+
+	if (collision_time < collision.collision_time) {
+		collision.collision_time = collision_time;
+	}
+}
 
 //FIRST_COLOR_ARAP_ENERGY
 void XPBD_IPC::computePreviousColorARAPEnergy(int thread_No, unsigned int color_No)
@@ -6123,7 +6329,7 @@ void XPBD_IPC::computePreviousColorARAPEnergy(int thread_No, unsigned int color_
 			continue;
 		}
 
-		stiffness = 0.5 * tetrahedron->data()[0].ARAP_stiffness;
+		stiffness = tetrahedron->data()[0].ARAP_stiffness;
 		vertex_pos = vertex_position[i + cloth->size()];
 		A = tetrahedron->data()[i].mesh_struct.A.data();
 
@@ -6206,77 +6412,45 @@ double XPBD_IPC::computeFloorEnergy(int type)
 		stiffness = cloth->data()[0].collision_stiffness[0];
 	}
 	double energy = 0.0;
-	//if (type == 0) {
+	if (type == 0) {
 		for (auto j = collision.record_vertex_collide_with_floor.begin(); j < collision.record_vertex_collide_with_floor.end(); ++j) {
 			for (auto i = j->begin(); i < j->end(); i += 2) {
 				energy += compute_energy.computeFloorBarrierEnergy(vertex_position[*i][*(i + 1)][floor->dimension], collision.record_vertex_collide_with_floor_d_hat[*i][*(i + 1)],
 					stiffness, floor->value);
 			}			
 		}
-	//}
-	//else {
-	//	for (auto j = collision.record_vertex_collide_with_floor.begin(); j < collision.record_vertex_collide_with_floor.end(); ++j) {
-	//		for (auto i = j->begin(); i < j->end(); i += 2) {
-	//			if (collision.vertex_used_in_self_collision[*i][*(i + 1)] || collision.vertex_belong_to_color_group[*i][*(i + 1)]) {
-	//				energy += compute_energy.computeFloorBarrierEnergy(vertex_position[*i][*(i + 1)][floor->dimension], collision.record_vertex_collide_with_floor_d_hat[*i][*(i + 1)],
-	//					stiffness, floor->value);
-	//			}
-	//		}
-	//	}
-	//}
-	return energy;
-}
-
-
-
-double XPBD_IPC::computeCollisionEnergy()
-{
-	double energy = 0.0;
-	double stiffness = 0.0;
-	if (!tetrahedron->empty()) {
-		stiffness = tetrahedron->data()[0].collision_stiffness[0];
 	}
 	else {
-		stiffness = cloth->data()[0].collision_stiffness[0];
-	}
-	energy += computeVTEnergy(&collision.record_vt_pair, triangle_indices.data(), vertex_position.data(),
-		vertex_position.data(), stiffness, &collision.record_vt_pair_d_hat, collision.vertex_belong_to_color_group, 0);
-	energy += computeEEEnergy(&collision.record_ee_pair, edge_vertices.data(), edge_vertices.data(), vertex_position.data(),
-		vertex_position.data(), stiffness, &collision.record_ee_pair_d_hat, collision.vertex_belong_to_color_group, 0);
-
-	if (has_collider) {
-		//vt_c
-		energy += computeVTEnergy(&collision.record_vt_collider_pair, triangle_indices_collider.data(), vertex_position.data(),
-			vertex_position_collider.data(), stiffness, &collision.record_vt_collider_pair_d_hat, collision.vertex_belong_to_color_group, 1);
-
-		energy += computeVTEnergy(&collision.record_tv_collider_pair, triangle_indices.data(), vertex_position_collider.data(),
-			vertex_position.data(), stiffness, &collision.record_tv_collider_pair_d_hat, collision.vertex_belong_to_color_group, 2);
-
-		energy += computeEEEnergy(&collision.record_ee_collider_pair, edge_vertices.data(), collider_edge_vertices.data(), vertex_position.data(),
-			vertex_position_collider.data(), stiffness, &collision.record_ee_collider_pair_d_hat,
-			collision.vertex_belong_to_color_group, 1);
-	}
-	if (floor->exist) {
-		energy += computeFloorEnergy(1);
+		for (auto j = collision.record_vertex_collide_with_floor.begin(); j < collision.record_vertex_collide_with_floor.end(); ++j) {
+			for (auto i = j->begin(); i < j->end(); i += 2) {
+				if (collision.vertex_belong_to_color_group[*i][*(i + 1)]) {
+					energy += compute_energy.computeFloorBarrierEnergy(vertex_position[*i][*(i + 1)][floor->dimension], collision.record_vertex_collide_with_floor_d_hat[*i][*(i + 1)],
+						stiffness, floor->value);
+				}
+			}
+		}
 	}
 	return energy;
 }
+
+
+
 
 
 double XPBD_IPC::computePreviousColorEnergy(unsigned int color_no)
 {
 	double energy = 0.0;
-	energy += computeColorInertialEnergy();
+	energy += computePreviousColorInertialEnergy(color_no);
 
 	thread->assignTask(this, FIRST_COLOR_ARAP_ENERGY, color_no);
 	for (int i = 0; i < total_thread_num; ++i) {
 		energy += energy_per_thread[i];
 	}
-		//vt
+
 	if (perform_collision) {
-		..
-		energy += computeCollisionEnergy();
+		energy += computePreviousColorCollisionEnergy();
 	}
+	return energy;
 }
 
 
@@ -6286,22 +6460,27 @@ double XPBD_IPC::computeLastColorEnergy()
 	energy += computeColorInertialEnergy();
 	//ARAP
 	energy += computeLastColorARAPEnergy();
-	//vt
 	if (perform_collision) {
-		energy += computeCollisionEnergy();
+		energy += computeBarrierEnergy();
 	}
 	return energy;
 }
 
-
+//type 0: compute all pair 1: ee in this color 2: ee_c in this color
 double XPBD_IPC::computeEEEnergy(std::vector<std::vector<unsigned int>>* record_pair, unsigned int** edge_v_0, unsigned int** edge_v_1,
-	 std::array<double, 3>** e0_current_pos, std::array<double, 3>** e1_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, bool** belong_to_color_group, int type)
+	 std::array<double, 3>** e0_current_pos, std::array<double, 3>** e1_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, bool** belong_to_color_group,
+	int type)
 {
 	double energy = 0.0;
 	unsigned int* edge_0_vertex;
 	unsigned int* edge_1_vertex;
 	double* d_hat_;
 	//if (type == 0) {
+
+	switch (type)
+	{
+	case 0:
+	{
 		for (auto j = record_pair->begin(); j < record_pair->end(); ++j) {
 			d_hat_ = d_hat->data()[j - record_pair->begin()].data();
 			for (auto i = j->begin(); i < j->end(); i += 4) {
@@ -6312,33 +6491,61 @@ double XPBD_IPC::computeEEEnergy(std::vector<std::vector<unsigned int>>* record_
 					e1_current_pos[*(i + 2)][*(edge_1_vertex + 1)].data(), collision_stiffness, d_hat_[(i - j->begin()) >> 2], false);
 			}
 		}
-	//}
-	//else {
-	//	for (auto j = record_pair->begin(); j < record_pair->end(); ++j) {
-	//		d_hat_ = d_hat->data()[j - record_pair->begin()].data();
-	//		for (auto i = j->begin(); i < j->end(); i += 4) {
-	//			edge_0_vertex = edge_v_0[*i] + ((*(i + 1)) << 1);
-	//			if (belong_to_this[*i][edge_0_vertex[0]] || belong_to_this[*i][edge_0_vertex[1]] || belong_to_color_group[*i][edge_0_vertex[0]] || belong_to_color_group[*i][edge_0_vertex[1]]) {
-	//				edge_1_vertex = edge_v_1[*(i + 2)] + ((*(i + 3)) << 1);
-	//				energy += compute_energy.computeBarrierEnergy(e0_current_pos[*i][*edge_0_vertex].data(),
-	//					e0_current_pos[*i][*(edge_0_vertex + 1)].data(), e1_current_pos[*(i + 2)][*edge_1_vertex].data(),
-	//					e1_current_pos[*(i + 2)][*(edge_1_vertex + 1)].data(), collision_stiffness, d_hat_[(i - j->begin()) >> 2], false);
-	//			}
-	//		}
-	//	}
-	//}
-		return energy;
+	}
+		break;
+
+	case 1:
+	{
+		for (auto j = record_pair->begin(); j < record_pair->end(); ++j) {
+			d_hat_ = d_hat->data()[j - record_pair->begin()].data();
+			for (auto i = j->begin(); i < j->end(); i += 4) {
+				edge_0_vertex = edge_v_0[*i] + ((*(i + 1)) << 1);				
+				edge_1_vertex = edge_v_1[*(i + 2)] + ((*(i + 3)) << 1);
+				if (belong_to_color_group[*i][edge_0_vertex[0]] || belong_to_color_group[*i][edge_0_vertex[1]]
+					|| belong_to_color_group[*(i + 2)][edge_1_vertex[0]] || belong_to_color_group[*(i + 2)][edge_1_vertex[1]]) {
+					energy += compute_energy.computeBarrierEnergy(e0_current_pos[*i][*edge_0_vertex].data(),
+						e0_current_pos[*i][*(edge_0_vertex + 1)].data(), e1_current_pos[*(i + 2)][*edge_1_vertex].data(),
+						e1_current_pos[*(i + 2)][*(edge_1_vertex + 1)].data(), collision_stiffness, d_hat_[(i - j->begin()) >> 2], false);
+				}
+			}
+		}
+	}
+	break;
+
+	case 2:
+	{
+		for (auto j = record_pair->begin(); j < record_pair->end(); ++j) {
+			d_hat_ = d_hat->data()[j - record_pair->begin()].data();
+			for (auto i = j->begin(); i < j->end(); i += 4) {
+				edge_0_vertex = edge_v_0[*i] + ((*(i + 1)) << 1);
+				if (belong_to_color_group[*i][edge_0_vertex[0]] || belong_to_color_group[*i][edge_0_vertex[1]]) {
+					edge_1_vertex = edge_v_1[*(i + 2)] + ((*(i + 3)) << 1);
+					energy += compute_energy.computeBarrierEnergy(e0_current_pos[*i][*edge_0_vertex].data(),
+						e0_current_pos[*i][*(edge_0_vertex + 1)].data(), e1_current_pos[*(i + 2)][*edge_1_vertex].data(),
+						e1_current_pos[*(i + 2)][*(edge_1_vertex + 1)].data(), collision_stiffness, d_hat_[(i - j->begin()) >> 2], false);
+				}
+			}
+		}
+	}
+	break;
+	}
+
+	return energy;
 }
 
 
-//type 0: vt, 1: vt_c, 2: tv_c
+//type 0: compute all pair 1: vt in this color 2: vt_c in this color 3: tv_c in this color
 double XPBD_IPC::computeVTEnergy(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
-	std::array<double, 3>** v_current_pos,	std::array<double, 3>** t_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, bool** belong_to_color_group,int type)
+	std::array<double, 3>** v_current_pos,	std::array<double, 3>** t_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, 
+	bool** belong_to_color_group, int type)
 {
 	double energy = 0.0;
 	int* indices;
 	double* d_hat_;
-	//if (type == 0) {
+	switch (type)
+	{
+	case 0:
+	{
 		for (auto j = record_vt_pair->begin(); j < record_vt_pair->end(); ++j) {
 			d_hat_ = d_hat->data()[j - record_vt_pair->begin()].data();
 			for (auto i = j->begin(); i < j->end(); i += 4) {
@@ -6349,30 +6556,51 @@ double XPBD_IPC::computeVTEnergy(std::vector<std::vector<unsigned int>>* record_
 					t_current_pos[*(i + 2)][indices[2]].data(), collision_stiffness, d_hat_[(i - j->begin()) >> 2], true);
 			}
 		}
-	//}
-	/*else if (type == 1) {
-		for (auto j = record_vt_pair->begin(); j < record_vt_pair->end(); ++j) {
-			d_hat_ = d_hat->data()[j - record_vt_pair->begin()].data();
-			for (auto i = j->begin(); i < j->end(); i += 4) {
-				if (belong_to_this[*i][*(i + 1)] || belong_to_color_group[*i][*(i + 1)]) {
-					indices = triangle_indices[*(i + 2)][*(i + 3)].data();
-					energy += compute_energy.computeBarrierEnergy(v_current_pos[*i][*(i + 1)].data(),
-						t_current_pos[*(i + 2)][indices[0]].data(),
-						t_current_pos[*(i + 2)][indices[1]].data(),
-						t_current_pos[*(i + 2)][indices[2]].data(), collision_stiffness, d_hat_[(i - j->begin()) >> 2], true);
+	}
+		break;
 
-				}
-			}
-		}
-	 }
-	else
+	case 1:
 	{
 		for (auto j = record_vt_pair->begin(); j < record_vt_pair->end(); ++j) {
 			d_hat_ = d_hat->data()[j - record_vt_pair->begin()].data();
 			for (auto i = j->begin(); i < j->end(); i += 4) {
-				if (belong_to_this[*(i + 2)][indices[0]] || belong_to_this[*(i + 2)][indices[1]] || belong_to_this[*(i + 2)][indices[2]] ||
-					belong_to_color_group[*(i + 2)][indices[0]] || belong_to_color_group[*(i + 2)][indices[1]] || belong_to_color_group[*(i + 2)][indices[2]]) {
+				indices = triangle_indices[*(i + 2)][*(i + 3)].data();
+				if (belong_to_color_group[*i][*(i + 1)] || belong_to_color_group[*(i + 2)][indices[0]] || 
+					belong_to_color_group[*(i + 2)][indices[1]] || belong_to_color_group[*(i + 2)][indices[2]]) {
+					energy += compute_energy.computeBarrierEnergy(v_current_pos[*i][*(i + 1)].data(),
+						t_current_pos[*(i + 2)][indices[0]].data(),
+						t_current_pos[*(i + 2)][indices[1]].data(),
+						t_current_pos[*(i + 2)][indices[2]].data(), collision_stiffness, d_hat_[(i - j->begin()) >> 2], true);
+				}				
+			}
+		}
+	}
+	break;
+
+	case 2:
+	{
+		for (auto j = record_vt_pair->begin(); j < record_vt_pair->end(); ++j) {
+			d_hat_ = d_hat->data()[j - record_vt_pair->begin()].data();
+			for (auto i = j->begin(); i < j->end(); i += 4) {
+				if (belong_to_color_group[*i][*(i + 1)]) {
 					indices = triangle_indices[*(i + 2)][*(i + 3)].data();
+					energy += compute_energy.computeBarrierEnergy(v_current_pos[*i][*(i + 1)].data(),
+						t_current_pos[*(i + 2)][indices[0]].data(),
+						t_current_pos[*(i + 2)][indices[1]].data(),
+						t_current_pos[*(i + 2)][indices[2]].data(), collision_stiffness, d_hat_[(i - j->begin()) >> 2], true);
+
+				}
+			}
+		}
+	}
+	break;
+
+	case 3:
+		for (auto j = record_vt_pair->begin(); j < record_vt_pair->end(); ++j) {
+			d_hat_ = d_hat->data()[j - record_vt_pair->begin()].data();
+			for (auto i = j->begin(); i < j->end(); i += 4) {
+				indices = triangle_indices[*(i + 2)][*(i + 3)].data();
+				if (belong_to_color_group[*(i + 2)][indices[0]] || belong_to_color_group[*(i + 2)][indices[1]] || belong_to_color_group[*(i + 2)][indices[2]]) {
 					energy += compute_energy.computeBarrierEnergy(v_current_pos[*i][*(i + 1)].data(),
 						t_current_pos[*(i + 2)][indices[0]].data(),
 						t_current_pos[*(i + 2)][indices[1]].data(),
@@ -6380,10 +6608,36 @@ double XPBD_IPC::computeVTEnergy(std::vector<std::vector<unsigned int>>* record_
 				}
 			}
 		}
-	}*/
+	break;
+	}
+
 	return energy;
 }
 
+
+double XPBD_IPC::computePreviousColorInertialEnergy(int color_No)
+{
+	double energy = 0.0;
+	std::vector<unsigned int>* index_group;
+	int color_group_index;
+	int i;
+	std::array<double, 3>* vertex_pos;
+	std::array<double, 3>* sn_;
+	double* mass;
+	for (int tet_No = 0; tet_No < tetrahedron->size(); ++tet_No) {
+		i = tet_No + cloth->size();
+		vertex_pos = vertex_position[i];
+		sn_ = sn[i].data();
+		mass = mesh_struct[i]->mass.data();
+		color_group_index = inner_iteration_number % tet_color_groups[tet_No]->size();
+		index_group = &vertex_index_of_a_tet_color_group[i][color_group_index][color_No];
+		for (auto j = index_group->begin(); j < index_group->end(); ++j) {
+			energy += mass[*j] * (EDGE_LENGTH(vertex_pos[*j], sn_[*j]));
+		}
+	}
+
+	return 0.5 * energy / (sub_time_step * sub_time_step);
+}
 
 double XPBD_IPC::computeColorInertialEnergy()
 {

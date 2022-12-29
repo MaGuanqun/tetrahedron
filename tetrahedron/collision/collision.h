@@ -370,7 +370,7 @@ public:
 	//std::vector<std::vector<std::vector<unsigned int>>>tet_involved_in_collision; // obj -> color group -> tet_involved
 	//std::vector<std::vector<std::vector<unsigned int>>>tet_involved_in_collision_start_per_thread; // obj -> color group ->start_index_per_thread
 
-	void collisionTimeAllClosePair();
+	void collisionTimeAllClosePair(int vt, int vt_c, int tv_c, int ee, int ee_c, int floor_);
 
 	//void computeFloorHessian(int thread_No, int color_No);
 
@@ -429,8 +429,12 @@ public:
 	std::vector<std::vector<unsigned int>> triangle_index_collide_with_collider;
 	std::vector<std::vector<unsigned int>> edge_index_collide_with_collider;
 	std::vector<std::vector<unsigned int>> vertex_index_collide_with_collider;
-
+	void upodateRecordPositionFirstColor(int color);
 private:		
+
+
+
+
 	std::vector<unsigned int>vertex_index_prefix_sum_obj;
 
 	//double VTColliderCollisionTime(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
@@ -443,7 +447,7 @@ private:
 
 	double VTCollisionTime(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
 		std::array<double, 3>** v_initial_pos, std::array<double, 3>** v_current_pos,
-		std::array<double, 3>** t_initial_pos, std::array<double, 3>** t_current_pos);
+		std::array<double, 3>** t_initial_pos, std::array<double, 3>** t_current_pos, int type);
 
 	//double EEColliderCollisionTime(std::vector<std::vector<unsigned int>>* record_pair, unsigned int** edge_v_0, unsigned int** edge_v_1,
 	//	std::array<double, 3>** e0_initial_pos, std::array<double, 3>** e0_current_pos,
@@ -451,7 +455,7 @@ private:
 
 	double EECollisionTime(std::vector<std::vector<unsigned int>>* record_pair, unsigned int** edge_v_0, unsigned int** edge_v_1,
 		std::array<double, 3>** e0_initial_pos, std::array<double, 3>** e0_current_pos,
-		std::array<double, 3>** e1_initial_pos, std::array<double, 3>** e1_current_pos);
+		std::array<double, 3>** e1_initial_pos, std::array<double, 3>** e1_current_pos, int type);
 
 
 

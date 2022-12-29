@@ -117,6 +117,7 @@ private:
 	void allPairCollisionInversionTime();
 	void allPairCollisionTimeWarmStart();
 
+	void previousColorCollisionInversionTime(unsigned int color_No);
 
 	void computeCurrentEnergy();
 
@@ -128,14 +129,19 @@ private:
 	void computeInversionForWarmStart();
 	void computeLastColorInversion();
 
+	void computePreviousColorInversion(int color_No);
+
+
 	double computeFloorEnergy(int type);
 
 
 	double computeEEEnergy(std::vector<std::vector<unsigned int>>* record_pair, unsigned int** edge_v_0, unsigned int** edge_v_1,
-		std::array<double, 3>** e0_current_pos, std::array<double, 3>** e1_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, bool** belong_to_color_group, int type);
+		std::array<double, 3>** e0_current_pos, std::array<double, 3>** e1_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, 
+		bool** belong_to_color_group, int type);
 
 	double computeVTEnergy(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
-		std::array<double, 3>** v_current_pos, std::array<double, 3>** t_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, bool** belong_to_color_group, int type);
+		std::array<double, 3>** v_current_pos, std::array<double, 3>** t_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, 
+		bool** belong_to_color_group, int type);
 
 
 	double computePreviousColorEnergy(unsigned int color_no);
@@ -143,7 +149,10 @@ private:
 	double computeLastColorEnergy();
 	double computeColorInertialEnergy();
 
-	double computeCollisionEnergy();
+
+	double computePreviousColorInertialEnergy(int color_No);
+
+	double computePreviousColorCollisionEnergy();
 
 
 	void solveVT_BlockPerThread(std::array<double, 3>** record_vertex_position, int** record_vertex_num, unsigned int* pair, unsigned int start, unsigned int end,
@@ -169,7 +178,7 @@ private:
 	std::vector<double>common_grad;
 
 
-	std::vector<std::vector<std::vector<std::vector<unsigned int>>>*>tet_color_groups;
+	std::vector<std::vector<std::vector<std::vector<unsigned int>>>*>tet_color_groups;//size is tet num
 	//std::vector<std::vector<std::vector<char>>*>tet_color_groups_label;
 
 	std::vector<std::vector<unsigned int>*>tet_around_tet; //size is tet num
@@ -468,7 +477,7 @@ private:
 		std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>& collision_hessian,
 		double* common_grad, std::vector<unsigned int>* triangle_of_a_tet,
 		std::vector<unsigned int>* edge_of_a_tet, int* vertex_index_on_surface, unsigned int prefix_sum_vetex_obj,
-		std::unordered_map<unsigned int, double>& floor_map, std::array<double, 3>* record_ori_pos, char* indicate_collide_with_floor);
+		std::unordered_map<unsigned int, double>& floor_map, std::array<double, 3>* record_ori_pos, char* indicate_collide_with_floor, int color_No);
 
 	void solveTetBlockCollision(std::array<double, 3>* vertex_position, double stiffness, double dt, std::array<int, 4>* indices,
 		double* mass,
@@ -775,5 +784,10 @@ private:
 
 	void checkExceedFloor();
 	std::vector<double>energy_per_thread;
+	std::vector< std::vector<std::vector<unsigned int>>*> vertex_index_of_a_tet_color_group;
+
+	void lineSearchLastColor();
+	void lineSearchFirstColor(unsigned int color_No, double ori_energy);
+
 };
 

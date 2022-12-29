@@ -509,7 +509,7 @@ void TetrahedronMeshStruct::setVolume(int thread_No)
 	for (int i = tetrahedron_index_begin_per_thread[thread_No]; i < tetrahedron_index_begin_per_thread[thread_No + 1]; ++i) {
 		volume[i] = getTetrahedronVolume(vertex_position[indices[i][0]].data(), vertex_position[indices[i][1]].data(), vertex_position[indices[i][2]].data(), vertex_position[indices[i][3]].data());
 		if (volume[i] < 0) {
-			std::cout << "error " << std::endl;
+			std::cout << "error  volume is negative" << std::endl;
 		}
 	}
 }

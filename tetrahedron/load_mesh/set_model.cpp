@@ -122,9 +122,8 @@ void SetModel::regularization(RegularizationInfo& regularization_info, int obj_i
 		SUB_(ori_mesh.vertices[i], regularization_info.body_center);
 	}
 
-	double coe = regularization_info.scaler * 1.5;
-
-	//double coe = 0.00991323;
+	//double coe = regularization_info.scaler * 1.5;
+	double coe = 0.00991323;
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
 		MULTI_(ori_mesh.vertices[i], coe);
 	}
@@ -146,16 +145,18 @@ void SetModel::regularization(RegularizationInfo& regularization_info, int obj_i
 	//}
 	
 
+	
+	//if (obj_index > 0) {
+		////two bar
+		//if (obj_index == 1) {
+		//	rotateAroundVectorRowMajor(rotation_matrix, axe, -M_PI / 1.8);
+		//}
+		//else {
+		//	rotateAroundVectorRowMajor(rotation_matrix, axe, -M_PI / 2.2);
+		//}
 
-	if (obj_index > 0) {
-		double rotation_matrix[9];
-		double axe[3] = { 0,1,0 };
-		if (obj_index == 1) {
-			rotateAroundVectorRowMajor(rotation_matrix, axe, -M_PI / 1.8);
-		}
-		else {
-			rotateAroundVectorRowMajor(rotation_matrix, axe, -M_PI / 2.2);
-		}
+		//arma
+		rotateAroundVectorRowMajor(rotation_matrix, axe, -M_PI/2.0);
 
 		for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
 			pos[0] = DOT(rotation_matrix, ori_mesh.vertices[i]);
@@ -163,7 +164,7 @@ void SetModel::regularization(RegularizationInfo& regularization_info, int obj_i
 			pos[2] = DOT((rotation_matrix + 6), ori_mesh.vertices[i]);
 			memcpy(ori_mesh.vertices[i].data(), pos, 24);
 		}
-	}
+	//}
 
 
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
@@ -175,14 +176,17 @@ void SetModel::regularization(RegularizationInfo& regularization_info, int obj_i
 
 	if (obj_index == 1) {
 		for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
-			ori_mesh.vertices[i][1] += 0.5;
+			ori_mesh.vertices[i][1] += 0.8;
 			ori_mesh.vertices[i][0] += 0.2; //0.3
 		}
 	}
 	else if(obj_index ==0) {
-		//for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
-		//	ori_mesh.vertices[i][1] -= 0.8;
-		//}
+		for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
+			//two bar
+			//ori_mesh.vertices[i][1] += 0.4;
+			//arma
+			ori_mesh.vertices[i][1] += 0.8;
+		}
 	}
 	else {
 		for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
