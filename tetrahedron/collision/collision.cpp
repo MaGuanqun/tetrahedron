@@ -8315,7 +8315,7 @@ void Collision::collisionTimeAllClosePair(int vt, int vt_c, int tv_c, int ee, in
 	//auto end = vt_pair_compressed_record.begin()+ vt_per_thread_start_index[thread_No + 1];
 
 	//vt
-	double vt_collision_time = VTCollisionTime(&record_vt_pair, triangle_indices.data(), vertex_collision_free.data(), vertex_position.data(),
+	double vt_collision_time = VTCollisionTime(&record_vt_pair, triangle_indices.data(), vertex_record_for_this_color.data(), vertex_position.data(),
 		vertex_record_for_this_color.data(), vertex_position.data(),vt);
 
 	if (vt_collision_time < collision_time) {
