@@ -7016,31 +7016,6 @@ double XPBD_IPC::computeColorInertialEnergy()
 }
 
 
-double XPBD_IPC::computeColorInertialEnergyTest()
-{
-	double energy = 0.0;
-	std::array<double, 3>* vertex_pos;
-	std::array<double, 3>* sn_;
-	unsigned int vertex_end;
-	double* mass;
-	bool* belong_color_group;
-	bool* belong_;
-	for (unsigned int i = 0; i < total_obj_num; ++i) {
-		vertex_pos = vertex_position[i];
-		sn_ = sn[i].data();
-		vertex_end = vertex_index_begin_per_thread[i][total_thread_num];
-		mass = mesh_struct[i]->mass.data();
-		belong_color_group = collision.vertex_belong_to_color_group[i];
-		for (unsigned int j = 0; j < vertex_end; ++j) {
-			if (belong_color_group[j]) {
-				energy += mass[j] * (EDGE_LENGTH(vertex_pos[j], sn_[j]));
-			}
-		}
-	}
-
-	return 0.5 * energy / (sub_time_step * sub_time_step);
-}
-
 
 
 //LAST_COLOR_INERTIAL_ENERGY

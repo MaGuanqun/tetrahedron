@@ -95,9 +95,9 @@ public:
         double* x, double* b, double* result, int* vertex_index_thread_begin, int sys_size);
 
     int thread_num;
-
-private:
     ThreadData* threads;
+private:
+
     std::vector<std::future<void>> futures;
 
     void thread_func(ThreadData* pData);

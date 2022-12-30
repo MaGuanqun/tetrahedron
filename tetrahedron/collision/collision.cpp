@@ -7446,31 +7446,29 @@ void Collision::vertexTriangleCollisionTimePair(int start_pair_index,
 
 			actual_ele_0 = vertex_index_prefix_sum[pair[i + 1]] + pair[i];
 			actual_ele_1 = triangle_index_prefix_sum[pair[i + 3]] + pair[i + 2];
-
 			hash_value = ((actual_ele_0 * P1) ^ (P2 * actual_ele_1)) % pair_hash_table_size;
+			address = hash_record + hash_value * pair_hash_table_cell_size;
 
-			if (!hash_size_record[hash_value]) {
-				distance = CCD::internal::pointTriangleDistanceUnclassified(ori_pos_0[pair[i + 1]][pair[i]].data(), 
-					ori_pos_1[pair[i + 3]][indices[0]].data(), ori_pos_1[pair[i + 3]][indices[1]].data(), ori_pos_1[pair[i + 3]][indices[2]].data());
-
-				hash_size_record[hash_value] = 2;
-				hash_record[hash_value * pair_hash_table_cell_size] = actual_ele_0;
-				hash_record[hash_value * pair_hash_table_cell_size +1 ] = actual_ele_1;
-			}
-			else {
-				address = hash_record + hash_value * pair_hash_table_cell_size;
-				for (unsigned int i = 0; i < hash_size_record[hash_value]; i += 2) {
-					if (address[i] == actual_ele_0 && address[i + 1] == actual_ele_1) {							
-						goto not_add_value;
-					}
+			{
+				if (!hash_size_record[hash_value]) {
+					hash_size_record[hash_value] = 2;
+					*address = actual_ele_0;
+					*(address + 1) = actual_ele_1;
 				}
-				distance = CCD::internal::pointTriangleDistanceUnclassified(ori_pos_0[pair[i + 1]][pair[i]].data(),
-					ori_pos_1[pair[i + 3]][indices[0]].data(), ori_pos_1[pair[i + 3]][indices[1]].data(), ori_pos_1[pair[i + 3]][indices[2]].data());
+				else {
+					for (unsigned int i = 0; i < hash_size_record[hash_value]; i += 2) {
+						if (address[i] == actual_ele_0 && address[i + 1] == actual_ele_1) {
+							goto not_add_value;
+						}
+					}
+					address[hash_size_record[hash_value]] = actual_ele_0;
+					address[hash_size_record[hash_value] + 1] = actual_ele_1;
+					hash_size_record[hash_value] += 2;
+				}
 
-				address[hash_size_record[hash_value]] = actual_ele_0;
-				address[hash_size_record[hash_value] + 1] = actual_ele_1;
-				hash_size_record[hash_value] += 2;
 			}
+			distance = CCD::internal::pointTriangleDistanceUnclassified(ori_pos_0[pair[i + 1]][pair[i]].data(),
+				ori_pos_1[pair[i + 3]][indices[0]].data(), ori_pos_1[pair[i + 3]][indices[1]].data(), ori_pos_1[pair[i + 3]][indices[2]].data());
 			record_index->emplace_back(pair[i + 1]);
 			record_index->emplace_back(pair[i]);
 			record_index->emplace_back(pair[i + 3]);
@@ -8317,7 +8315,7 @@ void Collision::collisionTimeAllClosePair(int vt, int vt_c, int tv_c, int ee, in
 	//auto end = vt_pair_compressed_record.begin()+ vt_per_thread_start_index[thread_No + 1];
 
 	//vt
-	double vt_collision_time = VTCollisionTime(&record_vt_pair, triangle_indices.data(), vertex_record_for_this_color.data(), vertex_position.data(),
+	double vt_collision_time = VTCollisionTime(&record_vt_pair, triangle_indices.data(), vertex_collision_free.data(), vertex_position.data(),
 		vertex_record_for_this_color.data(), vertex_position.data(),vt);
 
 	if (vt_collision_time < collision_time) {
