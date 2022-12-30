@@ -115,14 +115,27 @@ public:
 	void computeARAPEnergyPerThread(int thread_No);
 
 	double min_collision_time;
+	void computeBarrierEnergy(int thread_No);
+
+
+	void computePreviousColorCollisionEnergy(int thread_No);
+
+	void computePreviousColorInertialEnergy(int thread_No, unsigned int color_No);
+
+	void  computeColorInertialEnergy(int thread_No);
+
+	void computeLastColorARAPEnergy(int thread_No);
 
 private:
+
+	std::vector<std::vector<std::vector<unsigned int>>*> vertex_index_of_a_tet_color_per_thread_start_group;
 
 	double computeInertialEnergy();
 	double computeInertialEnergyWarmStart();
 	double computeCurrentARAPEnergy();
 	double computeBarrierEnergy();
 
+	double computeFloorEnergy(int type, double collision_stiffness, std::vector<unsigned int>* record_vertex_collide_with_floor, int start, int end);
 
 	void allPairCollisionInversionTime();
 	void allPairCollisionTimeWarmStart();
@@ -141,6 +154,7 @@ private:
 
 	void computePreviousColorInversion(int color_No);
 
+	double computeFloorEnergy(int thread_No, int type, unsigned int* pair_index_start_per_thread, double collision_stiffness);
 
 	double computeFloorEnergy(int type);
 
@@ -154,6 +168,16 @@ private:
 		std::array<double, 3>** e0_current_pos, std::array<double, 3>** e1_current_pos, double collision_stiffness, double* d_hat,
 		bool** belong_to_color_group, int type, unsigned int start, unsigned int end);
 
+	double computeEEBarrierEnergy(int thread_No, unsigned int* pair_index_start_per_thread, unsigned int** edge_v_0, unsigned int** edge_v_1,
+		std::array<double, 3>** v_current_pos, std::array<double, 3>** t_current_pos,
+		bool** belong_to_color_group, int type, double collision_stiffness, std::vector<std::vector<unsigned int>>* record_ee_pair,
+		std::vector<std::vector<double>>* d_hat);
+
+
+	double computeVTBarrierEnergy(int thread_No, unsigned int* pair_index_start_per_thread, std::array<int, 3>** triangle_indices,
+		std::array<double, 3>** v_current_pos, std::array<double, 3>** t_current_pos,
+		bool** belong_to_color_group, int type, double collision_stiffness, std::vector<std::vector<unsigned int>>* record_vt_pair,
+		std::vector<std::vector<double>>* d_hat);
 
 	double computeVTEnergy(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
 		std::array<double, 3>** v_current_pos, std::array<double, 3>** t_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, 
@@ -171,7 +195,7 @@ private:
 	double computeColorInertialEnergy();
 
 
-	double computePreviousColorInertialEnergy(int color_No);
+	double computePreviousColorInertialEnergy(unsigned int color_No);
 
 	double computePreviousColorCollisionEnergy();
 
@@ -812,5 +836,12 @@ private:
 
 	unsigned int inner_itr_num_standard;
 
+
+
+	//double computePreviousColorInertialEnergyTest(unsigned int color_No);
+	//double computePreviousColorCollisionEnergyTest();
+	//double computeColorInertialEnergyTest();
+	//double computeLastColorARAPEnergyTest();
+	//double computeBarrierEnergyTest();
 };
 

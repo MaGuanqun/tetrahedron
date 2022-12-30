@@ -419,6 +419,15 @@ public:
 	std::vector<unsigned int> record_vertex_triangle_pair_index_start_per_thread;//thread_No, index, respectively
 	std::vector<unsigned int> record_edge_edge_pair_index_start_per_thread;//thread_No, index, respectively
 
+	std::vector<unsigned int> record_vertex_obj_triangle_collider_pair_index_start_per_thread;//thread_No, index, respectively
+	std::vector<unsigned int> record_vertex_collider_triangle_obj_pair_index_start_per_thread;//thread_No, index, respectively
+
+	std::vector<unsigned int> record_edge_edge_pair_collider_index_start_per_thread;//thread_No, index, respectively
+
+
+	std::vector<unsigned int>record_vertex_collide_with_floor_start_per_thread;//thread_No, index, respectively
+
+
 	std::vector<std::vector<int>>vt_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 3 0 1 3 or 4 0 1 2 3, every element 5 number
 	std::vector < std::vector<int>>ee_hessian_record_index;//record vertex_involved, vertex_index_in_this_pair, hesssian, e.g. 3 0 1 3 or 4 0 1 2 3
 	
@@ -491,10 +500,7 @@ private:
 
 
 
-	std::vector<unsigned int> record_vertex_obj_triangle_collider_pair_index_start_per_thread;//thread_No, index, respectively
-	std::vector<unsigned int> record_vertex_collider_triangle_obj_pair_index_start_per_thread;//thread_No, index, respectively
 
-	std::vector<unsigned int> record_edge_edge_pair_collider_index_start_per_thread;//thread_No, index, respectively
 
 
 	std::vector<std::vector<char>> indicate_triangle_with_collider;
@@ -686,7 +692,7 @@ private:
 	//std::vector<unsigned int> target_position_start_per_thread;
 
 	void setPairIndexEveryThread(std::vector<std::vector<unsigned int>>& pair, std::vector<unsigned int>& pair_index_start_per_thread,
-		unsigned int& ave_pair_num);
+		unsigned int& ave_pair_num, int move_bit);
 
 
 	void setPairIndexEveryThread(unsigned int** pair, std::vector<unsigned int>& pair_index_start_per_thread,

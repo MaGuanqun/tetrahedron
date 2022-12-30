@@ -136,6 +136,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	record_vertex_collider_triangle_obj_pair_index_start_per_thread.resize(2 * (thread_num + 1), 0);
 	record_edge_edge_pair_index_start_per_thread.resize(2 * (thread_num + 1), 0);
 	record_edge_edge_pair_collider_index_start_per_thread.resize(2 * (thread_num + 1), 0);
+	record_vertex_collide_with_floor_start_per_thread.resize(2 * (thread_num + 1), 0);
 
 	//vertex_edge_pair_index_start_per_thread.resize(2 * (thread_num + 1), 0);
 	//vertex_obj_edge_collider_pair_index_start_per_thread.resize(2 * (thread_num + 1), 0);
@@ -1687,12 +1688,15 @@ void Collision::setPairIndexEveryThread()
 void Collision::setRecordPairIndexEveryThread()
 {
 	unsigned int pair_;
-	setPairIndexEveryThread(record_vt_pair, record_vertex_triangle_pair_index_start_per_thread, pair_);
-	setPairIndexEveryThread(record_ee_pair, record_edge_edge_pair_index_start_per_thread, pair_);
+	setPairIndexEveryThread(record_vt_pair, record_vertex_triangle_pair_index_start_per_thread, pair_,2);
+	setPairIndexEveryThread(record_ee_pair, record_edge_edge_pair_index_start_per_thread, pair_,2);
 	if (has_collider) {
-		setPairIndexEveryThread(record_vt_collider_pair, record_vertex_obj_triangle_collider_pair_index_start_per_thread, pair_);
-		setPairIndexEveryThread(record_tv_collider_pair, record_vertex_collider_triangle_obj_pair_index_start_per_thread, pair_);
-		setPairIndexEveryThread(record_ee_collider_pair, record_edge_edge_pair_collider_index_start_per_thread, pair_);
+		setPairIndexEveryThread(record_vt_collider_pair, record_vertex_obj_triangle_collider_pair_index_start_per_thread, pair_,2);
+		setPairIndexEveryThread(record_tv_collider_pair, record_vertex_collider_triangle_obj_pair_index_start_per_thread, pair_,2);
+		setPairIndexEveryThread(record_ee_collider_pair, record_edge_edge_pair_collider_index_start_per_thread, pair_,2);
+	}
+	if (floor->exist) {
+		setPairIndexEveryThread(record_vertex_collide_with_floor, record_vertex_collide_with_floor_start_per_thread, pair_, 1);
 	}
 }
 
@@ -1858,12 +1862,12 @@ void Collision::setPairIndexEveryThread(std::vector<unsigned int>* pair, std::ve
 
 
 void Collision::setPairIndexEveryThread(std::vector<std::vector<unsigned int>>& pair, std::vector<unsigned int>& pair_index_start_per_thread,
-	unsigned int& ave_pair_num)
+	unsigned int& ave_pair_num, int move_bit)
 {
 	std::vector<unsigned int>pair_start(thread_num);
-	unsigned int pair_num = pair[0].size() >> 2;
+	unsigned int pair_num = pair[0].size() >> move_bit;
 	for (int i = 1; i < thread_num; ++i) {
-		pair_num += pair[i].size() >> 2;
+		pair_num += pair[i].size() >> move_bit;
 	}
 	countInEveryThread(thread_num, pair_num, pair_start.data());
 	ave_pair_num = pair_start[0];
@@ -1871,21 +1875,21 @@ void Collision::setPairIndexEveryThread(std::vector<std::vector<unsigned int>>& 
 	unsigned int num;
 	for (int i = 0; i < thread_num; ++i) {
 		num = pair_start[i];
-		if (num <= (pair[pair_index_start_per_thread[i << 1]].size() - pair_index_start_per_thread[(i << 1) + 1]) >> 2)
+		if (num <= (pair[pair_index_start_per_thread[i << 1]].size() - pair_index_start_per_thread[(i << 1) + 1]) >> move_bit)
 		{
 			pair_index_start_per_thread[(i + 1) << 1] = pair_index_start_per_thread[i << 1];
-			pair_index_start_per_thread[(i << 1) + 3] = pair_index_start_per_thread[(i << 1) + 1] + (num << 2);
+			pair_index_start_per_thread[(i << 1) + 3] = pair_index_start_per_thread[(i << 1) + 1] + (num << move_bit);
 		}
 		else {
-			num -= (pair[pair_index_start_per_thread[i << 1]].size() - pair_index_start_per_thread[(i << 1) + 1]) >> 2;
+			num -= (pair[pair_index_start_per_thread[i << 1]].size() - pair_index_start_per_thread[(i << 1) + 1]) >> move_bit;
 			for (int j = pair_index_start_per_thread[i << 1] + 1; j < thread_num; ++j) {
-				if (num <= (pair[j].size() >> 2)) {
+				if (num <= (pair[j].size() >> move_bit)) {
 					pair_index_start_per_thread[(i + 1) << 1] = j;
-					pair_index_start_per_thread[(i << 1) + 3] = num << 2;
+					pair_index_start_per_thread[(i << 1) + 3] = num << move_bit;
 					break;
 				}
 				else {
-					num -= pair[j].size() >> 2;
+					num -= pair[j].size() >> move_bit;
 				}
 			}
 		}

@@ -824,6 +824,9 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
     case FIRST_COLOR_ARAP_ENERGY:
         k = job([func, thread_id, para]() {func->computePreviousColorARAPEnergy(thread_id, para); });
         break;
+    case PREVIOUS_COLOR_INERTIAL_ENERGY:
+        k = job([func, thread_id, para]() {func->computePreviousColorInertialEnergy(thread_id, para); });
+        break;
     //case UPDATE_TET_GRAD_SHARED:
     //    k = job([func, thread_id, para]() {func->tetGradForColor(thread_id, para); });
     //    break;
@@ -871,6 +874,18 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
         break;
     case ARAP_ENERGY:
         k = job([func, thread_id]() {func->computeARAPEnergyPerThread(thread_id); });
+        break;
+    case COMPUTE_BARRIER_ENERGY:
+        k = job([func, thread_id]() {func->computeBarrierEnergy(thread_id); });
+        break;
+    case COMPUTE_RPREVIOUS_COLOR_BARRIER_ENERGY:
+        k = job([func, thread_id]() {func->computePreviousColorCollisionEnergy(thread_id); });
+        break;
+    case LAST_COLOR_INERTIAL_ENERGY:
+        k = job([func, thread_id]() {func->computeColorInertialEnergy(thread_id); });
+        break;
+    case LAST_COLOR_ARAP_ENERGY:
+        k = job([func, thread_id]() {func->computeLastColorARAPEnergy(thread_id); });
         break;
     }
     return k;
