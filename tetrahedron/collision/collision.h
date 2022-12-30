@@ -430,6 +430,11 @@ public:
 	std::vector<std::vector<unsigned int>> edge_index_collide_with_collider;
 	std::vector<std::vector<unsigned int>> vertex_index_collide_with_collider;
 	void upodateRecordPositionFirstColor(int color);
+
+	unsigned int* inner_itr_num_standard;
+	double* min_collision_time;
+
+	bool collisionPairHasChanged();
 private:		
 
 

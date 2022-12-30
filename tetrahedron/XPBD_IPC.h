@@ -111,7 +111,17 @@ public:
 	//std::vector<std::array<double, 3>> e1_1_;
 	void computePreviousColorARAPEnergy(int thread_No, unsigned int color_No);
 
+	void inertialEnergyPerThread(int thread_No);
+	void computeARAPEnergyPerThread(int thread_No);
+
+	double min_collision_time;
+
 private:
+
+	double computeInertialEnergy();
+	double computeInertialEnergyWarmStart();
+	double computeCurrentARAPEnergy();
+	double computeBarrierEnergy();
 
 
 	void allPairCollisionInversionTime();
@@ -139,9 +149,20 @@ private:
 		std::array<double, 3>** e0_current_pos, std::array<double, 3>** e1_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, 
 		bool** belong_to_color_group, int type);
 
+
+	double computeEEEnergy(std::vector<unsigned int>* record_pair, unsigned int** edge_v_0, unsigned int** edge_v_1,
+		std::array<double, 3>** e0_current_pos, std::array<double, 3>** e1_current_pos, double collision_stiffness, double* d_hat,
+		bool** belong_to_color_group, int type, unsigned int start, unsigned int end);
+
+
 	double computeVTEnergy(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
 		std::array<double, 3>** v_current_pos, std::array<double, 3>** t_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, 
 		bool** belong_to_color_group, int type);
+
+
+	double computeVTEnergy(std::vector<unsigned int>* record_vt_pair, std::array<int, 3>** triangle_indices,
+		std::array<double, 3>** v_current_pos, std::array<double, 3>** t_current_pos, double collision_stiffness, double* d_hat,
+		bool** belong_to_color_group, int type, unsigned int start, unsigned int end);
 
 
 	double computePreviousColorEnergy(unsigned int color_no);
@@ -214,6 +235,9 @@ private:
 	std::vector<MeshStruct*> mesh_struct;
 	std::vector<MeshStruct*> collider_mesh_struct;
 	std::vector<unsigned int*> vertex_index_begin_per_thread;
+
+	std::vector<unsigned int*>tet_index_begin_per_thread;//size is total object num
+
 	void reorganzieDataOfObjects();
 	unsigned int total_obj_num;
 	void initialVariable();
@@ -361,10 +385,7 @@ private:
 		unsigned int num, double* d_hat, double collision_stiffness);
 
 
-	double computeInertialEnergy();
-	double computeInertialEnergyWarmStart();
-	double computeCurrentARAPEnergy();
-	double computeBarrierEnergy();
+
 
 
 	double computeEECollisionEnergyPerElement(double* pos0, double* pos1, unsigned int* edge_index,
@@ -788,6 +809,8 @@ private:
 
 	void lineSearchLastColor();
 	void lineSearchFirstColor(unsigned int color_No, double ori_energy);
+
+	unsigned int inner_itr_num_standard;
 
 };
 

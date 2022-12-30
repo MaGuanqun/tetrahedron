@@ -879,13 +879,13 @@ void SecondOrderLargeSystem::computeARAPEnergy()
 				//energy += compute_energy.computeARAPConstraint(vertex_pos[tet_index[i][0]].data(), vertex_pos[tet_index[i][1]].data(), vertex_pos[tet_index[i][2]].data(),
 				//	vertex_pos[tet_index[i][3]].data(), A[i], volume[i], stiffness, *lambda_,time_step_square);
 				//lambda_++;
-				energy += compute_energy.computeARAPEnergy(vertex_pos[tet_index[i][0]].data(), vertex_pos[tet_index[i][1]].data(), vertex_pos[tet_index[i][2]].data(),
+				energy += compute_energy.ARAPEnergy(vertex_pos[tet_index[i][0]].data(), vertex_pos[tet_index[i][1]].data(), vertex_pos[tet_index[i][2]].data(),
 					vertex_pos[tet_index[i][3]].data(), A[i], volume[i], stiffness);
 			}
 
 		}
 	}
-	total_energy += energy;
+	total_energy +=0.5* energy;
 }
 
 //also compute internal force

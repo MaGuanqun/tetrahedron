@@ -1459,13 +1459,13 @@ void NewtonMethod::computeARAPEnergy()
 		mass_inv_ = inv_mass[obj_No + cloth->size()];
 		for (unsigned int i = 0; i < tet_end; i++) {
 			if (mass_inv_[tet_index[i][0]] != 0.0 || mass_inv_[tet_index[i][1]] != 0.0 || mass_inv_[tet_index[i][2]] != 0.0 || mass_inv_[tet_index[i][3]] != 0.0) {
-				energy += compute_energy.computeARAPEnergy(vertex_pos[tet_index[i][0]].data(), vertex_pos[tet_index[i][1]].data(), vertex_pos[tet_index[i][2]].data(),
+				energy += compute_energy.ARAPEnergy(vertex_pos[tet_index[i][0]].data(), vertex_pos[tet_index[i][1]].data(), vertex_pos[tet_index[i][2]].data(),
 					vertex_pos[tet_index[i][3]].data(), A[i], volume[i], stiffness);
 			}
 
 		}
 	}
-	total_energy += energy;
+	total_energy += 0.5*energy;
 }
 
 

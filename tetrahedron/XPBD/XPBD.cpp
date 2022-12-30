@@ -959,13 +959,13 @@ double XPBD::computeCurrentARAPEnergy()
 		mass_inv_ = tetrahedron->data()[i].mesh_struct.mass_inv.data();
 		for (unsigned int j = 0; j < size; ++j) {
 			if (mass_inv_[indices[i][0]] != 0.0 || mass_inv_[indices[i][1]] != 0.0 || mass_inv_[indices[i][2]] != 0.0 || mass_inv_[indices[i][3]] != 0.0) {
-				energy += compute_energy.computeARAPEnergy(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
+				energy += compute_energy.ARAPEnergy(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
 					vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j], volume[j], stiffness);
 			}
 		}
 
 	}
-	return energy;
+	return 0.5*energy;
 }
 
 

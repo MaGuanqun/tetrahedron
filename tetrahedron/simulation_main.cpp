@@ -151,9 +151,9 @@ void simu_main(GLFWwindow* window, Input* input) {
 		if (couldMoveCamera(input, control_parameter)) {
 			if (input->mouse.scroll_callback) {
 				if (!scene.intersection.happened && !set_anchor[0]) {
-					if (zoom_value > 0.025) {
-						zoom_value -= 0.025 * input->mouse.scroll;
-						zoom_value = myMax(zoom_value, 0.026);
+					if (zoom_value > 0.005) {
+						zoom_value -= 0.005 * input->mouse.scroll;
+						zoom_value = myMax(zoom_value, 0.006);
 						zoom_value = myMin(zoom_value, 30.0);
 					}
 					camera.zoomInOut((float)zoom_value * camera_from_origin);

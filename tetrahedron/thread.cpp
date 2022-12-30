@@ -866,6 +866,12 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
     case COLLISION_FREE_POSITION_FROM_RECORD:
         k = job([func, thread_id]() {func->computeCollisionFreePositionFromRecord(thread_id); });
         break;
+    case INERTIAL_ENERGY:
+        k = job([func, thread_id]() {func->inertialEnergyPerThread(thread_id); });
+        break;
+    case ARAP_ENERGY:
+        k = job([func, thread_id]() {func->computeARAPEnergyPerThread(thread_id); });
+        break;
     }
     return k;
 }

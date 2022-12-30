@@ -43,7 +43,7 @@ double ComputeEnergy::computeBarrierEnergy(double* position_0, double* position_
 	return stiffness * barrier(distance, d_hat_2);
 }
 
-double ComputeEnergy::computeARAPEnergy(double* position_0, double* position_1, double* position_2, double* position_3, Matrix<double, 3, 4>& A, double volume, double stiffness)
+double ComputeEnergy::ARAPEnergy(double* position_0, double* position_1, double* position_2, double* position_3, Matrix<double, 3, 4>& A, double volume, double stiffness)
 {
 	Matrix3d deformation_gradient;
 	FEM::getDeformationGradient(position_0,position_1, position_2, position_3, A, deformation_gradient);
@@ -56,7 +56,7 @@ double ComputeEnergy::computeARAPEnergy(double* position_0, double* position_1, 
 	double norm = (eigen_value[0] - 1.0) * (eigen_value[0] - 1.0) + (eigen_value[1] - 1.0) * (eigen_value[1] - 1.0) +
 		(eigen_value[2] - 1.0) * (eigen_value[2] - 1.0);
 
-	return 0.5*norm * stiffness * volume;
+	return norm * stiffness * volume;
 }
 
 

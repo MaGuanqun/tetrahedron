@@ -6,7 +6,7 @@ collider
 .\model\U_simu.obj
 stiffness
 200 50000 0 0 0 0 
-1000 20000 20000 20 0 0 0 0 
+100000 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
 0 
@@ -34,9 +34,9 @@ XPBD_IPC
 substep_num
 1
 out iteration_num
-50
+100
 inner iteration_num
-200
+64
 sub_step_per_detection
 1
 d_hat
@@ -44,12 +44,12 @@ d_hat
 inner convergence rate
 0.001
 min inner itr num
-5
+4
 min outer itr num
 2
 displacement standard
 0.002
 distance record as collision
-1e-6
+1e-7
 energy converge standard
 1e-08
