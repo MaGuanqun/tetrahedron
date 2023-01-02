@@ -2250,7 +2250,7 @@ void Collision::computeCollisionFreePositionForColor(int thread_No)
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		index_end = all_vertex_index_start_per_thread[i][thread_No + 1];
 		q_end = vertex_position[i];
-		q_pre = vertex_record_for_this_color[i];
+		q_pre = vertex_collision_free[i];
 		record_position_num = indicate_if_involved_in_last_color[i][0].data();
 		for (unsigned int j = all_vertex_index_start_per_thread[i][thread_No]; j < index_end; ++j) {
 			if (record_position_num[j]) {
@@ -2488,7 +2488,7 @@ void Collision::updatePositionColor(int thread_No, int color)
 		//	continue;
 		//}
 		vertex_pos = vertex_position[i];
-		ini_vertex_pos = vertex_record_for_this_color[i];
+		ini_vertex_pos = vertex_collision_free[i];
 		index_of_a_tet_color = vertex_index_of_a_tet_color_group[i][color_group_index][color].data();
 		end_per_thread = vertex_index_of_a_tet_color_per_thread_start_group[i][color_group_index][color][thread_No + 1];
 
@@ -8315,8 +8315,8 @@ void Collision::collisionTimeAllClosePair(int vt, int vt_c, int tv_c, int ee, in
 	//auto end = vt_pair_compressed_record.begin()+ vt_per_thread_start_index[thread_No + 1];
 
 	//vt
-	double vt_collision_time = VTCollisionTime(&record_vt_pair, triangle_indices.data(), vertex_record_for_this_color.data(), vertex_position.data(),
-		vertex_record_for_this_color.data(), vertex_position.data(),vt);
+	double vt_collision_time = VTCollisionTime(&record_vt_pair, triangle_indices.data(), vertex_collision_free.data(), vertex_position.data(),
+		vertex_collision_free.data(), vertex_position.data(),vt);
 
 	if (vt_collision_time < collision_time) {
 		collision_time = vt_collision_time;
@@ -8329,8 +8329,8 @@ void Collision::collisionTimeAllClosePair(int vt, int vt_c, int tv_c, int ee, in
 	//start = ee_pair_compressed_record.begin() + ee_per_thread_start_index[thread_No];
 	//end = ee_pair_compressed_record.begin() + ee_per_thread_start_index[thread_No + 1];
 	double ee_collision_time
-		= EECollisionTime(&record_ee_pair,edge_vertices.data(),edge_vertices.data(), vertex_record_for_this_color.data(), vertex_position.data(), 
-			vertex_record_for_this_color.data(), vertex_position.data(),ee);
+		= EECollisionTime(&record_ee_pair,edge_vertices.data(),edge_vertices.data(), vertex_collision_free.data(), vertex_position.data(),
+			vertex_collision_free.data(), vertex_position.data(),ee);
 	if (ee_collision_time < collision_time) {
 		collision_time = ee_collision_time;
 	}
@@ -8341,21 +8341,21 @@ void Collision::collisionTimeAllClosePair(int vt, int vt_c, int tv_c, int ee, in
 
 	if (has_collider) {
 		double vt_collider_time = VTCollisionTime(&record_vt_collider_pair, triangle_indices_collider.data(),
-			vertex_record_for_this_color.data(), vertex_position.data(),
+			vertex_collision_free.data(), vertex_position.data(),
 			vertex_for_render_collider.data(), vertex_position_collider.data(),vt_c);
 		if (vt_collider_time < collision_time) {
 			collision_time = vt_collider_time;
 		}
 
 		double tv_collider_time = VTCollisionTime(&record_tv_collider_pair, triangle_indices.data(), vertex_for_render_collider.data(), vertex_position_collider.data(),
-			vertex_record_for_this_color.data(), vertex_position.data(),tv_c);
+			vertex_collision_free.data(), vertex_position.data(),tv_c);
 		if (tv_collider_time < collision_time) {
 			collision_time = tv_collider_time;
 		}
 
 		double ee_collider_time
 			= EECollisionTime(&record_ee_collider_pair, edge_vertices.data(), collider_edge_vertices.data(),
-				vertex_record_for_this_color.data(), vertex_position.data(),
+				vertex_collision_free.data(), vertex_position.data(),
 				vertex_for_render_collider.data(), vertex_position_collider.data(),ee_c);
 		if (ee_collider_time < collision_time) {
 			collision_time = ee_collider_time;
@@ -8367,7 +8367,7 @@ void Collision::collisionTimeAllClosePair(int vt, int vt_c, int tv_c, int ee, in
 		if (floor_ == 0) {
 			for (auto j = record_vertex_collide_with_floor.begin(); j < record_vertex_collide_with_floor.end(); ++j) {
 				for (auto i = j->begin(); i < j->end(); i += 2) {
-					floorCollisionTime(vertex_record_for_this_color[*i][*(i + 1)][floor->dimension], vertex_position[*i][*(i + 1)][floor->dimension],
+					floorCollisionTime(vertex_collision_free[*i][*(i + 1)][floor->dimension], vertex_position[*i][*(i + 1)][floor->dimension],
 						floor->normal_direction, floor->value, collision_time, tolerance);
 
 				}
@@ -8377,7 +8377,7 @@ void Collision::collisionTimeAllClosePair(int vt, int vt_c, int tv_c, int ee, in
 			for (auto j = record_vertex_collide_with_floor.begin(); j < record_vertex_collide_with_floor.end(); ++j) {
 				for (auto i = j->begin(); i < j->end(); i += 2) {
 					if (vertex_belong_to_color_group[*i][*(i + 1)]) {
-						floorCollisionTime(vertex_record_for_this_color[*i][*(i + 1)][floor->dimension], vertex_position[*i][*(i + 1)][floor->dimension],
+						floorCollisionTime(vertex_collision_free[*i][*(i + 1)][floor->dimension], vertex_position[*i][*(i + 1)][floor->dimension],
 							floor->normal_direction, floor->value, collision_time, tolerance);
 					}
 				}

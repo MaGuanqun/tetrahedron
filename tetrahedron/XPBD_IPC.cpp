@@ -639,16 +639,17 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 			inversionTest();
 			thread->assignTask(this, COLLISION_FREE_POSITION_);
 
-			if (!collision.collisionPairHasChanged()) {
-				if (inner_itr_num_standard < max_iteration_number) {
-					inner_itr_num_standard *= 2;
-				}
-			}
-			if (collision.collision_time < min_collision_time) {
-				if (inner_itr_num_standard > 1) {
-					inner_itr_num_standard /= 2;
-				}
-			}
+			//if (!collision.collisionPairHasChanged()) {
+			//	if (inner_itr_num_standard < max_iteration_number) {
+			//		inner_itr_num_standard *= 2;
+			//	}
+			//}
+			//if (collision.collision_time < min_collision_time) {
+			//	if (inner_itr_num_standard > 1) {
+			//		inner_itr_num_standard /= 2;
+			//	}
+			// 
+			//}
 		}
 		updateCollisionFreePosition();
 		if (outer_itr_num == 0) {
@@ -670,9 +671,9 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 			nearly_not_move = true;
 			solveNewtonCD_tetBlock();
 
-			if (outer_itr_num ==0) {
-				vertex_trace.push_back(vertex_position[0][3556]);
-			}
+			//if (outer_itr_num ==0) {
+			//	vertex_trace.push_back(vertex_position[0][3556]);
+			//}
 
 			computeCurrentEnergy();
 			//std::cout << "itration number " <<outer_itr_num<<" "<< inner_iteration_number << std::endl;
@@ -826,16 +827,19 @@ void XPBD_IPC::XPBD_IPCSolve()
 
 bool XPBD_IPC::innerConvergeCondition(unsigned int iteration_num)
 {
-	if (iteration_num >= inner_itr_num_standard) {//max_iteration_number
-		return true;
-	}
-	if (iteration_num < 1) {
+	//if (iteration_num >= inner_itr_num_standard) {//max_iteration_number
+	//	return true;
+	//}
+	if (iteration_num < min_inner_iteration) {
 		return false;
 	}
 	if (abs(energy - previous_energy) < energy_converge_standard) {
 		return true;
 	}
 	if (abs(energy - previous_energy) / previous_energy < energy_converge_ratio) {
+		return true;
+	}
+	if (iteration_num >= max_iteration_number) {//max_iteration_number
 		return true;
 	}
 
@@ -1061,7 +1065,7 @@ void XPBD_IPC::computeLastColorInversion()
 		size = tetrahedron->data()[i].mesh_struct.indices.size();
 		indices = tetrahedron->data()[i].mesh_struct.indices.data();
 		vertex_pos = vertex_position[i + cloth->size()];
-		ori_vertex_pos =record_vertex_position[i + cloth->size()].data();
+		ori_vertex_pos = record_collision_free_vertex_position[i + cloth->size()].data();
 		mass_inv_ = tetrahedron->data()[i].mesh_struct.mass_inv.data();
 
 		for (int j = 0; j < size; ++j) {
@@ -6258,7 +6262,7 @@ void XPBD_IPC::computePreviousColorInversion(int color_No)
 		size = tetrahedron->data()[i].mesh_struct.indices.size();
 		indices = tetrahedron->data()[i].mesh_struct.indices.data();
 		vertex_pos = vertex_position[i + cloth->size()];
-		ori_vertex_pos = record_vertex_position[i + cloth->size()].data();
+		ori_vertex_pos = record_collision_free_vertex_position[i + cloth->size()].data();
 		mass_inv_ = tetrahedron->data()[i].mesh_struct.mass_inv.data();
 		color_group_index = inner_iteration_number % tet_color_groups[i]->size();
 
