@@ -1615,6 +1615,8 @@ bool SecondOrderConstraint::computeBarrierEEGradientHessian(double* ea0, double*
 	double ee_cross_norm_2;
 	bool need_mollifier = CCD::internal::edgeEdgeMollifier(ea0, ea1, eb0, eb1, eps_x, mollifier, ee_cross_norm_2);
 
+
+
 	switch (CCD::internal::edgeEdgeDistanceType(ea0, ea1, eb0, eb1)) {
 	case 0:
 		distance = CCD::internal::pointPointDistance(ea0, eb0);

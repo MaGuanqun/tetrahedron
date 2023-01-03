@@ -408,7 +408,11 @@ void XPBD_IPC::initialHessianMap()
 
 	common_hessian.reserve(4 * vertex_num_on_surface_prefix_sum.back());
 	common_grad.resize(3 * vertex_index_prefix_sum_obj.back());
-	collision.common_grad = common_grad.data();
+	common_grad.resize(total_thread_num);
+	for (int i = 0; i < total_thread_num; ++i) {
+		collision.common_grad[i] = common_grad[i].data();
+	}
+
 	collision.floor_hessian = &floor_hessian;
 	floor_hessian.reserve(vertex_num_on_surface_prefix_sum.back() / 10);
 	
@@ -606,9 +610,12 @@ void XPBD_IPC::XPBD_IPC_Position_Solve()
 
 void XPBD_IPC::initialRecordHessian()
 {
-	common_hessian.clear();
+	//common_hessian.clear();
 	floor_hessian.clear();
-	memset(common_grad.data(), 0, 8 * common_grad.size());
+	for (int i = 0; i < total_thread_num; ++i) {
+		memset(common_grad[i].data(), 0, 8 * common_grad[i].size());
+	}
+	
 }
 
 
@@ -973,7 +980,7 @@ void 	XPBD_IPC::tetHessian()
 			tet_vertex = tet_vertex_indices[j].data();
 			for (int k = 0; k < 4; ++k) {
 				for (int m = 0; m < 4; ++m) {
-					address = hessian->find(std::array{tet_vertex[k], tet_vertex[m] });
+					address = hessian->find(std::array{tet_vertex[k], tet_vertex[mc] });
 					if (address != hessian->end()) {
 						address->second += Hessian.data()[(m << 2) + k];
 					}
@@ -2350,6 +2357,7 @@ void XPBD_IPC::newtonCDBlock()
 
 void XPBD_IPC::solveNewtonCD_tetBlock()
 {
+	common_hessian.clear();
 	//for (int i = 0; i < max_tet_color_num; ++i) {
 	//	for (int j = 0; j < thread->thread_num; ++j) {
 	//		tetHessianForColor(j, i);

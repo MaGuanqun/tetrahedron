@@ -36,6 +36,12 @@ struct MeshMaterial {
 };
 
 
+struct  StoreHessianWithOrderInConstraint
+{
+	std::vector<unsigned int> order_in_constraint;//store type(0 vt,1ee,2 tv_c, 3 ee_c), constraint index, start index in that constraint hessian
+	std::array<double, 9>hessian;
+};
+
 struct OriMesh {
 	int type;
 	std::vector<std::array<double, 3>> vertices;

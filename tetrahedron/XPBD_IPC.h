@@ -216,11 +216,11 @@ private:
 
 	void 	initialRecordHessian();
 
-	std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash> common_hessian;//only include collision
+	std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash> common_hessian;//only include collision
 	std::vector<std::unordered_map<std::array<int, 2>,double, pair_hash>> tet_hessian;//size is total obj num
 	std::unordered_map<unsigned int, double> floor_hessian;
 
-	std::vector<double>common_grad;
+	std::vector<std::vector<double>>common_grad;
 
 
 	std::vector<std::vector<std::vector<std::vector<unsigned int>>>*>tet_color_groups;//size is tet num
