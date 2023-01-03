@@ -1072,7 +1072,7 @@ void XPBD_IPC::computeLastColorInversion()
 		size = tetrahedron->data()[i].mesh_struct.indices.size();
 		indices = tetrahedron->data()[i].mesh_struct.indices.data();
 		vertex_pos = vertex_position[i + cloth->size()];
-		ori_vertex_pos = record_collision_free_vertex_position[i + cloth->size()].data();
+		ori_vertex_pos = record_vertex_position[i + cloth->size()].data();
 		mass_inv_ = tetrahedron->data()[i].mesh_struct.mass_inv.data();
 
 		for (int j = 0; j < size; ++j) {
@@ -6270,7 +6270,7 @@ void XPBD_IPC::computePreviousColorInversion(int color_No)
 		size = tetrahedron->data()[i].mesh_struct.indices.size();
 		indices = tetrahedron->data()[i].mesh_struct.indices.data();
 		vertex_pos = vertex_position[i + cloth->size()];
-		ori_vertex_pos = record_collision_free_vertex_position[i + cloth->size()].data();
+		ori_vertex_pos = record_vertex_position[i + cloth->size()].data();
 		mass_inv_ = tetrahedron->data()[i].mesh_struct.mass_inv.data();
 		color_group_index = inner_iteration_number % tet_color_groups[i]->size();
 
