@@ -857,6 +857,9 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
     case XPBD_IPC_VELOCITY:
         k = job([func, thread_id]() {func->computeVelocity(thread_id); });
         break;
+    case SUM_ALL_GRAD:
+        k = job([func, thread_id]() {func->sumAllGrad(thread_id); });
+        break;
     //case UPDATE_TET_HESSIAN:
     //    k = job([func, thread_id]() {func->tetHessian(thread_id); });
     //    break;

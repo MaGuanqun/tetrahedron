@@ -356,6 +356,8 @@ void XPBD_IPC::reorganzieDataOfObjects()
 	}
 
 
+	global_vertex_index_start_per_thread.resize(total_thread_num + 1,0);
+	arrangeIndex(total_thread_num, vertex_index_prefix_sum_obj[total_obj_num], global_vertex_index_start_per_thread.data());
 
 
 	int vertex_num;
@@ -413,9 +415,9 @@ void XPBD_IPC::initialHessianMap()
 		collision.common_grad[i] = common_grad[i].data();
 	}
 
-	collision.floor_hessian = &floor_hessian;
-	floor_hessian.reserve(vertex_num_on_surface_prefix_sum.back() / 10);
-	
+
+	floor_hessian.resize(vertex_index_prefix_sum_obj.back());
+	collision.floor_hessian = floor_hessian.data();	
 }
 
 
@@ -611,7 +613,9 @@ void XPBD_IPC::XPBD_IPC_Position_Solve()
 void XPBD_IPC::initialRecordHessian()
 {
 	//common_hessian.clear();
-	floor_hessian.clear();
+	if (floor->exist) {
+		memset(floor_hessian.data(), 0, 8 * floor_hessian.size());
+	}
 	for (int i = 0; i < total_thread_num; ++i) {
 		memset(common_grad[i].data(), 0, 8 * common_grad[i].size());
 	}
@@ -984,7 +988,7 @@ void 	XPBD_IPC::tetHessian()
 			tet_vertex = tet_vertex_indices[j].data();
 			for (int k = 0; k < 4; ++k) {
 				for (int m = 0; m < 4; ++m) {
-					address = hessian->find(std::array{tet_vertex[k], tet_vertex[mc] });
+					address = hessian->find(std::array{tet_vertex[k], tet_vertex[m] });
 					if (address != hessian->end()) {
 						address->second += Hessian.data()[(m << 2) + k];
 					}
@@ -1180,7 +1184,7 @@ void XPBD_IPC::inversionTest()
 
 
 //UPDATE_TET_GRAD_SHARED
-void XPBD_IPC::tetGradForColor(unsigned int color_No)
+void XPBD_IPC::tetGradForColor(int thread_No, unsigned int color_No)
 {
 
 	unsigned int start, end;
@@ -1205,6 +1209,8 @@ void XPBD_IPC::tetGradForColor(unsigned int color_No)
 	//solve all colors except the last color
 	double* grad_address;
 
+	double* com_grad = common_grad[thread_No].data();
+
 	for (int i = 0; i < tetrahedron->size(); ++i) {
 		color_group_index = inner_iteration_number % tet_color_groups[i]->size();
 		if (color_No >= tetrahedron->data()[i].mesh_struct.tet_color_group[color_group_index].size() - 1) {
@@ -1228,19 +1234,19 @@ void XPBD_IPC::tetGradForColor(unsigned int color_No)
 		for (auto j = 0; j < end; ++j) {
 			second_order_constraint.setARAPGrad(grad, vertex_pos, stiffness, A[tet_in_a_group[j]],// ,
 				volume[tet_in_a_group[j]], tet_indices_[tet_in_a_group[j]].data()); //,
-			grad_address = common_grad.data() + 3 * (prefix_sum_start + tet_indices_[tet_in_a_group[j]][0]);
+			grad_address = com_grad + 3 * (prefix_sum_start + tet_indices_[tet_in_a_group[j]][0]);
 			*grad_address += grad.data()[0];
 			*(grad_address + 1) += grad.data()[1];
 			*(grad_address + 2) += grad.data()[2];
-			grad_address = common_grad.data() + 3 * (prefix_sum_start + tet_indices_[tet_in_a_group[j]][1]);
+			grad_address = com_grad + 3 * (prefix_sum_start + tet_indices_[tet_in_a_group[j]][1]);
 			*grad_address += grad.data()[3];
 			*(grad_address + 1) += grad.data()[4];
 			*(grad_address + 2) += grad.data()[5];
-			grad_address = common_grad.data() + 3 * (prefix_sum_start + tet_indices_[tet_in_a_group[j]][2]);
+			grad_address = com_grad + 3 * (prefix_sum_start + tet_indices_[tet_in_a_group[j]][2]);
 			*grad_address += grad.data()[6];
 			*(grad_address + 1) += grad.data()[7];
 			*(grad_address + 2) += grad.data()[8];
-			grad_address = common_grad.data() + 3 * (prefix_sum_start + tet_indices_[tet_in_a_group[j]][3]);
+			grad_address = com_grad + 3 * (prefix_sum_start + tet_indices_[tet_in_a_group[j]][3]);
 			*grad_address += grad.data()[9];
 			*(grad_address + 1) += grad.data()[10];
 			*(grad_address + 2) += grad.data()[11];
@@ -1253,19 +1259,19 @@ void XPBD_IPC::tetGradForColor(unsigned int color_No)
 		for (auto j = 0;	j < end; ++j) {
 			second_order_constraint.setARAPGrad(grad, vertex_pos, stiffness, A[tet_around_a_group[j]],// ,
 				volume[tet_around_a_group[j]], tet_indices_[tet_around_a_group[j]].data());
-			grad_address = common_grad.data() + 3 * (prefix_sum_start + tet_indices_[tet_around_a_group[j]][0]);
+			grad_address = com_grad + 3 * (prefix_sum_start + tet_indices_[tet_around_a_group[j]][0]);
 			*grad_address += grad.data()[0];
 			*(grad_address+1) += grad.data()[1];
 			*(grad_address+2) += grad.data()[2];
-			grad_address = common_grad.data() + 3 * (prefix_sum_start + tet_indices_[tet_around_a_group[j]][1]);
+			grad_address = com_grad + 3 * (prefix_sum_start + tet_indices_[tet_around_a_group[j]][1]);
 			*grad_address += grad.data()[3];
 			*(grad_address + 1) += grad.data()[4];
 			*(grad_address + 2) += grad.data()[5];
-			grad_address = common_grad.data() + 3 * (prefix_sum_start + tet_indices_[tet_around_a_group[j]][2]);
+			grad_address = com_grad + 3 * (prefix_sum_start + tet_indices_[tet_around_a_group[j]][2]);
 			*grad_address += grad.data()[6];
 			*(grad_address + 1) += grad.data()[7];
 			*(grad_address + 2) += grad.data()[8];
-			grad_address = common_grad.data() + 3 * (prefix_sum_start + tet_indices_[tet_around_a_group[j]][3]);
+			grad_address = com_grad + 3 * (prefix_sum_start + tet_indices_[tet_around_a_group[j]][3]);
 			*grad_address += grad.data()[9];
 			*(grad_address + 1) += grad.data()[10];
 			*(grad_address + 2) += grad.data()[11];
@@ -1300,19 +1306,19 @@ void XPBD_IPC::tetGradForColor(unsigned int color_No)
 			second_order_constraint.setARAPGrad(grad, vertex_pos, stiffness, A[tet_in_a_group[j]],// ,
 				volume[tet_in_a_group[j]], tet_indices_[tet_in_a_group[j]].data()); //,
 			is_tet_arap_grad_compute[tet_prefix_sum_start + tet_in_a_group[j]] = true;
-			grad_address = common_grad.data() + 3 * (prefix_sum_start + tet_indices_[tet_in_a_group[j]][0]);
+			grad_address = com_grad + 3 * (prefix_sum_start + tet_indices_[tet_in_a_group[j]][0]);
 			*grad_address += grad.data()[0];
 			*(grad_address + 1) += grad.data()[1];
 			*(grad_address + 2) += grad.data()[2];
-			grad_address = common_grad.data() + 3 * (prefix_sum_start + tet_indices_[tet_in_a_group[j]][1]);
+			grad_address = com_grad + 3 * (prefix_sum_start + tet_indices_[tet_in_a_group[j]][1]);
 			*grad_address += grad.data()[3];
 			*(grad_address + 1) += grad.data()[4];
 			*(grad_address + 2) += grad.data()[5];
-			grad_address = common_grad.data() + 3 * (prefix_sum_start + tet_indices_[tet_in_a_group[j]][2]);
+			grad_address = com_grad + 3 * (prefix_sum_start + tet_indices_[tet_in_a_group[j]][2]);
 			*grad_address += grad.data()[6];
 			*(grad_address + 1) += grad.data()[7];
 			*(grad_address + 2) += grad.data()[8];
-			grad_address = common_grad.data() + 3 * (prefix_sum_start + tet_indices_[tet_in_a_group[j]][3]);
+			grad_address = com_grad + 3 * (prefix_sum_start + tet_indices_[tet_in_a_group[j]][3]);
 			*grad_address += grad.data()[9];
 			*(grad_address + 1) += grad.data()[10];
 			*(grad_address + 2) += grad.data()[11];
@@ -1327,19 +1333,19 @@ void XPBD_IPC::tetGradForColor(unsigned int color_No)
 			second_order_constraint.setARAPGrad(grad, vertex_pos, stiffness, A[tet_around_a_group[j]],// ,
 				volume[tet_around_a_group[j]], tet_indices_[tet_around_a_group[j]].data()); //,
 			is_tet_arap_grad_compute[tet_prefix_sum_start + tet_around_a_group[j]] = true;
-			grad_address = common_grad.data() + 3 * (prefix_sum_start + tet_indices_[tet_around_a_group[j]][0]);
+			grad_address = com_grad + 3 * (prefix_sum_start + tet_indices_[tet_around_a_group[j]][0]);
 			*grad_address += grad.data()[0];
 			*(grad_address + 1) += grad.data()[1];
 			*(grad_address + 2) += grad.data()[2];
-			grad_address = common_grad.data() + 3 * (prefix_sum_start + tet_indices_[tet_around_a_group[j]][1]);
+			grad_address = com_grad + 3 * (prefix_sum_start + tet_indices_[tet_around_a_group[j]][1]);
 			*grad_address += grad.data()[3];
 			*(grad_address + 1) += grad.data()[4];
 			*(grad_address + 2) += grad.data()[5];
-			grad_address = common_grad.data() + 3 * (prefix_sum_start + tet_indices_[tet_around_a_group[j]][2]);
+			grad_address = com_grad + 3 * (prefix_sum_start + tet_indices_[tet_around_a_group[j]][2]);
 			*grad_address += grad.data()[6];
 			*(grad_address + 1) += grad.data()[7];
 			*(grad_address + 2) += grad.data()[8];
-			grad_address = common_grad.data() + 3 * (prefix_sum_start + tet_indices_[tet_around_a_group[j]][3]);
+			grad_address = com_grad + 3 * (prefix_sum_start + tet_indices_[tet_around_a_group[j]][3]);
 			*grad_address += grad.data()[9];
 			*(grad_address + 1) += grad.data()[10];
 			*(grad_address + 2) += grad.data()[11];
@@ -1367,45 +1373,45 @@ void XPBD_IPC::tetGradForColor(unsigned int color_No)
 //	}
 //}
 
-void XPBD_IPC::setCollisionPairTetNeighborGrad(int tet_obj_No, int start, int end, unsigned int* tet_involved, unsigned int prefix_sum_start, unsigned int vertex_prefix_sum_start)
+void XPBD_IPC::setCollisionPairTetNeighborGrad(std::vector<unsigned int>& tet_involved, int start, int end, double* com_grad)
 {
 	double stiffness = 0.5 * tetrahedron->data()[0].ARAP_stiffness;
-	std::array<double, 3>* vertex_pos = vertex_position[tet_obj_No + cloth->size()];
-	Matrix<double, 3, 4>* A = tetrahedron->data()[tet_obj_No].mesh_struct.A.data();
 
-	double* volume = tet_volume[tet_obj_No + cloth->size()];
-	std::array<int, 4>* tet_indices_ = tet_indices[tet_obj_No + cloth->size()];
+	auto start_ = tet_involved.begin() + start;
+	auto end_ = tet_involved.begin() + end;
 	MatrixXd grad;
 	grad.resize(3, 4);
-	std::vector<unsigned int>* tet_tet = tet_around_tet[tet_obj_No];
-
 	double* grad_address;
 
-	for (int i = start; i < end; ++i) {
-		if (!is_tet_arap_grad_compute[prefix_sum_start +tet_involved[i]]) {
-			is_tet_arap_grad_compute[prefix_sum_start + tet_involved[i]] = true;
-			second_order_constraint.setARAPGrad(grad, vertex_pos, stiffness, A[tet_involved[i]],// ,
-				volume[tet_involved[i]], tet_indices_[tet_involved[i]].data()); //,
-			grad_address = common_grad.data() + 3 * (vertex_prefix_sum_start + tet_indices_[tet_involved[i]][0]);
+	int* tet_indices_;
+
+	for (auto i = start_; i < end_; i += 2) {
+		if (!is_tet_arap_grad_compute[prefix_sum_of_every_tet_index[*i] + *(i+1)]) {
+			is_tet_arap_grad_compute[prefix_sum_of_every_tet_index[*i] + *(i + 1)] = true;
+
+			tet_indices_ = tet_indices[*i][*(i + 1)].data();
+			second_order_constraint.setARAPGrad(grad, vertex_position[*i], stiffness, tet_A[*i][*(i+1)],// ,
+				tet_volume[*i][*(i + 1)], tet_indices_); //,
+
+			grad_address = com_grad + 3 * (vertex_index_prefix_sum_obj[*i] + tet_indices_[0]);
 			*grad_address += grad.data()[0];
 			*(grad_address + 1) += grad.data()[1];
 			*(grad_address + 2) += grad.data()[2];
-
-			grad_address = common_grad.data() + 3 * (vertex_prefix_sum_start + tet_indices_[tet_involved[i]][1]);
+			grad_address = com_grad + 3 * (vertex_index_prefix_sum_obj[*i] + tet_indices_[1]);
 			*grad_address += grad.data()[3];
 			*(grad_address + 1) += grad.data()[4];
 			*(grad_address + 2) += grad.data()[5];
 
-			grad_address = common_grad.data() + 3 * (vertex_prefix_sum_start + tet_indices_[tet_involved[i]][2]);
+			grad_address = com_grad + 3 * (vertex_index_prefix_sum_obj[*i] + tet_indices_[2]);
 			*grad_address += grad.data()[6];
 			*(grad_address + 1) += grad.data()[7];
 			*(grad_address + 2) += grad.data()[8];
 
-			grad_address = common_grad.data() + 3 * (vertex_prefix_sum_start + tet_indices_[tet_involved[i]][3]);
+			grad_address = com_grad + 3 * (vertex_index_prefix_sum_obj[*i] + tet_indices_[3]);
 			*grad_address += grad.data()[9];
 			*(grad_address + 1) += grad.data()[10];
-			*(grad_address + 2) += grad.data()[11];			
-		}
+			*(grad_address + 2) += grad.data()[11];
+		}		
 	}
 }
 
@@ -1500,25 +1506,31 @@ void XPBD_IPC::setCollisionPairTetNeighborGrad(int tet_obj_No, int start, int en
 //}
 
 //UPDATE_TET_GRAD_SHARED_COLLISION_NEIGHBOR
-void XPBD_IPC::tetGradForColorCollisionNeighbor(unsigned int color_No)
+void XPBD_IPC::tetGradForColorCollisionNeighbor(int thread_No, unsigned int color_No)
 {
-	int color_group_index;
-	unsigned int start, end;
-	unsigned int* element;
-	std::vector<unsigned int>* tet_around_an_element;
 
-	int obj_No;
+	int thread_id;
+	if (collision.tet_involve_in_collision_start_per_thread[(thread_No + 1) << 1] > collision.tet_involve_in_collision_start_per_thread[thread_No << 1]) {
+		thread_id = collision.tet_involve_in_collision_start_per_thread[thread_No << 1];
 
-	for (int i = 0; i < tetrahedron->size(); ++i) {
-		color_group_index = inner_iteration_number % tet_color_groups[i]->size();
-		if (color_No != tetrahedron->data()[i].mesh_struct.tet_color_group[color_group_index].size() - 1) {
-			continue;
+		setCollisionPairTetNeighborGrad(collision.tet_involve_in_collision[thread_id],
+			collision.tet_involve_in_collision_start_per_thread[(thread_No << 1) + 1], collision.tet_involve_in_collision[thread_id].size(), common_grad[thread_No].data());
+
+
+		for (int i = collision.tet_involve_in_collision_start_per_thread[thread_No << 1] + 1;
+			i < collision.tet_involve_in_collision_start_per_thread[(thread_No + 1) << 1]; ++i) {
+			setCollisionPairTetNeighborGrad(collision.tet_involve_in_collision[i],
+				0, collision.tet_involve_in_collision[i].size(), common_grad[thread_No].data());
 		}
-		obj_No = cloth->size() + i;
 
-		setCollisionPairTetNeighborGrad(i, 0,
-			collision.tet_involved_in_collision[obj_No].size(), collision.tet_involved_in_collision[obj_No].data(),
-			prefix_sum_of_every_tet_index[i],vertex_index_prefix_sum_obj[obj_No]);
+		thread_id = collision.tet_involve_in_collision_start_per_thread[(thread_No + 1) << 1];
+		setCollisionPairTetNeighborGrad(collision.tet_involve_in_collision[thread_id],
+			0, collision.tet_involve_in_collision_start_per_thread[(thread_No << 1) + 3], common_grad[thread_No].data());
+	}
+	else {
+		thread_id = collision.tet_involve_in_collision_start_per_thread[thread_No << 1];
+		setCollisionPairTetNeighborGrad(collision.tet_involve_in_collision[thread_id],
+			collision.tet_involve_in_collision_start_per_thread[(thread_No << 1) + 1], collision.tet_involve_in_collision_start_per_thread[(thread_No << 1) + 3], common_grad[thread_No].data());
 	}
 }
 
@@ -2391,6 +2403,7 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 		if (perform_collision) {
 			collision.computeHessian(i);
 		}
+		thread->assignTask(this, SUM_ALL_GRAD);
 
 		ori_energy = computePreviousColorEnergy(i);
 
@@ -2409,6 +2422,7 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 		//thread->assignTask(this, UPDATE_TET_GRAD_SHARED_COLLISION_NEIGHBOR, max_tet_color_num - 1);
 		tetGradForColorCollisionNeighbor(max_tet_color_num - 1);
 		collision.computeHessian(max_tet_color_num - 1);
+		thread->assignTask(this, SUM_ALL_GRAD);
 	}
 
 	initialRecordPositionForThread();
@@ -5926,9 +5940,9 @@ void XPBD_IPC::solveTetBlockCollision(std::array<double, 3>* vertex_position, do
 	int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num, std::vector<unsigned int>* triangle_of_a_tet,
 	std::vector<unsigned int>* edge_of_a_tet, double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
 	int* vertex_index_on_surface, std::unordered_map<std::array<int, 2>, double, pair_hash>& tet_hessian,
-	std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>& collision_hessian,
+	std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>& collision_hessian,
 	double* common_grad, std::array<double, 3>* record_vertex_position,
-	int* record_vertex_num, unsigned int prefix_sum_vetex_obj, std::unordered_map<unsigned int, double>& floor_map)//
+	int* record_vertex_num, unsigned int prefix_sum_vetex_obj, double* floor_map)//
 {
 	if (unfixed_vertex_num == 0) {
 		return;
@@ -5958,31 +5972,29 @@ void XPBD_IPC::solveTetBlockCollision(std::array<double, 3>* vertex_position, do
 
 	if (perform_collision) {
 		auto k_ = collision_hessian.end();
-		auto k2 = floor_map.end();
 		double* add_of_hessian;
 		double* hessian_in_collision;
 		for (int i = 0; i < unfixed_vertex_num; ++i) {
 			for (int j = 0; j < unfixed_vertex_num; ++j) {
 				k_ = collision_hessian.find(std::array{ prefix_sum_vetex_obj + tet_actual_unfixed_vertex_indices[i], prefix_sum_vetex_obj + tet_actual_unfixed_vertex_indices[j] });
 				if (k_ != collision_hessian.end()) {
-					add_of_hessian = Hessian.data() + 3 * (j * Hessian.cols() + i);
-					hessian_in_collision = k_->second.data();
-					for (int m = 0; m < 3; ++m) {
-						*add_of_hessian += *hessian_in_collision;
-						*(add_of_hessian + 1) += *(hessian_in_collision + 1);
-						*(add_of_hessian + 2) += *(hessian_in_collision + 2);
-						hessian_in_collision += 3;
-						add_of_hessian += Hessian.cols();
+					if (k_->second.is_update) {
+						add_of_hessian = Hessian.data() + 3 * (j * Hessian.cols() + i);
+						hessian_in_collision = k_->second.hessian.data();
+						for (int m = 0; m < 3; ++m) {
+							*add_of_hessian += *hessian_in_collision;
+							*(add_of_hessian + 1) += *(hessian_in_collision + 1);
+							*(add_of_hessian + 2) += *(hessian_in_collision + 2);
+							hessian_in_collision += 3;
+							add_of_hessian += Hessian.cols();
+						}
 					}
 				}
 			}			
 		}
 		if (floor->exist) {
 			for (int i = 0; i < unfixed_vertex_num; ++i) {
-				k2 = floor_map.find(prefix_sum_vetex_obj + tet_actual_unfixed_vertex_indices[i]);
-				if (k2 != floor_map.end()) {
-					Hessian.data()[(3 * i + floor->dimension) * (Hessian.cols() + 1)] += k2->second;
-				}
+					Hessian.data()[(3 * i + floor->dimension) * (Hessian.cols() + 1)] += floor_map[prefix_sum_vetex_obj + tet_actual_unfixed_vertex_indices[i]];
 			}
 		}
 		//MatrixXd Hessian_collision;
@@ -6097,10 +6109,10 @@ void XPBD_IPC::solveTetBlock(std::array<double, 3>* vertex_position, double stif
 	int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num,
 	double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
 	std::unordered_map<std::array<int, 2>, double, pair_hash>& tet_hessian, 
-	std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>& collision_hessian,
+	std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>& collision_hessian,
 	double* common_grad, std::vector<unsigned int>* triangle_of_a_tet,
 	std::vector<unsigned int>* edge_of_a_tet, int* vertex_index_on_surface, unsigned int prefix_sum_vetex_obj,
-	std::unordered_map<unsigned int, double>& floor_map, std::array<double, 3>* record_ori_pos, char* indicate_collide_with_floor,
+	double* floor_map, std::array<double, 3>* record_ori_pos, char* indicate_collide_with_floor,
 	int color_No)//
 {
 	if (unfixed_vertex_num == 0) {
@@ -6130,35 +6142,32 @@ void XPBD_IPC::solveTetBlock(std::array<double, 3>* vertex_position, double stif
 
 	if (perform_collision) {
 		auto k_ = collision_hessian.end();
-		auto k2 = floor_map.end();
 		double* add_of_hessian;
 		double* hessian_in_collision;
 		for (int i = 0; i < unfixed_vertex_num; ++i) {
 			for (int j = 0; j < unfixed_vertex_num; ++j) {
 				k_ = collision_hessian.find(std::array{ prefix_sum_vetex_obj + tet_actual_unfixed_vertex_indices[i], prefix_sum_vetex_obj + tet_actual_unfixed_vertex_indices[j]});
 				if (k_ != collision_hessian.end()) {
-					add_of_hessian = Hessian.data() + 3 * (j * Hessian.cols() + i);
-					hessian_in_collision = k_->second.data();
-					for (int m = 0; m < 3; ++m) {
-						*add_of_hessian += *hessian_in_collision;
-						*(add_of_hessian + 1) += *(hessian_in_collision + 1);
-						*(add_of_hessian + 2) += *(hessian_in_collision + 2);
-						hessian_in_collision += 3;
-						add_of_hessian += Hessian.cols();
-					}
+					if (k_->second.is_update) {
+						add_of_hessian = Hessian.data() + 3 * (j * Hessian.cols() + i);
+						hessian_in_collision = k_->second.hessian.data();
+						for (int m = 0; m < 3; ++m) {
+							*add_of_hessian += *hessian_in_collision;
+							*(add_of_hessian + 1) += *(hessian_in_collision + 1);
+							*(add_of_hessian + 2) += *(hessian_in_collision + 2);
+							hessian_in_collision += 3;
+							add_of_hessian += Hessian.cols();
+						}
+					}					
 				}
 			}	
 		}
 
 		if (floor->exist) {
 			for (int i = 0; i < unfixed_vertex_num; ++i) {
-				k2 = floor_map.find(prefix_sum_vetex_obj + tet_actual_unfixed_vertex_indices[i]);
-				if (k2 != floor_map.end()) {
-					Hessian.data()[(3 * i + floor->dimension) * (Hessian.cols() + 1)] += k2->second;
-				}
+					Hessian.data()[(3 * i + floor->dimension) * (Hessian.cols() + 1)] += floor_map[prefix_sum_vetex_obj + tet_actual_unfixed_vertex_indices[i]];
 			}
 		}
-
 	}
 
 	double mass_dt_2;
@@ -7649,3 +7658,15 @@ void XPBD_IPC::computeCollisionFreePosition(int thread_No)
 	}
 }
 
+
+//SUM_ALL_GRAD
+void XPBD_IPC::sumAllGrad(int thread_No)
+{
+	int start = 3*global_vertex_index_start_per_thread[thread_No];
+	int end =3* global_vertex_index_start_per_thread[thread_No + 1];
+	for (int i = start; i < end; i++) {
+		for (int j = 1; j < total_thread_num; ++j) {
+			common_grad[0][i] += common_grad[j][i];				
+		}
+	}
+}

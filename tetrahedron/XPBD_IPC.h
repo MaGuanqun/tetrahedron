@@ -85,11 +85,11 @@ public:
 	void tetHessian();
 
 	void inversionTest();
-	void tetGradForColor(unsigned int color_No);
+	void tetGradForColor(int thread_No, unsigned int color_No);
 	//void newtonCDTetBlockAGroupTest(int thread_No, int color);
 
 	//void tetGradForColorCollision(unsigned int color_No);
-	void tetGradForColorCollisionNeighbor(unsigned int color_No);
+	void tetGradForColorCollisionNeighbor(int thread_No, unsigned int color_No);
 	//void tetGradForColorCollisionEECollider(int thread_No, unsigned int color_No);
 	//void tetGradForColorCollisionTVCollider(int thread_No, unsigned int color_No);
 	//void tetGradForColorCollisionVT(int thread_No, unsigned int color_No);
@@ -125,6 +125,8 @@ public:
 	void  computeColorInertialEnergy(int thread_No);
 
 	void computeLastColorARAPEnergy(int thread_No);
+
+	void sumAllGrad(int thread_No);
 
 private:
 
@@ -218,7 +220,7 @@ private:
 
 	std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash> common_hessian;//only include collision
 	std::vector<std::unordered_map<std::array<int, 2>,double, pair_hash>> tet_hessian;//size is total obj num
-	std::unordered_map<unsigned int, double> floor_hessian;
+	std::vector<double> floor_hessian;
 
 	std::vector<std::vector<double>>common_grad;
 
@@ -519,10 +521,10 @@ private:
 		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num,
 		double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
 		std::unordered_map<std::array<int, 2>, double, pair_hash>& tet_hessian,
-		std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>& collision_hessian,
+		std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>& collision_hessian,
 		double* common_grad, std::vector<unsigned int>* triangle_of_a_tet,
 		std::vector<unsigned int>* edge_of_a_tet, int* vertex_index_on_surface, unsigned int prefix_sum_vetex_obj,
-		std::unordered_map<unsigned int, double>& floor_map, std::array<double, 3>* record_ori_pos, char* indicate_collide_with_floor, int color_No);
+		double* floor_map, std::array<double, 3>* record_ori_pos, char* indicate_collide_with_floor, int color_No);
 
 	void solveTetBlockCollision(std::array<double, 3>* vertex_position, double stiffness, double dt, std::array<int, 4>* indices,
 		double* mass,
@@ -531,9 +533,9 @@ private:
 		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num, std::vector<unsigned int>* triangle_of_a_tet,
 		std::vector<unsigned int>* edge_of_a_tet, double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
 		int* vertex_index_on_surface, std::unordered_map<std::array<int, 2>, double, pair_hash>& tet_hessian,
-		std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>& collision_hessian,
+		std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>& collision_hessian,
 		double* common_grad, std::array<double, 3>* record_vertex_position,
-		int* record_vertex_num, unsigned int prefix_sum_vetex_obj, std::unordered_map<unsigned int, double>& floor_map);
+		int* record_vertex_num, unsigned int prefix_sum_vetex_obj, double* floor_map);
 
 
 
@@ -730,8 +732,7 @@ private:
 
 	//void setCollisionPairTetGrad(int tet_obj_No, unsigned int start, unsigned int end, unsigned int* element, std::vector<unsigned int>* tet_around_an_element);
 
-	void setCollisionPairTetNeighborGrad(int tet_obj_No, int start, int end, unsigned int* tet_involved, unsigned int prefix_sum_start,
-		unsigned int vertex_prefix_sum_start);
+	void setCollisionPairTetNeighborGrad(std::vector<unsigned int>& tet_involved, int start, int end, double* com_grad);
 
 	void initialRecordPositionForThread();
 
@@ -826,7 +827,7 @@ private:
 	std::vector<double> record_max_displacement;
 
 	std::vector<unsigned int>vertex_index_prefix_sum_obj;
-
+	std::vector<unsigned int>global_vertex_index_start_per_thread;
 	void checkExceedFloor();
 	std::vector<double>energy_per_thread;
 	std::vector< std::vector<std::vector<unsigned int>>*> vertex_index_of_a_tet_color_group;

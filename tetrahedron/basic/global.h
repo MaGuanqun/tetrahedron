@@ -289,6 +289,27 @@ inline void countInEveryThread(unsigned int total_thread_num, unsigned int total
 	}
 }
 
+inline void arrangeIndex(unsigned int total_thread_num, unsigned int total_num, unsigned int* begin, unsigned int multi_) {
+	unsigned int interval1 = total_num / total_thread_num;
+	unsigned int resi1 = total_num % total_thread_num;
+	if (resi1 == 0) {
+		for (unsigned int i = 0; i < total_thread_num; ++i) {
+			begin[i] = interval1 * i * multi_;
+		}
+	}
+	else {
+		for (unsigned int i = 0; i < total_thread_num; ++i) {
+			if (i < resi1) {
+				begin[i] = ((interval1 + 1) * i) * multi_;
+			}
+			else {
+				begin[i] = ((interval1 + 1) * resi1 + interval1 * (i - resi1)) * multi_;
+			}
+		}
+	}
+	begin[total_thread_num] = total_num*multi_;
+}
+
 inline void arrangeIndex(unsigned int total_thread_num, unsigned int total_num, unsigned int* begin) {
 	unsigned int interval1 = total_num / total_thread_num;
 	unsigned int resi1 = total_num % total_thread_num;
