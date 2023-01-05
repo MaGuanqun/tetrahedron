@@ -305,14 +305,17 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     job k;
     switch (function_type)
     {
-    //case UPDATE_COLLISION_HESSIAN_COLOR:
-    //    k = job([func, thread_id, para]() {func->computeHessianPerThread(thread_id, para); });
-    //    break;      
+    case UPDATE_COLLISION_HESSIAN_COLOR:
+        k = job([func, thread_id, para]() {func->computeHessianPerThread(para,thread_id); });
+        break;      
     case COLOR_COLLISION_TIME:
         k = job([func, thread_id, para]() {func->colorCollisionTime(thread_id, para); });
         break;
     case UPDATE_COLOR_POSITION:
         k = job([func, thread_id, para]() {func->updatePositionColor(thread_id, para); });
+        break;
+    case SUM_COLLISION_HESSIAN:
+        k = job([func, thread_id, para]() {func->sumAllCollisionHessian(para, thread_id); });
         break;
     //case FLOOR_COLLISION_TIME:
     //    k = job([func, thread_id, para]() {func->floorCollisionTime(thread_id, para); });
@@ -408,6 +411,18 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
         break;
     case FIND_CLOSE_PAIR:
         k = job([func, thread_id]() {func->findClosePair(thread_id); });
+        break;
+    case COMPUTE_D_HAT_WITH_INDEX_IN_GLOBAL:
+        k = job([func, thread_id]() {func->computeDhatWithIndexInGlobal(thread_id); });
+        break;
+    case EXTRACT_ELEMENTS_WITH_COLLIDER:
+        k = job([func, thread_id]() {func->extractElementCollideWithCollider(thread_id); });
+        break;
+    case ADD_TET_IN_COLLISION:
+        k = job([func, thread_id]() {func->addTetInvolvedInCollision(thread_id); });
+        break;
+    case SET_PAIR_BY_ELEMENT:
+        k = job([func, thread_id]() {func->setPairByElement(thread_id); });
         break;
     }
     return k;
@@ -827,18 +842,18 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
     case PREVIOUS_COLOR_INERTIAL_ENERGY:
         k = job([func, thread_id, para]() {func->computePreviousColorInertialEnergy(thread_id, para); });
         break;
-    //case UPDATE_TET_GRAD_SHARED:
-    //    k = job([func, thread_id, para]() {func->tetGradForColor(thread_id, para); });
-    //    break;
+    case UPDATE_TET_GRAD_SHARED:
+        k = job([func, thread_id, para]() {func->tetGradForColor(thread_id, para); });
+        break;
     //case UPDATE_TET_GRAD_SHARED_COLLISION:
     //    k = job([func, thread_id, para]() {func->tetGradForColorCollision(thread_id, para); });
     //    break;
     //case SOLVE_TET_BLOCK_COLLISION:
     //    k = job([func, thread_id, para]() {func->newtonCDTetBlockAGroupCollision(thread_id, para); });
     //    break;
-    //case UPDATE_TET_GRAD_SHARED_COLLISION_NEIGHBOR:
-    //    k = job([func, thread_id, para]() {func->tetGradForColorCollisionNeighbor(thread_id, para); });
-    //    break;
+    case UPDATE_TET_GRAD_SHARED_COLLISION_NEIGHBOR:
+        k = job([func, thread_id, para]() {func->tetGradForColorCollisionNeighbor(thread_id, para); });
+        break;
     }
     return k;
 }

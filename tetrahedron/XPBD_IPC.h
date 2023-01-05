@@ -127,7 +127,7 @@ public:
 	void computeLastColorARAPEnergy(int thread_No);
 
 	void sumAllGrad(int thread_No);
-
+	void solveBlockForWarmStart(int thread_No);
 private:
 
 	std::vector<std::vector<std::vector<unsigned int>>*> vertex_index_of_a_tet_color_per_thread_start_group;
@@ -156,7 +156,7 @@ private:
 
 	void computePreviousColorInversion(int color_No);
 
-	double computeFloorEnergy(int thread_No, int type, unsigned int* pair_index_start_per_thread, double collision_stiffness);
+	
 
 	double computeFloorEnergy(int type);
 
@@ -170,16 +170,6 @@ private:
 		std::array<double, 3>** e0_current_pos, std::array<double, 3>** e1_current_pos, double collision_stiffness, double* d_hat,
 		bool** belong_to_color_group, int type, unsigned int start, unsigned int end);
 
-	double computeEEBarrierEnergy(int thread_No, unsigned int* pair_index_start_per_thread, unsigned int** edge_v_0, unsigned int** edge_v_1,
-		std::array<double, 3>** v_current_pos, std::array<double, 3>** t_current_pos,
-		bool** belong_to_color_group, int type, double collision_stiffness, std::vector<std::vector<unsigned int>>* record_ee_pair,
-		std::vector<std::vector<double>>* d_hat);
-
-
-	double computeVTBarrierEnergy(int thread_No, unsigned int* pair_index_start_per_thread, std::array<int, 3>** triangle_indices,
-		std::array<double, 3>** v_current_pos, std::array<double, 3>** t_current_pos,
-		bool** belong_to_color_group, int type, double collision_stiffness, std::vector<std::vector<unsigned int>>* record_vt_pair,
-		std::vector<std::vector<double>>* d_hat);
 
 	double computeVTEnergy(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
 		std::array<double, 3>** v_current_pos, std::array<double, 3>** t_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat, 
@@ -203,16 +193,15 @@ private:
 
 
 	void solveVT_BlockPerThread(std::array<double, 3>** record_vertex_position, int** record_vertex_num, unsigned int* pair, unsigned int start, unsigned int end,
-		int* vt_hessian_record_index, bool only_solve_collision_pair);
+		char* vt_hessian_record_index, bool only_solve_collision_pair);
 
-	void solvecollider_BlockPerThread(std::array<double, 3>** record_vertex_position, int** record_vertex_num, 
-		std::vector<std::vector<unsigned int>>* pair,  bool only_solve_collision_pair, int type);
+	void solvecollider_BlockPerThread(std::array<double, 3>** record_vertex_position, int** record_vertex_num, std::vector<unsigned int>* pair,
+		bool only_solve_collision_pair, int type, int start, int end);
 
-	void solveFloor_BlockPerThread(std::array<double, 3>** record_vertex_position, int** record_vertex_num, std::vector<std::vector<unsigned int>>* pair,
-		bool only_solve_collision_pair);
+
 
 	void solveEE_BlockPerThread(std::array<double, 3>** record_vertex_position, int** record_vertex_num, unsigned int* pair, unsigned int start, unsigned int end,
-		int* ee_hessian_record_index, bool only_solve_collision_pair);
+		char* ee_hessian_record_index_exist, bool only_solve_collision_pair);
 
 	void initialHessianMap();
 
@@ -797,8 +786,8 @@ private:
 		double dt,
 		std::array<double, 3>** record_vertex_position,
 		int** record_vertex_num, int* unfixed_pair_vertex_index, int unfixed_num, double* common_grad,
-		std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>& collision_hessian,
-		std::unordered_map<unsigned int, double>& floor_map, bool only_solve_collision_pair);
+		std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>& collision_hessian,
+		double* floor_map, bool only_solve_collision_pair);
 
 
 
