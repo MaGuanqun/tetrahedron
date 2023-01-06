@@ -17,7 +17,7 @@
 #include"../XPBD/second_order.h"
 
 #include<unordered_map>
-
+#include<atomic>
 //#include"mesh_patch.h"
 
 using namespace Eigen;
@@ -56,6 +56,9 @@ public:
 	void collisionTimeWithPair(int thread_No);
 
 	void allPairCollisionTime();
+
+
+	void obtainCollisionTimeFromEveryThread();
 	//void findAllPatchPairs(int thread_No);
 
 	//std::vector<std::vector<double>> target_position_and_stiffness; //thus, the actual number is 4*target_position_index[0]
@@ -377,7 +380,7 @@ public:
 	//std::vector<std::vector<std::vector<unsigned int>>>tet_involved_in_collision; // obj -> color group -> tet_involved
 	//std::vector<std::vector<std::vector<unsigned int>>>tet_involved_in_collision_start_per_thread; // obj -> color group ->start_index_per_thread
 
-	void collisionTimeAllClosePair(int vt, int vt_c, int tv_c, int ee, int ee_c, int floor_);
+	void collisionTimeAllClosePair(int thread_No, int para);
 
 	//void computeFloorHessian(int thread_No, int color_No);
 
@@ -479,7 +482,7 @@ public:
 	std::vector<unsigned int> triangle_c_start_add_per_thread;
 
 
-	void upodateRecordPositionFirstColor(int color);
+	void upodateRecordPositionFirstColor(int thread_No, int color);
 
 	unsigned int* inner_itr_num_standard;
 	double* min_collision_time;
@@ -492,7 +495,11 @@ public:
 
 	void setPairByElement(int thread_No);
 	void findPairByElementReverse();
+	
 	void extractElementCollideWithCollider(int thread_No);
+
+
+	std::vector<double>collision_time_thread;
 
 private:		
 
@@ -525,17 +532,19 @@ private:
 	//	std::array<double, 3>** v_initial_pos, std::array<double, 3>** v_current_pos,
 	//	std::array<double, 3>** t_initial_pos, std::array<double, 3>** t_current_pos, bool** belong_to_this, bool** belong_to_color_group);
 
-	double VTCollisionTime(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
+	double VTCollisionTime(std::vector<unsigned int>* record_vt_pair, std::array<int, 3>** triangle_indices,
 		std::array<double, 3>** v_initial_pos, std::array<double, 3>** v_current_pos,
-		std::array<double, 3>** t_initial_pos, std::array<double, 3>** t_current_pos, int type);
+		std::array<double, 3>** t_initial_pos, std::array<double, 3>** t_current_pos, int type,
+		unsigned int start, unsigned int end);
 
 	//double EEColliderCollisionTime(std::vector<std::vector<unsigned int>>* record_pair, unsigned int** edge_v_0, unsigned int** edge_v_1,
 	//	std::array<double, 3>** e0_initial_pos, std::array<double, 3>** e0_current_pos,
 	//	std::array<double, 3>** e1_initial_pos, std::array<double, 3>** e1_current_pos, bool** belong_to_this, bool** belong_to_color_group);
 
-	double EECollisionTime(std::vector<std::vector<unsigned int>>* record_pair, unsigned int** edge_v_0, unsigned int** edge_v_1,
+	double EECollisionTime(std::vector<unsigned int>* record_pair, unsigned int** edge_v_0, unsigned int** edge_v_1,
 		std::array<double, 3>** e0_initial_pos, std::array<double, 3>** e0_current_pos,
-		std::array<double, 3>** e1_initial_pos, std::array<double, 3>** e1_current_pos, int type);
+		std::array<double, 3>** e1_initial_pos, std::array<double, 3>** e1_current_pos, int type,
+		unsigned int start, unsigned int end);
 
 
 
@@ -569,11 +578,11 @@ private:
 
 
 
-	std::vector<std::vector<char>> indicate_triangle_with_collider;
-	std::vector<std::vector<char>> indicate_vertex_with_collider;
-	std::vector<std::vector<char>> indicate_edge_with_collider;
+	std::atomic_flag** indicate_triangle_with_collider;
+	std::atomic_flag** indicate_vertex_with_collider;
+	std::atomic_flag** indicate_edge_with_collider;
 
-	std::vector<std::vector<char>> indicate_tet_has_been_used;
+	std::atomic_flag** indicate_tet_has_been_used;
 
 
 	std::vector<unsigned int>record_previous_vt_pair_size;
@@ -603,7 +612,7 @@ private:
 
 
 	void recordCollideWithCollider();
-	void extractElementCollideWithCollider(std::vector<std::vector<char>>& indicate, std::vector<unsigned int>* record_pair,
+	void extractElementCollideWithCollider(std::atomic_flag** indicate, std::vector<unsigned int>* record_pair,
 		std::vector<unsigned int>& element_record, unsigned int bias, int start, int end, int move_size);
 
 
@@ -618,16 +627,16 @@ private:
 	int pair_hash_table_cell_size;
 
 
-	std::vector<unsigned int> vt_hash_size_record;
+	std::atomic<unsigned int>* vt_hash_size_record;
 	std::vector<unsigned int> vt_hash_record;
-	std::vector<unsigned int> ee_hash_size_record;
+	std::atomic<unsigned int>* ee_hash_size_record;
 	std::vector<unsigned int> ee_hash_record;
 
-	std::vector<unsigned int> vt_collider_hash_size_record;
+	std::atomic<unsigned int>* vt_collider_hash_size_record;
 	std::vector<unsigned int> vt_collider_hash_record;
-	std::vector<unsigned int> tv_collider_hash_size_record;
+	std::atomic<unsigned int>* tv_collider_hash_size_record;
 	std::vector<unsigned int> tv_collider_hash_record;
-	std::vector<unsigned int> ee_collider_hash_size_record;
+	std::atomic<unsigned int>* ee_collider_hash_size_record;
 	std::vector<unsigned int> ee_collider_hash_record;
 
 	void computeLastColorHessianPerThread(int color_No, int thread_No);
@@ -777,7 +786,7 @@ private:
 	//void setRecordPairIndexEveryThread();
 	//void setVertexVertexEdgePairIndexEveryThread();
 
-	std::vector<double>collision_time_thread;
+
 
 	ApproxCCD approx_CCD;
 	CollisionConstraint collision_constraint;
@@ -1057,7 +1066,7 @@ private:
 		unsigned int* pair, std::array<double, 3>** vertex_for_render_0, std::array<double, 3>** vertex_position_0,
 		std::array<double, 3>** vertex_for_render_1, std::array<double, 3>** vertex_position_1,
 		unsigned int** edge_vertices_0, unsigned int** edge_vertices_1, std::vector<unsigned int>* record_index,
-		unsigned int* hash_size_record, unsigned int* hash_record,
+		std::atomic<unsigned int>* hash_size_record, unsigned int* hash_record,
 		unsigned int* edge_0_index_prefix_sum, unsigned int* edge_1_index_prefix_sum);
 
 
@@ -1377,5 +1386,5 @@ private:
 
 
 	void adjustThreadDivide(unsigned int* pair, unsigned int* start_per_thread, unsigned int* start_per_thread_adjust);
-
+	void collisionTimeAllClosePair(int vt, int vt_c, int tv_c, int ee, int ee_c, int floor_, int thread_No);
 };

@@ -78,13 +78,13 @@ public:
 	void XPBD_IPC_Block_Solve_Multithread();
 
 	void newtonCDTetBlockAGroup(int thread_No, int color);
-	void newtonCDTetBlockAGroupCollision(int color);
+	void newtonCDTetBlockAGroupCollision(int thread_No, int color);
 	
 	void warmStart();
 
 	void tetHessian();
 
-	void inversionTest();
+	void inversionTest(int thread_No);
 	void tetGradForColor(int thread_No, unsigned int color_No);
 	//void newtonCDTetBlockAGroupTest(int thread_No, int color);
 
@@ -128,6 +128,15 @@ public:
 
 	void sumAllGrad(int thread_No);
 	void solveBlockForWarmStart(int thread_No);
+
+	void computePreviousColorInversion(int thread_No, int color_No);
+	void computeLastColorInversion(int thread_No);
+
+
+	//void testMulti(int thread_No);
+
+	int counter = 0;
+
 private:
 
 	std::vector<std::vector<std::vector<unsigned int>>*> vertex_index_of_a_tet_color_per_thread_start_group;
@@ -152,9 +161,8 @@ private:
 	double computeLastColorARAPEnergy();
 
 	void computeInversionForWarmStart();
-	void computeLastColorInversion();
 
-	void computePreviousColorInversion(int color_No);
+
 
 	
 
@@ -358,7 +366,7 @@ private:
 	double calEdgeLength();
 	//std::vector<double> store_tet_arap_hessian; //for every 12*12, we only store 4*4 as every block is a diagonal matrix 
 	//std::vector<double> store_tet_arap_grad;
-	bool* is_tet_arap_grad_compute;
+	std::atomic_flag* is_tet_arap_grad_compute;
 
 	int max_tet_size_of_a_color_group;
 
@@ -833,5 +841,7 @@ private:
 	//double computeColorInertialEnergyTest();
 	//double computeLastColorARAPEnergyTest();
 	//double computeBarrierEnergyTest();
+
+	void test();
 };
 

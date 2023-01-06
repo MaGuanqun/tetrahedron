@@ -20,7 +20,7 @@
 
 Thread::Thread()
 {
-    thread_num = 1;// std::thread::hardware_concurrency();
+    thread_num =  std::thread::hardware_concurrency();
     initial();
 }
 
@@ -317,6 +317,12 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     case SUM_COLLISION_HESSIAN:
         k = job([func, thread_id, para]() {func->sumAllCollisionHessian(para, thread_id); });
         break;
+    case CLOSE_PAIR_COLLISION_TIME:
+        k = job([func, thread_id, para]() {func->collisionTimeAllClosePair(thread_id, para); });
+    break;
+    case UPDATE_RECORD_POSITION_PREVIOUS_COLOR:
+        k = job([func, thread_id, para]() {func->upodateRecordPositionFirstColor(thread_id, para); });
+        break;
     //case FLOOR_COLLISION_TIME:
     //    k = job([func, thread_id, para]() {func->floorCollisionTime(thread_id, para); });
     //    break;
@@ -402,9 +408,6 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     //    break;
     //case RECORD_TRIANGLE_HAS_COLLISION_PAIR:
     //    k = job([func, thread_id]() {func->recordTriangleHasTVPair(thread_id); });
-    //    break;
-    //case CLOSE_PAIR_COLLISION_TIME:
-    //    k = job([func, thread_id]() {func->collisionTimeAllClosePair(thread_id); });
     //    break;
     case COLLISION_FREE_POSITION_LAST_COLOR:
         k = job([func, thread_id]() {func->computeCollisionFreePositionForColor(thread_id); });
@@ -833,7 +836,6 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
     switch (function_type)
     {
     case SOLVE_TET_BLOCK:
-        //k = job([func, thread_id, para]() {func->newtonCDTetBlockAGroupTest(thread_id, para);});
         k = job([func, thread_id, para]() {func->newtonCDTetBlockAGroup(thread_id, para); });
          break;
     case FIRST_COLOR_ARAP_ENERGY:
@@ -848,11 +850,14 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
     //case UPDATE_TET_GRAD_SHARED_COLLISION:
     //    k = job([func, thread_id, para]() {func->tetGradForColorCollision(thread_id, para); });
     //    break;
-    //case SOLVE_TET_BLOCK_COLLISION:
-    //    k = job([func, thread_id, para]() {func->newtonCDTetBlockAGroupCollision(thread_id, para); });
-    //    break;
+    case SOLVE_TET_BLOCK_COLLISION:
+        k = job([func, thread_id, para]() {func->newtonCDTetBlockAGroupCollision(thread_id, para); });
+        break;
     case UPDATE_TET_GRAD_SHARED_COLLISION_NEIGHBOR:
         k = job([func, thread_id, para]() {func->tetGradForColorCollisionNeighbor(thread_id, para); });
+        break;
+    case PREVIOUS_COLOR_INVERSION_TEST:
+        k = job([func, thread_id, para]() {func->computePreviousColorInversion(thread_id, para); });
         break;
     }
     return k;
@@ -863,6 +868,10 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
     job k;
     switch (function_type)
     {
+    //case TEST_MULTI:
+    //    k = job([func, thread_id]() {func->testMulti(thread_id); });
+    //    break;
+
     case SET_POS_PREDICT_:
         k = job([func, thread_id]() {func->setPosPredict(thread_id); });
         break;
@@ -874,6 +883,9 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
         break;
     case SUM_ALL_GRAD:
         k = job([func, thread_id]() {func->sumAllGrad(thread_id); });
+        break;
+    case WARM_START:
+        k = job([func, thread_id]() {func->solveBlockForWarmStart(thread_id); });
         break;
     //case UPDATE_TET_HESSIAN:
     //    k = job([func, thread_id]() {func->tetHessian(thread_id); });
@@ -904,6 +916,12 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
         break;
     case LAST_COLOR_ARAP_ENERGY:
         k = job([func, thread_id]() {func->computeLastColorARAPEnergy(thread_id); });
+        break;
+    case INVERSION_TEST:
+        k = job([func, thread_id]() {func->inversionTest(thread_id); });
+        break;
+    case LAST_COLOR_INVERSION_TEST:
+        k = job([func, thread_id]() {func->computeLastColorInversion(thread_id); });
         break;
     }
     return k;

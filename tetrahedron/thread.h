@@ -96,6 +96,7 @@ public:
 
     int thread_num;
     ThreadData* threads;
+    std::mutex m;
 private:
 
     std::vector<std::future<void>> futures;
