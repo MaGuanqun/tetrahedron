@@ -627,16 +627,16 @@ private:
 	int pair_hash_table_cell_size;
 
 
-	std::atomic<unsigned int>* vt_hash_size_record;
+	unsigned int* vt_hash_size_record;
 	std::vector<unsigned int> vt_hash_record;
-	std::atomic<unsigned int>* ee_hash_size_record;
+	unsigned int* ee_hash_size_record;
 	std::vector<unsigned int> ee_hash_record;
 
-	std::atomic<unsigned int>* vt_collider_hash_size_record;
+	unsigned int* vt_collider_hash_size_record;
 	std::vector<unsigned int> vt_collider_hash_record;
-	std::atomic<unsigned int>* tv_collider_hash_size_record;
+	unsigned int* tv_collider_hash_size_record;
 	std::vector<unsigned int> tv_collider_hash_record;
-	std::atomic<unsigned int>* ee_collider_hash_size_record;
+	unsigned int* ee_collider_hash_size_record;
 	std::vector<unsigned int> ee_collider_hash_record;
 
 	void computeLastColorHessianPerThread(int color_No, int thread_No);
@@ -1066,7 +1066,7 @@ private:
 		unsigned int* pair, std::array<double, 3>** vertex_for_render_0, std::array<double, 3>** vertex_position_0,
 		std::array<double, 3>** vertex_for_render_1, std::array<double, 3>** vertex_position_1,
 		unsigned int** edge_vertices_0, unsigned int** edge_vertices_1, std::vector<unsigned int>* record_index,
-		std::atomic<unsigned int>* hash_size_record, unsigned int* hash_record,
+		unsigned int* hash_size_record, unsigned int* hash_record,
 		unsigned int* edge_0_index_prefix_sum, unsigned int* edge_1_index_prefix_sum);
 
 
