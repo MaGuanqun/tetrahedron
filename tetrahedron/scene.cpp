@@ -351,6 +351,9 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 			xpbd_ipc.max_iteration_number = max_inner_itr_num;
 			xpbd_ipc.energy_converge_standard = energy_converge_standard;
 
+			xpbd_ipc.collision_compare.d_hat = d_hat;
+			xpbd_ipc.collision_compare.tolerance = distance_record_as_collision;
+
 			std::cout << "d_hat " << d_hat << std::endl;
 			std::cout << "energy_converge_ratio " << local_global_conv_rate << std::endl;
 			std::cout << "min_inner_iteration " << min_inner_itr << std::endl;
@@ -379,13 +382,17 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 	if (use_method== XPBD_) {
 		xpbd.collision.friction_coe = friction_coe;
 		xpbd.sub_step_per_detection = sub_step_per_detection;
+
 	}
 	else if (use_method == PD_) {
 		project_dynamic.collision.friction_coe = friction_coe;
 	}
 	else if (use_method == XPBD_IPC_) {
 		xpbd_ipc.collision.friction_coe = friction_coe;
+
 		xpbd_ipc.sub_step_per_detection = sub_step_per_detection;
+
+		xpbd_ipc.collision_compare.friction_coe = friction_coe;
 	}
 
 	Preprocessing preprocessing;

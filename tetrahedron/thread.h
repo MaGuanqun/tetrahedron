@@ -30,7 +30,7 @@ class XPBD_IPC;
 class MoveObject;
 class NewtonMethod;
 class SecondOrderLargeSystem;
-
+class CollisionCompare;
 //class MeshPatch;
 
 using job = std::packaged_task<void()>;
@@ -132,6 +132,10 @@ private:
     job create_task(SecondOrderLargeSystem* func, int thread_id, NewtonMethodFunc function_type);//
     job create_task(MoveObject* func, int thread_id, MoveObjectFunc function_type, unsigned int key_id);
     job create_task(TriangleMeshStruct* func, int thread_id, MeshStructFuncSendToThread function_type);// int jobNumber
+
+    job create_task(CollisionCompare* func, int thread_id, CollisionFuncSendToThread function_type);//
+    job create_task(CollisionCompare* func, int thread_id, CollisionFuncSendToThread function_type, int para);
+
 };
 
 

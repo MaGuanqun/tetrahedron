@@ -82,6 +82,15 @@ void XPBD_IPC::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* t
 		collision.setCollisionFreeVertex(&record_collision_free_vertex_position_address, &record_vertex_position);
 		collision.inner_itr_num_standard = &inner_itr_num_standard;
 		collision.min_collision_time = &min_collision_time;
+
+
+		collision_compare.inner_iteration_number = &inner_iteration_number;
+		collision_compare.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio, XPBD_IPC_, false);
+		collision_compare.setCollisionFreeVertex(&record_collision_free_vertex_position_address, &record_vertex_position);
+		collision_compare.inner_itr_num_standard = &inner_itr_num_standard;
+		collision_compare.min_collision_time = &min_collision_time;
+
+
 		//collision.setParameter(&lambda_collision,lambda.data()+ constraint_index_start[3], collision_constraint_index_start.data(), damping_coe, sub_time_step);
 	}
 
@@ -393,6 +402,7 @@ void XPBD_IPC::reorganzieDataOfObjects()
 	}
 
 	collision.indicate_if_involved_in_last_color = record_vertex_position_num_every_thread.data();
+	collision_compare.indicate_if_involved_in_last_color = record_vertex_position_num_every_thread.data();
 	std::cout << "xpbd ipc reorganzieDataOfObjects " << vertex_num_on_surface_prefix_sum[1] << std::endl;
 }
 
@@ -412,7 +422,11 @@ void XPBD_IPC::initialHessianMap()
 {
 	collision.common_hessian = &common_hessian;
 
+	
+
 	common_hessian.reserve(4 * vertex_num_on_surface_prefix_sum.back());
+	
+
 	common_grad.resize(total_thread_num);
 	for (int i = 0; i < total_thread_num; ++i) {
 		common_grad[i].resize(3 * vertex_index_prefix_sum_obj.back());
@@ -420,10 +434,17 @@ void XPBD_IPC::initialHessianMap()
 	for (int i = 0; i < total_thread_num; ++i) {
 		collision.common_grad[i] = common_grad[i].data();
 	}
-
-
 	floor_hessian.resize(vertex_index_prefix_sum_obj.back());
-	collision.floor_hessian = floor_hessian.data();	
+	collision.floor_hessian = floor_hessian.data();
+
+	collision_compare.common_hessian = &common_hessian_compare;
+	common_hessian_compare.reserve(4 * vertex_num_on_surface_prefix_sum.back());
+	common_grad_compare.resize(3 * vertex_index_prefix_sum_obj.back());
+	collision_compare.common_grad = common_grad_compare.data();
+	collision_compare.floor_hessian = &compare_floor_hessian;
+	compare_floor_hessian.reserve(vertex_num_on_surface_prefix_sum.back() / 10);
+
+
 }
 
 
@@ -624,6 +645,11 @@ void XPBD_IPC::initialRecordHessian()
 	for (int i = 0; i < total_thread_num; ++i) {
 		memset(common_grad[i].data(), 0, 8 * common_grad[i].size());
 	}
+
+
+	common_hessian_compare.clear();
+	compare_floor_hessian.clear();
+	memset(common_grad_compare.data(), 0, 8 * common_grad_compare.size());
 	
 }
 
@@ -641,6 +667,8 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 	iteration_number = 0;
 	if (perform_collision) {
 		collision.initialPairRecordInfo();
+
+		collision_compare.initialPairRecordInfo();
 	}
 	outer_itr_num = 0;
 	displacement_satisfied = false;
@@ -650,7 +678,20 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 	while (!convergeCondition(outer_itr_num)) {
 		if (perform_collision) {
 			collision.collisionCulling();
+
+			collision_compare.collisionCulling();
 			collision.collisionTimeWithPair();
+			collision_compare.collisionTimeWithPair();
+
+
+			std::cout << "====  " << std::endl;
+			compareVector(&collision.record_vt_pair[0], &collision_compare.record_vt_pair[0], 0);
+			compareVector(&collision.record_ee_pair[0], &collision_compare.record_ee_pair[0], 1);
+			compareVector(&collision.record_tv_collider_pair[0], &collision_compare.record_tv_collider_pair[0], 2);
+			compareVector(&collision.record_ee_collider_pair[0], &collision_compare.record_ee_collider_pair[0], 3);
+			compareVector(&collision.record_vt_collider_pair[0], &collision_compare.record_vt_collider_pair[0], 4);
+			std::cout << "====  " << std::endl;
+		
 
 			thread->assignTask(this, INVERSION_TEST);
 			for (int i = 0; i < total_thread_num; ++i) {
@@ -661,17 +702,17 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 
 			thread->assignTask(this, COLLISION_FREE_POSITION_);
 
-			//if (!collision.collisionPairHasChanged()) {
-			//	if (inner_itr_num_standard < max_iteration_number) {
-			//		inner_itr_num_standard *= 2;
-			//	}
-			//}
-			//if (collision.collision_time < min_collision_time) {
-			//	if (inner_itr_num_standard > 1) {
-			//		inner_itr_num_standard /= 2;
-			//	}
-			// 
-			//}
+			if (!collision.collisionPairHasChanged()) {
+				if (inner_itr_num_standard < max_iteration_number) {
+					inner_itr_num_standard *= 2;
+				}
+			}
+			if (collision.collision_time < min_collision_time) {
+				if (inner_itr_num_standard > 1) {
+					inner_itr_num_standard /= 2;
+				}
+			 
+			}
 		}
 		updateCollisionFreePosition();
 		if (outer_itr_num == 0) {
@@ -714,7 +755,9 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 
 	if (perform_collision) {
 		collision.collisionCulling();
+		collision_compare.collisionCulling();
 		collision.collisionTimeWithPair();
+		collision_compare.collisionTimeWithPair();
 		thread->assignTask(this, INVERSION_TEST);
 		for (int i = 0; i < total_thread_num; ++i) {
 			if (collision.collision_time_thread[i] < collision.collision_time) {
@@ -855,19 +898,16 @@ void XPBD_IPC::XPBD_IPCSolve()
 
 bool XPBD_IPC::innerConvergeCondition(unsigned int iteration_num)
 {
-	//if (iteration_num >= inner_itr_num_standard) {//max_iteration_number
-	//	return true;
-	//}
-	if (iteration_num < min_inner_iteration) {
+	if (iteration_num >= inner_itr_num_standard) {//max_iteration_number
+		return true;
+	}
+	if (iteration_num < 1) {
 		return false;
 	}
 	if (abs(energy - previous_energy) < energy_converge_standard) {
 		return true;
 	}
 	if (abs(energy - previous_energy) / previous_energy < energy_converge_ratio) {
-		return true;
-	}
-	if (iteration_num >= max_iteration_number) {//max_iteration_number
 		return true;
 	}
 
@@ -2302,9 +2342,9 @@ void XPBD_IPC::test()
 	k = new std::atomic_flag[3];
 	std::cout << "size " << sizeof(bool) << " " << sizeof(std::atomic_flag) << std::endl;
 	for (int i = 0; i < 3; ++i) {
-		//if (k[i].test_and_set(std::memory_order_relaxed)) {
+		if (k[i].test_and_set(std::memory_order_relaxed)) {
 
-		//}
+		}
 		std::cout << "k " << k[i].test() << std::endl;
 	}
 	for (int i = 0; i < 3; ++i) {
@@ -2365,11 +2405,15 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 		//tetGradForColor(i);
 		if (perform_collision) {
 			collision.computeHessian(i);
+			collision_compare.computeHessian(i);
+			compareIfRecordHessianIsRight();
 		}
 		thread->assignTask(this, SUM_ALL_GRAD);		
 		ori_energy = computePreviousColorEnergy(i);
 		thread->assignTask(this, SOLVE_TET_BLOCK, i);	
 		lineSearchFirstColor(i, ori_energy);
+
+
 
 	}
 
@@ -2383,6 +2427,7 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 		thread->assignTask(this, UPDATE_TET_GRAD_SHARED_COLLISION_NEIGHBOR, max_tet_color_num - 1);
 		//tetGradForColorCollisionNeighbor(max_tet_color_num - 1);
 		collision.computeHessian(max_tet_color_num - 1);
+		collision_compare.computeHessian(max_tet_color_num - 1);
 	}
 	thread->assignTask(this, SUM_ALL_GRAD);
 
@@ -2634,6 +2679,10 @@ void XPBD_IPC::warmStart()
 	{
 		initialRecordHessian();
 		collision.computeHessian(max_tet_color_num - 1);
+		collision_compare.computeHessian(max_tet_color_num - 1);
+
+		compareIfRecordHessianIsRight();
+
 		initialRecordPositionForThread();
 
 		
@@ -2670,7 +2719,6 @@ void XPBD_IPC::warmStart()
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		memcpy(this->record_vertex_position[i][0].data(), vertex_position[i][0].data(), this->record_vertex_position[i].size() * 24);
 	}
-
 }
 
 
@@ -6098,6 +6146,85 @@ void XPBD_IPC::solveTetBlockCollision(std::array<double, 3>* vertex_position, do
 	////	}
 	////}
 
+
+}
+
+
+
+void XPBD_IPC::compareVector(std::vector<unsigned int>* a, std::vector<unsigned int>* b, int type)
+{
+	if (a->size() != b->size()) {
+		std::cout << "type " << type << "not right "<<a->size()<<" "<<b->size() << std::endl;
+	}
+	else {
+		for (int i = 0; i <a->size(); i += 4) {
+			if (a->data()[i] != b->data()[i]) {
+				std::cout << "error record pair " << type << " " << a->data()[i] << " " << b->data()[i] << std::endl;
+			}
+		}
+	}
+}
+
+void XPBD_IPC::compareIfRecordHessianIsRight()
+{
+	compareVector(&collision.record_vt_pair[0], &collision_compare.record_vt_pair[0], 0);
+	compareVector(&collision.record_ee_pair[0], &collision_compare.record_ee_pair[0], 1);
+
+	compareVector(&collision.record_tv_collider_pair[0], &collision_compare.record_tv_collider_pair[0], 2);
+	compareVector(&collision.record_ee_collider_pair[0], &collision_compare.record_ee_collider_pair[0], 3);
+	compareVector(&collision.record_vt_collider_pair[0], &collision_compare.record_vt_collider_pair[0], 4);
+
+	auto k = common_hessian_compare.end();
+	for (auto i = common_hessian.begin(); i != common_hessian.end(); i++) {
+		if (i->second.is_update) {
+			k = common_hessian_compare.find(i->first);
+			if (k == common_hessian_compare.end()) {
+				std::cout << "error, cannot find pair in compare " << i->first[0] << " " << i->first[1] << std::endl;
+				continue;
+			}
+			
+			double value = 0.0;
+			for (int j = 0; j < 9; ++j) {
+				value += abs(i->second.hessian[j]-k->second[j]);
+			}
+			if (value > 1e-8) {
+
+				for (int m = 0; m < 9; ++m) {
+					std::cout << i->second.hessian[m] << " ";
+				}
+				std::cout << std::endl;
+
+				for (int m = 0; m < 9; ++m) {
+					std::cout << k->second[m] << " ";
+				}
+				std::cout << std::endl;
+				std::cout<<"error to sum all hessian in compare "<<value<<" " << i->first[0] << " " << i->first[1] << std::endl;
+			}
+		}
+	}
+
+
+	auto k2 = common_hessian.end();
+	for (auto i = common_hessian_compare.begin(); i != common_hessian_compare.end(); i++) {
+		if (i->first[0]<= i->first[1]) {
+			k2 = common_hessian.find(i->first);
+			if (k2 == common_hessian.end()) {
+				std::cout << "error, cannot find pair  in ori" << i->first[0] << " " << i->first[1] << std::endl;
+				continue;
+			}
+			if (!k2->second.is_update) {
+				std::cout << "error, cannot find pair  in ori not update" << i->first[0] << " " << i->first[1] << std::endl;
+				continue;
+			}
+			double value = 0.0;
+			for (int j = 0; j < 9; ++j) {
+				value += abs(i->second[j] - k2->second.hessian[j]);
+			}
+			if (value > 1e-8) {
+				std::cout << "error to sum all hessian in ori " << value << " " << i->first[0] << " " << i->first[1] << std::endl;
+			}
+		}
+	}
 
 }
 

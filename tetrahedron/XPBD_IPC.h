@@ -16,6 +16,8 @@
 #include"./XPBD/second_order.h"
 #include"./compute_energy.h"
 
+#include"collision/collision_compare.h"
+
 using namespace Eigen;
 using namespace denseOperation;
 
@@ -49,7 +51,7 @@ public:
 
 	void XPBD_IPC_Position_Solve();//solve collision as four position constraint
 	Collision collision;
-
+	CollisionCompare collision_compare;
 	unsigned int* time_indicate_for_simu;
 
 	MoveModel* move_model;
@@ -216,10 +218,16 @@ private:
 	void 	initialRecordHessian();
 
 	std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash> common_hessian;//only include collision
+
+	std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash> common_hessian_compare;//only include collision
+
 	std::vector<std::unordered_map<std::array<int, 2>,double, pair_hash>> tet_hessian;//size is total obj num
 	std::vector<double> floor_hessian;
 
+	std::unordered_map<unsigned int, double> compare_floor_hessian;
+
 	std::vector<std::vector<double>>common_grad;
+	std::vector<double>common_grad_compare;
 
 
 	std::vector<std::vector<std::vector<std::vector<unsigned int>>>*>tet_color_groups;//size is tet num
@@ -843,5 +851,12 @@ private:
 	//double computeBarrierEnergyTest();
 
 	void test();
+
+	void compareIfRecordHessianIsRight();
+
+	void compareVector(std::vector<unsigned int>* a, std::vector<unsigned int>* b, int type);
+
 };
+
+
 
