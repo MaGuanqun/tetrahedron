@@ -145,12 +145,12 @@ public:
 	//bool** vt_collider_hessian_record_is_not_empty;//if false, means the hessian is zero, just skip it
 
 	std::vector<char>ee_collider_hessian_index_exist; //every element 3 number, store true or false in order 
-	std::vector<unsigned int>ee_collider_hessian_index_in_global; //record vertex_involved, vertex_index_in_this_pair, store 2 elements, 
+	std::vector<unsigned int>ee_collider_hessian_index_in_global; //record vertex_involved, store 2 elements, 
 	std::vector<double>ee_collider_hessian_record;//every hessian is at most  6x6 hessian
 	//std::vector<double>ee_collider_grad_record;//every grad is at most  6 
 
 	std::vector<char>tv_collider_hessian_index_exist;//every element 4 number, store true or false in order 
-	std::vector<unsigned int>tv_collider_hessian_index_in_global;//record vertex_involved, vertex_index_in_this_pair, store 3 elements, 
+	std::vector<unsigned int>tv_collider_hessian_index_in_global;//record vertex_involved,store 3 elements, 
 	std::vector<double>tv_collider_hessian_record;//every hessian is at most a 9x9 hessian
 	//std::vector<double>tv_collider_grad_record;//every hessian is at most a 9 vector
 
@@ -562,6 +562,8 @@ private:
 	void setHessian(int* record_index, unsigned int* vertex_index_total, double* Hessian, double* grad,
 		double* hessian_record, double* common_grad, int record_col_num, bool* not_collider, char* record_exist);
 
+	void setHessian(int* record_index, unsigned int* vertex_index_total, double* Hessian, double* grad,
+		double* hessian_record, double* common_grad, int record_col_num, bool* not_collider, char* record_exist, unsigned int edge_0, unsigned int edge_1);
 
 	std::vector<unsigned int>triangle_index_prefix_sum_obj;
 	std::vector<unsigned int>edge_index_prefix_sum_obj;

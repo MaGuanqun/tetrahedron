@@ -852,7 +852,7 @@ private:
 
 	void test();
 
-	void compareIfRecordHessianIsRight();
+	void compareIfRecordHessianIsRight(int color);
 
 	void compareVector(std::vector<unsigned int>* a, std::vector<unsigned int>* b, int type);
 

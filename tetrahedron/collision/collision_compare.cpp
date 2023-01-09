@@ -1550,9 +1550,11 @@ void CollisionCompare::collisionCulling()
 	//////std::cout << "total e-e pair " << num << std::endl;
 
 	//for (int j = 0; j < thread_num; ++j) {
-	//	spatial_hashing.vertex_triangle_pair[j][0] = 0;
-	//	spatial_hashing.edge_edge_pair[j][0] = 0;
-	//	spatial_hashing.vertex_obj_triangle_collider_pair[j][0] = 0;
+		//spatial_hashing.vertex_triangle_pair[j][0] = 0;
+		//spatial_hashing.edge_edge_pair[j][0] = 0;
+		//spatial_hashing.vertex_obj_triangle_collider_pair[j][0] = 0;
+		//spatial_hashing.edge_edge_pair_collider[j][0] = 0;
+		//spatial_hashing.vertex_collider_triangle_obj_pair[j][0] = 0;
 	//}
 	//spatial_hashing.testColliderPair();
 
@@ -3583,7 +3585,8 @@ void CollisionCompare::computeEEHessian(int start, int end, unsigned int* pair, 
 						vertex_position_collider[obj_2][edge_1_vertex[0]].data(), vertex_position_collider[obj_2][edge_1_vertex[1]].data(), Hessian, grad,
 						hessian_record_index, stiffness, d_hat[i >> 2], rest_edge_length[pair[i]][pair[i + 1]],
 						rest_edge_length_collider[obj_2][pair[i + 3]])) {
-						setHessian(hessian_record_index, vertex_index_in_sum, Hessian, grad, common_hessian, common_grad, not_collider);
+						setHessian(hessian_record_index, vertex_index_in_sum, Hessian, grad, common_hessian, common_grad, not_collider,
+							pair[i + 1], pair[i + 3]);
 					}
 				}
 			}
@@ -3625,7 +3628,9 @@ void CollisionCompare::computeEEHessian(int start, int end, unsigned int* pair, 
 					vertex_position_collider[obj_2][edge_1_vertex[0]].data(), vertex_position_collider[obj_2][edge_1_vertex[1]].data(), Hessian, grad,
 					hessian_record_index, stiffness, d_hat[i >> 2], rest_edge_length[pair[i]][pair[i + 1]],
 					rest_edge_length_collider[obj_2][pair[i + 3]])) {
-					setHessian(hessian_record_index, vertex_index_in_sum, Hessian, grad, common_hessian, common_grad, not_collider);
+					setHessian(hessian_record_index, vertex_index_in_sum, Hessian, grad, common_hessian, common_grad, not_collider,
+						pair[i + 1], pair[i + 3]);
+
 
 				}				
 			}
@@ -3722,7 +3727,7 @@ void CollisionCompare::computeVTHessian(int start, int end, unsigned int* pair, 
 						vertex_position_collider[obj_2][triangle_vertex[1]].data(), vertex_position_collider[obj_2][triangle_vertex[2]].data(), d_hat[i >> 2],
 						hessian_record_index, stiffness)) {
 						hessian_record_index[0] = 1;
-						setHessian(hessian_record_index, vertex_index_in_sum, Hessian, grad, common_hessian, common_grad);
+						setHessian(hessian_record_index, vertex_index_in_sum, Hessian, grad, common_hessian, common_grad, pair[i + 1], pair[i + 3]);
 					}
 				}
 			}
@@ -3805,8 +3810,60 @@ void CollisionCompare::computeVTHessian(int start, int end, unsigned int* pair, 
 	}
 }
 
+
 void CollisionCompare::setHessian(int* record_index, unsigned int* vertex_index_total, MatrixXd& Hessian, VectorXd& grad,
 	std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>* common_hessian, double* common_grad, bool* not_collider)
+{
+	int size = record_index[0];
+	record_index += 1;
+	auto k = common_hessian->begin();
+	double* result;
+
+	double* hessian_locate;
+	double* grad_locate;
+
+	double* grad_in_global;
+
+	for (int i = 0; i < size; ++i) {
+		if (not_collider[record_index[i]]) {
+			for (int j = 0; j < size; ++j) {
+				if (not_collider[record_index[j]]) {
+					k = common_hessian->find(std::array{ vertex_index_total[record_index[i]],vertex_index_total[record_index[j]] });
+					hessian_locate = Hessian.data() + 3 * (Hessian.cols() * j + i);
+					if (k != common_hessian->end()) {
+						result = k->second.data();
+						result[0] += *hessian_locate;
+						result[1] += *(hessian_locate + 1);
+						result[2] += *(hessian_locate + 2);
+						result[3] += *(hessian_locate + Hessian.cols());
+						result[4] += *(hessian_locate + Hessian.cols() + 1);
+						result[5] += *(hessian_locate + Hessian.cols() + 2);
+						result[6] += *(hessian_locate + Hessian.cols() + Hessian.cols());
+						result[7] += *(hessian_locate + Hessian.cols() + Hessian.cols() + 1);
+						result[8] += *(hessian_locate + Hessian.cols() + Hessian.cols() + 2);
+					}
+					else {
+						common_hessian->emplace(std::array{ vertex_index_total[record_index[i]],vertex_index_total[record_index[j]] },
+							std::array{ *hessian_locate , *(hessian_locate + 1) ,*(hessian_locate + 2),
+							 *(hessian_locate + Hessian.cols()),*(hessian_locate + Hessian.cols() + 1),*(hessian_locate + Hessian.cols() + 2),
+							*(hessian_locate + Hessian.cols() + Hessian.cols()),*(hessian_locate + Hessian.cols() + Hessian.cols() + 1),*(hessian_locate + Hessian.cols() + Hessian.cols() + 2) });
+					}
+
+				}
+			}
+
+			grad_locate = grad.data() + 3 * i;
+			grad_in_global = common_grad + 3 * vertex_index_total[record_index[i]];
+			grad_in_global[0] += *grad_locate;
+			grad_in_global[1] += *(grad_locate + 1);
+			grad_in_global[2] += *(grad_locate + 2);
+		}
+	}
+}
+
+void CollisionCompare::setHessian(int* record_index, unsigned int* vertex_index_total, MatrixXd& Hessian, VectorXd& grad,
+	std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>* common_hessian, double* common_grad, bool* not_collider,
+	unsigned int edge_0_index, unsigned int edge_1_index)
 {
 	int size = record_index[0];
 	record_index += 1;
@@ -3842,6 +3899,9 @@ void CollisionCompare::setHessian(int* record_index, unsigned int* vertex_index_
 							 *(hessian_locate + Hessian.cols()),*(hessian_locate + Hessian.cols() + 1),*(hessian_locate + Hessian.cols() + 2),
 							*(hessian_locate + Hessian.cols() + Hessian.cols()),*(hessian_locate + Hessian.cols() + Hessian.cols() + 1),*(hessian_locate + Hessian.cols() + Hessian.cols() + 2) });
 					}
+
+
+
 				}				
 			}
 
@@ -3854,6 +3914,67 @@ void CollisionCompare::setHessian(int* record_index, unsigned int* vertex_index_
 	}
 }
 
+
+void CollisionCompare::setHessian(int* record_index, unsigned int* vertex_index_total, MatrixXd& Hessian, VectorXd& grad,
+	std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>* common_hessian, double* common_grad, unsigned int index_0, unsigned int index_1)
+{
+	int size = record_index[0];
+	record_index += 1;
+	auto k = common_hessian->begin();
+	double* result;
+
+	double a[1] = { 1.0 };
+	result = a;
+
+
+	double* hessian_locate;
+	double* grad_locate;
+
+	double* grad_in_global;
+	for (int i = 0; i < size; ++i) {
+		for (int j = 0; j < size; ++j) {
+			k = common_hessian->find(std::array{ vertex_index_total[record_index[i]],vertex_index_total[record_index[j]] });
+			hessian_locate = Hessian.data() + 3 * (Hessian.cols() * j + i);
+			if (k != common_hessian->end()) {
+				result = k->second.data();
+				result[0] += *hessian_locate;
+				result[1] += *(hessian_locate + 1);
+				result[2] += *(hessian_locate + 2);
+				result[3] += *(hessian_locate + Hessian.cols());
+				result[4] += *(hessian_locate + Hessian.cols() + 1);
+				result[5] += *(hessian_locate + Hessian.cols() + 2);
+				result[6] += *(hessian_locate + Hessian.cols() + Hessian.cols());
+				result[7] += *(hessian_locate + Hessian.cols() + Hessian.cols() + 1);
+				result[8] += *(hessian_locate + Hessian.cols() + Hessian.cols() + 2);				
+			}
+			else {
+				common_hessian->emplace(std::array{ vertex_index_total[record_index[i]],vertex_index_total[record_index[j]] },
+					std::array{ *hessian_locate , *(hessian_locate + 1) ,*(hessian_locate + 2),
+					 *(hessian_locate + Hessian.cols()),*(hessian_locate + Hessian.cols() + 1),*(hessian_locate + Hessian.cols() + 2),
+					*(hessian_locate + Hessian.cols() + Hessian.cols()),*(hessian_locate + Hessian.cols() + Hessian.cols() + 1),*(hessian_locate + Hessian.cols() + Hessian.cols() + 2) });
+			}
+
+			//if (vertex_index_total[record_index[i]] == 187 && vertex_index_total[record_index[j]] == 187) {
+			//	std::cout << "compare== " << index_0 << " " << index_1 << std::endl;
+			//	std::cout << i << " " << j << std::endl;
+			//	if (index_1 == 330) {
+			//		std::cout << result[0] << std::endl;
+			//	}
+			//	std::cout << Hessian << std::endl;
+			//}
+		}
+
+
+
+
+		grad_locate = grad.data() + 3 * i;
+		grad_in_global = common_grad + 3 * vertex_index_total[record_index[i]];
+		grad_in_global[0] += *grad_locate;
+		grad_in_global[1] += *(grad_locate + 1);
+		grad_in_global[2] += *(grad_locate + 2);
+
+	}
+}
 
 void CollisionCompare::setHessian(int* record_index, unsigned int* vertex_index_total, MatrixXd& Hessian, VectorXd& grad, 
 	std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>* common_hessian, double* common_grad)
@@ -3873,17 +3994,17 @@ void CollisionCompare::setHessian(int* record_index, unsigned int* vertex_index_
 			hessian_locate = Hessian.data() + 3 *( Hessian.cols() *  j +  i);
 			if (k != common_hessian->end()) {
 				result = k->second.data();
-				for (int m = 0; m < 3; m++) {
-					result[0] += *hessian_locate;
-					result[1] += *(hessian_locate+1);
-					result[2] += *(hessian_locate+2);
-					result[3] += *(hessian_locate + Hessian.cols());
-					result[4] += *(hessian_locate + Hessian.cols() +1);
-					result[5] += *(hessian_locate + Hessian.cols() + 2);
-					result[6] += *(hessian_locate + Hessian.cols()+ Hessian.cols());
-					result[7] += *(hessian_locate + Hessian.cols()+ Hessian.cols()+1);
-					result[8] += *(hessian_locate + Hessian.cols()+ Hessian.cols()+2);
-				}
+
+				result[0] += *hessian_locate;
+				result[1] += *(hessian_locate+1);
+				result[2] += *(hessian_locate+2);
+				result[3] += *(hessian_locate + Hessian.cols());
+				result[4] += *(hessian_locate + Hessian.cols() +1);
+				result[5] += *(hessian_locate + Hessian.cols() + 2);
+				result[6] += *(hessian_locate + Hessian.cols()+ Hessian.cols());
+				result[7] += *(hessian_locate + Hessian.cols()+ Hessian.cols()+1);
+				result[8] += *(hessian_locate + Hessian.cols()+ Hessian.cols()+2);
+				
 			}
 			else {
 				common_hessian->emplace(std::array{ vertex_index_total[record_index[i]],vertex_index_total[record_index[j]] }, 
@@ -3892,6 +4013,9 @@ void CollisionCompare::setHessian(int* record_index, unsigned int* vertex_index_
 					* (hessian_locate + Hessian.cols() + Hessian.cols()),* (hessian_locate + Hessian.cols() + Hessian.cols()+1),* (hessian_locate + Hessian.cols() + Hessian.cols()+2)});
 			}
 		}
+
+	
+
 
 		grad_locate = grad.data() + 3 * i;
 		grad_in_global = common_grad + 3 * vertex_index_total[record_index[i]];
@@ -5977,157 +6101,7 @@ void CollisionCompare::floorCollisionVertexForIPC(int thread_No)
 void CollisionCompare::pointTriangleResponseForIPC(unsigned int thread_No, unsigned int pair_thread_No, int start_pair_index,
 	int end_pair_index, TargetPosition* target_pos)
 {
-	//unsigned int* target_pos_index_ = point_triangle_target_pos_index[thread_No].data() + 1 + point_triangle_target_pos_index[thread_No][0];
-	//double* target_pos_record = point_triangle_target_pos_record[thread_No].data()+(point_triangle_target_pos_index[thread_No][0]>>2)*13;
-
-	//double* collision_time = record_VT_collision_time[pair_thread_No].data();
-
-	//unsigned int* pair_ = spatial_hashing.vertex_triangle_pair[pair_thread_No] + 1;
-	//double d_hat_ = d_hat;
-	//double tolerance = tolerance_radius[SELF_POINT_TRIANGLE];
-	//double epsilon_ = epsilon;
-	//int* indices;
-	//double target_pos_v[12];
-	//double stiffness_initial = collision_stiffness[SELF_POINT_TRIANGLE];
-	//double stiffness;
-	//std::vector<std::array<double, 3>>* vertex_b_sum = target_pos->b_sum.data();
-	//std::vector<double>* record_stiffness = target_pos->stiffness.data();
-	//bool** vetex_need_update = target_pos->need_update;
-
-	//unsigned int* pair;
-
-
-
-	////indices = triangle_indices[1][3].data();
-	////////std::cout << indices[0] << " " << indices[1] << " " << indices[2] << std::endl;
-	////////std::cout << "////// "<< start_pair_index <<" "<< end_pair_index << std::endl;
-	////////std::cout << tetrahedron->data()[0].mesh_struct.vertex_for_render[2][0] << std::endl;
-	////////std::cout << vertex_for_render[0][2][0] << " " << vertex_for_render[0][2][1] << " " << vertex_for_render[0][2][2] << std::endl;
-	////////std::cout << vertex_for_render[1][indices[0]][0] << " " << vertex_for_render[1][indices[0]][1] << " " << vertex_for_render[1][indices[0]][2] << std::endl;
-	////////std::cout << vertex_for_render[1][indices[1]][0] << " " << vertex_for_render[1][indices[1]][1] << " " << vertex_for_render[1][indices[1]][2] << std::endl;
-	////////std::cout << vertex_for_render[1][indices[2]][0] << " " << vertex_for_render[1][indices[2]][1] << " " << vertex_for_render[1][indices[2]][2] << std::endl;
-
-	////////std::cout << start_pair_index<<" "<< end_pair_index << std::endl;
-
-
-
-
-	//for (int i = start_pair_index; i < end_pair_index; i += 4) {
-	//	stiffness = stiffness_initial;
-	//	pair = pair_ + i;
-	//	indices = triangle_indices[*(pair + 3)][*(pair + 2)].data();
-
-	//	//if (pair[0] == 1 && pair[1] == 0 && pair[2] == 0 && pair[3] == 1) {
-	//	//	//std::cout << "occurs in response section " << std::endl;
-	//	//}
-	//	//if (pair[1] == 0 && pair[0] == 1 && pair[2] == 0 && pair[3] == 1) {
-	//	//	//std::cout << indices[0] << " " << indices[1] << " " << indices[2] << std::endl;
-	//	//	std::cout<<"compute position "<<  vertex_for_render[pair[ 1]][pair[0]][0] << " " << vertex_for_render[pair[ 1]][pair[0]][1] << " " << vertex_for_render[pair[ 1]][pair[0]][2] << std::endl;
-	//	//	//std::cout << vertex_for_render[pair[ 3]][indices[0]][0] << " " << vertex_for_render[pair[ 3]][indices[0]][1] << " " << vertex_for_render[pair[ 3]][indices[0]][2] << std::endl;
-	//	//	//std::cout << vertex_for_render[pair[ 3]][indices[1]][0] << " " << vertex_for_render[pair[ 3]][indices[1]][1] << " " << vertex_for_render[pair[ 3]][indices[1]][2] << std::endl;
-	//	//	//std::cout << vertex_for_render[pair[ 3]][indices[2]][0] << " " << vertex_for_render[pair[ 3]][indices[2]][1] << " " << vertex_for_render[pair[ 3]][indices[2]][2] << std::endl;
-	//	//}
-
-
-	//	//if (*(pair + 3) == 1 && *(pair + 2) == 73 && *pair == 18 && *(pair + 1) == 0) {
-
-	//	//		//std::cout << "collision_time here" << collision_time[i >> 2] << std::endl;
-
-	//	//}
-
-
-
-
-	//	if (collision_constraint.pointTriangleResponse(vertex_for_render[*(pair+ 1)][*pair].data(), vertex_position[*(pair + 1)][*pair].data(),
-	//		vertex_for_render[*(pair + 3)][indices[0]].data(), vertex_for_render[*(pair + 3)][indices[1]].data(),
-	//		vertex_for_render[*(pair + 3)][indices[2]].data(),
-	//		vertex_position[*(pair + 3)][indices[0]].data(), vertex_position[*(pair + 3)][indices[1]].data(),
-	//		vertex_position[*(pair + 3)][indices[2]].data(), 
-	//		vertex_collision_free[*(pair + 1)][*pair].data(),
-	//		vertex_collision_free[*(pair + 3)][indices[0]].data(), vertex_collision_free[*(pair + 3)][indices[1]].data(),
-	//		vertex_collision_free[*(pair + 3)][indices[2]].data(),
-	//		triangle_normal_render[*(pair + 3)][*(pair + 2)].data(),
-	//		target_pos_v, target_pos_v+3, target_pos_v+6, target_pos_v+9, d_hat_, stiffness, epsilon_,
-	//		mass[*(pair + 1)][*pair],
-	//		mass[*(pair + 3)][indices[0]], mass[*(pair + 3)][indices[1]], mass[*(pair + 3)][indices[2]], pair,
-	//		collision_time[i>>2], this->collision_time))
-	//	{
-
-
-
-	//		//if (*(pair + 3) == 1 &&(* (pair + 2) == 15|| *(pair + 1) == 0 || *(pair +0) == 10)) {
-	//		//if (*(pair + 3) == 0 && (indices[0] == 10 || indices[1] ==10 || indices[2] == 10)) {
-	//		//	std::cout << *pair << " " << *(pair + 1) << " " << *(pair + 2) << " " << *(pair + 3) <<" "<< indices[0]
-	//		//		<< " " << indices[1] <<" "<<indices[2]<<" "<<collision_time[i>>2] << std::endl;
-	//		//	for (unsigned int k = 0; k < 3; ++k) {
-	//		//		if (indices[k] == 10) {
-	//		//			double* pos = target_pos_v + 3 * k + 3;
-	//		//			std::cout << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
-	//		//			pos = vertex_collision_free[*(pair + 3)][indices[k]].data();
-	//		//			std::cout << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
-	//		//			pos = vertex_position[*(pair + 3)][indices[k]].data();
-	//		//			std::cout << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
-	//		//		}
-	//		//	}
-	//		//}
-	//		//if (*(pair + 1) == 0 && *( pair +0)== 10) {
-	//			//std::cout << *pair << " " << *(pair + 1) << " " << *(pair + 2) << " " << *(pair + 3) << " " << indices[0]
-	//			//	<< " " << indices[1] << " " << indices[2] << std::endl;
-	//			//double* pos = target_pos_v;
-	//			//std::cout << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
-	//			//pos = vertex_collision_free[*(pair + 1)][*pair].data();
-	//			//std::cout << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
-	//			//pos = vertex_position[*(pair + 3)][*pair].data();
-	//			//std::cout << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
-	//		
-
-
-	//		//if ( *(pair + 1) == 0 && *(pair + 0) == 10) {//* (pair + 3) == 1 && *(pair + 2) == 15 &&
-	//		//	//if (*(pair + 3) == 0 && (indices[0] == 10 || indices[1] ==10 || indices[2] == 10)) {
-	//		//	//	//std::cout << *pair << " " << *(pair + 1) << " " << *(pair + 2) << " " << *(pair + 3) <<" "<< indices[0]
-	//		//	//		<< " " << indices[1] <<" "<<indices[2] << std::endl;
-	//		//	//	for (unsigned int k = 0; k < 3; ++k) {
-	//		//	//		if (indices[k] == 0) {
-	//		//	//			double* pos = target_pos_v + 3 * k + 3;
-	//		//	//			//std::cout << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
-	//		//	//			pos = vertex_collision_free[*(pair + 3)][indices[k]].data();
-	//		//	//			//std::cout << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
-	//		//	//			pos = vertex_position[*(pair + 3)][indices[k]].data();
-	//		//	//			//std::cout << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
-	//		//	//		}
-	//		//	//	}
-	//		//	//}
-	//		//	//if (*(pair + 1) == 0 && *( pair +0)== 10) {
-	//		//	std::cout << *pair << " " << *(pair + 1) << " " << *(pair + 2) << " " << *(pair + 3) << " " << indices[0]
-	//		//		<< " " << indices[1] << " " << indices[2] << std::endl;
-	//		//	double* pos = vertex_collision_free[*(pair + 1)][*pair].data();
-	//		//	std::cout << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
-	//		//	pos = target_pos_v;
-	//		//	std::cout << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
-	//		//	pos = vertex_position[*(pair + 1)][*pair].data();
-	//		//	std::cout << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
-	//		//}
-
-
-	//		addTargetPosToSystemTotal(vertex_b_sum[*(pair + 1)][*pair].data(), target_pos->collision_energy, vertex_position[*(pair + 1)][*pair].data(),
-	//			target_pos_v, stiffness, record_stiffness[*(pair + 1)][*pair], vetex_need_update[*(pair + 1)][*pair]);
-	//		for (int j = 0; j < 3; ++j) {
-	//			addTargetPosToSystemTotal(vertex_b_sum[*(pair + 3)][indices[j]].data(), target_pos->collision_energy, vertex_position[*(pair + 3)][indices[j]].data(),
-	//				target_pos_v+3*(j+1), stiffness, record_stiffness[*(pair + 3)][indices[j]], vetex_need_update[*(pair + 3)][indices[j]]);
-	//		}
-	//		memcpy(target_pos_index_, pair, 16);
-	//		target_pos_index_ += 4;
-	//		memcpy(target_pos_record, target_pos_v, 96);
-	//		target_pos_record[12] = stiffness;
-	//		target_pos_record += 13;
-	//		////std::cout << "stiffness " << stiffness << std::endl;
-
-
-	//	}
-	//}
-
-
-	//point_triangle_target_pos_index[thread_No][0] = target_pos_index_ - point_triangle_target_pos_index[thread_No].data() - 1;
+	
 }
 
 
@@ -6181,19 +6155,7 @@ void CollisionCompare::pointTriangleResponse(unsigned int thread_No, unsigned in
 			//1.0,1.0,1.0,1.0,
 			triangle_normal_magnitude_reciprocal[*(pair + 3)][*(pair + 2)]))
 		{
-			//////std::cout << "should not occur point triangle collision" << std::endl;
-			/*////std::cout << "===========" << std::endl;
-			////std::cout << *(pair + 1) << " "<<*(pair + 3)<<" "<< *(pair)<<" "<< indices[0]<<" "<< indices[1]<<" "<< indices[2] << std::endl;
-			////std::cout << vertex_for_render[*(pair + 1)][*pair][0] << " " << vertex_for_render[*(pair + 1)][*pair][1] << " "
-				<< vertex_for_render[*(pair + 1)][*pair][2] << std::endl;
-			////std::cout << vertex_position[*(pair + 1)][*pair][0] << " " << vertex_position[*(pair + 1)][*pair][1] << " "
-				<< vertex_position[*(pair + 1)][*pair][2] << std::endl;
-			for (int j = 0; j < 3; ++j) {
-				////std::cout << vertex_for_render[*(pair + 3)][indices[j]][0] << " " << vertex_for_render[*(pair + 3)][indices[j]][1] << " "
-					<< vertex_for_render[*(pair + 3)][indices[j]][2] << std::endl;
-				////std::cout << vertex_position[*(pair + 3)][indices[j]][0] << " " << vertex_position[*(pair + 3)][indices[j]][1] << " "
-					<< vertex_position[*(pair + 3)][indices[j]][2] << std::endl;
-			}*/
+
 			addTargetPosToSystemTotal(vertex_b_sum[*(pair + 1)][*pair].data(), target_pos->collision_energy, vertex_position[*(pair + 1)][*pair].data(),
 				target_pos_v, stiffness, record_stiffness[*(pair + 1)][*pair], vetex_need_update[*(pair + 1)][*pair]);
 
@@ -7351,22 +7313,6 @@ void CollisionCompare::edgeEdgeCollisionTimePair(int start_pair_index,
 			vertex_position_1[pair[i + 3]][indices_1[1]].data(), eta, tolerance);
 
 		current_distance = d_hat_2 + d_hat_2;
-
-
-		if (pair[i] == 617 && pair[i+2]==561) {
-			std::cout << time<<" "<< eta<<" "<< tolerance << std::endl;
-			std::cout << vertex_for_render_0[pair[i + 1]][indices_0[0]][0] << " " << vertex_for_render_0[pair[i + 1]][indices_0[0]][1] << " " <<
-				vertex_for_render_0[pair[i + 1]][indices_0[0]][2] << std::endl;
-
-			std::cout << vertex_for_render_0[pair[i + 1]][indices_0[1]][0] << " " << vertex_for_render_0[pair[i + 1]][indices_0[1]][1] << " " <<
-				vertex_for_render_0[pair[i + 1]][indices_0[1]][2] << std::endl;
-
-			std::cout << vertex_for_render_1[pair[i + 1]][indices_1[0]][0] << " " << vertex_for_render_1[pair[i + 1]][indices_1[0]][1] << " " <<
-				vertex_for_render_1[pair[i + 1]][indices_1[0]][2] << std::endl;
-
-			std::cout << vertex_for_render_1[pair[i + 1]][indices_1[1]][0] << " " << vertex_for_render_1[pair[i + 1]][indices_1[1]][1] << " " <<
-				vertex_for_render_1[pair[i + 1]][indices_1[1]][2] << std::endl;
-		}
 
 
 		if (time >= 1.0) {

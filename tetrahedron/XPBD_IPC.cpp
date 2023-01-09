@@ -684,13 +684,13 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 			collision_compare.collisionTimeWithPair();
 
 
-			std::cout << "====  " << std::endl;
-			compareVector(&collision.record_vt_pair[0], &collision_compare.record_vt_pair[0], 0);
-			compareVector(&collision.record_ee_pair[0], &collision_compare.record_ee_pair[0], 1);
-			compareVector(&collision.record_tv_collider_pair[0], &collision_compare.record_tv_collider_pair[0], 2);
-			compareVector(&collision.record_ee_collider_pair[0], &collision_compare.record_ee_collider_pair[0], 3);
-			compareVector(&collision.record_vt_collider_pair[0], &collision_compare.record_vt_collider_pair[0], 4);
-			std::cout << "====  " << std::endl;
+			//std::cout << "====  " << std::endl;
+			//compareVector(&collision.record_vt_pair[0], &collision_compare.record_vt_pair[0], 0);
+			//compareVector(&collision.record_ee_pair[0], &collision_compare.record_ee_pair[0], 1);
+			//compareVector(&collision.record_tv_collider_pair[0], &collision_compare.record_tv_collider_pair[0], 2);
+			//compareVector(&collision.record_ee_collider_pair[0], &collision_compare.record_ee_collider_pair[0], 3);
+			//compareVector(&collision.record_vt_collider_pair[0], &collision_compare.record_vt_collider_pair[0], 4);
+			//std::cout << "====  " << std::endl;
 		
 
 			thread->assignTask(this, INVERSION_TEST);
@@ -715,11 +715,11 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 			}
 		}
 		updateCollisionFreePosition();
-		if (outer_itr_num == 0) {
-			if (perform_collision) {
-				warmStart();
-			}
-		}
+		//if (outer_itr_num == 0) {
+		//	if (perform_collision) {
+		//		warmStart();
+		//	}
+		//}
 
 
 		std::cout << "time stamp " << *time_stamp << " outer itr num " << outer_itr_num << " " << inner_iteration_number << std::endl;
@@ -2401,13 +2401,13 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 	for (unsigned int i = 0; i < max_tet_color_num-1; ++i) {		//
 		initialRecordHessian();
 		//update shared tet, collision hessian 
-		thread->assignTask(this, UPDATE_TET_GRAD_SHARED, i);	
 		//tetGradForColor(i);
 		if (perform_collision) {
 			collision.computeHessian(i);
 			collision_compare.computeHessian(i);
-			compareIfRecordHessianIsRight();
+			compareIfRecordHessianIsRight(i);
 		}
+		thread->assignTask(this, UPDATE_TET_GRAD_SHARED, i);
 		thread->assignTask(this, SUM_ALL_GRAD);		
 		ori_energy = computePreviousColorEnergy(i);
 		thread->assignTask(this, SOLVE_TET_BLOCK, i);	
@@ -2681,7 +2681,7 @@ void XPBD_IPC::warmStart()
 		collision.computeHessian(max_tet_color_num - 1);
 		collision_compare.computeHessian(max_tet_color_num - 1);
 
-		compareIfRecordHessianIsRight();
+		compareIfRecordHessianIsRight(-2);
 
 		initialRecordPositionForThread();
 
@@ -6165,7 +6165,7 @@ void XPBD_IPC::compareVector(std::vector<unsigned int>* a, std::vector<unsigned 
 	}
 }
 
-void XPBD_IPC::compareIfRecordHessianIsRight()
+void XPBD_IPC::compareIfRecordHessianIsRight(int color)
 {
 	compareVector(&collision.record_vt_pair[0], &collision_compare.record_vt_pair[0], 0);
 	compareVector(&collision.record_ee_pair[0], &collision_compare.record_ee_pair[0], 1);
@@ -6173,6 +6173,13 @@ void XPBD_IPC::compareIfRecordHessianIsRight()
 	compareVector(&collision.record_tv_collider_pair[0], &collision_compare.record_tv_collider_pair[0], 2);
 	compareVector(&collision.record_ee_collider_pair[0], &collision_compare.record_ee_collider_pair[0], 3);
 	compareVector(&collision.record_vt_collider_pair[0], &collision_compare.record_vt_collider_pair[0], 4);
+
+
+	for (int i = 0; i < common_grad_compare.size(); ++i) {
+		if (abs(common_grad_compare[i] - common_grad[0][i]) > 1e-8) {
+			std::cout << "wrong in common grad "<<color<<" " << abs(common_grad_compare[i] - common_grad[0][i]) << std::endl;
+		}
+	}
 
 	auto k = common_hessian_compare.end();
 	for (auto i = common_hessian.begin(); i != common_hessian.end(); i++) {
@@ -6188,17 +6195,20 @@ void XPBD_IPC::compareIfRecordHessianIsRight()
 				value += abs(i->second.hessian[j]-k->second[j]);
 			}
 			if (value > 1e-8) {
+				std::cout << "inner iter " << inner_iteration_number <<"outer "<<outer_itr_num<<  std::endl;
 
+
+				std::cout << "ori hessian show " << std::endl;
 				for (int m = 0; m < 9; ++m) {
 					std::cout << i->second.hessian[m] << " ";
 				}
 				std::cout << std::endl;
-
+				std::cout << "compare hessian show " << std::endl;
 				for (int m = 0; m < 9; ++m) {
 					std::cout << k->second[m] << " ";
 				}
 				std::cout << std::endl;
-				std::cout<<"error to sum all hessian in compare "<<value<<" " << i->first[0] << " " << i->first[1] << std::endl;
+				std::cout<<"error to sum all hessian in compare "<<color<<" " << value << " " << i->first[0] << " " << i->first[1] << std::endl;
 			}
 		}
 	}
