@@ -439,20 +439,28 @@ void Collision::initialPairRecordInfo()
 
 	record_vt_pair_d_hat.clear();
 	record_ee_pair_d_hat.clear();
-	if (has_collider || floor->exist) {
+
+	if(has_collider){
 		for (int i = 0; i < total_obj_num; ++i) {
-			memset(indicate_triangle_with_collider[i], 0, mesh_struct[i]->triangle_indices.size()* sizeof(std::atomic_flag));
-			memset(indicate_edge_with_collider[i], 0, mesh_struct[i]->edge_vertices.size()/2* sizeof(std::atomic_flag));
-			memset(indicate_vertex_with_collider[i], 0, mesh_struct[i]->vertex_position.size()* sizeof(std::atomic_flag));
+			memset(indicate_triangle_with_collider[i], 0, mesh_struct[i]->triangle_indices.size() * sizeof(std::atomic_flag));
+			memset(indicate_edge_with_collider[i], 0, mesh_struct[i]->edge_vertices.size() / 2 * sizeof(std::atomic_flag));
 		}
 		for (int i = 0; i < thread_num; ++i) {
 			triangle_index_collide_collider[i].clear();
 			edge_index_collide_collider[i].clear();
+		}
+		triangle_index_collide_collider_sum.clear();
+		edge_index_collide_collider_sum.clear();
+	}
+
+	if (has_collider || floor->exist) {
+		for (int i = 0; i < total_obj_num; ++i) {
+			memset(indicate_vertex_with_collider[i], 0, mesh_struct[i]->vertex_position.size()* sizeof(std::atomic_flag));
+		}
+		for (int i = 0; i < thread_num; ++i) {
 			vertex_index_collide_collider[i].clear();
 		}
 		vertex_index_collide_collider_sum.clear();
-		triangle_index_collide_collider_sum.clear();
-		edge_index_collide_collider_sum.clear();
 	}
 
 	
@@ -11423,6 +11431,7 @@ void Collision::recordCollideWithCollider()
 	edge_index_collide_collider.resize(thread_num);
 	vertex_index_collide_collider.resize(thread_num);
 
+
 	indicate_triangle_with_collider = new std::atomic_flag * [total_obj_num];
 	indicate_vertex_with_collider = new std::atomic_flag * [total_obj_num];
 	indicate_edge_with_collider = new std::atomic_flag * [total_obj_num];
@@ -11452,14 +11461,14 @@ void Collision::recordCollideWithCollider()
 		}
 	}
 
-	if (has_collider || floor->exist) {
-		for (int i = 0; i < thread_num; ++i) {
-			vertex_index_collide_collider[i].reserve(vertex_index_prefix_sum_obj[total_obj_num] / thread_num);
-		}
-		for (int i = 0; i < total_obj_num; ++i) {
-			indicate_vertex_with_collider[i]=new std::atomic_flag[mesh_struct[i]->vertex_position.size()];
-		}
+
+	for (int i = 0; i < thread_num; ++i) {
+		vertex_index_collide_collider[i].reserve(vertex_index_prefix_sum_obj[total_obj_num] / thread_num);
 	}
+	for (int i = 0; i < total_obj_num; ++i) {
+		indicate_vertex_with_collider[i] = new std::atomic_flag[mesh_struct[i]->vertex_position.size()];
+	}
+	
 
 
 

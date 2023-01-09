@@ -6245,6 +6245,27 @@ void XPBD_IPC::compareIfRecordHessianIsRight(int color)
 		}
 	}
 
+	
+	for (auto i = compare_floor_hessian.begin(); i != compare_floor_hessian.end(); ++i) {
+		if (abs(i->second - floor_hessian[i->first]) > 1e-8) {
+			std::cout << "floor error in ori " << i->first << " " << abs(i->second - floor_hessian[i->first]) << std::endl;
+		}
+	}
+	auto k3 = compare_floor_hessian.end();
+	for (auto i =0; i < floor_hessian.size(); ++i) {
+		if (floor_hessian[i] != 0.0) {
+			k3 = compare_floor_hessian.find(i);
+			if (k3 == compare_floor_hessian.end()) {
+				std::cout << "floor error cannot find in compare " <<i << std::endl;
+				continue;
+			}
+			if (abs(k3->second - floor_hessian[i]) > 1e-8) {
+				std::cout << "floor error in compare " << abs(k3->second - floor_hessian[i]) << " " <<i<< std::endl;
+			}
+		}
+	}
+
+
 }
 
 
