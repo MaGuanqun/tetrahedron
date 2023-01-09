@@ -445,6 +445,8 @@ public:
 
 	bool collisionPairHasChanged();
 	double eta;//for setting gap in ccd
+
+	unsigned int* outer_itr_num;
 private:		
 
 
@@ -482,10 +484,9 @@ private:
 
 	void recordPair();
 
-	void setHessian(int* record_index, unsigned int* vertex_index_total, MatrixXd& Hessian, VectorXd& grad,
-		std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>* common_hessian, double* common_grad, unsigned int index_0, unsigned int index_1);
 
-	void setHessian(int* record_index, unsigned int* vertex_index_total, MatrixXd& Hessian, VectorXd& grad, 
+
+	void setHessian(int* record_index, unsigned int* vertex_index_total, MatrixXd& Hessian, VectorXd& grad,
 		std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>* common_hessian, double* common_grad);
 
 	void setHessian(int* record_index, unsigned int* vertex_index_total, MatrixXd& Hessian, VectorXd& grad,
@@ -493,7 +494,7 @@ private:
 
 
 	void setHessian(int* record_index, unsigned int* vertex_index_total, MatrixXd& Hessian, VectorXd& grad,
-		std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>* common_hessian, double* common_grad, bool* not_collider, unsigned int edge_0_index, unsigned int edge_1_index);
+		std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>* common_hessian, double* common_grad, bool* not_collider, unsigned int index_0, unsigned int index_1);
 
 
 	std::vector<unsigned int>triangle_index_prefix_sum_obj;

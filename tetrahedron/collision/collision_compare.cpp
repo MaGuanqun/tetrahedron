@@ -1550,11 +1550,11 @@ void CollisionCompare::collisionCulling()
 	//////std::cout << "total e-e pair " << num << std::endl;
 
 	//for (int j = 0; j < thread_num; ++j) {
-		//spatial_hashing.vertex_triangle_pair[j][0] = 0;
-		//spatial_hashing.edge_edge_pair[j][0] = 0;
-		//spatial_hashing.vertex_obj_triangle_collider_pair[j][0] = 0;
-		//spatial_hashing.edge_edge_pair_collider[j][0] = 0;
-		//spatial_hashing.vertex_collider_triangle_obj_pair[j][0] = 0;
+	//	spatial_hashing.vertex_triangle_pair[j][0] = 0;
+	//	spatial_hashing.edge_edge_pair[j][0] = 0;
+	//	spatial_hashing.vertex_obj_triangle_collider_pair[j][0] = 0;
+	//	spatial_hashing.edge_edge_pair_collider[j][0] = 0;
+	//	//spatial_hashing.vertex_collider_triangle_obj_pair[j][0] = 0;
 	//}
 	//spatial_hashing.testColliderPair();
 
@@ -3727,7 +3727,7 @@ void CollisionCompare::computeVTHessian(int start, int end, unsigned int* pair, 
 						vertex_position_collider[obj_2][triangle_vertex[1]].data(), vertex_position_collider[obj_2][triangle_vertex[2]].data(), d_hat[i >> 2],
 						hessian_record_index, stiffness)) {
 						hessian_record_index[0] = 1;
-						setHessian(hessian_record_index, vertex_index_in_sum, Hessian, grad, common_hessian, common_grad, pair[i + 1], pair[i + 3]);
+						setHessian(hessian_record_index, vertex_index_in_sum, Hessian, grad, common_hessian, common_grad);
 					}
 				}
 			}
@@ -3745,7 +3745,8 @@ void CollisionCompare::computeVTHessian(int start, int end, unsigned int* pair, 
 					if (second_order_constraint.computeBarrierVTGradientHessian(Hessian, grad, vertex_position_collider[pair[i]][vertex_index].data(), vertex_position[obj_2][triangle_vertex[0]].data(),
 						vertex_position[obj_2][triangle_vertex[1]].data(), vertex_position[obj_2][triangle_vertex[2]].data(), d_hat[i >> 2],
 						hessian_record_index, stiffness)) {
-						setHessian(hessian_record_index, vertex_index_in_sum, Hessian, grad, common_hessian, common_grad, not_collider);
+						setHessian(hessian_record_index, vertex_index_in_sum, Hessian, grad, common_hessian, common_grad, not_collider,
+							pair[i + 1], pair[i + 3]);
 					}
 				}
 			}
@@ -3810,6 +3811,64 @@ void CollisionCompare::computeVTHessian(int start, int end, unsigned int* pair, 
 	}
 }
 
+void CollisionCompare::setHessian(int* record_index, unsigned int* vertex_index_total, MatrixXd& Hessian, VectorXd& grad,
+	std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>* common_hessian, double* common_grad, bool* not_collider,
+	unsigned int index_0, unsigned int index_1)
+{
+	int size = record_index[0];
+	record_index += 1;
+	auto k = common_hessian->begin();
+	double* result;
+
+	double* hessian_locate;
+	double* grad_locate;
+
+	double* grad_in_global;
+
+	for (int i = 0; i < size; ++i) {
+		if (not_collider[record_index[i]]) {
+			for (int j = 0; j < size; ++j) {
+				if (not_collider[record_index[j]]) {
+					k = common_hessian->find(std::array{ vertex_index_total[record_index[i]],vertex_index_total[record_index[j]] });
+					hessian_locate = Hessian.data() + 3 * (Hessian.cols() * j + i);
+					if (k != common_hessian->end()) {
+						result = k->second.data();
+						result[0] += *hessian_locate;
+						result[1] += *(hessian_locate + 1);
+						result[2] += *(hessian_locate + 2);
+						result[3] += *(hessian_locate + Hessian.cols());
+						result[4] += *(hessian_locate + Hessian.cols() + 1);
+						result[5] += *(hessian_locate + Hessian.cols() + 2);
+						result[6] += *(hessian_locate + Hessian.cols() + Hessian.cols());
+						result[7] += *(hessian_locate + Hessian.cols() + Hessian.cols() + 1);
+						result[8] += *(hessian_locate + Hessian.cols() + Hessian.cols() + 2);
+					}
+					else {
+						common_hessian->emplace(std::array{ vertex_index_total[record_index[i]],vertex_index_total[record_index[j]] },
+							std::array{ *hessian_locate , *(hessian_locate + 1) ,*(hessian_locate + 2),
+							 *(hessian_locate + Hessian.cols()),*(hessian_locate + Hessian.cols() + 1),*(hessian_locate + Hessian.cols() + 2),
+							*(hessian_locate + Hessian.cols() + Hessian.cols()),*(hessian_locate + Hessian.cols() + Hessian.cols() + 1),*(hessian_locate + Hessian.cols() + Hessian.cols() + 2) });
+					}
+					//}
+										//if (*outer_itr_num == 1) {
+					//if (vertex_index_total[record_index[i]] == 190 && vertex_index_total[record_index[j]] == 190) {
+					//	std::cout << "compare== " << index_0 << " " << index_1 << std::endl;
+					//	std::cout << i << " " << j << std::endl;
+					//	std::cout << Hessian << std::endl;
+					//}
+				}
+			}
+
+			grad_locate = grad.data() + 3 * i;
+			grad_in_global = common_grad + 3 * vertex_index_total[record_index[i]];
+			grad_in_global[0] += *grad_locate;
+			grad_in_global[1] += *(grad_locate + 1);
+			grad_in_global[2] += *(grad_locate + 2);
+		}
+	}
+}
+
+
 
 void CollisionCompare::setHessian(int* record_index, unsigned int* vertex_index_total, MatrixXd& Hessian, VectorXd& grad,
 	std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>* common_hessian, double* common_grad, bool* not_collider)
@@ -3848,7 +3907,6 @@ void CollisionCompare::setHessian(int* record_index, unsigned int* vertex_index_
 							 *(hessian_locate + Hessian.cols()),*(hessian_locate + Hessian.cols() + 1),*(hessian_locate + Hessian.cols() + 2),
 							*(hessian_locate + Hessian.cols() + Hessian.cols()),*(hessian_locate + Hessian.cols() + Hessian.cols() + 1),*(hessian_locate + Hessian.cols() + Hessian.cols() + 2) });
 					}
-
 				}
 			}
 
@@ -3861,120 +3919,6 @@ void CollisionCompare::setHessian(int* record_index, unsigned int* vertex_index_
 	}
 }
 
-void CollisionCompare::setHessian(int* record_index, unsigned int* vertex_index_total, MatrixXd& Hessian, VectorXd& grad,
-	std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>* common_hessian, double* common_grad, bool* not_collider,
-	unsigned int edge_0_index, unsigned int edge_1_index)
-{
-	int size = record_index[0];
-	record_index += 1;
-	auto k = common_hessian->begin();
-	double* result;
-
-	double* hessian_locate;
-	double* grad_locate;
-
-	double* grad_in_global;
-
-	for (int i = 0; i < size; ++i) {
-		if (not_collider[record_index[i]]) {
-			for (int j = 0; j < size; ++j) {
-				if (not_collider[record_index[j]]) {
-					k = common_hessian->find(std::array{ vertex_index_total[record_index[i]],vertex_index_total[record_index[j]] });
-					hessian_locate = Hessian.data() + 3 * (Hessian.cols() * j + i);
-					if (k != common_hessian->end()) {
-						result = k->second.data();
-						result[0] += *hessian_locate;
-						result[1] += *(hessian_locate + 1);
-						result[2] += *(hessian_locate + 2);
-						result[3] += *(hessian_locate + Hessian.cols());
-						result[4] += *(hessian_locate + Hessian.cols() + 1);
-						result[5] += *(hessian_locate + Hessian.cols() + 2);
-						result[6] += *(hessian_locate + Hessian.cols() + Hessian.cols());
-						result[7] += *(hessian_locate + Hessian.cols() + Hessian.cols() + 1);
-						result[8] += *(hessian_locate + Hessian.cols() + Hessian.cols() + 2);						
-					}
-					else {
-						common_hessian->emplace(std::array{ vertex_index_total[record_index[i]],vertex_index_total[record_index[j]] },
-							std::array{ *hessian_locate , *(hessian_locate + 1) ,*(hessian_locate + 2),
-							 *(hessian_locate + Hessian.cols()),*(hessian_locate + Hessian.cols() + 1),*(hessian_locate + Hessian.cols() + 2),
-							*(hessian_locate + Hessian.cols() + Hessian.cols()),*(hessian_locate + Hessian.cols() + Hessian.cols() + 1),*(hessian_locate + Hessian.cols() + Hessian.cols() + 2) });
-					}
-
-
-
-				}				
-			}
-
-			grad_locate = grad.data() + 3 * i;
-			grad_in_global = common_grad + 3 * vertex_index_total[record_index[i]];
-			grad_in_global[0] += *grad_locate;
-			grad_in_global[1] += *(grad_locate + 1);
-			grad_in_global[2] += *(grad_locate + 2);
-		}
-	}
-}
-
-
-void CollisionCompare::setHessian(int* record_index, unsigned int* vertex_index_total, MatrixXd& Hessian, VectorXd& grad,
-	std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>* common_hessian, double* common_grad, unsigned int index_0, unsigned int index_1)
-{
-	int size = record_index[0];
-	record_index += 1;
-	auto k = common_hessian->begin();
-	double* result;
-
-	double a[1] = { 1.0 };
-	result = a;
-
-
-	double* hessian_locate;
-	double* grad_locate;
-
-	double* grad_in_global;
-	for (int i = 0; i < size; ++i) {
-		for (int j = 0; j < size; ++j) {
-			k = common_hessian->find(std::array{ vertex_index_total[record_index[i]],vertex_index_total[record_index[j]] });
-			hessian_locate = Hessian.data() + 3 * (Hessian.cols() * j + i);
-			if (k != common_hessian->end()) {
-				result = k->second.data();
-				result[0] += *hessian_locate;
-				result[1] += *(hessian_locate + 1);
-				result[2] += *(hessian_locate + 2);
-				result[3] += *(hessian_locate + Hessian.cols());
-				result[4] += *(hessian_locate + Hessian.cols() + 1);
-				result[5] += *(hessian_locate + Hessian.cols() + 2);
-				result[6] += *(hessian_locate + Hessian.cols() + Hessian.cols());
-				result[7] += *(hessian_locate + Hessian.cols() + Hessian.cols() + 1);
-				result[8] += *(hessian_locate + Hessian.cols() + Hessian.cols() + 2);				
-			}
-			else {
-				common_hessian->emplace(std::array{ vertex_index_total[record_index[i]],vertex_index_total[record_index[j]] },
-					std::array{ *hessian_locate , *(hessian_locate + 1) ,*(hessian_locate + 2),
-					 *(hessian_locate + Hessian.cols()),*(hessian_locate + Hessian.cols() + 1),*(hessian_locate + Hessian.cols() + 2),
-					*(hessian_locate + Hessian.cols() + Hessian.cols()),*(hessian_locate + Hessian.cols() + Hessian.cols() + 1),*(hessian_locate + Hessian.cols() + Hessian.cols() + 2) });
-			}
-
-			//if (vertex_index_total[record_index[i]] == 187 && vertex_index_total[record_index[j]] == 187) {
-			//	std::cout << "compare== " << index_0 << " " << index_1 << std::endl;
-			//	std::cout << i << " " << j << std::endl;
-			//	if (index_1 == 330) {
-			//		std::cout << result[0] << std::endl;
-			//	}
-			//	std::cout << Hessian << std::endl;
-			//}
-		}
-
-
-
-
-		grad_locate = grad.data() + 3 * i;
-		grad_in_global = common_grad + 3 * vertex_index_total[record_index[i]];
-		grad_in_global[0] += *grad_locate;
-		grad_in_global[1] += *(grad_locate + 1);
-		grad_in_global[2] += *(grad_locate + 2);
-
-	}
-}
 
 void CollisionCompare::setHessian(int* record_index, unsigned int* vertex_index_total, MatrixXd& Hessian, VectorXd& grad, 
 	std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash>* common_hessian, double* common_grad)

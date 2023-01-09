@@ -89,7 +89,8 @@ void XPBD_IPC::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* t
 		collision_compare.setCollisionFreeVertex(&record_collision_free_vertex_position_address, &record_vertex_position);
 		collision_compare.inner_itr_num_standard = &inner_itr_num_standard;
 		collision_compare.min_collision_time = &min_collision_time;
-
+		collision.outer_itr_num = &outer_itr_num;
+		collision_compare.outer_itr_num = &outer_itr_num;
 
 		//collision.setParameter(&lambda_collision,lambda.data()+ constraint_index_start[3], collision_constraint_index_start.data(), damping_coe, sub_time_step);
 	}
@@ -715,11 +716,11 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 			}
 		}
 		updateCollisionFreePosition();
-		//if (outer_itr_num == 0) {
-		//	if (perform_collision) {
-		//		warmStart();
-		//	}
-		//}
+		if (outer_itr_num == 0) {
+			if (perform_collision) {
+				warmStart();
+			}
+		}
 
 
 		std::cout << "time stamp " << *time_stamp << " outer itr num " << outer_itr_num << " " << inner_iteration_number << std::endl;
@@ -2420,15 +2421,18 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 	//testPrintOut();
 	initialRecordHessian();
 	memset(is_tet_arap_grad_compute, 0, prefix_sum_of_every_tet_index[tetrahedron->size()]<<2);
-	thread->assignTask(this, UPDATE_TET_GRAD_SHARED, max_tet_color_num - 1);
+	
 	//tetGradForColor(max_tet_color_num-1);
 	if (perform_collision) {
 		//thread->assignTask(this, UPDATE_TET_GRAD_SHARED_COLLISION, max_tet_color_num - 1);
-		thread->assignTask(this, UPDATE_TET_GRAD_SHARED_COLLISION_NEIGHBOR, max_tet_color_num - 1);
+		//thread->assignTask(this, UPDATE_TET_GRAD_SHARED_COLLISION_NEIGHBOR, max_tet_color_num - 1);
 		//tetGradForColorCollisionNeighbor(max_tet_color_num - 1);
 		collision.computeHessian(max_tet_color_num - 1);
 		collision_compare.computeHessian(max_tet_color_num - 1);
+		compareIfRecordHessianIsRight(-1);
 	}
+	thread->assignTask(this, UPDATE_TET_GRAD_SHARED, max_tet_color_num - 1);
+	thread->assignTask(this, UPDATE_TET_GRAD_SHARED_COLLISION_NEIGHBOR, max_tet_color_num - 1);
 	thread->assignTask(this, SUM_ALL_GRAD);
 
 	initialRecordPositionForThread();
@@ -6174,10 +6178,15 @@ void XPBD_IPC::compareIfRecordHessianIsRight(int color)
 	compareVector(&collision.record_ee_collider_pair[0], &collision_compare.record_ee_collider_pair[0], 3);
 	compareVector(&collision.record_vt_collider_pair[0], &collision_compare.record_vt_collider_pair[0], 4);
 
-
+	double value_sum;
 	for (int i = 0; i < common_grad_compare.size(); ++i) {
-		if (abs(common_grad_compare[i] - common_grad[0][i]) > 1e-8) {
-			std::cout << "wrong in common grad "<<color<<" " << abs(common_grad_compare[i] - common_grad[0][i]) << std::endl;
+		value_sum = 0.0;
+
+		for (int k = 0; k < total_thread_num; ++k) {
+			value_sum += common_grad[k][i];
+		}
+		if (abs(common_grad_compare[i] - value_sum) > 1e-8) {
+			std::cout << "wrong in common grad "<<color<<" "<<i/3 << " " << abs(common_grad_compare[i] - common_grad[0][i]) << std::endl;
 		}
 	}
 

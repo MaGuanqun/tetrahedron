@@ -501,6 +501,9 @@ public:
 
 	std::vector<double>collision_time_thread;
 	double eta;//for setting gap in ccd
+
+	unsigned int* outer_itr_num;
+
 private:		
 
 
@@ -557,14 +560,16 @@ private:
 	void recordPair();
 
 	void setHessian(int* record_index, unsigned int* vertex_index_total, double* Hessian, double* grad, 
-		double* hessian_record, double* common_grad, int record_col_num, char* record_exist, int bias);//tv_c 1, others 0
+		double* hessian_record, double* common_grad, int record_col_num, char* record_exist);//tv_c 1, others 0
 
 	void setHessian(int* record_index, unsigned int* vertex_index_total, double* Hessian, double* grad,
-		double* hessian_record, double* common_grad, int record_col_num, bool* not_collider, char* record_exist);
+		double* hessian_record, double* common_grad, int record_col_num, bool* not_collider, char* record_exist, int bias);
 
-	void setHessian(int* record_index, unsigned int* vertex_index_total, double* Hessian, double* grad,
-		double* hessian_record, double* common_grad, int record_col_num, bool* not_collider, char* record_exist, unsigned int edge_0, unsigned int edge_1);
 
+	/*void setHessian(int* record_index, unsigned int* vertex_index_total, MatrixXd& Hessian, double* grad,
+		double* hessian_record, double* common_grad, int record_col_num, bool* not_collider, char* record_exist, int bias, unsigned int edge_0, unsigned int edge_1);*/
+
+	
 	std::vector<unsigned int>triangle_index_prefix_sum_obj;
 	std::vector<unsigned int>edge_index_prefix_sum_obj;
 
