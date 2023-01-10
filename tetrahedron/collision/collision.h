@@ -55,6 +55,8 @@ public:
 	void collisionTimeWithPair();
 	void collisionTimeWithPair(int thread_No);
 
+	void updateNewPairInHash(int thread_No);
+
 	void allPairCollisionTime();
 
 
@@ -281,8 +283,8 @@ public:
 	unsigned int tv_collider_d_hat_num;
 	unsigned int ee_collider_d_hat_num;
 
-	void computeVolume(int thread_No);
-	void saveCollisionPairVolume();
+	//void computeVolume(int thread_No);
+	//void saveCollisionPairVolume();
 
 	void setCollisionFreeVertex(std::vector<std::array<double, 3>*>* record_vertex_position, std::vector<std::vector<std::array<double, 3>>>* record_vertex_for_this_color);
 	void setCollisionFreeVertex(std::vector< std::vector<std::array<double, 3>>>* record_vertex_position);
@@ -457,6 +459,14 @@ public:
 
 	std::vector<unsigned int>tet_involve_in_collision_start_per_thread;//thread_No, index, respectively
 
+	std::vector<unsigned int>new_add_vt_hash_start_per_thread;//thread_No, index, respectively
+	std::vector<unsigned int>new_add_ee_hash_start_per_thread;//thread_No, index, respectively
+	std::vector<unsigned int>new_add_vt_c_hash_start_per_thread;//thread_No, index, respectively
+	std::vector<unsigned int>new_add_ee_c_hash_start_per_thread;//thread_No, index, respectively
+	std::vector<unsigned int>new_add_tv_c_hash_start_per_thread;//thread_No, index, respectively
+
+
+
 	//std::vector<unsigned int>record_vertex_collide_with_floor_start_per_thread;//thread_No, index, respectively
 
 
@@ -494,7 +504,7 @@ public:
 	void computeDhatWithIndexInGlobal(int thread_No);
 
 	void setPairByElement(int thread_No);
-	void findPairByElementReverse();
+
 	
 	void extractElementCollideWithCollider(int thread_No);
 
@@ -514,13 +524,6 @@ private:
 	std::vector<unsigned int> ee_c_pair_add_per_thread;
 	std::vector<unsigned int> tv_c_pair_add_per_thread;
 	std::vector<unsigned int> floor_add_per_thread;
-
-
-	std::vector<unsigned int> vt_pair_add_per_thread_adjust; //make sure one vertex only in one thread
-	std::vector<unsigned int> ee_pair_add_per_thread_adjust;//make sure one edge only in one thread
-	std::vector<unsigned int> vt_c_pair_add_per_thread_adjust;//make sure one vertex only in one thread
-	std::vector<unsigned int> ee_c_pair_add_per_thread_adjust;//make sure one edge only in one thread
-
 
 
 	std::vector<unsigned int>vertex_index_prefix_sum_obj;
@@ -552,10 +555,10 @@ private:
 
 
 
-	void findPairBySingleElement(unsigned int* pair, int start, int end, unsigned int** pair_by_element, unsigned int** pair_num_record, 
+	void findPairBySingleElement(unsigned int* pair, int start, int end, unsigned int** pair_by_element, std::atomic_uint** pair_num_record,
 		unsigned int close_pair_num, double** d_hat_by_element, unsigned int d_hat_num_per_element, double* d_hat_record);
 	void findPairBySingleElementReverse(unsigned int* pair, int start, int end, unsigned int** pair_by_element, 
-		unsigned int** pair_num_record, unsigned int close_pair_num, double** d_hat_by_element, unsigned int d_hat_num_per_element, double* d_hat_record);
+		std::atomic_uint** pair_num_record, unsigned int close_pair_num, double** d_hat_by_element, unsigned int d_hat_num_per_element, double* d_hat_record);
 
 	void recordPair();
 
@@ -634,16 +637,24 @@ private:
 	int pair_hash_table_cell_size;
 
 
-	unsigned int* vt_hash_size_record;
+
+	std::vector<std::vector<unsigned int>>record_new_vt_in_hash;
+	std::vector<std::vector<unsigned int>>record_new_ee_in_hash;
+	std::vector<std::vector<unsigned int>>record_new_vt_c_in_hash;
+	std::vector<std::vector<unsigned int>>record_new_ee_c_in_hash;
+	std::vector<std::vector<unsigned int>>record_new_tv_c_in_hash;
+
+
+	std::atomic_uint* vt_hash_size_record;
 	std::vector<unsigned int> vt_hash_record;
-	unsigned int* ee_hash_size_record;
+	std::atomic_uint* ee_hash_size_record;
 	std::vector<unsigned int> ee_hash_record;
 
-	unsigned int* vt_collider_hash_size_record;
+	std::atomic_uint* vt_collider_hash_size_record;
 	std::vector<unsigned int> vt_collider_hash_record;
-	unsigned int* tv_collider_hash_size_record;
+	std::atomic_uint* tv_collider_hash_size_record;
 	std::vector<unsigned int> tv_collider_hash_record;
-	unsigned int* ee_collider_hash_size_record;
+	std::atomic_uint* ee_collider_hash_size_record;
 	std::vector<unsigned int> ee_collider_hash_record;
 
 	void computeLastColorHessianPerThread(int color_No, int thread_No);
@@ -703,7 +714,7 @@ private:
 		std::array<double, 3>** vertex_for_render, std::array<double, 3>** vertex_pos, bool is_self, unsigned int** edge_vertices);
 
 
-	void storeVolume();
+	//void storeVolume();
 
 	bool record_pair_by_element;
 
@@ -786,6 +797,8 @@ private:
 	void setPairIndexEveryThread(std::vector<std::vector<unsigned int>>& pair, std::vector<unsigned int>& pair_index_start_per_thread,
 		unsigned int& ave_pair_num, int move_bit);
 
+	void setPairIndexEveryThread(int divide_coe,  std::vector<std::vector<unsigned int>>& pair, std::vector<unsigned int>& pair_index_start_per_thread,
+		unsigned int& ave_pair_num);
 
 	void setPairIndexEveryThread(unsigned int** pair, std::vector<unsigned int>& pair_index_start_per_thread,
 		unsigned int& ave_pair_num);
@@ -1050,8 +1063,8 @@ private:
 		std::array<double, 3>** vertex_position_0,
 		std::array<double, 3>** vertex_position_1,
 		unsigned int* pair, std::vector<unsigned int>* record_index,
-		unsigned int* hash_size_record, unsigned int* hash_record,
-		unsigned int* vertex_index_prefix_sum, unsigned int* triangle_index_prefix_sum);
+		std::atomic_uint* hash_size_record, unsigned int* hash_record,
+		unsigned int* vertex_index_prefix_sum, unsigned int* triangle_index_prefix_sum, std::vector<unsigned int>* record_new_in_hash);
 
 	void computeVTHessian(int start, int end, unsigned int* pair, double* d_hat, int type, bool is_last_color, char* hessian_record_exist_, double* hessian_record, double* grad_record);
 	void computeEEHessian(int start, int end, unsigned int* pair, double* d_hat, bool is_collider, bool is_last_color, char* hessian_record_exist_,
@@ -1073,8 +1086,8 @@ private:
 		unsigned int* pair, std::array<double, 3>** vertex_for_render_0, std::array<double, 3>** vertex_position_0,
 		std::array<double, 3>** vertex_for_render_1, std::array<double, 3>** vertex_position_1,
 		unsigned int** edge_vertices_0, unsigned int** edge_vertices_1, std::vector<unsigned int>* record_index,
-		unsigned int* hash_size_record, unsigned int* hash_record,
-		unsigned int* edge_0_index_prefix_sum, unsigned int* edge_1_index_prefix_sum);
+		std::atomic_uint* hash_size_record, unsigned int* hash_record,
+		unsigned int* edge_0_index_prefix_sum, unsigned int* edge_1_index_prefix_sum, std::vector<unsigned int>* record_new_in_hash);
 
 
 	void initialPair();
@@ -1254,21 +1267,21 @@ private:
 	void findEE_ClosePair_ReverseOrder();
 	void findVT_ColliderClosePair(int thread_No);
 
-	void findTV_ClosePair(int obj_No, unsigned int* vt_pair_initial, unsigned int* vt_pair_num, unsigned int** tv_pair,
-		unsigned int** tv_pair_num, unsigned int total_length_every_element_vt, unsigned int total_length_every_element_tv, bool is_tet);
+	void findTV_ClosePair(int obj_No, unsigned int* vt_pair_initial, std::atomic_uint* vt_pair_num, unsigned int** tv_pair,
+		std::atomic_uint** tv_pair_num, unsigned int total_length_every_element_vt, unsigned int total_length_every_element_tv, bool is_tet);
 
 	void findVT_ClosePairSingleVertex(double* current_position, unsigned int* trianlge_index,
 		unsigned int triangle_num, std::vector<std::array<double, 3>*>& position, 
 		std::vector<std::array<int, 3>*>& triangle_vertex_index,
-		unsigned int* close_triangle_index, unsigned int& computeEEVolume, bool* is_pair_exist);
+		unsigned int* close_triangle_index, std::atomic_uint& close_triangle_num, bool* is_pair_exist);
 	void findEE_ClosePairSingleEdge(double* current_position_a0, double* current_position_a1,
 		unsigned int* edge_index, unsigned int edge_num, std::vector<std::array<double, 3>*>& position,
 		std::vector<unsigned int*>& edge_vertex_index,
-		unsigned int* close_edge_index, unsigned int& close_edge_num, bool* is_pair_exist, int move_size);
+		unsigned int* close_edge_index, std::atomic_uint& close_edge_num, bool* is_pair_exist, int move_size);
 	void findTV_ClosePairSingleTriangle(double* current_position_a0, double* current_position_a1, double* current_position_a2,
 		unsigned int* vertex_index, unsigned int vertex_num, std::vector<std::array<double, 3>*>& position,
-		unsigned int* close_vertex_index, unsigned int& close_vertex_num, bool* is_pair_exist);
-	void findEE_ClosePairSingleEdgeByReverse(int obj_index, int edge_index, unsigned int* close_edge_index, unsigned int& close_edge_num);
+		unsigned int* close_vertex_index, std::atomic_uint& close_vertex_num, bool* is_pair_exist);
+	void findEE_ClosePairSingleEdgeByReverse(int obj_index, int edge_index, unsigned int* close_edge_index, unsigned int close_edge_num);
 
 
 	void initialPairRecord();
@@ -1278,10 +1291,10 @@ private:
 
 	void initialPairByElement();
 	void initialVolume();
-	void computeVTVolume(int thread_No);
-	//void computeEEVolume(int thread_No);
-	void computeTVVolume(int thread_No);
-	void computeVTColliderVolume(int thread_No);
+	//void computeVTVolume(int thread_No);
+	////void computeEEVolume(int thread_No);
+	//void computeTVVolume(int thread_No);
+	//void computeVTColliderVolume(int thread_No);
 
 	void computeVTVolume(double* vertex_position_, unsigned int pair_num, unsigned int* triangle_record, double* volume,
 		std::vector<std::array<double, 3>*>& vertex_position);
@@ -1394,4 +1407,9 @@ private:
 
 	void adjustThreadDivide(unsigned int* pair, unsigned int* start_per_thread, unsigned int* start_per_thread_adjust);
 	void collisionTimeAllClosePair(int vt, int vt_c, int tv_c, int ee, int ee_c, int floor_, int thread_No);
+
+	void initialNewPairRecord();
+	void addPairToHashRecord(int start, int end, std::vector<unsigned int>* pair_index, std::atomic_uint* hash_size_record, unsigned int* hash_record);
+	void updateNewPairInHash(int thread_No, unsigned int* start_per_thread, std::vector<std::vector<unsigned int>>& add_pair_record, std::atomic_uint* num_record,
+		unsigned int* hash_record);
 };

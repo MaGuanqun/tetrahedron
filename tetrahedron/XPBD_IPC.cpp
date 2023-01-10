@@ -617,7 +617,6 @@ void XPBD_IPC::XPBD_IPC_Position_Solve()
 			thread->assignTask(this, COLLISION_FREE_POSITION_);
 			updateCollisionFreePosition();
 			collision.findClosePair();
-			collision.saveCollisionPairVolume();
 		}		
 		nearly_not_move = false;
 
@@ -686,23 +685,17 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 	while (!convergeCondition(outer_itr_num)) {
 		if (perform_collision) {
 			collision.collisionCulling();
-
-			//collision_compare.collisionCulling();
-
 			collision.collisionTimeWithPair();
-			//some single thread function
-			
+
+			//collision_compare.collisionCulling();			
 			//collision_compare.collisionTimeWithPair();
-
-
 			//std::cout << "====  " << std::endl;
 			//compareVector(&collision.record_vt_pair[0], &collision_compare.record_vt_pair[0], 0);
 			//compareVector(&collision.record_ee_pair[0], &collision_compare.record_ee_pair[0], 1);
 			//compareVector(&collision.record_tv_collider_pair[0], &collision_compare.record_tv_collider_pair[0], 2);
 			//compareVector(&collision.record_ee_collider_pair[0], &collision_compare.record_ee_collider_pair[0], 3);
 			//compareVector(&collision.record_vt_collider_pair[0], &collision_compare.record_vt_collider_pair[0], 4);
-			//std::cout << "====  " << std::endl;
-		
+			//std::cout << "====  " << std::endl;		
 
 			thread->assignTask(this, INVERSION_TEST);
 			for (int i = 0; i < total_thread_num; ++i) {
@@ -710,7 +703,6 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 					collision.collision_time = collision.collision_time_thread[i];
 				}
 			}
-
 			thread->assignTask(this, COLLISION_FREE_POSITION_);
 
 			//if (!collision.collisionPairHasChanged()) {
@@ -744,10 +736,6 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 			previous_energy = energy;
 			nearly_not_move = true;
 			solveNewtonCD_tetBlock();
-
-			//if (outer_itr_num ==0) {
-			//	vertex_trace.push_back(vertex_position[0][3556]);
-			//}
 
 			//computeCurrentEnergy();
 			//std::cout << "itration number " <<outer_itr_num<<" "<< inner_iteration_number << std::endl;
@@ -1992,7 +1980,7 @@ void XPBD_IPC::newtonVTCollisionBlock()
 	int pair_num;
 	unsigned int* pair_index;
 	unsigned int* vertex_triangle_pair_by_vertex;
-	unsigned int* vertex_triangle_pair_num_record;
+	std::atomic_uint* vertex_triangle_pair_num_record;
 	double stiffness = 0;
 	double collision_stiffness =0.0;
 
@@ -2066,7 +2054,7 @@ void XPBD_IPC::newtonTVColliderCollisionBlock()
 	int pair_num;
 	unsigned int* pair_index;
 	unsigned int* vertex_triangle_pair_by_triangle;
-	unsigned int* vertex_triangle_pair_num_record;
+	std::atomic_uint* vertex_triangle_pair_num_record;
 	double stiffness = 0;
 	double collision_stiffness = 0.0;
 
@@ -2127,7 +2115,7 @@ void XPBD_IPC::newtonVTColliderCollisionBlock()
 	int pair_num;
 	unsigned int* pair_index;
 	unsigned int* vertex_triangle_pair_by_vertex;
-	unsigned int* vertex_triangle_pair_num_record;
+	std::atomic_uint* vertex_triangle_pair_num_record;
 	double stiffness = 0;
 	double collision_stiffness = 0.0;
 
@@ -2193,7 +2181,7 @@ void XPBD_IPC::newtonEEColliderCollisionBlock()
 	int pair_num;
 	unsigned int* pair_index;
 	unsigned int* edge_edge_pair_by_edge;
-	unsigned int* edge_edge_pair_num_record;
+	std::atomic_uint* edge_edge_pair_num_record;
 	double stiffness = 0;
 	double collision_stiffness = 0.0;
 
@@ -2261,7 +2249,7 @@ void XPBD_IPC::newtonEECollisionBlock()
 	int pair_num;
 	unsigned int* pair_index;
 	unsigned int* edge_edge_pair_by_edge;
-	unsigned int* edge_edge_pair_num_record;
+	std::atomic_uint* edge_edge_pair_num_record;
 	double stiffness = 0;
 	double collision_stiffness = 0.0;
 
@@ -2481,8 +2469,7 @@ void XPBD_IPC::lineSearchFirstColor(unsigned int color_No, double ori_energy)
 				//	for (int kk = 0; kk < 3; ++kk) {
 				//		if (abs(record_vertex_position[0][k][kk] - vertex_position[0][k][kk])>1e-6) {
 				//			std::cout << abs(record_vertex_position[0][k][kk] - vertex_position[0][k][kk])<<" "<<k << std::endl;
-				//		}
-		
+				//		}		
 				//	}
 				//}
 				break;
