@@ -16,7 +16,7 @@
 #include"newton_method.h"
 #include"XPBD_large_system.h"
 #include"XPBD_IPC.h"
-#include"collision/collision_compare.h"
+//#include"collision/collision_compare.h"
 //#include"collision/mesh_patch.h"
 
 Thread::Thread()
@@ -302,117 +302,117 @@ job Thread::create_task(BVH* func, int thread_id, BVHFunc function_type)// int j
 
 
 
-job Thread::create_task(CollisionCompare* func, int thread_id, CollisionFuncSendToThread function_type, int para)
-{
-    job k;
-    switch (function_type)
-    {
-        //case UPDATE_COLLISION_HESSIAN_COLOR:
-        //    k = job([func, thread_id, para]() {func->computeHessianPerThread(thread_id, para); });
-        //    break;      
-    case COLOR_COLLISION_TIME:
-        k = job([func, thread_id, para]() {func->colorCollisionTime(thread_id, para); });
-        break;
-    case UPDATE_COLOR_POSITION:
-        k = job([func, thread_id, para]() {func->updatePositionColor(thread_id, para); });
-        break;
-        //case FLOOR_COLLISION_TIME:
-        //    k = job([func, thread_id, para]() {func->floorCollisionTime(thread_id, para); });
-        //    break;
-        //case UPDATE_POSITION_FOR_FLOOR_COLLISION:
-        //    k = job([func, thread_id, para]() {func->updatePositionForFloor(thread_id, para); });
-        //    break;
-    }
-    return k;
-}
+//job Thread::create_task(CollisionCompare* func, int thread_id, CollisionFuncSendToThread function_type, int para)
+//{
+//    job k;
+//    switch (function_type)
+//    {
+//        //case UPDATE_COLLISION_HESSIAN_COLOR:
+//        //    k = job([func, thread_id, para]() {func->computeHessianPerThread(thread_id, para); });
+//        //    break;      
+//    case COLOR_COLLISION_TIME:
+//        k = job([func, thread_id, para]() {func->colorCollisionTime(thread_id, para); });
+//        break;
+//    case UPDATE_COLOR_POSITION:
+//        k = job([func, thread_id, para]() {func->updatePositionColor(thread_id, para); });
+//        break;
+//        //case FLOOR_COLLISION_TIME:
+//        //    k = job([func, thread_id, para]() {func->floorCollisionTime(thread_id, para); });
+//        //    break;
+//        //case UPDATE_POSITION_FOR_FLOOR_COLLISION:
+//        //    k = job([func, thread_id, para]() {func->updatePositionForFloor(thread_id, para); });
+//        //    break;
+//    }
+//    return k;
+//}
 
 
-job Thread::create_task(CollisionCompare* func, int thread_id, CollisionFuncSendToThread function_type)// int jobNumber
-{
-    job k;
-    switch (function_type)
-    {
-        //case FIND_PATCH_PAIRS:
-        //    k = job([func, thread_id]() {func->findAllPatchPairs(thread_id); });
-        //    break;  
-    case GLOBAL_COLLISION_TIME_ADD_PAIR:
-        k = job([func, thread_id]() {func->collisionTimeWithPair(thread_id); });
-        break;
-    case FIND_COLLISION_PAIR:
-        k = job([func, thread_id]() {func->getCollisionPair(thread_id); });
-        break;
-    case  FIND_PRIMITIVE_AROUND:
-        k = job([func, thread_id]() {func->findPrimitivesAround(thread_id); });
-        break;
-    case GLOBAL_COLLISION_TIME:
-        k = job([func, thread_id]() {func->collisionTime(thread_id); });
-        break;
-    case COMPUTE_VOLUME:
-        k = job([func, thread_id]() {func->computeVolume(thread_id); });
-        break;
-    case FIND_VERTEX_VERTEX_VERTEX_EDGE_PAIRS:
-        k = job([func, thread_id]() {func->findAllVertexVertexEdgePairs(thread_id); });
-        break;
-    case COMPUTE_COLLISION_ENERGY:
-        k = job([func, thread_id]() {func->collisionEnergy(thread_id); });
-        break;
-    case COLLISION_CONSTRAINT_IPC:
-        k = job([func, thread_id]() {func->collisionConstraintIPC(thread_id); });
-        break;
-    case RE_COLLISION_CONSTRAINT_IPC:
-        k = job([func, thread_id]() {func->re_collisionConstraintIPC(thread_id); });
-        break;
-    case COLLISION_CONSTRAINT:
-        k = job([func, thread_id]() {func->collisionConstraint(thread_id); });
-        break;
-    case RE_DETECTION:
-        k = job([func, thread_id]() {func->collisionReDetection(thread_id); });
-        break;
-    case RESUM_TARGET_POSITION:
-        k = job([func, thread_id]() {func->resumTargetPositionPerThread(thread_id); });
-        break;
-    case GLOBAL_COLLISION_DETECTION:
-        k = job([func, thread_id]() {func->collisionDetection(thread_id); });
-        break;
-    case SUM_TARGET_POSITION:
-        k = job([func, thread_id]() {func->sumTargetPositionPerThread(thread_id); });
-        break;
-    case FIND_TRIANGLE_PAIRS:
-        k = job([func, thread_id]() {func->findAllTrianglePairs(thread_id); });
-        break;
-    case RE_COLLISION_CONSTRAINT:
-        k = job([func, thread_id]() {func->re_collisionConstraint(thread_id); });
-        break;
-    case PREFIX_SUM_ALL_PAIRS:
-        k = job([func, thread_id]() {func->prefixSumAllPair(thread_id); });
-        break;
-    case SET_ELEMENT_COLLIDE_WITH_COLLIDER:
-        k = job([func, thread_id]() {func->setElementCollideWithCollider(thread_id); });
-        break;
-    case UPDATE_RECORD_VERTEX_POSITION:
-        k = job([func, thread_id]() {func->updateVertexRecordForColor(thread_id); });
-        break;
-        //case RECORD_VT_PAIR_COMPRESS:
-        //    k = job([func, thread_id]() {func->recordVTPairCompress(thread_id); });
-        //    break;
-        //case RECORD_EE_PAIR_COMPRESS:
-        //    k = job([func, thread_id]() {func->recordEEPairCompress(thread_id); });
-        //    break;
-        //case RECORD_TRIANGLE_HAS_COLLISION_PAIR:
-        //    k = job([func, thread_id]() {func->recordTriangleHasTVPair(thread_id); });
-        //    break;
-        //case CLOSE_PAIR_COLLISION_TIME:
-        //    k = job([func, thread_id]() {func->collisionTimeAllClosePair(thread_id); });
-        //    break;
-    case COLLISION_FREE_POSITION_LAST_COLOR:
-        k = job([func, thread_id]() {func->computeCollisionFreePositionForColor(thread_id); });
-        break;
-    case FIND_CLOSE_PAIR:
-        k = job([func, thread_id]() {func->findClosePair(thread_id); });
-        break;
-    }
-    return k;
-}
+//job Thread::create_task(CollisionCompare* func, int thread_id, CollisionFuncSendToThread function_type)// int jobNumber
+//{
+//    job k;
+//    switch (function_type)
+//    {
+//        //case FIND_PATCH_PAIRS:
+//        //    k = job([func, thread_id]() {func->findAllPatchPairs(thread_id); });
+//        //    break;  
+//    case GLOBAL_COLLISION_TIME_ADD_PAIR:
+//        k = job([func, thread_id]() {func->collisionTimeWithPair(thread_id); });
+//        break;
+//    case FIND_COLLISION_PAIR:
+//        k = job([func, thread_id]() {func->getCollisionPair(thread_id); });
+//        break;
+//    case  FIND_PRIMITIVE_AROUND:
+//        k = job([func, thread_id]() {func->findPrimitivesAround(thread_id); });
+//        break;
+//    case GLOBAL_COLLISION_TIME:
+//        k = job([func, thread_id]() {func->collisionTime(thread_id); });
+//        break;
+//    case COMPUTE_VOLUME:
+//        k = job([func, thread_id]() {func->computeVolume(thread_id); });
+//        break;
+//    case FIND_VERTEX_VERTEX_VERTEX_EDGE_PAIRS:
+//        k = job([func, thread_id]() {func->findAllVertexVertexEdgePairs(thread_id); });
+//        break;
+//    case COMPUTE_COLLISION_ENERGY:
+//        k = job([func, thread_id]() {func->collisionEnergy(thread_id); });
+//        break;
+//    case COLLISION_CONSTRAINT_IPC:
+//        k = job([func, thread_id]() {func->collisionConstraintIPC(thread_id); });
+//        break;
+//    case RE_COLLISION_CONSTRAINT_IPC:
+//        k = job([func, thread_id]() {func->re_collisionConstraintIPC(thread_id); });
+//        break;
+//    case COLLISION_CONSTRAINT:
+//        k = job([func, thread_id]() {func->collisionConstraint(thread_id); });
+//        break;
+//    case RE_DETECTION:
+//        k = job([func, thread_id]() {func->collisionReDetection(thread_id); });
+//        break;
+//    case RESUM_TARGET_POSITION:
+//        k = job([func, thread_id]() {func->resumTargetPositionPerThread(thread_id); });
+//        break;
+//    case GLOBAL_COLLISION_DETECTION:
+//        k = job([func, thread_id]() {func->collisionDetection(thread_id); });
+//        break;
+//    case SUM_TARGET_POSITION:
+//        k = job([func, thread_id]() {func->sumTargetPositionPerThread(thread_id); });
+//        break;
+//    case FIND_TRIANGLE_PAIRS:
+//        k = job([func, thread_id]() {func->findAllTrianglePairs(thread_id); });
+//        break;
+//    case RE_COLLISION_CONSTRAINT:
+//        k = job([func, thread_id]() {func->re_collisionConstraint(thread_id); });
+//        break;
+//    case PREFIX_SUM_ALL_PAIRS:
+//        k = job([func, thread_id]() {func->prefixSumAllPair(thread_id); });
+//        break;
+//    case SET_ELEMENT_COLLIDE_WITH_COLLIDER:
+//        k = job([func, thread_id]() {func->setElementCollideWithCollider(thread_id); });
+//        break;
+//    case UPDATE_RECORD_VERTEX_POSITION:
+//        k = job([func, thread_id]() {func->updateVertexRecordForColor(thread_id); });
+//        break;
+//        //case RECORD_VT_PAIR_COMPRESS:
+//        //    k = job([func, thread_id]() {func->recordVTPairCompress(thread_id); });
+//        //    break;
+//        //case RECORD_EE_PAIR_COMPRESS:
+//        //    k = job([func, thread_id]() {func->recordEEPairCompress(thread_id); });
+//        //    break;
+//        //case RECORD_TRIANGLE_HAS_COLLISION_PAIR:
+//        //    k = job([func, thread_id]() {func->recordTriangleHasTVPair(thread_id); });
+//        //    break;
+//        //case CLOSE_PAIR_COLLISION_TIME:
+//        //    k = job([func, thread_id]() {func->collisionTimeAllClosePair(thread_id); });
+//        //    break;
+//    case COLLISION_FREE_POSITION_LAST_COLOR:
+//        k = job([func, thread_id]() {func->computeCollisionFreePositionForColor(thread_id); });
+//        break;
+//    case FIND_CLOSE_PAIR:
+//        k = job([func, thread_id]() {func->findClosePair(thread_id); });
+//        break;
+//    }
+//    return k;
+//}
 
 
 

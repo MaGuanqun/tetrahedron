@@ -85,7 +85,7 @@ public:
 	unsigned int** edge_edge_pair_by_edge; //store 3 iterms, store the index of the pair of e1 if (e1<e2) in e2, to locate the pair fast, for coordinate descent, we should store both (e1,e2) & (e2,e1), store 
 	unsigned int** edge_edge_pair_number_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
 	unsigned int** vertex_obj_triangle_collider_pair_by_vertex;// store pair by every vertex. (obj_index, triangle_index)
-	unsigned int** vertex_obj_triangle_collider_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
+	 unsigned int** vertex_obj_triangle_collider_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
 
 	unsigned int** triangle_vertex_collider_pair_by_triangle; //store pair by triangle. for every triangle, store vertex: (obj_index,vertex_index, )
 	unsigned int** triangle_vertex_collider_pair_num_record;// record the number of vertex pairs for every triangle. For fast initialize, we recoed it in this variable

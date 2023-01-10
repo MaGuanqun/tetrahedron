@@ -2349,27 +2349,20 @@ void XPBD_IPC::newtonEECollisionBlock()
 
 void XPBD_IPC::test()
 {
-	std::atomic_flag* k;
-	k = new std::atomic_flag[3];
-	std::cout << "size " << sizeof(bool) << " " << sizeof(std::atomic_flag) << std::endl;
-	for (int i = 0; i < 3; ++i) {
-		if (k[i].test_and_set(std::memory_order_relaxed)) {
+	//std::atomic_uint* k;
+	//k = new std::atomic_uint[3];
+	//std::cout << "size " << sizeof(unsigned int) << " " << sizeof(std::atomic_uint) << std::endl;
 
-		}
-		std::cout << "k " << k[i].test() << std::endl;
-	}
-	for (int i = 0; i < 3; ++i) {
-		;
-		//if () {
-
-		//}
-		std::cout << "k " << k[i].test() << std::endl;
-	}
-
-	memset(k, 0, 12);
-	for (int i = 0; i < 3; ++i) {
-		std::cout << "k " << k[i].test() << std::endl;
-	}
+	//for (int i = 0; i < 3; ++i) {		
+	//	k[i].store(1);
+	//}
+	//for (int i = 0; i < 3; ++i) {
+	//	std::cout << k[i] << std::endl;
+	//}
+	//memset(k+1, 0, 8);
+	//for (int i = 0; i < 3; ++i) {
+	//	std::cout <<k[i] << std::endl;
+	//}
 }
 
 

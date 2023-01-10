@@ -199,9 +199,6 @@
     <ClCompile Include="basic\draw_triangle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="collision\collision_compare.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="basic\basic_imgui.h">
@@ -442,9 +439,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="tet_inversion.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="collision\collision_compare.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
