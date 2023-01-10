@@ -79,18 +79,18 @@ public:
 
 
 	unsigned int** vertex_triangle_pair_by_vertex;//store pair by every vertex. (obj_index,triangle_index, )
-	unsigned int** vertex_triangle_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
+	std::atomic_uint** vertex_triangle_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
 	unsigned int** triangle_vertex_pair_by_triangle; //store 3 items, store pair by triangle. for every triangle, store vertex: (obj_index,vertex_index, index in vertex_triangle_pair_by_vertex,)
-	unsigned int** triangle_vertex_pair_num_record;// record the number of vertex pairs for every triangle. For fast initialize, we recoed it in this variable
+	std::atomic_uint** triangle_vertex_pair_num_record;// record the number of vertex pairs for every triangle. For fast initialize, we recoed it in this variable
 	unsigned int** edge_edge_pair_by_edge; //store 3 iterms, store the index of the pair of e1 if (e1<e2) in e2, to locate the pair fast, for coordinate descent, we should store both (e1,e2) & (e2,e1), store 
-	unsigned int** edge_edge_pair_number_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
+	std::atomic_uint** edge_edge_pair_number_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
 	unsigned int** vertex_obj_triangle_collider_pair_by_vertex;// store pair by every vertex. (obj_index, triangle_index)
-	 unsigned int** vertex_obj_triangle_collider_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
+	std::atomic_uint** vertex_obj_triangle_collider_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
 
 	unsigned int** triangle_vertex_collider_pair_by_triangle; //store pair by triangle. for every triangle, store vertex: (obj_index,vertex_index, )
-	unsigned int** triangle_vertex_collider_pair_num_record;// record the number of vertex pairs for every triangle. For fast initialize, we recoed it in this variable
+	std::atomic_uint** triangle_vertex_collider_pair_num_record;// record the number of vertex pairs for every triangle. For fast initialize, we recoed it in this variable
 	unsigned int** edge_edge_collider_pair_by_edge; //for coordinate descent, we should store both (e1,e2) & (e2,e1),
-	unsigned int** edge_edge_collider_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
+	std::atomic_uint** edge_edge_collider_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
 
 	double** vertex_triangle_pair_d_hat;
 	double** triangle_vertex_pair_d_hat;
@@ -1305,7 +1305,7 @@ private:
 
 	//void vertexUsedInSelfCollision();
 
-	void prefixSumRecordPairNum(unsigned int* num_record, unsigned int* prefix_sum, int num, unsigned int& start_index, int move_size);
+	void prefixSumRecordPairNum(std::atomic_uint* num_record, unsigned int* prefix_sum, int num, unsigned int& start_index, int move_size);
 
 	bool computeFloorHessian(double d_hat, double stiffness, double floor_value, double* hessian, double* grad, double position);
 

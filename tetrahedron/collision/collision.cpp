@@ -11506,16 +11506,16 @@ void Collision::initialPairRecord()
 	edge_edge_pair_by_edge = new unsigned int* [total_obj_num];
 	vertex_obj_triangle_collider_pair_by_vertex = new unsigned int* [total_obj_num];
 
-	vertex_triangle_pair_num_record = new unsigned int* [total_obj_num];
-	triangle_vertex_pair_num_record = new unsigned int* [total_obj_num];
-	edge_edge_pair_number_record = new unsigned int* [total_obj_num];
-	vertex_obj_triangle_collider_num_record = new unsigned int* [total_obj_num];
+	vertex_triangle_pair_num_record = new std::atomic_uint * [total_obj_num];
+	triangle_vertex_pair_num_record = new std::atomic_uint * [total_obj_num];
+	edge_edge_pair_number_record = new std::atomic_uint * [total_obj_num];
+	vertex_obj_triangle_collider_num_record = new std::atomic_uint * [total_obj_num];
 
 
 	triangle_vertex_collider_pair_by_triangle= new unsigned int* [total_obj_num]; 
-	triangle_vertex_collider_pair_num_record = new unsigned int* [total_obj_num];
+	triangle_vertex_collider_pair_num_record = new std::atomic_uint * [total_obj_num];
 	edge_edge_collider_pair_by_edge = new unsigned int* [total_obj_num];
-	edge_edge_collider_pair_num_record = new unsigned int* [total_obj_num];
+	edge_edge_collider_pair_num_record = new std::atomic_uint * [total_obj_num];
 
 
 	vertex_triangle_pair_d_hat = new double* [total_obj_num];
@@ -11539,15 +11539,15 @@ void Collision::initialPairRecord()
 
 		vertex_triangle_pair_by_vertex[i] = new unsigned int[close_vt_pair_num * all_vertex_index_start_per_thread[i][thread_num]];// 
 		memset(vertex_triangle_pair_by_vertex[i], 0, 4 * (close_vt_pair_num * all_vertex_index_start_per_thread[i][thread_num]));
-		vertex_triangle_pair_num_record[i] = new unsigned int[all_vertex_index_start_per_thread[i][thread_num]];// 
+		vertex_triangle_pair_num_record[i] = new std::atomic_uint[all_vertex_index_start_per_thread[i][thread_num]];// 
 		memset(vertex_triangle_pair_num_record[i], 0, 4 * all_vertex_index_start_per_thread[i][thread_num]);
 	
 		triangle_vertex_pair_by_triangle[i] = new unsigned int[close_tv_pair_num * mesh_struct[i]->triangle_indices.size()];// 
 		memset(triangle_vertex_pair_by_triangle[i], 0, 4 * (close_tv_pair_num * mesh_struct[i]->triangle_indices.size()));
 
-		edge_edge_pair_number_record[i] = new unsigned int[mesh_struct[i]->edge_length.size()];// 
+		edge_edge_pair_number_record[i] = new std::atomic_uint[mesh_struct[i]->edge_length.size()];// 
 		memset(edge_edge_pair_number_record[i], 0, 4 * mesh_struct[i]->edge_length.size());
-		triangle_vertex_pair_num_record[i] = new unsigned int[mesh_struct[i]->triangle_indices.size()];// 
+		triangle_vertex_pair_num_record[i] = new std::atomic_uint[mesh_struct[i]->triangle_indices.size()];// 
 		memset(triangle_vertex_pair_num_record[i], 0, 4 * mesh_struct[i]->triangle_indices.size());	
 
 
@@ -11566,20 +11566,20 @@ void Collision::initialPairRecord()
 			vertex_obj_triangle_collider_pair_by_vertex[i] = new unsigned int[close_vt_collider_pair_num * all_vertex_index_start_per_thread[i][thread_num]];
 			memset(vertex_obj_triangle_collider_pair_by_vertex[i], 0, 4 * (close_vt_collider_pair_num * all_vertex_index_start_per_thread[i][thread_num]));
 
-			vertex_obj_triangle_collider_num_record[i] = new unsigned int[all_vertex_index_start_per_thread[i][thread_num]];// 
+			vertex_obj_triangle_collider_num_record[i] = new std::atomic_uint[all_vertex_index_start_per_thread[i][thread_num]];// 
 			memset(vertex_obj_triangle_collider_num_record[i], 0, 4 * all_vertex_index_start_per_thread[i][thread_num]);
 
 
 			triangle_vertex_collider_pair_by_triangle[i] = new unsigned int[close_tv_collider_pair_num * triangle_index_start_per_thread[i][thread_num]];
 			memset(triangle_vertex_collider_pair_by_triangle[i], 0, 4 * (close_tv_collider_pair_num * triangle_index_start_per_thread[i][thread_num]));
 
-			triangle_vertex_collider_pair_num_record[i] = new unsigned int[triangle_index_start_per_thread[i][thread_num]];// 
+			triangle_vertex_collider_pair_num_record[i] = new std::atomic_uint[triangle_index_start_per_thread[i][thread_num]];// 
 			memset(triangle_vertex_collider_pair_num_record[i], 0, 4 * triangle_index_start_per_thread[i][thread_num]);
 
 			edge_edge_collider_pair_by_edge[i] = new unsigned int[close_ee_collider_pair_num * edge_index_start_per_thread[i][thread_num]];
 			memset(edge_edge_collider_pair_by_edge[i], 0, 4 * (close_ee_collider_pair_num * edge_index_start_per_thread[i][thread_num]));
 
-			edge_edge_collider_pair_num_record[i] = new unsigned int[edge_index_start_per_thread[i][thread_num]];// 
+			edge_edge_collider_pair_num_record[i] = new std::atomic_uint[edge_index_start_per_thread[i][thread_num]];// 
 			memset(edge_edge_collider_pair_num_record[i], 0, 4 * edge_index_start_per_thread[i][thread_num]);
 
 
@@ -11597,13 +11597,13 @@ void Collision::initialPairRecord()
 		else {
 			//edge_edge_pair_collider[i] = new unsigned int[1];
 			vertex_obj_triangle_collider_pair_by_vertex[i] = new unsigned int[1];
-			vertex_obj_triangle_collider_num_record[i] = new unsigned int[1];
+			vertex_obj_triangle_collider_num_record[i] = new std::atomic_uint[1];
 			//vertex_collider_triangle_obj_pair[i] = new unsigned int[1];
 
 			triangle_vertex_collider_pair_by_triangle[i] = new unsigned int[1];
-			triangle_vertex_collider_pair_num_record[i] = new unsigned int[1];
+			triangle_vertex_collider_pair_num_record[i] = new std::atomic_uint[1];
 			edge_edge_collider_pair_by_edge[i] = new unsigned int[1]; 
-			edge_edge_collider_pair_num_record[i] = new unsigned int[1];
+			edge_edge_collider_pair_num_record[i] = new std::atomic_uint[1];
 
 			vertex_obj_triangle_collider_pair_d_hat[i] = new double[1];
 			triangle_vertex_collider_pair_d_hat[i] = new double[1];
@@ -11793,7 +11793,7 @@ void Collision::prefixSumAllPair(int thread_No)
 }
 
 
-void Collision::prefixSumRecordPairNum(unsigned int* num_record, unsigned int* prefix_sum, int num, unsigned int& start_index, int move_size)
+void Collision::prefixSumRecordPairNum(std::atomic_uint* num_record, unsigned int* prefix_sum, int num, unsigned int& start_index, int move_size)
 {
 	prefix_sum[0] = start_index;
 	for (int i = 1; i <= num; ++i) {
@@ -12058,7 +12058,7 @@ void Collision::findMinMaxDegreeOfCollisionPair(unsigned int& max_degree, unsign
 	max_degree = 0;
 	min_degree = UINT_MAX;
 	//check VT
-	unsigned int* vt_num;
+	std::atomic_uint* vt_num;
 	unsigned int* ee_num;
 	unsigned int* vertex_pair;
 	int cloth_size = cloth->size();
