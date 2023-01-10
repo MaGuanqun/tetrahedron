@@ -502,11 +502,11 @@ public:
 	std::vector<double>collision_time_thread;
 	double eta;//for setting gap in ccd
 
-	unsigned int* outer_itr_num;
+	//unsigned int* outer_itr_num;
 
 private:		
 
-
+	
 
 	std::vector<unsigned int> vt_pair_add_per_thread;
 	std::vector<unsigned int> ee_pair_add_per_thread;

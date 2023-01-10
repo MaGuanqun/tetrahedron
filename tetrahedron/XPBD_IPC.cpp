@@ -84,13 +84,13 @@ void XPBD_IPC::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* t
 		collision.min_collision_time = &min_collision_time;
 
 
-		collision_compare.inner_iteration_number = &inner_iteration_number;
-		collision_compare.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio, XPBD_IPC_, false);
-		collision_compare.setCollisionFreeVertex(&record_collision_free_vertex_position_address, &record_vertex_position);
-		collision_compare.inner_itr_num_standard = &inner_itr_num_standard;
-		collision_compare.min_collision_time = &min_collision_time;
-		collision.outer_itr_num = &outer_itr_num;
-		collision_compare.outer_itr_num = &outer_itr_num;
+		//collision_compare.inner_iteration_number = &inner_iteration_number;
+		//collision_compare.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio, XPBD_IPC_, false);
+		//collision_compare.setCollisionFreeVertex(&record_collision_free_vertex_position_address, &record_vertex_position);
+		//collision_compare.inner_itr_num_standard = &inner_itr_num_standard;
+		//collision_compare.min_collision_time = &min_collision_time;
+		//collision.outer_itr_num = &outer_itr_num;
+		//collision_compare.outer_itr_num = &outer_itr_num;
 
 		//collision.setParameter(&lambda_collision,lambda.data()+ constraint_index_start[3], collision_constraint_index_start.data(), damping_coe, sub_time_step);
 	}
@@ -99,6 +99,13 @@ void XPBD_IPC::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* t
 	setColorNum();
 	initialHessianMap();
 
+	if (!tetrahedron->empty()) {
+		color_group_num = tet_color_groups[0]->size();
+	}
+	else {
+		color_group_num = 3;
+	}
+	
 
 	//thread->assignTask(this, TEST_MULTI);
 	//std::cout << "test count " << counter << std::endl;
@@ -403,7 +410,7 @@ void XPBD_IPC::reorganzieDataOfObjects()
 	}
 
 	collision.indicate_if_involved_in_last_color = record_vertex_position_num_every_thread.data();
-	collision_compare.indicate_if_involved_in_last_color = record_vertex_position_num_every_thread.data();
+	//collision_compare.indicate_if_involved_in_last_color = record_vertex_position_num_every_thread.data();
 	std::cout << "xpbd ipc reorganzieDataOfObjects " << vertex_num_on_surface_prefix_sum[1] << std::endl;
 }
 
@@ -438,12 +445,12 @@ void XPBD_IPC::initialHessianMap()
 	floor_hessian.resize(vertex_index_prefix_sum_obj.back());
 	collision.floor_hessian = floor_hessian.data();
 
-	collision_compare.common_hessian = &common_hessian_compare;
-	common_hessian_compare.reserve(4 * vertex_num_on_surface_prefix_sum.back());
-	common_grad_compare.resize(3 * vertex_index_prefix_sum_obj.back());
-	collision_compare.common_grad = common_grad_compare.data();
-	collision_compare.floor_hessian = &compare_floor_hessian;
-	compare_floor_hessian.reserve(vertex_num_on_surface_prefix_sum.back() / 10);
+	//collision_compare.common_hessian = &common_hessian_compare;
+	//common_hessian_compare.reserve(4 * vertex_num_on_surface_prefix_sum.back());
+	//common_grad_compare.resize(3 * vertex_index_prefix_sum_obj.back());
+	//collision_compare.common_grad = common_grad_compare.data();
+	//collision_compare.floor_hessian = &compare_floor_hessian;
+	//compare_floor_hessian.reserve(vertex_num_on_surface_prefix_sum.back() / 10);
 
 
 }
@@ -648,9 +655,9 @@ void XPBD_IPC::initialRecordHessian()
 	}
 
 
-	common_hessian_compare.clear();
-	compare_floor_hessian.clear();
-	memset(common_grad_compare.data(), 0, 8 * common_grad_compare.size());
+	//common_hessian_compare.clear();
+	//compare_floor_hessian.clear();
+	//memset(common_grad_compare.data(), 0, 8 * common_grad_compare.size());
 	
 }
 
@@ -669,7 +676,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 	if (perform_collision) {
 		collision.initialPairRecordInfo();
 
-		collision_compare.initialPairRecordInfo();
+		//collision_compare.initialPairRecordInfo();
 	}
 	outer_itr_num = 0;
 	displacement_satisfied = false;
@@ -680,9 +687,12 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 		if (perform_collision) {
 			collision.collisionCulling();
 
-			collision_compare.collisionCulling();
+			//collision_compare.collisionCulling();
+
 			collision.collisionTimeWithPair();
-			collision_compare.collisionTimeWithPair();
+			//some single thread function
+			
+			//collision_compare.collisionTimeWithPair();
 
 
 			//std::cout << "====  " << std::endl;
@@ -703,17 +713,17 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 
 			thread->assignTask(this, COLLISION_FREE_POSITION_);
 
-			if (!collision.collisionPairHasChanged()) {
-				if (inner_itr_num_standard < max_iteration_number) {
-					inner_itr_num_standard *= 2;
-				}
-			}
-			if (collision.collision_time < min_collision_time) {
-				if (inner_itr_num_standard > 1) {
-					inner_itr_num_standard /= 2;
-				}
-			 
-			}
+			//if (!collision.collisionPairHasChanged()) {
+			//	if (inner_itr_num_standard < max_iteration_number) {
+			//		inner_itr_num_standard *= 2;
+			//	}
+			//}
+			//if (collision.collision_time < min_collision_time) {
+			//	if (inner_itr_num_standard > 1) {
+			//		inner_itr_num_standard /= 2;
+			//	}
+			// 
+			//}
 		}
 		updateCollisionFreePosition();
 		if (outer_itr_num == 0) {
@@ -739,7 +749,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 			//	vertex_trace.push_back(vertex_position[0][3556]);
 			//}
 
-			computeCurrentEnergy();
+			//computeCurrentEnergy();
 			//std::cout << "itration number " <<outer_itr_num<<" "<< inner_iteration_number << std::endl;
 			inner_iteration_number++;
 			//vertex_trace.push_back(vertex_position[0][6]);
@@ -756,9 +766,9 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 
 	if (perform_collision) {
 		collision.collisionCulling();
-		collision_compare.collisionCulling();
+		//collision_compare.collisionCulling();
 		collision.collisionTimeWithPair();
-		collision_compare.collisionTimeWithPair();
+		//collision_compare.collisionTimeWithPair();
 		thread->assignTask(this, INVERSION_TEST);
 		for (int i = 0; i < total_thread_num; ++i) {
 			if (collision.collision_time_thread[i] < collision.collision_time) {
@@ -899,18 +909,18 @@ void XPBD_IPC::XPBD_IPCSolve()
 
 bool XPBD_IPC::innerConvergeCondition(unsigned int iteration_num)
 {
-	if (iteration_num >= inner_itr_num_standard) {//max_iteration_number
+	if (iteration_num >= color_group_num){    // inner_itr_num_standard) {//max_iteration_number
 		return true;
 	}
-	if (iteration_num < 1) {
-		return false;
-	}
-	if (abs(energy - previous_energy) < energy_converge_standard) {
-		return true;
-	}
-	if (abs(energy - previous_energy) / previous_energy < energy_converge_ratio) {
-		return true;
-	}
+	//if (iteration_num < 1) {
+	//	return false;
+	//}
+	//if (abs(energy - previous_energy) < energy_converge_standard) {
+	//	return true;
+	//}
+	//if (abs(energy - previous_energy) / previous_energy < energy_converge_ratio) {
+	//	return true;
+	//}
 
 	return false;
 
@@ -2405,8 +2415,8 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 		//tetGradForColor(i);
 		if (perform_collision) {
 			collision.computeHessian(i);
-			collision_compare.computeHessian(i);
-			compareIfRecordHessianIsRight(i);
+			//collision_compare.computeHessian(i);
+			//compareIfRecordHessianIsRight(i);
 		}
 		thread->assignTask(this, UPDATE_TET_GRAD_SHARED, i);
 		thread->assignTask(this, SUM_ALL_GRAD);		
@@ -2428,7 +2438,7 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 		//thread->assignTask(this, UPDATE_TET_GRAD_SHARED_COLLISION_NEIGHBOR, max_tet_color_num - 1);
 		//tetGradForColorCollisionNeighbor(max_tet_color_num - 1);
 		collision.computeHessian(max_tet_color_num - 1);
-		collision_compare.computeHessian(max_tet_color_num - 1);
+		//collision_compare.computeHessian(max_tet_color_num - 1);
 		compareIfRecordHessianIsRight(-1);
 	}
 	thread->assignTask(this, UPDATE_TET_GRAD_SHARED, max_tet_color_num - 1);
@@ -2683,7 +2693,7 @@ void XPBD_IPC::warmStart()
 	{
 		initialRecordHessian();
 		collision.computeHessian(max_tet_color_num - 1);
-		collision_compare.computeHessian(max_tet_color_num - 1);
+		//collision_compare.computeHessian(max_tet_color_num - 1);
 
 		compareIfRecordHessianIsRight(-2);
 
@@ -6171,99 +6181,99 @@ void XPBD_IPC::compareVector(std::vector<unsigned int>* a, std::vector<unsigned 
 
 void XPBD_IPC::compareIfRecordHessianIsRight(int color)
 {
-	compareVector(&collision.record_vt_pair[0], &collision_compare.record_vt_pair[0], 0);
-	compareVector(&collision.record_ee_pair[0], &collision_compare.record_ee_pair[0], 1);
+	//compareVector(&collision.record_vt_pair[0], &collision_compare.record_vt_pair[0], 0);
+	//compareVector(&collision.record_ee_pair[0], &collision_compare.record_ee_pair[0], 1);
 
-	compareVector(&collision.record_tv_collider_pair[0], &collision_compare.record_tv_collider_pair[0], 2);
-	compareVector(&collision.record_ee_collider_pair[0], &collision_compare.record_ee_collider_pair[0], 3);
-	compareVector(&collision.record_vt_collider_pair[0], &collision_compare.record_vt_collider_pair[0], 4);
+	//compareVector(&collision.record_tv_collider_pair[0], &collision_compare.record_tv_collider_pair[0], 2);
+	//compareVector(&collision.record_ee_collider_pair[0], &collision_compare.record_ee_collider_pair[0], 3);
+	//compareVector(&collision.record_vt_collider_pair[0], &collision_compare.record_vt_collider_pair[0], 4);
 
-	double value_sum;
-	for (int i = 0; i < common_grad_compare.size(); ++i) {
-		value_sum = 0.0;
+	//double value_sum;
+	//for (int i = 0; i < common_grad_compare.size(); ++i) {
+	//	value_sum = 0.0;
 
-		for (int k = 0; k < total_thread_num; ++k) {
-			value_sum += common_grad[k][i];
-		}
-		if (abs(common_grad_compare[i] - value_sum) > 1e-8) {
-			std::cout << "wrong in common grad "<<color<<" "<<i/3 << " " << abs(common_grad_compare[i] - common_grad[0][i]) << std::endl;
-		}
-	}
+	//	for (int k = 0; k < total_thread_num; ++k) {
+	//		value_sum += common_grad[k][i];
+	//	}
+	//	if (abs(common_grad_compare[i] - value_sum) > 1e-8) {
+	//		std::cout << "wrong in common grad "<<color<<" "<<i/3 << " " << abs(common_grad_compare[i] - common_grad[0][i]) << std::endl;
+	//	}
+	//}
 
-	auto k = common_hessian_compare.end();
-	for (auto i = common_hessian.begin(); i != common_hessian.end(); i++) {
-		if (i->second.is_update) {
-			k = common_hessian_compare.find(i->first);
-			if (k == common_hessian_compare.end()) {
-				std::cout << "error, cannot find pair in compare " << i->first[0] << " " << i->first[1] << std::endl;
-				continue;
-			}
-			
-			double value = 0.0;
-			for (int j = 0; j < 9; ++j) {
-				value += abs(i->second.hessian[j]-k->second[j]);
-			}
-			if (value > 1e-8) {
-				std::cout << "inner iter " << inner_iteration_number <<"outer "<<outer_itr_num<<  std::endl;
-
-
-				std::cout << "ori hessian show " << std::endl;
-				for (int m = 0; m < 9; ++m) {
-					std::cout << i->second.hessian[m] << " ";
-				}
-				std::cout << std::endl;
-				std::cout << "compare hessian show " << std::endl;
-				for (int m = 0; m < 9; ++m) {
-					std::cout << k->second[m] << " ";
-				}
-				std::cout << std::endl;
-				std::cout<<"error to sum all hessian in compare "<<color<<" " << value << " " << i->first[0] << " " << i->first[1] << std::endl;
-			}
-		}
-	}
+	//auto k = common_hessian_compare.end();
+	//for (auto i = common_hessian.begin(); i != common_hessian.end(); i++) {
+	//	if (i->second.is_update) {
+	//		k = common_hessian_compare.find(i->first);
+	//		if (k == common_hessian_compare.end()) {
+	//			std::cout << "error, cannot find pair in compare " << i->first[0] << " " << i->first[1] << std::endl;
+	//			continue;
+	//		}
+	//		
+	//		double value = 0.0;
+	//		for (int j = 0; j < 9; ++j) {
+	//			value += abs(i->second.hessian[j]-k->second[j]);
+	//		}
+	//		if (value > 1e-8) {
+	//			std::cout << "inner iter " << inner_iteration_number <<"outer "<<outer_itr_num<<  std::endl;
 
 
-	auto k2 = common_hessian.end();
-	for (auto i = common_hessian_compare.begin(); i != common_hessian_compare.end(); i++) {
-		if (i->first[0]<= i->first[1]) {
-			k2 = common_hessian.find(i->first);
-			if (k2 == common_hessian.end()) {
-				std::cout << "error, cannot find pair  in ori" << i->first[0] << " " << i->first[1] << std::endl;
-				continue;
-			}
-			if (!k2->second.is_update) {
-				std::cout << "error, cannot find pair  in ori not update" << i->first[0] << " " << i->first[1] << std::endl;
-				continue;
-			}
-			double value = 0.0;
-			for (int j = 0; j < 9; ++j) {
-				value += abs(i->second[j] - k2->second.hessian[j]);
-			}
-			if (value > 1e-8) {
-				std::cout << "error to sum all hessian in ori " << value << " " << i->first[0] << " " << i->first[1] << std::endl;
-			}
-		}
-	}
+	//			std::cout << "ori hessian show " << std::endl;
+	//			for (int m = 0; m < 9; ++m) {
+	//				std::cout << i->second.hessian[m] << " ";
+	//			}
+	//			std::cout << std::endl;
+	//			std::cout << "compare hessian show " << std::endl;
+	//			for (int m = 0; m < 9; ++m) {
+	//				std::cout << k->second[m] << " ";
+	//			}
+	//			std::cout << std::endl;
+	//			std::cout<<"error to sum all hessian in compare "<<color<<" " << value << " " << i->first[0] << " " << i->first[1] << std::endl;
+	//		}
+	//	}
+	//}
 
-	
-	for (auto i = compare_floor_hessian.begin(); i != compare_floor_hessian.end(); ++i) {
-		if (abs(i->second - floor_hessian[i->first]) > 1e-8) {
-			std::cout << "floor error in ori " << i->first << " " << abs(i->second - floor_hessian[i->first]) << std::endl;
-		}
-	}
-	auto k3 = compare_floor_hessian.end();
-	for (auto i =0; i < floor_hessian.size(); ++i) {
-		if (floor_hessian[i] != 0.0) {
-			k3 = compare_floor_hessian.find(i);
-			if (k3 == compare_floor_hessian.end()) {
-				std::cout << "floor error cannot find in compare " <<i << std::endl;
-				continue;
-			}
-			if (abs(k3->second - floor_hessian[i]) > 1e-8) {
-				std::cout << "floor error in compare " << abs(k3->second - floor_hessian[i]) << " " <<i<< std::endl;
-			}
-		}
-	}
+
+	//auto k2 = common_hessian.end();
+	//for (auto i = common_hessian_compare.begin(); i != common_hessian_compare.end(); i++) {
+	//	if (i->first[0]<= i->first[1]) {
+	//		k2 = common_hessian.find(i->first);
+	//		if (k2 == common_hessian.end()) {
+	//			std::cout << "error, cannot find pair  in ori" << i->first[0] << " " << i->first[1] << std::endl;
+	//			continue;
+	//		}
+	//		if (!k2->second.is_update) {
+	//			std::cout << "error, cannot find pair  in ori not update" << i->first[0] << " " << i->first[1] << std::endl;
+	//			continue;
+	//		}
+	//		double value = 0.0;
+	//		for (int j = 0; j < 9; ++j) {
+	//			value += abs(i->second[j] - k2->second.hessian[j]);
+	//		}
+	//		if (value > 1e-8) {
+	//			std::cout << "error to sum all hessian in ori " << value << " " << i->first[0] << " " << i->first[1] << std::endl;
+	//		}
+	//	}
+	//}
+
+	//
+	//for (auto i = compare_floor_hessian.begin(); i != compare_floor_hessian.end(); ++i) {
+	//	if (abs(i->second - floor_hessian[i->first]) > 1e-8) {
+	//		std::cout << "floor error in ori " << i->first << " " << abs(i->second - floor_hessian[i->first]) << std::endl;
+	//	}
+	//}
+	//auto k3 = compare_floor_hessian.end();
+	//for (auto i =0; i < floor_hessian.size(); ++i) {
+	//	if (floor_hessian[i] != 0.0) {
+	//		k3 = compare_floor_hessian.find(i);
+	//		if (k3 == compare_floor_hessian.end()) {
+	//			std::cout << "floor error cannot find in compare " <<i << std::endl;
+	//			continue;
+	//		}
+	//		if (abs(k3->second - floor_hessian[i]) > 1e-8) {
+	//			std::cout << "floor error in compare " << abs(k3->second - floor_hessian[i]) << " " <<i<< std::endl;
+	//		}
+	//	}
+	//}
 
 
 }
