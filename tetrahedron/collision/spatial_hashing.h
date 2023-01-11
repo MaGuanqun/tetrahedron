@@ -7,6 +7,7 @@
 #include"../object/tetrahedron.h"
 #include"parallel_radix_sort.h"
 #include<atomic>
+#include<unordered_set>
 
 class SpatialHashing
 {
@@ -109,10 +110,15 @@ public:
 		std::vector<std::vector<unsigned int>>& vertex_index, std::vector<std::vector<unsigned int>>& triangle_index,
 		std::vector<std::vector<unsigned int>>& edge_index);
 
-	void combineHashTable(int thread_No);
+	//void combineHashTable(int thread_No);
 
 	void testColliderPair();
+
 private:
+
+	std::unordered_set<unsigned int>* unduplicate_cell_index_for_element;
+
+
 	unsigned int total_length_every_element_for_vertex_triange;
 	unsigned int total_length_every_element_for_vertex_triange_collider;
 	unsigned int total_length_every_element_for_triangle_vertex;
@@ -219,7 +225,8 @@ private:
 
 	void triangleHashValueWithoutRecord(double* aabb,
 		unsigned int* spatial_hashing_cell, unsigned int* triangle_index, double* scene_aabb, double cell_length, unsigned int hash_cell_count,
-		uint64_t P1, uint64_t P2, uint64_t P3, std::atomic_uint* spatial_hashing_cell_triangle_size, unsigned int max_index_number_in_one_cell);
+		uint64_t P1, uint64_t P2, uint64_t P3, std::atomic_uint* spatial_hashing_cell_triangle_size, unsigned int max_index_number_in_one_cell,
+		std::unordered_set<unsigned int>* record_hash_index);
 
 
 
@@ -262,7 +269,7 @@ private:
 
 	void reorganzieDataOfObjects();
 
-	std::vector<unsigned int> hash_cell_triangle_count;
+
 
 
 
@@ -296,7 +303,7 @@ private:
 
 	void findAllEdgeEdgePairs(int thread_No);
 
-	unsigned int** primitive_index_record;
+	std::vector<std::vector<unsigned int>> primitive_index_record;
 	unsigned int max_triangle_cell_size;
 	unsigned int max_vertex_cell_size;
 
