@@ -262,11 +262,6 @@ private:
 		std::vector<unsigned int>* neighbor_primitive_0, std::vector<unsigned int>* neighbor_primitive_1,
 		unsigned int max_index_number_in_one_cell, unsigned int max_index_number_in_one_cell_collider);
 
-	void searchPrimitiveOnCollider(double* aabb, unsigned int* hash_index, unsigned int hash_cell_size,
-		unsigned int input_obj_No, unsigned int vertex_index,
-		unsigned int*& triangle_pair_with_collider_, unsigned int thread_No,
-		unsigned int* spatial_hashing_cell_, unsigned int* spatial_hash_size_, unsigned int max_index_number_in_one_cell_collider);
-
 	void reorganzieDataOfObjects();
 
 
@@ -380,5 +375,6 @@ private:
 
 	void initialExistFlag(bool* flag, unsigned int num);
 
+	void initialHashSizeRecord();
 };
 
