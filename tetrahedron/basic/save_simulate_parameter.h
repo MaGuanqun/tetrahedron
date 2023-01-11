@@ -56,7 +56,9 @@ namespace SaveParameter{
 		double& local_conv_rate, double& outer_conv_rate, double& cloth_density, double& tet_density, double& velocity_damp, double* friction_coe,
 		unsigned int& sub_step_per_detection, bool& floor_exist, unsigned int& floor_dimension, bool& floor_normal_direction, double& floor_value,
 		double& d_hat, unsigned int& min_inner_itr, unsigned int& min_outer_itr, double& displacement_standard, double& distance_record_as_collision,
-		glm::vec3& camera_position,	glm::vec3& camera_up, glm::vec3& camera_center, unsigned int& max_inner_itr_num, double& enegy_convege_standard)
+		glm::vec3& camera_position,	glm::vec3& camera_up, glm::vec3& camera_center, unsigned int& max_inner_itr_num, double& enegy_convege_standard,
+		std::vector<std::array<double, 3>>& translation_info, std::vector<double>& resize_scaler, std::vector<std::array<double, 3>>& rotate_angle,
+		std::vector<std::array<double, 3>>& collider_translation_info, std::vector<double>& collider_resize_scaler, std::vector<std::array<double, 3>>& collider_rotate_angle)
 	{
 
 		std::string line;
@@ -199,6 +201,87 @@ namespace SaveParameter{
 		}
 		std::getline(in, line);
 		floor_value = std::stod(line);
+
+		std::getline(in, line);
+		if (line != "translation") {
+			std::cout << "error read model translation info" << std::endl;
+			return;
+		}
+		translation_info.resize(obj_path.size());
+		resize_scaler.resize(obj_path.size());
+		rotate_angle.resize(obj_path.size());
+		for (int i = 0; i < obj_path.size(); ++i) {
+			std::getline(in, line);
+			split(line, " ", vec);
+			for (auto j = 0; j < 3; ++j) {
+				translation_info[i][j] = std::stod(vec[j]);
+			}			
+		}
+		std::getline(in, line);
+		if (line != "size_scaler") {
+			std::cout << "error read model scaler info" << std::endl;
+			return;
+		}
+		std::getline(in, line);
+		split(line, " ", vec);
+		for (int i = 0; i < obj_path.size(); ++i) {
+			resize_scaler[i]= std::stod(vec[i]);
+		}
+
+		std::getline(in, line);
+		if (line != "rotation_angle") {
+			std::cout << "error read model rotation info" << std::endl;
+			return;
+		}
+		for (int i = 0; i < obj_path.size(); ++i) {
+			std::getline(in, line);
+			split(line, " ", vec);
+			for (auto j = 0; j < 3; ++j) {
+				rotate_angle[i][j] = std::stod(vec[j]);
+			}
+		}
+
+
+		std::getline(in, line);
+		if (line != "collider_translation") {
+			std::cout << "error read collider translation info" << std::endl;
+			return;
+		}
+		collider_translation_info.resize(collider_path.size());
+		collider_resize_scaler.resize(collider_path.size());
+		collider_rotate_angle.resize(collider_path.size());
+		for (int i = 0; i < collider_path.size(); ++i) {
+			std::getline(in, line);
+			split(line, " ", vec);
+			for (auto j = 0; j < 3; ++j) {
+				collider_translation_info[i][j] = std::stod(vec[j]);
+			}
+		}
+		std::getline(in, line);
+		if (line != "collider_size_scaler") {
+			std::cout << "error read collider scaler info" << std::endl;
+			return;
+		}
+		if (!collider_path.empty()) {
+			std::getline(in, line);
+			split(line, " ", vec);
+			for (int i = 0; i < collider_path.size(); ++i) {
+				collider_resize_scaler[i] = std::stod(vec[i]);
+			}
+		}
+
+		std::getline(in, line);
+		if (line != "collider_rotation_angle") {
+			std::cout << "error read collider rotation info" << std::endl;
+			return;
+		}
+		for (int i = 0; i < collider_path.size(); ++i) {
+			std::getline(in, line);
+			split(line, " ", vec);
+			for (auto j = 0; j < 3; ++j) {
+				collider_rotate_angle[i][j] = std::stod(vec[j]);
+			}
+		}
 
 		std::getline(in, line);
 		if (line != "camera position") {
@@ -384,7 +467,9 @@ namespace SaveParameter{
 		unsigned int use_method, std::vector<std::vector<int>*>& anchor_veretx, double time_step,
 		std::vector<std::array<double, 6>>& cloth_stiffness, std::vector<std::array<double, 6>>& tet_stiffness,
 		std::vector<std::array<double, 8>>& cloth_collision_stiffness, std::vector<std::array<double, 8>>& tet_collision_stiffness, double cloth_density, double tet_density,
-		double velocity_damp, double* friction_coe, bool floor_exist, int floor_dimension, bool floor_normal_direction, double floor_value)
+		double velocity_damp, double* friction_coe, bool floor_exist, int floor_dimension, bool floor_normal_direction, double floor_value,
+		std::vector<std::array<double,3>>& translation_info, std::vector<double>& resize_scaler,std::vector<std::array<double,3>>&  rotate_angle,
+		std::vector<std::array<double,3>>& collider_translation_info, std::vector<double>& collider_resize_scaler,std::vector<std::array<double,3>>& collider_rotate_angle)
 	{
 		//input_file.precision(64);
 		input_file << "object" << "\n";
@@ -453,6 +538,42 @@ namespace SaveParameter{
 		}
 		input_file << "floor_value" << "\n";
 		input_file << floor_value<< "\n";
+		input_file << "translation" << "\n";
+		for (int i = 0; i < translation_info.size(); i++) 
+		{
+			input_file << translation_info[i][0]<<" "<< translation_info[i][1]<<" "<< translation_info[i][2] << "\n";
+		}
+		input_file <<"size_scaler"<< "\n";
+		for (int i = 0; i < resize_scaler.size(); ++i) 
+		{
+			input_file << resize_scaler[i] << " ";
+		}
+		input_file << "\n";
+
+		input_file << "rotation_angle" << "\n";
+		for (int i = 0; i < rotate_angle.size(); i++)
+		{
+			input_file << rotate_angle[i][0] << " " << rotate_angle[i][1] << " " << rotate_angle[i][2] << "\n";
+		}
+		input_file << "collider_translation" << "\n";
+		for (int i = 0; i < collider_translation_info.size(); i++)
+		{
+			input_file << collider_translation_info[i][0] << " " << collider_translation_info[i][1] << " " << collider_translation_info[i][2] << "\n";
+		}
+		input_file << "collider_size_scaler" << "\n";
+		if (!collider_resize_scaler.empty()) {
+			for (int i = 0; i < collider_resize_scaler.size(); ++i)
+			{
+				input_file << collider_resize_scaler[i] << " ";
+			}
+			input_file << "\n";
+		}
+
+		input_file << "collider_rotation_angle" << "\n";
+		for (int i = 0; i < collider_rotate_angle.size(); i++)
+		{
+			input_file << collider_rotate_angle[i][0] << " " << collider_rotate_angle[i][1] << " " << collider_rotate_angle[i][2] << "\n";
+		}
 	}
 
 
@@ -463,7 +584,9 @@ namespace SaveParameter{
 		unsigned int sub_step_num, unsigned int max_outer_iteration_num, double cloth_density, double tet_density, double velocity_damp,
 		double* friction_coe, unsigned int sub_step_per_detection, bool floor_exist, int floor_dimension, bool floor_normal_direction, double floor_value, double d_hat,
 		unsigned int min_inner_itr, unsigned int min_outer_itr, double displacement_standard, double distance_record_as_collision, glm::vec3 camera_position,
-		glm::vec3 camera_up, glm::vec3 camera_center, unsigned int max_inner_itr_num, double enegy_convege_standard)
+		glm::vec3 camera_up, glm::vec3 camera_center, unsigned int max_inner_itr_num, double enegy_convege_standard,
+		std::vector<std::array<double, 3>>& translation_info, std::vector<double>& resize_scaler, std::vector<std::array<double, 3>>& rotate_angle,
+		std::vector<std::array<double, 3>>& collider_translation_info, std::vector<double>& collider_resize_scaler, std::vector<std::array<double, 3>>& collider_rotate_angle)
 	{
 		std::string prefix = "./record_scene_data/";
 		if (_access(prefix.c_str(), 0) == -1)
@@ -473,7 +596,9 @@ namespace SaveParameter{
 		std::string obj_name = prefix + "scene.scene";
 		input_file.open(obj_name.c_str(), std::ios::trunc);
 		writeBasicPara(input_file, path, collider_path, use_method, anchor_veretx, time_step,cloth_stiffness,tet_stiffness, cloth_collision_stiffness, 
-			tet_collision_stiffness,cloth_density,tet_density,velocity_damp,friction_coe,floor_exist,floor_dimension,floor_normal_direction,floor_value);
+			tet_collision_stiffness,cloth_density,tet_density,velocity_damp,friction_coe,floor_exist,floor_dimension,floor_normal_direction,floor_value,
+			translation_info, resize_scaler, rotate_angle,
+			collider_translation_info, collider_resize_scaler, collider_rotate_angle);
 
 
 		input_file << "camera position" << "\n";

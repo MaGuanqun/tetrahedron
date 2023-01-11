@@ -17,14 +17,15 @@ public:
 	std::array<double,6> aabb;
 	OriMesh ori_mesh;
 	RegularizationInfo regularization_info;
-	void load_getAABB(std::string& path, int& index, int obj_index, bool collider);
-	void regularization(RegularizationInfo& regularization_info, int obj_index);
-
+	void load(std::string& path, int& index, bool collider);
+	void regularization(int obj_index,
+		std::array<double, 3>& translation_info, double& resize_scaler, std::array<double, 3>& rotate_angle);
+	void getAABB();
 private:
 
 	void setBackMaterial(OriMesh& ori_mesh);
 	void moveBodyCapsule(OriMesh& ori_mesh, unsigned int obj_No, bool collider);
-	void getAABB();
+
 	void setTetFrontMaterial(OriMesh& ori_mesh, int& index);
 	void splitPath(std::string& path, std::string& name);
 };

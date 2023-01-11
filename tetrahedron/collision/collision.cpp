@@ -377,12 +377,12 @@ void Collision::recordPair()
 	record_new_ee_c_in_hash.resize(thread_num);
 	record_new_tv_c_in_hash.resize(thread_num);
 	for (int i = 0; i < thread_num; ++i) {
-		record_new_vt_in_hash[i].reserve(vertex_index_prefix_sum_obj[i + 1] / 4);
-		record_new_ee_in_hash[i].reserve(edge_index_prefix_sum_obj[i + 1] / 4);
+		record_new_vt_in_hash[i].reserve(vertex_index_prefix_sum_obj[total_obj_num] / 4);
+		record_new_ee_in_hash[i].reserve(edge_index_prefix_sum_obj[total_obj_num] / 4);
 		if (has_collider) {
-			record_new_vt_c_in_hash[i].reserve(vertex_index_prefix_sum_obj[i + 1] / 4);
-			record_new_ee_c_in_hash[i].reserve(edge_index_prefix_sum_obj[i + 1] / 4);
-			record_new_tv_c_in_hash[i].reserve(triangle_index_prefix_sum_obj[i + 1] / 4);
+			record_new_vt_c_in_hash[i].reserve(vertex_index_prefix_sum_obj[total_obj_num] / 4);
+			record_new_ee_c_in_hash[i].reserve(edge_index_prefix_sum_obj[total_obj_num] / 4);
+			record_new_tv_c_in_hash[i].reserve(triangle_index_prefix_sum_obj[total_obj_num] / 4);
 		}
 	
 	}

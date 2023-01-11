@@ -166,7 +166,8 @@ void Scene::saveParameter(std::vector<std::string>& path, std::vector<std::strin
 		anchor_vertex, time_step,project_dynamic.outer_itr_conv_rate, local_conv_rate,
 		xpbd.sub_step_num, max_outer_iteration_num, cloth_density,tetrahedron_density,velocity_damp,
 		friction_coe, sub_step_per_detection,floor.exist,floor.dimension,floor.normal_direction,floor.value, d_hat,min_inner_itr,min_outer_itr,
-		displacement_standard, distance_record_as_collision, camera->position, camera->up,camera->center, max_inner_iteration_num, energy_converge_standard);
+		displacement_standard, distance_record_as_collision, camera->position, camera->up,camera->center, max_inner_iteration_num, energy_converge_standard,
+		translation_info, resize_scaler, rotate_angle, collider_translation_info, collider_resize_scaler, collider_rotate_angle);
 
 
 
@@ -312,7 +313,7 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 			local_global_conv_rate, project_dynamic.outer_itr_conv_rate,cloth_density,tetrahedron_density, velocity_damp,friction_coe,
 			*sub_step_per_detection, floor_indicator[0], floor_dimension, floor_indicator[2], floor_value,d_hat, min_inner_itr, min_outer_itr,
 			displacement_standard, distance_record_as_collision, camera->ori_position,camera->ori_up,camera->ori_center, max_inner_itr_num,
-			energy_converge_standard	);
+			energy_converge_standard, translation_info, resize_scaler, rotate_angle, collider_translation_info, collider_resize_scaler, collider_rotate_angle);
 
 		camera->position = camera->ori_position;
 		camera->up = camera->ori_up;
@@ -371,13 +372,21 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 
 			break;
 		}
-
-
 		if (floor_indicator[0]) {
 			floor_indicator[1] = true;
 		}
 	}
-
+	else {
+		translation_info.resize(object_path.size(), std::array{0.0,0.0,0.0});
+		resize_scaler.resize(object_path.size(), 1.0);
+		rotate_angle.resize(object_path.size(), std::array{ 0.0,0.0,0.0 });
+		if (!collider_path.empty()) 
+		{
+			collider_translation_info.resize(collider_path.size(), std::array{ 0.0,0.0,0.0 });
+			collider_resize_scaler.resize(collider_path.size(), 1.0);
+			collider_rotate_angle.resize(collider_path.size(), std::array{ 0.0,0.0,0.0 });
+		}		
+	}
 
 	if (use_method== XPBD_) {
 		xpbd.collision.friction_coe = friction_coe;
@@ -396,17 +405,17 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 	}
 
 	Preprocessing preprocessing;
-	preprocessing.load_all_model(collider_path, object_path);
+	preprocessing.load_all_model(collider_path, object_path,translation_info, resize_scaler, rotate_angle, collider_translation_info, collider_resize_scaler, collider_rotate_angle);
 
 	initialSceneSetting(preprocessing);
 	collider_num = collider_path.size();
 	collider.resize(collider_num);
 	for (int i = 0; i < collider_num; ++i) {
-		collider[i].loadMesh(preprocessing.ori_collider_mesh[i], &thread);
+		collider[i].loadMesh(preprocessing.collider_model[i].ori_mesh, &thread);
 	}
 	std::vector<int>cloth_index_in_object, tetrahedron_index_in_object;
 	for (int i = 0; i < object_path.size(); ++i) {
-		if (preprocessing.ori_simulation_mesh[i].type == TRIANGLE) {
+		if (preprocessing.simulation_model[i].ori_mesh.type == TRIANGLE) {
 			cloth_index_in_object.push_back(i);
 		}
 		else {
@@ -424,11 +433,11 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 	setTolerance(tolerance_ratio);
 
 	for (int i = 0; i < cloth_num; ++i) {
-		cloth[i].loadMesh(preprocessing.ori_simulation_mesh[cloth_index_in_object[i]], cloth_density, &thread);
+		cloth[i].loadMesh(preprocessing.simulation_model[cloth_index_in_object[i]].ori_mesh, cloth_density, &thread);
 		cloth[i].mesh_struct.initialUnfixedIndex();
 	}
 	for (int i = 0; i < tetrahedron_num; ++i) {
-		tetrahedron[i].loadMesh(preprocessing.ori_simulation_mesh[tetrahedron_index_in_object[i]], tetrahedron_density, &thread);
+		tetrahedron[i].loadMesh(preprocessing.simulation_model[tetrahedron_index_in_object[i]].ori_mesh, tetrahedron_density, &thread);
 		tetrahedron[i].mesh_struct.initialUnfixedIndex();
 		
 	}

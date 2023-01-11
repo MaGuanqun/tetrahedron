@@ -24,8 +24,20 @@ floor_dimension
 4
 floor_value
 -0.55
+translation
+0 1.2 0
+size_scaler
+0.00991323
+rotation_angle
+0 -90.0 0
+collider_translation
+0 0 0
+collider_size_scaler
+1 
+collider_rotation_angle
+0 0 0
 camera position
-4.0488 0.3432 -1.72513
+4.68534 0.347706 -2.03353
 camera up
 -0.00291372 0.999959 0.00859385
 camera center

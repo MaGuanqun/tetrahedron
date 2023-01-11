@@ -198,4 +198,13 @@ private:
 
 	DrawVertex draw_vertex;
 	DrawTriangle draw_triangle;
+
+	std::vector<std::array<double, 3>> translation_info;
+	std::vector<double> resize_scaler;
+	std::vector<std::array<double, 3>> rotate_angle;
+
+	std::vector<std::array<double, 3>> collider_translation_info;
+	std::vector<double> collider_resize_scaler;
+	std::vector<std::array<double, 3>> collider_rotate_angle;
+
 };

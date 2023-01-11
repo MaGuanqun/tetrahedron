@@ -3,7 +3,7 @@
 #include"readObj.h"
 #include"read_ele.h"
 
-void SetModel::load_getAABB(std::string& path, int& index, int obj_index, bool collider)
+void SetModel::load(std::string& path, int& index, bool collider)
 {
 	std::string extension_name;
 	extension_name = path.substr(path.length() - 3, 3);
@@ -66,7 +66,7 @@ void SetModel::load_getAABB(std::string& path, int& index, int obj_index, bool c
 
 		//moveBodyCapsule(ori_mesh, obj_index,collider);
 	
-	getAABB();
+	//getAABB();
 	setBackMaterial(ori_mesh);
 	if (path == "./model/floor.obj") {
 		//moveBodyCapsule();
@@ -111,98 +111,50 @@ void SetModel::getAABB()
 			}
 		}
 	}
-
-	//std::cout << aabb[3]-aabb[0] << " " << aabb[4] - aabb[1] << " " << aabb[5] - aabb[2] << std::endl;
-	//std::cout << 0.5*(aabb[3]+aabb[0]) << " " << 0.5*(aabb[4] + aabb[1]) << " " << 0.5*(aabb[5] + aabb[2]) << std::endl;
 }
 
-void SetModel::regularization(RegularizationInfo& regularization_info, int obj_index)
+void SetModel::regularization(int obj_index, 
+	std::array<double, 3>& translation_info, double& resize_scaler, std::array<double, 3>& rotate_angle)
 {
+	double compute_center[3] = {0.0,0.0,0.0};
+
+	for (auto i = ori_mesh.vertices.begin(); i < ori_mesh.vertices.end(); ++i) {
+		compute_center[0] += i->data()[0];
+		compute_center[1] += i->data()[1];
+		compute_center[2] += i->data()[2];
+	}
+	compute_center[0] /= (double)ori_mesh.vertices.size();
+	compute_center[1] /= (double)ori_mesh.vertices.size();
+	compute_center[2] /= (double)ori_mesh.vertices.size();
+
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
-		SUB_(ori_mesh.vertices[i], regularization_info.body_center);
+		SUB_(ori_mesh.vertices[i], compute_center);
 	}
 
-	double coe = regularization_info.scaler * 1.5;
-	//double coe = 0.00991323;
+	double coe = resize_scaler;
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
 		MULTI_(ori_mesh.vertices[i], coe);
 	}
 
 
-
 	double rotation_matrix[9];
-	double axe[3] = { 0,1,0 };
-
-	//	rotateAroundVectorRowMajor(rotation_matrix, axe, -M_PI/2);
-
+	double axe[3][3] = { { 1,0,0 },{ 0,1,0 },{ 0,0,1 } };
 	double pos[3];
 
-	//for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
-	//	pos[0] = DOT(rotation_matrix, ori_mesh.vertices[i]);
-	//	pos[1] = DOT((rotation_matrix + 3), ori_mesh.vertices[i]);
-	//	pos[2] = DOT((rotation_matrix + 6), ori_mesh.vertices[i]);
-	//	memcpy(ori_mesh.vertices[i].data(), pos, 24);
-	//}
-	
-
-	
-	//if (obj_index > 0) {
-		////two bar
-		//if (obj_index == 1) {
-		//	rotateAroundVectorRowMajor(rotation_matrix, axe, -M_PI / 1.8);
-		//}
-		//else {
-		//	rotateAroundVectorRowMajor(rotation_matrix, axe, -M_PI / 2.2);
-		//}
-
-		//arma
-		rotateAroundVectorRowMajor(rotation_matrix, axe, -M_PI/2.0);
-
+	for (int i = 0; i < 3; ++i) {
+		rotateAroundVectorRowMajor(rotation_matrix, axe[i], rotate_angle[i] / 180.0 * M_PI);
 		for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
 			pos[0] = DOT(rotation_matrix, ori_mesh.vertices[i]);
 			pos[1] = DOT((rotation_matrix + 3), ori_mesh.vertices[i]);
 			pos[2] = DOT((rotation_matrix + 6), ori_mesh.vertices[i]);
 			memcpy(ori_mesh.vertices[i].data(), pos, 24);
 		}
-	//}
-
-
+	}
+	
+	//SUM_(compute_center, translation_info);
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
-		SUM_(ori_mesh.vertices[i], regularization_info.move_info);
+		SUM_(ori_mesh.vertices[i], translation_info);
 	}
-
-
-	//std::cout << "scale " << coe<<" "<< regularization_info.move_info[0]<<" "<< regularization_info.move_info[1]<<" "<< regularization_info.move_info[2] << std::endl;
-
-	if (obj_index == 1) {
-		for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
-			ori_mesh.vertices[i][1] += 0.8;
-			ori_mesh.vertices[i][0] += 0.2; //0.3
-		}
-	}
-	else if(obj_index ==0) {
-		for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
-			//two bar
-			//ori_mesh.vertices[i][1] += 0.4;
-			//arma
-			ori_mesh.vertices[i][1] += 0.8;
-		}
-	}
-	else {
-		for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
-			ori_mesh.vertices[i][0] -= 0.2; //0.3
-		}
-	}
-
-	//if (obj_index == 1) {
-		//double move_info[3] = { -0.213267, -0.0693193, -0.250224 };
-		//for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
-		//	SUM_(ori_mesh.vertices[i], move_info);
-		//}
-	//}
-
-
-	//std::cout <<"scaler "<< regularization_info.scaler << std::endl;
 }
 
 void SetModel::setTetFrontMaterial(OriMesh& ori_mesh, int& index)
