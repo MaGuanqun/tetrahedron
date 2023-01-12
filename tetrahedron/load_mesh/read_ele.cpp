@@ -24,7 +24,8 @@ void ReadEle::loadFile(const char* name, std::vector<std::string>& temString)
 {
 	std::string line;
 	std::ifstream fin;
-	fin.open(name);
+	fin.open(name, std::ifstream::in);
+
 	if (!fin.is_open()) {
 		std::cout << "error opening " << *name << std::endl;
 	}
@@ -33,6 +34,7 @@ void ReadEle::loadFile(const char* name, std::vector<std::string>& temString)
 		while (std::getline(fin, line)) {
 			temString.push_back(line);
 		}
+
 		fin.close();
 	}
 }
@@ -113,6 +115,7 @@ void ReadEle::saveTetrahedronIndex(std::vector<std::vector<std::string>>& result
 	bool start_from_zero = false;
 	int tetrahedron_num = stoi(result[0][0]);
 	mesh.indices.reserve(4 * tetrahedron_num);
+
 	for (int i = 1; i < result.size() - 1; i++) {
 		for (int j = 1; j < 5; j++) {
 			if (result[i][j] == "0") {
@@ -121,10 +124,10 @@ void ReadEle::saveTetrahedronIndex(std::vector<std::vector<std::string>>& result
 			mesh.indices.push_back(stoi(result[i][j]));
 		}
 	}
-	if (result[result.size() - 1][0] != "#") {
+	if (result.back()[0] != "#") {
 		if (result[result.size() - 1].size() > 1) {
 			for (int j = 1; j < 5; j++) {
-				if (result[result.size() - 1][j] == "0") {
+				if (result.back()[j] == "0") {
 					start_from_zero = true;
 				}
 				mesh.indices.push_back(stoi(result[result.size() - 1][j]));

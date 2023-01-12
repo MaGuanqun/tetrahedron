@@ -3,7 +3,7 @@
 #include"readObj.h"
 #include"read_ele.h"
 
-void SetModel::load(std::string& path, int& index, bool collider)
+void SetModel::load(std::string& path, int index, bool collider)
 {
 	std::string extension_name;
 	extension_name = path.substr(path.length() - 3, 3);
@@ -157,7 +157,7 @@ void SetModel::regularization(int obj_index,
 	}
 }
 
-void SetModel::setTetFrontMaterial(OriMesh& ori_mesh, int& index)
+void SetModel::setTetFrontMaterial(OriMesh& ori_mesh, int index)
 {
 	std::array<float, 3> Kd, Ka, Ks, Tf;
 	int illum;
@@ -196,7 +196,6 @@ void SetModel::setTetFrontMaterial(OriMesh& ori_mesh, int& index)
 	ori_mesh.front_material.Ns = Ns;
 	ori_mesh.front_material.Ni = Ni;
 	ori_mesh.front_material.illum = illum;
-	index++;
 }
 
 

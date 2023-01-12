@@ -11,7 +11,7 @@ void TriangleObject::drawWireframe(Camera* camera, Shader* wireframe_shader)
 	wireframe_shader->setMat4("view", camera->GetViewMatrix());
 	wireframe_shader->setMat4("model", glm::mat4(1.0));
 	wireframe_shader->setVec3("color", wireframe_color);
-	wireframe_shader->setFloat("transparent", 1.0f);
+	wireframe_shader->setFloat("transparent", 0.08f);
 	if (!mesh_struct.triangle_indices.empty()) {		
 		glBindVertexArray(VAO);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

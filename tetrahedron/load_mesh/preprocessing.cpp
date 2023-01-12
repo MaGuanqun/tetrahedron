@@ -17,6 +17,7 @@ void Preprocessing::load_all_model(std::vector<std::string>& body_path, std::vec
 	collider_rotate_angle.resize(body_path.size());
 
 	simulation_model.resize(object_path.size());
+
 	for (int i = 0; i < object_path.size(); ++i) {
 		simulation_model[i].load(object_path[i], i, false);
 	}
@@ -99,6 +100,8 @@ void Preprocessing::getRegularizationInfo()
 	regularization_info.move_info[1] = 0.0;
 	regularization_info.move_info[2] = 0.0;
 	regularization_info.max_dis_from_center = 1.2 * sqrt(3.0* max_cen);
+
+	std::cout <<"max length of aabb " << max_cen << " " << 1 / max_cen << std::endl;
 
 }
 

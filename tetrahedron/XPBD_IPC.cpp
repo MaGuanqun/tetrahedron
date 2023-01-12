@@ -2858,7 +2858,7 @@ void XPBD_IPC::newtonCDTetBlockAGroupCollision(int thread_No, int color)
 			collision.vt_hessian_index_exist.data(),false);
 		solveEE_BlockPerThread(record_vertex_position, record_vertex_num, collision.record_ee_pair_sum_all_thread.data(), collision.ee_pair_sum_start_per_thread[thread_No],
 			collision.ee_pair_sum_start_per_thread[thread_No + 1],
-			collision.vt_hessian_index_exist.data(),false);
+			collision.ee_hessian_index_exist.data(),false);
 		if (has_collider || floor->exist) {
 			solvecollider_BlockPerThread(record_vertex_position, record_vertex_num, &collision.vertex_index_collide_collider_sum, false, 0,
 				collision.vertex_c_start_per_thread[thread_No], collision.vertex_c_start_add_per_thread[thread_No + 1]);
