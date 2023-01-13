@@ -450,11 +450,18 @@ inline void getTriangleNormal(double* v0, double* v1, double* v2, double* normal
 	normalize(normal);
 }
 
+inline void barrierGrad(double d, double d_hat, double& gradient)
+{
+	double log_2 = 2.0 * log(d / d_hat);
+	gradient = (d_hat - d) * (log_2 - d_hat / d + 1.0);
+}
+
+
 inline void barrierGradHessian(double d, double d_hat, double& gradient, double& hessian)
 {
 	double log_2 = 2.0 * log(d / d_hat);
 	gradient = (d_hat - d) * (log_2 - d_hat / d + 1.0);
-	hessian = -log_2 + (d_hat - d) * (d_hat + 3 * d) / (d * d);
+	hessian = -log_2 + (d_hat - d) * (d_hat + 3.0 * d) / (d * d);
 }
 
 inline double barrier(double d, double d_hat)

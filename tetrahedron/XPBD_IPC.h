@@ -131,6 +131,8 @@ public:
 	void computeLastColorARAPEnergy(int thread_No);
 
 	void sumAllGrad(int thread_No);
+	void sumWithInertial(int thread_No);
+
 	void solveBlockForWarmStart(int thread_No);
 
 	void computePreviousColorInversion(int thread_No, int color_No);
@@ -141,7 +143,11 @@ public:
 
 	int counter = 0;
 
+	void tetGrad(int thread_No);
+
 private:
+
+	void computeGradient();
 
 	std::vector<std::vector<std::vector<unsigned int>>*> vertex_index_of_a_tet_color_per_thread_start_group;
 

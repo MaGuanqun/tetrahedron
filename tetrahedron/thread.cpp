@@ -475,6 +475,9 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     case UPDATE_NEW_PAIR_IN_HASH:
         k = job([func, thread_id]() {func->updateNewPairInHash(thread_id); });
         break;
+    case COLLISION_GRAD:
+        k = job([func, thread_id]() {func->computeGradientPerThread(thread_id); });
+        break;
     //case COMPUTE_VOLUME:
     //    k = job([func, thread_id]() {func->computeVolume(thread_id); });
     //    break;
@@ -547,7 +550,7 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     case SET_PAIR_BY_ELEMENT:
         k = job([func, thread_id]() {func->setPairByElement(thread_id); });
         break;
-
+    
 
     }
     return k;
@@ -1002,6 +1005,9 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
         break;
     case XPBD_IPC_VELOCITY:
         k = job([func, thread_id]() {func->computeVelocity(thread_id); });
+        break;
+    case TET_GRAD:
+        k = job([func, thread_id]() {func->tetGrad(thread_id); });
         break;
     case SUM_ALL_GRAD:
         k = job([func, thread_id]() {func->sumAllGrad(thread_id); });

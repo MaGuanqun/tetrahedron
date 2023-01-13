@@ -1243,7 +1243,9 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 			test_draw_collision.draw_collision.setElementIndices();
 		}
 		//checkVolume();
-
+		if (time_stamp == 500) {
+			system("pause");
+		}
 	}
 }
 

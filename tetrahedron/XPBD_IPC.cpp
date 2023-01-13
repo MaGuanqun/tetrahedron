@@ -681,6 +681,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 	displacement_satisfied = false;
 
 	inner_itr_num_standard = min_inner_iteration;
+	inner_iteration_number = 0;
 
 	while (!convergeCondition(outer_itr_num)) {
 		if (perform_collision) {
@@ -727,14 +728,14 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 
 		std::cout << "time stamp " << *time_stamp << " outer itr num " << outer_itr_num << " " << inner_iteration_number << std::endl;
 
-		inner_iteration_number = 0;
-		nearly_not_move = false;
-		previous_energy = energy;
+		
+		//nearly_not_move = false;
+		//previous_energy = energy;
 
-		while (!innerConvergeCondition(inner_iteration_number))
-		{
-			previous_energy = energy;
-			nearly_not_move = true;
+		//while (!innerConvergeCondition(inner_iteration_number))
+		//{
+			//previous_energy = energy;
+			//nearly_not_move = true;
 			solveNewtonCD_tetBlock();
 
 			//computeCurrentEnergy();
@@ -747,11 +748,10 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 			//	e1_0_.push_back(mesh_struct[1]->vertex_position[40]);
 			//	e1_1_.push_back(mesh_struct[1]->vertex_position[39]);
 			//}
-		}
+		//}
 		outer_itr_num++;
-		iteration_number += inner_iteration_number;
 	}
-
+	iteration_number += inner_iteration_number;
 	if (perform_collision) {
 		collision.collisionCulling();
 		//collision_compare.collisionCulling();
@@ -970,31 +970,29 @@ bool XPBD_IPC::checkMaxDisplacement()
 		}
 	}
 
-	if (record_max_displacement.size() > 4) {
-		record_max_displacement.clear();
-		record_max_displace_vertex.clear();
-	}
-
-
+	//if (record_max_displacement.size() > 4) {
+	//	record_max_displacement.clear();
+	//	record_max_displace_vertex.clear();
+	//}
 	//std::cout << "outer itr num " << outer_itr_num<< " max in checkMaxDisplacement "<< vertex_ <<" " << max << std::endl;
 
 	if (max > max_move_standard) {
 
-		for (int i = 0; i < record_max_displacement.size(); ++i) {
-			if (abs(record_max_displacement[i]- max)<1e-5 && record_max_displace_vertex[i << 1] == obj_ && record_max_displace_vertex[i + i + 1] == vertex_) {
-				return true;
-			}
-		}
+		//for (int i = 0; i < record_max_displacement.size(); ++i) {
+		//	if (abs(record_max_displacement[i]- max)<1e-5 && record_max_displace_vertex[i << 1] == obj_ && record_max_displace_vertex[i + i + 1] == vertex_) {
+		//		return true;
+		//	}
+		//}
 
-		record_max_displacement.emplace_back(max);
-		record_max_displace_vertex.emplace_back(obj_);
-		record_max_displace_vertex.emplace_back(vertex_);
+		//record_max_displacement.emplace_back(max);
+		//record_max_displace_vertex.emplace_back(obj_);
+		//record_max_displace_vertex.emplace_back(vertex_);
 
 		return false;
 	}
 
-	record_max_displacement.clear();
-	record_max_displace_vertex.clear();
+	//record_max_displacement.clear();
+	//record_max_displace_vertex.clear();
 	return true;
 }
 
@@ -1234,8 +1232,60 @@ void XPBD_IPC::inversionTest(int thread_No)
 	}
 }
 
+//TET_GRAD
+void XPBD_IPC::tetGrad(int thread_No)
+{
+	MatrixXd grad;
+	grad.resize(3, 4);
+	std::array<int, 4>* tet_indices_;
 
+	std::array<double, 3>* vertex_pos;
+	double stiffness = 0.0;
+	Matrix<double, 3, 4>* A;
+	double* volume;
 
+	int prefix_sum_start;
+	double* grad_address;
+
+	double* com_grad = common_grad[thread_No].data();
+	unsigned int tet_prefix_sum_start;
+
+	int start, end;
+
+	for (int i = 0; i < tetrahedron->size(); ++i) {
+		stiffness = 0.5 * tetrahedron->data()[0].ARAP_stiffness;
+		prefix_sum_start = vertex_index_prefix_sum_obj[i + cloth->size()];
+
+		vertex_pos = vertex_position[i + cloth->size()];
+		A = tetrahedron->data()[i].mesh_struct.A.data();
+		volume = tet_volume[i + cloth->size()];
+		tet_indices_ = tet_indices[i + cloth->size()];
+		tet_prefix_sum_start = prefix_sum_of_every_tet_index[i];
+		start = tet_index_begin_per_thread[i + cloth->size()][thread_No];
+		end = tet_index_begin_per_thread[i + cloth->size()][thread_No + 1];
+		for (int j = start; j < end; ++j)
+		{
+			second_order_constraint.setARAPGrad(grad, vertex_pos, stiffness, A[j],// ,
+				volume[j], tet_indices_[j].data()); //,
+			grad_address = com_grad + 3 * (prefix_sum_start + tet_indices_[j][0]);
+			*grad_address += grad.data()[0];
+			*(grad_address + 1) += grad.data()[1];
+			*(grad_address + 2) += grad.data()[2];
+			grad_address = com_grad + 3 * (prefix_sum_start + tet_indices_[j][1]);
+			*grad_address += grad.data()[3];
+			*(grad_address + 1) += grad.data()[4];
+			*(grad_address + 2) += grad.data()[5];
+			grad_address = com_grad + 3 * (prefix_sum_start + tet_indices_[j][2]);
+			*grad_address += grad.data()[6];
+			*(grad_address + 1) += grad.data()[7];
+			*(grad_address + 2) += grad.data()[8];
+			grad_address = com_grad + 3 * (prefix_sum_start + tet_indices_[j][3]);
+			*grad_address += grad.data()[9];
+			*(grad_address + 1) += grad.data()[10];
+			*(grad_address + 2) += grad.data()[11];
+		}
+	}
+}
 
 
 //UPDATE_TET_GRAD_SHARED
@@ -2383,6 +2433,19 @@ void XPBD_IPC::newtonCDBlock()
 	newtonCDTetBlock();
 }
 
+
+
+void XPBD_IPC::computeGradient()
+{
+	for (int i = 0; i < total_thread_num; ++i) {
+		memset(common_grad[i].data(), 0, 8 * common_grad[i].size());
+	}
+	thread->assignTask(this, TET_GRAD);
+	thread->assignTask(&collision,COLLISION_GRAD);
+	thread->assignTask(this, SUM_ALL_GRAD);
+
+
+}
 
 
 
@@ -7728,6 +7791,54 @@ void XPBD_IPC::computeCollisionFreePosition(int thread_No)
 		}
 	}
 }
+
+void XPBD_IPC::sumWithInertial(int thread_No)
+{
+	unsigned int index_end;
+	unsigned int index_start;
+
+	std::array<double, 3>* pos;
+	std::array<double, 3>* sn_;
+	unsigned int prefix_sum;
+	double max = 0.0;
+	double actual_grad;
+	double* mass_;
+	double mass_dt;
+	double dt_2 = sub_time_step * sub_time_step;
+	double* alread_grad = common_grad[0].data();
+	std::vector<bool> *(is_vertex_fixed_;
+	for (int i = 0; i < total_obj_num; ++i) {
+		index_end = vertex_index_begin_per_thread[i][thread_No + 1];
+		index_start = vertex_index_begin_per_thread[i][thread_No];
+		pos = vertex_position[i];
+		sn_ = sn[i].data();
+		prefix_sum = vertex_index_prefix_sum_obj[i];
+		mass_ = mass[i];
+		is_vertex_fixed_ = is_vertex_fixed[i];
+		for (unsigned int j = index_start; j < index_end; ++j) {
+			if (!(*is_vertex_fixed_)[j]) {
+				mass_dt = mass_[j] / dt_2;
+				actual_grad = abs(alread_grad[3 * (prefix_sum + j)] + mass_dt * (pos[j][0] - sn_[j][0]));
+				if (actual_grad > max) {
+					max = actual_grad;
+				}
+				actual_grad = abs(alread_grad[3 * (prefix_sum + j) + 1] + mass_dt * (pos[j][1] - sn_[j][1]));
+				if (actual_grad > max) {
+					max = actual_grad;
+				}
+				actual_grad = abs(alread_grad[3 * (prefix_sum + j) + 2] + mass_dt * (pos[j][2] - sn_[j][2]));
+				if (actual_grad > max) {
+					max = actual_grad;
+				}
+			}		
+		}
+	}
+
+	//store to gloabl
+	..
+
+}
+
 
 
 //SUM_ALL_GRAD

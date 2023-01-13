@@ -1820,13 +1820,28 @@ void SpatialHashing::initialHashSizeRecord()
 	if (has_collider) {
 		memset(spatial_hashing_cell_collider_triangle_size, 0, hash_cell_count << 2);
 		memset(spatial_hashing_cell_collider_edge_size, 0, hash_cell_count << 2);
+		memset(spatial_hashing_cell_collider_vertex_size, 0, hash_cell_count << 2);
 	}
 	if (searchPairByCell) {
 		memset(spatial_hashing_cell_vertex_size, 0, hash_cell_count << 2);
-		if (has_collider) {
-			memset(spatial_hashing_cell_collider_vertex_size, 0, hash_cell_count << 2);
-		}
 	}
+
+
+	//for (int i = 0; i < hash_cell_count; ++i) {
+	//	if (spatial_hashing_cell_triangle_size[i] != 0) {
+	//		std::cout <<"error initial spatial_hashing_cell_triangle_size" << std::endl;
+	//	}
+	//	if (spatial_hashing_cell_edge_size[i] != 0) {
+	//		std::cout << "error initial spatial_hashing_cell_edge_size" << std::endl;
+	//	}
+	//	if (spatial_hashing_cell_collider_triangle_size[i] != 0) {
+	//		std::cout << "error initial spatial_hashing_cell_collider_triangle_size" << std::endl;
+	//	}
+	//	if (spatial_hashing_cell_collider_edge_size[i] != 0) {
+	//		std::cout << "error initial spatial_hashing_cell_collider_edge_size" << std::endl;
+	//	}
+	//}
+
 }
 
 
@@ -2202,6 +2217,9 @@ void SpatialHashing::triangleHashValueWithoutRecord(double* aabb,
 	for (auto i = record_hash_index->begin(); i != record_hash_index->end(); ++i)
 	{
 		ori_value = spatial_hashing_cell_triangle_size[*i].fetch_add(2, std::memory_order_relaxed);
+		if (ori_value > max_index_number_in_one_cell) {
+			std::cout << "error exceed max size " << ori_value << " " << max_index_number_in_one_cell << std::endl;
+		}
 		memcpy(spatial_hashing_cell + (*i) * max_index_number_in_one_cell + ori_value, triangle_index, 8);
 	}
 

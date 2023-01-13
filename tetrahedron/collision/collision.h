@@ -361,6 +361,7 @@ public:
 	void computeHessian(int color_No);
 
 	void computeHessianPerThread(unsigned int color_No, int thread_No);
+	void computeGradientPerThread(int thread_No);
 
 	void sumAllCollisionHessian(int color_No, int thread_No);
 
@@ -565,9 +566,15 @@ private:
 	void setHessian(int* record_index, unsigned int* vertex_index_total, double* Hessian, double* grad, 
 		double* hessian_record, double* common_grad, int record_col_num, char* record_exist);//tv_c 1, others 0
 
+	void setGrad(int* record_index, unsigned int* vertex_index_total, double* grad,
+		double* hessian_record, double* common_grad, int record_col_num);//tv_c 1, others 0
+
+
 	void setHessian(int* record_index, unsigned int* vertex_index_total, double* Hessian, double* grad,
 		double* hessian_record, double* common_grad, int record_col_num, bool* not_collider, char* record_exist, int bias);
 
+	void setGrad(int* record_index, unsigned int* vertex_index_total, double* grad,
+		double* hessian_record, double* common_grad, int record_col_num, bool* not_collider, int bias);
 
 	/*void setHessian(int* record_index, unsigned int* vertex_index_total, MatrixXd& Hessian, double* grad,
 		double* hessian_record, double* common_grad, int record_col_num, bool* not_collider, char* record_exist, int bias, unsigned int edge_0, unsigned int edge_1);*/
@@ -1070,6 +1077,10 @@ private:
 	void computeEEHessian(int start, int end, unsigned int* pair, double* d_hat, bool is_collider, bool is_last_color, char* hessian_record_exist_,
 		double* hessian_record, double* grad_record);
 
+	void computeEEGrad(int start, int end, unsigned int* pair, double* d_hat, bool is_collider, char* hessian_record_exist_,
+		double* hessian_record, double* grad_record);
+	void computeVTGrad(int start, int end, unsigned int* pair, double* d_hat, int type, char* hessian_record_exist_, double* hessian_record, double* grad_record);
+
 
 	void edgeEdgeCollisionTime(int thread_No, unsigned int pair_thread_No, int start_pair_index,
 		int end_pair_index, double& collision_time);
@@ -1320,7 +1331,8 @@ private:
 
 	void prefixSumRecordPairNum(std::atomic_uint* num_record, unsigned int* prefix_sum, int num, unsigned int& start_index, int move_size);
 
-	bool computeFloorHessian(double d_hat, double stiffness, double floor_value, double* hessian, double* grad, double position);
+	bool computeFloorHessian(double d_hat, double stiffness, double floor_value, double* hessian, double* grad, double position,
+		bool compute_hessian);
 
 	//void setTriangleCollideWithCollider();
 	//void setEdgeCollideWithCollider();
