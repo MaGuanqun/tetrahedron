@@ -159,7 +159,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	ee_collider_pair_sum_start_per_thread.resize(thread_num + 1);
 	floor_pair_sum_start_per_thread.resize(thread_num + 1);
 
-	pair_index_start_per_thread.resize(thread_num + 1);
+	pair_index_start_per_thread.resize(thread_num + 1, 0);
 
 	//target_position_start_per_thread.resize(2 * (thread_num + 1), 0);
 
@@ -323,7 +323,7 @@ void Collision::recordPair()
 
 
 	pair_hash_table_size= 99991;//999983
-	pair_hash_table_cell_size = 15;
+	pair_hash_table_cell_size = 44;
 	
 	vt_hash_size_record=new std::atomic_uint[pair_hash_table_size];
 	ee_hash_size_record = new std::atomic_uint[pair_hash_table_size];
@@ -417,12 +417,12 @@ void Collision::recordPair()
 
 void Collision::initialPairRecordInfo()
 {
-	memset(vt_hash_size_record, 0, 4 * pair_hash_table_size);
-	memset(ee_hash_size_record, 0, 4 * pair_hash_table_size);
+	memset(vt_hash_size_record, 0, sizeof(std::atomic_int) * pair_hash_table_size);
+	memset(ee_hash_size_record, 0, sizeof(std::atomic_int) * pair_hash_table_size);
 	if (has_collider) {
-		memset(vt_collider_hash_size_record, 0, 4 * pair_hash_table_size);
-		memset(tv_collider_hash_size_record, 0, 4 * pair_hash_table_size);
-		memset(ee_collider_hash_size_record, 0, 4 * pair_hash_table_size);
+		memset(vt_collider_hash_size_record, 0, sizeof(std::atomic_int) * pair_hash_table_size);
+		memset(tv_collider_hash_size_record, 0, sizeof(std::atomic_int) * pair_hash_table_size);
+		memset(ee_collider_hash_size_record, 0, sizeof(std::atomic_int) * pair_hash_table_size);
 	}
 	for (int i = 0; i < total_obj_num; ++i) {
 		memset(indicate_vertex_collide_with_floor[i].data(), 0, indicate_vertex_collide_with_floor[i].size());		
@@ -833,7 +833,7 @@ void Collision::initialDHatTolerance(double ave_edge_length)
 
 
 
-	eta = 0.1;	
+	eta = 0.2;	
 	tolerance_2 = 0.0;// tolerance* tolerance;
 	epsilon = 0.1;
 
@@ -1937,7 +1937,7 @@ void Collision::testPairEven()
 //make pair num in every thread even
 void Collision::setPairIndexEveryThread(std::vector<unsigned int>* pair, std::vector<unsigned int>& pair_index_start_per_thread)
 {
-	std::vector<unsigned int>pair_start(thread_num);
+	std::vector<unsigned int>pair_start(thread_num+1, 0);
 	unsigned int pair_num = pair[0][0] >> 2;
 	for (int i = 1; i < thread_num; ++i) {
 		pair_num += pair[i][0] >> 2;
@@ -1978,13 +1978,18 @@ void Collision::setPairIndexEveryThread(std::vector<unsigned int>* pair, std::ve
 void Collision::setPairIndexEveryThread(int divide_coe, std::vector<std::vector<unsigned int>>& pair, std::vector<unsigned int>& pair_index_start_per_thread,
 	unsigned int& ave_pair_num)
 {
-	std::vector<unsigned int>pair_start(thread_num);
+	std::vector<unsigned int>pair_start(thread_num + 1, 0);
 	unsigned int pair_num = pair[0].size()/divide_coe;
 	for (int i = 1; i < thread_num; ++i) {
 		pair_num += pair[i].size() / divide_coe;
 	}
 	countInEveryThread(thread_num, pair_num, pair_start.data());
 	ave_pair_num = pair_start[0];
+
+
+	//pair_index_start_per_thread[0] = 0;
+	//pair_index_start_per_thread[1] = 0;
+
 
 	unsigned int num;
 	for (int i = 0; i < thread_num; ++i) {
@@ -2015,13 +2020,16 @@ void Collision::setPairIndexEveryThread(int divide_coe, std::vector<std::vector<
 void Collision::setPairIndexEveryThread(std::vector<std::vector<unsigned int>>& pair, std::vector<unsigned int>& pair_index_start_per_thread,
 	unsigned int& ave_pair_num, int move_bit)
 {
-	std::vector<unsigned int>pair_start(thread_num);
+	std::vector<unsigned int>pair_start(thread_num + 1,0);
 	unsigned int pair_num = pair[0].size() >> move_bit;
 	for (int i = 1; i < thread_num; ++i) {
 		pair_num += pair[i].size() >> move_bit;
 	}
 	countInEveryThread(thread_num, pair_num, pair_start.data());
 	ave_pair_num = pair_start[0];
+
+	//pair_index_start_per_thread[0] = 0;
+	//pair_index_start_per_thread[1] = 0;
 
 	unsigned int num;
 	for (int i = 0; i < thread_num; ++i) {
@@ -2051,13 +2059,17 @@ void Collision::setPairIndexEveryThread(std::vector<std::vector<unsigned int>>& 
 //make pair num in every thread even
 void Collision::setPairIndexEveryThread(unsigned int** pair, std::vector<unsigned int>&pair_index_start_per_thread, unsigned int& ave_pair_num)
 {
-	std::vector<unsigned int>pair_start(thread_num);
+	std::vector<unsigned int>pair_start(thread_num+1, 0);
 	unsigned int pair_num = pair[0][0]>>2;
 	for (int i = 1; i < thread_num; ++i) {
 		pair_num += pair[i][0]>>2;
 	}
 	countInEveryThread(thread_num, pair_num, pair_start.data());
 	ave_pair_num = pair_start[0];
+
+	//pair_index_start_per_thread[0] = 0;
+	//pair_index_start_per_thread[1] = 0;
+
 
 	unsigned int num;
 	for (int i = 0; i < thread_num; ++i) {
@@ -2126,6 +2138,23 @@ void Collision::initialNewPairRecord()
 //UPDATE_NEW_PAIR_IN_HASH
 void Collision::updateNewPairInHash(int thread_No)
 {
+	//if (new_add_vt_hash_start_per_thread[1] != 0) {
+	//	std::cout << "error vt" << std::endl;
+	//}
+	//if (new_add_ee_hash_start_per_thread[1] != 0) {
+	//	std::cout << "error ee" << std::endl;
+	//}
+	//if (new_add_vt_c_hash_start_per_thread[1] != 0) {
+	//	std::cout << "error vtc" << std::endl;
+	//}
+	//if (new_add_ee_c_hash_start_per_thread[1] != 0) {
+	//	std::cout << "error eec" << std::endl;
+	//}
+	//if (new_add_tv_c_hash_start_per_thread[1] != 0) {
+	//	std::cout << "error tvc" << std::endl;
+	//}
+
+
 	updateNewPairInHash(thread_No, new_add_vt_hash_start_per_thread.data(), record_new_vt_in_hash, vt_hash_size_record,vt_hash_record.data());
 	updateNewPairInHash(thread_No, new_add_ee_hash_start_per_thread.data(), record_new_ee_in_hash, ee_hash_size_record,vt_hash_record.data());
 	if (has_collider) {
@@ -2174,6 +2203,8 @@ void Collision::collisionTimeWithPair()
 		setPairIndexEveryThread(3, record_new_tv_c_in_hash, new_add_tv_c_hash_start_per_thread, ave);
 	}
 
+	//testPrint();
+
 	thread->assignTask(this, UPDATE_NEW_PAIR_IN_HASH);
 
 	obtainCollisionTimeFromEveryThread();
@@ -2215,6 +2246,64 @@ void Collision::collisionTimeWithPair()
 	setMapForHessianIndexToConstraint();
 
 }
+
+
+void Collision::testPrint()
+{
+	std::cout << "vt " << std::endl;
+	for (int i = 0; i < thread_num+1; ++i) {
+		std::cout << new_add_vt_hash_start_per_thread[i << 1] << " " << new_add_vt_hash_start_per_thread[(i << 1) + 1] << " ";
+	}
+	std::cout << std::endl;
+
+	for (int i = 0; i < thread_num; ++i) {
+		std::cout << record_new_vt_in_hash[i].size() << " ";
+	}
+	std::cout << std::endl;
+
+	std::cout << "ee " << std::endl;
+	for (int i = 0; i < thread_num + 1; ++i) {
+		std::cout << new_add_ee_hash_start_per_thread[i << 1] << " " << new_add_ee_hash_start_per_thread[(i << 1) + 1] << " ";
+	}
+	std::cout << std::endl;
+
+	for (int i = 0; i < thread_num; ++i) {
+		std::cout << record_new_ee_in_hash[i].size() << " ";
+	}
+	std::cout << std::endl;
+
+	std::cout << "vt_c " << std::endl;
+	for (int i = 0; i < thread_num + 1; ++i) {
+		std::cout << new_add_vt_c_hash_start_per_thread[i << 1] << " " << new_add_vt_c_hash_start_per_thread[(i << 1) + 1] << " ";
+	}
+	std::cout << std::endl;
+	for (int i = 0; i < thread_num; ++i) {
+		std::cout << record_new_vt_c_in_hash[i].size() << " ";
+	}
+	std::cout << std::endl;
+
+	std::cout << "ee_c " << std::endl;
+	for (int i = 0; i < thread_num + 1; ++i) {
+		std::cout << new_add_ee_c_hash_start_per_thread[i << 1] << " " << new_add_ee_c_hash_start_per_thread[(i << 1) + 1] << " ";
+	}
+	std::cout << std::endl;
+	for (int i = 0; i < thread_num; ++i) {
+		std::cout << record_new_ee_c_in_hash[i].size() << " ";
+	}
+	std::cout << std::endl;
+
+	std::cout << "tv_c " << std::endl;
+	for (int i = 0; i < thread_num+1; ++i) {
+		std::cout << new_add_tv_c_hash_start_per_thread[i << 1] << " " << new_add_tv_c_hash_start_per_thread[(i << 1) + 1] << " ";
+	}
+	std::cout << std::endl;
+	for (int i = 0; i < thread_num; ++i) {
+		std::cout << record_new_tv_c_in_hash[i].size() << " ";
+	}
+	std::cout << std::endl;
+
+}
+
 
 //type 0 vt, 1 ee, 2 tv_c, 3 ee_c, 4 vt_c 
 void Collision::setMapForHessianIndexToConstraint(int start, int end, int step_size, unsigned int* index_in_global, unsigned int type)
@@ -4001,61 +4090,18 @@ void Collision::sumAllCollisionHessian(int color_No, int thread_No)
 				sumHessian(hessian_index_exist, hessian_sum,  tv_collider_hessian_record.data(), *is_update, j,
 					3, 81, 9);
 
-				//if (*(i + 1) == 190 && *i == 190) {
-				//	std::cout << *is_update << std::endl;
-
-				//	std::cout << " " << record_tv_collider_pair_sum_all_thread[4 * (*(j + 1)) + 1] << " " << record_tv_collider_pair_sum_all_thread[4 * (*(j + 1)) + 3] << std::endl;
-
-				//	for (int m = 0; m < 9; ++m) {
-				//		std::cout << hessian_sum[m] << " ";
-				//	}
-				//	std::cout << std::endl;
-				//}
-
-
 				break;
 			case 3: //ee_c
-
-
 
 				hessian_index_exist = ee_collider_hessian_index_exist.data() + 3 * (*(j + 1));
 				sumHessian(hessian_index_exist, hessian_sum,  ee_collider_hessian_record.data(), *is_update, j,
 					2, 36, 6);
-
-				//if (*outer_itr_num == 1) {
-				//	if (*(i + 1) == 187 && *i == 187) {
-				//		if (hessian_index_exist[*(j + 2) / 2 + 1] && hessian_index_exist[*(j + 2) % 2 + 1]) {
-				//			std::cout << *(j + 2) << std::endl;
-				//			std::cout << "ori for 187 " << record_ee_collider_pair_sum_all_thread[4 * (*(j + 1)) + 1] << " " << record_ee_collider_pair_sum_all_thread[4 * (*(j + 1)) + 3] << " " << *(j + 1) << " " << *(j + 2) << " "
-				//				<<j-order_in_constraint->begin()<< std::endl;
-				//			//std::cout << std::to_string(hessian_index_exist[*(j + 2) / 2]) << " " << std::to_string(hessian_index_exist[*(j + 2) % 2]) << std::endl;
-				//		}
-				//		//for (int m = 0; m < 9; ++m) {
-				//		//	std::cout << hessian_sum[m] << " ";
-				//		//}
-				//		std::cout << std::endl;
-				//	}
-				//}
-
-				
-
 
 				break;
 			case 4://vt_c
 				hessian_index_exist = vt_collider_hessian_index_exist.data() + 2 * (*(j + 1));
 				sumHessian(hessian_index_exist, hessian_sum,  vt_collider_hessian_record.data(), *is_update, j,
 					1, 9, 3);
-
-				//if (*(i + 1) == 187 && *i == 187) {
-				//	if (hessian_index_exist) {
-				//		std::cout << "ori for 187 " << record_vt_collider_pair_sum_all_thread[4 * (*(j + 1)) + 1] << " " << record_vt_collider_pair_sum_all_thread[4 * (*(j + 1)) + 3] << " " << *(j + 1)<<" "<<*(j+2) << std::endl;
-				//		for (int m = 0; m < 9; ++m) {
-				//				std::cout << vt_collider_hessian_record[9*(*(j + 1))+m] << " ";
-				//			}
-				//		std::cout << std::endl;
-				//	}
-				//}
-
 
 				break;
 			}
@@ -4865,7 +4911,7 @@ void Collision::computeHessianPreviousThread(int color_No, int thread_No)
 		for (auto j = start; j < end; j+=2) {
 			if (vertex_belong_to_color_group[*j][*(j+1)]) {
 				if (computeFloorHessian(record_vertex_collide_with_floor_d_hat[*j][*(j+1)], stiffness, floor_value, &hessian, &grad,
-					vertex_position[*j][*(j+1)][floor_dimension])) {
+					vertex_position[*j][*(j+1)][floor_dimension],true)) {
 					global_index = vertex_index_prefix_sum_obj[*j] + *(j+1);
 					floor_hessian[global_index] = hessian;
 					grad_ [3 * global_index + floor_dimension] += grad;
@@ -8419,15 +8465,40 @@ void Collision::vertexTriangleCollisionTimePair(int start_pair_index,
 		//	current_distance = CCD::internal::pointTriangleDistanceUnclassified(vertex_position_0[pair[i + 1]][pair[i]].data(),
 		//		vertex_position_1[pair[i + 3]][indices[0]].data(), vertex_position_1[pair[i + 3]][indices[1]].data(), vertex_position_1[pair[i + 3]][indices[2]].data());
 		//}
+
+
+
+		//if (vertex_position_0[pair[i + 1]][pair[i]][1] < vertex_position_1[pair[i + 3]][indices[2]][1]) {
+		//	if (vertex_position_1[pair[i + 3]][indices[2]][1] < -0.79311) {
+		//		if (time >= 1.0) {
+		//			std::cout << "error ++ " << std::endl;
+		//			std::cout << pair[i] << " " << pair[i + 2] << std::endl;
+
+		//		}
+		//		else {
+		//			std::cout << "right ++ " << std::endl;
+		//			std::cout << pair[i] << " " << pair[i + 2] << std::endl;
+		//		}
+		//	}
+		//
+		//}
+
+	
+
 		if (time < 1.0){// || current_distance < d_hat_2
 			if (time < collision_time) {
 				collision_time = time;
 			}
 
+			//std::cout << "+++ " << pair[i]<<" "<< vertex_position_0[pair[i + 1]][pair[i]][1]<<" "<< vertex_position_1[pair[i + 3]][indices[2]][1] << " " << time << std::endl;
+			//std::cout <<precisou vertex_position_1[pair[i + 3]][indices[2]][1]<< std::endl;
+
 			actual_ele_0 = vertex_index_prefix_sum[pair[i + 1]] + pair[i];
 			actual_ele_1 = triangle_index_prefix_sum[pair[i + 3]] + pair[i + 2];
 			hash_value = ((actual_ele_0 * P1) ^ (P2 * actual_ele_1)) % pair_hash_table_size;
 			address = hash_record + hash_value * pair_hash_table_cell_size;
+
+		
 
 			for (unsigned int i = 0; i < hash_size_record[hash_value]; i += 2) {
 				if (address[i] == actual_ele_0 && address[i + 1] == actual_ele_1) {
@@ -8435,12 +8506,11 @@ void Collision::vertexTriangleCollisionTimePair(int start_pair_index,
 				}
 			}
 
+			//std::cout << " should be here ++ " << std::endl;
+
 			record_new_in_hash->emplace_back(hash_value);
 			record_new_in_hash->emplace_back(actual_ele_0);
 			record_new_in_hash->emplace_back(actual_ele_1);
-			//address[hash_size_record[hash_value]] = actual_ele_0;
-			//address[hash_size_record[hash_value] + 1] = actual_ele_1;
-			//hash_size_record[hash_value] += 2;
 			
 			record_index->emplace_back(pair[i + 1]);
 			record_index->emplace_back(pair[i]);
@@ -9671,7 +9741,6 @@ void Collision::collisionTimeWithPair(int thread_No)
 					&record_tv_collider_pair[thread_No], tv_collider_hash_size_record,
 					tv_collider_hash_record.data(), vertex_index_prefix_sum_obj_collider.data(), triangle_index_prefix_sum_obj.data(), &record_new_tv_c_in_hash[thread_No]
 					);
-
 			}
 			vertexTriangleCollisionTimePair(0, vertex_collider_triangle_obj_pair_index_start_per_thread[(thread_No << 1) + 3], collision_time,
 				triangle_indices.data(), vertex_for_render_collider.data(), vertex_collision_free.data(),

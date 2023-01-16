@@ -1424,4 +1424,8 @@ private:
 	void addPairToHashRecord(int start, int end, std::vector<unsigned int>* pair_index, std::atomic_uint* hash_size_record, unsigned int* hash_record);
 	void updateNewPairInHash(int thread_No, unsigned int* start_per_thread, std::vector<std::vector<unsigned int>>& add_pair_record, std::atomic_uint* num_record,
 		unsigned int* hash_record);
+
+
+	void testPrint();
+
 };

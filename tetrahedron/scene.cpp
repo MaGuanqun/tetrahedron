@@ -121,7 +121,7 @@ void Scene::saveParameter(std::vector<std::string>& path, std::vector<std::strin
 	unsigned int min_outer_itr = 1;
 	double displacement_standard = 1e-4;
 
-	double distance_record_as_collision = 1e-6;
+	double distance_record_as_collision = 0.0;
 
 
 	unsigned int max_outer_iteration_num=10;
@@ -952,7 +952,10 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 	//
 
 	//if (xpbd_ipc.e0_0_.size() > 3) {
-	//	draw_vertex.setVertex(xpbd_ipc.e0_0_, //
+	//std::vector<unsigned int> v;
+	//v.push_back(90);
+	//v.push_back(300);
+	//	draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[90].data(), //
 	//		0.002);
 	//	draw_vertex.draw(camera, glm::vec3(1.0, 0.0, 0.0));
 
@@ -971,7 +974,7 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 	//	
 	////}
 	//std::vector<unsigned int> indices;
-	//indices.push_back(452);
+	//indices.push_back(793);
 	//draw_triangle.drawTriangle(camera, object_shader_front, collider[0].mesh_struct.vertex_for_render,
 	//	collider[0].mesh_struct.triangle_indices, collider[0].mesh_struct.face_normal_for_render,
 	//	indices, glm::vec3(1.0, 0.0, 0.0));
@@ -1820,7 +1823,7 @@ void Scene::cursorMovement(Camera* camera, double* cursor_screen, double* force_
 {
 	camera->getCursorPosInSpace(cursor_pos_in_space, cursor_screen, object_position);
 	SUB(force_direction, cursor_pos_in_space, object_position);
-	force_coe *= 100.0;
+	force_coe *= 10000.0;
 	MULTI(force_direction, force_direction, force_coe);
 	double force_magnitude =sqrt(DOT(force_direction, force_direction));
 	if (force_magnitude > max_force_magnitude) {

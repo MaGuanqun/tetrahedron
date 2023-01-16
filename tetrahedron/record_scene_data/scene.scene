@@ -5,7 +5,7 @@ collider
 1
 .\model\U_simu.obj
 stiffness
-200 50000 0 0 0 0 
+20000 50000 0 0 0 0 
 100000 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
@@ -15,7 +15,7 @@ time_step
 cloth_density
 1
 tet_density
-1
+100
 velocity_damp
 0.995
 friction_coe
@@ -46,7 +46,7 @@ XPBD_IPC
 substep_num
 1
 out iteration_num
-100
+200
 inner iteration_num
 68
 sub_step_per_detection
@@ -60,8 +60,8 @@ min inner itr num
 min outer itr num
 2
 displacement standard
-0.0001
+0.005
 distance record as collision
-1e-07
+0.0
 energy converge standard
 1e-10

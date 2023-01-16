@@ -126,6 +126,8 @@ public:
 
 	void computePreviousColorInertialEnergy(int thread_No, unsigned int color_No);
 
+	void maxDisplacement(int thread_No, unsigned int color_No);
+
 	void  computeColorInertialEnergy(int thread_No);
 
 	void computeLastColorARAPEnergy(int thread_No);
@@ -211,15 +213,15 @@ private:
 
 
 	void solveVT_BlockPerThread(std::array<double, 3>** record_vertex_position, int** record_vertex_num, unsigned int* pair, unsigned int start, unsigned int end,
-		char* vt_hessian_record_index, bool only_solve_collision_pair);
+		char* vt_hessian_record_index, bool only_solve_collision_pair, int thread_No);
 
 	void solvecollider_BlockPerThread(std::array<double, 3>** record_vertex_position, int** record_vertex_num, std::vector<unsigned int>* pair,
-		bool only_solve_collision_pair, int type, int start, int end);
+		bool only_solve_collision_pair, int type, int start, int end, int thread_No);
 
 
 
 	void solveEE_BlockPerThread(std::array<double, 3>** record_vertex_position, int** record_vertex_num, unsigned int* pair, unsigned int start, unsigned int end,
-		char* ee_hessian_record_index_exist, bool only_solve_collision_pair);
+		char* ee_hessian_record_index_exist, bool only_solve_collision_pair, int thread_No);
 
 	void initialHessianMap();
 
@@ -548,7 +550,8 @@ private:
 		int* vertex_index_on_surface, std::unordered_map<std::array<int, 2>, double, pair_hash>& tet_hessian,
 		std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>& collision_hessian,
 		double* common_grad, std::array<double, 3>* record_vertex_position,
-		int* record_vertex_num, unsigned int prefix_sum_vetex_obj, double* floor_map);
+		int* record_vertex_num, unsigned int prefix_sum_vetex_obj, double* floor_map, double& max_dis,
+		std::array<double, 3>* collision_free_pos);
 
 
 
@@ -751,10 +754,10 @@ private:
 
 	void solveVT_Block(unsigned int vertex_obj_no, unsigned int vertex_index, unsigned int triangle_obj_No, unsigned int triangle_index,
 		double dt, std::array<double, 3>** record_vertex_position,
-		int** record_vertex_num, bool only_solve_collision_pair);
+		int** record_vertex_num, bool only_solve_collision_pair, int thread_No);
 
 	void solveCollisionWithColliderBlock(double dt, unsigned int obj_no, unsigned int index, int type, std::array<double, 3>** record_vertex_position,
-		int** record_vertex_num, bool only_solve_collision_pair);
+		int** record_vertex_num, bool only_solve_collision_pair, int thread_No);
 
 
 	void getVTCollisionHessainForPairFromRecord(MatrixXd& Hessian, VectorXd& grad,
@@ -799,7 +802,7 @@ private:
 	void solveEE_Block(unsigned int obj_No_0, unsigned int primitive_0_index, unsigned int obj_No_1, unsigned int primitive_1_index,
 		double dt,
 		std::array<double, 3>** record_vertex_position,
-		int** record_vertex_num, bool only_solve_collision_pair);
+		int** record_vertex_num, bool only_solve_collision_pair, int thread_No);
 
 	void getEEUnfixedPairIndex(int* unfixed_pair_vertex_index, int& unfixed_num, unsigned int obj_No_0,
 		unsigned int primitive_0_index, unsigned int obj_No_1, unsigned int primitive_1_index);
@@ -811,7 +814,7 @@ private:
 		std::array<double, 3>** record_vertex_position,
 		int** record_vertex_num, int* unfixed_pair_vertex_index, int unfixed_num, double* common_grad,
 		std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>& collision_hessian,
-		double* floor_map, bool only_solve_collision_pair);
+		double* floor_map, bool only_solve_collision_pair, double& max_dis);
 
 
 
@@ -837,7 +840,7 @@ private:
 	//}
 
 	std::vector<unsigned int> record_max_displace_vertex;
-	std::vector<double> record_max_displacement;
+	//std::vector<double> record_max_displacement;
 
 	std::vector<unsigned int>vertex_index_prefix_sum_obj;
 	std::vector<unsigned int>global_vertex_index_start_per_thread;
@@ -865,6 +868,15 @@ private:
 	void compareVector(std::vector<unsigned int>* a, std::vector<unsigned int>* b, int type);
 
 	int color_group_num;
+
+	std::vector<double>grad_max_store;
+
+	std::vector<double>max_dis_record;
+
+	double max_displacement;
+
+	double grad_max;
+
 };
 
 

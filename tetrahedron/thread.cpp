@@ -984,6 +984,9 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
     case PREVIOUS_COLOR_INVERSION_TEST:
         k = job([func, thread_id, para]() {func->computePreviousColorInversion(thread_id, para); });
         break;
+    case MAX_DISPLACEMENT_COLOR:
+        k = job([func, thread_id, para]() {func->maxDisplacement(thread_id, para); });
+        break;
     }
     return k;
 }
@@ -1014,6 +1017,9 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
         break;
     case WARM_START:
         k = job([func, thread_id]() {func->solveBlockForWarmStart(thread_id); });
+        break;
+    case GRAD_NORM:
+        k = job([func, thread_id]() {func->sumWithInertial(thread_id); });
         break;
     //case UPDATE_TET_HESSIAN:
     //    k = job([func, thread_id]() {func->tetHessian(thread_id); });
