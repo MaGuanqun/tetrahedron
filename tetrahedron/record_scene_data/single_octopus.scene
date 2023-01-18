@@ -6,7 +6,7 @@ collider
 .\model\tank.obj
 stiffness
 2e+04 50000 0 0 0 0 
-1e+05 20000 20000 20 0 0 0 0 
+2e+04 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
 0 
@@ -17,7 +17,7 @@ cloth_density
 tet_density
 100
 velocity_damp
-0.995
+0.99
 friction_coe
 0.9 0.8 0.9
 floor_dimension
@@ -46,21 +46,21 @@ XPBD_IPC
 substep_num
 1
 out iteration_num
-200
+300
 inner iteration_num
 64
 sub_step_per_detection
 1
 d_hat
-0.001
+0.01
 inner convergence rate
 0.001
 min inner itr num
 4
 min outer itr num
-3
+9
 displacement standard
-0.0002
+0.0001
 distance record as collision
 0.0
 energy converge standard

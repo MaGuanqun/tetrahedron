@@ -95,7 +95,7 @@ public:
 		MatrixXd& sys_matrix, double volume, VectorXd& grad);
 
 	bool computeBarrierVTGradientHessian(MatrixXd& Hessian, VectorXd& grad, double* p, double* t0,
-		double* t1, double* t2, double d_hat_2, int* vertex_in_pair, double  stiffness, bool compute_hessian);
+		double* t1, double* t2, double d_hat_2, int* vertex_in_pair, double  stiffness, bool compute_hessian, int type);
 
 	void computeVTBarrierGradientHessianTest(MatrixXd& Hessian_, VectorXd& grad_, double* p, double* t0, double* t1, double* t2,
 		double d_hat_2, int* triangle_vertex_order_in_system, double stiffness, int* record_vertex_in_pair, int record_vertex_in_use);
@@ -114,8 +114,10 @@ public:
 
 
 	bool computeBarrierEEGradientHessian(double* ea0, double* ea1, double* eb0, double* eb1, MatrixXd& h, VectorXd& g,
-		int* vertex_in_pair, double stiffness, double d_hat_2, double rest_length_0, double rest_length_1, bool compute_hessian);
+		int* vertex_in_pair, double stiffness, double d_hat_2, double rest_length_0, double rest_length_1, bool compute_hessian, bool is_collider);
 
+	bool computeBarrierEEGradientHessianTest(double* ea0, double* ea1, double* eb0, double* eb1, MatrixXd& h, VectorXd& g,
+		int* vertex_in_pair, double stiffness, double d_hat_2, double rest_length_0, double rest_length_1, bool compute_hessian);
 
 	void computeVTBarrierGradientHessianTest(MatrixXd& Hessian_, VectorXd& grad_, double* p, double* t0, double* t1, double* t2,
 		double d_hat_2, int* triangle_vertex_order_in_system, double stiffness, double& barrier);
@@ -140,7 +142,7 @@ private:
 
 	void 	setBarrierGHWithMollifier(double barrier_, MatrixXd& dis_h, VectorXd& dis_g,
 		double* ea0, double* ea1, double* eb0, double* eb1,double eps_x, 
-		double ee_cross_norm_2, double mollifier, double b_grad, double b_hessian, bool compute_hessian);
+		double ee_cross_norm_2, double mollifier, double b_grad, double b_hessian, bool compute_hessian, bool is_collider);
 
 	void setFourVertexHessianFromBarrierHessian(MatrixXd& Hessian_system, VectorXd& grad_system, MatrixXd& Hessian_, VectorXd& grad_,
 		int* vertex_in_pair, int vertex_in_use);

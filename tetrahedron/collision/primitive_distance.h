@@ -20,6 +20,26 @@ namespace CCD {
             T dev = MMT[0] * MMT[1] - MMT[2] * MMT[2];
             result[0] = (MMT[1] * mVec[0] - MMT[2] * mVec[1]) / dev;
             result[1] = (MMT[0] * mVec[1] - MMT[2] * mVec[0]) / dev;
+
+            if (dev == 0.0) {
+                if (MMT[0] != 0.0) {
+                    result[1] = 0;
+                    result[0] = mVec[0]/MMT[0];
+                }
+                else if(MMT[1] != 0.0) {
+                    result[0] = 0;
+                    result[1] = mVec[1] / MMT[1];
+                }
+                else if (MMT[2] != 0.0)
+                {
+                    result[1] = 0;
+                    result[0] = mVec[1] / MMT[2];
+                }
+                else {
+                    result[1] = 0;
+                    result[0] = 0;
+                }
+            }
         }
 
 

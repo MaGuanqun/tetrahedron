@@ -199,6 +199,9 @@ namespace FEM {
 		}
 
 		VectorXd fixed_eigen_value = svd.eigenvalues();
+
+		MatrixXd k = svd.eigenvectors() * fixed_eigen_value.asDiagonal() * svd.eigenvectors().transpose();
+
 		for (unsigned int i = 0; i < A.cols(); ++i) {
 			if (fixed_eigen_value.data()[i] < 0) {
 				fixed_eigen_value.data()[i] = 0;

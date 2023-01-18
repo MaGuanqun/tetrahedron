@@ -343,11 +343,13 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 		case XPBD_IPC_:
 			control_parameter[USE_XPBD_IPC] = true;
 			xpbd_ipc.collision.d_hat = d_hat;
+			xpbd_ipc.collision.d_hat_2 = d_hat * d_hat;
 			xpbd_ipc.energy_converge_ratio = local_global_conv_rate;
 			xpbd_ipc.min_inner_iteration = min_inner_itr;
 			xpbd_ipc.min_outer_iteration = min_outer_itr;
 			xpbd_ipc.max_move_standard = displacement_standard;
 			xpbd_ipc.collision.tolerance = distance_record_as_collision;
+
 			xpbd_ipc.outer_max_iteration_number = max_outer_itr_num;
 			xpbd_ipc.max_iteration_number = max_inner_itr_num;
 			xpbd_ipc.energy_converge_standard = energy_converge_standard;
@@ -944,7 +946,7 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 
 
 
-	//draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[4048].data(),//collision.draw_target_position,
+	//draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[1153].data(),//collision.draw_target_position,
 	//	0.002);
 	////////draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[project_dynamic.collision.chosen_show_vertex].data(),
 	////////	0.005);
@@ -952,12 +954,16 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 	//
 
 	//if (xpbd_ipc.e0_0_.size() > 3) {
-	//std::vector<unsigned int> v;
-	//v.push_back(90);
-	//v.push_back(300);
-	//	draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[90].data(), //
-	//		0.002);
-	//	draw_vertex.draw(camera, glm::vec3(1.0, 0.0, 0.0));
+	//std::vector<int> v;
+	//for (auto i = xpbd_ipc.collision.edge_index_collide_collider_sum.begin()+1;
+	//	i < xpbd_ipc.collision.edge_index_collide_collider_sum.end(); i+=2) {
+	//	v.push_back(tetrahedron[0].mesh_struct.edge_vertices[(*i)*2]);
+	//	v.push_back(tetrahedron[0].mesh_struct.edge_vertices[(*i)*2+1]);
+
+	//}
+	
+		draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[2488].data(), 0.002);
+		draw_vertex.draw(camera, glm::vec3(1.0, 0.0, 0.0));
 
 	//	draw_vertex.setVertex(xpbd_ipc.e0_1_, //
 	//		0.002);
@@ -974,7 +980,7 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 	//	
 	////}
 	//std::vector<unsigned int> indices;
-	//indices.push_back(793);
+	//indices.push_back(817);
 	//draw_triangle.drawTriangle(camera, object_shader_front, collider[0].mesh_struct.vertex_for_render,
 	//	collider[0].mesh_struct.triangle_indices, collider[0].mesh_struct.face_normal_for_render,
 	//	indices, glm::vec3(1.0, 0.0, 0.0));

@@ -877,6 +877,8 @@ private:
 
 	double grad_max;
 
+	std::vector<double>dis_record;
+
 };
 
 
