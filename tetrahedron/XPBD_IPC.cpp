@@ -699,16 +699,17 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 		thread->assignTask(this, COLLISION_FREE_POSITION_);
 	}
 	updateCollisionFreePosition();
-	if (perform_collision) {
-		warmStart();
-	}
+	//if (perform_collision) {
+	//	warmStart();
+	//}
 
 	//std::cout << "time stamp " << *time_stamp << " outer itr num " << outer_itr_num << " " << inner_iteration_number << std::endl;
 	//max_displacement = 0.0;
 
 	while (!convergeCondition(outer_itr_num)) {
 		if (outer_itr_num > 0) {
-			updateCollisionFreePosition();		}
+			updateCollisionFreePosition();		
+		}
 		//for (int i = 0; i < color_group_num; ++i) {
 			solveNewtonCD_tetBlock();
 			inner_iteration_number++;
@@ -5573,9 +5574,23 @@ void XPBD_IPC::solveBlockWithPair(double dt,
 	LLT <MatrixXd> linear(Hessian);
 	VectorXd result = linear.solve(grad);
 
+	//if (!only_solve_collision_pair) {
+	//	for (int j = 0; j < result.size(); ++j) {
+	//		if (abs(result[j]) > 0.3) {
+	//			std::cout << result.transpose() << std::endl;
+	//			std::cout << "block move so large " << inner_iteration_number << std::endl;
+	//			for (int i = 0; i < unfixed_num; i += 2) {
+	//				int vertex_index = unfixed_pair_vertex_index[i + 1];
+	//				int obj_index_ = unfixed_pair_vertex_index[i];
+	//				std::cout << vertex_index << std::endl;
+	//				std::cout << vertex_position[obj_index_][vertex_index][0] - sn[obj_index_][vertex_index][0] << " " << vertex_position[obj_index_][vertex_index][1] - sn[obj_index_][vertex_index][1] << " " <<
+	//					vertex_position[obj_index_][vertex_index][2] - sn[obj_index_][vertex_index][2] << std::endl;
 
-
-
+	//			}
+	//			break;
+	//		}
+	//	}
+	//}
 	//if (unfixed_num == 4) {
 	//	if (unfixed_pair_vertex_index[1] == 1973 || unfixed_pair_vertex_index[3] == 1973) {
 	//		std::cout << std::setprecision(12) << mass_dt_2<<" "<< sn[obj_index_][ unfixed_pair_vertex_index[1]][0]<<" "<< sn[obj_index_][ unfixed_pair_vertex_index[1]][1]<<" "<< sn[obj_index_][ unfixed_pair_vertex_index[1]][2] << std::endl;
@@ -6251,6 +6266,20 @@ void XPBD_IPC::solveTetBlockCollision(std::array<double, 3>* vertex_position, do
 	LLT <MatrixXd> linear(Hessian);
 	VectorXd result = linear.solve(grad);
 
+
+	//for (int j = 0; j < result.size(); ++j) {
+	//	if (abs(result[j]) > 0.3) {
+	//		std::cout << result.transpose() << std::endl;
+	//		std::cout << "move so large " << inner_iteration_number << " " << tet_index << " " << tet_actual_unfixed_vertex_indices[0] << " " << tet_actual_unfixed_vertex_indices[1] << " " << tet_actual_unfixed_vertex_indices[2] << " " << tet_actual_unfixed_vertex_indices[3] << std::endl;
+	//		for (int i = 0; i < unfixed_vertex_num; ++i) {
+	//			vertex_index = tet_actual_unfixed_vertex_indices[i];
+	//			std::cout << vertex_position[vertex_index][0] - sn[vertex_index][0] << " " << vertex_position[vertex_index][1] - sn[vertex_index][1] << " " <<
+	//				vertex_position[vertex_index][2] - sn[vertex_index][2] << std::endl;
+	//		}
+	//		break;
+	//	}
+	//}
+
 	
 	double dis;
 	
@@ -6512,7 +6541,7 @@ void XPBD_IPC::solveTetBlock(std::array<double, 3>* vertex_position, double stif
 
 	LLT <MatrixXd> linear(Hessian);
 	VectorXd result = linear.solve(grad);
-	
+
 	//double energy_initial = 1e-15;
 
 	//if (perform_collision) {
@@ -6521,20 +6550,18 @@ void XPBD_IPC::solveTetBlock(std::array<double, 3>* vertex_position, double stif
 	//		collision.indicate_vertex_collide_with_floor[obj_No].data(), collision.record_vertex_collide_with_floor_d_hat[obj_No].data());
 	//}
 
-	for (int j = 0; j < result.size(); ++j) {
-		if (abs(result[j]) > 0.3) {
-			std::cout << result.transpose() << std::endl;
-			std::cout << "move so large " << inner_iteration_number << " " << tet_index << " " << tet_actual_unfixed_vertex_indices[0] << " " << tet_actual_unfixed_vertex_indices[1] << " " << tet_actual_unfixed_vertex_indices[2] << " " << tet_actual_unfixed_vertex_indices[3] << std::endl;
-			for (int i = 0; i < unfixed_vertex_num; ++i) {
-				vertex_index = tet_actual_unfixed_vertex_indices[i];
-				std::cout << vertex_position[vertex_index][0] - sn[vertex_index][0] << " " << vertex_position[vertex_index][1] - sn[vertex_index][1] << " " <<
-					vertex_position[vertex_index][2] - sn[vertex_index][2] << std::endl;
-
-
-			}
-			break;
-		}
-	}
+	//for (int j = 0; j < result.size(); ++j) {
+	//	if (abs(result[j]) > 0.3) {
+	//		std::cout << result.transpose() << std::endl;
+	//		std::cout << "move so large " << inner_iteration_number << " " << tet_index << " " << tet_actual_unfixed_vertex_indices[0] << " " << tet_actual_unfixed_vertex_indices[1] << " " << tet_actual_unfixed_vertex_indices[2] << " " << tet_actual_unfixed_vertex_indices[3] << std::endl;
+	//		for (int i = 0; i < unfixed_vertex_num; ++i) {
+	//			vertex_index = tet_actual_unfixed_vertex_indices[i];
+	//			std::cout << vertex_position[vertex_index][0] - sn[vertex_index][0] << " " << vertex_position[vertex_index][1] - sn[vertex_index][1] << " " <<
+	//				vertex_position[vertex_index][2] - sn[vertex_index][2] << std::endl;
+	//		}
+	//		break;
+	//	}
+	//}
 
 	for (int i = 0; i < unfixed_vertex_num; ++i) {
 		vertex_index = tet_actual_unfixed_vertex_indices[i];

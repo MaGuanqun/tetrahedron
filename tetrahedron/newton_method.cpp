@@ -19,6 +19,26 @@ NewtonMethod::NewtonMethod()
 	//damp_coe = 0.99;
 	beta = 0.25;
 	gamma = 0.5;
+
+	std::vector<Eigen::Triplet<double>> triplet;
+
+	triplet.emplace_back(1, 1, 10);
+	triplet.emplace_back(2, 3, 11);
+
+	Eigen::SparseMatrix<double> A(4, 4);
+	A.setFromTriplets(triplet.begin(), triplet.end());
+	std::cout << A.innerIndexPtr()[0] << std::endl; // prints 0
+	std::cout << A.innerIndexPtr()[1] << std::endl; // prints 2
+	std::cout << std::endl;
+	std::cout << A.outerIndexPtr()[0] << std::endl; // prints 0
+	std::cout << A.outerIndexPtr()[1] << std::endl; // prints 2, but I thought it should print 0
+	std::cout << std::endl;
+	std::cout << A.valuePtr()[0] << std::endl; // prints 10
+	std::cout << A.valuePtr()[1] << std::endl; // prints 11
+	std::cout << A.outerSize() << std::endl;
+
+
+
 }
 
 

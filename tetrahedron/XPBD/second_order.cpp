@@ -2261,7 +2261,7 @@ bool SecondOrderConstraint::computeBarrierEEGradientHessianTest(double* ea0, dou
 	double ee_cross_norm_2;
 	bool need_mollifier = CCD::internal::edgeEdgeMollifier(ea0, ea1, eb0, eb1, eps_x, mollifier, ee_cross_norm_2);
 
-	std::cout << CCD::internal::edgeEdgeDistanceType(ea0, ea1, eb0, eb1) << std::endl;
+	std::cout<<" type " << CCD::internal::edgeEdgeDistanceType(ea0, ea1, eb0, eb1) << std::endl;
 
 	switch (CCD::internal::edgeEdgeDistanceType(ea0, ea1, eb0, eb1)) {
 	case 0:
@@ -2442,7 +2442,11 @@ bool SecondOrderConstraint::computeBarrierEEGradientHessianTest(double* ea0, dou
 		else {
 			if (compute_hessian) {
 				h = (b_hessian * g * g.transpose() + b_grad * h).eval();
-				FEM::SPDprojection(h);
+				MatrixXd temp = h.block<3, 3>(0, 0);				
+				std::cout << "ori " << std::endl;
+				std::cout << h << std::endl;
+				FEM::SPDprojection(temp);
+				h.block<3, 3>(0, 0)=temp;
 			}
 			g *= b_grad;
 

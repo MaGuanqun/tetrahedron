@@ -138,5 +138,5 @@ enum NewtonMethodFunc {
 };
 
 enum MethodFunc {
-    PD_, XPBD_, NEWTON_, XPBD_SECOND_ORDER_LARGE_,XPBD_IPC_
+    PD_, XPBD_, NEWTON_, XPBD_SECOND_ORDER_LARGE_,XPBD_IPC_, IPC_
 };

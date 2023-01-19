@@ -195,7 +195,7 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	//record_EE_collision_time.resize(thread_num);
 	//record_VTCollider_collision_time.resize(thread_num);
 
-	if (use_method == XPBD_IPC_)
+	if (use_method == XPBD_IPC_ || use_method == IPC_)
 	{
 			//resizeFloorCollisionHessianRecord();
 			//initialPairCompress();
@@ -4450,20 +4450,22 @@ void Collision::computeEEHessian(int start, int end, unsigned int* pair, double*
 					setHessian(hessian_record_index, vertex_index_in_sum, Hessian.data(), grad.data(), hessian_record + (i >> 2) * 36, grad_record, 6, not_collider,
 						hessian_record_exist_ + (i >> 2) * 3, 0);
 
-					//if (edge_0_vertex[0] == 1973 || edge_0_vertex[1] == 1973) {
+					//if ((edge_0_vertex[0] == 42 && edge_0_vertex[1] == 51) || (edge_0_vertex[0] == 51 && edge_0_vertex[1] == 42)) {
 					//	std::cout << "===" << std::endl;
 					//	std::cout << grad.transpose() << std::endl;
 					//	std::cout << Hessian << std::endl;
-						//std::cout << pair[i + 1] << " " << pair[i + 3]<<" "<< d_hat[i >> 2] << std::endl;
-						//std::cout << edge_0_vertex[0] << " " << edge_0_vertex[1]<<" "<<i/4 << std::endl;
-						//MatrixXd mat;
-						//VectorXd grad_;
-						//second_order_constraint.computeBarrierEEGradientHessianTest(vertex_position[pair[i]][edge_0_vertex[0]].data(),
-						//	vertex_position[pair[i]][edge_0_vertex[1]].data(),
-						//	vertex_position_collider[obj_2][edge_1_vertex[0]].data(), vertex_position_collider[obj_2][edge_1_vertex[1]].data(), mat, grad_,
-						//	hessian_record_index, stiffness, d_hat[i >> 2], rest_edge_length[pair[i]][pair[i + 1]],
-						//	rest_edge_length_collider[obj_2][pair[i + 3]], true);
+					//	std::cout << pair[i + 1] << " " << pair[i + 3]<<" "<< d_hat[i >> 2] << std::endl;
+					//	std::cout << edge_0_vertex[0] << " " << edge_0_vertex[1]<<" "<<i/4 << std::endl;
+					//	MatrixXd mat;
+					//	VectorXd grad_;
+					//	second_order_constraint.computeBarrierEEGradientHessianTest(vertex_position[pair[i]][edge_0_vertex[0]].data(),
+					//		vertex_position[pair[i]][edge_0_vertex[1]].data(),
+					//		vertex_position_collider[obj_2][edge_1_vertex[0]].data(), vertex_position_collider[obj_2][edge_1_vertex[1]].data(), mat, grad_,
+					//		hessian_record_index, stiffness, d_hat[i >> 2], rest_edge_length[pair[i]][pair[i + 1]],
+					//		rest_edge_length_collider[obj_2][pair[i + 3]], true);
 						//std::cout << hessian_record_index[0] << " " << hessian_record_index[1] << " " << hessian_record_index[2] << " " << hessian_record_index[3] << " " << hessian_record_index[4] << std::endl;
+						//std::cout << Hessian << std::endl;
+						//std::cout << Hessian - mat<<std::endl;
 						//std::cout << grad_ << std::endl;
 						//std::cout << grad-grad_ << std::endl;
 						//double* re = hessian_record + (i >> 2) * 36;
