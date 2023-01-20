@@ -102,6 +102,8 @@ public:
 
 	std::vector<std::array<double, 3>>vertex_trace;
 	void updatePositionAverage(int thread_No);
+	void updatePositionAverageExceptThisColor(int thread_No);
+
 	void lastColorVertexBelongToGroup(int thread_No);
 	//std::vector<std::array<double, 3>> e0_0;
 	//std::vector<std::array<double, 3>> e0_1;
@@ -165,7 +167,7 @@ private:
 
 	void previousColorCollisionInversionTime(unsigned int color_No);
 
-	void computeCurrentEnergy();
+	double computeCurrentEnergy();
 
 	double computeWarmStartEnergy();
 
@@ -538,7 +540,8 @@ private:
 		std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>& collision_hessian,
 		double* common_grad, std::vector<unsigned int>* triangle_of_a_tet,
 		std::vector<unsigned int>* edge_of_a_tet, int* vertex_index_on_surface, unsigned int prefix_sum_vetex_obj,
-		double* floor_map, std::array<double, 3>* record_ori_pos, char* indicate_collide_with_floor, int color_No);
+		double* floor_map, std::array<double, 3>* record_ori_pos, char* indicate_collide_with_floor, int color_No,
+		double& max_dis, std::array<double, 3>* collision_free_pos);
 
 	void solveTetBlockCollision(std::array<double, 3>* vertex_position, double stiffness, double dt, std::array<int, 4>* indices,
 		double* mass,
@@ -847,7 +850,7 @@ private:
 	std::vector<double>energy_per_thread;
 	std::vector< std::vector<std::vector<unsigned int>>*> vertex_index_of_a_tet_color_group;
 
-	void lineSearchLastColor();
+	void lineSearchColor(unsigned int color_No, double ori_energy);
 	void lineSearchFirstColor(unsigned int color_No, double ori_energy);
 
 	unsigned int inner_itr_num_standard;

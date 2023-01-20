@@ -362,10 +362,10 @@ public:
 
 	void computeHessian(int color_No);
 
-	void computeHessianPerThread(unsigned int color_No, int thread_No);
+	void computeHessianPerThread(int thread_No);
 	void computeGradientPerThread(int thread_No);
 
-	void sumAllCollisionHessian(int color_No, int thread_No);
+	void sumAllCollisionHessian(int thread_No);
 
 
 
@@ -666,7 +666,7 @@ private:
 	std::atomic_uint* ee_collider_hash_size_record;
 	std::vector<unsigned int> ee_collider_hash_record;
 
-	void computeLastColorHessianPerThread(int color_No, int thread_No);
+	void computeLastColorHessianPerThread(int thread_No);
 
 	void computeHessianPreviousThread(int color_No, int thread_No);
 

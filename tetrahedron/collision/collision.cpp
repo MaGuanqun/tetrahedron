@@ -2913,7 +2913,7 @@ void Collision::updateVertexRecordForColor(int thread_No)
 }
 
 
-//COLLISION_FREE_POSITION_LAST_COLOR
+//COLLISION_FREE_POSITION_ALL
 void Collision::computeCollisionFreePositionForColor(int thread_No)
 {
 	unsigned int index_end;
@@ -2922,21 +2922,15 @@ void Collision::computeCollisionFreePositionForColor(int thread_No)
 	std::array<double, 3>* q_pre;
 	std::array<double, 3>* q_end;
 
-
-	int* record_position_num;
-
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		index_end = all_vertex_index_start_per_thread[i][thread_No + 1];
 		q_end = vertex_position[i];
 		q_pre = vertex_record_for_this_color[i];
-		record_position_num = indicate_if_involved_in_last_color[i][0].data();
+
 		for (unsigned int j = all_vertex_index_start_per_thread[i][thread_No]; j < index_end; ++j) {
-			if (record_position_num[j]) {
-				q_end[j][0] = q_pre[j][0] + collision_time * (q_end[j][0] - q_pre[j][0]);
-				q_end[j][1] = q_pre[j][1] + collision_time * (q_end[j][1] - q_pre[j][1]);
-				q_end[j][2] = q_pre[j][2] + collision_time * (q_end[j][2] - q_pre[j][2]);
-				//memcpy(q_pre[j].data(), q_end[j].data(), 24);
-			}
+			q_end[j][0] = q_pre[j][0] + collision_time * (q_end[j][0] - q_pre[j][0]);
+			q_end[j][1] = q_pre[j][1] + collision_time * (q_end[j][1] - q_pre[j][1]);
+			q_end[j][2] = q_pre[j][2] + collision_time * (q_end[j][2] - q_pre[j][2]);			
 		}
 	}
 }
@@ -4025,10 +4019,9 @@ void Collision::computeHessian(int color_No)
 	}
 
 
-	thread->assignTask(this, UPDATE_COLLISION_HESSIAN_COLOR, color_No);
-	//computeHessianPerThread(color_No);
+	thread->assignTask(this, UPDATE_COLLISION_HESSIAN_COLOR);
 
-	thread->assignTask(this, SUM_COLLISION_HESSIAN, color_No);
+	thread->assignTask(this, SUM_COLLISION_HESSIAN);
 	//sumAllCollisionHessian(color_No);
 
 	//std::cout << " if_used.size() " << ee_pair_compressed_record.size()/5<<" "<< if_used.size()/5 << std::endl;
@@ -4067,7 +4060,7 @@ void Collision::sumHessian(char* hessian_index_exist, double* hessian_sum, doubl
 }
 
 //SUM_COLLISION_HESSIAN
-void Collision::sumAllCollisionHessian(int color_No, int thread_No)
+void Collision::sumAllCollisionHessian(int thread_No)
 {
 	auto start = record_pair_key_value.begin()+(pair_index_start_per_thread[thread_No] << 1);
 	auto end = record_pair_key_value.begin() + (pair_index_start_per_thread[thread_No + 1] << 1);
@@ -5026,7 +5019,7 @@ void Collision::computeGradientPerThread(int thread_No)
 
 
 
-void Collision::computeLastColorHessianPerThread(int color_No, int thread_No)
+void Collision::computeLastColorHessianPerThread(int thread_No)
 {
 	double stiffness = 0.0;
 	if (!tetrahedron->empty()) {
@@ -5089,16 +5082,16 @@ void Collision::computeLastColorHessianPerThread(int color_No, int thread_No)
 }
 
 //UPDATE_COLLISION_HESSIAN_COLOR
-void Collision::computeHessianPerThread(unsigned int color_No, int thread_No)
+void Collision::computeHessianPerThread(int thread_No)
 {
-	int color_group_index = 0;
-	color_group_index = *inner_iteration_number % tet_color_groups[cloth->size()]->size();
-	if (color_No < tet_color_groups[cloth->size()]->data()[color_group_index].size() - 1) {
-		computeHessianPreviousThread(color_No,thread_No);
-	}
-	else {
-		computeLastColorHessianPerThread(color_No,thread_No);
-	}
+	//int color_group_index = 0;
+	//color_group_index = *inner_iteration_number % tet_color_groups[cloth->size()]->size();
+	//if (color_No < tet_color_groups[cloth->size()]->data()[color_group_index].size() - 1) {
+	//	computeHessianPreviousThread(color_No,thread_No);
+	//}
+	//else {
+		computeLastColorHessianPerThread(thread_No);
+	//}
 
 }
 

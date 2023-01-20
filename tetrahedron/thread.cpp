@@ -421,18 +421,12 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
 {
     job k;
     switch (function_type)
-    {
-    case UPDATE_COLLISION_HESSIAN_COLOR:
-        k = job([func, thread_id, para]() {func->computeHessianPerThread(para,thread_id); });
-        break;      
+    {  
     case COLOR_COLLISION_TIME:
         k = job([func, thread_id, para]() {func->colorCollisionTime(thread_id, para); });
         break;
     case UPDATE_COLOR_POSITION:
         k = job([func, thread_id, para]() {func->updatePositionColor(thread_id, para); });
-        break;
-    case SUM_COLLISION_HESSIAN:
-        k = job([func, thread_id, para]() {func->sumAllCollisionHessian(para, thread_id); });
         break;
     case CLOSE_PAIR_COLLISION_TIME:
         k = job([func, thread_id, para]() {func->collisionTimeAllClosePair(thread_id, para); });
@@ -474,6 +468,12 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
         break;
     case UPDATE_NEW_PAIR_IN_HASH:
         k = job([func, thread_id]() {func->updateNewPairInHash(thread_id); });
+        break;
+    case UPDATE_COLLISION_HESSIAN_COLOR:
+        k = job([func, thread_id]() {func->computeHessianPerThread(thread_id); });
+        break;
+    case SUM_COLLISION_HESSIAN:
+        k = job([func, thread_id]() {func->sumAllCollisionHessian(thread_id); });
         break;
     case COLLISION_GRAD:
         k = job([func, thread_id]() {func->computeGradientPerThread(thread_id); });
@@ -532,7 +532,7 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     //case RECORD_TRIANGLE_HAS_COLLISION_PAIR:
     //    k = job([func, thread_id]() {func->recordTriangleHasTVPair(thread_id); });
     //    break;
-    case COLLISION_FREE_POSITION_LAST_COLOR:
+    case COLLISION_FREE_POSITION_ALL:
         k = job([func, thread_id]() {func->computeCollisionFreePositionForColor(thread_id); });
         break;
     case FIND_CLOSE_PAIR:
@@ -1027,6 +1027,9 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
     case UPDATE_POSITION_AVERAGE:
         k = job([func, thread_id]() {func->updatePositionAverage(thread_id); });
        break;
+    case UPDATE_POSITION_AVERAGE_EXCEPT_THIS_COLOR:
+        k = job([func, thread_id]() {func->updatePositionAverageExceptThisColor(thread_id); });
+        break;       
     case UPDATE_LAST_COLOR_VERTEX_BELONG:
         k = job([func, thread_id]() {func->lastColorVertexBelongToGroup(thread_id); });
         break;

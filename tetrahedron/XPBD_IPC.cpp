@@ -481,8 +481,8 @@ void XPBD_IPC::initalARAPHessianStorages()
 	//store_tet_arap_hessian.resize(16 * prefix_sum_of_every_tet_index[tetrahedron->size()],0.0);
 	//store_tet_arap_grad.resize(12 * prefix_sum_of_every_tet_index[tetrahedron->size()],0.0);
 
-	is_tet_arap_grad_compute = new std::atomic_flag[prefix_sum_of_every_tet_index[tetrahedron->size()]];
-	memset(is_tet_arap_grad_compute, 0, prefix_sum_of_every_tet_index[tetrahedron->size()]<<2);
+	//is_tet_arap_grad_compute = new std::atomic_flag[prefix_sum_of_every_tet_index[tetrahedron->size()]];
+	//memset(is_tet_arap_grad_compute, 0, prefix_sum_of_every_tet_index[tetrahedron->size()]<<2);
 
 	max_tet_size_of_a_color_group = prefix_sum_of_every_tet_index[tetrahedron->size()];
 	//auto t0 = std::chrono::system_clock::now();
@@ -699,9 +699,9 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 		thread->assignTask(this, COLLISION_FREE_POSITION_);
 	}
 	updateCollisionFreePosition();
-	//if (perform_collision) {
-	//	warmStart();
-	//}
+	if (perform_collision) {
+		warmStart();
+	}
 
 	//std::cout << "time stamp " << *time_stamp << " outer itr num " << outer_itr_num << " " << inner_iteration_number << std::endl;
 	//max_displacement = 0.0;
@@ -1215,7 +1215,7 @@ void XPBD_IPC::tetGrad(int thread_No)
 	double* grad_address;
 
 	double* com_grad = common_grad[thread_No].data();
-	unsigned int tet_prefix_sum_start;
+
 
 	int start, end;
 
@@ -1227,7 +1227,6 @@ void XPBD_IPC::tetGrad(int thread_No)
 		A = tetrahedron->data()[i].mesh_struct.A.data();
 		volume = tet_volume[i + cloth->size()];
 		tet_indices_ = tet_indices[i + cloth->size()];
-		tet_prefix_sum_start = prefix_sum_of_every_tet_index[i];
 		start = tet_index_begin_per_thread[i + cloth->size()][thread_No];
 		end = tet_index_begin_per_thread[i + cloth->size()][thread_No + 1];
 		for (int j = start; j < end; ++j)
@@ -1676,9 +1675,9 @@ double XPBD_IPC::computeWarmStartEnergy()
 }
 
 
-void XPBD_IPC::computeCurrentEnergy()
+double XPBD_IPC::computeCurrentEnergy()
 {
-	energy = 1e-15;
+	double energy = 0;
 	double inertial_energy = computeInertialEnergy();
 	energy += inertial_energy;
 	double ARAP_energy = computeCurrentARAPEnergy();
@@ -1688,6 +1687,7 @@ void XPBD_IPC::computeCurrentEnergy()
 		barrier_energy = computeBarrierEnergy();
 		energy += barrier_energy;		
 	}
+	return energy;
 }
 
 void XPBD_IPC::firstNewtonCD()
@@ -2458,40 +2458,33 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 	memset(max_dis_record.data(), 0, 8 * max_dis_record.size());
 	for (unsigned int i = 0; i < max_tet_color_num-1; ++i) {		//
 		initialRecordHessian();
-		//update shared tet, collision hessian 
-		//tetGradForColor(i);
 		if (perform_collision) {
 			collision.computeHessian(i);
-			//collision_compare.computeHessian(i);
-			//compareIfRecordHessianIsRight(i);
-		}
-		thread->assignTask(this, UPDATE_TET_GRAD_SHARED, i);
+		}		
+		thread->assignTask(this, TET_GRAD);
 		thread->assignTask(this, SUM_ALL_GRAD);		
-		ori_energy = computePreviousColorEnergy(i);
+		ori_energy = computeCurrentEnergy();
+		initialRecordPositionForThread();
 		thread->assignTask(this, SOLVE_TET_BLOCK, i);	
-
-		thread->assignTask(this, MAX_DISPLACEMENT_COLOR, i);	
-		lineSearchFirstColor(i, ori_energy);
-
-
-
+		for (int i = 0; i < total_thread_num; ++i) {
+			if (max_displacement < max_dis_record[i]) {
+				max_displacement = max_dis_record[i];
+			}
+		}
+		thread->assignTask(this, UPDATE_POSITION_AVERAGE_EXCEPT_THIS_COLOR);		
+		lineSearchColor(i, ori_energy);
 	}
 
 	//testPrintOut();
 	initialRecordHessian();
-	memset(is_tet_arap_grad_compute, 0, prefix_sum_of_every_tet_index[tetrahedron->size()]<<2);
-	
+	//memset(is_tet_arap_grad_compute, 0, prefix_sum_of_every_tet_index[tetrahedron->size()]<<2);	
 	//tetGradForColor(max_tet_color_num-1);
 	if (perform_collision) {
-		//thread->assignTask(this, UPDATE_TET_GRAD_SHARED_COLLISION, max_tet_color_num - 1);
-		//thread->assignTask(this, UPDATE_TET_GRAD_SHARED_COLLISION_NEIGHBOR, max_tet_color_num - 1);
-		//tetGradForColorCollisionNeighbor(max_tet_color_num - 1);
 		collision.computeHessian(max_tet_color_num - 1);
 		//collision_compare.computeHessian(max_tet_color_num - 1);
-		compareIfRecordHessianIsRight(-1);
+		//compareIfRecordHessianIsRight(-1);
 	}
-	thread->assignTask(this, UPDATE_TET_GRAD_SHARED, max_tet_color_num - 1);
-	thread->assignTask(this, UPDATE_TET_GRAD_SHARED_COLLISION_NEIGHBOR, max_tet_color_num - 1);
+	thread->assignTask(this, TET_GRAD);
 	thread->assignTask(this, SUM_ALL_GRAD);
 
 	initialRecordPositionForThread();
@@ -2504,17 +2497,9 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 			max_displacement = max_dis_record[i];
 		}
 	}
-
-	lineSearchLastColor();
-
-	// 
-	//for (int i = 0; i < time.size(); ++i) {
-	//	std::cout << time[i] << " ";
-	//}
-	//std::cout << std::endl;
-
-	//system("pause");
-	//newtonCDTetBlockAGroupTest();
+	ori_energy = computeCurrentEnergy();
+	thread->assignTask(this, UPDATE_POSITION_AVERAGE);
+	lineSearchColor(max_tet_color_num - 1,ori_energy);
 
 }
 
@@ -2566,26 +2551,17 @@ void XPBD_IPC::lineSearchFirstColor(unsigned int color_No, double ori_energy)
 	//collision.upodateRecordPositionFirstColor(color_No);
 }
 
-void XPBD_IPC::lineSearchLastColor()
+void XPBD_IPC::lineSearchColor(unsigned int color_No, double ori_energy)
 {
-	double ori_energy = 0.0, current_energy = 0.0;
+	double current_energy = 0.0;
 
-	ori_energy = 0.0, current_energy = 0.0;
-	thread->assignTask(this, UPDATE_LAST_COLOR_VERTEX_BELONG);
-	if (perform_collision) {
-		ori_energy = computeLastColorEnergy();
-	}
-	thread->assignTask(this, UPDATE_POSITION_AVERAGE);
-
-
+	current_energy = 0.0;
 
 	if (perform_collision) {
-		//if (collision.collision_time > 0.0) {
+
 		allPairCollisionInversionTime();
 
-		//std::cout << "last color collision time " << collision.collision_time << std::endl;
-
-		current_energy = computeLastColorEnergy();
+		current_energy = computeCurrentEnergy();
 		if (current_energy > energy_converge_standard) {
 			double record_collision_time = collision.collision_time;
 			collision.collision_time = 0.5;
@@ -2594,16 +2570,14 @@ void XPBD_IPC::lineSearchLastColor()
 			while (current_energy > ori_energy)
 			{
 				record_collision_time *= 0.5;
-				thread->assignTask(&collision, COLLISION_FREE_POSITION_LAST_COLOR);
+				thread->assignTask(&collision, COLLISION_FREE_POSITION_ALL);
 				if (record_collision_time < 1e-5) {
-					std::cout << "last color record_collision_time is too small " << ori_energy << " " << current_energy << std::endl;
-
+					std::cout << "record_collision_time is too small "<<color_No<<" " << ori_energy << " " << current_energy << std::endl;
 					//collision.collision_time = 0.0;
 					//thread->assignTask(&collision, COLLISION_FREE_POSITION_LAST_COLOR);
-
 					break;
 				}
-				current_energy = computeLastColorEnergy();
+				current_energy = computeCurrentEnergy();
 			}
 			//std::cout << "final color actual collision time " << record_collision_time << std::endl;
 		}		
@@ -2611,7 +2585,9 @@ void XPBD_IPC::lineSearchLastColor()
 		//	std::cout << "final color actual collision time " << collision.collision_time << std::endl;
 		//}
 		//update record position
-		thread->assignTask(&collision, UPDATE_RECORD_VERTEX_POSITION);
+		for (unsigned int i = 0; i < total_obj_num; ++i) {
+			memcpy(this->record_vertex_position[i][0].data(), vertex_position[i][0].data(), this->record_vertex_position[i].size() * 24);
+		}
 		//}	
 	}
 }
@@ -2663,6 +2639,47 @@ void XPBD_IPC::lastColorVertexBelongToGroup(int thread_No)
 				if (record_position_num[k][j]) {
 					belong[k] = true;
 					break;
+				}
+			}
+		}
+	}
+}
+
+//UPDATE_POSITION_AVERAGE_EXCEPT_THIS_COLOR
+void XPBD_IPC::updatePositionAverageExceptThisColor(int thread_No)
+{
+	int start, end;
+	std::vector<std::array<double, 3>>* record_position;
+	std::vector<int>* record_position_num;
+
+	int vertex_num;
+	double pos[3];
+
+	std::array<double, 3>* vertex_pos;
+	bool* belong;
+
+	for (int i = 0; i < total_obj_num; ++i) {
+		start = vertex_index_begin_per_thread[i][thread_No];
+		end = vertex_index_begin_per_thread[i][thread_No + 1];
+
+		record_position = record_vertex_position_every_thread[i].data();
+		record_position_num = record_vertex_position_num_every_thread[i].data();
+
+		vertex_pos = vertex_position[i];
+		belong = collision.vertex_belong_to_color_group[i];
+		for (int j = start; j < end; ++j) {
+			if (!belong[j]) {
+				memset(pos, 0, 24);
+				vertex_num = 0;
+				for (int k = 0; k < total_thread_num; ++k) {
+					if (record_position_num[k][j]) {
+						vertex_num += record_position_num[k][j];
+						SUM_(pos, record_position[k][j]);
+					}
+				}
+				if (vertex_num) {
+					DEV(vertex_pos[j], pos, (double)vertex_num);
+					record_position_num[0][j] = vertex_num;
 				}
 			}
 		}
@@ -2764,13 +2781,8 @@ void XPBD_IPC::warmStart()
 		initialRecordHessian();
 		collision.computeHessian(max_tet_color_num - 1);
 		thread->assignTask(this, SUM_ALL_GRAD);
-		//collision_compare.computeHessian(max_tet_color_num - 1);
 
-		//compareIfRecordHessianIsRight(-2);
-
-		initialRecordPositionForThread();
-
-		
+		initialRecordPositionForThread();		
 		//all self collision pair
 		thread->assignTask(this, WARM_START);
 
@@ -2827,7 +2839,7 @@ void XPBD_IPC::allPairCollisionInversionTime()
 {
 	collision.allPairCollisionTime();
 
-	thread->assignTask(this, LAST_COLOR_INVERSION_TEST);
+	thread->assignTask(this, INVERSION_TEST);
 	for (int i = 0; i < total_thread_num; ++i) {
 		if (collision.collision_time_thread[i] < collision.collision_time) {
 			collision.collision_time = collision.collision_time_thread[i];
@@ -2835,7 +2847,7 @@ void XPBD_IPC::allPairCollisionInversionTime()
 	}
 	//computeLastColorInversion();
 	if (collision.collision_time < 1.0) {
-		thread->assignTask(&collision, COLLISION_FREE_POSITION_LAST_COLOR);
+		thread->assignTask(&collision, COLLISION_FREE_POSITION_ALL);
 	}
 }
 
@@ -2854,7 +2866,7 @@ void XPBD_IPC::allPairCollisionTimeWarmStart()
 //SOLVE_TET_BLOCK_COLLISION
 void XPBD_IPC::newtonCDTetBlockAGroupCollision(int thread_No, int color)
 {
-	unsigned int* tet_group;
+
 	int start, end;
 
 	std::array<int, 4>* indices;
@@ -2878,7 +2890,6 @@ void XPBD_IPC::newtonCDTetBlockAGroupCollision(int thread_No, int color)
 	std::vector<unsigned int>* edge_of_a_tet;
 	unsigned int obj_No;
 	int* vertex_index_on_surface;
-	int j;
 
 
 	int color_group_index;
@@ -2893,10 +2904,6 @@ void XPBD_IPC::newtonCDTetBlockAGroupCollision(int thread_No, int color)
 
 	for (int i = 0; i < tetrahedron->size(); ++i) {
 		color_group_index = inner_iteration_number % tet_color_groups[i]->size();
-		if (color != tetrahedron->data()[i].mesh_struct.tet_color_group[color_group_index].size() - 1) {
-			continue;
-		}
-
 		collision_stiffness = tetrahedron->data()[i].collision_stiffness[0];
 		obj_No = i + cloth->size();
 
@@ -2925,14 +2932,10 @@ void XPBD_IPC::newtonCDTetBlockAGroupCollision(int thread_No, int color)
 		free_pos = record_collision_free_vertex_position[obj_No].data();
 
 		//the original tet in last color
-		end = tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[color_group_index][color][thread_No + 1];
-		start = tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[color_group_index][color][thread_No];
-		tet_group = tet_color_groups[i]->data()[color_group_index][color].data();
-
+		end = tet_index_begin_per_thread[obj_No][thread_No + 1];
+		start = tet_index_begin_per_thread[obj_No][thread_No];
 		prefix_vertex = vertex_index_prefix_sum_obj[obj_No];
-
-		for (int k = start; k < end; ++k) {
-			j = tet_group[k];
+		for (int j = start; j < end; ++j) {
 			solveTetBlockCollision(vertex_pos, stiffness, sub_time_step, tet_indices[i], mass, A, tet_neightbor_tet[j],
 				volume, j, sn_, tet_neightbor_tet_common_vertex[j].data(), indices[j].data(),
 				unfixed_vertex_index[j].data(), unfixed_vertex_num[j], &(triangle_of_a_tet[j]), &(edge_of_a_tet[j]), collision_stiffness,
@@ -3065,9 +3068,6 @@ void XPBD_IPC::newtonCDTetBlockAGroup(int thread_No, int color)
 
 	int color_group_index;
 
-
-	//char* is_tet_involved_in_collision;
-
 	std::vector<unsigned int>* triangle_of_a_tet;
 	std::vector<unsigned int>* edge_of_a_tet;
 
@@ -3075,57 +3075,102 @@ void XPBD_IPC::newtonCDTetBlockAGroup(int thread_No, int color)
 
 	unsigned int prefix_vertex;
 	char* indicate_collide_with_floor_;
-	for (int i = 0; i < tetrahedron->size(); ++i) {
-		color_group_index = inner_iteration_number % tet_color_groups[i]->size();
-		if (color >= tetrahedron->data()[i].mesh_struct.tet_color_group[color_group_index].size()-1) {
-			continue;
+	
+	int* vertex_pos_num_record;
+	std::array<double, 3>* vertex_pos_record;
+
+	double max_dis = 0.0;
+	std::array<double, 3>* free_pos;
+
+	for (int i = 0; i < tetrahedron->size(); ++i) {			
+			color_group_index = inner_iteration_number % tet_color_groups[i]->size();
+			collision_stiffness = tetrahedron->data()[i].collision_stiffness[0];
+			mesh_struct_ = mesh_struct[i + cloth->size()];
+			indices = tetrahedron->data()[i].mesh_struct.indices.data();
+			volume = tetrahedron->data()[i].mesh_struct.volume.data();
+			vertex_pos = vertex_position[i + cloth->size()];
+			stiffness = 0.5 * tetrahedron->data()[i].ARAP_stiffness;
+
+			A = tetrahedron->data()[i].mesh_struct.A.data();
+			mass = mesh_struct_->mass.data();
+			mass_inv = mesh_struct_->mass_inv.data();
+			sn_ = sn[i + cloth->size()].data();
+			unfixed_vertex_num = tetrahedron->data()[i].mesh_struct.tet_unfixed_vertex_num.data();
+			tet_neightbor_tet = tetrahedron->data()[i].mesh_struct.tet_tet_index.data();
+			tet_neightbor_tet_common_vertex = tetrahedron->data()[i].mesh_struct.tet_neighbor_tet_vertex_order.data();
+			unfixed_vertex_index = tetrahedron->data()[i].mesh_struct.unfixied_indices.data();
+			unfixed_actual_vertex_index = tetrahedron->data()[i].mesh_struct.unfixied_actual_indices.data();
+			obj_No = i + cloth->size();
+			triangle_of_a_tet = tetrahedron->data()[i].mesh_struct.triangle_index_of_a_tet.data();
+			edge_of_a_tet = tetrahedron->data()[i].mesh_struct.edge_index_of_a_tet.data();
+			vertex_index_on_surface = tetrahedron->data()[i].mesh_struct.vertex_surface_index.data();
+			prefix_vertex = vertex_index_prefix_sum_obj[obj_No];
+			record_vertex_pos = record_vertex_position[obj_No].data();
+			indicate_collide_with_floor_ = collision.indicate_vertex_collide_with_floor[obj_No].data();
+
+			vertex_pos_record = record_vertex_position_every_thread[obj_No][thread_No].data();
+			vertex_pos_num_record = record_vertex_position_num_every_thread[obj_No][thread_No].data();
+
+
+			free_pos = record_collision_free_vertex_position[obj_No].data();
+
+			for (int c = 0; c < max_tet_color_num; ++c) {
+				tet_group = tet_color_groups[i]->data()[color_group_index][c].data();
+				end = tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[color_group_index][c][thread_No + 1];
+				start = tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[color_group_index][c][thread_No];
+				if (c == color) {
+					for (int k = start; k < end; ++k) {
+						j = tet_group[k];
+						solveTetBlock(vertex_pos, stiffness, sub_time_step, mass, mass_inv, A, tet_neightbor_tet[j],
+							volume, j, sn_, tet_neightbor_tet_common_vertex[j].data(), indices[j].data(),
+							unfixed_vertex_index[j].data(), unfixed_vertex_num[j], collision_stiffness,
+							obj_No, unfixed_actual_vertex_index[j].data(), tet_hessian[obj_No], common_hessian,
+							common_grad[0].data(), &(triangle_of_a_tet[j]), &(edge_of_a_tet[j]), vertex_index_on_surface, prefix_vertex, floor_hessian.data(),
+							record_vertex_pos, indicate_collide_with_floor_, color, max_dis, free_pos);
+					}
+				}
+				else {
+					for (int k = start; k < end; ++k) {
+						j = tet_group[k];
+						solveTetBlockCollision(vertex_pos, stiffness, sub_time_step, tet_indices[i], mass, A, tet_neightbor_tet[j],
+							volume, j, sn_, tet_neightbor_tet_common_vertex[j].data(), indices[j].data(),
+							unfixed_vertex_index[j].data(), unfixed_vertex_num[j], &(triangle_of_a_tet[j]), &(edge_of_a_tet[j]), collision_stiffness,
+							obj_No, unfixed_actual_vertex_index[j].data(), vertex_index_on_surface, tet_hessian[obj_No], common_hessian,
+							common_grad[0].data(), vertex_pos_record, vertex_pos_num_record, prefix_vertex, floor_hessian.data(),
+							max_dis, free_pos);
+					}
+				}
+		}		
+	}
+
+
+	if (max_dis > max_dis_record[thread_No]) {
+		max_dis_record[thread_No] = max_dis;
+	}
+
+	if (perform_collision) {
+		int obj_No_0, obj_No_1, index_0, index_1;
+		std::array<double, 3>** record_vertex_position = record_vertex_by_thread[thread_No].data();
+		int** record_vertex_num = record_vertex_update_num_by_thread[thread_No].data();
+		//all self collision pair
+		solveVT_BlockPerThread(record_vertex_position, record_vertex_num, collision.record_vt_pair_sum_all_thread.data(), collision.vt_pair_sum_start_per_thread[thread_No],
+			collision.vt_pair_sum_start_per_thread[thread_No + 1],
+			collision.vt_hessian_index_exist.data(), false, thread_No);
+		solveEE_BlockPerThread(record_vertex_position, record_vertex_num, collision.record_ee_pair_sum_all_thread.data(), collision.ee_pair_sum_start_per_thread[thread_No],
+			collision.ee_pair_sum_start_per_thread[thread_No + 1],
+			collision.ee_hessian_index_exist.data(), false, thread_No);
+		if (has_collider || floor->exist) {
+			solvecollider_BlockPerThread(record_vertex_position, record_vertex_num, &collision.vertex_index_collide_collider_sum, false, 0,
+				collision.vertex_c_start_per_thread[thread_No], collision.vertex_c_start_per_thread[thread_No + 1], thread_No);
 		}
-
-		collision_stiffness = tetrahedron->data()[i].collision_stiffness[0];
-
-		tet_group = tet_color_groups[i]->data()[color_group_index][color].data();
-		//is_tet_involved_in_collision = tet_color_groups_label[i][color_group_index][color].data();
-
-		end = tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[color_group_index][color][thread_No + 1];
-		start = tetrahedron->data()[i].mesh_struct.tet_in_a_group_start_per_thread_groups[color_group_index][color][thread_No];
-
-		mesh_struct_ = mesh_struct[i + cloth->size()];
-		indices = tetrahedron->data()[i].mesh_struct.indices.data();
-		volume = tetrahedron->data()[i].mesh_struct.volume.data();
-		vertex_pos = vertex_position[i + cloth->size()];
-		stiffness = 0.5 * tetrahedron->data()[i].ARAP_stiffness;
-
-		A = tetrahedron->data()[i].mesh_struct.A.data();
-		mass = mesh_struct_->mass.data();
-		mass_inv = mesh_struct_->mass_inv.data();
-		sn_ = sn[i + cloth->size()].data();
-		unfixed_vertex_num = tetrahedron->data()[i].mesh_struct.tet_unfixed_vertex_num.data();
-		tet_neightbor_tet = tetrahedron->data()[i].mesh_struct.tet_tet_index.data();
-		tet_neightbor_tet_common_vertex = tetrahedron->data()[i].mesh_struct.tet_neighbor_tet_vertex_order.data();
-		unfixed_vertex_index = tetrahedron->data()[i].mesh_struct.unfixied_indices.data();
-		unfixed_actual_vertex_index = tetrahedron->data()[i].mesh_struct.unfixied_actual_indices.data();
-		obj_No = i + cloth->size();
-
-		triangle_of_a_tet = tetrahedron->data()[i].mesh_struct.triangle_index_of_a_tet.data();
-		edge_of_a_tet = tetrahedron->data()[i].mesh_struct.edge_index_of_a_tet.data();
-
-		vertex_index_on_surface = tetrahedron->data()[i].mesh_struct.vertex_surface_index.data();
-
-		prefix_vertex = vertex_index_prefix_sum_obj[obj_No];
-		record_vertex_pos = record_vertex_position[obj_No].data();
-
-		indicate_collide_with_floor_ = collision.indicate_vertex_collide_with_floor[obj_No].data();
-
-		for (int k = start; k < end; ++k) {
-			j = tet_group[k];
-			solveTetBlock(vertex_pos, stiffness, sub_time_step, mass, mass_inv, A, tet_neightbor_tet[j],
-				volume, j, sn_, tet_neightbor_tet_common_vertex[j].data(), indices[j].data(),
-				unfixed_vertex_index[j].data(), unfixed_vertex_num[j],  collision_stiffness,
-				obj_No, unfixed_actual_vertex_index[j].data(), tet_hessian[obj_No], common_hessian,
-				common_grad[0].data(), &(triangle_of_a_tet[j]), &(edge_of_a_tet[j]), vertex_index_on_surface, prefix_vertex, floor_hessian.data(),
-				record_vertex_pos, indicate_collide_with_floor_,color);
+		if (has_collider) {
+			solvecollider_BlockPerThread(record_vertex_position, record_vertex_num, &collision.edge_index_collide_collider_sum, false, 1,
+				collision.edge_c_start_per_thread[thread_No], collision.edge_c_start_per_thread[thread_No + 1], thread_No);
+			solvecollider_BlockPerThread(record_vertex_position, record_vertex_num, &collision.triangle_index_collide_collider_sum, false, 2,
+				collision.triangle_c_start_per_thread[thread_No], collision.triangle_c_start_per_thread[thread_No + 1], thread_No);
 		}
 	}
+
 }
 
 
@@ -6458,7 +6503,7 @@ void XPBD_IPC::solveTetBlock(std::array<double, 3>* vertex_position, double stif
 	double* common_grad, std::vector<unsigned int>* triangle_of_a_tet,
 	std::vector<unsigned int>* edge_of_a_tet, int* vertex_index_on_surface, unsigned int prefix_sum_vetex_obj,
 	double* floor_map, std::array<double, 3>* record_ori_pos, char* indicate_collide_with_floor,
-	int color_No)//
+	int color_No, double& max_dis, std::array<double, 3>* collision_free_pos)//
 {
 	if (unfixed_vertex_num == 0) {
 		return;

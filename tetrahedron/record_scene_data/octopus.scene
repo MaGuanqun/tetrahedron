@@ -10,15 +10,15 @@ collider
 .\model\tank.obj
 stiffness
 2e+04 50000 0 0 0 0 
-2e+07 20000 20000 20 0 0 0 0 
+2e+08 20000 20000 20 0 0 0 0 
 2e+04 50000 0 0 0 0 
-2e+07 20000 20000 20 0 0 0 0
+2e+08 20000 20000 20 0 0 0 0
 2e+04 50000 0 0 0 0 
-2e+07 20000 20000 20 0 0 0 0 
+2e+08 20000 20000 20 0 0 0 0 
 2e+04 50000 0 0 0 0 
-2e+07 20000 20000 20 0 0 0 0 
+2e+08 20000 20000 20 0 0 0 0 
 2e+04 50000 0 0 0 0 
-2e+07 20000 20000 20 0 0 0 0 
+2e+08 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
 0 
@@ -80,7 +80,7 @@ inner iteration_num
 sub_step_per_detection
 1
 d_hat
-0.01
+0.001
 inner convergence rate
 0.001
 min inner itr num
@@ -88,7 +88,7 @@ min inner itr num
 min outer itr num
 9
 displacement standard
-0.0001
+0.0005
 distance record as collision
 0.0
 energy converge standard
