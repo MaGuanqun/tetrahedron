@@ -444,6 +444,8 @@ void XPBD_IPC::initialHessianMap()
 		common_grad[i].resize(3 * vertex_index_prefix_sum_obj.back());
 	}
 
+	floor_hessian.resize(vertex_index_prefix_sum_obj.back());
+
 	if (perform_collision) {
 		collision.common_hessian = &common_hessian;
 		for (int i = 0; i < total_thread_num; ++i) {
@@ -452,8 +454,7 @@ void XPBD_IPC::initialHessianMap()
 		collision.floor_hessian = floor_hessian.data();
 	}
 
-	floor_hessian.resize(vertex_index_prefix_sum_obj.back());
-
+	
 
 	//collision_compare.common_hessian = &common_hessian_compare;
 	//common_hessian_compare.reserve(4 * vertex_num_on_surface_prefix_sum.back());
@@ -690,7 +691,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 	if (perform_collision) {
 		collision.collisionCulling();
 		collision.collisionTimeWithPair();
-		thread->assignTask(this, INVERSION_TEST);
+		thread->assignTask(this, INVERSION_TEST,0);
 		for (int i = 0; i < total_thread_num; ++i) {
 			if (collision.collision_time_thread[i] < collision.collision_time) {
 				collision.collision_time = collision.collision_time_thread[i];
@@ -698,6 +699,9 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 		}
 		thread->assignTask(this, COLLISION_FREE_POSITION_);
 	}
+
+	energy_time_start_begin = computeCurrentEnergy();
+
 	updateCollisionFreePosition();
 	if (perform_collision) {
 		warmStart();
@@ -717,13 +721,15 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 		if (perform_collision) {
 			collision.collisionCulling();
 			collision.collisionTimeWithPair();			
-			thread->assignTask(this, INVERSION_TEST);
+			thread->assignTask(this, INVERSION_TEST,0);
 			for (int i = 0; i < total_thread_num; ++i) {
 				if (collision.collision_time_thread[i] < collision.collision_time) {
 					collision.collision_time = collision.collision_time_thread[i];
 				}
 			}
 			thread->assignTask(this, COLLISION_FREE_POSITION_);
+			lineSearch(energy_time_start_begin);
+
 		}		
 		//if (outer_itr_num > (int)min_outer_iteration - 2)
 		//{
@@ -731,6 +737,12 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 		//}
 		outer_itr_num++;
 	}
+
+	//for (int i = 0; i < mesh_struct[1]->vertex_position.size(); ++i) {
+	//	if (mesh_struct[1]->vertex_position[i][1] < -0.95 + 1e-7) {
+	//		std::cout<<"equal zero " << i << std::endl;
+	//	}
+	//}
 
 	iteration_number += inner_iteration_number;
 	thread->assignTask(this, XPBD_IPC_VELOCITY);
@@ -742,6 +754,35 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 	//std::cout <<"time stamp "<< * time_stamp << std::endl;
 }
 
+
+void XPBD_IPC::testEdge()
+{
+	int v0 = 224, v1 = 1189;
+	int v2 = 54, v3 = 21;
+
+	//rootParityTest(initial[0])
+}
+
+void XPBD_IPC::rootParityTest(double* v0_ini, double* v0_cu, double* v1_ini, double* v1_cu,
+	double* v2_ini, double* v2_cu, double* v3_ini, double* v3_cu)
+{
+	Vec3d initial_pos_a = Vec3d(v0_ini[0], v0_ini[1], v0_ini[2]);
+	Vec3d current_pos_a = Vec3d(v0_cu[0], v0_cu[1], v0_cu[2]);
+	Vec3d initial_triangle_0_a = Vec3d(v1_ini[0], v1_ini[1], v1_ini[2]);
+	Vec3d initial_triangle_1_a = Vec3d(v2_ini[0], v2_ini[1], v2_ini[2]);
+	Vec3d initial_triangle_2_a = Vec3d(v3_ini[0], v3_ini[1], v3_ini[2]);
+	Vec3d current_triangle_0_a = Vec3d(v1_cu[0], v1_cu[1], v1_cu[2]);
+	Vec3d current_triangle_1_a = Vec3d(v2_cu[0], v2_cu[1], v2_cu[2]);
+	Vec3d current_triangle_2_a = Vec3d(v3_cu[0], v3_cu[1], v3_cu[2]);
+	rootparity::RootParityCollisionTest root_parity(initial_pos_a, initial_triangle_0_a, initial_triangle_1_a, initial_triangle_2_a,
+		current_pos_a, current_triangle_0_a, current_triangle_1_a, current_triangle_2_a, true);
+	bool test2 = root_parity.edge_edge_collision();
+
+	if (test2) {
+		std::cout << "==error : two edge collide" << std::endl;
+	}
+
+}
 
 
 void XPBD_IPC::XPBD_IPC_Block_Solve()
@@ -1135,7 +1176,8 @@ void XPBD_IPC::computeLastColorInversion(int thread_No)
 
 
 //INVERSION_TEST
-void XPBD_IPC::inversionTest(int thread_No)
+// 0 inital pos is the last itr collision free,  1 initial is the record pos 
+void XPBD_IPC::inversionTest(int thread_No, int type)
 {
 	unsigned int start, end;
 	unsigned int* tet_around_a_group;
@@ -1168,7 +1210,13 @@ void XPBD_IPC::inversionTest(int thread_No)
 
 	for (int i = 0; i < tetrahedron->size(); ++i) {
 		vertex_pos = vertex_position[i + cloth->size()];
-		ori_vertex_pos = record_collision_free_vertex_position_address[i + cloth->size()];
+		if (type == 0) {
+			ori_vertex_pos = record_collision_free_vertex_position[i + cloth->size()].data();
+		}
+		else {
+			ori_vertex_pos = record_vertex_position[i + cloth->size()].data();
+		}
+		
 		tet_indices_ = tet_indices[i + cloth->size()];
 		start = tet_index_begin_per_thread[i+cloth->size()][thread_No];
 		end = tet_index_begin_per_thread[i+cloth->size()][thread_No+1];
@@ -1180,6 +1228,25 @@ void XPBD_IPC::inversionTest(int thread_No)
 				if (inversion_time < collision_time) {
 					collision_time = inversion_time;
 				}
+
+				//if (inversion_time < 1e-7) {
+				//	std::cout << "inversion time too small " << j<<" "<< inversion_time << std::endl;
+				//}
+
+				//if (collision_time < 0.1) {
+				//	std::cout << "tet index " << j << " " << tet_vertex[0] << " " << tet_vertex[1] << " " << tet_vertex[2] << " " << tet_vertex[3]<<" "<< collision_time << std::endl;
+				//	double t;
+				//	inversionTest::TetInversionTestTest(ori_vertex_pos[tet_vertex[0]].data(), ori_vertex_pos[tet_vertex[1]].data(),
+				//		ori_vertex_pos[tet_vertex[2]].data(), ori_vertex_pos[tet_vertex[3]].data(), vertex_pos[tet_vertex[0]].data(),
+				//		vertex_pos[tet_vertex[1]].data(), vertex_pos[tet_vertex[2]].data(), vertex_pos[tet_vertex[3]].data(), &t);
+
+				//	inversionTest::TetInversionTestTestCompare(ori_vertex_pos[tet_vertex[0]].data(), ori_vertex_pos[tet_vertex[1]].data(),
+				//		ori_vertex_pos[tet_vertex[2]].data(), ori_vertex_pos[tet_vertex[3]].data(), vertex_pos[tet_vertex[0]].data(),
+				//		vertex_pos[tet_vertex[1]].data(), vertex_pos[tet_vertex[2]].data(), vertex_pos[tet_vertex[3]].data(), &t);
+				//}
+
+
+
 			}
 		}
 	}
@@ -1608,11 +1675,16 @@ void XPBD_IPC::tetGradForColorCollisionNeighbor(int thread_No, unsigned int colo
 
 bool XPBD_IPC::convergeCondition(unsigned int iteration_num)
 {
+	//if (iteration_num < 1)
+	//{
+	//	return false;
+	//}
+	//return true;
+
 	if (iteration_num <min_outer_iteration) {//max_iteration_number
 		std::cout << iteration_num << " " << max_displacement << std::endl;
 		return false;
 	}
-
 	if (iteration_num > outer_max_iteration_number - 1) {
 		return true;
 	}
@@ -2486,12 +2558,9 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 	}
 	thread->assignTask(this, TET_GRAD);
 	thread->assignTask(this, SUM_ALL_GRAD);
-
 	initialRecordPositionForThread();
-
 	//newtonCDTetBlockAGroupCollision(max_tet_color_num - 1);
 	thread->assignTask(this, SOLVE_TET_BLOCK_COLLISION, max_tet_color_num-1);
-
 	for (int i = 0; i < total_thread_num; ++i) {
 		if (max_displacement < max_dis_record[i]) {
 			max_displacement = max_dis_record[i];
@@ -2551,19 +2620,69 @@ void XPBD_IPC::lineSearchFirstColor(unsigned int color_No, double ori_energy)
 	//collision.upodateRecordPositionFirstColor(color_No);
 }
 
+
+void XPBD_IPC::lineSearch(double& ori_energy)
+{
+	double current_energy = 0.0;
+	if (perform_collision) {
+		//std::cout << "color collision time " << color_No << " " << collision.collision_time << std::endl;
+		current_energy = computeCurrentEnergy();
+		if (current_energy > energy_converge_standard) {
+			double record_collision_time = collision.collision_time;
+			if (current_energy > ori_energy) {
+				if (record_collision_time < 1e-5) {
+					std::cout << "global ccd original record_collision_time is too small " << ori_energy << " " << current_energy << std::endl;
+				}
+			}
+			collision.collision_time = 0.5;
+			//line search, make sure energy is decrease
+			//ori_energy += 1e-15;
+			while (current_energy > ori_energy)
+			{
+				record_collision_time *= 0.5;
+				thread->assignTask(this, COLLISION_FREE_POSITION_);
+				if (record_collision_time < 1e-5) {
+					std::cout << "record_collision_time is too small " <<  ori_energy << " " << current_energy << std::endl;
+					current_energy = computeCurrentEnergy();
+					//collision.collision_time = 0.0;
+					//thread->assignTask(&collision, COLLISION_FREE_POSITION_LAST_COLOR);
+					break;
+				}
+				current_energy = computeCurrentEnergy();
+			}
+			std::cout << "final color actual collision time " << record_collision_time << std::endl;
+		}
+		//else {
+			//std::cout << "final color actual collision time " << collision.collision_time << std::endl;
+		//}
+		//update record position
+		//for (unsigned int i = 0; i < total_obj_num; ++i) {
+		//	memcpy(this->record_vertex_position[i][0].data(), vertex_position[i][0].data(), this->record_vertex_position[i].size() * 24);
+		//}
+		//}	
+		ori_energy = current_energy;
+	}
+}
+
+
 void XPBD_IPC::lineSearchColor(unsigned int color_No, double ori_energy)
 {
 	double current_energy = 0.0;
-
-	current_energy = 0.0;
 
 	if (perform_collision) {
 
 		allPairCollisionInversionTime();
 
+		//std::cout << "color collision time " << color_No << " " << collision.collision_time << std::endl;
+
 		current_energy = computeCurrentEnergy();
 		if (current_energy > energy_converge_standard) {
 			double record_collision_time = collision.collision_time;
+			if (current_energy > ori_energy) {
+				if (record_collision_time < 1e-5) {
+					std::cout << "original record_collision_time is too small " << color_No << " " << ori_energy << " " << current_energy << std::endl;
+				}
+			}
 			collision.collision_time = 0.5;
 			//line search, make sure energy is decrease
 			//ori_energy += 1e-15;
@@ -2579,10 +2698,10 @@ void XPBD_IPC::lineSearchColor(unsigned int color_No, double ori_energy)
 				}
 				current_energy = computeCurrentEnergy();
 			}
-			//std::cout << "final color actual collision time " << record_collision_time << std::endl;
+			//std::cout << "color actual collision time "<<color_No<<" " << record_collision_time << std::endl;
 		}		
 		//else {
-		//	std::cout << "final color actual collision time " << collision.collision_time << std::endl;
+		//	std::cout << "color actual collision time " << color_No << " " << collision.collision_time << std::endl;
 		//}
 		//update record position
 		for (unsigned int i = 0; i < total_obj_num; ++i) {
@@ -2804,7 +2923,7 @@ void XPBD_IPC::warmStart()
 	//std::cout << "warm start itr " << itr_num << std::endl;
 
 	collision.collision_time = 1.0;
-	thread->assignTask(this, INVERSION_TEST);
+	thread->assignTask(this, INVERSION_TEST,0);
 	//inversionTest();
 	collision.obtainCollisionTimeFromEveryThread();
 	std::cout << "inversion test time " << collision.collision_time << std::endl;
@@ -2839,13 +2958,13 @@ void XPBD_IPC::allPairCollisionInversionTime()
 {
 	collision.allPairCollisionTime();
 
-	thread->assignTask(this, INVERSION_TEST);
+	//std::cout << "color co " << collision.collision_time << std::endl;
+	thread->assignTask(this, INVERSION_TEST,1);
 	for (int i = 0; i < total_thread_num; ++i) {
 		if (collision.collision_time_thread[i] < collision.collision_time) {
 			collision.collision_time = collision.collision_time_thread[i];
 		}
 	}
-	//computeLastColorInversion();
 	if (collision.collision_time < 1.0) {
 		thread->assignTask(&collision, COLLISION_FREE_POSITION_ALL);
 	}

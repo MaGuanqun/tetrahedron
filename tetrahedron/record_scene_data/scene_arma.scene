@@ -3,10 +3,10 @@ object
 .\model\armadillo_new.ele
 collider
 1
-.\model\U_simu.obj
+.\model\tank.obj
 stiffness
-200 50000 0 0 0 0 
-100000 20000 20000 20 0 0 0 0 
+2e4 50000 0 0 0 0 
+1e8 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
 0 
@@ -15,7 +15,7 @@ time_step
 cloth_density
 1
 tet_density
-1
+100
 velocity_damp
 0.995
 friction_coe
@@ -46,21 +46,21 @@ XPBD_IPC
 substep_num
 1
 out iteration_num
-100
+300
 inner iteration_num
 64
 sub_step_per_detection
 1
 d_hat
-0.01
+0.001
 inner convergence rate
 0.001
 min inner itr num
 4
 min outer itr num
-2
+3
 displacement standard
-0.002
+0.0005
 distance record as collision
 1e-7
 energy converge standard

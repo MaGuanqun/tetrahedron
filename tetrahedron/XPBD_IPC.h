@@ -88,7 +88,7 @@ public:
 
 	void tetHessian();
 
-	void inversionTest(int thread_No);
+	void inversionTest(int thread_No, int type);
 	void tetGradForColor(int thread_No, unsigned int color_No);
 	//void newtonCDTetBlockAGroupTest(int thread_No, int color);
 
@@ -148,6 +148,11 @@ public:
 	int counter = 0;
 
 	void tetGrad(int thread_No);
+
+
+	std::vector<std::vector<std::array<double, 3>>> record_vertex_position;
+
+	std::vector<std::vector<std::array<double, 3>>> record_collision_free_vertex_position;
 
 private:
 
@@ -361,8 +366,6 @@ private:
 
 	//std::vector<std::array<double, 3>*>address_of_record_vertex_position;
 
-	std::vector<std::vector<std::array<double, 3>>> record_vertex_position;
-	std::vector<std::vector<std::array<double, 3>>> record_collision_free_vertex_position;
 
 
 	std::vector<std::vector<std::vector<std::array<double, 3>>>> record_vertex_position_every_thread; // obj_no -> thread_No ->vertex_No
@@ -851,6 +854,8 @@ private:
 	std::vector< std::vector<std::vector<unsigned int>>*> vertex_index_of_a_tet_color_group;
 
 	void lineSearchColor(unsigned int color_No, double ori_energy);
+	void lineSearch(double& ori_energy);
+
 	void lineSearchFirstColor(unsigned int color_No, double ori_energy);
 
 	unsigned int inner_itr_num_standard;
@@ -881,6 +886,12 @@ private:
 
 	std::vector<double>dis_record;
 
+	void  rootParityTest(double* v0_ini, double* v0_cu, double* v1_ini, double* v1_cu,
+		double* v2_ini, double* v2_cu, double* v3_ini, double* v3_cu);
+	void testEdge();
+
+
+	double energy_time_start_begin;
 };
 
 

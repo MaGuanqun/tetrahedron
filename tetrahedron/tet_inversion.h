@@ -66,12 +66,12 @@ namespace inversionTest {
 		op[0] = DOT(DA, m2);
 		op[1] = DOT(da0, m2) + DOT(DA, m1);
 		op[2] = DOT(da0, m1) + DOT(DA, m0);
-		op[3] = DOT(da0, m0);
+		op[3] = 0.8*DOT(da0, m0);
 
 		int roots = 0;
 		unsigned int reducedDegree = 3;
 		for (unsigned int i = 0; i < 3; i++) {
-			if (std::abs(op[i]) <  1e-8)
+			if (std::abs(op[i]) <  1e-6)
 				reducedDegree--;
 			else
 				break;
@@ -79,13 +79,13 @@ namespace inversionTest {
 		if (reducedDegree < 3) {
 			//move lower term coeff to higher term, this is for convenience
 			for (int i = 0; i <= reducedDegree; i++) {
-				op[i] = op[i + 3 - reducedDegree];
+				op[i] = op[i +3- reducedDegree];
 			}
 		}
 
 		T time[3];
 		if (reducedDegree == 3) {
-			if (find_root::getSmallestPositiveRealCubicRoot(op[0], op[1], op[2], op[3], time[0], 1e-8)) {
+			if (find_root::getSmallestPositiveRealCubicRoot(op[0], op[1], op[2], op[3], time[0], 1e-6)) {
 				*time_= time[0];
 				return true;
 			}
@@ -145,19 +145,19 @@ namespace inversionTest {
 		DA[0] = d1[0] - a1[0] - da0[0];
 		DA[1] = d1[1] - a1[1] - da0[1];
 		DA[2] = d1[2] - a1[2] - da0[2];
-
+		
 		T op[4]; //op[0]x^3+op[1]x^2+cx+d=0
 		op[0] = DOT(DA, m2);
 		op[1] = DOT(da0, m2) + DOT(DA, m1);
 		op[2] = DOT(da0, m1) + DOT(DA, m0);
-		op[3] = DOT(da0, m0);
+		op[3] =0.8* DOT(da0, m0);
 
 		std::cout << "coe op " << op[0] << " " << op[1] << " " << op[2] << " " << op[3] << std::endl;
 
 		int roots = 0;
 		unsigned int reducedDegree = 3;
 		for (unsigned int i = 0; i < 3; i++) {
-			if (op[i] < 1e-10)
+			if (std::abs(op[i]) < 1e-6)
 				reducedDegree--;
 			else
 				break;
@@ -169,9 +169,10 @@ namespace inversionTest {
 			}
 		}
 
+		std::cout << "coe op final " << reducedDegree << " " << op[0] << " " << op[1] << " " << op[2] << " " << op[3] << std::endl;
 		T time[3];
 		if (reducedDegree == 3) {
-			if (find_root::solveCubicEquation(op[0], op[1], op[2], op[3], time[0], time[1], time[2])) {
+			if (find_root::getSmallestPositiveRealCubicRoot(op[0], op[1], op[2], op[3], time[0], 1e-6)) {
 				*time_ = time[0];
 				return true;
 			}
@@ -195,5 +196,53 @@ namespace inversionTest {
 		return false;
 	}
 
+	template <class T>
+	inline bool TetInversionTestTestCompare(T* a0, T* b0, T* c0, T* d0,
+		T* a1, T* b1, T* c1, T* d1, T* time_)
+	{
+		T x1 = a0[0];
+		T x2 = b0[0];
+		T x3 = c0[0];
+		T x4 = d0[0];
+
+		T y1 = a0[1];
+		T y2 = b0[1];
+		T y3 = c0[1];
+		T y4 = d0[1];
+
+		T z1 = a0[2];
+		T z2 = b0[2];
+		T z3 = c0[2];
+		T z4 = d0[2];
+
+		T p1 = a1[0] - a0[0];
+		T p2 = b1[0] - b0[0];
+		T p3 = c1[0] - c0[0];
+		T p4 = d1[0] - d0[0];
+
+
+		T q1 = a1[1] - a0[1];
+		T q2 = b1[1] - b0[1];
+		T q3 = c1[1] - c0[1];
+		T q4 = d1[1] - d0[1];
+
+		T r1 = a1[2] - a0[2];
+		T r2 = b1[2] - b0[2];
+		T r3 = c1[2] - c0[2];
+		T r4 = d1[2] - d0[2];
+
+
+
+		T a = -p1 * q2 * r3 + p1 * r2 * q3 + q1 * p2 * r3 - q1 * r2 * p3 - r1 * p2 * q3 + r1 * q2 * p3 + p1 * q2 * r4 - p1 * r2 * q4 - q1 * p2 * r4 + q1 * r2 * p4 + r1 * p2 * q4 - r1 * q2 * p4 - p1 * q3 * r4 + p1 * r3 * q4 + q1 * p3 * r4 - q1 * r3 * p4 - r1 * p3 * q4 + r1 * q3 * p4 + p2 * q3 * r4 - p2 * r3 * q4 - q2 * p3 * r4 + q2 * r3 * p4 + r2 * p3 * q4 - r2 * q3 * p4;
+		T b = -x1 * q2 * r3 + x1 * r2 * q3 + y1 * p2 * r3 - y1 * r2 * p3 - z1 * p2 * q3 + z1 * q2 * p3 + x2 * q1 * r3 - x2 * r1 * q3 - y2 * p1 * r3 + y2 * r1 * p3 + z2 * p1 * q3 - z2 * q1 * p3 - x3 * q1 * r2 + x3 * r1 * q2 + y3 * p1 * r2 - y3 * r1 * p2 - z3 * p1 * q2 + z3 * q1 * p2 + x1 * q2 * r4 - x1 * r2 * q4 - y1 * p2 * r4 + y1 * r2 * p4 + z1 * p2 * q4 - z1 * q2 * p4 - x2 * q1 * r4 + x2 * r1 * q4 + y2 * p1 * r4 - y2 * r1 * p4 - z2 * p1 * q4 + z2 * q1 * p4 + x4 * q1 * r2 - x4 * r1 * q2 - y4 * p1 * r2 + y4 * r1 * p2 + z4 * p1 * q2 - z4 * q1 * p2 - x1 * q3 * r4 + x1 * r3 * q4 + y1 * p3 * r4 - y1 * r3 * p4 - z1 * p3 * q4 + z1 * q3 * p4 + x3 * q1 * r4 - x3 * r1 * q4 - y3 * p1 * r4 + y3 * r1 * p4 + z3 * p1 * q4 - z3 * q1 * p4 - x4 * q1 * r3 + x4 * r1 * q3 + y4 * p1 * r3 - y4 * r1 * p3 - z4 * p1 * q3 + z4 * q1 * p3 + x2 * q3 * r4 - x2 * r3 * q4 - y2 * p3 * r4 + y2 * r3 * p4 + z2 * p3 * q4 - z2 * q3 * p4 - x3 * q2 * r4 + x3 * r2 * q4 + y3 * p2 * r4 - y3 * r2 * p4 - z3 * p2 * q4 + z3 * q2 * p4 + x4 * q2 * r3 - x4 * r2 * q3 - y4 * p2 * r3 + y4 * r2 * p3 + z4 * p2 * q3 - z4 * q2 * p3;
+		T c = -x1 * y2 * r3 + x1 * z2 * q3 + x1 * y3 * r2 - x1 * z3 * q2 + y1 * x2 * r3 - y1 * z2 * p3 - y1 * x3 * r2 + y1 * z3 * p2 - z1 * x2 * q3 + z1 * y2 * p3 + z1 * x3 * q2 - z1 * y3 * p2 - x2 * y3 * r1 + x2 * z3 * q1 + y2 * x3 * r1 - y2 * z3 * p1 - z2 * x3 * q1 + z2 * y3 * p1 + x1 * y2 * r4 - x1 * z2 * q4 - x1 * y4 * r2 + x1 * z4 * q2 - y1 * x2 * r4 + y1 * z2 * p4 + y1 * x4 * r2 - y1 * z4 * p2 + z1 * x2 * q4 - z1 * y2 * p4 - z1 * x4 * q2 + z1 * y4 * p2 + x2 * y4 * r1 - x2 * z4 * q1 - y2 * x4 * r1 + y2 * z4 * p1 + z2 * x4 * q1 - z2 * y4 * p1 - x1 * y3 * r4 + x1 * z3 * q4 + x1 * y4 * r3 - x1 * z4 * q3 + y1 * x3 * r4 - y1 * z3 * p4 - y1 * x4 * r3 + y1 * z4 * p3 - z1 * x3 * q4 + z1 * y3 * p4 + z1 * x4 * q3 - z1 * y4 * p3 - x3 * y4 * r1 + x3 * z4 * q1 + y3 * x4 * r1 - y3 * z4 * p1 - z3 * x4 * q1 + z3 * y4 * p1 + x2 * y3 * r4 - x2 * z3 * q4 - x2 * y4 * r3 + x2 * z4 * q3 - y2 * x3 * r4 + y2 * z3 * p4 + y2 * x4 * r3 - y2 * z4 * p3 + z2 * x3 * q4 - z2 * y3 * p4 - z2 * x4 * q3 + z2 * y4 * p3 + x3 * y4 * r2 - x3 * z4 * q2 - y3 * x4 * r2 + y3 * z4 * p2 + z3 * x4 * q2 - z3 * y4 * p2;
+		T d = (1.0 - 0.2) * (x1 * z2 * y3 - x1 * y2 * z3 + y1 * x2 * z3 - y1 * z2 * x3 - z1 * x2 * y3 + z1 * y2 * x3 + x1 * y2 * z4 - x1 * z2 * y4 - y1 * x2 * z4 + y1 * z2 * x4 + z1 * x2 * y4 - z1 * y2 * x4 - x1 * y3 * z4 + x1 * z3 * y4 + y1 * x3 * z4 - y1 * z3 * x4 - z1 * x3 * y4 + z1 * y3 * x4 + x2 * y3 * z4 - x2 * z3 * y4 - y2 * x3 * z4 + y2 * z3 * x4 + z2 * x3 * y4 - z2 * y3 * x4);
+
+
+		std::cout << "compare tet inverse  coe " << a << " " << b << " " << c << " " << d << std::endl;
+
+		return true;
+
+	}
 
 }

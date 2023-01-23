@@ -4,7 +4,7 @@
 
 Collision::Collision()
 {
-	d_hat = 1e-2;
+	d_hat = 1e-3;
 	d_hat_2 = d_hat * d_hat;
 	tolerance = 0.0;// 1e-5 * d_hat;
 	collision_pair_around_pair_size_per_pair = 20;
@@ -33,8 +33,8 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	this->thread = thread;
 	this->floor = floor;
 	thread_num = thread->thread_num;
-	max_index_number_in_one_cell = 1200;
-	max_index_number_in_one_cell_collider = 400;
+	max_index_number_in_one_cell = 1400;
+	max_index_number_in_one_cell_collider = 600;
 
 	estimate_coeff_for_vt_pair_num = 600;
 	estimate_coeff_for_vt_collider_pair_num = 400;
@@ -8229,20 +8229,15 @@ bool Collision::floorCollisionTime(double initial_position, double current_pos, 
 		if (current_pos> floor_value) {
 			return false;
 		}
-		floor_value += tolerance;
 	}
 	else {
 		floor_value -= tolerance;
 		if (current_pos < floor_value) {
 			return false;
-		}
-		
+		}		
 	}
-	double time = (initial_position - floor_value) / (initial_position - current_pos);
-	if (collision_time > time) {
-		collision_time = time;
-	}
-	if (time < 0) {
+	collision_time = (initial_position - floor_value) / (initial_position - current_pos);
+	if (collision_time < 0) {
 		std::cout << "error collision time of floor is negative" << std::endl;
 	}
 
@@ -9917,7 +9912,9 @@ void Collision::collisionTimeWithPair(int thread_No)
 		std::vector<unsigned int>* record_with_floor= &record_vertex_collide_with_floor[thread_No];
 
 		double* d_hat_with_floor;
-		double collision_time_temp;
+		double collision_time_temp=1.0;
+
+		double reocrd_collision_time = 1.0;
 
 		for (int i = 0; i < total_obj_num; ++i) {
 			element_end = vertex_index_start_per_thread[i][thread_No + 1];
@@ -9929,15 +9926,15 @@ void Collision::collisionTimeWithPair(int thread_No)
 				for (int j = vertex_index_start_per_thread[i][thread_No]; j < element_end; ++j) {
 					if (floorCollisionTime(initial_pos[j].data()[floor->dimension], current_pos[j].data()[floor->dimension],
 						floor->normal_direction, floor->value, collision_time_temp, tolerance)) {
+						if (collision_time_temp < reocrd_collision_time) {
+							reocrd_collision_time = collision_time_temp;
+						}
 						if (!with_floor[j]) {
 							with_floor[j] = '\1';
 							record_with_floor->emplace_back(i);
 							record_with_floor->emplace_back(j);
 							d_hat_with_floor[j] = (std::max)((vertex_for_render[i][j][floor->dimension] - floor->value) *
-								(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);
-							if (collision_time_temp < collision_time) {
-								collision_time = collision_time_temp;
-							}
+								(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);							
 						}
 					}
 				}
@@ -9949,6 +9946,15 @@ void Collision::collisionTimeWithPair(int thread_No)
 					j = surface_to_normal[k];
 					if (floorCollisionTime(initial_pos[j].data()[floor->dimension], current_pos[j].data()[floor->dimension],
 						floor->normal_direction, floor->value, collision_time_temp, tolerance)) {
+						if (collision_time_temp < reocrd_collision_time) {
+							reocrd_collision_time = collision_time_temp;
+						}
+
+						//if (collision_time_temp < 1e-5) {
+						//	std::cout << "floor collision  " << j<<" " << collision_time_temp<<" "<<tolerance << " " << initial_pos[j].data()[floor->dimension] << " " << current_pos[j].data()[floor->dimension] << " " 
+						//		<< initial_pos[j].data()[floor->dimension] - floor->value << " " << floor->value << std::endl;
+						//}
+
 						if (!with_floor[j]) {
 							with_floor[j] = '\1';
 							record_with_floor->emplace_back(i);
@@ -9956,14 +9962,21 @@ void Collision::collisionTimeWithPair(int thread_No)
 							//d_hat_with_floor[j] = d_hat_2;
 							d_hat_with_floor[j] = (std::max)((vertex_for_render[i][j][floor->dimension] - floor->value) *
 								(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);
-							if (collision_time_temp < collision_time) {
-								collision_time = collision_time_temp;
-							}
+						
+							
 						}
 					}
 				}
 			}
 		}
+
+		reocrd_collision_time *= 0.9;
+		if (reocrd_collision_time < collision_time) {
+			collision_time = reocrd_collision_time;
+		}
+
+
+
 	}
 
 	collision_time_thread[thread_No] = collision_time;

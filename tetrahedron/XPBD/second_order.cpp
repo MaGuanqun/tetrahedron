@@ -3419,8 +3419,8 @@ void SecondOrderConstraint::computeVTBarrierGradientHessianTest(MatrixXd& Hessia
 bool SecondOrderConstraint::computeBarrierVTGradientHessian(MatrixXd& Hessian, VectorXd& grad, double* p, double* t0,
 	double* t1, double* t2, double d_hat_2, int* vertex_in_pair, double  stiffness, bool compute_hessian, int type)
 {
-	double distance;
-	double b_grad = 0.0, b_hessian = 0.0;;
+	double distance=1.0;
+	double b_grad = 0.0, b_hessian = 0.0;
 	switch (CCD::internal::pointTriangleDistanceType(p, t0, t1, t2))
 	{
 	case 0:

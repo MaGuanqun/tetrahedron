@@ -972,6 +972,9 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
     case UPDATE_TET_GRAD_SHARED:
         k = job([func, thread_id, para]() {func->tetGradForColor(thread_id, para); });
         break;
+    case INVERSION_TEST:
+        k = job([func, thread_id, para]() {func->inversionTest(thread_id, para); });
+        break;
     //case UPDATE_TET_GRAD_SHARED_COLLISION:
     //    k = job([func, thread_id, para]() {func->tetGradForColorCollision(thread_id, para); });
     //    break;
@@ -1053,9 +1056,6 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
         break;
     case LAST_COLOR_ARAP_ENERGY:
         k = job([func, thread_id]() {func->computeLastColorARAPEnergy(thread_id); });
-        break;
-    case INVERSION_TEST:
-        k = job([func, thread_id]() {func->inversionTest(thread_id); });
         break;
     case LAST_COLOR_INVERSION_TEST:
         k = job([func, thread_id]() {func->computeLastColorInversion(thread_id); });

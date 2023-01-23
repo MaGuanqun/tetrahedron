@@ -185,7 +185,7 @@ namespace FEM {
 	}
 
 
-	inline void SPDprojection(Eigen::MatrixXd& A)
+	inline bool SPDprojection(Eigen::MatrixXd& A)
 	{
 
 
@@ -195,12 +195,10 @@ namespace FEM {
 
 		SelfAdjointEigenSolver<MatrixXd> svd(A);
 		if (svd.eigenvalues()[0] >= 0) {
-			return;
+			return false;
 		}
 
 		VectorXd fixed_eigen_value = svd.eigenvalues();
-
-		MatrixXd k = svd.eigenvectors() * fixed_eigen_value.asDiagonal() * svd.eigenvectors().transpose();
 
 		for (unsigned int i = 0; i < A.cols(); ++i) {
 			if (fixed_eigen_value.data()[i] < 0) {
@@ -208,6 +206,7 @@ namespace FEM {
 			}
 		}
 		A = svd.eigenvectors() * fixed_eigen_value.asDiagonal() * svd.eigenvectors().transpose();
+		return true;
 	}
 
 

@@ -40,7 +40,7 @@ namespace CCD {
             return 1.0;
         T dist2_cur = internal::pointTriangleDistanceUnclassified(p, t0, t1, t2);
         T dist_cur = std::sqrt(dist2_cur);
-        T gap = eta * (dist_cur - thickness);
+        T gap = eta * (dist2_cur - thickness * thickness) / (dist_cur + thickness);
 
         T toc = 0.0;
         int itr = 0;
@@ -50,7 +50,7 @@ namespace CCD {
         double dis_recrod;
 
         while (true) {
-            T toc_lower_bound = (0.9 - eta) * (dist_cur - thickness) / (max_disp_mag);
+            T toc_lower_bound = (0.9 - eta) * (dist2_cur - thickness * thickness) / ((dist_cur + thickness) * max_disp_mag);
             ACCUMULATE_SUM_WITH_COE(p, toc_lower_bound, dp);
             ACCUMULATE_SUM_WITH_COE(t0, toc_lower_bound, dt0);
             ACCUMULATE_SUM_WITH_COE(t1, toc_lower_bound, dt1);
@@ -60,7 +60,13 @@ namespace CCD {
 
             dist2_cur = internal::pointTriangleDistanceUnclassified(p, t0, t1, t2);
             dist_cur = std::sqrt(dist2_cur);
-            if (((dist_cur - thickness )< gap)|| itr > 300) {// || (toc &&
+
+            if (dist2_cur == 0.0) {
+                std::cout << "PT CCD distance equals zero, warning " << std::endl;
+                break;
+            }
+
+            if ((((dist2_cur - thickness * thickness) / (dist_cur + thickness) < gap))|| itr > 300) {// || (toc &&
                // std::cout << toc<<" "<< toc_lower_bound<<" "<< dist_cur - thickness<<" "<<gap << std::endl;
 
                 break;
@@ -212,7 +218,7 @@ namespace CCD {
         if (max_disp_mag == 0)
             return 1.0;
         T dist2_cur = internal::edgeEdgeDistanceUnclassified(ea0, ea1, eb0, eb1);
-        T dFunc = std::sqrt(dist2_cur) - thickness;
+        T dFunc = dist2_cur - thickness * thickness;
         // since we ensured other place that all dist smaller than dHat are positive,
        // this must be some far away nearly parallel edges
         std::vector<T> dists(4);
@@ -222,22 +228,27 @@ namespace CCD {
             dists[2] = SQUARED_LENGTH(ea1, eb0);
             dists[3] = SQUARED_LENGTH(ea1, eb1);
             dist2_cur = *std::min_element(dists.begin(), dists.end());
-            dFunc = std::sqrt(dist2_cur) - thickness;
+            dFunc = dist2_cur - thickness * thickness;
         }
         T dist_cur = std::sqrt(dist2_cur);
-        T gap = eta * dFunc;
+        T gap = eta * dFunc / (dist_cur + thickness);
         T toc = 0.0;
         int itr = 0;
         while (true)
         {
-            T toc_lower_bound = (0.9 - eta) * dFunc / (max_disp_mag);
+            T toc_lower_bound = (0.9 - eta) * dFunc / ((dist_cur + thickness) * max_disp_mag); 
             ACCUMULATE_SUM_WITH_COE(ea0, toc_lower_bound, dea0);
             ACCUMULATE_SUM_WITH_COE(ea1, toc_lower_bound, dea1);
             ACCUMULATE_SUM_WITH_COE(eb0, toc_lower_bound, deb0);
             ACCUMULATE_SUM_WITH_COE(eb1, toc_lower_bound, deb1);
 
             dist2_cur = internal::edgeEdgeDistanceUnclassified(ea0, ea1, eb0, eb1);
-            dFunc = sqrt(dist2_cur) - thickness;//dist2_cur - thickness * thickness;//
+
+            if (dist2_cur == 0.0) {
+                std::cout << "EE CCD distance equals zero, warning " << std::endl;
+                break;
+            }
+            dFunc = dist2_cur - thickness * thickness;
             if (dFunc <= 0) {
                 // since we ensured other place that all dist smaller than dHat are positive,
                 // this must be some far away nearly parallel edges
@@ -246,11 +257,11 @@ namespace CCD {
                 dists[2] = SQUARED_LENGTH(ea1, eb0);
                 dists[3] = SQUARED_LENGTH(ea1, eb1);
                 dist2_cur = *std::min_element(dists.begin(), dists.end());
-                dFunc = sqrt(dist2_cur) - thickness;// dist2_cur - thickness * thickness;//
+                dFunc = dist2_cur - thickness * thickness;
             }
             dist_cur = std::sqrt(dist2_cur);
 
-            if ((dFunc< gap) || itr > 300) {//(toc&&
+            if (((dFunc / (dist_cur + thickness) < gap)) || itr > 300) {//(toc&&
                 break;
             }
             toc += toc_lower_bound;

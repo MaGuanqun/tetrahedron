@@ -83,6 +83,7 @@ public:
 	void saveParameter(std::vector<std::string>& path, std::vector<std::string>& collider_path, std::vector<std::array<double, 6>>& cloth_stiffness, std::vector<std::array<double, 6>>& tet_stiffness,
 		std::vector<std::array<double, 8>>& cloth_collision_stiffness, std::vector<std::array<double, 8>>& tet_collision_stiffness, double* tolerance_ratio,
 		double* friction_coe);
+	void testScene();
 
 	Camera* camera;
 
