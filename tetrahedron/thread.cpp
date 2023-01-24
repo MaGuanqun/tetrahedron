@@ -21,7 +21,7 @@
 
 Thread::Thread()
 {
-    thread_num = std::thread::hardware_concurrency();//  
+    thread_num = 1;// std::thread::hardware_concurrency();//  
     initial();
 }
 
@@ -1023,6 +1023,12 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
         break;
     case GRAD_NORM:
         k = job([func, thread_id]() {func->sumWithInertial(thread_id); });
+        break;
+    case NEO_HOOKEAN_HESSIAN_GRAD:
+        k = job([func, thread_id]() {func->computeNeoHookeanHessianGrad(thread_id); });
+        break;
+    case SUM_NEO_HOOKEAN_HESSIAN:
+        k = job([func, thread_id]() {func->sumNeoHookeanHessian(thread_id); });
         break;
     //case UPDATE_TET_HESSIAN:
     //    k = job([func, thread_id]() {func->tetHessian(thread_id); });

@@ -783,7 +783,7 @@ void ImGuiWindows::helpMarker(const char* desc)
 
 
 
-void ImGuiWindows::operationWindow(std::vector<std::array<double, 6>>& cloth_stiffness, std::vector<std::array<double, 6>>& tet_stiffness, double* simulation_parameters, std::vector<std::array<double, 8>>& cloth_collision_stiffness,
+void ImGuiWindows::operationWindow(std::vector<std::array<double, 6>>& cloth_stiffness, std::vector<std::array<double, 8>>& tet_stiffness, double* simulation_parameters, std::vector<std::array<double, 8>>& cloth_collision_stiffness,
 	std::vector<std::array<double, 8>>& tet_collision_stiffness,
 	bool* set_stiffness, double* temp_stiffness, UpdateObjStiffness& update_obj_stiffness, bool* set_anchor_point, bool tetrahedron_exist,
 	double* damp_stiffness, double* rayleigh_damp_stiffness)

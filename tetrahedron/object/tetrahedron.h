@@ -44,6 +44,7 @@ public:
 	double position_stiffness;
 	double collision_stiffness[4];
 	double youngs_modulus, poisson_ratio;
+
 	double sigma_limit[2];//min max sigma for volume preserve
 	void recordInitialMesh(SingleTetrahedronInfo& single_tetrahedron_info_ref);
 	void initial();

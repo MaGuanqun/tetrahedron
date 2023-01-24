@@ -2,6 +2,7 @@
 #include<algorithm>
 #include"XPBD/FEM_relate.h"
 #include"tet_inversion.h"
+#include"NeoHookean.h"
 
 XPBD_IPC::XPBD_IPC()
 {
@@ -11,7 +12,7 @@ XPBD_IPC::XPBD_IPC()
 
 	damping_coe = 0.0;
 
-	perform_collision = true;
+	perform_collision = false;
 
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
@@ -75,7 +76,7 @@ void XPBD_IPC::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* t
 	initialClothBending();
 	setConstraintIndex();
 	//energy_per_thread.resize(thread->thread_num,0.0);
-	if (perform_collision) {
+	//if (perform_collision) {
 		collision.inner_iteration_number = &inner_iteration_number;
 		//collision.energy = energy_per_thread.data();
 		collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio, XPBD_IPC_,false);
@@ -93,9 +94,9 @@ void XPBD_IPC::setForXPBD(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* t
 		//collision_compare.outer_itr_num = &outer_itr_num;
 
 		//collision.setParameter(&lambda_collision,lambda.data()+ constraint_index_start[3], collision_constraint_index_start.data(), damping_coe, sub_time_step);
-	}
+	//}
 
-	initalARAPHessianStorages();
+	initalElasticHessianStorages();
 	setColorNum();
 
 
@@ -446,14 +447,13 @@ void XPBD_IPC::initialHessianMap()
 
 	floor_hessian.resize(vertex_index_prefix_sum_obj.back());
 
-	if (perform_collision) {
+	//if (perform_collision) {
 		collision.common_hessian = &common_hessian;
 		for (int i = 0; i < total_thread_num; ++i) {
 			collision.common_grad[i] = common_grad[i].data();
 		}
 		collision.floor_hessian = floor_hessian.data();
-	}
-
+	//}
 	
 
 	//collision_compare.common_hessian = &common_hessian_compare;
@@ -467,7 +467,7 @@ void XPBD_IPC::initialHessianMap()
 }
 
 
-void XPBD_IPC::initalARAPHessianStorages()
+void XPBD_IPC::initalElasticHessianStorages()
 {
 	prefix_sum_of_every_tet_index.resize(tetrahedron->size()+1);
 	prefix_sum_of_every_tet_index[0] = 0;
@@ -475,15 +475,32 @@ void XPBD_IPC::initalARAPHessianStorages()
 		prefix_sum_of_every_tet_index[i + 1] = prefix_sum_of_every_tet_index[i] + tetrahedron->data()[i].mesh_struct.indices.size();
 	}
 
-	tet_hessian.resize(total_obj_num);
+	neo_hookean_hessian.resize(total_obj_num);
 	for (int i = 0; i < tetrahedron->size(); ++i) {
-		tet_hessian[i + cloth->size()].reserve(tetrahedron->data()[i].mesh_struct.indices.size() * 4);
+		neo_hookean_hessian[i + cloth->size()].reserve(tetrahedron->data()[i].mesh_struct.indices.size() * 4);
 	}
+
+	record_neo_hookean_pair_key_value.resize(total_obj_num);
+	for (int i = 0; i < tetrahedron->size(); ++i) {
+		record_neo_hookean_pair_key_value[i + cloth->size()].reserve(tetrahedron->data()[i].mesh_struct.indices.size() * 4);
+	}
+
+	neo_hookean_hessian_record.resize(total_obj_num);
+	for (int i = 0; i < tetrahedron->size(); ++i) {
+		neo_hookean_hessian_record[i + cloth->size()].resize(tetrahedron->data()[i].mesh_struct.indices.size() * 144);
+	}
+
+
+	//tet_hessian.resize(total_obj_num);
+	//for (int i = 0; i < tetrahedron->size(); ++i) {
+	//	tet_hessian[i + cloth->size()].reserve(tetrahedron->data()[i].mesh_struct.indices.size() * 4);
+	//}
 	//store_tet_arap_hessian.resize(16 * prefix_sum_of_every_tet_index[tetrahedron->size()],0.0);
 	//store_tet_arap_grad.resize(12 * prefix_sum_of_every_tet_index[tetrahedron->size()],0.0);
 
 	//is_tet_arap_grad_compute = new std::atomic_flag[prefix_sum_of_every_tet_index[tetrahedron->size()]];
 	//memset(is_tet_arap_grad_compute, 0, prefix_sum_of_every_tet_index[tetrahedron->size()]<<2);
+
 
 	max_tet_size_of_a_color_group = prefix_sum_of_every_tet_index[tetrahedron->size()];
 	//auto t0 = std::chrono::system_clock::now();
@@ -495,7 +512,16 @@ void XPBD_IPC::initalARAPHessianStorages()
 	//auto t1 = std::chrono::system_clock::now();
 
 	//thread->assignTask(this, UPDATE_TET_HESSIAN);
-	tetHessian();
+	setNewHookeanHessianStruct();
+
+	neo_hookean_pair_index_start_per_thread.resize(total_obj_num);
+	for (int i = 0; i < tetrahedron->size(); ++i) {
+		neo_hookean_pair_index_start_per_thread[i + cloth->size()].resize(total_thread_num + 1, 0);
+		arrangeIndex(total_thread_num, record_neo_hookean_pair_key_value[i + cloth->size()].size() >> 1,
+			neo_hookean_pair_index_start_per_thread[i + cloth->size()].data(), 2);
+	}
+
+	//tetHessian();
 	//auto t2 = std::chrono::system_clock::now();
 
 	//double time_0 = double(std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count()) * std::chrono::microseconds::period::num / std::chrono::microseconds::period::den * 1000.0;
@@ -1003,6 +1029,199 @@ bool XPBD_IPC::checkMaxDisplacement()
 	//record_max_displace_vertex.clear();
 	return true;
 }
+
+
+
+void XPBD_IPC::computeNeoHookeanHessianGrad()
+{
+	thread->assignTask(this, NEO_HOOKEAN_HESSIAN_GRAD);
+	thread->assignTask(this, SUM_NEO_HOOKEAN_HESSIAN);
+}
+
+//NEO_HOOKEAN_HESSIAN_GRAD
+void XPBD_IPC::computeNeoHookeanHessianGrad(int thread_No)
+{
+	int start, end;
+	for (int i = 0; i < tetrahedron->size(); ++i) {
+		start = tet_index_begin_per_thread[i + cloth->size()][thread_No];
+		end = tet_index_begin_per_thread[i + cloth->size()][thread_No + 1];
+		computeNeoHookeanHessianGrad(thread_No, i + cloth->size(), start, end);
+	}
+}
+
+
+//SUM_NEO_HOOKEAN_HESSIAN
+void XPBD_IPC::sumNeoHookeanHessian(int thread_No)
+{
+	for (int i = 0; i < tetrahedron->size(); ++i) {
+		combineNeoHookeanHessian(thread_No, neo_hookean_pair_index_start_per_thread[i + cloth->size()][thread_No],
+			neo_hookean_pair_index_start_per_thread[i + cloth->size()][thread_No + 1],
+			&record_neo_hookean_pair_key_value[i + cloth->size()], &neo_hookean_hessian[i + cloth->size()],
+			neo_hookean_hessian_record[i + cloth->size()].data());
+	}
+	 
+}
+
+
+void XPBD_IPC::combineNeoHookeanHessian(int thread_No, int start, int end, std::vector<unsigned int>* pair_index_record,
+	std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>* neo_hookean_hessian, double* hessian_record)
+{
+	auto k = neo_hookean_hessian->end();
+	auto start_ = pair_index_record->begin() + start;
+	auto end_ = pair_index_record->begin() + end;
+
+	std::vector<unsigned int>* order_in_constraint;
+	double* hessian_sum;
+	bool* is_update;
+
+	for (auto i = start_; i < end_; i+=2) {
+		k = neo_hookean_hessian->find(std::array{* i, * (i + 1)});
+		order_in_constraint = &k->second.order_in_constraint;
+		hessian_sum = k->second.hessian.data();
+		is_update = &k->second.is_update;
+		*is_update = false;
+		for (auto j = order_in_constraint->begin(); j < order_in_constraint->end(); j +=2) {
+			sumHessian(hessian_sum, hessian_record + 144 * (*j), *is_update, *(j + 1));
+		}
+	}
+}
+
+
+
+void XPBD_IPC::sumHessian(double* hessian_sum, double* global_hessian_record, bool& need_update, unsigned int start_index)
+{
+	
+	if (!need_update) {
+		need_update = true;
+		memset(hessian_sum, 0, 72);
+	}
+	double* hessian_record = global_hessian_record + start_index;
+	hessian_sum[0] += hessian_record[0];
+	hessian_sum[1] += hessian_record[1];
+	hessian_sum[2] += hessian_record[2];
+	hessian_sum[3] += hessian_record[12];
+	hessian_sum[4] += hessian_record[1 + 12];
+	hessian_sum[5] += hessian_record[2 + 12];
+	hessian_sum[6] += hessian_record[24];
+	hessian_sum[7] += hessian_record[1 + 24];
+	hessian_sum[8] += hessian_record[2 + 24];
+	
+	
+}
+
+
+void XPBD_IPC::computeNeoHookeanHessianGrad(int thread_No, int obj_No, int start, int end)
+{
+	MatrixXd hessian(12,12);
+	VectorXd grad(12);
+	int* vertex_index;
+	Matrix<double, 3, 4>* A= tet_A[obj_No];
+	std::array<double, 3>* vertex_pos = vertex_position[obj_No];
+
+	double* volume = tet_volume[obj_No];
+	double mu; double lambda;
+
+	double* neo_hookean_hessian_record_ = neo_hookean_hessian_record[obj_No].data();
+
+	LameCoeff(tetrahedron->data()[obj_No - cloth->size()].youngs_modulus, tetrahedron->data()[obj_No - cloth->size()].poisson_ratio,
+		mu, lambda);
+	double* com_grad = common_grad[thread_No].data();
+
+
+	if (thread_No == 0) {
+		std::cout << "youngs modulus, " << tetrahedron->data()[obj_No - cloth->size()].youngs_modulus << " " << tetrahedron->data()[obj_No - cloth->size()].poisson_ratio << std::endl;
+	}
+
+	int prefix_sum_start = vertex_index_prefix_sum_obj[obj_No];
+
+	double* grad_address;
+	
+
+	for (int i = start; i < end; ++i) {
+		vertex_index = tet_indices[obj_No][i].data();
+		NeoHookean::gradientHessian(vertex_pos[vertex_index[0]].data(), vertex_pos[vertex_index[1]].data(),
+			vertex_pos[vertex_index[2]].data(), vertex_pos[vertex_index[3]].data(),
+			A[i], volume[i], mu, lambda, grad, hessian);
+
+		memcpy(neo_hookean_hessian_record_ + 144 * i, hessian.data(), 1152);
+
+		grad_address = com_grad + 3 * (prefix_sum_start + vertex_index[0]);
+		*grad_address += grad.data()[0];
+		*(grad_address + 1) += grad.data()[1];
+		*(grad_address + 2) += grad.data()[2];
+
+		grad_address = com_grad + 3 * (prefix_sum_start + vertex_index[1]);
+		*grad_address += grad.data()[3];
+		*(grad_address + 1) += grad.data()[4];
+		*(grad_address + 2) += grad.data()[5];
+
+		grad_address = com_grad + 3 * (prefix_sum_start + vertex_index[2]);
+		*grad_address += grad.data()[6];
+		*(grad_address + 1) += grad.data()[7];
+		*(grad_address + 2) += grad.data()[8];
+
+		grad_address = com_grad + 3 * (prefix_sum_start + vertex_index[1]);
+		*grad_address += grad.data()[9];
+		*(grad_address + 1) += grad.data()[10];
+		*(grad_address + 2) += grad.data()[11];
+	}
+}
+
+
+void XPBD_IPC::setNewHookeanHessianStruct()
+{
+	int obj_No;
+	int num;
+	for (int i = 0; i < tetrahedron->size(); ++i) {
+		obj_No = cloth->size() + i;
+		num = tetrahedron->data()[i].mesh_struct.indices.size();
+		setNewHookeanHessianStruct(&neo_hookean_hessian[obj_No],
+			num, tet_indices[obj_No],
+			&record_neo_hookean_pair_key_value[obj_No]);
+
+	}
+}
+
+
+void XPBD_IPC::setNewHookeanHessianStruct(std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>* neo_hookean_hessian,
+	int end, std::array<int,4>* indices, std::vector<unsigned int>* record_neo_hookean_pair_key_value)
+{
+	int* vertex_index;
+	auto find_ = neo_hookean_hessian->end();
+
+	StoreHessianWithOrderInConstraint temp_store_;
+	memset(temp_store_.hessian.data(), 0, 72);
+	temp_store_.order_in_constraint.resize(2, 0);
+	temp_store_.is_update = false;
+
+	for (int i = 0; i < end; ++i) {
+		vertex_index = indices[i].data();
+
+		for (int k = 0; k < 4; ++k) {
+			for (int j = 0; j < 4; ++j) {
+				if (vertex_index[k] <= vertex_index[j]) {
+					find_ = neo_hookean_hessian->find(std::array{ (unsigned int)vertex_index[k],(unsigned int)vertex_index[j] });
+					if (find_ != neo_hookean_hessian->end()) {
+						find_->second.order_in_constraint.emplace_back(i);
+						find_->second.order_in_constraint.emplace_back(9*((4*j)+k));
+					}
+					else {
+						temp_store_.order_in_constraint[0] = i;
+						temp_store_.order_in_constraint[1] = 9 * ((4 * j) + k);
+						neo_hookean_hessian->emplace(std::array{ (unsigned int)vertex_index[k],(unsigned int)vertex_index[j] }, temp_store_);
+						record_neo_hookean_pair_key_value->emplace_back(vertex_index[k]);
+						record_neo_hookean_pair_key_value->emplace_back(vertex_index[j]);
+					}
+				}
+			}
+		}
+	}
+	
+
+	
+
+}
+
 
 //UPDATE_TET_HESSIAN 
 void 	XPBD_IPC::tetHessian()
@@ -2533,7 +2752,12 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 		if (perform_collision) {
 			collision.computeHessian(i);
 		}		
-		thread->assignTask(this, TET_GRAD);
+		else {
+			collision.updateVertexBelongColorGroup(i);
+		}
+		//thread->assignTask(this, TET_GRAD);
+		computeNeoHookeanHessianGrad();
+
 		thread->assignTask(this, SUM_ALL_GRAD);		
 		ori_energy = computeCurrentEnergy();
 		initialRecordPositionForThread();
@@ -2556,7 +2780,11 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 		//collision_compare.computeHessian(max_tet_color_num - 1);
 		//compareIfRecordHessianIsRight(-1);
 	}
-	thread->assignTask(this, TET_GRAD);
+	else {
+		collision.updateVertexBelongColorGroup(max_tet_color_num - 1);
+	}
+	//thread->assignTask(this, TET_GRAD);
+	computeNeoHookeanHessianGrad();
 	thread->assignTask(this, SUM_ALL_GRAD);
 	initialRecordPositionForThread();
 	//newtonCDTetBlockAGroupCollision(max_tet_color_num - 1);
@@ -3058,7 +3286,7 @@ void XPBD_IPC::newtonCDTetBlockAGroupCollision(int thread_No, int color)
 			solveTetBlockCollision(vertex_pos, stiffness, sub_time_step, tet_indices[i], mass, A, tet_neightbor_tet[j],
 				volume, j, sn_, tet_neightbor_tet_common_vertex[j].data(), indices[j].data(),
 				unfixed_vertex_index[j].data(), unfixed_vertex_num[j], &(triangle_of_a_tet[j]), &(edge_of_a_tet[j]), collision_stiffness,
-				obj_No, unfixed_actual_vertex_index[j].data(), vertex_index_on_surface, tet_hessian[obj_No], common_hessian,
+				obj_No, unfixed_actual_vertex_index[j].data(), vertex_index_on_surface, neo_hookean_hessian[obj_No], common_hessian,
 				common_grad[0].data(), vertex_pos_record, vertex_pos_num_record, prefix_vertex, floor_hessian.data(),
 				max_dis, free_pos);
 		}
@@ -3193,8 +3421,7 @@ void XPBD_IPC::newtonCDTetBlockAGroup(int thread_No, int color)
 	int* vertex_index_on_surface;
 
 	unsigned int prefix_vertex;
-	char* indicate_collide_with_floor_;
-	
+
 	int* vertex_pos_num_record;
 	std::array<double, 3>* vertex_pos_record;
 
@@ -3225,7 +3452,6 @@ void XPBD_IPC::newtonCDTetBlockAGroup(int thread_No, int color)
 			vertex_index_on_surface = tetrahedron->data()[i].mesh_struct.vertex_surface_index.data();
 			prefix_vertex = vertex_index_prefix_sum_obj[obj_No];
 			record_vertex_pos = record_vertex_position[obj_No].data();
-			indicate_collide_with_floor_ = collision.indicate_vertex_collide_with_floor[obj_No].data();
 
 			vertex_pos_record = record_vertex_position_every_thread[obj_No][thread_No].data();
 			vertex_pos_num_record = record_vertex_position_num_every_thread[obj_No][thread_No].data();
@@ -3243,9 +3469,9 @@ void XPBD_IPC::newtonCDTetBlockAGroup(int thread_No, int color)
 						solveTetBlock(vertex_pos, stiffness, sub_time_step, mass, mass_inv, A, tet_neightbor_tet[j],
 							volume, j, sn_, tet_neightbor_tet_common_vertex[j].data(), indices[j].data(),
 							unfixed_vertex_index[j].data(), unfixed_vertex_num[j], collision_stiffness,
-							obj_No, unfixed_actual_vertex_index[j].data(), tet_hessian[obj_No], common_hessian,
+							obj_No, unfixed_actual_vertex_index[j].data(), neo_hookean_hessian[obj_No], common_hessian,
 							common_grad[0].data(), &(triangle_of_a_tet[j]), &(edge_of_a_tet[j]), vertex_index_on_surface, prefix_vertex, floor_hessian.data(),
-							record_vertex_pos, indicate_collide_with_floor_, color, max_dis, free_pos);
+							record_vertex_pos, color, max_dis, free_pos);
 					}
 				}
 				else {
@@ -3254,7 +3480,7 @@ void XPBD_IPC::newtonCDTetBlockAGroup(int thread_No, int color)
 						solveTetBlockCollision(vertex_pos, stiffness, sub_time_step, tet_indices[i], mass, A, tet_neightbor_tet[j],
 							volume, j, sn_, tet_neightbor_tet_common_vertex[j].data(), indices[j].data(),
 							unfixed_vertex_index[j].data(), unfixed_vertex_num[j], &(triangle_of_a_tet[j]), &(edge_of_a_tet[j]), collision_stiffness,
-							obj_No, unfixed_actual_vertex_index[j].data(), vertex_index_on_surface, tet_hessian[obj_No], common_hessian,
+							obj_No, unfixed_actual_vertex_index[j].data(), vertex_index_on_surface, neo_hookean_hessian[obj_No], common_hessian,
 							common_grad[0].data(), vertex_pos_record, vertex_pos_num_record, prefix_vertex, floor_hessian.data(),
 							max_dis, free_pos);
 					}
@@ -5644,20 +5870,46 @@ void XPBD_IPC::solveBlockWithPair(double dt,
 	Hessian.resize(3 * real_unfiex_num, 3 * real_unfiex_num);
 	Hessian.setZero();
 
+
+	double* add_of_hessian;
+
 	if (!only_solve_collision_pair) {
-		auto k = tet_hessian[cloth->size()].end();
+		double* hessian_in_neo_hookean;
+		auto k = neo_hookean_hessian[cloth->size()].end();
 		for (int i = 0; i < unfixed_num; i += 2) {
 			for (int j = 0; j < unfixed_num; j += 2) {
 				if (unfixed_pair_vertex_index[i] != unfixed_pair_vertex_index[j]) {
 					continue;
 				}
-				k = tet_hessian[unfixed_pair_vertex_index[i]].find(std::array{ unfixed_pair_vertex_index[i + 1],unfixed_pair_vertex_index[j + 1] });
-				if (k != tet_hessian[unfixed_pair_vertex_index[i]].end()) {
-					Hessian.data()[3 * ((j * Hessian.cols() + i) >> 1)] = k->second;
-					Hessian.data()[3 * ((j * Hessian.cols() + i) >> 1) + Hessian.cols() + 1] = k->second;
-					Hessian.data()[3 * ((j * Hessian.cols() + i) >> 1) + Hessian.cols() + Hessian.cols() + 2] = k->second;
-				}				
-			}			
+				if (unfixed_pair_vertex_index[i+1] > unfixed_pair_vertex_index[j+1]) {
+					continue;
+				}
+
+				k = neo_hookean_hessian[unfixed_pair_vertex_index[i]].find(std::array{ (unsigned int)unfixed_pair_vertex_index[i+1], (unsigned int)unfixed_pair_vertex_index[j+1] });
+				if (k != neo_hookean_hessian[unfixed_pair_vertex_index[i]].end()) {
+					std::cout << "error, cannot find the hessian of a tet solveBlockWithPair()" << std::endl;
+				}
+				add_of_hessian = Hessian.data() + ((3 * (j * Hessian.cols() + i))>>1);
+				hessian_in_neo_hookean = k->second.hessian.data();
+				for (int m = 0; m < 3; ++m) {
+					*add_of_hessian += *hessian_in_neo_hookean;
+					*(add_of_hessian + 1) += *(hessian_in_neo_hookean + 1);
+					*(add_of_hessian + 2) += *(hessian_in_neo_hookean + 2);
+					hessian_in_neo_hookean += 3;
+					add_of_hessian += Hessian.cols();
+				}
+				if (i != j) {
+					add_of_hessian = Hessian.data() + ((3 * (i * Hessian.cols() + j))>>1);
+					hessian_in_neo_hookean = k->second.hessian.data();
+					for (int m = 0; m < 3; ++m) {
+						*add_of_hessian += *hessian_in_neo_hookean;
+						*(add_of_hessian + 1) += *(hessian_in_neo_hookean + 3);
+						*(add_of_hessian + 2) += *(hessian_in_neo_hookean + 6);
+						hessian_in_neo_hookean++;
+						add_of_hessian += Hessian.cols();
+					}
+				}
+			}
 		}
 	}
 
@@ -5668,7 +5920,6 @@ void XPBD_IPC::solveBlockWithPair(double dt,
 
 	if (perform_collision) {
 		auto k_ = collision_hessian.end();
-		double* add_of_hessian;
 		double* hessian_in_collision;
 
 		unsigned int index_0, index_1;
@@ -6292,7 +6543,7 @@ void XPBD_IPC::solveTetBlockCollision(std::array<double, 3>* vertex_position, do
 	double* volume, unsigned int tet_index, std::array<double, 3>* sn, unsigned int* common_vertex_in_order,
 	int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num, std::vector<unsigned int>* triangle_of_a_tet,
 	std::vector<unsigned int>* edge_of_a_tet, double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
-	int* vertex_index_on_surface, std::unordered_map<std::array<int, 2>, double, pair_hash>& tet_hessian,
+	int* vertex_index_on_surface, std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>& tet_hessian,
 	std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>& collision_hessian,
 	double* common_grad, std::array<double, 3>* record_vertex_position,
 	int* record_vertex_num, unsigned int prefix_sum_vetex_obj, double* floor_map, double& max_dis, std::array<double, 3>* collision_free_pos)//
@@ -6310,22 +6561,46 @@ void XPBD_IPC::solveTetBlockCollision(std::array<double, 3>* vertex_position, do
 
 
 	auto k = tet_hessian.end();
+	double* add_of_hessian;
+	double* hessian_in_neo_hookean;
+
 	for (int i = 0; i < unfixed_vertex_num; ++i) {
 		for (int j = 0; j < unfixed_vertex_num; ++j) {
-			k = tet_hessian.find(std::array{ tet_actual_unfixed_vertex_indices[i],tet_actual_unfixed_vertex_indices[j] });
+			if (tet_actual_unfixed_vertex_indices[i] > tet_actual_unfixed_vertex_indices[j]) {
+				continue;
+			}
+			k = tet_hessian.find(std::array{ (unsigned int)tet_actual_unfixed_vertex_indices[i], (unsigned int)tet_actual_unfixed_vertex_indices[j] });
 			if (k == tet_hessian.end()) {
+				//std::cout << tet_actual_unfixed_vertex_indices[i] << " " << tet_actual_unfixed_vertex_indices[j] << std::endl;
+				//std::cout << tet_hessian.size() << std::endl;
 				std::cout << "error, cannot find the hessian of a tet solveTetBlockCollision()" << std::endl;
 			}
-			Hessian.data()[3 * (j * Hessian.cols() + i)] = k->second;
-			Hessian.data()[3 * (j * Hessian.cols() + i) + Hessian.cols() + 1] = k->second;
-			Hessian.data()[3 * (j * Hessian.cols() + i) + Hessian.cols() + Hessian.cols() + 2] = k->second;
+			add_of_hessian = Hessian.data() + 3 * (j * Hessian.cols() + i);
+			hessian_in_neo_hookean = k->second.hessian.data();
+			for (int m = 0; m < 3; ++m) {
+				*add_of_hessian += *hessian_in_neo_hookean;
+				*(add_of_hessian + 1) += *(hessian_in_neo_hookean + 1);
+				*(add_of_hessian + 2) += *(hessian_in_neo_hookean + 2);
+				hessian_in_neo_hookean += 3;
+				add_of_hessian += Hessian.cols();
+			}
+			if (i != j) {
+				add_of_hessian = Hessian.data() + 3 * (i * Hessian.cols() + j);
+				hessian_in_neo_hookean = k->second.hessian.data();
+				for (int m = 0; m < 3; ++m) {
+					*add_of_hessian += *hessian_in_neo_hookean;
+					*(add_of_hessian + 1) += *(hessian_in_neo_hookean + 3);
+					*(add_of_hessian + 2) += *(hessian_in_neo_hookean + 6);
+					hessian_in_neo_hookean++;
+					add_of_hessian += Hessian.cols();
+				}
+			}
 		}
 		memcpy(grad.data() + 3 * i, common_grad + 3 * (prefix_sum_vetex_obj + tet_actual_unfixed_vertex_indices[i]), 24);
 	}
 
 	if (perform_collision) {
 		auto k_ = collision_hessian.end();
-		double* add_of_hessian;
 		double* hessian_in_collision;
 		for (int i = 0; i < unfixed_vertex_num; ++i) {
 			for (int j = 0; j < unfixed_vertex_num; ++j) {
@@ -6617,11 +6892,11 @@ void XPBD_IPC::solveTetBlock(std::array<double, 3>* vertex_position, double stif
 	double* volume, unsigned int tet_index, std::array<double, 3>* sn, unsigned int* common_vertex_in_order,
 	int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num,
 	double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
-	std::unordered_map<std::array<int, 2>, double, pair_hash>& tet_hessian, 
+	std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>& tet_hessian,
 	std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>& collision_hessian,
 	double* common_grad, std::vector<unsigned int>* triangle_of_a_tet,
 	std::vector<unsigned int>* edge_of_a_tet, int* vertex_index_on_surface, unsigned int prefix_sum_vetex_obj,
-	double* floor_map, std::array<double, 3>* record_ori_pos, char* indicate_collide_with_floor,
+	double* floor_map, std::array<double, 3>* record_ori_pos,
 	int color_No, double& max_dis, std::array<double, 3>* collision_free_pos)//
 {
 	if (unfixed_vertex_num == 0) {
@@ -6635,23 +6910,46 @@ void XPBD_IPC::solveTetBlock(std::array<double, 3>* vertex_position, double stif
 	Hessian.setZero();
 	grad.setZero();
 
+
+	double* hessian_in_neo_hookean;
+	double* add_of_hessian;
+
 	auto k = tet_hessian.end();
 	for (int i = 0; i < unfixed_vertex_num; ++i) {
 		for (int j = 0; j < unfixed_vertex_num; ++j) {
-			k = tet_hessian.find(std::array{ tet_actual_unfixed_vertex_indices[i],tet_actual_unfixed_vertex_indices[j] });
+			if (tet_actual_unfixed_vertex_indices[i] > tet_actual_unfixed_vertex_indices[j]) {
+				continue;
+			}
+			k = tet_hessian.find(std::array{ (unsigned int)tet_actual_unfixed_vertex_indices[i], (unsigned int)tet_actual_unfixed_vertex_indices[j] });
 			if(k== tet_hessian.end())	{
 				std::cout << "error, cannot find the hessian of a tet solveTetBlock()" << std::endl;
 			}
-			Hessian.data()[3 * (j * Hessian.cols() + i)] = k->second;
-			Hessian.data()[3 * (j * Hessian.cols() + i) + Hessian.cols() +1] = k->second;
-			Hessian.data()[3 * (j * Hessian.cols() + i) + Hessian.cols()+ Hessian.cols() +2] = k->second;
+			add_of_hessian = Hessian.data() + 3 * (j * Hessian.cols() + i);
+			hessian_in_neo_hookean = k->second.hessian.data();
+			for (int m = 0; m < 3; ++m) {
+				*add_of_hessian += *hessian_in_neo_hookean;
+				*(add_of_hessian + 1) += *(hessian_in_neo_hookean + 1);
+				*(add_of_hessian + 2) += *(hessian_in_neo_hookean + 2);
+				hessian_in_neo_hookean += 3;
+				add_of_hessian += Hessian.cols();
+			}
+			if (i != j) {
+				add_of_hessian = Hessian.data() + 3 * (i * Hessian.cols() + j);
+				hessian_in_neo_hookean = k->second.hessian.data();
+				for (int m = 0; m < 3; ++m) {
+					*add_of_hessian += *hessian_in_neo_hookean;
+					*(add_of_hessian + 1) += *(hessian_in_neo_hookean + 3);
+					*(add_of_hessian + 2) += *(hessian_in_neo_hookean + 6);
+					hessian_in_neo_hookean++;
+					add_of_hessian += Hessian.cols();
+				}
+			}
 		}
 		memcpy(grad.data()+3*i, common_grad + 3 * (prefix_sum_vetex_obj + tet_actual_unfixed_vertex_indices[i]), 24);
 	}
 
 	if (perform_collision) {
 		auto k_ = collision_hessian.end();
-		double* add_of_hessian;
 		double* hessian_in_collision;
 		for (int i = 0; i < unfixed_vertex_num; ++i) {
 			for (int j = 0; j < unfixed_vertex_num; ++j) {

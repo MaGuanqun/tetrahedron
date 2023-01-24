@@ -101,7 +101,7 @@ namespace SaveParameter{
 		}
 		std::vector<std::string> vec;
 		for (unsigned int i = 0; i < obj_path.size(); ++i) {
-			obj_stiffness[i].reserve(6);
+			obj_stiffness[i].reserve(8);
 			collide_stiffness[i].reserve(8);
 			std::getline(in, line);
 			split(line, " ", vec);
@@ -465,7 +465,7 @@ namespace SaveParameter{
 
 	inline void writeBasicPara(std::ofstream& input_file, std::vector<std::string>& path, std::vector<std::string>& collider_path,
 		unsigned int use_method, std::vector<std::vector<int>*>& anchor_veretx, double time_step,
-		std::vector<std::array<double, 6>>& cloth_stiffness, std::vector<std::array<double, 6>>& tet_stiffness,
+		std::vector<std::array<double, 6>>& cloth_stiffness, std::vector<std::array<double, 8>>& tet_stiffness,
 		std::vector<std::array<double, 8>>& cloth_collision_stiffness, std::vector<std::array<double, 8>>& tet_collision_stiffness, double cloth_density, double tet_density,
 		double velocity_damp, double* friction_coe, bool floor_exist, int floor_dimension, bool floor_normal_direction, double floor_value,
 		std::vector<std::array<double,3>>& translation_info, std::vector<double>& resize_scaler,std::vector<std::array<double,3>>&  rotate_angle,
@@ -578,7 +578,7 @@ namespace SaveParameter{
 
 
 	inline void writeParameter(std::vector<std::string>& path, std::vector<std::string>& collider_path, std::vector<std::array<double,6>>& cloth_stiffness, 
-		std::vector<std::array<double, 6>>& tet_stiffness, std::vector<std::array<double, 8>>& cloth_collision_stiffness, std::vector<std::array<double, 8>>& tet_collision_stiffness,
+		std::vector<std::array<double, 8>>& tet_stiffness, std::vector<std::array<double, 8>>& cloth_collision_stiffness, std::vector<std::array<double, 8>>& tet_collision_stiffness,
 		unsigned int use_method, std::vector<std::vector<int>*>&anchor_veretx, double time_step, double outer_convergence_rate,
 		double local_convergence_rate,
 		unsigned int sub_step_num, unsigned int max_outer_iteration_num, double cloth_density, double tet_density, double velocity_damp,

@@ -185,6 +185,30 @@ namespace FEM {
 	}
 
 
+	inline bool SPDprojection(Eigen::Matrix3d& A)
+	{
+
+
+		//JacobiSVD<Matrix<double, 12, 12>>  svd;
+		//svd.compute(A, ComputeFullU | ComputeFullV);
+
+
+		SelfAdjointEigenSolver<Matrix3d> svd(A);
+		if (svd.eigenvalues()[0] >= 0) {
+			return false;
+		}
+
+		VectorXd fixed_eigen_value = svd.eigenvalues();
+
+		for (unsigned int i = 0; i < A.cols(); ++i) {
+			if (fixed_eigen_value.data()[i] < 0) {
+				fixed_eigen_value.data()[i] = 0;
+			}
+		}
+		A = svd.eigenvectors() * fixed_eigen_value.asDiagonal() * svd.eigenvectors().transpose();
+		return true;
+	}
+
 	inline bool SPDprojection(Eigen::MatrixXd& A)
 	{
 

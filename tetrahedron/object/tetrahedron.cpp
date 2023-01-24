@@ -397,6 +397,8 @@ void Tetrahedron::recordInitialMesh(SingleTetrahedronInfo& single_tetrahedron_in
 	youngs_modulus = single_tetrahedron_info_ref.youngs_modulus;
 	poisson_ratio = single_tetrahedron_info_ref.poisson_ratio;
 	edge_length_stiffness = single_tetrahedron_info_ref.edge_length_stiffness;
+
+
 }
 
 

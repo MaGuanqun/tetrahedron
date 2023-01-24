@@ -279,6 +279,7 @@
     <ClInclude Include="collision\predictive_contact.h" />
     <ClInclude Include="collision\spatial_hashing.h" />
     <ClInclude Include="compute_energy.h" />
+    <ClInclude Include="constitutiveModel.h" />
     <ClInclude Include="external\imgui\imgui.h" />
     <ClInclude Include="external\imgui\imgui_impl_glfw.h" />
     <ClInclude Include="external\imgui\imgui_impl_opengl3.h" />
@@ -294,6 +295,7 @@
     <ClInclude Include="mesh_struct\mesh_struct.h" />
     <ClInclude Include="mesh_struct\tetrahedron_mesh_struct.h" />
     <ClInclude Include="mesh_struct\triangle_mesh_struct.h" />
+    <ClInclude Include="NeoHookean.h" />
     <ClInclude Include="newton_method.h" />
     <ClInclude Include="not used\createMesh.h" />
     <ClInclude Include="object\collider.h" />

@@ -482,6 +482,13 @@ inline double barrier(double d, double d_hat)
 }
 
 
+
+inline void LameCoeff(double Youngs_modulus, double Poisson_ratio, double& mu, double& lambda)
+{
+	mu =(Youngs_modulus / (2.0 + Poisson_ratio + Poisson_ratio));
+	lambda =(Youngs_modulus * Poisson_ratio / ((1.0 + Poisson_ratio) * (1.0 - 2.0 * Poisson_ratio)));
+}
+
 struct pair_hash {
 	template <typename T>
 	size_t operator()(const std::array<T, 2>& p) const {

@@ -88,6 +88,13 @@ public:
 
 	void tetHessian();
 
+
+	void setNewHookeanHessianStruct();
+
+
+	void setNewHookeanHessianStruct(std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>* neo_hookean_hessian,
+		int end, std::array<int, 4>* indices, std::vector<unsigned int>* record_neo_hookean_pair_key_value);
+
 	void inversionTest(int thread_No, int type);
 	void tetGradForColor(int thread_No, unsigned int color_No);
 	//void newtonCDTetBlockAGroupTest(int thread_No, int color);
@@ -154,7 +161,15 @@ public:
 
 	std::vector<std::vector<std::array<double, 3>>> record_collision_free_vertex_position;
 
+	void computeNeoHookeanHessianGrad(int thread_No);
+
+
+	void sumNeoHookeanHessian(int thread_No);
+
 private:
+
+	void computeNeoHookeanHessianGrad();
+
 
 	void computeGradient();
 
@@ -238,6 +253,7 @@ private:
 
 	//std::unordered_map<std::array<unsigned int, 2>, std::array<double, 9>, pair_hash> common_hessian_compare;//only include collision
 
+	std::vector<std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>>neo_hookean_hessian;//size is total obj num
 	std::vector<std::unordered_map<std::array<int, 2>,double, pair_hash>> tet_hessian;//size is total obj num
 	std::vector<double> floor_hessian;
 
@@ -300,8 +316,8 @@ private:
 
 	std::vector<std::array<int, 4>*> tet_indices; //size is total obj num
 
-	std::vector<Matrix<double, 3, 4>*>tet_A;
-	std::vector<double*>tet_volume;
+	std::vector<Matrix<double, 3, 4>*>tet_A;//size is total obj num
+	std::vector<double*>tet_volume;//size is total obj num
 
 	std::vector<double> lambda;
 
@@ -539,11 +555,11 @@ private:
 		double* volume, unsigned int tet_index, std::array<double, 3>* sn, unsigned int* common_vertex_in_order,
 		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num,
 		double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
-		std::unordered_map<std::array<int, 2>, double, pair_hash>& tet_hessian,
+		std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>& tet_hessian,
 		std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>& collision_hessian,
 		double* common_grad, std::vector<unsigned int>* triangle_of_a_tet,
 		std::vector<unsigned int>* edge_of_a_tet, int* vertex_index_on_surface, unsigned int prefix_sum_vetex_obj,
-		double* floor_map, std::array<double, 3>* record_ori_pos, char* indicate_collide_with_floor, int color_No,
+		double* floor_map, std::array<double, 3>* record_ori_pos, int color_No,
 		double& max_dis, std::array<double, 3>* collision_free_pos);
 
 	void solveTetBlockCollision(std::array<double, 3>* vertex_position, double stiffness, double dt, std::array<int, 4>* indices,
@@ -552,7 +568,7 @@ private:
 		double* volume, unsigned int tet_index, std::array<double, 3>* sn, unsigned int* common_vertex_in_order,
 		int* tet_vertex_index, int* unfixed_tet_vertex_index, unsigned int unfixed_vertex_num, std::vector<unsigned int>* triangle_of_a_tet,
 		std::vector<unsigned int>* edge_of_a_tet, double collision_stiffness, unsigned int obj_No, int* tet_actual_unfixed_vertex_indices,
-		int* vertex_index_on_surface, std::unordered_map<std::array<int, 2>, double, pair_hash>& tet_hessian,
+		int* vertex_index_on_surface, std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>& tet_hessian,
 		std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>& collision_hessian,
 		double* common_grad, std::array<double, 3>* record_vertex_position,
 		int* record_vertex_num, unsigned int prefix_sum_vetex_obj, double* floor_map, double& max_dis,
@@ -713,7 +729,7 @@ private:
 		unsigned int* EE_collider, int num_collider, double edge_length_0);
 
 
-	void initalARAPHessianStorages();
+	void initalElasticHessianStorages();
 
 	void getVTCollisionHessainForTetFromRecord(MatrixXd& Hessian, VectorXd& grad,
 		unsigned int* VT, unsigned int num, unsigned int vertex_order_in_matrix, unsigned int obj_No, int* tet_unfixed_vertex_indices, int unfixed_tet_vertex_num,
@@ -892,6 +908,22 @@ private:
 
 
 	double energy_time_start_begin;
+
+	std::vector< std::vector<unsigned int>>record_neo_hookean_pair_key_value;//size is total obj num
+
+
+
+	std::vector< std::vector<double>>neo_hookean_hessian_record;//every hessian is 12x12 hessian
+
+	void computeNeoHookeanHessianGrad(int thread_No, int obj_No, int start, int end);
+
+	void combineNeoHookeanHessian(int thread_No, int start, int end, std::vector<unsigned int>* pair_index_record,
+		std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>* neo_hookean_hessian, double* hessian_record);
+
+	void sumHessian(double* hessian_sum, double* global_hessian_record, bool& need_update, unsigned int start_index);
+
+	std::vector<std::vector<unsigned int>> neo_hookean_pair_index_start_per_thread;
+
 };
 
 

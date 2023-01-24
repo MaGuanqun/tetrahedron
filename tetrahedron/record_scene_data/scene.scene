@@ -1,15 +1,14 @@
 object
 1
-.\model\octopus_5K.ele
+C:\graphics\tetrahedron\model\bar.ele
 collider
-1
-.\model\tank.obj
+0
 stiffness
-20000 50000 0 0 0 0 
-2e+08 20000 20000 20 0 0 0 0 
+20000 50000 1 0 0 0 100000 0.3 
+1e+07 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
-0 
+75 1 2 3 4 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 47 48 49 50 371 372 373 374 375 376 377 378 379 380 381 382 383 384 385 386 387 388 389 390 392 393 395 396 398 399 400 401 402 403 404 405 406 407 408 409 410 411 412 413 414 415 441 447 454 467 470 471 482 
 time_step
 0.01
 cloth_density
@@ -17,7 +16,7 @@ cloth_density
 tet_density
 100
 velocity_damp
-0.99
+0.995
 friction_coe
 0.9 0.8 0.9
 floor_dimension
@@ -25,30 +24,27 @@ floor_dimension
 floor_value
 -0.55
 translation
-0 1 -0.16
+0 0 0
 size_scaler
-0.3 
+1 
 rotation_angle
 0 0 0
 collider_translation
-0 0 0
 collider_size_scaler
-1 
 collider_rotation_angle
-0 0 0
 camera position
-3.79426 0.341399 -1.60181
+0.376286 -0.113018 -3.29181
 camera up
--0.00291372 0.999959 0.00859385
+0 0.999848 -0.0174524
 camera center
--0.0926839 0.313883 0.281407
+0.376286 -0.055559 0
 XPBD_IPC
 substep_num
 1
 out iteration_num
-300
+40
 inner iteration_num
-64
+100
 sub_step_per_detection
 1
 d_hat
@@ -58,10 +54,10 @@ inner convergence rate
 min inner itr num
 4
 min outer itr num
-9
+2
 displacement standard
-0.0005
+0.001
 distance record as collision
 0
 energy converge standard
-1e-08
+1e-10

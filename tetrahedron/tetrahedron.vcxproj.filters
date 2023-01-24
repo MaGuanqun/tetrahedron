@@ -447,6 +447,12 @@
     <ClInclude Include="IPC.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="NeoHookean.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="constitutiveModel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

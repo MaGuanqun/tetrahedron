@@ -138,9 +138,9 @@ struct SingleTetrahedronInfo {
 		this->position_stiffness = single_cloth_info.position_stiffness;
 		memcpy(this->volume_preserve_stiffness, single_cloth_info.volume_preserve_stiffness, 16);
 		memcpy(this->ARAP_stiffness, single_cloth_info.ARAP_stiffness,16);
-		this->youngs_modulus = youngs_modulus;
-		this->poisson_ratio = poisson_ratio;
-		this->edge_length_stiffness = edge_length_stiffness;
+		this->youngs_modulus = single_cloth_info.youngs_modulus;
+		this->poisson_ratio = single_cloth_info.poisson_ratio;
+		this->edge_length_stiffness = single_cloth_info.edge_length_stiffness;
 		memcpy(this->collision_stiffness, single_cloth_info.collision_stiffness, 64);
 		memcpy(this->sigma_limit, single_cloth_info.sigma_limit, 16);
 		return *this;
@@ -155,6 +155,10 @@ struct UpdateObjStiffness
 	double bend_stiffness[2];
 	bool update_ARAP;
 	double ARAP_stiffness[2];
+
+	double youngs_modulus;
+	double poisson_ratio;
+
 	bool  update_collision[4];
 	double collision_stiffness[8];
 	bool update_tet_edge_length;

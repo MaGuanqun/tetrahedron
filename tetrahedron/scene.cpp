@@ -108,7 +108,7 @@ void Scene::reorganizeData()
 }
 
 
-void Scene::saveParameter(std::vector<std::string>& path, std::vector<std::string>& collider_path, std::vector<std::array<double, 6>>& cloth_stiffness, std::vector<std::array<double, 6>>& tet_stiffness,
+void Scene::saveParameter(std::vector<std::string>& path, std::vector<std::string>& collider_path, std::vector<std::array<double, 6>>& cloth_stiffness, std::vector<std::array<double, 8>>& tet_stiffness,
 	std::vector<std::array<double, 8>>& cloth_collision_stiffness, std::vector<std::array<double, 8>>& tet_collision_stiffness, double* tolerance_ratio, double* friction_coe)
 {
 	double velocity_damp=1.0;
@@ -491,6 +491,10 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 			initial_stiffness[DAMP_ARAP] = obj_stiffness[cloth.size()][3];
 			memcpy(initial_stiffness, collide_stiffness[cloth.size()].data(), 32);
 			memcpy(initial_stiffness + DAMP_BODY_POINT_TRIANGLE, collide_stiffness[0].data() + 4, 32);
+
+			initial_stiffness[YOUNGS_MODULUS] = obj_stiffness[cloth.size()][6];
+			initial_stiffness[POISSON_RATIO] = obj_stiffness[cloth.size()][7];
+
 			for (unsigned int i = 0; i < tetrahedron.size(); ++i) {
 				if (!anchor_vertex[i+cloth.size()].empty()) {
 					tetrahedron[i].mesh_struct.anchor_vertex = anchor_vertex[i + cloth.size()];
@@ -520,7 +524,9 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 	//std::array<double, 4>tetrahedron_collision_stiffness_per = {1e1,1e1, 1e1,1e1 };
 	double sigma_limit[2] = { 0.99,1.01 };
 	SingleTetrahedronInfo single_tetrahedron_info(tetrahedron_density, 5e4, initial_stiffness[ARAP], 0.0, initial_stiffness, sigma_limit,
-		5e4,0.45, initial_stiffness[TET_EDGE_LENGTH],initial_stiffness[DAMP_ARAP], 0.0);
+		initial_stiffness[YOUNGS_MODULUS], initial_stiffness[POISSON_RATIO], initial_stiffness[TET_EDGE_LENGTH], initial_stiffness[DAMP_ARAP], 0.0);
+
+
 	for (int i = 0; i < tetrahedron_num; ++i) {
 		tetrahedron[i].recordInitialMesh(single_tetrahedron_info);
 	}
@@ -790,7 +796,7 @@ void Scene::updateIterateSolverParameter(double rate, int itr_solver_method)
 	}
 }
 
-void Scene::getTetrahedronInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 6>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 8>>& collision_stiffness)
+void Scene::getTetrahedronInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector<double>& mass, std::vector<std::array<double, 8>>& mesh_stiffness, double* simulation_parameter, std::vector<std::array<double, 8>>& collision_stiffness)
 {
 	mesh_info.resize(2);
 	mass.resize(tetrahedron_num);
@@ -802,11 +808,14 @@ void Scene::getTetrahedronInfo(std::vector<std::array<int, 3>>& mesh_info, std::
 		mass[i] = tetrahedron[i].mass;
 	}
 	mesh_stiffness.resize(tetrahedron_num);
+
 	for (int i = 0; i < tetrahedron_num; ++i) {
 		mesh_stiffness[i][0] = tetrahedron[i].single_tetrahedron_info_ref.ARAP_stiffness[0];
 		mesh_stiffness[i][1] = tetrahedron[i].single_tetrahedron_info_ref.position_stiffness;
 		mesh_stiffness[i][2] = tetrahedron[i].single_tetrahedron_info_ref.edge_length_stiffness;
 		mesh_stiffness[i][3] = tetrahedron[i].single_tetrahedron_info_ref.ARAP_stiffness[1];
+		mesh_stiffness[i][6] = tetrahedron[i].single_tetrahedron_info_ref.youngs_modulus;
+		mesh_stiffness[i][7] = tetrahedron[i].single_tetrahedron_info_ref.poisson_ratio;
 	}
 	simulation_parameter[0] = time_step;
 	switch (use_method)
@@ -1958,7 +1967,7 @@ void Scene::testForWritetToArraySingle(int total_thread_num)
 
 
 
-void Scene::updateStiffness(UpdateObjStiffness& update_obj_stiffness, std::vector<std::array<double, 6>>& cloth_stiffness, std::vector<std::array<double, 6>>& tet_stiffness,
+void Scene::updateStiffness(UpdateObjStiffness& update_obj_stiffness, std::vector<std::array<double, 6>>& cloth_stiffness, std::vector<std::array<double, 8>>& tet_stiffness,
 	std::vector<std::array<double, 8>>& cloth_collision_stiffness,
 	std::vector<std::array<double, 8>>& tet_collision_stiffness)
 {
@@ -1988,6 +1997,8 @@ void Scene::updateStiffness(UpdateObjStiffness& update_obj_stiffness, std::vecto
 			tetrahedron[i].damp_ARAP_stiffness = update_obj_stiffness.ARAP_stiffness[1];
 			tet_stiffness[i][0]= update_obj_stiffness.ARAP_stiffness[0];
 			tet_stiffness[i][3]= update_obj_stiffness.ARAP_stiffness[1];
+			tet_stiffness[i][6] = update_obj_stiffness.youngs_modulus;
+			tet_stiffness[i][7] = update_obj_stiffness.poisson_ratio;
 		}
 		update_obj_stiffness.update_ARAP = false;
 	}

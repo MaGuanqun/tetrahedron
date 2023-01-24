@@ -517,6 +517,8 @@ public:
 
 	//unsigned int* outer_itr_num;
 
+	void updateVertexBelongColorGroup(int color_No);
+
 private:		
 
 	
@@ -1327,7 +1329,6 @@ private:
 	void testColliderPair();
 	SecondOrderConstraint second_order_constraint;
 
-	void updateVertexBelongColorGroup(int color_No);
 
 	//void vertexUsedInSelfCollision();
 
