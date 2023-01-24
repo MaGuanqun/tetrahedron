@@ -972,8 +972,8 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 
 	//}
 	
-		draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[2488].data(), 0.002);
-		draw_vertex.draw(camera, glm::vec3(1.0, 0.0, 0.0));
+		//draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[2488].data(), 0.002);
+		//draw_vertex.draw(camera, glm::vec3(1.0, 0.0, 0.0));
 
 	//	draw_vertex.setVertex(xpbd_ipc.e0_1_, //
 	//		0.002);
@@ -1004,7 +1004,7 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 	//	pos_2.emplace_back(xpbd_ipc.e1_0[order]);
 	//	pos_2.emplace_back(xpbd_ipc.e1_1[order]);
 
-		testScene();
+		//testScene();
 
 }
 

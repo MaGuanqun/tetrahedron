@@ -1129,7 +1129,8 @@ void XPBD_IPC::computeNeoHookeanHessianGrad(int thread_No, int obj_No, int start
 
 
 	if (thread_No == 0) {
-		std::cout << "youngs modulus, " << tetrahedron->data()[obj_No - cloth->size()].youngs_modulus << " " << tetrahedron->data()[obj_No - cloth->size()].poisson_ratio << std::endl;
+		std::cout << "youngs modulus, " << tetrahedron->data()[obj_No - cloth->size()].youngs_modulus << " " << tetrahedron->data()[obj_No - cloth->size()].poisson_ratio<<" "
+			<<mu<<" "<<lambda << std::endl;
 	}
 
 	int prefix_sum_start = vertex_index_prefix_sum_obj[obj_No];
@@ -1139,11 +1140,13 @@ void XPBD_IPC::computeNeoHookeanHessianGrad(int thread_No, int obj_No, int start
 
 	for (int i = start; i < end; ++i) {
 		vertex_index = tet_indices[obj_No][i].data();
-		NeoHookean::gradientHessian(vertex_pos[vertex_index[0]].data(), vertex_pos[vertex_index[1]].data(),
+		NeoHookean::gradientHessianMPM(vertex_pos[vertex_index[0]].data(), vertex_pos[vertex_index[1]].data(),
 			vertex_pos[vertex_index[2]].data(), vertex_pos[vertex_index[3]].data(),
 			A[i], volume[i], mu, lambda, grad, hessian);
 
 		memcpy(neo_hookean_hessian_record_ + 144 * i, hessian.data(), 1152);
+
+		std::cout << hessian << std::endl;
 
 		grad_address = com_grad + 3 * (prefix_sum_start + vertex_index[0]);
 		*grad_address += grad.data()[0];
@@ -1160,7 +1163,7 @@ void XPBD_IPC::computeNeoHookeanHessianGrad(int thread_No, int obj_No, int start
 		*(grad_address + 1) += grad.data()[7];
 		*(grad_address + 2) += grad.data()[8];
 
-		grad_address = com_grad + 3 * (prefix_sum_start + vertex_index[1]);
+		grad_address = com_grad + 3 * (prefix_sum_start + vertex_index[3]);
 		*grad_address += grad.data()[9];
 		*(grad_address + 1) += grad.data()[10];
 		*(grad_address + 2) += grad.data()[11];
@@ -8356,9 +8359,10 @@ void XPBD_IPC::computeARAPEnergyPerThread(int thread_No)
 	std::array<double, 3>* vertex_pos;
 	Matrix<double, 3, 4>* A;
 	double* volume;
-	double stiffness;
+	//double stiffness;
 	double* mass_inv_;
 	double tet_energy;
+	double mu; double lambda;
 	for (unsigned int i = 0; i < tetrahedron->size(); ++i) {
 		end = tet_index_begin_per_thread[i+cloth->size()][thread_No+1];
 		start = tet_index_begin_per_thread[i + cloth->size()][thread_No];
@@ -8366,12 +8370,17 @@ void XPBD_IPC::computeARAPEnergyPerThread(int thread_No)
 		vertex_pos = vertex_position[i + cloth->size()];
 		A = tetrahedron->data()[i].mesh_struct.A.data();
 		volume = tetrahedron->data()[i].mesh_struct.volume.data();
-		stiffness = tetrahedron->data()[i].ARAP_stiffness;
+		//stiffness = tetrahedron->data()[i].ARAP_stiffness;
 		mass_inv_ = tetrahedron->data()[i].mesh_struct.mass_inv.data();
+		LameCoeff(tetrahedron->data()[i].youngs_modulus, tetrahedron->data()[i].poisson_ratio,
+			mu, lambda);
+
 		for (unsigned int j = start; j < end; ++j) {
 			if (mass_inv_[indices[j][0]] != 0.0 || mass_inv_[indices[j][1]] != 0.0 || mass_inv_[indices[j][2]] != 0.0 || mass_inv_[indices[j][3]] != 0.0) {
-				tet_energy = compute_energy.ARAPEnergy(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
-					vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j], volume[j], stiffness);
+				//tet_energy = compute_energy.ARAPEnergy(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
+				//	vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j], volume[j], stiffness);
+				tet_energy = NeoHookean::energy(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
+					vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j], volume[j], mu, lambda);
 				energy += tet_energy;
 			}
 		}

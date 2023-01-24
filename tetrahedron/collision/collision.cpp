@@ -4203,6 +4203,9 @@ void Collision::updateVertexBelongColorGroup(int color_No)
 		for (auto j = anchor_vertex->begin(); j < anchor_vertex->end(); ++j) {
 			belong[*j] = false;
 		}
+
+		//std::cout << "updateVertexBelongColorGroup() " << color_No << " " << vertex_index_of_a_tet_color_group[i][color_group_index][color_No].size() << std::endl;
+
 	}
 }
 

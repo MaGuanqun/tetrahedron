@@ -44,7 +44,7 @@ namespace NeoHookean {
 		d2e_dsigma2(1, 1) = mu * (1.0 + inv2_1) - lambda * inv2_1 * (log_sigma_prod - 1.0);
 		d2e_dsigma2(0, 1) = d2e_dsigma2(1, 0) = lambda / sigma[0] / sigma[1];
 
-		const double inv2_2 = 1.0 / sigma[2] / sigma[2];
+		const double inv2_2 = 1.0 / (sigma[2] * sigma[2]);
 		d2e_dsigma2(2, 2) = mu * (1.0 + inv2_2) - lambda * inv2_2 * (log_sigma_prod - 1.0);
 		d2e_dsigma2(1, 2) = d2e_dsigma2(2, 1) = lambda / sigma[1] / sigma[2];
 		d2e_dsigma2(2, 0) = d2e_dsigma2(0, 2) = lambda / sigma[2] / sigma[0];
@@ -98,8 +98,12 @@ namespace NeoHookean {
 		svd.compute(F, ComputeFullU | ComputeFullV);
 		dpsi_dsigma(svd.singularValues(), mu, lambda, de_dsigma);
 		d2psi_dsigma2(svd.singularValues(), mu, lambda, d2e_dsigma2);
+
 		Vector3d left_coeff;
 		B_left_coeff(svd.singularValues(), mu, lambda, left_coeff);
+
+		std::cout << "de_dsigma " << de_dsigma.transpose() << std::endl;
+		std::cout << d2e_dsigma2 << std::endl;
 
 		ConstitutiveModel::first_piola_derivative(svd.matrixU(), svd.singularValues(), svd.matrixV(), de_dsigma,
 			left_coeff, d2e_dsigma2, dPdF);
@@ -111,15 +115,22 @@ namespace NeoHookean {
 	{
 		Matrix3d deformation_gradient;
 		FEM::getDeformationGradient(position_0, position_1, position_2, position_3, A, deformation_gradient);
+
 		Matrix3d P;
 		firstPiola(deformation_gradient, mu, lambda, P);
+
+		std::cout << "p " << std::endl;
+		std::cout <<P << std::endl;
+
 		Matrix3d P_inv;
 		memcpy(P_inv.data(), A.data() + 3, 72);
 		P_inv.transposeInPlace();
 		ConstitutiveModel::backpropagate_element_gradient(P_inv, P, grad);
 		grad *= volume;
 
-		ConstitutiveModel::backpropagate_element_hessian(P_inv, P, Hessian);
+		MatrixXd dPdF(9,9);
+		firstPiolaDerivative(deformation_gradient, mu, lambda, dPdF);
+		ConstitutiveModel::backpropagate_element_hessian(P_inv, dPdF, Hessian);
 		Hessian *= volume;
 	}
 
