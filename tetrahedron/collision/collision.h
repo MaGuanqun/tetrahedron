@@ -444,7 +444,12 @@ public:
 	std::vector<unsigned int> floor_pair_sum_start_per_thread;
 
 
-
+	std::vector<char> vt_pair_activated;
+	std::vector<char> ee_pair_activated;
+	std::vector<char> tv_collider_pair_activated;
+	std::vector<char> vt_collider_pair_activated;
+	std::vector<char> ee_collider_pair_activated;
+	std::vector<char> floor_pair_activated;
 
 
 	std::vector<double>record_vt_pair_d_hat;
@@ -1382,7 +1387,6 @@ private:
 	std::vector<std::vector<std::vector<std::vector<unsigned int>>>*>tet_color_groups;
 	//std::vector<std::vector<std::vector<char>>*>tet_color_groups_label;
 
-
 	std::vector<std::vector<unsigned int>*>triangle_around_triangle;
 	std::vector<std::vector<unsigned int>*>edge_around_triangle;
 
@@ -1430,5 +1434,7 @@ private:
 
 
 	void testPrint();
+
+	void testPairDistance();
 
 };

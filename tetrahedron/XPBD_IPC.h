@@ -924,6 +924,10 @@ private:
 
 	std::vector<std::vector<unsigned int>> neo_hookean_pair_index_start_per_thread;
 
+	void NeoHookeanTest();
+
+	void testVolume();
+
 };
 
 

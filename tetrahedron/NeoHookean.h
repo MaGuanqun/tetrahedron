@@ -2,10 +2,30 @@
 #include"XPBD/FEM_relate.h"
 #include"basic/global.h"
 #include"constitutiveModel.h"
+#include <stdlib.h>
 
 using namespace Eigen;
 
 namespace NeoHookean {
+
+	inline bool testDeterminent(double* position_0, double* position_1, double* position_2, double* position_3,
+		Matrix<double, 3, 4>& A)
+	{
+		Matrix3d deformation_gradient;
+		FEM::getDeformationGradient(position_0, position_1, position_2, position_3, A, deformation_gradient);
+
+		double k = deformation_gradient.determinant();
+
+		if (k <= 0) {
+			std::cout << "error tet volume equals zero, error to compute ||F|| " << k << std::endl;
+			k = 1e-36;
+			return false;
+			//system("pause");
+
+
+		}
+		return true;
+	}
 
 	inline double energy(double* position_0, double* position_1, double* position_2, double* position_3,
 		Matrix<double, 3, 4>& A, double volume, double mu, double lambda)
@@ -13,7 +33,22 @@ namespace NeoHookean {
 		Matrix3d deformation_gradient;
 		FEM::getDeformationGradient(position_0, position_1, position_2, position_3, A, deformation_gradient);
 
-		double J = log(deformation_gradient.determinant());
+		double k = deformation_gradient.determinant();
+
+		if (k <= 0) {
+			std::cout << "compute energy, error tet volume equals zero, error to compute ||F|| "<<k << std::endl;
+			k = 1e-36;
+
+			system("pause");
+
+
+		}
+
+
+		double J = log(k);
+
+
+
 
 		double energy = mu * 0.5 * (deformation_gradient.squaredNorm() - 3.0) - mu *J + lambda * 0.5 * J * J;
 		return volume * energy;
@@ -55,7 +90,13 @@ namespace NeoHookean {
 
 	inline void B_left_coeff(const Vector3d& sigma, double mu, double lambda, Vector3d& left_coeff)
 	{
-		const double sigma_prod = sigma.prod();
+		double sigma_prod = sigma.prod();
+
+		if (sigma_prod <= 0) {
+			std::cout << "error to compute B_left_coeff, product of eigen value equals zero " << std::endl;
+			sigma_prod = 1e-36;
+		}
+
 		const double middle = mu - lambda * std::log(sigma_prod);
 		left_coeff[0] = (mu + middle / (sigma[0] * sigma[1])) / 2.0;
 		left_coeff[1] = (mu + middle / (sigma[1] * sigma[2])) / 2.0;
@@ -84,6 +125,12 @@ namespace NeoHookean {
 		Matrix3d F_inv;
 		cofactor(F, F_inv);
 		double J = F.determinant();
+
+		if (J <= 0) {
+			std::cout << "error fist piola, tet volume equals zero, error to compute ||F|| " << std::endl;
+			J = 1e-36;
+		}
+
 		F_inv /= J;
 		P = mu * (F - F_inv) + lambda * std::log(J) * F_inv;
 	}
@@ -96,14 +143,17 @@ namespace NeoHookean {
 		Matrix3d d2e_dsigma2;
 
 		svd.compute(F, ComputeFullU | ComputeFullV);
+
+
+
 		dpsi_dsigma(svd.singularValues(), mu, lambda, de_dsigma);
 		d2psi_dsigma2(svd.singularValues(), mu, lambda, d2e_dsigma2);
 
 		Vector3d left_coeff;
 		B_left_coeff(svd.singularValues(), mu, lambda, left_coeff);
 
-		std::cout << "de_dsigma " << de_dsigma.transpose() << std::endl;
-		std::cout << d2e_dsigma2 << std::endl;
+		//std::cout << "de_dsigma " << de_dsigma.transpose() << std::endl;
+		//std::cout << d2e_dsigma2 << std::endl;
 
 		ConstitutiveModel::first_piola_derivative(svd.matrixU(), svd.singularValues(), svd.matrixV(), de_dsigma,
 			left_coeff, d2e_dsigma2, dPdF);
@@ -119,8 +169,8 @@ namespace NeoHookean {
 		Matrix3d P;
 		firstPiola(deformation_gradient, mu, lambda, P);
 
-		std::cout << "p " << std::endl;
-		std::cout <<P << std::endl;
+		//std::cout << "p " << std::endl;
+		//std::cout <<P << std::endl;
 
 		Matrix3d P_inv;
 		memcpy(P_inv.data(), A.data() + 3, 72);

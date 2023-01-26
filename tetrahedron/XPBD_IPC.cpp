@@ -12,7 +12,7 @@ XPBD_IPC::XPBD_IPC()
 
 	damping_coe = 0.0;
 
-	perform_collision = false;
+	perform_collision = true;
 
 	XPBD_constraint.epsilon_for_bending = 1e-10;
 
@@ -1036,6 +1036,9 @@ void XPBD_IPC::computeNeoHookeanHessianGrad()
 {
 	thread->assignTask(this, NEO_HOOKEAN_HESSIAN_GRAD);
 	thread->assignTask(this, SUM_NEO_HOOKEAN_HESSIAN);
+
+
+	
 }
 
 //NEO_HOOKEAN_HESSIAN_GRAD
@@ -1128,10 +1131,10 @@ void XPBD_IPC::computeNeoHookeanHessianGrad(int thread_No, int obj_No, int start
 	double* com_grad = common_grad[thread_No].data();
 
 
-	if (thread_No == 0) {
-		std::cout << "youngs modulus, " << tetrahedron->data()[obj_No - cloth->size()].youngs_modulus << " " << tetrahedron->data()[obj_No - cloth->size()].poisson_ratio<<" "
-			<<mu<<" "<<lambda << std::endl;
-	}
+	//if (thread_No == 0) {
+	//	std::cout << "youngs modulus, " << tetrahedron->data()[obj_No - cloth->size()].youngs_modulus << " " << tetrahedron->data()[obj_No - cloth->size()].poisson_ratio<<" "
+	//		<<mu<<" "<<lambda << std::endl;
+	//}
 
 	int prefix_sum_start = vertex_index_prefix_sum_obj[obj_No];
 
@@ -1146,7 +1149,9 @@ void XPBD_IPC::computeNeoHookeanHessianGrad(int thread_No, int obj_No, int start
 
 		memcpy(neo_hookean_hessian_record_ + 144 * i, hessian.data(), 1152);
 
-		std::cout << hessian << std::endl;
+		//std::cout << "start " << start << " " << end << std::endl;
+		//std::cout << grad.transpose() << std::endl;
+		//std::cout << hessian << std::endl;
 
 		grad_address = com_grad + 3 * (prefix_sum_start + vertex_index[0]);
 		*grad_address += grad.data()[0];
@@ -1206,11 +1211,11 @@ void XPBD_IPC::setNewHookeanHessianStruct(std::unordered_map<std::array<unsigned
 					find_ = neo_hookean_hessian->find(std::array{ (unsigned int)vertex_index[k],(unsigned int)vertex_index[j] });
 					if (find_ != neo_hookean_hessian->end()) {
 						find_->second.order_in_constraint.emplace_back(i);
-						find_->second.order_in_constraint.emplace_back(9*((4*j)+k));
+						find_->second.order_in_constraint.emplace_back(3*((12*j)+k));
 					}
 					else {
 						temp_store_.order_in_constraint[0] = i;
-						temp_store_.order_in_constraint[1] = 9 * ((4 * j) + k);
+						temp_store_.order_in_constraint[1] = 3 * ((12 * j) + k);
 						neo_hookean_hessian->emplace(std::array{ (unsigned int)vertex_index[k],(unsigned int)vertex_index[j] }, temp_store_);
 						record_neo_hookean_pair_key_value->emplace_back(vertex_index[k]);
 						record_neo_hookean_pair_key_value->emplace_back(vertex_index[j]);
@@ -1452,24 +1457,71 @@ void XPBD_IPC::inversionTest(int thread_No, int type)
 				}
 
 				//if (inversion_time < 1e-7) {
-				//	std::cout << "inversion time too small " << j<<" "<< inversion_time << std::endl;
-				//}
-
-				//if (collision_time < 0.1) {
-				//	std::cout << "tet index " << j << " " << tet_vertex[0] << " " << tet_vertex[1] << " " << tet_vertex[2] << " " << tet_vertex[3]<<" "<< collision_time << std::endl;
+				//	std::cout << "collision time too small " << i << " " << j << std::endl;
 				//	double t;
 				//	inversionTest::TetInversionTestTest(ori_vertex_pos[tet_vertex[0]].data(), ori_vertex_pos[tet_vertex[1]].data(),
-				//		ori_vertex_pos[tet_vertex[2]].data(), ori_vertex_pos[tet_vertex[3]].data(), vertex_pos[tet_vertex[0]].data(),
-				//		vertex_pos[tet_vertex[1]].data(), vertex_pos[tet_vertex[2]].data(), vertex_pos[tet_vertex[3]].data(), &t);
+				//				ori_vertex_pos[tet_vertex[2]].data(), ori_vertex_pos[tet_vertex[3]].data(), vertex_pos[tet_vertex[0]].data(),
+				//				vertex_pos[tet_vertex[1]].data(), vertex_pos[tet_vertex[2]].data(), vertex_pos[tet_vertex[3]].data(), &t);
+				//}
 
+				//if (type == 1 && j == 7451) {
+				//	std::cout <<"test inversion "<< inversion_time << std::endl;
+				//}
+				//if (inversion_time < 1e-7) {
+				//	std::cout << "inversion time too small " << j<<" "<< inversion_time << std::endl;
+				//}
+				//if (collision_time < 0.1) {
+				//	std::cout << "tet index " << j << " " << tet_vertex[0] << " " << tet_vertex[1] << " " << tet_vertex[2] << " " << tet_vertex[3]<<" "<< collision_time << std::endl;
+				//	
+				//	
 				//	inversionTest::TetInversionTestTestCompare(ori_vertex_pos[tet_vertex[0]].data(), ori_vertex_pos[tet_vertex[1]].data(),
 				//		ori_vertex_pos[tet_vertex[2]].data(), ori_vertex_pos[tet_vertex[3]].data(), vertex_pos[tet_vertex[0]].data(),
 				//		vertex_pos[tet_vertex[1]].data(), vertex_pos[tet_vertex[2]].data(), vertex_pos[tet_vertex[3]].data(), &t);
 				//}
-
-
-
 			}
+
+			//if (inner_iteration_number==23 &&  j == 2381 && type == 1) {
+			//	double t;
+			//	if (inversionTest::TetInversionTestTest(ori_vertex_pos[tet_vertex[0]].data(), ori_vertex_pos[tet_vertex[1]].data(),
+			//		ori_vertex_pos[tet_vertex[2]].data(), ori_vertex_pos[tet_vertex[3]].data(), vertex_pos[tet_vertex[0]].data(),
+			//		vertex_pos[tet_vertex[1]].data(), vertex_pos[tet_vertex[2]].data(), vertex_pos[tet_vertex[3]].data(), &t)) {
+			//		std::cout << t << std::endl;
+			//	}			
+			//	else {
+			//		//t = 1.0;
+			//	}
+			//	t = 0.028645;
+			//	double v0[4][3];				
+			//			for (int k = 0; k < 4; ++k) {
+			//				v0[k][0] = ori_vertex_pos[tet_vertex[k]][0] + t * (vertex_pos[tet_vertex[k]][0] - ori_vertex_pos[tet_vertex[k]][0]);
+			//				v0[k][1] = ori_vertex_pos[tet_vertex[k]][1] + t * (vertex_pos[tet_vertex[k]][1] - ori_vertex_pos[tet_vertex[k]][1]);
+			//				v0[k][2] = ori_vertex_pos[tet_vertex[k]][2] + t * (vertex_pos[tet_vertex[k]][2] - ori_vertex_pos[tet_vertex[k]][2]);
+			//			}
+			//			NeoHookean::testDeterminent(v0[0], v0[1], v0[2], v0[3],tet_A[0][j]);
+			//}
+
+			//if ( type == 1 && j == 2486) {
+			//	for (int m = 0; m < 4; ++m) {
+			//		std::cout << vertex_pos[tet_vertex[m]][0] << " " << vertex_pos[tet_vertex[m]][1] << " " << vertex_pos[tet_vertex[m]][2] << std::endl;
+			//	}				
+			//	if (inversionTest::TetInversionTestTest(ori_vertex_pos[tet_vertex[0]].data(), ori_vertex_pos[tet_vertex[1]].data(),
+			//		ori_vertex_pos[tet_vertex[2]].data(), ori_vertex_pos[tet_vertex[3]].data(), vertex_pos[tet_vertex[0]].data(),
+			//		vertex_pos[tet_vertex[1]].data(), vertex_pos[tet_vertex[2]].data(), vertex_pos[tet_vertex[3]].data(), &inversion_time)) {
+			//		std::cout << inversion_time << std::endl;
+			//		
+			//		NeoHookean::testDeterminent(v0[0], v0[1], v0[2], v0[3],
+			//			tet_A[0][j]);
+		
+			//	}				
+			//}
+			//else {
+			//	//if (type == 1 && j == 7451) {
+			//	//	inversionTest::TetInversionTestTest(ori_vertex_pos[tet_vertex[0]].data(), ori_vertex_pos[tet_vertex[1]].data(),
+			//	//		ori_vertex_pos[tet_vertex[2]].data(), ori_vertex_pos[tet_vertex[3]].data(), vertex_pos[tet_vertex[0]].data(),
+			//	//		vertex_pos[tet_vertex[1]].data(), vertex_pos[tet_vertex[2]].data(), vertex_pos[tet_vertex[3]].data(), &inversion_time);
+			//	//	std::cout << "test inversion failed to detect" << std::endl;
+			//	//}
+			//}
 		}
 	}
 
@@ -1976,11 +2028,14 @@ double XPBD_IPC::computeCurrentEnergy()
 	energy += inertial_energy;
 	double ARAP_energy = computeCurrentARAPEnergy();
 	energy += ARAP_energy;
-	if (perform_collision) {
-		double barrier_energy = 0.0;
+	double barrier_energy = 0.0;
+	if (perform_collision) {		
 		barrier_energy = computeBarrierEnergy();
 		energy += barrier_energy;		
 	}
+
+	//std::cout <<"energy " << energy << " " << inertial_energy << " " << ARAP_energy << " " << barrier_energy << std::endl;
+
 	return energy;
 }
 
@@ -2745,12 +2800,58 @@ void XPBD_IPC::computeGradient()
 
 
 
+void XPBD_IPC::NeoHookeanTest()
+{
+	std::cout << "sum record " << std::endl;
+	for (int i = 0; i < 12; ++i) {
+		std::cout << common_grad[0][i] << " ";
+	}
+	std::cout << std::endl;
+
+	for (int i = 0; i < 12; ++i) {
+		for (int j = 0; j < 12; ++j) {
+			std::cout << neo_hookean_hessian_record[0][12 * j + i] << " ";
+		}
+		std::cout << std::endl;
+	}
+
+	for (auto i = neo_hookean_hessian[0].begin(); i != neo_hookean_hessian[0].end(); ++i) {
+		std::cout << i->first[0] << " " << i->first[1] << std::endl;
+		for (int j = 0; j < 3; ++j) {
+			for (int k = 0; k < 3; ++k) {
+				std::cout << i->second.hessian[3 * k + j] << " ";
+			}
+			std::cout << std::endl;
+		}
+	
+	}
+}
+
+
+void XPBD_IPC::testVolume()
+{
+	for (int i = 0; i < tet_index_begin_per_thread[0][total_thread_num]; ++i) {
+		double volume = getTetrahedronVolume(vertex_position[0][tet_indices[0][i][0]].data(), vertex_position[0][tet_indices[0][i][1]].data(), 
+			vertex_position[0][tet_indices[0][i][2]].data(), vertex_position[0][tet_indices[0][i][3]].data());
+		if (volume <= 0.0) {
+			std::cout << "error  volume is negative "<<i << std::endl;
+		}
+	}
+}
+
 void XPBD_IPC::solveNewtonCD_tetBlock()
 {
 	double ori_energy = 0.0;
 	max_displacement = 0.0;
 	memset(max_dis_record.data(), 0, 8 * max_dis_record.size());
-	for (unsigned int i = 0; i < max_tet_color_num-1; ++i) {		//
+
+	//std::cout << "before itr " << std::endl;
+	//testVolume();
+
+	for (unsigned int i = 0; i < max_tet_color_num - 1; ++i) {		//
+
+		
+
 		initialRecordHessian();
 		if (perform_collision) {
 			collision.computeHessian(i);
@@ -2760,8 +2861,12 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 		}
 		//thread->assignTask(this, TET_GRAD);
 		computeNeoHookeanHessianGrad();
-
 		thread->assignTask(this, SUM_ALL_GRAD);		
+
+		//if (i > 35 && inner_iteration_number ==23) {
+		//	std::cout << "first " << std::endl;
+		//}
+		//std::cout << "ori " << std::endl;
 		ori_energy = computeCurrentEnergy();
 		initialRecordPositionForThread();
 		thread->assignTask(this, SOLVE_TET_BLOCK, i);	
@@ -2771,17 +2876,24 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 			}
 		}
 		thread->assignTask(this, UPDATE_POSITION_AVERAGE_EXCEPT_THIS_COLOR);		
+
+		//std::cout << vertex_position[0][428][0] << " " << vertex_position[0][428][1] << " " << vertex_position[0][428][1] << std::endl;
+
+
 		lineSearchColor(i, ori_energy);
+
+		//std::cout << "color itr "<<i << std::endl;
+		//testVolume();
+		
+
 	}
 
+	//std::cout << "last color " <<  std::endl;
 	//testPrintOut();
 	initialRecordHessian();
 	//memset(is_tet_arap_grad_compute, 0, prefix_sum_of_every_tet_index[tetrahedron->size()]<<2);	
-	//tetGradForColor(max_tet_color_num-1);
 	if (perform_collision) {
 		collision.computeHessian(max_tet_color_num - 1);
-		//collision_compare.computeHessian(max_tet_color_num - 1);
-		//compareIfRecordHessianIsRight(-1);
 	}
 	else {
 		collision.updateVertexBelongColorGroup(max_tet_color_num - 1);
@@ -2789,18 +2901,20 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 	//thread->assignTask(this, TET_GRAD);
 	computeNeoHookeanHessianGrad();
 	thread->assignTask(this, SUM_ALL_GRAD);
+	//NeoHookeanTest();
 	initialRecordPositionForThread();
-	//newtonCDTetBlockAGroupCollision(max_tet_color_num - 1);
+
 	thread->assignTask(this, SOLVE_TET_BLOCK_COLLISION, max_tet_color_num-1);
 	for (int i = 0; i < total_thread_num; ++i) {
 		if (max_displacement < max_dis_record[i]) {
 			max_displacement = max_dis_record[i];
 		}
 	}
+	//std::cout << "ori " << std::endl;
 	ori_energy = computeCurrentEnergy();
 	thread->assignTask(this, UPDATE_POSITION_AVERAGE);
 	lineSearchColor(max_tet_color_num - 1,ori_energy);
-
+	//testVolume();
 }
 
 
@@ -2822,7 +2936,7 @@ void XPBD_IPC::lineSearchFirstColor(unsigned int color_No, double ori_energy)
 		{
 			record_collision_time *= 0.5;
 			thread->assignTask(&collision, UPDATE_COLOR_POSITION, color_No);
-			if (record_collision_time < 1e-5) {
+			if (record_collision_time < 1e-8) {
 				std::cout << "previous color very close " << color_No << std::endl;
 
 				//collision.collision_time = 0.0;
@@ -2861,36 +2975,40 @@ void XPBD_IPC::lineSearch(double& ori_energy)
 		if (current_energy > energy_converge_standard) {
 			double record_collision_time = collision.collision_time;
 			if (current_energy > ori_energy) {
-				if (record_collision_time < 1e-5) {
+				if (record_collision_time < 1e-6) {
 					std::cout << "global ccd original record_collision_time is too small " << ori_energy << " " << current_energy << std::endl;
 				}
 			}
 			collision.collision_time = 0.5;
 			//line search, make sure energy is decrease
 			//ori_energy += 1e-15;
+
+			int itr_num = 0;
 			while (current_energy > ori_energy)
 			{
 				record_collision_time *= 0.5;
 				thread->assignTask(this, COLLISION_FREE_POSITION_);
-				if (record_collision_time < 1e-5) {
-					std::cout << "record_collision_time is too small " <<  ori_energy << " " << current_energy << std::endl;
-					current_energy = computeCurrentEnergy();
-					//collision.collision_time = 0.0;
-					//thread->assignTask(&collision, COLLISION_FREE_POSITION_LAST_COLOR);
+
+				itr_num++;
+				if (itr_num > 6) {
+					//std::cout << "global record_collision_time is too small " << ori_energy << " " << current_energy << std::endl;
 					break;
 				}
+
+				//if (record_collision_time < 1e-6) {
+				//	std::cout << "global record_collision_time is too small " <<  ori_energy << " " << current_energy << std::endl;
+				//	current_energy = computeCurrentEnergy();
+				//	//collision.collision_time = 0.0;
+				//	//thread->assignTask(&collision, COLLISION_FREE_POSITION_LAST_COLOR);
+				//	break;
+				//}
 				current_energy = computeCurrentEnergy();
 			}
-			std::cout << "final color actual collision time " << record_collision_time << std::endl;
+			//std::cout << "final color actual collision time " << record_collision_time << std::endl;
 		}
 		//else {
 			//std::cout << "final color actual collision time " << collision.collision_time << std::endl;
 		//}
-		//update record position
-		//for (unsigned int i = 0; i < total_obj_num; ++i) {
-		//	memcpy(this->record_vertex_position[i][0].data(), vertex_position[i][0].data(), this->record_vertex_position[i].size() * 24);
-		//}
-		//}	
 		ori_energy = current_energy;
 	}
 }
@@ -2903,30 +3021,43 @@ void XPBD_IPC::lineSearchColor(unsigned int color_No, double ori_energy)
 	if (perform_collision) {
 
 		allPairCollisionInversionTime();
-
 		//std::cout << "color collision time " << color_No << " " << collision.collision_time << std::endl;
-
+		//if (color_No>34 && inner_iteration_number == 23) {
+		//	std::cout << "color time " << collision.collision_time << std::endl;
+		//	std::cout << "second " << std::endl;
+		//}
 		current_energy = computeCurrentEnergy();
+		//if (color_No >34 && inner_iteration_number == 23) {
+		//	std::cout << "third " << std::endl;
+		//}
 		if (current_energy > energy_converge_standard) {
 			double record_collision_time = collision.collision_time;
 			if (current_energy > ori_energy) {
-				if (record_collision_time < 1e-5) {
+				if (record_collision_time < 1e-6) {
 					std::cout << "original record_collision_time is too small " << color_No << " " << ori_energy << " " << current_energy << std::endl;
 				}
 			}
 			collision.collision_time = 0.5;
 			//line search, make sure energy is decrease
 			//ori_energy += 1e-15;
+
+			int itr_num = 0;
 			while (current_energy > ori_energy)
 			{
 				record_collision_time *= 0.5;
 				thread->assignTask(&collision, COLLISION_FREE_POSITION_ALL);
-				if (record_collision_time < 1e-5) {
-					std::cout << "record_collision_time is too small "<<color_No<<" " << ori_energy << " " << current_energy << std::endl;
-					//collision.collision_time = 0.0;
-					//thread->assignTask(&collision, COLLISION_FREE_POSITION_LAST_COLOR);
+
+				itr_num++;
+				if (itr_num > 6) {
+					//std::cout << "record_collision_time is too small " << color_No << " " << ori_energy << " " << current_energy << std::endl;
 					break;
 				}
+				//if (record_collision_time < 1e-6) {
+				//	
+				//	//collision.collision_time = 0.0;
+				//	//thread->assignTask(&collision, COLLISION_FREE_POSITION_LAST_COLOR);
+				//	break;
+				//}
 				current_energy = computeCurrentEnergy();
 			}
 			//std::cout << "color actual collision time "<<color_No<<" " << record_collision_time << std::endl;
@@ -3196,6 +3327,9 @@ void XPBD_IPC::allPairCollisionInversionTime()
 			collision.collision_time = collision.collision_time_thread[i];
 		}
 	}
+
+	//std::cout << "color time " << collision.collision_time << std::endl;
+
 	if (collision.collision_time < 1.0) {
 		thread->assignTask(&collision, COLLISION_FREE_POSITION_ALL);
 	}
@@ -5890,28 +6024,28 @@ void XPBD_IPC::solveBlockWithPair(double dt,
 
 				k = neo_hookean_hessian[unfixed_pair_vertex_index[i]].find(std::array{ (unsigned int)unfixed_pair_vertex_index[i+1], (unsigned int)unfixed_pair_vertex_index[j+1] });
 				if (k != neo_hookean_hessian[unfixed_pair_vertex_index[i]].end()) {
-					std::cout << "error, cannot find the hessian of a tet solveBlockWithPair()" << std::endl;
-				}
-				add_of_hessian = Hessian.data() + ((3 * (j * Hessian.cols() + i))>>1);
-				hessian_in_neo_hookean = k->second.hessian.data();
-				for (int m = 0; m < 3; ++m) {
-					*add_of_hessian += *hessian_in_neo_hookean;
-					*(add_of_hessian + 1) += *(hessian_in_neo_hookean + 1);
-					*(add_of_hessian + 2) += *(hessian_in_neo_hookean + 2);
-					hessian_in_neo_hookean += 3;
-					add_of_hessian += Hessian.cols();
-				}
-				if (i != j) {
-					add_of_hessian = Hessian.data() + ((3 * (i * Hessian.cols() + j))>>1);
+					add_of_hessian = Hessian.data() + ((3 * (j * Hessian.cols() + i)) >> 1);
 					hessian_in_neo_hookean = k->second.hessian.data();
 					for (int m = 0; m < 3; ++m) {
 						*add_of_hessian += *hessian_in_neo_hookean;
-						*(add_of_hessian + 1) += *(hessian_in_neo_hookean + 3);
-						*(add_of_hessian + 2) += *(hessian_in_neo_hookean + 6);
-						hessian_in_neo_hookean++;
+						*(add_of_hessian + 1) += *(hessian_in_neo_hookean + 1);
+						*(add_of_hessian + 2) += *(hessian_in_neo_hookean + 2);
+						hessian_in_neo_hookean += 3;
 						add_of_hessian += Hessian.cols();
 					}
+					if (i != j) {
+						add_of_hessian = Hessian.data() + ((3 * (i * Hessian.cols() + j)) >> 1);
+						hessian_in_neo_hookean = k->second.hessian.data();
+						for (int m = 0; m < 3; ++m) {
+							*add_of_hessian += *hessian_in_neo_hookean;
+							*(add_of_hessian + 1) += *(hessian_in_neo_hookean + 3);
+							*(add_of_hessian + 2) += *(hessian_in_neo_hookean + 6);
+							hessian_in_neo_hookean++;
+							add_of_hessian += Hessian.cols();
+						}
+					}
 				}
+			
 			}
 		}
 	}
@@ -5992,23 +6126,22 @@ void XPBD_IPC::solveBlockWithPair(double dt,
 	LLT <MatrixXd> linear(Hessian);
 	VectorXd result = linear.solve(grad);
 
-	//if (!only_solve_collision_pair) {
-	//	for (int j = 0; j < result.size(); ++j) {
-	//		if (abs(result[j]) > 0.3) {
-	//			std::cout << result.transpose() << std::endl;
-	//			std::cout << "block move so large " << inner_iteration_number << std::endl;
-	//			for (int i = 0; i < unfixed_num; i += 2) {
-	//				int vertex_index = unfixed_pair_vertex_index[i + 1];
-	//				int obj_index_ = unfixed_pair_vertex_index[i];
-	//				std::cout << vertex_index << std::endl;
-	//				std::cout << vertex_position[obj_index_][vertex_index][0] - sn[obj_index_][vertex_index][0] << " " << vertex_position[obj_index_][vertex_index][1] - sn[obj_index_][vertex_index][1] << " " <<
-	//					vertex_position[obj_index_][vertex_index][2] - sn[obj_index_][vertex_index][2] << std::endl;
-
-	//			}
-	//			break;
-	//		}
-	//	}
-	//}
+	if (!only_solve_collision_pair) {
+		for (int j = 0; j < result.size(); ++j) {
+			//if (abs(result[j]) > 0.3) {
+			//	std::cout << result.transpose() << std::endl;
+			//	std::cout << "block move so large " << inner_iteration_number << std::endl;
+			//	for (int i = 0; i < unfixed_num; i += 2) {
+			//		int vertex_index = unfixed_pair_vertex_index[i + 1];
+			//		int obj_index_ = unfixed_pair_vertex_index[i];
+			//		std::cout << vertex_index << std::endl;
+			//		std::cout << vertex_position[obj_index_][vertex_index][0] - sn[obj_index_][vertex_index][0] << " " << vertex_position[obj_index_][vertex_index][1] - sn[obj_index_][vertex_index][1] << " " <<
+			//			vertex_position[obj_index_][vertex_index][2] - sn[obj_index_][vertex_index][2] << std::endl;
+			//	}
+			//	break;
+			//}
+		}
+	}
 	//if (unfixed_num == 4) {
 	//	if (unfixed_pair_vertex_index[1] == 1973 || unfixed_pair_vertex_index[3] == 1973) {
 	//		std::cout << std::setprecision(12) << mass_dt_2<<" "<< sn[obj_index_][ unfixed_pair_vertex_index[1]][0]<<" "<< sn[obj_index_][ unfixed_pair_vertex_index[1]][1]<<" "<< sn[obj_index_][ unfixed_pair_vertex_index[1]][2] << std::endl;
@@ -6693,6 +6826,9 @@ void XPBD_IPC::solveTetBlockCollision(std::array<double, 3>* vertex_position, do
 	//	grad += grad_collision;
 	//}
 
+	//std::cout << "solve grad " << grad.transpose() << std::endl;
+	//std::cout << Hessian << std::endl;
+
 	double mass_dt_2;
 	int vertex_index;
 	for (int i = 0; i < unfixed_vertex_num; ++i) {
@@ -6712,7 +6848,7 @@ void XPBD_IPC::solveTetBlockCollision(std::array<double, 3>* vertex_position, do
 	//for (int j = 0; j < result.size(); ++j) {
 	//	if (abs(result[j]) > 0.3) {
 	//		std::cout << result.transpose() << std::endl;
-	//		std::cout << "move so large " << inner_iteration_number << " " << tet_index << " " << tet_actual_unfixed_vertex_indices[0] << " " << tet_actual_unfixed_vertex_indices[1] << " " << tet_actual_unfixed_vertex_indices[2] << " " << tet_actual_unfixed_vertex_indices[3] << std::endl;
+	//		std::cout << "solveTetBlockCollision() move so large " << inner_iteration_number << " " << tet_index << " " << tet_actual_unfixed_vertex_indices[0] << " " << tet_actual_unfixed_vertex_indices[1] << " " << tet_actual_unfixed_vertex_indices[2] << " " << tet_actual_unfixed_vertex_indices[3] << std::endl;
 	//		for (int i = 0; i < unfixed_vertex_num; ++i) {
 	//			vertex_index = tet_actual_unfixed_vertex_indices[i];
 	//			std::cout << vertex_position[vertex_index][0] - sn[vertex_index][0] << " " << vertex_position[vertex_index][1] - sn[vertex_index][1] << " " <<
@@ -8382,6 +8518,12 @@ void XPBD_IPC::computeARAPEnergyPerThread(int thread_No)
 				tet_energy = NeoHookean::energy(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
 					vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j], volume[j], mu, lambda);
 				energy += tet_energy;
+
+				//if (!NeoHookean::testDeterminent(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
+				//	vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j])) {
+				//	std::cout <<"error tet index "<< j << std::endl;
+				//	system("pause");
+				//}
 			}
 		}
 	}
@@ -8502,6 +8644,8 @@ void XPBD_IPC::sumWithInertial(int thread_No)
 
 
 
+
+
 //SUM_ALL_GRAD
 void XPBD_IPC::sumAllGrad(int thread_No)
 {
@@ -8513,3 +8657,4 @@ void XPBD_IPC::sumAllGrad(int thread_No)
 		}
 	}
 }
+

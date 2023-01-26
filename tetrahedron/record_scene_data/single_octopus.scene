@@ -5,8 +5,8 @@ collider
 1
 .\model\tank.obj
 stiffness
-2e+05 50000 0 0 0 0 2e+05 0.3
-2e+08 20000 20000 20 0 0 0 0 
+2e+05 50000 0 0 0 0 2e+04 0.3
+2e+06 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
 0 
@@ -58,9 +58,9 @@ inner convergence rate
 min inner itr num
 4
 min outer itr num
-6
+3
 displacement standard
-0.0005
+0.0002
 distance record as collision
 0.0
 energy converge standard

@@ -286,7 +286,7 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 	}
 	only_test_collision = control_parameter[ONLY_COLLISION_TEST];
 	cloth_density = 1;
-	tetrahedron_density =100;
+	tetrahedron_density =1;
 
 
 	std::vector<std::vector<double>>obj_stiffness,collide_stiffness;
@@ -954,14 +954,19 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 	//pos.push_back(tetrahedron[0].mesh_struct.vertex_position[tetrahedron[0].mesh_struct.edge_vertices[3533 * 2]]);
 	//pos.push_back(tetrahedron[0].mesh_struct.vertex_position[tetrahedron[0].mesh_struct.edge_vertices[3533 * 2 + 1]]);
 
+	std::vector<int> vertex_i;
+	vertex_i.emplace_back(428);
+	vertex_i.emplace_back(1667);
+	vertex_i.emplace_back(571);
 
-
-	//draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[1153].data(),//collision.draw_target_position,
-	//	0.002);
+	//draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position,//collision.draw_target_position,
+	//	vertex_i);
 	////////draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[project_dynamic.collision.chosen_show_vertex].data(),
 	////////	0.005);
 	//draw_vertex.draw(camera, glm::vec3(1.0, 0.0, 0.0));
 	//
+
+	//testPairDistance();
 
 	//if (xpbd_ipc.e0_0_.size() > 3) {
 	//std::vector<int> v;
@@ -1008,6 +1013,33 @@ void Scene::drawScene(Camera* camera, std::vector<std::vector<bool>>& show_eleme
 
 }
 
+void Scene::testPairDistance()
+{
+
+	//int* indices0 = tetrahedron[0].mesh_struct.triangle_indices[0].data();
+	//int* indices1 = tetrahedron[0].mesh_struct.triangle_indices[0].data();
+
+	int a = CCD::internal::edgeEdgeDistanceType(tetrahedron[1].mesh_struct.vertex_position[0].data(), tetrahedron[1].mesh_struct.vertex_position[1].data(),
+		tetrahedron[0].mesh_struct.vertex_position[0].data(), tetrahedron[0].mesh_struct.vertex_position[1].data());
+	std::cout << "distance type " << a << std::endl;
+
+	draw_vertex.setVertex(tetrahedron[1].mesh_struct.vertex_position[0].data(), 0.02);
+	draw_vertex.draw(camera, glm::vec3(1.0, 0.0, 0.0));
+	draw_vertex.setVertex(tetrahedron[1].mesh_struct.vertex_position[1].data(), 0.02);
+	draw_vertex.draw(camera, glm::vec3(0.4, 0.0, 0.0));
+	//std::vector<unsigned int> indices_;
+	//indices_.push_back(0);
+	//draw_triangle.drawTriangle(camera, object_shader_front, tetrahedron[0].mesh_struct.vertex_position,
+	//	tetrahedron[0].mesh_struct.triangle_indices, tetrahedron[0].mesh_struct.face_normal,
+	//	indices_, glm::vec3(0.0, 1.0, 0.0));
+
+	draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[0].data(), 0.02);
+	draw_vertex.draw(camera, glm::vec3(0.0, 1.0, 0.0));
+	draw_vertex.setVertex(tetrahedron[0].mesh_struct.vertex_position[1].data(), 0.02);
+	draw_vertex.draw(camera, glm::vec3(0.0, 0.4, 0.0));
+}
+
+
 void Scene::testScene()
 {
 	std::array<double, 3> v0 = { -0.128463347312, -0.76930889097, -0.0919940570462 };
@@ -1027,6 +1059,9 @@ void Scene::testScene()
 	v.emplace_back(v1);
 	v.emplace_back(v2);
 	v.emplace_back(v3);
+
+
+
 
 	//draw_edge_.drawEdge(camera, wireframe_shader, v,
 	//	edge_ver, glm::vec3(1.0, 0.0, 0.0));
@@ -2086,3 +2121,5 @@ void Scene::readScene()
 //	}
 //
 //}
+
+

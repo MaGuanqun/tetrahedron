@@ -208,4 +208,6 @@ private:
 	std::vector<double> collider_resize_scaler;
 	std::vector<std::array<double, 3>> collider_rotate_angle;
 
+	void testPairDistance();
+
 };

@@ -3460,9 +3460,7 @@ bool SecondOrderConstraint::computeBarrierVTGradientHessian(MatrixXd& Hessian, V
 				Hessian.block<3, 3>(3, 3) = temp;
 			}
 				  break;
-			}
-
-			
+			}			
 		}
 		else {
 			barrierGrad(distance, d_hat_2, b_grad);

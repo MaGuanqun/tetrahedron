@@ -68,14 +68,18 @@ namespace inversionTest {
 		op[2] = DOT(da0, m1) + DOT(DA, m0);
 		op[3] = 0.8*DOT(da0, m0);
 
+		T ori_op[4];
+		memcpy(ori_op, op, 4 * sizeof(T));
+
 		int roots = 0;
 		unsigned int reducedDegree = 3;
 		for (unsigned int i = 0; i < 3; i++) {
-			if (std::abs(op[i]) <  1e-6)
+			if (std::abs(op[i]) < 1e-10)
 				reducedDegree--;
 			else
 				break;
 		}
+
 		if (reducedDegree < 3) {
 			//move lower term coeff to higher term, this is for convenience
 			for (int i = 0; i <= reducedDegree; i++) {
@@ -85,8 +89,9 @@ namespace inversionTest {
 
 		T time[3];
 		if (reducedDegree == 3) {
-			if (find_root::getSmallestPositiveRealCubicRoot(op[0], op[1], op[2], op[3], time[0], 1e-6)) {
+			if (find_root::getSmallestPositiveRealCubicRoot(op[0], op[1], op[2], op[3], time[0], 1e-4)) {
 				*time_= time[0];
+				find_root::checkSolution(op[0], op[1], op[2], op[3], *time_);
 				return true;
 			}
 			return false;
@@ -94,6 +99,7 @@ namespace inversionTest {
 		else if (reducedDegree == 2) {
 			if (find_root::quad(op[0], op[1], op[2], time[0], time[1])) {
 				*time_=time[0];
+				find_root::checkSolution(ori_op[0], ori_op[1], ori_op[2], ori_op[3], *time_);
 				return true;
 			}
 			return false;
@@ -102,12 +108,15 @@ namespace inversionTest {
 			time[0] = -op[1] / op[0];
 			if (time[0] > 0.0 && time[0]<1.0) {
 				*time_ = time[0];
+				find_root::checkSolution(ori_op[0], ori_op[1], ori_op[2], ori_op[3], *time_);
 				return true;
 			}
 			return false;
 		}
 		return false;
 	}
+
+
 
 	template <class T>
 	inline bool TetInversionTestTest(T* a0, T* b0, T* c0, T* d0,
@@ -117,13 +126,6 @@ namespace inversionTest {
 		T ba0[3], ca0[3], BA[3], CA[3];
 		T da0[3], DA[3];
 
-		//SUB(BA, b1, a1);
-		//SUB(CA, c1, a1);
-		//SUB(DA, d1, a1);
-		//CROSS(da0, BA, CA);
-		//if (DOT(da0, DA) > 0) {
-		//	return false;
-		//}
 
 		SUB(ba0, b0, a0);
 		SUB(ca0, c0, a0);
@@ -152,12 +154,16 @@ namespace inversionTest {
 		op[2] = DOT(da0, m1) + DOT(DA, m0);
 		op[3] =0.8* DOT(da0, m0);
 
+
+		T ori_op[4];
+		memcpy(ori_op, op, 4 * sizeof(T));
+
 		std::cout << "coe op " << op[0] << " " << op[1] << " " << op[2] << " " << op[3] << std::endl;
 
 		int roots = 0;
 		unsigned int reducedDegree = 3;
 		for (unsigned int i = 0; i < 3; i++) {
-			if (std::abs(op[i]) < 1e-6)
+			if (std::abs(op[i]) < 1e-10)
 				reducedDegree--;
 			else
 				break;
@@ -172,8 +178,10 @@ namespace inversionTest {
 		std::cout << "coe op final " << reducedDegree << " " << op[0] << " " << op[1] << " " << op[2] << " " << op[3] << std::endl;
 		T time[3];
 		if (reducedDegree == 3) {
-			if (find_root::getSmallestPositiveRealCubicRoot(op[0], op[1], op[2], op[3], time[0], 1e-6)) {
+			find_root::getSmallestPositiveRealCubicRootTest(op[0], op[1], op[2], op[3], time[0], 1e-4);
+			if (find_root::getSmallestPositiveRealCubicRoot(op[0], op[1], op[2], op[3], time[0], 1e-4)) {
 				*time_ = time[0];
+				find_root::checkSolution(op[0], op[1], op[2], op[3], *time_);
 				return true;
 			}
 			return false;
@@ -181,6 +189,7 @@ namespace inversionTest {
 		else if (reducedDegree == 2) {
 			if (find_root::quad(op[0], op[1], op[2], time[0], time[1])) {
 				*time_ = time[0];
+				find_root::checkSolution(ori_op[0], ori_op[1], ori_op[2], ori_op[3], *time_);
 				return true;
 			}
 			return false;
@@ -189,6 +198,7 @@ namespace inversionTest {
 			time[0] = -op[1] / op[0];
 			if (time[0] > 0.0 && time[0] < 1.0) {
 				*time_ = time[0];
+				find_root::checkSolution(ori_op[0], ori_op[1], ori_op[2], ori_op[3], *time_);
 				return true;
 			}
 			return false;

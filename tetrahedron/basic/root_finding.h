@@ -45,6 +45,42 @@ namespace find_root {
 	}
 
 
+	template <class T>
+	inline bool getSmallestPositiveRealCubicRootTest(T a, T b, T c, T d, T& t, T tol)
+	{
+		// return negative value if no positive real root is found
+		t = -1;
+		std::complex<T> i(0, 1);
+		std::complex<T> delta0(b * b - 3 * a * c, 0);
+		std::complex<T> delta1(2 * b * b * b - 9 * a * b * c + 27 * a * a * d, 0);
+		std::complex<T> C = std::pow((delta1 + std::sqrt(delta1 * delta1 - 4.0 * delta0 * delta0 * delta0)) / 2.0, 1.0 / 3.0);
+		if (std::abs(C) == 0.0) {
+			// a corner case listed by wikipedia found by our collaborate from another project
+			C = pow((delta1 - sqrt(delta1 * delta1 - 4.0 * delta0 * delta0 * delta0)) / 2.0, 1.0 / 3.0);
+		}
+		std::complex<T> u2 = (-1.0 + sqrt(3.0) * i) / 2.0;
+		std::complex<T> u3 = (-1.0 - sqrt(3.0) * i) / 2.0;
+		std::complex<T> t1 = (b + C + delta0 / C) / (-3.0 * a);
+		std::complex<T> t2 = (b + u2 * C + delta0 / (u2 * C)) / (-3.0 * a);
+		std::complex<T> t3 = (b + u3 * C + delta0 / (u3 * C)) / (-3.0 * a);
+
+		std::cout << t1 << " " << t2 << " " << t3 << std::endl;
+
+
+		if ((std::abs(std::imag(t1)) < tol) && (std::real(t1) > 0))
+			t = real(t1);
+		if ((std::abs(imag(t2)) < tol) && (std::real(t2) > 0) && ((std::real(t2) < t) || (t < 0)))
+			t = real(t2);
+		if ((std::abs(imag(t3)) < tol) && (std::real(t3) > 0) && ((std::real(t3) < t) || (t < 0)))
+			t = real(t3);
+
+		if (t <= 1.0 && t > 0.0) {
+			return true;
+		}
+		return false;
+	}
+
+
 
 	template <class T>
 	inline bool getSmallestPositiveRealCubicRoot(T a, T b, T c, T d,  T& t, T tol)
@@ -77,6 +113,17 @@ namespace find_root {
 		}
 		return false;
 	}
+
+	//make sure the solution is right
+	template <class T>
+	inline void checkSolution(T a, T b, T c, T d, T& time)
+	{
+		while (d+time*(c+time*(b+a*time))<=0)
+		{
+			time *= 0.5;
+		}
+	}
+
 
 
 	template<class T>

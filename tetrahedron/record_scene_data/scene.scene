@@ -1,20 +1,25 @@
 object
-1
-.\model\single_tet.ele
+2
+C:\graphics\tetrahedron\model\single_tet.ele
+C:\graphics\tetrahedron\model\single_tet.ele
 collider
 0
 stiffness
-20000 50000 1 0 0 0 1e5 0.35
+20000 50000 1 0 0 0 100000 0.3 
+1e+07 20000 20000 20 0 0 0 0 
+20000 50000 1 0 0 0 100000 0.3 
 1e+07 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
+0 
+1
 0 
 time_step
 0.01
 cloth_density
 1
 tet_density
-100
+1
 velocity_damp
 0.995
 friction_coe
@@ -25,15 +30,17 @@ floor_value
 -0.55
 translation
 0 0 0
+0 0 0
 size_scaler
-1 
+1 1 
 rotation_angle
+0 0 0
 0 0 0
 collider_translation
 collider_size_scaler
 collider_rotation_angle
 camera position
-0 0 -2.24011
+0 0 -2.10774
 camera up
 0 1 0
 camera center
