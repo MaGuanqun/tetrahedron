@@ -50,7 +50,7 @@ namespace CCD {
         double dis_recrod;
 
         while (true) {
-            T toc_lower_bound = (0.9 - eta) * (dist2_cur - thickness * thickness) / ((dist_cur + thickness) * max_disp_mag);
+            T toc_lower_bound = (1.0 - eta) * (dist2_cur - thickness * thickness) / ((dist_cur + thickness) * max_disp_mag);
             ACCUMULATE_SUM_WITH_COE(p, toc_lower_bound, dp);
             ACCUMULATE_SUM_WITH_COE(t0, toc_lower_bound, dt0);
             ACCUMULATE_SUM_WITH_COE(t1, toc_lower_bound, dt1);
@@ -236,7 +236,7 @@ namespace CCD {
         int itr = 0;
         while (true)
         {
-            T toc_lower_bound = (0.9 - eta) * dFunc / ((dist_cur + thickness) * max_disp_mag); 
+            T toc_lower_bound = (1.0 - eta) * dFunc / ((dist_cur + thickness) * max_disp_mag); 
             ACCUMULATE_SUM_WITH_COE(ea0, toc_lower_bound, dea0);
             ACCUMULATE_SUM_WITH_COE(ea1, toc_lower_bound, dea1);
             ACCUMULATE_SUM_WITH_COE(eb0, toc_lower_bound, deb0);

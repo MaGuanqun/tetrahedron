@@ -453,6 +453,9 @@
     <ClInclude Include="constitutiveModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="basic\poly_root_finder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

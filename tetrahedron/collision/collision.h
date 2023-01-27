@@ -1075,16 +1075,18 @@ private:
 
 	void vertexTriangleCollisionTimePair(int start_pair_index,
 		int end_pair_index, double& collision_time, std::array<int, 3>** triangle_indices,
-		std::array<double, 3>** vertex_for_render_0, std::array<double, 3>** vertex_for_render_1, 
+		std::array<double, 3>** vertex_for_render_0, std::array<double, 3>** vertex_for_render_1,
 		std::array<double, 3>** vertex_position_0,
 		std::array<double, 3>** vertex_position_1,
 		unsigned int* pair, std::vector<unsigned int>* record_index,
 		std::atomic_uint* hash_size_record, unsigned int* hash_record,
-		unsigned int* vertex_index_prefix_sum, unsigned int* triangle_index_prefix_sum, std::vector<unsigned int>* record_new_in_hash);
+		unsigned int* vertex_index_prefix_sum, unsigned int* triangle_index_prefix_sum, std::vector<unsigned int>* record_new_in_hash,
+		char* pair_activated);
 
-	void computeVTHessian(int start, int end, unsigned int* pair, double* d_hat, int type, bool is_last_color, char* hessian_record_exist_, double* hessian_record, double* grad_record);
+	void computeVTHessian(int start, int end, unsigned int* pair, double* d_hat, int type, bool is_last_color, char* hessian_record_exist_, double* hessian_record, 
+		double* grad_record, char* pair_is_activated);
 	void computeEEHessian(int start, int end, unsigned int* pair, double* d_hat, bool is_collider, bool is_last_color, char* hessian_record_exist_,
-		double* hessian_record, double* grad_record);
+		double* hessian_record, double* grad_record, char* pair_is_activated);
 
 	void computeEEGrad(int start, int end, unsigned int* pair, double* d_hat, bool is_collider, char* hessian_record_exist_,
 		double* hessian_record, double* grad_record);
@@ -1107,7 +1109,8 @@ private:
 		std::array<double, 3>** vertex_for_render_1, std::array<double, 3>** vertex_position_1,
 		unsigned int** edge_vertices_0, unsigned int** edge_vertices_1, std::vector<unsigned int>* record_index,
 		std::atomic_uint* hash_size_record, unsigned int* hash_record,
-		unsigned int* edge_0_index_prefix_sum, unsigned int* edge_1_index_prefix_sum, std::vector<unsigned int>* record_new_in_hash);
+		unsigned int* edge_0_index_prefix_sum, unsigned int* edge_1_index_prefix_sum, std::vector<unsigned int>* record_new_in_hash,
+		char* pair_activated);
 
 
 	void initialPair();
@@ -1428,13 +1431,25 @@ private:
 	void collisionTimeAllClosePair(int vt, int vt_c, int tv_c, int ee, int ee_c, int floor_, int thread_No);
 
 	void initialNewPairRecord();
-	void addPairToHashRecord(int start, int end, std::vector<unsigned int>* pair_index, std::atomic_uint* hash_size_record, unsigned int* hash_record);
+	void addPairToHashRecord(int start, int end, std::vector<unsigned int>* pair_index, std::atomic_uint* hash_size_record, 
+		unsigned int* hash_record, unsigned int acitvated_pair_start);
 	void updateNewPairInHash(int thread_No, unsigned int* start_per_thread, std::vector<std::vector<unsigned int>>& add_pair_record, std::atomic_uint* num_record,
-		unsigned int* hash_record);
+		unsigned int* hash_record, unsigned int ori_pair_num, unsigned int* new_activated_pair_prefix_sum);
 
 
 	void testPrint();
 
 	void testPairDistance();
 
+	std::vector<unsigned int> prefix_sum_of_new_add_vt_activated_pair;
+	std::vector<unsigned int> prefix_sum_of_new_add_ee_activated_pair;
+	std::vector<unsigned int> prefix_sum_of_new_add_vt_collider_activated_pair;
+	std::vector<unsigned int> prefix_sum_of_new_add_tv_collider_activated_pair;
+	std::vector<unsigned int> prefix_sum_of_new_add_ee_collider_activated_pair;
+
+	void checkIfPairActivatedRight(std::vector<unsigned int>* pair, unsigned int* hash_record, unsigned int* prefix_sum_0, unsigned int* prefix_sum_1,
+		std::atomic_uint* hash_size_record);
+
+	void checkIfPairActivatedRight();
+	void test__();
 };

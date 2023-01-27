@@ -1481,7 +1481,7 @@ void XPBD_IPC::inversionTest(int thread_No, int type)
 			}
 
 			//if (inner_iteration_number==23 &&  j == 2381 && type == 1) {
-			//	double t;
+			//	
 			//	if (inversionTest::TetInversionTestTest(ori_vertex_pos[tet_vertex[0]].data(), ori_vertex_pos[tet_vertex[1]].data(),
 			//		ori_vertex_pos[tet_vertex[2]].data(), ori_vertex_pos[tet_vertex[3]].data(), vertex_pos[tet_vertex[0]].data(),
 			//		vertex_pos[tet_vertex[1]].data(), vertex_pos[tet_vertex[2]].data(), vertex_pos[tet_vertex[3]].data(), &t)) {
@@ -1491,13 +1491,7 @@ void XPBD_IPC::inversionTest(int thread_No, int type)
 			//		//t = 1.0;
 			//	}
 			//	t = 0.028645;
-			//	double v0[4][3];				
-			//			for (int k = 0; k < 4; ++k) {
-			//				v0[k][0] = ori_vertex_pos[tet_vertex[k]][0] + t * (vertex_pos[tet_vertex[k]][0] - ori_vertex_pos[tet_vertex[k]][0]);
-			//				v0[k][1] = ori_vertex_pos[tet_vertex[k]][1] + t * (vertex_pos[tet_vertex[k]][1] - ori_vertex_pos[tet_vertex[k]][1]);
-			//				v0[k][2] = ori_vertex_pos[tet_vertex[k]][2] + t * (vertex_pos[tet_vertex[k]][2] - ori_vertex_pos[tet_vertex[k]][2]);
-			//			}
-			//			NeoHookean::testDeterminent(v0[0], v0[1], v0[2], v0[3],tet_A[0][j]);
+			
 			//}
 
 			//if ( type == 1 && j == 2486) {
@@ -1522,7 +1516,26 @@ void XPBD_IPC::inversionTest(int thread_No, int type)
 			//	//	std::cout << "test inversion failed to detect" << std::endl;
 			//	//}
 			//}
+			//if (type == 1 &&( j == 1126|| j==2922)) {
+			//	std::cout << j << std::endl;
+			//	double t;
+			//	if (inversionTest::TetInversionTestTest(ori_vertex_pos[tet_vertex[0]].data(), ori_vertex_pos[tet_vertex[1]].data(),
+			//		ori_vertex_pos[tet_vertex[2]].data(), ori_vertex_pos[tet_vertex[3]].data(), vertex_pos[tet_vertex[0]].data(),
+			//		vertex_pos[tet_vertex[1]].data(), vertex_pos[tet_vertex[2]].data(), vertex_pos[tet_vertex[3]].data(), &t)) {
+			//		double v0[4][3];
+			//		for (int k = 0; k < 4; ++k) {
+			//			v0[k][0] = ori_vertex_pos[tet_vertex[k]][0] + t * (vertex_pos[tet_vertex[k]][0] - ori_vertex_pos[tet_vertex[k]][0]);
+			//			v0[k][1] = ori_vertex_pos[tet_vertex[k]][1] + t * (vertex_pos[tet_vertex[k]][1] - ori_vertex_pos[tet_vertex[k]][1]);
+			//			v0[k][2] = ori_vertex_pos[tet_vertex[k]][2] + t * (vertex_pos[tet_vertex[k]][2] - ori_vertex_pos[tet_vertex[k]][2]);
+			//		}
+			//		NeoHookean::testDeterminent(v0[0], v0[1], v0[2], v0[3], tet_A[0][j]);
+			//	}
+			//	std::cout << "test inversion failed to detect" << std::endl;
+			//}
 		}
+
+			
+
 	}
 
 	if (collision_time < 1.0) {
@@ -8519,11 +8532,11 @@ void XPBD_IPC::computeARAPEnergyPerThread(int thread_No)
 					vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j], volume[j], mu, lambda);
 				energy += tet_energy;
 
-				//if (!NeoHookean::testDeterminent(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
-				//	vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j])) {
-				//	std::cout <<"error tet index "<< j << std::endl;
-				//	system("pause");
-				//}
+				if (!NeoHookean::testDeterminent(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
+					vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j])) {
+					std::cout <<"error tet index "<< j << std::endl;
+					system("pause");
+				}
 			}
 		}
 	}

@@ -89,9 +89,9 @@ namespace inversionTest {
 
 		T time[3];
 		if (reducedDegree == 3) {
-			if (find_root::getSmallestPositiveRealCubicRoot(op[0], op[1], op[2], op[3], time[0], 1e-4)) {
+			if (find_root::getSmallestPositiveRealCubicRootWithPoly(op, time[0], 1e-8)) {
 				*time_= time[0];
-				find_root::checkSolution(op[0], op[1], op[2], op[3], *time_);
+				//find_root::checkSolution(op[0], op[1], op[2], op[3], *time_);
 				return true;
 			}
 			return false;
@@ -178,10 +178,17 @@ namespace inversionTest {
 		std::cout << "coe op final " << reducedDegree << " " << op[0] << " " << op[1] << " " << op[2] << " " << op[3] << std::endl;
 		T time[3];
 		if (reducedDegree == 3) {
-			find_root::getSmallestPositiveRealCubicRootTest(op[0], op[1], op[2], op[3], time[0], 1e-4);
-			if (find_root::getSmallestPositiveRealCubicRoot(op[0], op[1], op[2], op[3], time[0], 1e-4)) {
+			T r[3]; T g[3];
+			RootFinder root_finder;
+			root_finder.rpoly(op, 3, r, g);
+			std::cout << r[0] << " " << r[1] << " " << r[2] << std::endl;
+			std::cout <<g[0] << " " << g[1] << " " << g[2] << std::endl;
+
+			
+			std::cout << time[0] << std::endl;
+			if (find_root::getSmallestPositiveRealCubicRootWithPoly(op, time[0], 1e-8)) {
 				*time_ = time[0];
-				find_root::checkSolution(op[0], op[1], op[2], op[3], *time_);
+				//find_root::checkSolution(op[0], op[1], op[2], op[3], *time_);
 				return true;
 			}
 			return false;

@@ -27,7 +27,7 @@ void GraphColor::graphColorTet(MeshStruct& mesh_struct, int different_color_stra
 
 	std::vector<int>element_order(mesh_struct.tet_tet_index.size());
 
-	int max_color_num =(int) ((double) max_degree) / 3;
+	int max_color_num = (int)((double)max_degree) / 5;
 
 	for (int i =0; i < element_order.size(); ++i) {
 		element_order[i] = i;
@@ -56,12 +56,12 @@ void GraphColor::graphColorTet(MeshStruct& mesh_struct, int different_color_stra
 		}
 	}
 
-	//for (int j = 0; j < 3; ++j) {
-	//	for (unsigned int i = 0; i < mesh_struct.tet_color_group[j].size(); ++i) {
-	//		std::cout << mesh_struct.tet_color_group[j][i].size() << " ";
-	//	}
-	//	std::cout << std::endl;
-	//}
+	for (int j = 0; j < 3; ++j) {
+		for (unsigned int i = 0; i < mesh_struct.tet_color_group[j].size(); ++i) {
+			std::cout << mesh_struct.tet_color_group[j][i].size() << " ";
+		}
+		std::cout << std::endl;
+	}
 
 
 

@@ -255,6 +255,7 @@
     <ClInclude Include="basic\object_chosen_indicator.h" />
     <ClInclude Include="basic\opengl_input.h" />
     <ClInclude Include="basic\pick_triangle.h" />
+    <ClInclude Include="basic\poly_root_finder.h" />
     <ClInclude Include="basic\root_finding.h" />
     <ClInclude Include="basic\save_scene.h" />
     <ClInclude Include="basic\save_simulate_parameter.h" />

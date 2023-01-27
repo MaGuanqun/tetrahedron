@@ -1,6 +1,7 @@
 #pragma once
 
 #include"global.h"
+#include"poly_root_finder.h"
 
 namespace find_root {
 	template<class T>
@@ -80,7 +81,25 @@ namespace find_root {
 		return false;
 	}
 
+	template <class T>
+	inline bool getSmallestPositiveRealCubicRootWithPoly(T* op, T& t, T tol)
+	{
+		// return negative value if no positive real root is found
+		T zeror[3]; T zeroi[3];
+		poly_root::rpoly(op, 3, zeror, zeroi);
+		t = 2.0;
+		if ((std::abs(zeroi[0]) < tol) && (zeror[0] > 0))
+			t = zeror[0];
+		if ((std::abs(zeroi[1]) < tol) && (zeror[1] > 0) && ((zeror[1] < t) || (t < 0)))
+			t = zeror[1];
+		if ((std::abs(zeroi[2]) < tol) && (zeror[2] > 0) && ((zeror[2] < t) || (t < 0)))
+			t = zeror[2];
 
+		if (t <= 1.0 && t > 0.0) {
+			return true;
+		}
+		return false;
+	}
 
 	template <class T>
 	inline bool getSmallestPositiveRealCubicRoot(T a, T b, T c, T d,  T& t, T tol)
@@ -195,8 +214,6 @@ namespace find_root {
 		}
 		return false;
 	}
-
-
 }
 
 

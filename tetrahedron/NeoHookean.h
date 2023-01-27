@@ -39,7 +39,7 @@ namespace NeoHookean {
 			std::cout << "compute energy, error tet volume equals zero, error to compute ||F|| "<<k << std::endl;
 			k = 1e-36;
 
-			system("pause");
+			//system("pause");
 
 
 		}
