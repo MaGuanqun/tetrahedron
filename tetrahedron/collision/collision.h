@@ -82,26 +82,26 @@ public:
 
 
 
-	unsigned int** vertex_triangle_pair_by_vertex;//store pair by every vertex. (obj_index,triangle_index, )
-	std::atomic_uint** vertex_triangle_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
-	unsigned int** triangle_vertex_pair_by_triangle; //store 3 items, store pair by triangle. for every triangle, store vertex: (obj_index,vertex_index, index in vertex_triangle_pair_by_vertex,)
-	std::atomic_uint** triangle_vertex_pair_num_record;// record the number of vertex pairs for every triangle. For fast initialize, we recoed it in this variable
-	unsigned int** edge_edge_pair_by_edge; //store 3 iterms, store the index of the pair of e1 if (e1<e2) in e2, to locate the pair fast, for coordinate descent, we should store both (e1,e2) & (e2,e1), store 
-	std::atomic_uint** edge_edge_pair_number_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
-	unsigned int** vertex_obj_triangle_collider_pair_by_vertex;// store pair by every vertex. (obj_index, triangle_index)
-	std::atomic_uint** vertex_obj_triangle_collider_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
+	//unsigned int** vertex_triangle_pair_by_vertex;//store pair by every vertex. (obj_index,triangle_index, )
+	//std::atomic_uint** vertex_triangle_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
+	//unsigned int** triangle_vertex_pair_by_triangle; //store 3 items, store pair by triangle. for every triangle, store vertex: (obj_index,vertex_index, index in vertex_triangle_pair_by_vertex,)
+	//std::atomic_uint** triangle_vertex_pair_num_record;// record the number of vertex pairs for every triangle. For fast initialize, we recoed it in this variable
+	//unsigned int** edge_edge_pair_by_edge; //store 3 iterms, store the index of the pair of e1 if (e1<e2) in e2, to locate the pair fast, for coordinate descent, we should store both (e1,e2) & (e2,e1), store 
+	//std::atomic_uint** edge_edge_pair_number_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
+	//unsigned int** vertex_obj_triangle_collider_pair_by_vertex;// store pair by every vertex. (obj_index, triangle_index)
+	//std::atomic_uint** vertex_obj_triangle_collider_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
 
-	unsigned int** triangle_vertex_collider_pair_by_triangle; //store pair by triangle. for every triangle, store vertex: (obj_index,vertex_index, )
-	std::atomic_uint** triangle_vertex_collider_pair_num_record;// record the number of vertex pairs for every triangle. For fast initialize, we recoed it in this variable
-	unsigned int** edge_edge_collider_pair_by_edge; //for coordinate descent, we should store both (e1,e2) & (e2,e1),
-	std::atomic_uint** edge_edge_collider_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
+	//unsigned int** triangle_vertex_collider_pair_by_triangle; //store pair by triangle. for every triangle, store vertex: (obj_index,vertex_index, )
+	//std::atomic_uint** triangle_vertex_collider_pair_num_record;// record the number of vertex pairs for every triangle. For fast initialize, we recoed it in this variable
+	//unsigned int** edge_edge_collider_pair_by_edge; //for coordinate descent, we should store both (e1,e2) & (e2,e1),
+	//std::atomic_uint** edge_edge_collider_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
 
-	double** vertex_triangle_pair_d_hat;
-	double** triangle_vertex_pair_d_hat;
-	double** edge_edge_pair_d_hat;
-	double** vertex_obj_triangle_collider_pair_d_hat;
-	double** triangle_vertex_collider_pair_d_hat;
-	double** edge_edge_collider_pair_d_hat;
+	//double** vertex_triangle_pair_d_hat;
+	//double** triangle_vertex_pair_d_hat;
+	//double** edge_edge_pair_d_hat;
+	//double** vertex_obj_triangle_collider_pair_d_hat;
+	//double** triangle_vertex_collider_pair_d_hat;
+	//double** edge_edge_collider_pair_d_hat;
 
 
 
@@ -267,7 +267,7 @@ public:
 	double* energy;
 
 	double* friction_coe;//self, collider, floor
-	void findClosePair();
+	//void findClosePair();
 
 	unsigned int close_vt_pair_num;
 	unsigned int close_vt_collider_pair_num;
@@ -302,9 +302,9 @@ public:
 	//void collisionTimeSingleVertex(unsigned int obj_index, unsigned int vertex_index, unsigned int vertex_index_on_surface,
 	//	std::array<double, 3>* initial_pos,	std::array<double, 3>* current_pos);
 
-	void collisionFreeOneVertex(unsigned int obj_No, unsigned int vertex_No, unsigned int vertex_index_on_surface, double* initial_vertex_pos, double* current_vertex_pos,
-		std::array<double, 3>* initial_pos_this_obj, std::array<double, 3>* current_pos_this_obj,
-		std::array<double, 3>** current_pos);
+	//void collisionFreeOneVertex(unsigned int obj_No, unsigned int vertex_No, unsigned int vertex_index_on_surface, double* initial_vertex_pos, double* current_vertex_pos,
+	//	std::array<double, 3>* initial_pos_this_obj, std::array<double, 3>* current_pos_this_obj,
+	//	std::array<double, 3>** current_pos);
 
 	void solveCollisionConstraintForIPC();
 
@@ -370,9 +370,9 @@ public:
 
 
 
-	void prefixSumAllPair(int thread_No);
+	//void prefixSumAllPair(int thread_No);
 
-	void colorCollisionTime(int thread_No, int color_No);
+	//void colorCollisionTime(int thread_No, int color_No);
 
 	void setElementCollideWithCollider(int thread_No);
 
@@ -405,7 +405,7 @@ public:
 	//std::vector<unsigned int> vt_per_thread_start_index;//recrod start index for every thread in vt_pair_compress_record
 	//std::vector<unsigned int> ee_per_thread_start_index;// recrod start index for every thread in ee_pair_compress_record
 
-	void findClosePair(int thread_No);
+	//void findClosePair(int thread_No);
 	void initialPairRecordInfo();
 
 	std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>* common_hessian;
@@ -1281,14 +1281,14 @@ private:
 	void collisionTimeByElement(int thread_No);
 
 
-	void findVT_ClosePair(int thread_No);
-	void findEE_ClosePair(int thread_No);
-	void findEE_ColliderClosePair(int thread_No);
-	void findTV_ClosePair();
-	void findTV_ColliderClosePair(int thread_No);
+	//void findVT_ClosePair(int thread_No);
+	//void findEE_ClosePair(int thread_No);
+	//void findEE_ColliderClosePair(int thread_No);
+	//void findTV_ClosePair();
+	//void findTV_ColliderClosePair(int thread_No);
 
-	void findEE_ClosePair_ReverseOrder();
-	void findVT_ColliderClosePair(int thread_No);
+	//void findEE_ClosePair_ReverseOrder();
+	//void findVT_ColliderClosePair(int thread_No);
 
 	void findTV_ClosePair(int obj_No, unsigned int* vt_pair_initial, std::atomic_uint* vt_pair_num, unsigned int** tv_pair,
 		std::atomic_uint** tv_pair_num, unsigned int total_length_every_element_vt, unsigned int total_length_every_element_tv, bool is_tet);
@@ -1304,15 +1304,15 @@ private:
 	void findTV_ClosePairSingleTriangle(double* current_position_a0, double* current_position_a1, double* current_position_a2,
 		unsigned int* vertex_index, unsigned int vertex_num, std::vector<std::array<double, 3>*>& position,
 		unsigned int* close_vertex_index, std::atomic_uint& close_vertex_num, bool* is_pair_exist);
-	void findEE_ClosePairSingleEdgeByReverse(int obj_index, int edge_index, unsigned int* close_edge_index, unsigned int close_edge_num);
+	//void findEE_ClosePairSingleEdgeByReverse(int obj_index, int edge_index, unsigned int* close_edge_index, unsigned int close_edge_num);
 
 
-	void initialPairRecord();
+	//void initialPairRecord();
 	void initialPairPrefixSumRecord();
 
 	void initialHessianRecord();
 
-	void initialPairByElement();
+	//void initialPairByElement();
 	void initialVolume();
 	//void computeVTVolume(int thread_No);
 	////void computeEEVolume(int thread_No);
@@ -1334,7 +1334,7 @@ private:
 	//void initialCollisionTimeRecord(int thread_No);
 	//void initialCollisionTimeRecord();
 
-	void testColliderPair();
+	//void testColliderPair();
 	SecondOrderConstraint second_order_constraint;
 
 
@@ -1349,7 +1349,7 @@ private:
 	//void setEdgeCollideWithCollider();
 	//void setVertexCollideWithCollider();
 
-	void findMinMaxDegreeOfCollisionPair(unsigned int& max_degree, unsigned int& min_degree);
+	//void findMinMaxDegreeOfCollisionPair(unsigned int& max_degree, unsigned int& min_degree);
 
 
 	//std::vector<int> collision_pair_around_pair;

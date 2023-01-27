@@ -422,9 +422,9 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     job k;
     switch (function_type)
     {  
-    case COLOR_COLLISION_TIME:
-        k = job([func, thread_id, para]() {func->colorCollisionTime(thread_id, para); });
-        break;
+    //case COLOR_COLLISION_TIME:
+    //    k = job([func, thread_id, para]() {func->colorCollisionTime(thread_id, para); });
+    //    break;
     case UPDATE_COLOR_POSITION:
         k = job([func, thread_id, para]() {func->updatePositionColor(thread_id, para); });
         break;
@@ -514,9 +514,9 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     case RE_COLLISION_CONSTRAINT:
         k = job([func, thread_id]() {func->re_collisionConstraint(thread_id); });
         break;
-    case PREFIX_SUM_ALL_PAIRS:
-        k = job([func, thread_id]() {func->prefixSumAllPair(thread_id); });
-        break;
+    //case PREFIX_SUM_ALL_PAIRS:
+    //    k = job([func, thread_id]() {func->prefixSumAllPair(thread_id); });
+    //    break;
     case SET_ELEMENT_COLLIDE_WITH_COLLIDER:
         k = job([func, thread_id]() {func->setElementCollideWithCollider(thread_id); });
         break;
@@ -536,8 +536,8 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
         k = job([func, thread_id]() {func->computeCollisionFreePositionForColor(thread_id); });
         break;
     case FIND_CLOSE_PAIR:
-        k = job([func, thread_id]() {func->findClosePair(thread_id); });
-        break;
+        //k = job([func, thread_id]() {func->findClosePair(thread_id); });
+        //break;
     case COMPUTE_D_HAT_WITH_INDEX_IN_GLOBAL:
         k = job([func, thread_id]() {func->computeDhatWithIndexInGlobal(thread_id); });
         break;
