@@ -683,9 +683,9 @@ void Scene::setGroup()
 
 
 
-/*				for (int j = 0; j < 3; ++j) {
-					graph_color.testTet(tetrahedron[i].mesh_struct, tetrahedron[i].mesh_struct.tet_color_group[j], tetrahedron[i].mesh_struct.indices);
-				}		*/	
+				//for (int j = 0; j < 3; ++j) {
+				//	graph_color.testTet(tetrahedron[i].mesh_struct, tetrahedron[i].mesh_struct.tet_color_group[j], tetrahedron[i].mesh_struct.indices);
+				//}			
 
 			}
 			else {

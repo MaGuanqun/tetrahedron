@@ -18,6 +18,35 @@ void GraphColor::findMinMaxDegree(std::vector<std::vector<unsigned int>>& elemen
 }
 
 
+void GraphColor::orderByDegree(std::vector<std::vector<unsigned int>>& tet_tet, std::vector<int>& element_order)
+{
+	std::vector<int> degree;
+	std::vector<std::pair<int, int>> vect;
+	for (int i = 0; i < tet_tet.size(); ++i) {
+		vect.emplace_back(std::make_pair(tet_tet[i].size(), i));
+	}
+	std::sort(vect.begin(), vect.end(), std::greater<>());
+
+	for (int i = 0; i < tet_tet.size(); ++i) {
+		element_order[i] = vect[i].second;
+	}
+	
+}
+
+void GraphColor::orderByScore(std::vector<int>& tet_score, std::vector<int>& element_order)
+{
+	std::vector<int> degree;
+	std::vector<std::pair<int, int>> vect;
+	for (int i = 0; i < tet_score.size(); ++i) {
+		vect.emplace_back(std::make_pair(tet_score[i], i));
+	}
+	std::sort(vect.begin(), vect.end(), std::greater<>());
+	for (int i = 0; i < tet_score.size(); ++i) {
+		element_order[i] = vect[i].second;
+	}
+}
+
+
 void GraphColor::graphColorTet(MeshStruct& mesh_struct, int different_color_strategy_num)
 {
 	mesh_struct.tet_color_group.resize(different_color_strategy_num);
@@ -27,32 +56,36 @@ void GraphColor::graphColorTet(MeshStruct& mesh_struct, int different_color_stra
 
 	std::vector<int>element_order(mesh_struct.tet_tet_index.size());
 
-	int max_color_num = (int)((double)max_degree) / 5;
+	int max_color_num = (int)((double)max_degree) / 6;
+	//for (int i =0; i < element_order.size(); ++i) {
+	//	element_order[i] = i;
+	//}
 
-	for (int i =0; i < element_order.size(); ++i) {
-		element_order[i] = i;
-	}
-	std::shuffle(element_order.begin(), element_order.end(), std::default_random_engine(1));
+	std::vector<int> color_score(mesh_struct.tet_tet_index.size(), 0);
+
+	orderByDegree(mesh_struct.tet_tet_index, element_order);
+	//std::shuffle(element_order.begin(), element_order.end(), std::default_random_engine(1));
 	graphColorLoopNode(mesh_struct.tet_tet_index, max_color_num, mesh_struct.tet_color_group[0],
-		element_order.data());
+		element_order.data(), color_score);
 
 	if (different_color_strategy_num > 1) {
-		memcpy(element_order.data(), mesh_struct.tet_color_group[0].back().data(), 4 * mesh_struct.tet_color_group[0].back().size());
-
-		int* addre = element_order.data() + mesh_struct.tet_color_group[0].back().size();
-		for (int i = 0; i < mesh_struct.tet_color_group[0].size() - 1; ++i) {
-			memcpy(addre, mesh_struct.tet_color_group[0][i].data(), 4 * mesh_struct.tet_color_group[0][i].size());
-			addre += mesh_struct.tet_color_group[0][i].size();
-		}
-		std::shuffle(element_order.begin(), element_order.begin() + mesh_struct.tet_color_group[0].back().size(), std::default_random_engine(111));
-		std::shuffle(element_order.begin() + mesh_struct.tet_color_group[0].back().size(), element_order.end(), std::default_random_engine(111));
+		//memcpy(element_order.data(), mesh_struct.tet_color_group[0].back().data(), 4 * mesh_struct.tet_color_group[0].back().size());
+		//int* addre = element_order.data() + mesh_struct.tet_color_group[0].back().size();
+		//for (int i = 0; i < mesh_struct.tet_color_group[0].size() - 1; ++i) {
+		//	memcpy(addre, mesh_struct.tet_color_group[0][i].data(), 4 * mesh_struct.tet_color_group[0][i].size());
+		//	addre += mesh_struct.tet_color_group[0][i].size();
+		//}
+		//std::shuffle(element_order.begin(), element_order.begin() + mesh_struct.tet_color_group[0].back().size(), std::default_random_engine(111));
+		//std::shuffle(element_order.begin() + mesh_struct.tet_color_group[0].back().size(), element_order.end(), std::default_random_engine(111));
+		orderByScore(color_score, element_order);
 		graphColorLoopNode(mesh_struct.tet_tet_index, max_color_num, mesh_struct.tet_color_group[1],
-			element_order.data());
+			element_order.data(), color_score);
 
 		for (int i = 2; i < different_color_strategy_num; ++i) {
-			std::shuffle(element_order.begin(), element_order.end(), std::default_random_engine(111*i));
+			//std::shuffle(element_order.begin(), element_order.end(), std::default_random_engine(111*i));
+			orderByScore(color_score, element_order);
 			graphColorLoopNode(mesh_struct.tet_tet_index, max_color_num, mesh_struct.tet_color_group[i],
-				element_order.data());
+				element_order.data(), color_score);
 		}
 	}
 
@@ -63,13 +96,11 @@ void GraphColor::graphColorTet(MeshStruct& mesh_struct, int different_color_stra
 		std::cout << std::endl;
 	}
 
-
-
 }
 
 
 void GraphColor::graphColorLoopNode(std::vector<std::vector<unsigned int>>& element_element, int max_color_number,
-	std::vector<std::vector<unsigned int>>& element_not_connect, int* element_order)
+	std::vector<std::vector<unsigned int>>& element_not_connect, int* element_order, std::vector<int>& color_score)
 {
 	unsigned int element_number = element_element.size();
 	std::vector<int>color(element_number, -1);
@@ -79,7 +110,7 @@ void GraphColor::graphColorLoopNode(std::vector<std::vector<unsigned int>>& elem
 	std::vector<int> palette_unit_1(max_color_number);
 	for (int i = 0; i < unique_color_number; ++i) {
 		palette_unit_0[i] = i;
-		palette_unit_1[i] = unique_color_number - 1 - i;
+		palette_unit_1[i] = i;// unique_color_number - 1 - i;
 	}
 	palette_unit_0[unique_color_number] = unique_color_number;
 	palette_unit_1[unique_color_number] = unique_color_number;	
@@ -113,10 +144,14 @@ void GraphColor::graphColorLoopNode(std::vector<std::vector<unsigned int>>& elem
 		}
 		color[i] = palette_unit[unique_color_number];
 	color_assigned:;
-
 	}
 
 	decideGroup(max_color_number, element_not_connect, color.data(), element_number);
+
+	for (int i = 0; i < color.size(); ++i) {
+		color_score[i] += color[i];
+	}
+
 }
 
 
@@ -435,13 +470,13 @@ void GraphColor::testTet(MeshStruct& mesh_struct,std::vector<std::vector<unsigne
 		std::cout << "lost some element " << std::endl;
 	}
 
-	std::cout << "group of tet "<< element_not_connect.size() << std::endl;
-	for (unsigned int i = 0; i < element_not_connect.size(); ++i) {
-		//for (auto j = element_not_connect[i].begin(); j < element_not_connect[i].end(); ++j) {
-		//	std::cout << *j << " ";
-		//}
-		std::cout<< element_not_connect[i].size() << std::endl;
-	}
+	//std::cout << "group of tet "<< element_not_connect.size() << std::endl;
+	//for (unsigned int i = 0; i < element_not_connect.size(); ++i) {
+	//	//for (auto j = element_not_connect[i].begin(); j < element_not_connect[i].end(); ++j) {
+	//	//	std::cout << *j << " ";
+	//	//}
+	//	std::cout<< element_not_connect[i].size() << std::endl;
+	//}
 }
 
 
