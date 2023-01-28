@@ -411,11 +411,33 @@ void Collision::recordPair()
 	for (int i = 0; i < tetrahedron->size(); ++i) {
 		indicate_tet_has_been_used[i + cloth->size()] =new  std::atomic_flag[tetrahedron->data()[i].mesh_struct.indices.size()];
 	}
-	tet_involve_in_collision.resize(thread_num);
-	for (int i = 0; i < thread_num; ++i) {
-		tet_involve_in_collision[i].reserve(vertex_index_prefix_sum_obj[total_obj_num] / thread_num);
+	//tet_involve_in_collision.resize(thread_num);
+	//for (int i = 0; i < thread_num; ++i) {
+	//	tet_involve_in_collision[i].reserve(vertex_index_prefix_sum_obj[total_obj_num] / thread_num);
+	//}
+
+	stencil_num_per_vertex = 20;
+	vertex_collision_stencil_num = new std::atomic_uint * [total_obj_num];
+	for (int i = 0; i < total_obj_num; ++i) {
+		vertex_collision_stencil_num[i] = new std::atomic_uint[mesh_struct[i]->vertex_position.size()];
 	}
-	
+
+	vertex_collision_stencil_by_vertex = new unsigned int* [total_obj_num];
+	for (int i = 0; i < total_obj_num; ++i) {
+		vertex_collision_stencil_by_vertex[i] = new unsigned int[stencil_num_per_vertex * mesh_struct[i]->vertex_position.size()];
+	}
+
+
+	unconnect_stencil_stencil.resize(5);
+	for (int i = 0; i < 5; ++i) {
+		unconnect_stencil_stencil[i].reserve(vertex_index_prefix_sum_obj.back());
+	}
+	is_stencil_used.resize(5);
+	for (int i = 0; i < 5; ++i) {
+		is_stencil_used[i].reserve(vertex_index_prefix_sum_obj.back());
+	}
+
+	record_previous_pair_size.resize(5, 0);
 }
 
 
@@ -503,15 +525,22 @@ void Collision::initialPairRecordInfo()
 		memset(indicate_tet_has_been_used[i + cloth->size()], 0, tetrahedron->data()[i].mesh_struct.indices.size() * sizeof(std::atomic_flag));
 	}
 
-	for(int i=0;i< tet_involve_in_collision.size();++i)
-	{
-		tet_involve_in_collision[i].clear();
-	}
+	//for(int i=0;i< tet_involve_in_collision.size();++i)
+	//{
+	//	tet_involve_in_collision[i].clear();
+	//}
+
 
 	//initialPairByElement();
 
 	common_hessian->clear();
 	record_pair_key_value.clear();
+
+
+	for (int i = 0; i < total_obj_num; ++i) {
+		memset(vertex_collision_stencil_num[i], 0, sizeof(std::atomic_uint) * total_vertex_num[i]);
+	}
+	stencil_neighobor_stencil.clear();
 
 }
 
@@ -2265,11 +2294,11 @@ void Collision::collisionTimeWithPair()
 	//extractElementCollideWithCollider();
 	combineElementCollideCollider();
 
-	thread->assignTask(this, ADD_TET_IN_COLLISION);
+	//thread->assignTask(this, ADD_TET_IN_COLLISION);
 	//addTetInvolvedInCollision();
 
-	unsigned int  ave_pair;
-	setPairIndexEveryThread(tet_involve_in_collision, tet_involve_in_collision_start_per_thread, ave_pair, 1);
+	//unsigned int  ave_pair;
+	//setPairIndexEveryThread(tet_involve_in_collision, tet_involve_in_collision_start_per_thread, ave_pair, 1);
 
 
 	//thread->assignTask(this, SET_PAIR_BY_ELEMENT);
@@ -2281,6 +2310,280 @@ void Collision::collisionTimeWithPair()
 
 	setMapForHessianIndexToConstraint();
 
+	thread->assignTask(this, VERTEX_COLLISION_STENCIL);
+
+}
+
+//VERTEX_COLLISION_STENCIL
+void Collision::setVerteCollisionStencil(int thread_No)
+{
+	setVTPairForVertexStencil(0, vt_pair_add_per_thread[thread_No], vt_pair_add_per_thread[thread_No + 1],
+		record_vt_pair_sum_all_thread.data(), triangle_indices.data(), vertex_collision_stencil_by_vertex, vertex_collision_stencil_num);
+
+	setEEPairForVertexStencil(1, ee_pair_add_per_thread[thread_No], ee_pair_add_per_thread[thread_No + 1],
+		record_ee_pair_sum_all_thread.data(), edge_vertices.data(), vertex_collision_stencil_by_vertex, vertex_collision_stencil_num);
+
+	if (has_collider) {
+		setEEPairForVertexStencil(3, ee_c_pair_add_per_thread[thread_No], ee_c_pair_add_per_thread[thread_No + 1],
+			edge_index_collide_collider_sum.data(), edge_vertices.data(), vertex_collision_stencil_by_vertex, vertex_collision_stencil_num);
+
+		setVTPairForVertexStencil(2, tv_c_pair_add_per_thread[thread_No], tv_c_pair_add_per_thread[thread_No + 1],
+			triangle_index_collide_collider_sum.data(), triangle_indices.data(), vertex_collision_stencil_by_vertex, vertex_collision_stencil_num);
+
+		setVTPairForVertexStencil(4, vt_c_pair_add_per_thread[thread_No], vt_c_pair_add_per_thread[thread_No + 1],
+			vertex_index_collide_collider_sum.data(), triangle_indices.data(), vertex_collision_stencil_by_vertex, vertex_collision_stencil_num);
+	}
+}
+
+
+
+
+void Collision::setCollisionStencilToStencil()
+{
+	unconnect_stencil_stencil[0].resize(record_vt_pair_sum_all_thread.size() >> 2);
+	unconnect_stencil_stencil[1].resize(record_ee_pair_sum_all_thread.size() >> 2);
+	unconnect_stencil_stencil[2].resize(triangle_index_collide_collider_sum.size() >> 1);
+	unconnect_stencil_stencil[3].resize(edge_index_collide_collider_sum.size() >> 1);
+	unconnect_stencil_stencil[4].resize(vertex_index_collide_collider_sum.size() >> 1);
+	
+	is_stencil_used[0].resize(record_vt_pair_sum_all_thread.size() >> 2,false);
+	is_stencil_used[1].resize(record_ee_pair_sum_all_thread.size() >> 2, false);
+	is_stencil_used[2].resize(triangle_index_collide_collider_sum.size() >> 1, false);
+	is_stencil_used[3].resize(edge_index_collide_collider_sum.size() >> 1, false);
+	is_stencil_used[4].resize(vertex_index_collide_collider_sum.size() >> 1, false);
+
+
+}
+
+void Collision::setVTStencilStencil(int type, int start, int end, unsigned int* pair, unsigned int** edge_0_v, unsigned int** edge_1_v,
+	unsigned int** vertex_collision_stencil_by_vertex,
+	std::atomic_uint** vertex_collision_stencil_num, std::vector<std::vector<std::vector<unsigned int>>>* unconnect_stencil_stencil)
+{
+
+}
+
+void Collision::setEEStencilStencil(int type, int start, int end, unsigned int* pair, unsigned int** edge_0_v, unsigned int** edge_1_v,
+	unsigned int** vertex_collision_stencil_by_vertex,
+	std::atomic_uint** vertex_collision_stencil_num, std::vector<std::vector<std::vector<unsigned int>>>* unconnect_stencil_stencil)
+{
+	unsigned int ori_value;
+	unsigned int* edge_0_vertex;
+	unsigned int stencil_num_per_vertex = this->stencil_num_per_vertex;
+	unsigned int* stencil;
+	int stencil_num;
+	std::vector<std::vector<unsigned int>>* stencil_stencil = &unconnect_stencil_stencil->data()[type];
+	std::vector<unsigned int>record;
+	record.reserve(20);
+	unsigned int stencil_index;
+	switch (type)
+	{
+	case 1:
+		for (int i = start; i < end; i += 4) { 
+			stencil_index = i >> 2;
+			is_stencil_used[type][stencil_index] = true;
+			record.clear();
+			record.emplace_back(type);
+			record.emplace_back(stencil_index);
+
+			edge_0_vertex = edge_0_v[pair[i]] + (pair[i + 1] << 1);
+			stencil = vertex_collision_stencil_by_vertex[pair[i]] + stencil_num_per_vertex * (*edge_0_vertex);
+			stencil_num = vertex_collision_stencil_num[pair[i]][*edge_0_vertex];
+			for (int j = 0; j < stencil_num; j += 2) {
+				if (!is_stencil_used[stencil[j]][stencil[j + 1]]) {
+					is_stencil_used[stencil[j]][stencil[j + 1]] = true;
+					stencil_stencil->data()[stencil_index].emplace_back(stencil[j]);
+					stencil_stencil->data()[stencil_index].emplace_back(stencil[j + 1]);
+					record.emplace_back(stencil[j]);
+					record.emplace_back(stencil[j + 1]);
+					if (record_previous_pair_size[stencil[j]] > stencil[j + 1]) {
+						unconnect_stencil_stencil->data()[stencil[j]][stencil[j + 1]].emplace_back(type);
+						unconnect_stencil_stencil->data()[stencil[j]][stencil[j + 1]].emplace_back(stencil_index);
+					}
+				}
+			}
+
+			stencil = vertex_collision_stencil_by_vertex[pair[i]] + stencil_num_per_vertex * (edge_0_vertex[1]);
+			stencil_num = vertex_collision_stencil_num[pair[i]][edge_0_vertex[1]];
+			for (int j = 0; j < stencil_num; j += 2) {
+				if (!is_stencil_used[stencil[j]][stencil[j + 1]]) {
+					is_stencil_used[stencil[j]][stencil[j + 1]] = true;
+					stencil_stencil->data()[stencil_index].emplace_back(stencil[j]);
+					stencil_stencil->data()[stencil_index].emplace_back(stencil[j + 1]);
+					record.emplace_back(stencil[j]);
+					record.emplace_back(stencil[j + 1]);
+					if (record_previous_pair_size[stencil[j]] > stencil[j + 1]) {
+						unconnect_stencil_stencil->data()[stencil[j]][stencil[j + 1]].emplace_back(type);
+						unconnect_stencil_stencil->data()[stencil[j]][stencil[j + 1]].emplace_back(stencil_index);
+					}
+				}
+			}
+
+			edge_0_vertex = edge_1_v[pair[i+2]] + (pair[i + 3] << 1);
+			stencil = vertex_collision_stencil_by_vertex[pair[i+2]] + stencil_num_per_vertex * (*edge_0_vertex);
+			stencil_num = vertex_collision_stencil_num[pair[i+2]][*edge_0_vertex];
+			for (int j = 0; j < stencil_num; j += 2) {
+				if (!is_stencil_used[stencil[j]][stencil[j + 1]]) {
+					is_stencil_used[stencil[j]][stencil[j + 1]] = true;
+					stencil_stencil->data()[stencil_index].emplace_back(stencil[j]);
+					stencil_stencil->data()[stencil_index].emplace_back(stencil[j + 1]);
+					record.emplace_back(stencil[j]);
+					record.emplace_back(stencil[j + 1]);
+					if (record_previous_pair_size[stencil[j]] > stencil[j + 1]) {
+						unconnect_stencil_stencil->data()[stencil[j]][stencil[j + 1]].emplace_back(type);
+						unconnect_stencil_stencil->data()[stencil[j]][stencil[j + 1]].emplace_back(stencil_index);
+					}
+				}
+			}
+
+			stencil = vertex_collision_stencil_by_vertex[pair[i + 2]] + stencil_num_per_vertex * (edge_0_vertex[1]);
+			stencil_num = vertex_collision_stencil_num[pair[i + 2]][edge_0_vertex[1]];
+			for (int j = 0; j < stencil_num; j += 2) {
+				if (!is_stencil_used[stencil[j]][stencil[j + 1]]) {
+					is_stencil_used[stencil[j]][stencil[j + 1]] = true;
+					stencil_stencil->data()[stencil_index].emplace_back(stencil[j]);
+					stencil_stencil->data()[stencil_index].emplace_back(stencil[j + 1]);
+					record.emplace_back(stencil[j]);
+					record.emplace_back(stencil[j + 1]);
+					if (record_previous_pair_size[stencil[j]] > stencil[j + 1]) {
+						unconnect_stencil_stencil->data()[stencil[j]][stencil[j + 1]].emplace_back(type);
+						unconnect_stencil_stencil->data()[stencil[j]][stencil[j + 1]].emplace_back(stencil_index);
+					}
+				}
+			}		
+			for (int j = 0; j < record.size(); j += 2) {
+				is_stencil_used[record[j]][record[j + 1]] = false;
+			}
+		}
+		break;
+
+	case 3:
+		for (int i = start; i < end; i += 2) {
+			stencil_index = i >> 1;
+			is_stencil_used[type][stencil_index] = true;
+			record.clear();
+			record.emplace_back(type);
+			record.emplace_back(stencil_index);
+
+			edge_0_vertex = edge_0_v[pair[i]] + (pair[i + 1] << 1);
+			stencil = vertex_collision_stencil_by_vertex[pair[i]] + stencil_num_per_vertex * (*edge_0_vertex);
+			stencil_num = vertex_collision_stencil_num[pair[i]][*edge_0_vertex];
+			for (int j = 0; j < stencil_num; j += 2) {
+				if (!is_stencil_used[stencil[j]][stencil[j + 1]]) {
+					is_stencil_used[stencil[j]][stencil[j + 1]] = true;
+					stencil_stencil->data()[stencil_index].emplace_back(stencil[j]);
+					stencil_stencil->data()[stencil_index].emplace_back(stencil[j + 1]);
+					record.emplace_back(stencil[j]);
+					record.emplace_back(stencil[j + 1]);
+					if (record_previous_pair_size[stencil[j]] > stencil[j + 1]) {
+						unconnect_stencil_stencil->data()[stencil[j]][stencil[j + 1]].emplace_back(type);
+						unconnect_stencil_stencil->data()[stencil[j]][stencil[j + 1]].emplace_back(stencil_index);
+					}
+				}
+			}
+
+			stencil = vertex_collision_stencil_by_vertex[pair[i]] + stencil_num_per_vertex * (edge_0_vertex[1]);
+			stencil_num = vertex_collision_stencil_num[pair[i]][edge_0_vertex[1]];
+			for (int j = 0; j < stencil_num; j += 2) {
+				if (!is_stencil_used[stencil[j]][stencil[j + 1]]) {
+					is_stencil_used[stencil[j]][stencil[j + 1]] = true;
+					stencil_stencil->data()[stencil_index].emplace_back(stencil[j]);
+					stencil_stencil->data()[stencil_index].emplace_back(stencil[j + 1]);
+					record.emplace_back(stencil[j]);
+					record.emplace_back(stencil[j + 1]);
+					if (record_previous_pair_size[stencil[j]] > stencil[j + 1]) {
+						unconnect_stencil_stencil->data()[stencil[j]][stencil[j + 1]].emplace_back(type);
+						unconnect_stencil_stencil->data()[stencil[j]][stencil[j + 1]].emplace_back(stencil_index);
+					}
+				}
+			}
+			for (int j = 0; j < record.size(); j += 2) {
+				is_stencil_used[record[j]][record[j + 1]] = false;
+			}
+		}
+		break;
+
+	}
+
+}
+
+
+
+//type 0 vt, 1 ee, 2 tv_c, 3 ee_c, 4 vt_c 
+void Collision::setEEPairForVertexStencil(int type, int start, int end, unsigned int* pair, unsigned int** edge_0_v,
+	unsigned int** vertex_collision_stencil_by_vertex,
+	std::atomic_uint** vertex_collision_stencil_num)
+{
+	unsigned int ori_value;
+	unsigned int* edge_0_vertex;
+	unsigned int stencil_num_per_vertex = this->stencil_num_per_vertex;
+	switch (type)
+	{
+	case 1:
+		for (int i = start; i < end; i += 2) {
+			edge_0_vertex = edge_0_v[pair[i]]+(pair[i + 1]<<1);
+			ori_value = vertex_collision_stencil_num[pair[i]][*edge_0_vertex].fetch_add(2, std::memory_order_relaxed);
+			vertex_collision_stencil_by_vertex[pair[i]][*edge_0_vertex * stencil_num_per_vertex + ori_value] = type;
+			vertex_collision_stencil_by_vertex[pair[i]][*edge_0_vertex * stencil_num_per_vertex + ori_value + 1] = i >> 2;
+			ori_value = vertex_collision_stencil_num[pair[i]][edge_0_vertex[1]].fetch_add(2, std::memory_order_relaxed);
+			vertex_collision_stencil_by_vertex[pair[i]][edge_0_vertex[1] * stencil_num_per_vertex + ori_value] = type;
+			vertex_collision_stencil_by_vertex[pair[i]][edge_0_vertex[1] * stencil_num_per_vertex + ori_value + 1] = i >> 2;
+		}
+		break;
+	case 3:
+		for (int i = start; i < end; i += 2) {
+			edge_0_vertex = edge_0_v[pair[i]] + (pair[i + 1] << 1);
+			ori_value = vertex_collision_stencil_num[pair[i]][*edge_0_vertex].fetch_add(2, std::memory_order_relaxed);
+			vertex_collision_stencil_by_vertex[pair[i]][*edge_0_vertex * stencil_num_per_vertex + ori_value] = type;
+			vertex_collision_stencil_by_vertex[pair[i]][*edge_0_vertex * stencil_num_per_vertex + ori_value + 1] = i >> 1;
+			ori_value = vertex_collision_stencil_num[pair[i]][edge_0_vertex[1]].fetch_add(2, std::memory_order_relaxed);
+			vertex_collision_stencil_by_vertex[pair[i]][edge_0_vertex[1] * stencil_num_per_vertex + ori_value] = type;
+			vertex_collision_stencil_by_vertex[pair[i]][edge_0_vertex[1] * stencil_num_per_vertex + ori_value + 1] = i >> 1;
+		}
+		break;
+	}
+
+}
+
+//type 0 vt, 1 ee, 2 tv_c, 3 ee_c, 4 vt_c 
+void Collision::setVTPairForVertexStencil(int type, int start, int end, unsigned int* pair, std::array<int,3>** triangle_indices, unsigned int** vertex_collision_stencil_by_vertex,
+	std::atomic_uint** vertex_collision_stencil_num)
+{
+	unsigned int ori_value;
+	int* tri_index;
+	unsigned int stencil_num_per_vertex = this->stencil_num_per_vertex;
+	switch (type)
+	{
+	case 0:
+		for (int i = start; i < end; i += 4) {
+			ori_value = vertex_collision_stencil_num[pair[i]][pair[i + 1]].fetch_add(2, std::memory_order_relaxed);
+			vertex_collision_stencil_by_vertex[pair[i]][pair[i + 1] * stencil_num_per_vertex + ori_value] = type;
+			vertex_collision_stencil_by_vertex[pair[i]][pair[i + 1] * stencil_num_per_vertex + ori_value + 1] = i>>2;
+			tri_index = triangle_indices[pair[i + 2]][pair[i + 3]].data();
+			for (int j = 0; j < 3; ++j) {
+				ori_value = vertex_collision_stencil_num[pair[i+2]][tri_index[j]].fetch_add(2, std::memory_order_relaxed);
+				vertex_collision_stencil_by_vertex[pair[i+2]][tri_index[j] * stencil_num_per_vertex + ori_value] = type;
+				vertex_collision_stencil_by_vertex[pair[i+2]][tri_index[j] * stencil_num_per_vertex + ori_value + 1] = i >> 2;
+			}
+		}
+		break;
+	case 4:
+		for (int i = start; i < end; i += 2) {
+			ori_value = vertex_collision_stencil_num[pair[i]][pair[i + 1]].fetch_add(2, std::memory_order_relaxed);
+			vertex_collision_stencil_by_vertex[pair[i]][pair[i + 1] * stencil_num_per_vertex + ori_value] = type;
+			vertex_collision_stencil_by_vertex[pair[i]][pair[i + 1] * stencil_num_per_vertex + ori_value + 1] = i >> 1;
+		}
+		break;
+	case 2:
+		for (int i = start; i < end; i += 2) {
+			tri_index = triangle_indices[pair[i]][pair[i + 1]].data();
+			for (int j = 0; j < 3; ++j) {
+				ori_value = vertex_collision_stencil_num[pair[i]][tri_index[j]].fetch_add(2, std::memory_order_relaxed);
+				vertex_collision_stencil_by_vertex[pair[i]][tri_index[j] * stencil_num_per_vertex + ori_value] = type;
+				vertex_collision_stencil_by_vertex[pair[i]][tri_index[j] * stencil_num_per_vertex + ori_value + 1] = i >> 1;
+			}
+		}
+		break;
+	}
 }
 
 
@@ -2590,6 +2893,9 @@ void Collision::setPairTogether()
 		record_ee_collider_pair_d_hat.resize(record_ee_collider_pair_sum_all_thread.size() >> 2);
 		record_tv_collider_pair_d_hat.resize(record_tv_collider_pair_sum_all_thread.size() >> 2);
 	}
+
+
+
 }
 
 
@@ -2889,6 +3195,12 @@ void Collision::combineElementCollideCollider()
 		arrangeIndex(thread_num, vertex_index_collide_collider_sum.size() >> 1, vertex_c_start_per_thread.data(), 2);
 		arrangeIndex(thread_num, (vertex_index_collide_collider_sum.size() - record_previous_vertex_index_with_collider_sum) >> 1, vertex_c_start_add_per_thread.data(), 2);
 	}
+
+	record_previous_pair_size[0] = record_previous_vt_pair_sum_size >> 2;
+	record_previous_pair_size[1] = record_previous_ee_pair_sum_size >> 2;
+	record_previous_pair_size[2] = record_previous_triangle_index_with_collider_sum >> 1;
+	record_previous_pair_size[3] = record_previous_edge_index_with_collider_sum >> 1;
+	record_previous_pair_size[4] = record_previous_vertex_index_with_collider_sum >> 1;
 }
 
 
@@ -8648,6 +8960,7 @@ void Collision::addPairToHashRecord(int start, int end, std::vector<unsigned int
 }
 
 
+
 void Collision::vertexTriangleCollisionTimePair(int start_pair_index,
 	int end_pair_index, double& collision_time, std::array<int,3>** triangle_indices,
 	std::array<double, 3>** vertex_for_render_0, std::array<double, 3>** vertex_for_render_1,
@@ -8683,42 +8996,41 @@ void Collision::vertexTriangleCollisionTimePair(int start_pair_index,
 		//	current_distance = CCD::internal::pointTriangleDistanceUnclassified(vertex_position_0[pair[i + 1]][pair[i]].data(),
 		//		vertex_position_1[pair[i + 3]][indices[0]].data(), vertex_position_1[pair[i + 3]][indices[1]].data(), vertex_position_1[pair[i + 3]][indices[2]].data());
 		//}
-
-	/*	if (pair[i] == 198) {
-			if (vertex_position_0[pair[i + 1]][pair[i]][1] < vertex_position_1[pair[i + 3]][indices[2]][1]) {
-				if (vertex_position_1[pair[i + 3]][indices[2]][1] < -0.79311) {
-					if (time >= 1.0) {
-						if (vertex_for_render_0[pair[i + 1]][pair[i]][1] > vertex_position_1[pair[i + 3]][indices[2]][1]) {
-							std::cout << "ori true " << std::endl;
-						}
-						else {
-							std::cout << "ori false " << std::endl;
-						}
-						std::cout << "error ++ " << std::endl;
-						std::cout << pair[i] << " " << pair[i + 2] << std::endl;
-					}
-					else {
-						if (vertex_for_render_0[pair[i + 1]][pair[i]][1] > vertex_position_1[pair[i + 3]][indices[2]][1]) {
-							std::cout << "ori true " << std::endl;
-						}
-						else {
-							std::cout << "ori false " << std::endl;
-						}
-						std::cout << "right ++ " << time<< std::endl;
-						double time_ = CCD::pointTriangleCcdPrint(vertex_for_render_0[pair[i + 1]][pair[i]].data(),
-							vertex_for_render_1[pair[i + 3]][indices[0]].data(),
-							vertex_for_render_1[pair[i + 3]][indices[1]].data(),
-							vertex_for_render_1[pair[i + 3]][indices[2]].data(),
-							vertex_position_0[pair[i + 1]][pair[i]].data(),
-							vertex_position_1[pair[i + 3]][indices[0]].data(),
-							vertex_position_1[pair[i + 3]][indices[1]].data(),
-							vertex_position_1[pair[i + 3]][indices[2]].data(), eta, tolerance);
-						std::cout << pair[i] << " " << indices[2] << std::endl;
-						std::cout << pair[i] << " " << pair[i + 2] << std::endl;
-					}
-				}
-			}
-		}*/
+		//if (pair[i] == 198) {
+		//	if (vertex_position_0[pair[i + 1]][pair[i]][1] < vertex_position_1[pair[i + 3]][indices[2]][1]) {
+		//		if (vertex_position_1[pair[i + 3]][indices[2]][1] < -0.79311) {
+		//			if (time >= 1.0) {
+		//				if (vertex_for_render_0[pair[i + 1]][pair[i]][1] > vertex_position_1[pair[i + 3]][indices[2]][1]) {
+		//					std::cout << "ori true " << std::endl;
+		//				}
+		//				else {
+		//					std::cout << "ori false " << std::endl;
+		//				}
+		//				std::cout << "error ++ " << std::endl;
+		//				std::cout << pair[i] << " " << pair[i + 2] << std::endl;
+		//			}
+		//			else {
+		//				if (vertex_for_render_0[pair[i + 1]][pair[i]][1] > vertex_position_1[pair[i + 3]][indices[2]][1]) {
+		//					std::cout << "ori true " << std::endl;
+		//				}
+		//				else {
+		//					std::cout << "ori false " << std::endl;
+		//				}
+		//				std::cout << "right ++ " << time<< std::endl;
+		//				double time_ = CCD::pointTriangleCcdPrint(vertex_for_render_0[pair[i + 1]][pair[i]].data(),
+		//					vertex_for_render_1[pair[i + 3]][indices[0]].data(),
+		//					vertex_for_render_1[pair[i + 3]][indices[1]].data(),
+		//					vertex_for_render_1[pair[i + 3]][indices[2]].data(),
+		//					vertex_position_0[pair[i + 1]][pair[i]].data(),
+		//					vertex_position_1[pair[i + 3]][indices[0]].data(),
+		//					vertex_position_1[pair[i + 3]][indices[1]].data(),
+		//					vertex_position_1[pair[i + 3]][indices[2]].data(), eta, tolerance);
+		//				std::cout << pair[i] << " " << indices[2] << std::endl;
+		//				std::cout << pair[i] << " " << pair[i + 2] << std::endl;
+		//			}
+		//		}
+		//	}
+		//}
 
 		if (time < 1.0){// || current_distance < d_hat_2
 			//std::cout << "+++ " << pair[i]<<" "<< vertex_position_0[pair[i + 1]][pair[i]][1]<<" "<< vertex_position_1[pair[i + 3]][indices[2]][1] << " " << time << std::endl;
@@ -12578,27 +12890,27 @@ void Collision::addTetToCollision(std::vector<unsigned int>& pair_compress_recor
 }
 
 
-//ADD_TET_IN_COLLISION
-void Collision::addTetInvolvedInCollision(int thread_No)
-{
-
-	addTetToCollision(record_vt_pair_sum_all_thread, tet_around_vertex.data(), tet_around_triangle.data(), &tet_involve_in_collision[thread_No],
-		vt_pair_add_per_thread[thread_No], vt_pair_add_per_thread[thread_No + 1]);
-	addTetToCollision(record_ee_pair_sum_all_thread, tet_around_edge.data(), tet_around_edge.data(), &tet_involve_in_collision[thread_No],
-		ee_pair_add_per_thread[thread_No], ee_pair_add_per_thread[thread_No + 1]);	
-	
-	if (has_collider || floor->exist) {
-		addTetToCollision(vertex_index_collide_collider_sum, tet_around_vertex.data(),
-			&tet_involve_in_collision[thread_No], vertex_c_start_add_per_thread[thread_No], vertex_c_start_add_per_thread[thread_No + 1]);
-	}
-	if (has_collider) {
-		addTetToCollision(edge_index_collide_collider_sum, tet_around_edge.data(),
-			&tet_involve_in_collision[thread_No], edge_c_start_add_per_thread[thread_No], edge_c_start_add_per_thread[thread_No + 1]);
-		addTetToCollision(triangle_index_collide_collider_sum, tet_around_triangle.data(),
-			&tet_involve_in_collision[thread_No], triangle_c_start_add_per_thread[thread_No], triangle_c_start_add_per_thread[thread_No + 1]);
-	}
-
-}
+////ADD_TET_IN_COLLISION
+//void Collision::addTetInvolvedInCollision(int thread_No)
+//{
+//
+//	addTetToCollision(record_vt_pair_sum_all_thread, tet_around_vertex.data(), tet_around_triangle.data(), &tet_involve_in_collision[thread_No],
+//		vt_pair_add_per_thread[thread_No], vt_pair_add_per_thread[thread_No + 1]);
+//	addTetToCollision(record_ee_pair_sum_all_thread, tet_around_edge.data(), tet_around_edge.data(), &tet_involve_in_collision[thread_No],
+//		ee_pair_add_per_thread[thread_No], ee_pair_add_per_thread[thread_No + 1]);	
+//	
+//	if (has_collider || floor->exist) {
+//		addTetToCollision(vertex_index_collide_collider_sum, tet_around_vertex.data(),
+//			&tet_involve_in_collision[thread_No], vertex_c_start_add_per_thread[thread_No], vertex_c_start_add_per_thread[thread_No + 1]);
+//	}
+//	if (has_collider) {
+//		addTetToCollision(edge_index_collide_collider_sum, tet_around_edge.data(),
+//			&tet_involve_in_collision[thread_No], edge_c_start_add_per_thread[thread_No], edge_c_start_add_per_thread[thread_No + 1]);
+//		addTetToCollision(triangle_index_collide_collider_sum, tet_around_triangle.data(),
+//			&tet_involve_in_collision[thread_No], triangle_c_start_add_per_thread[thread_No], triangle_c_start_add_per_thread[thread_No + 1]);
+//	}
+//
+//}
 
 
 

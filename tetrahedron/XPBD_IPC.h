@@ -100,7 +100,7 @@ public:
 	//void newtonCDTetBlockAGroupTest(int thread_No, int color);
 
 	//void tetGradForColorCollision(unsigned int color_No);
-	void tetGradForColorCollisionNeighbor(int thread_No, unsigned int color_No);
+	//void tetGradForColorCollisionNeighbor(int thread_No, unsigned int color_No);
 	//void tetGradForColorCollisionEECollider(int thread_No, unsigned int color_No);
 	//void tetGradForColorCollisionTVCollider(int thread_No, unsigned int color_No);
 	//void tetGradForColorCollisionVT(int thread_No, unsigned int color_No);

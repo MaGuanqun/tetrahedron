@@ -478,6 +478,9 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     case COLLISION_GRAD:
         k = job([func, thread_id]() {func->computeGradientPerThread(thread_id); });
         break;
+    case VERTEX_COLLISION_STENCIL:
+        k = job([func, thread_id]() {func->setVerteCollisionStencil(thread_id); });
+        break;
     //case COMPUTE_VOLUME:
     //    k = job([func, thread_id]() {func->computeVolume(thread_id); });
     //    break;
@@ -544,9 +547,9 @@ job Thread::create_task(Collision* func, int thread_id, CollisionFuncSendToThrea
     case EXTRACT_ELEMENTS_WITH_COLLIDER:
         k = job([func, thread_id]() {func->extractElementCollideWithCollider(thread_id); });
         break;
-    case ADD_TET_IN_COLLISION:
-        k = job([func, thread_id]() {func->addTetInvolvedInCollision(thread_id); });
-        break;
+    //case ADD_TET_IN_COLLISION:
+    //    k = job([func, thread_id]() {func->addTetInvolvedInCollision(thread_id); });
+    //    break;
     case SET_PAIR_BY_ELEMENT:
         k = job([func, thread_id]() {func->setPairByElement(thread_id); });
         break;
@@ -981,9 +984,9 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
     case SOLVE_TET_BLOCK_COLLISION:
         k = job([func, thread_id, para]() {func->newtonCDTetBlockAGroupCollision(thread_id, para); });
         break;
-    case UPDATE_TET_GRAD_SHARED_COLLISION_NEIGHBOR:
-        k = job([func, thread_id, para]() {func->tetGradForColorCollisionNeighbor(thread_id, para); });
-        break;
+    //case UPDATE_TET_GRAD_SHARED_COLLISION_NEIGHBOR:
+    //    k = job([func, thread_id, para]() {func->tetGradForColorCollisionNeighbor(thread_id, para); });
+    //    break;
     case PREVIOUS_COLOR_INVERSION_TEST:
         k = job([func, thread_id, para]() {func->computePreviousColorInversion(thread_id, para); });
         break;

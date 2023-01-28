@@ -1855,33 +1855,33 @@ void XPBD_IPC::setCollisionPairTetNeighborGrad(std::vector<unsigned int>& tet_in
 //	}
 //}
 
-//UPDATE_TET_GRAD_SHARED_COLLISION_NEIGHBOR
-void XPBD_IPC::tetGradForColorCollisionNeighbor(int thread_No, unsigned int color_No)
-{
-
-	int thread_id;
-	if (collision.tet_involve_in_collision_start_per_thread[(thread_No + 1) << 1] > collision.tet_involve_in_collision_start_per_thread[thread_No << 1]) {
-		thread_id = collision.tet_involve_in_collision_start_per_thread[thread_No << 1];
-		setCollisionPairTetNeighborGrad(collision.tet_involve_in_collision[thread_id],
-			collision.tet_involve_in_collision_start_per_thread[(thread_No << 1) + 1], collision.tet_involve_in_collision[thread_id].size(), common_grad[thread_No].data());
-
-
-		for (int i = collision.tet_involve_in_collision_start_per_thread[thread_No << 1] + 1;
-			i < collision.tet_involve_in_collision_start_per_thread[(thread_No + 1) << 1]; ++i) {
-			setCollisionPairTetNeighborGrad(collision.tet_involve_in_collision[i],
-				0, collision.tet_involve_in_collision[i].size(), common_grad[thread_No].data());
-		}
-
-		thread_id = collision.tet_involve_in_collision_start_per_thread[(thread_No + 1) << 1];
-		setCollisionPairTetNeighborGrad(collision.tet_involve_in_collision[thread_id],
-			0, collision.tet_involve_in_collision_start_per_thread[(thread_No << 1) + 3], common_grad[thread_No].data());
-	}
-	else {
-		thread_id = collision.tet_involve_in_collision_start_per_thread[thread_No << 1];
-		setCollisionPairTetNeighborGrad(collision.tet_involve_in_collision[thread_id],
-			collision.tet_involve_in_collision_start_per_thread[(thread_No << 1) + 1], collision.tet_involve_in_collision_start_per_thread[(thread_No << 1) + 3], common_grad[thread_No].data());
-	}
-}
+////UPDATE_TET_GRAD_SHARED_COLLISION_NEIGHBOR
+//void XPBD_IPC::tetGradForColorCollisionNeighbor(int thread_No, unsigned int color_No)
+//{
+//
+//	int thread_id;
+//	if (collision.tet_involve_in_collision_start_per_thread[(thread_No + 1) << 1] > collision.tet_involve_in_collision_start_per_thread[thread_No << 1]) {
+//		thread_id = collision.tet_involve_in_collision_start_per_thread[thread_No << 1];
+//		setCollisionPairTetNeighborGrad(collision.tet_involve_in_collision[thread_id],
+//			collision.tet_involve_in_collision_start_per_thread[(thread_No << 1) + 1], collision.tet_involve_in_collision[thread_id].size(), common_grad[thread_No].data());
+//
+//
+//		for (int i = collision.tet_involve_in_collision_start_per_thread[thread_No << 1] + 1;
+//			i < collision.tet_involve_in_collision_start_per_thread[(thread_No + 1) << 1]; ++i) {
+//			setCollisionPairTetNeighborGrad(collision.tet_involve_in_collision[i],
+//				0, collision.tet_involve_in_collision[i].size(), common_grad[thread_No].data());
+//		}
+//
+//		thread_id = collision.tet_involve_in_collision_start_per_thread[(thread_No + 1) << 1];
+//		setCollisionPairTetNeighborGrad(collision.tet_involve_in_collision[thread_id],
+//			0, collision.tet_involve_in_collision_start_per_thread[(thread_No << 1) + 3], common_grad[thread_No].data());
+//	}
+//	else {
+//		thread_id = collision.tet_involve_in_collision_start_per_thread[thread_No << 1];
+//		setCollisionPairTetNeighborGrad(collision.tet_involve_in_collision[thread_id],
+//			collision.tet_involve_in_collision_start_per_thread[(thread_No << 1) + 1], collision.tet_involve_in_collision_start_per_thread[(thread_No << 1) + 3], common_grad[thread_No].data());
+//	}
+//}
 
 
 

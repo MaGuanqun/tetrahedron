@@ -78,9 +78,12 @@ public:
 	std::vector<std::vector<double>>point_triangle_collider_target_pos_record;
 	std::vector<std::vector<double>>edge_edge_target_pos_record;
 
+	unsigned int** vertex_collision_stencil_by_vertex; //collision type, collision index
+	std::atomic_uint ** vertex_collision_stencil_num;
 
+	unsigned int stencil_num_per_vertex;
 
-
+	std::vector<std::vector<unsigned int>> stencil_neighobor_stencil; //record collision type, collision index
 
 	//unsigned int** vertex_triangle_pair_by_vertex;//store pair by every vertex. (obj_index,triangle_index, )
 	//std::atomic_uint** vertex_triangle_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
@@ -422,7 +425,7 @@ public:
 
 
 
-	std::vector<std::vector<unsigned int>>tet_involve_in_collision;//size is total thread num/ obj_index, tet_index
+	//std::vector<std::vector<unsigned int>>tet_involve_in_collision;//size is total thread num/ obj_index, tet_index
 
 	std::vector<std::vector<unsigned int>>record_vt_pair; //obj_1, vertex_1, obj_2, vertex_2
 	std::vector<std::vector<unsigned int>>record_ee_pair;
@@ -507,7 +510,7 @@ public:
 
 	bool collisionPairHasChanged();
 
-	void 	addTetInvolvedInCollision(int thread_No);
+	//void 	addTetInvolvedInCollision(int thread_No);
 
 	void computeDhatWithIndexInGlobal(int thread_No);
 
@@ -524,9 +527,27 @@ public:
 
 	void updateVertexBelongColorGroup(int color_No);
 
+	void setVerteCollisionStencil(int thread_No);
+
+
 private:		
 
-	
+	std::vector<std::vector<std::vector<unsigned int>>> unconnect_stencil_stencil;//store type, stencil index, //type 0 vt, 1 ee, 2 tv_c, 3 ee_c, 4 vt_c 
+	void setEEStencilStencil(int type, int start, int end, unsigned int* pair, unsigned int** edge_0_v, unsigned int** edge_1_v,
+		unsigned int** vertex_collision_stencil_by_vertex,
+		std::atomic_uint** vertex_collision_stencil_num, std::vector<std::vector<std::vector<unsigned int>>>* unconnect_stencil_stencil);
+	void setCollisionStencilToStencil();
+
+	void setVTPairForVertexStencil(int type, int start, int end, unsigned int* pair, std::array<int, 3>** triangle_indices, 
+		unsigned int** vertex_collision_stencil_by_vertex,
+		std::atomic_uint** vertex_collision_stencil_num);
+
+
+	std::vector<std::vector<bool>>is_stencil_used;
+
+	void setEEPairForVertexStencil(int type, int start, int end, unsigned int* pair, unsigned int** edge_0_v,
+		unsigned int** vertex_collision_stencil_by_vertex,
+		std::atomic_uint** vertex_collision_stencil_num);
 
 	std::vector<unsigned int> vt_pair_add_per_thread;
 	std::vector<unsigned int> ee_pair_add_per_thread;
@@ -635,6 +656,8 @@ private:
 	unsigned int record_previous_vt_collider_pair_sum_size;
 	unsigned int record_previous_ee_collider_pair_sum_size;
 	unsigned int record_previous_floor_pair_sum_size;
+
+	std::vector<unsigned int>record_previous_pair_size; //type 0 vt, 1 ee, 2 tv_c, 3 ee_c, 4 vt_c 
 
 
 	void recordCollideWithCollider();
