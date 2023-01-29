@@ -716,7 +716,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 
 	if (perform_collision) {
 		collision.collisionCulling();
-		collision.collisionTimeWithPair();
+		collision.collisionTimeWithPair(true);
 		thread->assignTask(this, INVERSION_TEST,0);
 		for (int i = 0; i < total_thread_num; ++i) {
 			if (collision.collision_time_thread[i] < collision.collision_time) {
@@ -746,7 +746,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 		//}		
 		if (perform_collision) {
 			collision.collisionCulling();
-			collision.collisionTimeWithPair();			
+			collision.collisionTimeWithPair(true);			
 			thread->assignTask(this, INVERSION_TEST,0);
 			for (int i = 0; i < total_thread_num; ++i) {
 				if (collision.collision_time_thread[i] < collision.collision_time) {

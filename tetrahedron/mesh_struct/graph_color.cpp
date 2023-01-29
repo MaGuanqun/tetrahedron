@@ -99,6 +99,7 @@ void GraphColor::graphColorTet(MeshStruct& mesh_struct, int different_color_stra
 }
 
 
+
 void GraphColor::graphColorLoopNode(std::vector<std::vector<unsigned int>>& element_element, int max_color_number,
 	std::vector<std::vector<unsigned int>>& element_not_connect, int* element_order, std::vector<int>& color_score)
 {

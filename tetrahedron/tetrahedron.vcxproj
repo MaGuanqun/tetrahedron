@@ -213,6 +213,7 @@
     <ClCompile Include="load_mesh\read_ele.cpp" />
     <ClCompile Include="load_mesh\set_model.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="mesh_struct\collision_graph_color.cpp" />
     <ClCompile Include="mesh_struct\graph_color.cpp" />
     <ClCompile Include="mesh_struct\mesh_struct.cpp" />
     <ClCompile Include="mesh_struct\tetrahedron_mesh_struct.cpp" />
@@ -292,6 +293,7 @@
     <ClInclude Include="load_mesh\read_ele.h" />
     <ClInclude Include="load_mesh\set_model.h" />
     <ClInclude Include="load_mesh\writeObj.h" />
+    <ClInclude Include="mesh_struct\collision_graph_color.h" />
     <ClInclude Include="mesh_struct\graph_color.h" />
     <ClInclude Include="mesh_struct\mesh_struct.h" />
     <ClInclude Include="mesh_struct\tetrahedron_mesh_struct.h" />

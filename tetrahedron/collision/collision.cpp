@@ -438,6 +438,18 @@ void Collision::recordPair()
 	}
 
 	record_previous_pair_size.resize(5, 0);
+	pair_color_start_per_thread.resize(collision_graph_color.max_color_number);
+	for (int i = 0; i < pair_color_start_per_thread.size(); ++i) {
+		pair_color_start_per_thread[i].resize(thread_num + 1, 0);
+	}
+
+	collision_pair_sum.resize(5);
+	collision_pair_sum[0] = &record_vt_pair_sum_all_thread;
+	collision_pair_sum[1] = &record_ee_pair_sum_all_thread;
+	collision_pair_sum[2] = &triangle_index_collide_collider_sum;
+	collision_pair_sum[3] = &edge_index_collide_collider_sum;
+	collision_pair_sum[4] = &vertex_index_collide_collider_sum;
+
 }
 
 
@@ -540,8 +552,10 @@ void Collision::initialPairRecordInfo()
 	for (int i = 0; i < total_obj_num; ++i) {
 		memset(vertex_collision_stencil_num[i], 0, sizeof(std::atomic_uint) * total_vertex_num[i]);
 	}
-	stencil_neighobor_stencil.clear();
-
+	for (int i = 0; i < unconnect_stencil_stencil.size(); ++i) {
+		unconnect_stencil_stencil[i].clear();
+	}
+	collision_graph_color.initial(unconnect_pair_color_group);
 }
 
 
@@ -2217,7 +2231,7 @@ void Collision::updateNewPairInHash(int thread_No)
 
 
 //recrod all pair with collision, compute collision_time
-void Collision::collisionTimeWithPair()
+void Collision::collisionTimeWithPair(bool for_warm_start)
 {
 	for (int i = 0; i < thread_num; ++i) {
 		record_previous_vt_pair_size[i] = record_vt_pair[i].size();
@@ -2310,8 +2324,17 @@ void Collision::collisionTimeWithPair()
 
 	setMapForHessianIndexToConstraint();
 
-	thread->assignTask(this, VERTEX_COLLISION_STENCIL);
+	if (for_warm_start)
+	{
+		thread->assignTask(this, VERTEX_COLLISION_STENCIL);
 
+		//for (int i = 0; i < vertex_collision_stencil_num[0][624]; i += 2) {
+		//	std::cout << vertex_collision_stencil_by_vertex[0][624 * stencil_num_per_vertex + i] << " " << vertex_collision_stencil_by_vertex[0][624 * stencil_num_per_vertex + i + 1] << std::endl;
+		//}
+		setCollisionStencilToStencil();
+	}
+	
+	
 }
 
 //VERTEX_COLLISION_STENCIL
@@ -2324,13 +2347,16 @@ void Collision::setVerteCollisionStencil(int thread_No)
 		record_ee_pair_sum_all_thread.data(), edge_vertices.data(), vertex_collision_stencil_by_vertex, vertex_collision_stencil_num);
 
 	if (has_collider) {
-		setEEPairForVertexStencil(3, ee_c_pair_add_per_thread[thread_No], ee_c_pair_add_per_thread[thread_No + 1],
+
+		//std::cout <<"thread start "<< edge_c_start_add_per_thread[thread_No] << " " << ee_c_pair_add_per_thread[thread_No + 1] << std::endl;
+
+		setEEPairForVertexStencil(3, edge_c_start_add_per_thread[thread_No], edge_c_start_add_per_thread[thread_No + 1],
 			edge_index_collide_collider_sum.data(), edge_vertices.data(), vertex_collision_stencil_by_vertex, vertex_collision_stencil_num);
 
-		setVTPairForVertexStencil(2, tv_c_pair_add_per_thread[thread_No], tv_c_pair_add_per_thread[thread_No + 1],
+		setVTPairForVertexStencil(2, triangle_c_start_add_per_thread[thread_No], triangle_c_start_add_per_thread[thread_No + 1],
 			triangle_index_collide_collider_sum.data(), triangle_indices.data(), vertex_collision_stencil_by_vertex, vertex_collision_stencil_num);
 
-		setVTPairForVertexStencil(4, vt_c_pair_add_per_thread[thread_No], vt_c_pair_add_per_thread[thread_No + 1],
+		setVTPairForVertexStencil(4, vertex_c_start_add_per_thread[thread_No], vertex_c_start_add_per_thread[thread_No + 1],
 			vertex_index_collide_collider_sum.data(), triangle_indices.data(), vertex_collision_stencil_by_vertex, vertex_collision_stencil_num);
 	}
 }
@@ -2352,14 +2378,156 @@ void Collision::setCollisionStencilToStencil()
 	is_stencil_used[3].resize(edge_index_collide_collider_sum.size() >> 1, false);
 	is_stencil_used[4].resize(vertex_index_collide_collider_sum.size() >> 1, false);
 
+	//vt
+	setVTStencilStencil(0, record_previous_vt_pair_sum_size, record_vt_pair_sum_all_thread.size(), record_vt_pair_sum_all_thread.data(), triangle_indices.data(),
+		vertex_collision_stencil_by_vertex, vertex_collision_stencil_num, &unconnect_stencil_stencil);
+	//ee
+	setEEStencilStencil(1, record_previous_ee_pair_sum_size, record_ee_pair_sum_all_thread.size(), record_ee_pair_sum_all_thread.data(), edge_vertices.data(),
+		edge_vertices.data(), vertex_collision_stencil_by_vertex, vertex_collision_stencil_num, &unconnect_stencil_stencil);
+	if(has_collider){
+		//tv_c
+		setVTStencilStencil(2, record_previous_triangle_index_with_collider_sum, triangle_index_collide_collider_sum.size(), triangle_index_collide_collider_sum.data(), triangle_indices.data(),
+			vertex_collision_stencil_by_vertex, vertex_collision_stencil_num, &unconnect_stencil_stencil);
+		//ee_c
+		setEEStencilStencil(3, record_previous_edge_index_with_collider_sum, edge_index_collide_collider_sum.size(), edge_index_collide_collider_sum.data(), edge_vertices.data(),
+			edge_vertices.data(), vertex_collision_stencil_by_vertex, vertex_collision_stencil_num, &unconnect_stencil_stencil);
+	}
+	if (has_collider || floor->exist) {
+		//vt_c
+		setVTStencilStencil(4, record_previous_vertex_index_with_collider_sum, vertex_index_collide_collider_sum.size(), vertex_index_collide_collider_sum.data(), triangle_indices.data(),
+			vertex_collision_stencil_by_vertex, vertex_collision_stencil_num, &unconnect_stencil_stencil);
+	}
+
+	collision_graph_color.graphColorLoopNode(unconnect_stencil_stencil, unconnect_pair_color_group, record_previous_pair_size.data());
+
+	for (int i = 0; i < unconnect_pair_color_group.size(); ++i) {
+		arrangeIndex(thread_num, unconnect_pair_color_group[i].size() >> 1, pair_color_start_per_thread[i].data(), 2);
+	}
+
+	//collision_graph_color.testColor(edge_vertices, triangle_indices, unconnect_pair_color_group, collision_pair_sum, unconnect_stencil_stencil,
+	//	total_obj_num, total_vertex_num.data());
 
 }
 
-void Collision::setVTStencilStencil(int type, int start, int end, unsigned int* pair, unsigned int** edge_0_v, unsigned int** edge_1_v,
+void Collision::setVTStencilStencil(int type, int start, int end, unsigned int* pair, std::array<int,3>** indices, 
 	unsigned int** vertex_collision_stencil_by_vertex,
 	std::atomic_uint** vertex_collision_stencil_num, std::vector<std::vector<std::vector<unsigned int>>>* unconnect_stencil_stencil)
 {
+	unsigned int ori_value;
+	int* triangle_vertex;
+	unsigned int stencil_num_per_vertex = this->stencil_num_per_vertex;
+	unsigned int* stencil;
+	int stencil_num;
+	std::vector<std::vector<unsigned int>>* stencil_stencil = &unconnect_stencil_stencil->data()[type];
+	std::vector<unsigned int>record;
+	record.reserve(20);
+	unsigned int stencil_index;
+	switch (type)
+	{
+	case 0:
+		for (int i = start; i < end; i+=4) {
+			stencil_index = i >> 2;
+			is_stencil_used[type][stencil_index] = true;
+			record.clear();
+			record.emplace_back(type);
+			record.emplace_back(stencil_index);
+			stencil = vertex_collision_stencil_by_vertex[pair[i]] + stencil_num_per_vertex * pair[i + 1];
+			stencil_num = vertex_collision_stencil_num[pair[i]][pair[i + 1]];
+			for (int j = 0; j < stencil_num; j += 2) {
+				if (!is_stencil_used[stencil[j]][stencil[j + 1]]) {
+					is_stencil_used[stencil[j]][stencil[j + 1]] = true;
+					stencil_stencil->data()[stencil_index].emplace_back(stencil[j]);
+					stencil_stencil->data()[stencil_index].emplace_back(stencil[j + 1]);
+					record.emplace_back(stencil[j]);
+					record.emplace_back(stencil[j + 1]);
+					if (record_previous_pair_size[stencil[j]] > stencil[j + 1]) {
+						unconnect_stencil_stencil->data()[stencil[j]][stencil[j + 1]].emplace_back(type);
+						unconnect_stencil_stencil->data()[stencil[j]][stencil[j + 1]].emplace_back(stencil_index);
+					}
+				}
+			}
+			triangle_vertex = indices[pair[i + 2]][pair[i + 3]].data();
+			for (int k = 0; k < 3; ++k) {
+				stencil = vertex_collision_stencil_by_vertex[pair[i+2]] + stencil_num_per_vertex * (triangle_vertex[k]);
+				stencil_num = vertex_collision_stencil_num[pair[i+2]][triangle_vertex[k]];
+				for (int j = 0; j < stencil_num; j += 2) {
+					if (!is_stencil_used[stencil[j]][stencil[j + 1]]) {
+						is_stencil_used[stencil[j]][stencil[j + 1]] = true;
+						stencil_stencil->data()[stencil_index].emplace_back(stencil[j]);
+						stencil_stencil->data()[stencil_index].emplace_back(stencil[j + 1]);
+						record.emplace_back(stencil[j]);
+						record.emplace_back(stencil[j + 1]);
+						if (record_previous_pair_size[stencil[j]] > stencil[j + 1]) {
+							unconnect_stencil_stencil->data()[stencil[j]][stencil[j + 1]].emplace_back(type);
+							unconnect_stencil_stencil->data()[stencil[j]][stencil[j + 1]].emplace_back(stencil_index);
+						}
+					}
+				}
+			}
+			for (int j = 0; j < record.size(); j += 2) {
+				is_stencil_used[record[j]][record[j + 1]] = false;
+			}
+		}
+		break;
 
+	case 2:
+		for (int i = start; i < end; i += 2) {
+			stencil_index = i >> 1;
+			is_stencil_used[type][stencil_index] = true;
+			record.clear();
+			record.emplace_back(type);
+			record.emplace_back(stencil_index);
+			triangle_vertex = indices[pair[i]][pair[i + 1]].data();
+			for (int k = 0; k < 3; ++k) {
+				stencil = vertex_collision_stencil_by_vertex[pair[i]] + stencil_num_per_vertex * (triangle_vertex[k]);
+				stencil_num = vertex_collision_stencil_num[pair[i]][triangle_vertex[k]];
+				for (int j = 0; j < stencil_num; j += 2) {
+					if (!is_stencil_used[stencil[j]][stencil[j + 1]]) {
+						is_stencil_used[stencil[j]][stencil[j + 1]] = true;
+						stencil_stencil->data()[stencil_index].emplace_back(stencil[j]);
+						stencil_stencil->data()[stencil_index].emplace_back(stencil[j + 1]);
+						record.emplace_back(stencil[j]);
+						record.emplace_back(stencil[j + 1]);
+						if (record_previous_pair_size[stencil[j]] > stencil[j + 1]) {
+							unconnect_stencil_stencil->data()[stencil[j]][stencil[j + 1]].emplace_back(type);
+							unconnect_stencil_stencil->data()[stencil[j]][stencil[j + 1]].emplace_back(stencil_index);
+						}
+					}
+				}
+			}
+			for (int j = 0; j < record.size(); j += 2) {
+				is_stencil_used[record[j]][record[j + 1]] = false;
+			}
+		}
+		break;
+	case 4:
+		for (int i = start; i < end; i += 2) {
+			stencil_index = i >> 1;
+			is_stencil_used[type][stencil_index] = true;
+			record.clear();
+			record.emplace_back(type);
+			record.emplace_back(stencil_index);
+			stencil = vertex_collision_stencil_by_vertex[pair[i]] + stencil_num_per_vertex * pair[i + 1];
+			stencil_num = vertex_collision_stencil_num[pair[i]][pair[i + 1]];
+			for (int j = 0; j < stencil_num; j += 2) {
+				if (!is_stencil_used[stencil[j]][stencil[j + 1]]) {
+					is_stencil_used[stencil[j]][stencil[j + 1]] = true;
+					stencil_stencil->data()[stencil_index].emplace_back(stencil[j]);
+					stencil_stencil->data()[stencil_index].emplace_back(stencil[j + 1]);
+					record.emplace_back(stencil[j]);
+					record.emplace_back(stencil[j + 1]);
+					if (record_previous_pair_size[stencil[j]] > stencil[j + 1]) {
+						unconnect_stencil_stencil->data()[stencil[j]][stencil[j + 1]].emplace_back(type);
+						unconnect_stencil_stencil->data()[stencil[j]][stencil[j + 1]].emplace_back(stencil_index);
+					}
+				}
+			}
+			for (int j = 0; j < record.size(); j += 2) {
+				is_stencil_used[record[j]][record[j + 1]] = false;
+			}
+		}		
+		break;
+	}
 }
 
 void Collision::setEEStencilStencil(int type, int start, int end, unsigned int* pair, unsigned int** edge_0_v, unsigned int** edge_1_v,
@@ -3184,6 +3352,12 @@ void Collision::combineElementCollideCollider()
 
 		arrangeIndex(thread_num, (edge_index_collide_collider_sum.size() - record_previous_edge_index_with_collider_sum) >> 1, edge_c_start_add_per_thread.data(), 2);
 		arrangeIndex(thread_num, (triangle_index_collide_collider_sum.size() - record_previous_triangle_index_with_collider_sum) >> 1, triangle_c_start_add_per_thread.data(), 2);
+
+		for (int i = 0; i < thread_num; ++i) {
+			edge_c_start_add_per_thread[i] += record_previous_edge_index_with_collider_sum;
+			triangle_c_start_add_per_thread[i] += record_previous_triangle_index_with_collider_sum;
+		}
+		
 	}
 
 	if (has_collider || floor->exist) {
@@ -3194,6 +3368,9 @@ void Collision::combineElementCollideCollider()
 
 		arrangeIndex(thread_num, vertex_index_collide_collider_sum.size() >> 1, vertex_c_start_per_thread.data(), 2);
 		arrangeIndex(thread_num, (vertex_index_collide_collider_sum.size() - record_previous_vertex_index_with_collider_sum) >> 1, vertex_c_start_add_per_thread.data(), 2);
+		for (int i = 0; i < thread_num; ++i) {
+			vertex_c_start_add_per_thread[i] += record_previous_vertex_index_with_collider_sum;
+		}
 	}
 
 	record_previous_pair_size[0] = record_previous_vt_pair_sum_size >> 2;

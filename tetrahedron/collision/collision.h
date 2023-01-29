@@ -21,6 +21,7 @@
 #include<unordered_map>
 #include<atomic>
 //#include"mesh_patch.h"
+#include"../mesh_struct/collision_graph_color.h"
 
 using namespace Eigen;
 
@@ -54,7 +55,7 @@ public:
 	void test();
 	void collisionCulling();
 	void globalCollisionTime();
-	void collisionTimeWithPair();
+	void collisionTimeWithPair(bool for_warm_start);
 	void collisionTimeWithPair(int thread_No);
 
 	void updateNewPairInHash(int thread_No);
@@ -83,7 +84,6 @@ public:
 
 	unsigned int stencil_num_per_vertex;
 
-	std::vector<std::vector<unsigned int>> stencil_neighobor_stencil; //record collision type, collision index
 
 	//unsigned int** vertex_triangle_pair_by_vertex;//store pair by every vertex. (obj_index,triangle_index, )
 	//std::atomic_uint** vertex_triangle_pair_num_record;//record the number of triangle pairs for every vertex. For fast initialize, we recoed it in this variable
@@ -529,14 +529,27 @@ public:
 
 	void setVerteCollisionStencil(int thread_No);
 
+	std::vector<std::vector<unsigned int>>unconnect_pair_color_group;
+
+	std::vector<std::vector<unsigned int>> pair_color_start_per_thread;
+
+	std::vector<std::vector<unsigned int>*> collision_pair_sum;
 
 private:		
+
+
 
 	std::vector<std::vector<std::vector<unsigned int>>> unconnect_stencil_stencil;//store type, stencil index, //type 0 vt, 1 ee, 2 tv_c, 3 ee_c, 4 vt_c 
 	void setEEStencilStencil(int type, int start, int end, unsigned int* pair, unsigned int** edge_0_v, unsigned int** edge_1_v,
 		unsigned int** vertex_collision_stencil_by_vertex,
 		std::atomic_uint** vertex_collision_stencil_num, std::vector<std::vector<std::vector<unsigned int>>>* unconnect_stencil_stencil);
+	void setVTStencilStencil(int type, int start, int end, unsigned int* pair, std::array<int, 3>** indices,
+		unsigned int** vertex_collision_stencil_by_vertex,
+		std::atomic_uint** vertex_collision_stencil_num, std::vector<std::vector<std::vector<unsigned int>>>* unconnect_stencil_stencil);
 	void setCollisionStencilToStencil();
+
+
+
 
 	void setVTPairForVertexStencil(int type, int start, int end, unsigned int* pair, std::array<int, 3>** triangle_indices, 
 		unsigned int** vertex_collision_stencil_by_vertex,
@@ -1475,4 +1488,6 @@ private:
 
 	void checkIfPairActivatedRight();
 	void test__();
+
+	CollisionGraphColor collision_graph_color;
 };

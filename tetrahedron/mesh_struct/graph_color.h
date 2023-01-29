@@ -30,9 +30,7 @@ private:
 	void testEdgeGroup(int size, std::vector<std::vector<unsigned int>>& unconnected_vertex_index, MeshStruct& mesh_struct);
 
 	void findMinMaxDegree(std::vector<std::vector<unsigned int>>& element_element, unsigned int& max_degree, unsigned int& min_degree);
-
 	void getMaxPaletteSize(int& size, int* palette, unsigned int max_size, unsigned int max_array_size);
-
 	void orderByDegree(std::vector<std::vector<unsigned int>>& tet_tet, std::vector<int>& element_order);
 	void orderByScore(std::vector<int>& tet_score, std::vector<int>& element_order);
 
