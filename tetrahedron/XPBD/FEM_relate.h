@@ -218,15 +218,15 @@ namespace FEM {
 
 
 		SelfAdjointEigenSolver<MatrixXd> svd(A);
-		if (svd.eigenvalues()[0] >= 0) {
+		if (svd.eigenvalues()[0] >= 0.0) {
 			return false;
 		}
 
 		VectorXd fixed_eigen_value = svd.eigenvalues();
 
 		for (unsigned int i = 0; i < A.cols(); ++i) {
-			if (fixed_eigen_value.data()[i] < 0) {
-				fixed_eigen_value.data()[i] = 0;
+			if (fixed_eigen_value.data()[i] < 0.0) {
+				fixed_eigen_value.data()[i] = 0.0;
 			}
 		}
 		A = svd.eigenvectors() * fixed_eigen_value.asDiagonal() * svd.eigenvectors().transpose();

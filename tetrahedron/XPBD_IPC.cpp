@@ -230,6 +230,7 @@ void XPBD_IPC::reorganzieDataOfObjects()
 	record_vertex_position_address.resize(total_obj_num);
 	record_collision_free_vertex_position_address.resize(total_obj_num);
 	record_collision_free_vertex_position.resize(total_obj_num);
+	record_first_collision_free_position.resize(total_obj_num);
 
 	//record_outer_vertex_position.resize(total_obj_num);
 	//unfixed_vertex.resize(total_obj_num);
@@ -269,6 +270,7 @@ void XPBD_IPC::reorganzieDataOfObjects()
 		record_vertex_position[i].resize(cloth->data()[i].mesh_struct.vertex_position.size());
 		record_vertex_position_address[i]= record_vertex_position[i].data();
 		record_collision_free_vertex_position[i] = cloth->data()[i].mesh_struct.vertex_position;
+		record_first_collision_free_position[i] = cloth->data()[i].mesh_struct.vertex_position;
 		record_collision_free_vertex_position_address[i] = record_collision_free_vertex_position[i].data();
 		triangle_indices[i] = cloth->data()[i].mesh_struct.triangle_indices.data();
 		//record_outer_vertex_position[i].resize(cloth->data()[i].mesh_struct.vertex_position.size());
@@ -306,6 +308,7 @@ void XPBD_IPC::reorganzieDataOfObjects()
 		record_vertex_position[i + cloth->size()].resize(tetrahedron->data()[i].mesh_struct.vertex_position.size());
 		record_vertex_position_address[i + cloth->size()] = record_vertex_position[i + cloth->size()].data();
 		record_collision_free_vertex_position[i + cloth->size()]=tetrahedron->data()[i].mesh_struct.vertex_position;
+		record_first_collision_free_position[i + cloth->size()]=tetrahedron->data()[i].mesh_struct.vertex_position;
 		record_collision_free_vertex_position_address[i + cloth->size()] = record_collision_free_vertex_position[i + cloth->size()].data();
 		triangle_indices[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.triangle_indices.data();
 		tet_indices[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.indices.data();
@@ -647,11 +650,11 @@ void XPBD_IPC::XPBD_IPC_Position_Solve()
 	}
 	outer_itr_num = 0;
 
-	while (!convergeCondition(outer_itr_num)) {
+	while (!convergeCondition(outer_itr_num,false)) {
 
 		if (perform_collision) {
 			collision.globalCollisionTime();
-			thread->assignTask(this, COLLISION_FREE_POSITION_);
+			thread->assignTask(this, COLLISION_FREE_POSITION_,0);
 			updateCollisionFreePosition();
 			//collision.findClosePair();
 		}		
@@ -671,7 +674,7 @@ void XPBD_IPC::XPBD_IPC_Position_Solve()
 
 
 	collision.globalCollisionTime();
-	thread->assignTask(this, COLLISION_FREE_POSITION_);
+	thread->assignTask(this, COLLISION_FREE_POSITION_,0);
 
 	thread->assignTask(this, XPBD_IPC_VELOCITY);
 	updatePosition();
@@ -698,6 +701,45 @@ void XPBD_IPC::initialRecordHessian()
 }
 
 
+//WARM START
+void XPBD_IPC::warmStart(double& ori_energy)
+{
+	//collision.initialVertexBelongColorGroup();
+	unsigned itr_num = 0;
+	double initial_energy = 0.0;
+
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		memcpy(record_first_collision_free_position[i][0].data(), vertex_position[i][0].data(), 24 * record_first_collision_free_position[i].size());
+	}
+
+	while (!convergeCondition(itr_num,true))
+	{
+		if (itr_num > 0) {
+			updateCollisionFreePosition();
+		}
+		warmStart_solveBlock();
+		
+		if (perform_collision) {
+			collision.collisionCulling();
+			collision.collisionTimeWithPair(true);
+
+			thread->assignTask(this, COLLISION_FREE_POSITION_,0);
+			lineSearchWarmStart(ori_energy, true);
+		}
+		itr_num++;
+	}
+	//std::cout << "warm start itr " << itr_num << std::endl;
+	collision.collision_time = 1.0;
+	thread->assignTask(this, INVERSION_TEST, 2);
+	collision.obtainCollisionTimeFromEveryThread();
+	std::cout << "warm start inversion test time " << collision.collision_time << std::endl;
+	thread->assignTask(this, COLLISION_FREE_POSITION_,1);
+	//for (unsigned int i = 0; i < total_obj_num; ++i) {
+	//	memcpy(this->record_vertex_position[i][0].data(), vertex_position[i][0].data(), this->record_vertex_position[i].size() * 24);
+	//}
+	updateCollisionFreePosition();
+}
+
 
 void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 {
@@ -723,20 +765,21 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 				collision.collision_time = collision.collision_time_thread[i];
 			}
 		}
-		thread->assignTask(this, COLLISION_FREE_POSITION_);
+		thread->assignTask(this, COLLISION_FREE_POSITION_,0);
 	}
 
-	energy_time_start_begin = computeCurrentEnergy();
+	energy_time_start_begin = computeWarmStartEnergy();
 
 	updateCollisionFreePosition();
 	if (perform_collision) {
-		warmStart();
+		warmStart(energy_time_start_begin);
+		energy_time_start_begin = computeCurrentEnergy();
 	}
 
 	//std::cout << "time stamp " << *time_stamp << " outer itr num " << outer_itr_num << " " << inner_iteration_number << std::endl;
 	//max_displacement = 0.0;
 
-	while (!convergeCondition(outer_itr_num)) {
+	while (!convergeCondition(outer_itr_num,false)) {
 		if (outer_itr_num > 0) {
 			updateCollisionFreePosition();		
 		}
@@ -746,14 +789,14 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 		//}		
 		if (perform_collision) {
 			collision.collisionCulling();
-			collision.collisionTimeWithPair(true);			
+			collision.collisionTimeWithPair(false);			
 			thread->assignTask(this, INVERSION_TEST,0);
 			for (int i = 0; i < total_thread_num; ++i) {
 				if (collision.collision_time_thread[i] < collision.collision_time) {
 					collision.collision_time = collision.collision_time_thread[i];
 				}
 			}
-			thread->assignTask(this, COLLISION_FREE_POSITION_);
+			thread->assignTask(this, COLLISION_FREE_POSITION_,0);
 			lineSearch(energy_time_start_begin);
 
 		}		
@@ -826,11 +869,11 @@ void XPBD_IPC::XPBD_IPC_Block_Solve()
 	}
 	outer_itr_num = 0;
 	displacement_satisfied = false;
-	while (!convergeCondition(outer_itr_num)) {
+	while (!convergeCondition(outer_itr_num,false)) {
 		if (perform_collision) {
 			collision.collisionCulling();
 			collision.globalCollisionTime();
-			thread->assignTask(this, COLLISION_FREE_POSITION_);
+			thread->assignTask(this, COLLISION_FREE_POSITION_,0);
 			updateCollisionFreePosition();
 			//collision.findClosePair();
 
@@ -862,7 +905,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve()
 
 	if (perform_collision) {
 		collision.globalCollisionTime();
-		thread->assignTask(this, COLLISION_FREE_POSITION_);
+		thread->assignTask(this, COLLISION_FREE_POSITION_,0);
 	}
 	thread->assignTask(this, XPBD_IPC_VELOCITY);
 	updatePosition();
@@ -897,7 +940,7 @@ void XPBD_IPC::XPBD_IPCSolve()
 
 	//	if (perform_collision) {
 	//		collision.globalCollisionTime();
-	//		thread->assignTask(this, COLLISION_FREE_POSITION_);
+	//		thread->assignTask(this, COLLISION_FREE_POSITION_,0);
 	//		updateCollisionFreePosition();
 	//		collision.findClosePair();
 	//		collision.saveCollisionPairVolume();
@@ -920,7 +963,7 @@ void XPBD_IPC::XPBD_IPCSolve()
 
 	if (perform_collision) {
 		collision.globalCollisionTime();
-		thread->assignTask(this, COLLISION_FREE_POSITION_);
+		thread->assignTask(this, COLLISION_FREE_POSITION_,0);
 	}
 	thread->assignTask(this, XPBD_IPC_VELOCITY);
 	updatePosition();
@@ -1403,7 +1446,7 @@ void XPBD_IPC::computeLastColorInversion(int thread_No)
 
 
 //INVERSION_TEST
-// 0 inital pos is the last itr collision free,  1 initial is the record pos 
+// 0 inital pos is the last itr collision free,  1 initial is the record pos, 2 first collision free pos for warmstart
 void XPBD_IPC::inversionTest(int thread_No, int type)
 {
 	unsigned int start, end;
@@ -1440,8 +1483,11 @@ void XPBD_IPC::inversionTest(int thread_No, int type)
 		if (type == 0) {
 			ori_vertex_pos = record_collision_free_vertex_position[i + cloth->size()].data();
 		}
-		else {
+		else if(type==1) {
 			ori_vertex_pos = record_vertex_position[i + cloth->size()].data();
+		}
+		else {
+			ori_vertex_pos = record_first_collision_free_position[i + cloth->size()].data();
 		}
 		
 		tet_indices_ = tet_indices[i + cloth->size()];
@@ -1960,7 +2006,7 @@ void XPBD_IPC::setCollisionPairTetNeighborGrad(std::vector<unsigned int>& tet_in
 
 
 
-bool XPBD_IPC::convergeCondition(unsigned int iteration_num)
+bool XPBD_IPC::convergeCondition(unsigned int iteration_num, bool for_warm_start)
 {
 	//if (iteration_num < 1)
 	//{
@@ -1968,16 +2014,31 @@ bool XPBD_IPC::convergeCondition(unsigned int iteration_num)
 	//}
 	//return true;
 
-	if (iteration_num <min_outer_iteration) {//max_iteration_number
-		std::cout << iteration_num << " " << max_displacement << std::endl;
-		return false;
+	if (for_warm_start) {
+		if (iteration_num < 1) {//max_iteration_number
+			std::cout <<"warm start "<<  iteration_num << " " << max_displacement << std::endl;
+			return false;
+		}
+	}
+	else {
+		if (iteration_num < min_outer_iteration) {//max_iteration_number
+			std::cout << iteration_num << " " << max_displacement << std::endl;
+			return false;
+		}
 	}
 	if (iteration_num > outer_max_iteration_number - 1) {
 		return true;
 	}
+	if (for_warm_start) {
+		std::cout << "warm start " << iteration_num << " " << max_displacement << std::endl;
+	}
+	else {
+		std::cout << iteration_num << " " << max_displacement << std::endl;
+	}
+	
 
 	if (max_displacement > max_move_standard) {
-		std::cout << iteration_num << " " << max_displacement << std::endl;
+		
 		if (iteration_num > 100) {
 			if (dis_record.size() > 3) {
 				dis_record.clear();
@@ -1990,9 +2051,6 @@ bool XPBD_IPC::convergeCondition(unsigned int iteration_num)
 			dis_record.emplace_back(max_displacement);			
 		}		
 		return false;
-	}
-	else {
-		std::cout << iteration_num << " " << max_displacement << std::endl;
 	}
 	//if (grad_max > max_move_standard)
 	//{
@@ -2849,6 +2907,36 @@ void XPBD_IPC::testVolume()
 	}
 }
 
+
+
+void XPBD_IPC::warmStart_solveBlock()
+{
+	double ori_energy = 0.0;
+	max_displacement = 0.0;
+	memset(max_dis_record.data(), 0, 8 * max_dis_record.size());
+	for (int i = 0; i < collision.unconnect_pair_color_group.size(); ++i) {
+		if (collision.unconnect_pair_color_group[i].empty()) {
+			continue;
+		}
+		initialRecordHessian();
+		collision.computeHessian(i,true);
+		thread->assignTask(this, SUM_ALL_GRAD);
+
+		ori_energy = computeWarmStartEnergy();
+		initialRecordPositionForThread();
+		thread->assignTask(this, WARM_START_SOLVE_COLLISION, i);
+		for (int i = 0; i < total_thread_num; ++i) {
+			if (max_displacement < max_dis_record[i]) {
+				max_displacement = max_dis_record[i];
+			}
+		}
+		thread->assignTask(this, UPDATE_POSITION_AVERAGE_WARM_START);
+		lineSearchWarmStart(ori_energy,false);
+
+	}
+}
+
+
 void XPBD_IPC::solveNewtonCD_tetBlock()
 {
 	double ori_energy = 0.0;
@@ -2864,7 +2952,7 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 
 		initialRecordHessian();
 		if (perform_collision) {
-			collision.computeHessian(i);
+			collision.computeHessian(i,false);
 		}		
 		else {
 			collision.updateVertexBelongColorGroup(i);
@@ -2903,7 +2991,7 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 	initialRecordHessian();
 	//memset(is_tet_arap_grad_compute, 0, prefix_sum_of_every_tet_index[tetrahedron->size()]<<2);	
 	if (perform_collision) {
-		collision.computeHessian(max_tet_color_num - 1);
+		collision.computeHessian(max_tet_color_num - 1,false);
 	}
 	else {
 		collision.updateVertexBelongColorGroup(max_tet_color_num - 1);
@@ -2997,7 +3085,7 @@ void XPBD_IPC::lineSearch(double& ori_energy)
 			while (current_energy > ori_energy)
 			{
 				record_collision_time *= 0.5;
-				thread->assignTask(this, COLLISION_FREE_POSITION_);
+				thread->assignTask(this, COLLISION_FREE_POSITION_,0);
 
 				itr_num++;
 				if (itr_num > 6) {
@@ -3020,6 +3108,55 @@ void XPBD_IPC::lineSearch(double& ori_energy)
 			//std::cout << "final color actual collision time " << collision.collision_time << std::endl;
 		//}
 		ori_energy = current_energy;
+	}
+}
+
+
+
+void XPBD_IPC::lineSearchWarmStart(double& ori_energy, bool is_outer_itr)
+{
+	double current_energy = 0.0;
+	if (!is_outer_itr) {
+		collision.allPairCollisionTime();
+		if (collision.collision_time < 1.0) {
+			thread->assignTask(&collision, COLLISION_FREE_POSITION_ALL);
+		}
+	}
+	//std::cout <<"time before line search "<< collision.collision_time << std::endl;
+	current_energy = computeWarmStartEnergy();
+	if (current_energy > 1e-13) {
+		double record_collision_time = collision.collision_time;
+		if (current_energy > ori_energy) {
+			if (record_collision_time < 1e-6) {
+				std::cout << "warm start initial collision_time is too small " << ori_energy << " " << current_energy<<" "<<is_outer_itr << std::endl;
+			}
+		}
+		collision.collision_time = 0.5;
+		int itr_num = 0;
+		while (current_energy > ori_energy)
+		{
+			record_collision_time *= 0.5;
+			if (is_outer_itr) {
+				thread->assignTask(this, COLLISION_FREE_POSITION_,0);
+			}
+			else{
+				thread->assignTask(&collision, COLLISION_FREE_POSITION_ALL);
+			}		
+			itr_num++;
+			if (itr_num > 6) {
+				std::cout << "warm start record_collision_time is too small " <<  ori_energy << " " << current_energy << std::endl;
+				break;
+			}
+			current_energy = computeWarmStartEnergy();
+		}
+	}
+	if (is_outer_itr) {
+		ori_energy = current_energy;
+	}
+	else{
+		for (unsigned int i = 0; i < total_obj_num; ++i) {
+			memcpy(this->record_vertex_position[i][0].data(), vertex_position[i][0].data(), this->record_vertex_position[i].size() * 24);
+		}
 	}
 }
 
@@ -3177,6 +3314,58 @@ void XPBD_IPC::updatePositionAverageExceptThisColor(int thread_No)
 	}
 }
 
+//UPDATE_POSITION_AVERAGE_WARM_START
+void XPBD_IPC::updatePositionAverageWarmStart(int thread_No)
+{
+	int start, end;
+	std::vector<std::array<double, 3>>* record_position;
+	std::vector<int>* record_position_num;
+
+	int vertex_num;
+	double pos[3];
+
+	std::array<double, 3>* vertex_pos;
+	std::array<double, 3>* sn_;
+
+	for (int i = 0; i < total_obj_num; ++i) {
+		start = vertex_index_begin_per_thread[i][thread_No];
+		end = vertex_index_begin_per_thread[i][thread_No + 1];
+
+		record_position = record_vertex_position_every_thread[i].data();
+		record_position_num = record_vertex_position_num_every_thread[i].data();
+
+		vertex_pos = vertex_position[i];
+		sn_ = sn[i].data();
+
+		for (int j = start; j < end; ++j) {
+			memset(pos, 0, 24);
+			vertex_num = 0;
+			for (int k = 0; k < total_thread_num; ++k) {
+				if (record_position_num[k][j] == -1) {
+					record_position_num[0][j] = -1;
+					vertex_num = -1;
+					break;
+				}
+				if (record_position_num[k][j]) {
+					vertex_num += record_position_num[k][j];
+					SUM_(pos, record_position[k][j]);
+				}
+			}
+			//if (j == 2264) {
+			//	std::cout<< vertex_num<<" "<<
+			//}
+
+			if (vertex_num == 0) {
+				memcpy(vertex_pos[j].data(), sn_[j].data(), 24);
+			}
+			else if (vertex_num>0) {
+				DEV(vertex_pos[j], pos, (double)vertex_num);
+				record_position_num[0][j] = vertex_num;
+			}
+		}
+	}
+}
+
 //UPDATE_POSITION_AVERAGE
 void XPBD_IPC::updatePositionAverage(int thread_No)
 {
@@ -3256,54 +3445,6 @@ void XPBD_IPC::solveBlockForWarmStart(int thread_No)
 
 }
 
-
-//WARM START
-void XPBD_IPC::warmStart()
-{
-	//collision.initialVertexBelongColorGroup();
-	unsigned itr_num = 0;
-	double initial_energy = 0.0;
-
-	previous_energy = 1e-15;
-	energy = previous_energy;
-
-	while (!convCondition(itr_num,4,energy,previous_energy,100, energy_converge_standard, energy_converge_ratio))
-	{
-		initialRecordHessian();
-		collision.computeHessian(max_tet_color_num - 1);
-		thread->assignTask(this, SUM_ALL_GRAD);
-
-		initialRecordPositionForThread();		
-		//all self collision pair
-		thread->assignTask(this, WARM_START);
-
-		for (unsigned int i = 0; i < total_obj_num; ++i) {
-			memcpy(vertex_position[i][0].data(), sn[i][0].data(), sn[i].size() * 24);
-		}
-
-		thread->assignTask(this, UPDATE_POSITION_AVERAGE);
-		allPairCollisionTimeWarmStart();
-		for (unsigned int i = 0; i < total_obj_num; ++i) {
-			memcpy(this->record_vertex_position[i][0].data(), vertex_position[i][0].data(), this->record_vertex_position[i].size() * 24);
-		}
-		previous_energy=energy;
-		energy = computeWarmStartEnergy();
-
-		itr_num++;
-	}
-
-	//std::cout << "warm start itr " << itr_num << std::endl;
-
-	collision.collision_time = 1.0;
-	thread->assignTask(this, INVERSION_TEST,0);
-	//inversionTest();
-	collision.obtainCollisionTimeFromEveryThread();
-	std::cout << "inversion test time " << collision.collision_time << std::endl;
-	thread->assignTask(this, COLLISION_FREE_POSITION_);
-	for (unsigned int i = 0; i < total_obj_num; ++i) {
-		memcpy(this->record_vertex_position[i][0].data(), vertex_position[i][0].data(), this->record_vertex_position[i].size() * 24);
-	}
-}
 
 
 void XPBD_IPC::previousColorCollisionInversionTime(unsigned int color_No)
@@ -3528,6 +3669,24 @@ void XPBD_IPC::solveEE_BlockPerThread(std::array<double, 3>** record_vertex_posi
 		solveEE_Block(obj_No_0, index_0,
 			obj_No_1, index_1, sub_time_step,
 			record_vertex_position, record_vertex_num, only_solve_collision_pair, thread_No);
+	}
+}
+
+//WARM_START_SOLVE_COLLISION
+void XPBD_IPC::warmStartSolveCollision(int thread_No, int color)
+{
+	bool direct_update;
+	for (int i = 0; i < collision.unconnect_pair_color_group.size(); ++i) {
+		if (collision.unconnect_pair_color_group[i].empty()) {
+			continue;
+		}
+		auto start = collision.unconnect_pair_color_group[i].begin() + collision.pair_color_start_per_thread[i][thread_No];
+		auto end = collision.unconnect_pair_color_group[i].begin() + collision.pair_color_start_per_thread[i][thread_No+1];
+		direct_update = (i == color) && i< (collision.unconnect_pair_color_group.size()-1);
+		for (auto j = start; j < end; j += 2) {
+			solveCollisionBlockWarmStart(thread_No, *j, *(j + 1), sub_time_step, record_vertex_by_thread[thread_No].data(),
+				record_vertex_update_num_by_thread[thread_No].data(), direct_update);
+		}
 	}
 }
 
@@ -5997,7 +6156,130 @@ void XPBD_IPC::comparePrimitiveAroundPrimitveTogether(std::vector<unsigned int>*
 	}
 }
 
+void XPBD_IPC::warmstart_solveBlockWithPair(double dt,
+	std::array<double, 3>** record_vertex_position,
+	int** record_vertex_num, int* unfixed_pair_vertex_index, int unfixed_num, double* common_grad,
+	std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>& collision_hessian,
+	double* floor_map, double& max_dis, bool direct_update)
+{
+	MatrixXd Hessian;
+	VectorXd grad;
 
+	int real_unfiex_num = unfixed_num >> 1;
+	grad.resize(3 * real_unfiex_num);
+	grad.setZero();
+	Hessian.resize(3 * real_unfiex_num, 3 * real_unfiex_num);
+	Hessian.setZero();
+	double* add_of_hessian;
+	for (int i = 0; i < unfixed_num; i += 2) {
+		memcpy(grad.data() + 3 * (i >> 1), common_grad + 3 * (vertex_index_prefix_sum_obj[unfixed_pair_vertex_index[i]] + unfixed_pair_vertex_index[i + 1]), 24);
+	}
+	auto k_ = collision_hessian.end();
+	double* hessian_in_collision;
+
+	unsigned int index_0, index_1;
+	for (int i = 0; i < unfixed_num; i += 2) {
+		index_0 = vertex_index_prefix_sum_obj[unfixed_pair_vertex_index[i]] + unfixed_pair_vertex_index[i + 1];
+		for (int j = 0; j < unfixed_num; j += 2) {
+			index_1 = vertex_index_prefix_sum_obj[unfixed_pair_vertex_index[j]] + unfixed_pair_vertex_index[j + 1];
+			k_ = collision_hessian.find(std::array{ index_0,index_1 });
+			if (k_ != collision_hessian.end()) {
+				add_of_hessian = Hessian.data() + 3 * ((j * Hessian.cols() + i) >> 1);
+				hessian_in_collision = k_->second.hessian.data();
+				for (int m = 0; m < 3; ++m) {
+					*add_of_hessian += *hessian_in_collision;
+					*(add_of_hessian + 1) += *(hessian_in_collision + 1);
+					*(add_of_hessian + 2) += *(hessian_in_collision + 2);
+					hessian_in_collision += 3;
+					add_of_hessian += Hessian.cols();
+				}
+				if (i != j) {
+					add_of_hessian = Hessian.data() + 3 * ((i * Hessian.cols() + j) >> 1);
+					hessian_in_collision = k_->second.hessian.data();
+					for (int m = 0; m < 3; ++m) {
+						*add_of_hessian += *hessian_in_collision;
+						*(add_of_hessian + 1) += *(hessian_in_collision + 3);
+						*(add_of_hessian + 2) += *(hessian_in_collision + 6);
+						hessian_in_collision++;
+						add_of_hessian += Hessian.cols();
+					}
+				}
+			}
+		}
+	}
+
+	if (floor->exist) {
+		for (int i = 0; i < unfixed_num; i += 2) {
+			Hessian.data()[(3 * (i >> 1) + floor->dimension) * (Hessian.cols() + 1)] += floor_map[vertex_index_prefix_sum_obj[unfixed_pair_vertex_index[i]] + unfixed_pair_vertex_index[i + 1]];
+		}
+	}
+
+
+	//MatrixXd he = Hessian;
+	//VectorXd g = grad;
+
+	double mass_dt_2;
+	int obj_index_, vertex_index_;
+	int i;
+	for (int j = 0; j < unfixed_num; j += 2) {
+		i = (j >> 1);
+		vertex_index_ = unfixed_pair_vertex_index[j + 1];
+		obj_index_ = unfixed_pair_vertex_index[j];
+		mass_dt_2 = mass[obj_index_][vertex_index_] / (dt * dt);
+		Hessian(3 * i, 3 * i) += mass_dt_2;
+		Hessian(3 * i + 1, 3 * i + 1) += mass_dt_2;
+		Hessian(3 * i + 2, 3 * i + 2) += mass_dt_2;
+		grad.data()[3 * i] += mass_dt_2 * (vertex_position[obj_index_][vertex_index_][0] - sn[obj_index_][vertex_index_][0]);
+		grad.data()[3 * i + 1] += mass_dt_2 * (vertex_position[obj_index_][vertex_index_][1] - sn[obj_index_][vertex_index_][1]);
+		grad.data()[3 * i + 2] += mass_dt_2 * (vertex_position[obj_index_][vertex_index_][2] - sn[obj_index_][vertex_index_][2]);
+	}
+
+	LLT <MatrixXd> linear(Hessian);
+	VectorXd result = linear.solve(grad);
+	double dis = result.lpNorm<Eigen::Infinity>();
+	if (dis > max_dis) {
+		max_dis = dis;
+	}
+
+	//if (dis > 0.5) {
+	//	for (int j = 0; j < unfixed_num; j += 2) {
+	//		std::cout<< unfixed_pair_vertex_index[j]<<" "<< unfixed_pair_vertex_index[j+1]<<" ";
+	//	}
+	//	std::cout << std::endl;
+	//	std::cout << result << std::endl;
+	//	std::cout << g.transpose() << std::endl;
+	//	std::cout << he << std::endl;
+	//}
+
+
+	if (!direct_update) {
+		for (int i = 0; i < unfixed_num; i += 2) {
+			vertex_index_ = unfixed_pair_vertex_index[i + 1];
+			obj_index_ = unfixed_pair_vertex_index[i];
+			if (record_vertex_num[obj_index_][vertex_index_] != -1) {
+				if (record_vertex_num[obj_index_][vertex_index_]) {
+					record_vertex_position[obj_index_][vertex_index_][0] += vertex_position[obj_index_][vertex_index_][0] - *(result.data() + 3 * (i >> 1));
+					record_vertex_position[obj_index_][vertex_index_][1] += vertex_position[obj_index_][vertex_index_][1] - *(result.data() + 3 * (i >> 1) + 1);
+					record_vertex_position[obj_index_][vertex_index_][2] += vertex_position[obj_index_][vertex_index_][2] - *(result.data() + 3 * (i >> 1) + 2);
+				}
+				else {
+					SUB(record_vertex_position[obj_index_][vertex_index_], vertex_position[obj_index_][vertex_index_], (result.data() + 3 * (i >> 1)));
+				}
+				record_vertex_num[obj_index_][vertex_index_] ++;
+			}
+		}
+	}
+	else {
+		for (int i = 0; i < unfixed_num; i += 2) {
+			vertex_index_ = unfixed_pair_vertex_index[i + 1];
+			obj_index_ = unfixed_pair_vertex_index[i];
+			SUB_(vertex_position[obj_index_][vertex_index_], (result.data() + 3 * (i >> 1)));
+			record_vertex_num[obj_index_][vertex_index_] = -1;
+		}
+	}
+
+
+}
 
 void XPBD_IPC::solveBlockWithPair(double dt,
 	std::array<double, 3>** record_vertex_position,
@@ -6180,19 +6462,25 @@ void XPBD_IPC::solveBlockWithPair(double dt,
 		}
 		record_vertex_num[obj_index_][vertex_index_] ++;
 
-		dis = abs(vertex_position[obj_index_][vertex_index_][0] - *(result.data() + 3 * (i >> 1)) - record_collision_free_vertex_position[obj_index_][vertex_index_][0]);
-		if (dis > max_dis) {
-			max_dis = dis;
-		}
-		dis = abs(vertex_position[obj_index_][vertex_index_][1] - *(result.data() + 3 * (i >> 1) + 1) - record_collision_free_vertex_position[obj_index_][vertex_index_][1]);
-		if (dis > max_dis) {
-			max_dis = dis;
-		}
-		dis = abs(vertex_position[obj_index_][vertex_index_][2] - *(result.data() + 3 * (i >> 1) + 2) - record_collision_free_vertex_position[obj_index_][vertex_index_][2]);
-		if (dis > max_dis) {
-			max_dis = dis;
-		}
+		//dis = abs(vertex_position[obj_index_][vertex_index_][0] - *(result.data() + 3 * (i >> 1)) - record_collision_free_vertex_position[obj_index_][vertex_index_][0]);
+		//if (dis > max_dis) {
+		//	max_dis = dis;
+		//}
+		//dis = abs(vertex_position[obj_index_][vertex_index_][1] - *(result.data() + 3 * (i >> 1) + 1) - record_collision_free_vertex_position[obj_index_][vertex_index_][1]);
+		//if (dis > max_dis) {
+		//	max_dis = dis;
+		//}
+		//dis = abs(vertex_position[obj_index_][vertex_index_][2] - *(result.data() + 3 * (i >> 1) + 2) - record_collision_free_vertex_position[obj_index_][vertex_index_][2]);
+		//if (dis > max_dis) {
+		//	max_dis = dis;
+		//}
 	}
+
+	dis = result.lpNorm<Eigen::Infinity>();
+	if (dis > max_dis) {
+		max_dis = dis;
+	}
+
 }
 
 
@@ -6269,6 +6557,72 @@ void XPBD_IPC::solveCollisionWithColliderBlock(double dt, unsigned int obj_no, u
 		dt, record_vertex_position, record_vertex_num, unfixed_pair_vertex_index, unfixed_num, common_grad[0].data(),
 		common_hessian, floor_hessian.data(), only_solve_collision_pair, max_dis_record[thread_No]);
 }
+
+
+
+void XPBD_IPC::solveCollisionBlockWarmStart(int thread_No, unsigned int type, unsigned int index, double dt,
+	std::array<double, 3>** record_vertex_position, int** record_vertex_num, bool direct_update)
+{
+	int unfixed_pair_vertex_index[8];
+	int unfixed_num = 0;
+	unsigned int* pair; 
+	switch (type)
+	{
+	case 0:
+		pair = collision.collision_pair_sum[type]->data() + (index << 2);
+		getVTUnfixedPairIndex(unfixed_pair_vertex_index, unfixed_num, pair[0], pair[1], pair[2], pair[3]);
+		break;
+	case 1:
+		pair = collision.collision_pair_sum[type]->data() + (index << 2);
+		getEEUnfixedPairIndex(unfixed_pair_vertex_index, unfixed_num, pair[0], pair[1], pair[2], pair[3]);
+		break;
+	case 4:
+		pair = collision.collision_pair_sum[type]->data() + (index << 1);
+		if (!(*is_vertex_fixed[pair[0]])[pair[1]]) {
+			unfixed_pair_vertex_index[0] = pair[0];
+			unfixed_pair_vertex_index[1] = pair[1];
+			unfixed_num = 2;
+		}
+		break;
+		//e
+	case 3: {
+		pair = collision.collision_pair_sum[type]->data() + (index << 1);
+		unsigned int* edge_vertex_0 = edge_vertices[pair[0]] + (pair[1] << 1);
+		if ((!(*is_vertex_fixed[pair[0]])[*edge_vertex_0])) {
+			unfixed_pair_vertex_index[unfixed_num] = pair[0];
+			unfixed_pair_vertex_index[unfixed_num + 1] = *edge_vertex_0;
+			unfixed_num += 2;
+		}
+		if ((!(*is_vertex_fixed[pair[0]])[edge_vertex_0[1]])) {
+			unfixed_pair_vertex_index[unfixed_num] = pair[0];
+			unfixed_pair_vertex_index[unfixed_num + 1] = edge_vertex_0[1];
+			unfixed_num += 2;
+		}
+	}
+		  break;
+		  //t
+	case 2:
+		pair = collision.collision_pair_sum[type]->data() + (index << 1);
+		int* tri_indices = triangle_indices[pair[0]][pair[1]].data();
+		for (unsigned int i = 0; i < 3; ++i) {
+			if (!(*is_vertex_fixed[pair[0]])[tri_indices[i]]) {
+				unfixed_pair_vertex_index[unfixed_num] = pair[0];
+				unfixed_pair_vertex_index[unfixed_num + 1] = tri_indices[i];
+				unfixed_num += 2;
+			}
+		}
+		break;
+	}
+
+	if (unfixed_num == 0) {
+		return;
+	}
+
+	warmstart_solveBlockWithPair(dt, record_vertex_position, record_vertex_num, unfixed_pair_vertex_index, unfixed_num, common_grad[0].data(),
+		common_hessian, floor_hessian.data(), max_dis_record[thread_No], direct_update);
+
+}
+
 
 void XPBD_IPC::solveVT_Block(unsigned int vertex_obj_no, unsigned int vertex_index, unsigned int triangle_obj_No, unsigned int triangle_index,
 	double dt, 
@@ -6881,18 +7235,23 @@ void XPBD_IPC::solveTetBlockCollision(std::array<double, 3>* vertex_position, do
 		}
 		record_vertex_num[vertex_index] ++;
 
-		dis = abs(vertex_position[vertex_index][0] - *(result.data() + 3 * i) - collision_free_pos[vertex_index][0]);
-		if (dis > max_dis) {
-			max_dis = dis;
-		}
-		dis = abs(vertex_position[vertex_index][1] - *(result.data() + 3 * i + 1) - collision_free_pos[vertex_index][1]);
-		if (dis > max_dis) {
-			max_dis = dis;
-		}
-		dis = abs(vertex_position[vertex_index][2] - *(result.data() + 3 * i + 2) - collision_free_pos[vertex_index][2]);
-		if (dis > max_dis) {
-			max_dis = dis;
-		}
+		//dis = abs(vertex_position[vertex_index][0] - *(result.data() + 3 * i) - collision_free_pos[vertex_index][0]);
+		//if (dis > max_dis) {
+		//	max_dis = dis;
+		//}
+		//dis = abs(vertex_position[vertex_index][1] - *(result.data() + 3 * i + 1) - collision_free_pos[vertex_index][1]);
+		//if (dis > max_dis) {
+		//	max_dis = dis;
+		//}
+		//dis = abs(vertex_position[vertex_index][2] - *(result.data() + 3 * i + 2) - collision_free_pos[vertex_index][2]);
+		//if (dis > max_dis) {
+		//	max_dis = dis;
+		//}
+	}
+
+	dis = result.lpNorm<Eigen::Infinity>();
+	if (dis > max_dis) {
+		max_dis = dis;
 	}
 
 	//for (int i = 0; i < unfixed_vertex_num; ++i) {
@@ -7178,7 +7537,10 @@ void XPBD_IPC::solveTetBlock(std::array<double, 3>* vertex_position, double stif
 	}
 
 
-
+	double dis = result.lpNorm<Eigen::Infinity>();
+	if (dis > max_dis) {
+		max_dis = dis;
+	}
 
 	//if (perform_collision) {
 
@@ -8570,8 +8932,8 @@ void XPBD_IPC::computeCollisionFreePositionFromRecord(int thread_No)
 
 
 
-//COLLISION_FREE_POSITION_
-void XPBD_IPC::computeCollisionFreePosition(int thread_No)
+//COLLISION_FREE_POSITION_, type=1, warmstart, type=0 record_collision_free_vertex_position, 
+void XPBD_IPC::computeCollisionFreePosition(int thread_No, unsigned int type)
 {
 	double collision_time = collision.collision_time;
 
@@ -8585,7 +8947,12 @@ void XPBD_IPC::computeCollisionFreePosition(int thread_No)
 	for (unsigned int i = 0; i <total_obj_num; ++i) {
 		index_end = vertex_index_begin_per_thread[i][thread_No + 1];
 		q_end = vertex_position[i];
-		q_pre = record_collision_free_vertex_position[i].data();
+		if (type == 0) {
+			q_pre = record_collision_free_vertex_position[i].data();
+		}
+		else {
+			q_pre = record_first_collision_free_position[i].data();
+		}
 		for (unsigned int j = vertex_index_begin_per_thread[i][thread_No]; j < index_end; ++j) {
 			q_end[j][0] = q_pre[j][0] + collision_time * (q_end[j][0] - q_pre[j][0]);
 			q_end[j][1] = q_pre[j][1] + collision_time * (q_end[j][1] - q_pre[j][1]);

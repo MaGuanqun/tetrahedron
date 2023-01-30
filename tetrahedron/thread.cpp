@@ -21,7 +21,7 @@
 
 Thread::Thread()
 {
-    thread_num =  std::thread::hardware_concurrency();//  
+    thread_num = 1;// std::thread::hardware_concurrency();//  
     initial();
 }
 
@@ -978,11 +978,17 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
     case INVERSION_TEST:
         k = job([func, thread_id, para]() {func->inversionTest(thread_id, para); });
         break;
+    case COLLISION_FREE_POSITION_:
+        k = job([func, thread_id, para]() {func->computeCollisionFreePosition(thread_id, para); });
+        break;
     //case UPDATE_TET_GRAD_SHARED_COLLISION:
     //    k = job([func, thread_id, para]() {func->tetGradForColorCollision(thread_id, para); });
     //    break;
     case SOLVE_TET_BLOCK_COLLISION:
         k = job([func, thread_id, para]() {func->newtonCDTetBlockAGroupCollision(thread_id, para); });
+        break;
+    case WARM_START_SOLVE_COLLISION:
+        k = job([func, thread_id, para]() {func->warmStartSolveCollision(thread_id, para); });
         break;
     //case UPDATE_TET_GRAD_SHARED_COLLISION_NEIGHBOR:
     //    k = job([func, thread_id, para]() {func->tetGradForColorCollisionNeighbor(thread_id, para); });
@@ -1009,9 +1015,7 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
     case SET_POS_PREDICT_:
         k = job([func, thread_id]() {func->setPosPredict(thread_id); });
         break;
-    case COLLISION_FREE_POSITION_:
-        k = job([func, thread_id]() {func->computeCollisionFreePosition(thread_id); });
-        break;
+
     case XPBD_IPC_VELOCITY:
         k = job([func, thread_id]() {func->computeVelocity(thread_id); });
         break;
@@ -1039,6 +1043,9 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
     case UPDATE_POSITION_AVERAGE:
         k = job([func, thread_id]() {func->updatePositionAverage(thread_id); });
        break;
+    case UPDATE_POSITION_AVERAGE_WARM_START:
+        k = job([func, thread_id]() {func->updatePositionAverageWarmStart(thread_id); });
+        break;
     case UPDATE_POSITION_AVERAGE_EXCEPT_THIS_COLOR:
         k = job([func, thread_id]() {func->updatePositionAverageExceptThisColor(thread_id); });
         break;       

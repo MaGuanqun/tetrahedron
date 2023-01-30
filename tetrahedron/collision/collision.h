@@ -363,7 +363,7 @@ public:
 	double tolerance;
 
 
-	void computeHessian(int color_No);
+	void computeHessian(int color_No, bool for_warm_start);
 
 	void computeHessianPerThread(int thread_No);
 	void computeGradientPerThread(int thread_No);
@@ -539,7 +539,7 @@ private:
 
 
 
-	std::vector<std::vector<std::vector<unsigned int>>> unconnect_stencil_stencil;//store type, stencil index, //type 0 vt, 1 ee, 2 tv_c, 3 ee_c, 4 vt_c 
+	std::vector<std::vector<std::vector<unsigned int>>> connect_stencil_stencil;//store type, stencil index, //type 0 vt, 1 ee, 2 tv_c, 3 ee_c, 4 vt_c 
 	void setEEStencilStencil(int type, int start, int end, unsigned int* pair, unsigned int** edge_0_v, unsigned int** edge_1_v,
 		unsigned int** vertex_collision_stencil_by_vertex,
 		std::atomic_uint** vertex_collision_stencil_num, std::vector<std::vector<std::vector<unsigned int>>>* unconnect_stencil_stencil);

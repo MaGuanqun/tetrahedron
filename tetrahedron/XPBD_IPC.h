@@ -66,7 +66,7 @@ public:
 	unsigned int* sub_step_per_detection;
 
 	bool* has_force;
-	void computeCollisionFreePosition(int thread_No);
+	void computeCollisionFreePosition(int thread_No, unsigned int type);
 	void computeCollisionFreePositionFromRecord(int thread_No);
 
 
@@ -84,7 +84,7 @@ public:
 	void newtonCDTetBlockAGroup(int thread_No, int color);
 	void newtonCDTetBlockAGroupCollision(int thread_No, int color);
 	
-	void warmStart();
+	void warmStart(double& ori_energy);
 
 	void tetHessian();
 
@@ -156,7 +156,7 @@ public:
 
 	void tetGrad(int thread_No);
 
-
+	std::vector<std::vector<std::array<double, 3>>> record_first_collision_free_position;
 	std::vector<std::vector<std::array<double, 3>>> record_vertex_position;
 
 	std::vector<std::vector<std::array<double, 3>>> record_collision_free_vertex_position;
@@ -165,6 +165,9 @@ public:
 
 
 	void sumNeoHookeanHessian(int thread_No);
+
+	void warmStartSolveCollision(int thread_No, int color);
+	void updatePositionAverageWarmStart(int thread_No);
 
 private:
 
@@ -375,7 +378,7 @@ private:
 	void updateNormal();
 	void updateRenderVertexNormal();
 
-	bool convergeCondition(unsigned int iteration_num);
+	bool convergeCondition(unsigned int iteration_num, bool for_warm_start);
 	bool innerConvergeCondition(unsigned int iteration_num);
 	bool convCondition(unsigned int iteration_num, unsigned int min_itr, double energy, double previous_energy, unsigned int max_itr, double energy_converge_standard,
 		double energy_converge_ratio);
@@ -837,8 +840,7 @@ private:
 		std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>& collision_hessian,
 		double* floor_map, bool only_solve_collision_pair, double& max_dis);
 
-
-
+	
 
 	//void testPrintOut()
 	//{
@@ -928,6 +930,16 @@ private:
 
 	void testVolume();
 
+	void solveCollisionBlockWarmStart(int thread_No, unsigned int type, unsigned int index, double dt,
+		std::array<double, 3>** record_vertex_position, int** record_vertex_num, bool direct_update);
+	void warmstart_solveBlockWithPair(double dt,
+		std::array<double, 3>** record_vertex_position,
+		int** record_vertex_num, int* unfixed_pair_vertex_index, int unfixed_num, double* common_grad,
+		std::unordered_map<std::array<unsigned int, 2>, StoreHessianWithOrderInConstraint, pair_hash>& collision_hessian,
+		double* floor_map, double& max_dis, bool direct_update);
+
+	void warmStart_solveBlock();
+	void lineSearchWarmStart(double& ori_energy, bool is_outer_itr);
 };
 
 
