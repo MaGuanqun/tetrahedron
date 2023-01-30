@@ -3174,7 +3174,7 @@ void Collision::computeEEDhat(unsigned int start, unsigned int end, std::vector<
 				vertex_position_0[*i][indices_0[1]].data(),
 				vertex_position_1[*(i + 2)][indices_1[0]].data(),
 				vertex_position_1[*(i + 2)][indices_1[1]].data());
-			*d_hat_ = d_hat_2;// (std::max)(distance, d_hat_2);
+			*d_hat_ =(std::max)(distance, d_hat_2);
 			d_hat_++;
 			*(hessian_index_in_global_++) = vertex_index_prefix_sum_obj[*i] + *indices_0;
 			*(hessian_index_in_global_++) = vertex_index_prefix_sum_obj[*i] + indices_0[1];
@@ -3188,7 +3188,7 @@ void Collision::computeEEDhat(unsigned int start, unsigned int end, std::vector<
 				vertex_position_0[*i][indices_0[1]].data(),
 				vertex_position_1[*(i + 2)][indices_1[0]].data(),
 				vertex_position_1[*(i + 2)][indices_1[1]].data());
-			*d_hat_ = d_hat_2;// (std::max)(distance, d_hat_2);
+			*d_hat_ =(std::max)(distance, d_hat_2);
 			d_hat_++;
 			*(hessian_index_in_global_++) = vertex_index_prefix_sum_obj[*i] + *indices_0;
 			*(hessian_index_in_global_++) = vertex_index_prefix_sum_obj[*i] + indices_0[1];
@@ -3223,7 +3223,7 @@ void Collision::computeVTDhat(unsigned int start, unsigned int end, std::vector<
 			indices = triangle_indices[*(i + 2)][*(i + 3)].data();
 			distance = CCD::internal::pointTriangleDistanceUnclassified(ori_pos_0[*i][*(i + 1)].data(),
 				ori_pos_1[*(i + 2)][indices[0]].data(), ori_pos_1[*(i + 2)][indices[1]].data(), ori_pos_1[*(i + 2)][indices[2]].data());
-			*d_hat_ = d_hat_2;// (std::max)(distance, d_hat_2);
+			*d_hat_ =(std::max)(distance, d_hat_2);
 			d_hat_++;
 			*(hessian_index_in_global_++) = vertex_index_prefix_sum_obj[*i] + *(i + 1);
 			*(hessian_index_in_global_++) = vertex_index_prefix_sum_obj[*(i + 2)] + indices[0];
@@ -3237,7 +3237,7 @@ void Collision::computeVTDhat(unsigned int start, unsigned int end, std::vector<
 			indices = triangle_indices[*(i + 2)][*(i + 3)].data();
 			distance = CCD::internal::pointTriangleDistanceUnclassified(ori_pos_0[*i][*(i + 1)].data(),
 				ori_pos_1[*(i + 2)][indices[0]].data(), ori_pos_1[*(i + 2)][indices[1]].data(), ori_pos_1[*(i + 2)][indices[2]].data());
-			*d_hat_ = d_hat_2;// (std::max)(distance, d_hat_2);
+			*d_hat_ = (std::max)(distance, d_hat_2);
 			d_hat_++;
 			*(hessian_index_in_global_++) = vertex_index_prefix_sum_obj[*i] + *(i + 1);
 		}
@@ -3248,7 +3248,7 @@ void Collision::computeVTDhat(unsigned int start, unsigned int end, std::vector<
 			indices = triangle_indices[*(i + 2)][*(i + 3)].data();
 			distance = CCD::internal::pointTriangleDistanceUnclassified(ori_pos_0[*i][*(i + 1)].data(),
 				ori_pos_1[*(i + 2)][indices[0]].data(), ori_pos_1[*(i + 2)][indices[1]].data(), ori_pos_1[*(i + 2)][indices[2]].data());
-			*d_hat_ = d_hat_2;// (std::max)(distance, d_hat_2);
+			*d_hat_ = (std::max)(distance, d_hat_2);
 			d_hat_++;
 			*(hessian_index_in_global_++) = vertex_index_prefix_sum_obj[*(i + 2)] + indices[0];
 			*(hessian_index_in_global_++) = vertex_index_prefix_sum_obj[*(i + 2)] + indices[1];

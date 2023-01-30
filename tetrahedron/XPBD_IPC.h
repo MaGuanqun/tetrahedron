@@ -378,7 +378,7 @@ private:
 	void updateNormal();
 	void updateRenderVertexNormal();
 
-	bool convergeCondition(unsigned int iteration_num, bool for_warm_start);
+	bool convergeCondition(unsigned int iteration_num, bool for_warm_start, double max_move_standard, unsigned int outer_max_iteration_number);
 	bool innerConvergeCondition(unsigned int iteration_num);
 	bool convCondition(unsigned int iteration_num, unsigned int min_itr, double energy, double previous_energy, unsigned int max_itr, double energy_converge_standard,
 		double energy_converge_ratio);

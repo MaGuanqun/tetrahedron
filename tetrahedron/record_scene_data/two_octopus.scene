@@ -6,9 +6,9 @@ collider
 1
 .\model\tank.obj
 stiffness
-2e+05 50000 0 0 0 0 1e+02 0.35
+2e+05 50000 0 0 0 0 1e+04 0.35
 1e+8 20000 20000 20 0 0 0 0 
-2e+05 50000 0 0 0 0 1e+02 0.35
+2e+05 50000 0 0 0 0 1e+04 0.35
 1e+8 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
@@ -20,7 +20,7 @@ time_step
 cloth_density
 1
 tet_density
-1
+100
 velocity_damp
 0.99
 friction_coe

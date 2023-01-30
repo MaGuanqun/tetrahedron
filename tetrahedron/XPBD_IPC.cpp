@@ -650,7 +650,7 @@ void XPBD_IPC::XPBD_IPC_Position_Solve()
 	}
 	outer_itr_num = 0;
 
-	while (!convergeCondition(outer_itr_num,false)) {
+	while (!convergeCondition(outer_itr_num,false,max_move_standard,outer_max_iteration_number)) {
 
 		if (perform_collision) {
 			collision.globalCollisionTime();
@@ -712,7 +712,7 @@ void XPBD_IPC::warmStart(double& ori_energy)
 		memcpy(record_first_collision_free_position[i][0].data(), vertex_position[i][0].data(), 24 * record_first_collision_free_position[i].size());
 	}
 
-	while (!convergeCondition(itr_num,true))
+	while (!convergeCondition(itr_num,true,1e-3,200))
 	{
 		if (itr_num > 0) {
 			updateCollisionFreePosition();
@@ -779,7 +779,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 	//std::cout << "time stamp " << *time_stamp << " outer itr num " << outer_itr_num << " " << inner_iteration_number << std::endl;
 	//max_displacement = 0.0;
 
-	while (!convergeCondition(outer_itr_num,false)) {
+	while (!convergeCondition(outer_itr_num,false, max_move_standard, outer_max_iteration_number)) {
 		if (outer_itr_num > 0) {
 			updateCollisionFreePosition();		
 		}
@@ -869,7 +869,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve()
 	}
 	outer_itr_num = 0;
 	displacement_satisfied = false;
-	while (!convergeCondition(outer_itr_num,false)) {
+	while (!convergeCondition(outer_itr_num,false, max_move_standard, outer_max_iteration_number)) {
 		if (perform_collision) {
 			collision.collisionCulling();
 			collision.globalCollisionTime();
@@ -2006,7 +2006,7 @@ void XPBD_IPC::setCollisionPairTetNeighborGrad(std::vector<unsigned int>& tet_in
 
 
 
-bool XPBD_IPC::convergeCondition(unsigned int iteration_num, bool for_warm_start)
+bool XPBD_IPC::convergeCondition(unsigned int iteration_num, bool for_warm_start, double max_move_standard, unsigned int outer_max_iteration_number)
 {
 	//if (iteration_num < 1)
 	//{
