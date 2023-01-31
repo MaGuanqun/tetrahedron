@@ -151,9 +151,18 @@ void IPC::IPC_solve()
 	inner_iteration_number = 0;
 	if (perform_collision) {
 		collision.collisionCulling();
-		collision.collisionTimeWithPair(false);
+		if (add_pair_by_distance) {
+			collision.globalCollisionTime();
+		}
+		else {
+			collision.collisionTimeWithPair(false);
+		}
+		
 		inversionTest();
 		computeCollisionFreePosition();
+		if (add_pair_by_distance) {
+			collision.addPairByDistance();
+		}
 		updateCollisionFreePosition();
 	}
 	double ori_energy = computeCurrentEnergy();
@@ -167,9 +176,17 @@ void IPC::IPC_solve()
 		solveSystem();
 		if (perform_collision) {
 			collision.collisionCulling();
-			collision.collisionTimeWithPair(false);
+			if (add_pair_by_distance) {
+				collision.globalCollisionTime();
+			}
+			else {
+				collision.collisionTimeWithPair(false);
+			}
 			inversionTest();
 			computeCollisionFreePosition();
+			if (add_pair_by_distance) {
+				collision.addPairByDistance();
+			}
 			//line search
 			lineSearch(ori_energy);
 		}
@@ -395,12 +412,14 @@ void IPC::lineSearch(double& ori_energy)
 			{
 				record_collision_time *= 0.5;
 				computeCollisionFreePosition();
+				if (add_pair_by_distance) {
+					collision.addPairByDistance();
+				}
 				itr_num++;
 				if (itr_num > 6) {
 					//std::cout << "global record_collision_time is too small " << ori_energy << " " << current_energy << std::endl;
 					break;
 				}
-
 				current_energy = computeCurrentEnergy();
 			}
 		}

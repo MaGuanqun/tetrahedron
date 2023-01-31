@@ -537,6 +537,8 @@ public:
 	bool computeFloorHessian(double d_hat, double stiffness, double floor_value, double* hessian, double* grad, double position,
 		bool compute_hessian);
 
+	void addPairByDistance();
+
 private:		
 
 
@@ -1490,4 +1492,10 @@ private:
 	void test__();
 
 	CollisionGraphColor collision_graph_color;
+
+
+	void addVTPair(std::vector<unsigned int>* vt_pair, unsigned int** sp_vt_pair, std::vector<double>* d_hat, 
+		std::array<double, 3>** vertex_position_0, std::array<double, 3>** vertex_position_1, std::array<int, 3>** indices);
+	void addEEPair(std::vector<unsigned int>* ee_pair, unsigned int** sp_ee_pair, std::vector<double>* d_hat,
+		std::array<double, 3>** vertex_position_0, std::array<double, 3>** vertex_position_1, unsigned int** e0v, unsigned int** e1v);
 };

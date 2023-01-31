@@ -1,13 +1,19 @@
 object
-1
-.\model\single_tet.ele
+2
+.\model\bar.ele
+.\model\bar.ele
 collider
-0
+1
+.\model\tank.obj
 stiffness
 20000 50000 1 0 0 0 10000 0.35 
-1e+7 20000 20000 20 0 0 0 0 
+1e+08 20000 20000 20 0 0 0 0 
+20000 50000 1 0 0 0 10000 0.35 
+1e+08 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
+0 
+1
 0 
 time_step
 0.01
@@ -20,29 +26,34 @@ velocity_damp
 friction_coe
 0.9 0.8 0.9
 floor_dimension
-2
+4
 floor_value
--0.5
+-0.55
 translation
 0 -0.4 0
+0 0 0
 size_scaler
-0.1 
+0.5 0.5 
 rotation_angle
 0 0 0
+0 75 0
 collider_translation
+0 0 0
 collider_size_scaler
+1 
 collider_rotation_angle
+0 0 0
 camera position
-1.18187 -0.159634 -1.76254
+0 0 -2.46908
 camera up
--0.0377453 0.992624 -0.115213
+0 1 0
 camera center
 0 0 0
 IPC
 substep_num
 1
 out iteration_num
-40
+300
 inner iteration_num
 100
 sub_step_per_detection

@@ -18,6 +18,7 @@ class IPC
 {
 public:
 	IPC();
+	bool add_pair_by_distance=true;
 	void IPC_solve();
 	double time_step;
 	double gravity_;
