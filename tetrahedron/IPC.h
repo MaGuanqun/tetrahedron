@@ -910,6 +910,9 @@ private:
 		std::array<double, 3>** e0_current_pos, std::array<double, 3>** e1_current_pos, double collision_stiffness, double* d_hat,
 		unsigned int start, unsigned int end);
 	void updatePos();
+
+	void computeFloorHessian();
+
 };
 
 

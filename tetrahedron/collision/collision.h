@@ -534,6 +534,8 @@ public:
 	std::vector<std::vector<unsigned int>> pair_color_start_per_thread;
 
 	std::vector<std::vector<unsigned int>*> collision_pair_sum;
+	bool computeFloorHessian(double d_hat, double stiffness, double floor_value, double* hessian, double* grad, double position,
+		bool compute_hessian);
 
 private:		
 
@@ -1378,8 +1380,6 @@ private:
 
 	void prefixSumRecordPairNum(std::atomic_uint* num_record, unsigned int* prefix_sum, int num, unsigned int& start_index, int move_size);
 
-	bool computeFloorHessian(double d_hat, double stiffness, double floor_value, double* hessian, double* grad, double position,
-		bool compute_hessian);
 
 	//void setTriangleCollideWithCollider();
 	//void setEdgeCollideWithCollider();

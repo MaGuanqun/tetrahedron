@@ -52,6 +52,7 @@ void IPC::setForIPC(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahe
 	//recordEdgeHessian();
 	//computeGravity();
 	//setHessian();
+	this->floor = floor;
 
 	collision.common_hessian = &common_hessian;
 	if (perform_collision) {
@@ -259,7 +260,7 @@ double IPC::computeCurrentEnergy()
 		energy += barrier_energy;
 	}
 
-	//std::cout <<"energy " << energy << " " << inertial_energy << " " << ARAP_energy << " " << barrier_energy << std::endl;
+	std::cout <<"energy " << energy << " " << inertial_energy << " " << elastic_energy << " " << barrier_energy << std::endl;
 
 	return energy;
 }
@@ -300,7 +301,35 @@ double IPC::computeBarrierEnergy()
 			0,
 			collision.record_ee_collider_pair_sum_all_thread.size());
 	}
+	if (floor->exist) {
+		energy += computeFloorEnergy(0, stiffness, &collision.record_vertex_collide_with_floor_sum_all_thread, 0,
+			collision.record_vertex_collide_with_floor_sum_all_thread.size());
+	}
 	return energy;
+}
+double IPC::computeFloorEnergy(int type, double collision_stiffness, std::vector<unsigned int>* record_vertex_collide_with_floor, int start, int end)
+{
+	auto start_ = record_vertex_collide_with_floor->begin() + start;
+	auto end_ = record_vertex_collide_with_floor->begin() + end;
+
+	double energy = 0.0;
+	if (type == 0) {
+		for (auto i = start_; i < end_; i += 2) {
+			energy += compute_energy.computeFloorBarrierEnergy(vertex_position[*i][*(i + 1)][floor->dimension], collision.record_vertex_collide_with_floor_d_hat[*i][*(i + 1)],
+				collision_stiffness, floor->value);
+		}
+	}
+	else {
+		for (auto i = start_; i < end_; i += 2) {
+			if (collision.vertex_belong_to_color_group[*i][*(i + 1)]) {
+				energy += compute_energy.computeFloorBarrierEnergy(vertex_position[*i][*(i + 1)][floor->dimension], collision.record_vertex_collide_with_floor_d_hat[*i][*(i + 1)],
+					collision_stiffness, floor->value);
+			}
+		}
+	}
+
+	return energy;
+
 }
 
 
@@ -652,6 +681,35 @@ void IPC::setCollisionHessian()
 		//vt_c
 		computeVTHessian(0, collision.record_vt_collider_pair_sum_all_thread.size(), collision.record_vt_collider_pair_sum_all_thread.data(),
 			collision.record_vt_collider_pair_d_hat.data(), 1, b.data(), hessian_nnz);
+	}
+	if (floor->exist) {
+		computeFloorHessian();
+	}
+}
+
+void IPC::computeFloorHessian()
+{
+	double stiffness;
+	double floor_value = floor->value;
+	int floor_dimension = floor->dimension;
+	unsigned int global_index;
+	double hessian, grad;
+	if (!tetrahedron->empty()) {
+		stiffness = tetrahedron->data()[0].collision_stiffness[0];
+	}
+	else {
+		stiffness = cloth->data()[0].collision_stiffness[0];
+	}
+	for (auto i = collision.record_vertex_collide_with_floor_sum_all_thread.begin(); i < collision.record_vertex_collide_with_floor_sum_all_thread.end(); i+=2) {
+		if (collision.computeFloorHessian(collision.d_hat_2, stiffness, floor_value, &hessian, &grad,
+			vertex_position[*i][*(i + 1)][floor_dimension], true)) {
+			global_index = vertex_index_prefix_sum_obj[*i] + *(i + 1);
+			hessian_nnz.emplace_back(Triplet<double>(3 * global_index + floor->dimension,
+				3 * global_index + floor->dimension, hessian));
+			std::cout << b[3 * global_index + floor_dimension] << std::endl;
+			b[3 * global_index + floor_dimension] += grad;
+			std::cout << b[3 * global_index + floor_dimension] << std::endl;
+		}
 	}
 }
 

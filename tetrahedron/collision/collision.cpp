@@ -2983,6 +2983,7 @@ void Collision::setMapForHessianIndexToConstraint()
 }
 
 
+
 void Collision::setPairTogether()
 {
 
@@ -8907,7 +8908,7 @@ bool Collision::floorCollisionTime(double initial_position, double current_pos, 
 			return false;
 		}		
 	}
-	collision_time = (initial_position - floor_value) / (initial_position - current_pos);
+	collision_time = 0.9*(initial_position - floor_value) / (initial_position - current_pos);
 	if (collision_time < 0) {
 		std::cout << "error collision time of floor is negative" << std::endl;
 	}
@@ -9178,6 +9179,21 @@ void Collision::vertexTriangleCollisionTimePair(int start_pair_index,
 
 	for (int i = start_pair_index; i < end_pair_index; i += 4) {
 		indices = triangle_indices[pair[i + 3]][pair[i + 2]].data();
+
+		//if (floorCollisionTime(initial_pos[j].data()[floor->dimension], current_pos[j].data()[floor->dimension],
+		//	floor->normal_direction, floor->value, collision_time_temp, tolerance)) {
+		//	if (!with_floor[j]) {
+		//		if (collision_time_temp < reocrd_collision_time) {
+		//			reocrd_collision_time = collision_time_temp;
+		//		}
+		//		with_floor[j] = '\1';
+		//		record_with_floor->emplace_back(i);
+		//		record_with_floor->emplace_back(j);
+		//		d_hat_with_floor[j] = (std::max)((vertex_for_render[i][j][floor->dimension] - floor->value) *
+		//			(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);
+		//	}
+		//}
+
 		time = CCD::pointTriangleCcd(vertex_for_render_0[pair[i + 1]][pair[i]].data(),
 			vertex_for_render_1[pair[i + 3]][indices[0]].data(),
 			vertex_for_render_1[pair[i + 3]][indices[1]].data(),
@@ -10695,38 +10711,44 @@ void Collision::collisionTimeWithPair(int thread_No)
 				for (int k = vertex_index_start_per_thread[i][thread_No]; k < element_end; ++k) {
 					j = surface_to_normal[k];
 					if (floorCollisionTime(initial_pos[j].data()[floor->dimension], current_pos[j].data()[floor->dimension],
-						floor->normal_direction, floor->value, collision_time_temp, tolerance)) {					
+						floor->normal_direction, floor->value, collision_time_temp, 0.0)) {					
 
 						//if (collision_time_temp < 1e-5) {
 						//	std::cout << "floor collision  " << j<<" " << collision_time_temp<<" "<<tolerance << " " << initial_pos[j].data()[floor->dimension] << " " << current_pos[j].data()[floor->dimension] << " " 
 						//		<< initial_pos[j].data()[floor->dimension] - floor->value << " " << floor->value << std::endl;
 						//}
-
-						if (!with_floor[j]) {
-							if (collision_time_temp < reocrd_collision_time) {
-								reocrd_collision_time = collision_time_temp;
-							}
+						if (collision_time_temp < reocrd_collision_time) {
+							reocrd_collision_time = collision_time_temp;
+						}
+						if (!with_floor[j]) {							
 							with_floor[j] = '\1';
 							record_with_floor->emplace_back(i);
 							record_with_floor->emplace_back(j);
-							//d_hat_with_floor[j] = d_hat_2;
-							d_hat_with_floor[j] = (std::max)((vertex_for_render[i][j][floor->dimension] - floor->value)*
-								(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);
+							d_hat_with_floor[j] = d_hat_2;
+							//d_hat_with_floor[j] = (std::max)((vertex_for_render[i][j][floor->dimension] - floor->value)*
+							//	(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);
 						
 							
+						}
+					}
+					else {
+						if (current_pos[j].data()[floor->dimension] - floor->value < d_hat) {
+							if (!with_floor[j]) {
+								with_floor[j] = '\1';
+								record_with_floor->emplace_back(i);
+								record_with_floor->emplace_back(j);
+								d_hat_with_floor[j] = d_hat_2;// (std::max)((vertex_for_render[i][j][floor->dimension] - floor->value) *
+									//(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);
+							}
 						}
 					}
 				}
 			}
 		}
-
-		reocrd_collision_time *= 0.9;
+		
 		if (reocrd_collision_time < collision_time) {
 			collision_time = reocrd_collision_time;
 		}
-
-
-
 	}
 
 	collision_time_thread[thread_No] = collision_time;
