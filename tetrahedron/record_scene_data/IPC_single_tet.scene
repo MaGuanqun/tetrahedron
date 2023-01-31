@@ -1,9 +1,9 @@
 object
 1
-C:\graphics\tetrahedron\model\single_tet.ele
+.\model\single_tet.ele
 collider
 1
-C:\graphics\tetrahedron\model\tank.obj
+.\model\tank.obj
 stiffness
 20000 50000 1 0 0 0 10000 0.35 
 1e+8 20000 20000 20 0 0 0 0 
