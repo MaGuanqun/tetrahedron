@@ -36,6 +36,8 @@ void MeshStruct::resetMassInv()
 	for (unsigned int i = 0; i < anchor_vertex.size(); ++i) {
 		is_vertex_fixed[anchor_vertex[i]] = true;
 	}
+
+
 }
 
 void MeshStruct::updateAnchorPerThread(int total_thread_num)

@@ -21,7 +21,7 @@
 #include"XPBD_large_system.h"
 #include"XPBD_IPC.h"
 #include"basic/draw_triangle.h"
-
+#include"IPC.h"
 //#include<windows.h>
 #include"basic/drawEdge.h"
 
@@ -108,6 +108,9 @@ private:
 	ProjectDynamic project_dynamic;
 	XPBD xpbd;
 	XPBD_IPC xpbd_ipc;
+
+	IPC ipc;
+
 	NewtonMethod newton_method;
 	SecondOrderLargeSystem second_order_xpbd_large;
 

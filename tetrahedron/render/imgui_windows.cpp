@@ -12,7 +12,8 @@ void ImGuiWindows::controlWindow(bool* control_parameter, float* force_coe)
 	ImGui::Begin("Control Panel");
 	ImGui::SetNextItemOpen(true);
 	if (ImGui::TreeNode("State Control")) {
-		if (control_parameter[USE_XPBD] || control_parameter[USE_PD_] || control_parameter[USE_NEWTON_] || control_parameter[USE_XPBD_LARGE] || control_parameter[USE_XPBD_IPC]) {
+		if (control_parameter[USE_XPBD] || control_parameter[USE_PD_] || control_parameter[USE_NEWTON_] || control_parameter[USE_XPBD_LARGE] || control_parameter[USE_XPBD_IPC]
+			|| control_parameter[USE_IPC]) {
 			if (ImGui::Button("1 Frame", ImVec2(160, 25)))
 			{
 				control_parameter[ONE_FRAME] = true;

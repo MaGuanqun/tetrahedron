@@ -18,10 +18,11 @@ namespace CCD {
             mVec[1] = DOT(basis1, vec);
 
             T dev = MMT[0] * MMT[1] - MMT[2] * MMT[2];
-            result[0] = (MMT[1] * mVec[0] - MMT[2] * mVec[1]) / dev;
-            result[1] = (MMT[0] * mVec[1] - MMT[2] * mVec[0]) / dev;
-
-            if (dev == 0.0) {
+            if (dev != 0.0) {
+                result[0] = (MMT[1] * mVec[0] - MMT[2] * mVec[1]) / dev;
+                result[1] = (MMT[0] * mVec[1] - MMT[2] * mVec[0]) / dev;
+            }
+            else{
                 if (MMT[0] != 0.0) {
                     result[1] = 0;
                     result[0] = mVec[0]/MMT[0];
@@ -139,7 +140,7 @@ namespace CCD {
                 tN = (a * e - b * d);
                 T n[3];
                 CROSS(n, u, v);
-                if (tN > 0.0 && tN < tD && (DOT(n, n) < NEAR_ZERO2 * a * c)) {
+                if (tN > 0.0 && tN < tD && (DOT(n, n) < NEAR_ZERO2 * a * c || DOT(n,w)==0.0)) {
                     // if (tN > 0.0 && tN < tD && (u.cross(v).dot(w) == 0.0 || u.cross(v).squaredNorm() == 0.0)) {
                     // std::cout << u.cross(v).squaredNorm() / (a * c) << ": " << sN << " " << D << ", " << tN << " " << tD << std::endl;
                     // avoid coplanar or nearly parallel EE

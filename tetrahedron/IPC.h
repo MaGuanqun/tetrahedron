@@ -18,6 +18,7 @@ class IPC
 {
 public:
 	IPC();
+	void IPC_solve();
 	double time_step;
 	double gravity_;
 	unsigned int sub_step_num;
@@ -26,7 +27,7 @@ public:
 		Thread* thread, double* tolerance_ratio);
 	size_t* time_stamp;
 	void setPosPredict(int thread_No);
-	void computeVelocity(int thread_No);
+	void computeVelocity();
 	unsigned int iteration_number;
 	unsigned int inner_iteration_number;
 	unsigned int outer_itr_num;
@@ -59,7 +60,7 @@ public:
 	unsigned int* sub_step_per_detection;
 
 	bool* has_force;
-	void computeCollisionFreePosition(int thread_No);
+	void computeCollisionFreePosition();
 	void computeCollisionFreePositionFromRecord(int thread_No);
 
 
@@ -109,7 +110,7 @@ public:
 	void computePreviousColorARAPEnergy(int thread_No, unsigned int color_No);
 
 	void inertialEnergyPerThread(int thread_No);
-	void computeARAPEnergyPerThread(int thread_No);
+	double computeElasticEnergy();
 
 	double min_collision_time;
 	void computeBarrierEnergy(int thread_No);
@@ -158,7 +159,7 @@ private:
 
 	void previousColorCollisionInversionTime(unsigned int color_No);
 
-	void computeCurrentEnergy();
+	double computeCurrentEnergy();
 
 	double computeWarmStartEnergy();
 
@@ -188,10 +189,6 @@ private:
 		std::array<double, 3>** v_current_pos, std::array<double, 3>** t_current_pos, double collision_stiffness, std::vector<std::vector<double>>* d_hat,
 		bool** belong_to_color_group, int type);
 
-
-	double computeVTEnergy(std::vector<unsigned int>* record_vt_pair, std::array<int, 3>** triangle_indices,
-		std::array<double, 3>** v_current_pos, std::array<double, 3>** t_current_pos, double collision_stiffness, double* d_hat,
-		bool** belong_to_color_group, int type, unsigned int start, unsigned int end);
 
 
 	double computePreviousColorEnergy(unsigned int color_no);
@@ -229,7 +226,6 @@ private:
 
 	//std::unordered_map<unsigned int, double> compare_floor_hessian;
 
-	std::vector<std::vector<double>>common_grad;
 	//std::vector<double>common_grad_compare;
 
 
@@ -254,13 +250,11 @@ private:
 	std::vector<Tetrahedron>* tetrahedron;
 	std::vector<Collider>* collider;
 	Thread* thread;
-	double sub_time_step;
-	VectorXd f_ext;
-	VectorXd velocity;
+	std::vector<std::vector<std::array<double,3>>> f_ext;
+	std::vector<std::vector<std::array<double,3>>> velocity;
+	std::vector<std::vector<std::array<double,3>>> sn;
 
-	VectorXd sn;
-
-
+	void solveSystem();
 	//std::vector<std::vector<std::array<double, 3>>> total_gravity;
 
 	std::vector<std::array<double, 3>*> vertex_position_collider;
@@ -301,7 +295,6 @@ private:
 	std::vector<unsigned int*> edge_vertices;
 	std::vector<unsigned int*> collider_edge_vertices;
 
-	std::vector<std::vector<bool>*> is_vertex_fixed;
 
 	std::vector<int*>vertex_index_surface;
 
@@ -348,7 +341,7 @@ private:
 	void updateNormal();
 	void updateRenderVertexNormal();
 
-	bool convergeCondition(unsigned int iteration_num);
+	bool convergeCondition(unsigned int iteration_num, bool for_warm_start, double max_move_standard, unsigned int outer_max_iteration_number);
 	bool innerConvergeCondition(unsigned int iteration_num);
 	bool convCondition(unsigned int iteration_num, unsigned int min_itr, double energy, double previous_energy, unsigned int max_itr, double energy_converge_standard,
 		double energy_converge_ratio);
@@ -878,16 +871,45 @@ private:
 	SparseMatrix<double> Hessian;
 	VectorXd b;
 	VectorXd acceleration;
-	void setARAPWithInertial();
-
+	void setInertial();
+	void setNeoHookean();
 	std::vector<Triplet<double>> hessian_nnz;
 
 	void computeARAPHessian(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
 		std::vector<Triplet<double>>* hessian_nnz,
-		int* vertex_index, double stiffness, Matrix<double, 3, 4>& A, bool* is_unfixed, double volume);
+		int* vertex_index, double mu, double lambda, Matrix<double, 3, 4>& A, bool* is_unfixed, double volume);
 
-	int record_size_of_arap_triplet;
+	int record_size_of_inertial_triplet;
+	void setCollisionHessian();
 
+	void  computeVTHessian(int start, int end, unsigned int* pair, double* d_hat, int type, double* grad,
+		std::vector<Triplet<double>>& hessian);
+
+	void setHessian(int* record_index, unsigned int* vertex_index_total, MatrixXd& Hessian, double* grad,
+		std::vector<Triplet<double>>& hessian, double* common_grad, bool* not_collider);
+
+	void computeEEHessian(int start, int end, unsigned int* pair, double* d_hat, double* grad_,
+		std::vector<Triplet<double>>& hessian, bool is_collider);
+
+	void setPosPredict();
+
+	void inversionTest();
+	void setInertialGrad(double* grad);
+
+	SimplicialLLT<SparseMatrix<double>> global_llt;
+	VectorXd delta_x;
+
+
+	void lineSearch(double& energy);
+
+	double computeVTEnergy(std::vector<unsigned int>* record_vt_pair, std::array<int, 3>** triangle_indices,
+		std::array<double, 3>** v_current_pos, std::array<double, 3>** t_current_pos, double collision_stiffness, double* d_hat,
+		unsigned int start, unsigned int end);
+
+	double computeEEEnergy(std::vector<unsigned int>* record_pair, unsigned int** edge_v_0, unsigned int** edge_v_1,
+		std::array<double, 3>** e0_current_pos, std::array<double, 3>** e1_current_pos, double collision_stiffness, double* d_hat,
+		unsigned int start, unsigned int end);
+	void updatePos();
 };
 
 

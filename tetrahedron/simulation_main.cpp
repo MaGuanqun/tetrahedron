@@ -25,14 +25,15 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 	float zoom_value = 1.0;
 	CoordinateSystem coordinateSystem;
-	bool control_parameter[32];
-	memset(control_parameter, 0, 31);
+	bool control_parameter[33];
+	memset(control_parameter, 0, 33);
 	control_parameter[ONLY_COLLISION_TEST] =false;
 	control_parameter[USE_XPBD] = false;
 	control_parameter[USE_PD_] = false;
 	control_parameter[USE_NEWTON_] = false;
 	control_parameter[USE_XPBD_LARGE] = false;
-	control_parameter[USE_XPBD_IPC] = true;
+	control_parameter[USE_XPBD_IPC] = false;
+	control_parameter[USE_IPC] = true;
 	control_parameter[DRAW_VT] = true;
 
 
@@ -73,7 +74,7 @@ void simu_main(GLFWwindow* window, Input* input) {
 	double temp_data[20] = {1e7,2e4,2e4,2e1,1e2,3e-5,2e4,1.0,0.0,
 		0.0,0.0,
 	//1e-3, 2e-3,2e-3,2e-3, 1e-3,1e-9,1e-2};
-	0.0, 0.0,0.0,0.0, 0.0,0.0,0.0,1e5,0.3 };
+	0.0, 0.0,0.0,0.0, 0.0,0.0,0.0,1e4,0.35 };
 	memcpy(temp_stiffness.data(), temp_data, 20 * 8);
 	//memset(temp_stiffness, 0, 64);
 	UpdateObjStiffness update_obj_stiffness;
@@ -217,7 +218,8 @@ void simu_main(GLFWwindow* window, Input* input) {
 
 		}
 		start_time = clock();
-		if (control_parameter[USE_PD_] || control_parameter[USE_XPBD] || control_parameter[USE_NEWTON_]|| control_parameter[USE_XPBD_LARGE] || control_parameter[USE_XPBD_IPC]) {
+		if (control_parameter[USE_PD_] || control_parameter[USE_XPBD] || control_parameter[USE_NEWTON_]|| control_parameter[USE_XPBD_LARGE] || control_parameter[USE_XPBD_IPC]
+			|| control_parameter[USE_IPC]) {
 			
 
 			imgui_windows.operationWindow(cloth_stiffness, tetrahedron_stiffness, simulation_parameter, cloth_collision_stiffness, tetrahedron_collision_stiffness, set_stiffness, temp_stiffness.data(),

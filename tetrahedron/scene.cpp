@@ -26,7 +26,9 @@ Scene::Scene()
 	xpbd.move_model = &move_model;
 	xpbd_ipc.time_indicate_for_simu = &time_indicate_for_simu;
 	xpbd_ipc.move_model = &move_model;
-	
+
+	ipc.time_indicate_for_simu = &time_indicate_for_simu;
+
 	genShader();
 
 
@@ -37,6 +39,9 @@ Scene::Scene()
 	xpbd.time_stamp= &time_stamp;
 	xpbd_ipc.time_step = time_step;
 	xpbd_ipc.time_stamp = &time_stamp;
+
+	ipc.time_step = time_step;
+	ipc.time_stamp = &time_stamp;
 
 	newton_method.time_step = time_step;
 	newton_method.time_step_square = time_step * time_step;
@@ -84,6 +89,7 @@ Scene::Scene()
 	//std::cout << cbrt(-27.0) << " " << cbrt(27.0) << std::endl;
 	xpbd.has_force = &read_force;
 	xpbd_ipc.has_force = &read_force;
+	ipc.has_force = &read_force;
 	newton_method.has_force = &read_force;
 }
 
@@ -161,6 +167,19 @@ void Scene::saveParameter(std::vector<std::string>& path, std::vector<std::strin
 		energy_converge_standard = xpbd_ipc.energy_converge_standard;
 
 		break;
+	case IPC_:
+		velocity_damp = ipc.velocity_damp;
+		sub_step_per_detection = *ipc.sub_step_per_detection;
+		d_hat = ipc.collision.d_hat;
+		local_conv_rate = ipc.energy_converge_ratio;
+		min_inner_itr = ipc.min_inner_iteration;
+		min_outer_itr = ipc.min_outer_iteration;
+		displacement_standard = ipc.max_move_standard;
+		distance_record_as_collision = ipc.collision.tolerance;
+		max_outer_iteration_num = ipc.outer_max_iteration_number;
+		max_inner_iteration_num = ipc.max_iteration_number;
+		energy_converge_standard = ipc.energy_converge_standard;
+		break;
 	}
 
 	SaveParameter::writeParameter(path, collider_path, cloth_stiffness, tet_stiffness, cloth_collision_stiffness, tet_collision_stiffness, use_method,	
@@ -207,6 +226,9 @@ void Scene::updateItrInfo(int* iteration_num)
 		case XPBD_IPC_:
 			xpbd_ipc.updateItrInfo(iteration_num);
 			break;
+		case IPC_:
+			ipc.updateItrInfo(iteration_num);
+			break;
 		}
 	//}
 }
@@ -237,6 +259,10 @@ void Scene::obtainConvergenceInfo(double* convergence_rate, int* iteration_num)
 		case XPBD_IPC_:
 			iteration_num[LOCAL_GLOBAL] = xpbd_ipc.iteration_number;
 			iteration_num[OUTER] = xpbd_ipc.outer_itr_num;
+			break;
+		case IPC_:
+			iteration_num[LOCAL_GLOBAL] = ipc.iteration_number;
+			iteration_num[OUTER] = ipc.outer_itr_num;
 			break;
 		}
 	//}
@@ -269,6 +295,7 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 	this->control_parameter = control_parameter;
 	xpbd.control_parameter = control_parameter;
 	xpbd_ipc.control_parameter = control_parameter;
+	ipc.control_parameter = control_parameter;
 	if (control_parameter[USE_XPBD]) {
 		use_method = XPBD_;
 	}
@@ -284,9 +311,12 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 	else if (control_parameter[USE_XPBD_IPC]) {
 		use_method = XPBD_IPC_;
 	}
+	else if (control_parameter[USE_IPC]) {
+		use_method = IPC_;
+	}
 	only_test_collision = control_parameter[ONLY_COLLISION_TEST];
 	cloth_density = 1;
-	tetrahedron_density =1;
+	tetrahedron_density =100;
 
 
 	std::vector<std::vector<double>>obj_stiffness,collide_stiffness;
@@ -325,6 +355,7 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 		control_parameter[USE_NEWTON_] = false;
 		control_parameter[USE_XPBD_LARGE] = false;
 		control_parameter[USE_XPBD_IPC] = false;
+		control_parameter[USE_IPC] = false;
 		switch (use_method)
 		{
 		case XPBD_:
@@ -374,6 +405,38 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 			std::cout << "energy_converge_standard  " << xpbd_ipc.energy_converge_standard << std::endl;
 
 			break;
+		case IPC_:
+			control_parameter[USE_IPC] = true;
+			ipc.collision.d_hat = d_hat;
+			ipc.collision.d_hat_2 = d_hat * d_hat;
+			ipc.energy_converge_ratio = local_global_conv_rate;
+			ipc.min_inner_iteration = min_inner_itr;
+			ipc.min_outer_iteration = min_outer_itr;
+			ipc.max_move_standard = displacement_standard;
+			ipc.collision.tolerance = distance_record_as_collision;
+
+			ipc.outer_max_iteration_number = max_outer_itr_num;
+			ipc.max_iteration_number = max_inner_itr_num;
+			ipc.energy_converge_standard = energy_converge_standard;
+
+			//ipc.collision_compare.d_hat = d_hat;
+			//ipc.collision_compare.tolerance = distance_record_as_collision;
+
+			std::cout << "d_hat " << d_hat << std::endl;
+			std::cout << "energy_converge_ratio " << local_global_conv_rate << std::endl;
+			std::cout << "min_inner_iteration " << min_inner_itr << std::endl;
+			std::cout << "min_outer_itr " << min_outer_itr << std::endl;
+			std::cout << "max_move_standard " << displacement_standard << std::endl;
+			std::cout << "distance_record_as_collision " << distance_record_as_collision << std::endl;
+
+			std::cout << "camera position " << camera->position.x << " " << camera->position.y << " " << camera->position.z << std::endl;
+			std::cout << "camera up " << camera->up.x << " " << camera->up.y << " " << camera->up.z << std::endl;
+			std::cout << "camera center " << camera->center.x << " " << camera->center.y << " " << camera->center.z << std::endl;
+
+			std::cout << "outer_max_iteration_number " << ipc.outer_max_iteration_number << std::endl;
+			std::cout << "max_inner_itr_num " << ipc.max_iteration_number << std::endl;
+			std::cout << "energy_converge_standard  " << ipc.energy_converge_standard << std::endl;
+			break;
 		}
 		if (floor_indicator[0]) {
 			floor_indicator[1] = true;
@@ -405,6 +468,11 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 		xpbd_ipc.sub_step_per_detection = sub_step_per_detection;
 
 		//xpbd_ipc.collision_compare.friction_coe = friction_coe;
+	}
+	else if (use_method == IPC_) {
+		ipc.collision.friction_coe = friction_coe;
+
+		ipc.sub_step_per_detection = sub_step_per_detection;
 	}
 
 	Preprocessing preprocessing;
@@ -461,6 +529,9 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 			break;
 		case XPBD_IPC_:
 			xpbd_ipc.velocity_damp = velocity_damp;
+			break;
+		case IPC_:
+			ipc.velocity_damp = velocity_damp;
 			break;
 		}
 		if (!cloth.empty()) {
@@ -531,7 +602,7 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 		tetrahedron[i].recordInitialMesh(single_tetrahedron_info);
 	}
 
-	if (use_method == XPBD_ || use_method == XPBD_IPC_) {
+	if (use_method == XPBD_ || use_method == XPBD_IPC_ || use_method ==IPC_) {
 		setGroup();
 	}
 
@@ -555,6 +626,10 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 	case XPBD_IPC_:
 		xpbd_ipc.setForXPBD(&cloth, &tetrahedron, &collider, &floor, &thread, tolerance_ratio);
 		break;
+	case IPC_:
+		ipc.setForIPC(&cloth, &tetrahedron, &collider, &floor, &thread, tolerance_ratio);
+		break;
+
 	}
 
 	if (load_by_scene_file) {
@@ -780,6 +855,9 @@ void Scene::getClothInfo(std::vector<std::array<int, 3>>& mesh_info, std::vector
 	case XPBD_IPC_:
 		simulation_parameter[1] = xpbd_ipc.gravity_;
 		break;
+	case IPC_:
+		simulation_parameter[1] = ipc.gravity_;
+		break;
 	}
 	collision_stiffness.resize(cloth_num);
 	for (int i = 0; i < cloth_num; ++i) {
@@ -834,6 +912,9 @@ void Scene::getTetrahedronInfo(std::vector<std::array<int, 3>>& mesh_info, std::
 		break;
 	case XPBD_IPC_:
 		simulation_parameter[1] = xpbd_ipc.gravity_;
+		break;
+	case IPC_:
+		simulation_parameter[1] = ipc.gravity_;
 		break;
 	}
 	collision_stiffness.resize(tetrahedron_num);
@@ -1109,6 +1190,9 @@ void Scene::saveScene()
 	case XPBD_IPC_:
 		xpbd_ipc.saveScene(force_direction, intersection.obj_No, intersection.happened);
 		break;
+	case IPC_:
+		ipc.saveScene(force_direction, intersection.obj_No, intersection.happened);
+		break;
 	}
 }
 
@@ -1127,6 +1211,9 @@ void Scene::readScene(std::string& path)
 		break;
 	case XPBD_IPC_:
 		xpbd_ipc.readScene(path.c_str(), force_direction, intersection.obj_No);
+		break;
+	case IPC_:
+		ipc.readScene(path.c_str(), force_direction, intersection.obj_No);
 		break;
 	}
 }
@@ -1168,6 +1255,9 @@ void Scene::initial()
 		case XPBD_IPC_:
 			xpbd_ipc.initial();
 			break;
+		case IPC_:
+			ipc.initial();
+			break;
 		}
 	//}
 	for (int i = 0; i < cloth.size(); ++i) {
@@ -1205,6 +1295,9 @@ void Scene::reset()
 			break;
 		case XPBD_IPC_:
 			xpbd_ipc.reset();
+			break;
+		case IPC_:
+			ipc.reset();
 			break;
 		}
 	//}
@@ -1263,6 +1356,9 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 		case XPBD_IPC_:
 			xpbd_ipc.resetExternalForce();
 			break;
+		case IPC_:
+			ipc.resetExternalForce();
+			break;
 		}
 	}
 
@@ -1310,6 +1406,9 @@ void Scene::updateObjSimulation(Camera* camera, double* cursor_screen, bool* con
 			//xpbd_ipc.XPBD_IPCSolve();
 			//xpbd_ipc.XPBD_IPC_Block_Solve();
 			xpbd_ipc.XPBD_IPC_Block_Solve_Multithread();
+			break;
+		case IPC_:
+			ipc.IPC_solve();
 			break;
 		}
 
@@ -1569,6 +1668,9 @@ void Scene::setAveEdgeLength()
 		case XPBD_IPC_:
 			xpbd_ipc.initialDHatTolerance(ave_edge_length);
 			break;
+		case IPC_:
+			ipc.initialDHatTolerance(ave_edge_length);
+			break;
 		}
 	//}
 }
@@ -1644,6 +1746,12 @@ void Scene::selectAnchor(bool* control_parameter, bool* select_anchor, double* s
 			break;
 		case XPBD_IPC_:
 			xpbd_ipc.updateTetrahedronAnchorVertices();
+			for (unsigned int i = 0; i < tetrahedron.size(); ++i) {
+				tetrahedron[i].mesh_struct.updateTetNeighborInfo();
+			}
+			break;
+		case IPC_:
+			ipc.updateTetrahedronAnchorVertices();
 			for (unsigned int i = 0; i < tetrahedron.size(); ++i) {
 				tetrahedron[i].mesh_struct.updateTetNeighborInfo();
 			}
@@ -1888,6 +1996,9 @@ void  Scene::addExternalForce()
 		case XPBD_IPC_:
 			xpbd_ipc.addExternalForce(force_direction, cloth[intersection.obj_No].coe_neighbor_vertex_force, cloth[intersection.obj_No].neighbor_vertex, intersection.obj_No);
 			break;
+		case IPC_:
+			ipc.addExternalForce(force_direction, cloth[intersection.obj_No].coe_neighbor_vertex_force, cloth[intersection.obj_No].neighbor_vertex, intersection.obj_No);
+			break;
 		}
 	}
 	else {
@@ -1907,6 +2018,9 @@ void  Scene::addExternalForce()
 			break;
 		case XPBD_IPC_:
 			xpbd_ipc.addExternalForce(force_direction, tetrahedron[intersection.obj_No - cloth.size()].coe_neighbor_vertex_force, tetrahedron[intersection.obj_No - cloth.size()].neighbor_vertex, intersection.obj_No);
+			break;
+		case IPC_:
+			ipc.addExternalForce(force_direction, tetrahedron[intersection.obj_No - cloth.size()].coe_neighbor_vertex_force, tetrahedron[intersection.obj_No - cloth.size()].neighbor_vertex, intersection.obj_No);
 			break;
 		}
 	}

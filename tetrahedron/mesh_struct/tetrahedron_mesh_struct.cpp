@@ -69,7 +69,9 @@ void TetrahedronMeshStruct::initialUnfixedIndex()
 void TetrahedronMeshStruct::updateUnfixedPointData()
 {
 	unfixed_point_index.clear();
-	std::vector<bool> is_vertex_fixed(vertex_position.size(),false);
+
+	std::fill(is_vertex_fixed.begin(), is_vertex_fixed.end(), false);
+
 	for (unsigned int i = 0; i < anchor_vertex.size(); ++i) {
 		is_vertex_fixed[anchor_vertex[i]] = true;
 	}

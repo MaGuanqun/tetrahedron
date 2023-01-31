@@ -1,19 +1,14 @@
 object
-2
-C:\graphics\tetrahedron\model\bar.1.ele
-C:\graphics\tetrahedron\model\bar.1.ele
+1
+C:\graphics\tetrahedron\model\single_tet.ele
 collider
 1
 C:\graphics\tetrahedron\model\tank.obj
 stiffness
 20000 50000 1 0 0 0 10000 0.35 
-1e+09 20000 20000 20 0 0 0 0 
-20000 50000 1 0 0 0 10000 0.35 
-1e+09 20000 20000 20 0 0 0 0 
+1e+8 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
-0 
-1
 0 
 time_step
 0.01
@@ -30,12 +25,10 @@ floor_dimension
 floor_value
 -0.55
 translation
-0 0 0
 0 -0.4 0
 size_scaler
-0.5 0.5
+0.1 
 rotation_angle
-0 75 0
 0 0 0
 collider_translation
 0 0 0
@@ -44,9 +37,9 @@ collider_size_scaler
 collider_rotation_angle
 0 0 0
 camera position
-0.750578 -0.140827 -2.52054
+0.193199 -0.16353 -3.14476
 camera up
-0.0152637 0.998569 -0.0512465
+0.0304071 0.998284 -0.0500436
 camera center
 0 0 0
 IPC

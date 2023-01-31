@@ -60,9 +60,11 @@ namespace CCD {
 
             dist2_cur = internal::pointTriangleDistanceUnclassified(p, t0, t1, t2);
             dist_cur = std::sqrt(dist2_cur);
-
             if (dist2_cur == 0.0) {
-                std::cout << "PT CCD distance equals zero, warning " << std::endl;
+                std::cout << "PT CCD distance equals zero, warning "<< itr <<std::endl;
+                //std::cout<<
+                //std::cout << toc_lower_bound << std::endl;
+
                 break;
             }
 

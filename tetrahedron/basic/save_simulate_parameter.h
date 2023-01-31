@@ -334,6 +334,9 @@ namespace SaveParameter{
 		else if (line == "XPBD_IPC") {
 			use_method = XPBD_IPC_;
 		}
+		else if (line == "IPC") {
+			use_method = IPC_;
+		}
 		else {
 			std::cout << "error reading the simulation method" << std::endl;
 			return;
@@ -341,6 +344,86 @@ namespace SaveParameter{
 		switch (use_method)
 		{
 		case XPBD_IPC_:
+		{
+			std::getline(in, line);
+			if (line != "substep_num") {
+				std::cout << "error read substep num" << std::endl;
+				return;
+			}
+			std::getline(in, line);
+			sub_step_num = std::stoi(line);
+			std::getline(in, line);
+			if (line != "out iteration_num") {
+				std::cout << "error read iteration num" << std::endl;
+				return;
+			}
+			std::getline(in, line);
+			iteration_num = std::stoi(line);
+			std::getline(in, line);
+			if (line != "inner iteration_num") {
+				std::cout << "error  read inner iteration num" << std::endl;
+			}
+			std::getline(in, line);
+			max_inner_itr_num = std::stoi(line);
+
+			std::getline(in, line);
+			if (line != "sub_step_per_detection") {
+				std::cout << "error read sub_step per detection" << std::endl;
+			}
+			std::getline(in, line);
+			sub_step_per_detection = std::stoi(line);
+			std::getline(in, line);
+			if (line != "d_hat") {
+				std::cout << "error read d_hat" << std::endl;
+			}
+			std::getline(in, line);
+			d_hat = std::stod(line);
+			std::getline(in, line);
+			if (line != "inner convergence rate") {
+				std::cout << "error read inner convergence rate" << std::endl;
+			}
+			std::getline(in, line);
+			local_conv_rate = std::stod(line);
+			std::getline(in, line);
+			if (line != "min inner itr num") {
+				std::cout << "error read min inner itr num" << std::endl;
+			}
+			std::getline(in, line);
+			min_inner_itr = std::stoi(line);
+			std::getline(in, line);
+			if (line != "min outer itr num") {
+				std::cout << "error read min outer itr num" << std::endl;
+			}
+			std::getline(in, line);
+			min_outer_itr = std::stoi(line);
+
+
+			std::getline(in, line);
+			if (line != "displacement standard") {
+				std::cout << "error read displacement standard" << std::endl;
+			}
+			std::getline(in, line);
+			displacement_standard = std::stod(line);
+
+
+			std::getline(in, line);
+			if (line != "distance record as collision") {
+				std::cout << "error read distance record as collision" << std::endl;
+			}
+			std::getline(in, line);
+			distance_record_as_collision = std::stod(line);
+
+
+			std::getline(in, line);
+			if (line != "energy converge standard") {
+				std::cout << "error read energy converge standard" << std::endl;
+			}
+			std::getline(in, line);
+			enegy_convege_standard = std::stod(line);
+
+		}
+		break;
+		case IPC_:
 		{
 			std::getline(in, line);
 			if (line != "substep_num") {
@@ -657,7 +740,31 @@ namespace SaveParameter{
 			input_file << distance_record_as_collision << "\n";
 			input_file << "energy converge standard" << "\n";
 			input_file << enegy_convege_standard << "\n";
-
+			break;
+		case IPC_:
+			input_file << "IPC" << "\n";
+			input_file << "substep_num" << "\n";
+			input_file << sub_step_num << "\n";
+			input_file << "out iteration_num" << "\n";
+			input_file << max_outer_iteration_num << "\n";
+			input_file << "inner iteration_num" << "\n";
+			input_file << max_inner_itr_num << "\n";
+			input_file << "sub_step_per_detection" << "\n";
+			input_file << sub_step_per_detection << "\n";
+			input_file << "d_hat" << "\n";
+			input_file << d_hat << "\n";
+			input_file << "inner convergence rate" << "\n";
+			input_file << local_convergence_rate << "\n";
+			input_file << "min inner itr num" << "\n";
+			input_file << min_inner_itr << "\n";
+			input_file << "min outer itr num" << "\n";
+			input_file << min_outer_itr << "\n";
+			input_file << "displacement standard" << "\n";
+			input_file << displacement_standard << "\n";
+			input_file << "distance record as collision" << "\n";
+			input_file << distance_record_as_collision << "\n";
+			input_file << "energy converge standard" << "\n";
+			input_file << enegy_convege_standard << "\n";
 			break;
 		}		
 	}

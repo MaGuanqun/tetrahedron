@@ -712,7 +712,7 @@ void XPBD_IPC::warmStart(double& ori_energy)
 		memcpy(record_first_collision_free_position[i][0].data(), vertex_position[i][0].data(), 24 * record_first_collision_free_position[i].size());
 	}
 
-	while (!convergeCondition(itr_num,true,1e-3,200))
+	while (!convergeCondition(itr_num,true,1e-3,100))
 	{
 		if (itr_num > 0) {
 			updateCollisionFreePosition();
@@ -3126,11 +3126,11 @@ void XPBD_IPC::lineSearchWarmStart(double& ori_energy, bool is_outer_itr)
 	current_energy = computeWarmStartEnergy();
 	if (current_energy > 1e-13) {
 		double record_collision_time = collision.collision_time;
-		if (current_energy > ori_energy) {
-			if (record_collision_time < 1e-6) {
-				std::cout << "warm start initial collision_time is too small " << ori_energy << " " << current_energy<<" "<<is_outer_itr << std::endl;
-			}
-		}
+		//if (current_energy > ori_energy) {
+		//	if (record_collision_time < 1e-6) {
+		//		std::cout << "warm start initial collision_time is too small " << ori_energy << " " << current_energy<<" "<<is_outer_itr << std::endl;
+		//	}
+		//}
 		collision.collision_time = 0.5;
 		int itr_num = 0;
 		while (current_energy > ori_energy)
@@ -3144,7 +3144,7 @@ void XPBD_IPC::lineSearchWarmStart(double& ori_energy, bool is_outer_itr)
 			}		
 			itr_num++;
 			if (itr_num > 6) {
-				std::cout << "warm start record_collision_time is too small " <<  ori_energy << " " << current_energy << std::endl;
+				//std::cout << "warm start record_collision_time is too small " <<  ori_energy << " " << current_energy << std::endl;
 				break;
 			}
 			current_energy = computeWarmStartEnergy();
@@ -8880,15 +8880,15 @@ void XPBD_IPC::computeARAPEnergyPerThread(int thread_No)
 					vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j], volume[j], mu, lambda);
 				energy += tet_energy;
 
-				if (!NeoHookean::testDeterminent(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
-					vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j])) {
-					std::cout <<"error tet index "<< j << std::endl;
-					system("pause");
-				}
+				//if (!NeoHookean::testDeterminent(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
+				//	vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j])) {
+				//	std::cout <<"error tet index "<< j << std::endl;
+				//	system("pause");
+				//}
 			}
 		}
 	}
-	energy_per_thread[thread_No] =0.5* energy;
+	energy_per_thread[thread_No] =energy;
 }
 
 double XPBD_IPC::computeCurrentARAPEnergy()
