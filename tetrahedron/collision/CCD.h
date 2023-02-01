@@ -212,7 +212,10 @@ namespace CCD {
                 break;
             }
 
-            if ((toc && ((dist2_cur - thickness * thickness) / (dist_cur + thickness) < gap))) {// || (
+            if ((toc && ((dist2_cur - thickness * thickness) / (dist_cur + thickness) < gap)) ) {// || itr > 500
+                //if (itr > 500) {
+                    //std::cout <<"itr "<< itr << std::endl;
+                //}
                 // std::cout << toc<<" "<< toc_lower_bound<<" "<< dist_cur - thickness<<" "<<gap << std::endl;
                 break;
             }
@@ -224,6 +227,9 @@ namespace CCD {
             }
 
             if (toc > 1.0) {
+                if (itr > 500) {
+                    std::cout << "itr " << itr<<" "<< max_disp_mag<<" "<< gap << std::endl;
+                }
                 return 1.0;
             }
             itr++;
@@ -396,7 +402,7 @@ namespace CCD {
             }
             dist_cur = std::sqrt(dist2_cur);
 
-            if ((toc && (dFunc / (dist_cur + thickness) < gap)) || itr > 500) {//(
+            if ((toc && (dFunc / (dist_cur + thickness) < gap)) ) {//(|| itr > 500
                 break;
             }
             toc += toc_lower_bound;
