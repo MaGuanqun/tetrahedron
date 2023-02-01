@@ -9126,16 +9126,16 @@ void Collision::edgeEdgeCollisionTimePair(int start_pair_index,
 			vertex_position_1[pair[i + 3]][indices_1[0]].data(),
 			vertex_position_1[pair[i + 3]][indices_1[1]].data(), eta, tolerance);
 
-		//current_distance = d_hat_2 + d_hat_2;
-		//if (time >= 1.0) {
-		//	current_distance = CCD::internal::edgeEdgeDistanceUnclassified(vertex_position_0[pair[i + 1]][indices_0[0]].data(),
-		//		vertex_position_0[pair[i + 1]][indices_0[1]].data(),
-		//		vertex_position_1[pair[i + 3]][indices_1[0]].data(),
-		//		vertex_position_1[pair[i + 3]][indices_1[1]].data());
-		//}
+		current_distance = d_hat_2 + d_hat_2;
+		if (time >= 1.0) {
+			current_distance = CCD::internal::edgeEdgeDistanceUnclassified(vertex_position_0[pair[i + 1]][indices_0[0]].data(),
+				vertex_position_0[pair[i + 1]][indices_0[1]].data(),
+				vertex_position_1[pair[i + 3]][indices_1[0]].data(),
+				vertex_position_1[pair[i + 3]][indices_1[1]].data());
+		}
 
 
-		if (time < 1.0) {// || current_distance < d_hat_2
+		if (time < 1.0) {//  || current_distance < d_hat_2
 			actual_ele_0 = edge_0_index_prefix_sum[pair[i + 1]] + pair[i];
 			actual_ele_1 = edge_1_index_prefix_sum[pair[i + 3]] + pair[i + 2];
 			hash_value = ((actual_ele_0 * P1) ^ (P2 * actual_ele_1)) % pair_hash_table_size;
@@ -9259,11 +9259,11 @@ void Collision::vertexTriangleCollisionTimePair(int start_pair_index,
 			vertex_position_1[pair[i + 3]][indices[1]].data(),
 			vertex_position_1[pair[i + 3]][indices[2]].data(), eta, tolerance);
 
-		//current_distance = d_hat_2+ d_hat_2;
-		//if (time >= 1.0) {
-		//	current_distance = CCD::internal::pointTriangleDistanceUnclassified(vertex_position_0[pair[i + 1]][pair[i]].data(),
-		//		vertex_position_1[pair[i + 3]][indices[0]].data(), vertex_position_1[pair[i + 3]][indices[1]].data(), vertex_position_1[pair[i + 3]][indices[2]].data());
-		//}
+		current_distance = d_hat_2+ d_hat_2;
+		if (time >= 1.0) {
+			current_distance = CCD::internal::pointTriangleDistanceUnclassified(vertex_position_0[pair[i + 1]][pair[i]].data(),
+				vertex_position_1[pair[i + 3]][indices[0]].data(), vertex_position_1[pair[i + 3]][indices[1]].data(), vertex_position_1[pair[i + 3]][indices[2]].data());
+		}
 		//if (pair[i] == 198) {
 		//	if (vertex_position_0[pair[i + 1]][pair[i]][1] < vertex_position_1[pair[i + 3]][indices[2]][1]) {
 		//		if (vertex_position_1[pair[i + 3]][indices[2]][1] < -0.79311) {
@@ -9300,7 +9300,7 @@ void Collision::vertexTriangleCollisionTimePair(int start_pair_index,
 		//	}
 		//}
 
-		if (time < 1.0){// || current_distance < d_hat_2
+		if (time < 1.0){// || ||  current_distance < d_hat_2
 			//std::cout << "+++ " << pair[i]<<" "<< vertex_position_0[pair[i + 1]][pair[i]][1]<<" "<< vertex_position_1[pair[i + 3]][indices[2]][1] << " " << time << std::endl;
 			//std::cout <<precisou vertex_position_1[pair[i + 3]][indices[2]][1]<< std::endl;
 
@@ -9349,6 +9349,7 @@ void Collision::vertexTriangleCollisionTimePair(int start_pair_index,
 		not_add_value_vt:;
 		}
 	}
+
 	
 }
 
@@ -10696,9 +10697,9 @@ void Collision::collisionTimeWithPair(int thread_No)
 							with_floor[j] = '\1';
 							record_with_floor->emplace_back(i);
 							record_with_floor->emplace_back(j);
-							d_hat_with_floor[j] = d_hat_2;
-							//d_hat_with_floor[j] = (std::max)((vertex_for_render[i][j][floor->dimension] - floor->value)*
-							//	(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);
+							//d_hat_with_floor[j] = d_hat_2;
+							d_hat_with_floor[j] = (std::max)((vertex_for_render[i][j][floor->dimension] - floor->value)*
+								(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);
 						
 							
 						}
@@ -10709,8 +10710,8 @@ void Collision::collisionTimeWithPair(int thread_No)
 								with_floor[j] = '\1';
 								record_with_floor->emplace_back(i);
 								record_with_floor->emplace_back(j);
-								d_hat_with_floor[j] = d_hat_2;// (std::max)((vertex_for_render[i][j][floor->dimension] - floor->value) *
-									//(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);
+								d_hat_with_floor[j] = (std::max)((vertex_for_render[i][j][floor->dimension] - floor->value) *
+									(vertex_for_render[i][j][floor->dimension] - floor->value), d_hat_2);
 							}
 						}
 					}

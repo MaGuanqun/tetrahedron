@@ -49,17 +49,17 @@ camera up
 -0.00291372 0.999959 0.00859385
 camera center
 -0.0926839 0.313883 0.281407
-XPBD_IPC
+IPC
 substep_num
 1
 out iteration_num
-400
+300
 inner iteration_num
 64
 sub_step_per_detection
 1
 d_hat
-0.002
+0.001
 inner convergence rate
 0.001
 min inner itr num
@@ -67,7 +67,7 @@ min inner itr num
 min outer itr num
 3
 displacement standard
-0.0002
+0.001
 distance record as collision
 0.0
 energy converge standard

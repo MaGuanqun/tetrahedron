@@ -359,12 +359,21 @@ double IPC::computeVTEnergy(std::vector<unsigned int>* record_vt_pair, std::arra
 	auto pair_end = record_vt_pair->begin() + end;
 	auto pair_start = record_vt_pair->begin() + start;
 	double* d_hat_ = d_hat + (start >> 2);
+
+	double energy1;
+
 	for (auto i = pair_start; i < pair_end; i += 4) {
 		indices = triangle_indices[*(i + 2)][*(i + 3)].data();
-		energy += compute_energy.computeBarrierEnergy(v_current_pos[*i][*(i + 1)].data(),
+		energy1 = compute_energy.computeBarrierEnergy(v_current_pos[*i][*(i + 1)].data(),
 			t_current_pos[*(i + 2)][indices[0]].data(),
 			t_current_pos[*(i + 2)][indices[1]].data(),
 			t_current_pos[*(i + 2)][indices[2]].data(), collision_stiffness, *d_hat_, true);
+		energy += energy1;
+
+		if (std::isinf(energy1)) {
+			std::cout << "vt " << *(i + 1) << " " << *(i + 3)<<" "<< v_current_pos[*i][*(i + 1)][1] << std::endl;
+		}
+
 		d_hat_++;
 	}
 	return energy;
@@ -381,13 +390,19 @@ double IPC::computeEEEnergy(std::vector<unsigned int>* record_pair, unsigned int
 	auto pair_end = record_pair->begin() + end;
 	auto pair_start = record_pair->begin() + start;
 	double* d_hat_ = d_hat + (start >> 2);
+	double energy1;
 
 	for (auto i = pair_start; i < pair_end; i += 4) {
 		edge_0_vertex = edge_v_0[*i] + ((*(i + 1)) << 1);
 		edge_1_vertex = edge_v_1[*(i + 2)] + ((*(i + 3)) << 1);
-		energy += compute_energy.computeBarrierEnergy(e0_current_pos[*i][*edge_0_vertex].data(),
+		energy1 = compute_energy.computeBarrierEnergy(e0_current_pos[*i][*edge_0_vertex].data(),
 			e0_current_pos[*i][*(edge_0_vertex + 1)].data(), e1_current_pos[*(i + 2)][*edge_1_vertex].data(),
 			e1_current_pos[*(i + 2)][*(edge_1_vertex + 1)].data(), collision_stiffness, *d_hat_, false);
+		energy += energy1;
+		if (std::isinf(energy1)) {
+			std::cout << "ee1 " << *(i + 1) << " " << *(i + 3) << std::endl;
+		}
+
 		d_hat_++;
 	}
 	return energy;
@@ -445,6 +460,14 @@ void IPC::solveSystem()
 
 	delta_x = global_llt.solve(b);
 	max_displacement = delta_x.lpNorm<Eigen::Infinity>();
+
+	//double k = 1.0;
+	//for (int i = 0; i < mesh_struct[1]->vertex_position.size(); ++i) {
+	//	if (k > mesh_struct[1]->vertex_position[i][1]) {
+	//		k = mesh_struct[1]->vertex_position[i][1];
+	//	}
+	//}
+	//std::cout << "==distance " << k - collider_mesh_struct[0]->vertex_position[0][1] << std::endl;
 	updatePos();
 }
 
@@ -567,6 +590,15 @@ void IPC::computeCollisionFreePosition()
 	std::array<double, 3>* q_pre;
 	std::array<double, 3>* q_end;
 
+	//std::cout <<"ori pos "<< record_vertex_position[0][0][1]<<" "<< vertex_position[0][0][1]<<" "<< collision_time<<" "<<
+	//	record_vertex_position[0][0][1] - vertex_position_collider[0][0][1]<<" "
+	//	<< (record_vertex_position[0][0][1]- vertex_position_collider[0][0][1])/(record_vertex_position[0][0][1] - vertex_position[0][0][1]) << " "<<
+	//	collision_time*(vertex_position[0][0][1] - record_vertex_position[0][0][1])+(record_vertex_position[0][0][1] - vertex_position_collider[0][0][1]) << " "<<
+	//	record_vertex_position[0][0][1]+ collision_time * (vertex_position[0][0][1] - record_vertex_position[0][0][1])- vertex_position_collider[0][0][1]<<" "<<
+	//	collision_time * (vertex_position[0][0][1] - record_vertex_position[0][0][1]) + record_vertex_position[0][0][1]  - vertex_position_collider[0][0][1]
+	//	<<std::endl;
+
+
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
 		index_end = vertex_index_begin_per_thread[i][total_thread_num];
 		q_end = vertex_position[i];
@@ -578,6 +610,9 @@ void IPC::computeCollisionFreePosition()
 			q_end[j][2] = q_pre[j][2] + collision_time * (q_end[j][2] - q_pre[j][2]);
 		}
 	}
+
+	//std::cout << "current pos " << record_vertex_position[0][0][1] << " " << vertex_position[0][0][1]<<" "<< vertex_position[0][0][1] -vertex_position_collider[0][0][1] << std::endl;
+
 }
 
 void IPC::updateSn()

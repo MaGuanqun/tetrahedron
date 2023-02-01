@@ -446,7 +446,7 @@ namespace CCD {
             CROSS(temp2, temp0, temp1);
             SUB(temp0, p, t0);
             T aTb = DOT(temp0, temp2);
-            return aTb * aTb / DOT(temp2, temp2);
+            return aTb * (aTb / DOT(temp2, temp2));
         }
         template <class T>
         inline T edgeEdgeDistance(const T* ea0, const T* ea1, const T* eb0, const T* eb1)

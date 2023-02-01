@@ -4,9 +4,9 @@
 #include"primitive_distance.h"
 #include<vector>
 namespace CCD {
+
     template <class T>
-    T pointTriangleCcd(
-        const T* _p,
+    T pointTriangleCcdTest(const T* _p,
         const T* _t0,
         const T* _t1,
         const T* _t2,
@@ -38,6 +38,140 @@ namespace CCD {
         T max_disp_mag = sqrt(DOT(dp, dp)) + std::sqrt((std::max)((std::max)(disp_mag2_vec[0], disp_mag2_vec[1]), disp_mag2_vec[2]));
         if (max_disp_mag == 0)
             return 1.0;
+
+
+
+
+        T dist2_cur = internal::pointTriangleDistanceUnclassified(p, t0, t1, t2);
+        T dist_cur = std::sqrt(dist2_cur);
+
+
+    
+
+
+        T gap = eta * (dist2_cur - thickness * thickness) / (dist_cur + thickness);
+        T toc = 0.0;
+        int itr = 0;
+
+        T ori_dist2_cur = dist2_cur;
+
+        double dis_recrod;
+
+
+
+
+        while (true) {
+            T toc_lower_bound;
+            if (itr == 0) {
+                toc_lower_bound = (1.0 - eta) * (dist2_cur - thickness * thickness) / ((dist_cur + thickness) * max_disp_mag);
+            }
+            std::cout << toc_lower_bound << " " << (1.0 - eta) << " " << (dist2_cur - thickness * thickness) / ((dist_cur + thickness) * max_disp_mag) << " " 
+                << dist2_cur << " " << dist_cur << " " << max_disp_mag << std::endl;
+
+            T p6[3], t60[3], t61[3], t62[3];
+            int size = 3 * sizeof(T);
+            memcpy(p6, p, size);
+            memcpy(t60, t0, size);
+            memcpy(t61, t1, size);
+            memcpy(t62, t2, size);
+
+            ACCUMULATE_SUM_WITH_COE(p, toc_lower_bound, dp);
+            ACCUMULATE_SUM_WITH_COE(t0, toc_lower_bound, dt0);
+            ACCUMULATE_SUM_WITH_COE(t1, toc_lower_bound, dt1);
+            ACCUMULATE_SUM_WITH_COE(t2, toc_lower_bound, dt2);
+
+            std::cout << "dis " << dp[1] << " " << toc_lower_bound << " " << p[1] - t0[1] << std::endl;
+
+            std::cout << -0.000735 * 1.01959e-13 << " " << -0.000735 * 1.01959e-13 / 0.9 << std::endl;
+            std::cout << p[1] -0.000735 * 1.01959e-13 -t0[1] << " " <<p[1] - 0.000735 * 1.01959e-13 / 0.9 -t0[1] << std::endl;
+
+            dis_recrod = dist2_cur;
+
+            dist2_cur = internal::pointTriangleDistanceUnclassified(p, t0, t1, t2);
+            dist_cur = std::sqrt(dist2_cur);
+
+            T temp0[3], temp1[3], temp2[3];
+            SUB(temp0, t1, t0);
+            SUB(temp1, t2, t0);
+            CROSS(temp2, temp0, temp1);
+            SUB(temp0, p, t0);
+            T aTb = DOT(temp0, temp2);
+            std::cout <<"temp "<< temp0[0] << " " << temp0[1] << " " << temp0[2] << " " << temp2[0] << " " << temp2[1] << " " << temp2[2] << std::endl;
+            std::cout <<DOT(temp0, temp0)<<" "<<aTb << " " << aTb * aTb << " " << DOT(temp2, temp2) << std::endl;
+
+            std::cout << "toc_lower_bound " << max_disp_mag << " " << toc_lower_bound << " " << dist2_cur << std::endl;
+            std::cout << "type2 " << internal::pointTriangleDistanceType(p, t0, t1, t2) << " " << dist_cur << " " << dist2_cur << " " << max_disp_mag << " " << toc_lower_bound << std::endl;
+
+            if (dist2_cur == 0.0) {
+
+                std::cout << internal::pointTriangleDistanceUnclassified(p, t0, t1, t2) << " " << internal::pointTriangleDistanceType(p, t0, t1, t2) << std::endl;
+                std::cout << "point triangle distance " << internal::pointTriangleDistance(p, t0, t1, t2) << std::endl;;
+                std::cout << "PT CCD distance equals zero, warning " << itr << std::endl;
+                //std::cout<<
+                //std::cout << toc_lower_bound << std::endl;
+
+                break;
+            }
+
+            if ((toc && ((dist2_cur - thickness * thickness) / (dist_cur + thickness) < gap))) {// || (
+                // std::cout << toc<<" "<< toc_lower_bound<<" "<< dist_cur - thickness<<" "<<gap << std::endl;
+                break;
+            }
+            toc += toc_lower_bound;
+
+            if (toc < 0.0) {
+                std::cout << "warning: the vt distance is less than the thickness " << dis_recrod << " " << dist2_cur - thickness * thickness << " " << thickness << std::endl;
+                return 0.0;
+            }
+
+            if (toc > 1.0) {
+                return 1.0;
+            }
+            itr++;
+        }
+        return toc;
+    }
+
+
+
+    template <class T>
+    T pointTriangleCcd(
+        const T* _p,
+        const T* _t0,
+        const T* _t1,
+        const T* _t2,
+        const T* p_new,
+        const T* t0_new,
+        const T* t1_new,
+        const T* t2_new,
+        T eta, T thickness)
+    {
+        T p[3], t0[3], t1[3], t2[3], dp[3], dt0[3], dt1[3], dt2[3];
+        int size = 3 * sizeof(T);
+        memcpy(p, _p, size);
+        memcpy(t0, _t0, size);
+        memcpy(t1, _t1, size);
+        memcpy(t2, _t2, size);
+        SUB(dp, p_new, p);
+        SUB(dt0, t0_new, t0);
+        SUB(dt1, t1_new, t1);
+        SUB(dt2, t2_new, t2);
+        T move[3];
+        for (int i = 0; i < 3; ++i) {
+            move[i] = 0.25 * (dp[i] + dt0[i] + dt1[i] + dt2[i]);
+        }
+
+        //double k = sqrt(DOT(dp, dp));
+        //std::cout << "real div " <<k << std::endl;
+
+        SUB_(dt0, move);
+        SUB_(dt1, move);
+        SUB_(dt2, move);
+        SUB_(dp, move);
+        T disp_mag2_vec[3] = { DOT(dt0,dt0),DOT(dt1,dt1), DOT(dt2,dt2) };
+        T max_disp_mag = sqrt(DOT(dp, dp)) + std::sqrt((std::max)((std::max)(disp_mag2_vec[0], disp_mag2_vec[1]), disp_mag2_vec[2]));
+        if (max_disp_mag == 0)
+            return 1.0;
         T dist2_cur = internal::pointTriangleDistanceUnclassified(p, t0, t1, t2);
         T dist_cur = std::sqrt(dist2_cur);
         T gap = eta * (dist2_cur - thickness * thickness) / (dist_cur + thickness);
@@ -46,8 +180,9 @@ namespace CCD {
         int itr = 0;
 
         T ori_dist2_cur = dist2_cur;
-        
+
         double dis_recrod;
+        //std::cout << "=== "<<k-max_disp_mag << std::endl;
 
         while (true) {
             T toc_lower_bound = (1.0 - eta) * (dist2_cur - thickness * thickness) / ((dist_cur + thickness) * max_disp_mag);
@@ -60,23 +195,31 @@ namespace CCD {
 
             dist2_cur = internal::pointTriangleDistanceUnclassified(p, t0, t1, t2);
             dist_cur = std::sqrt(dist2_cur);
+
+
+            //std::cout << "toc_lower_bound " <<max_disp_mag<<" "<<  toc_lower_bound << " " << dist2_cur << std::endl;
+            //std::cout << _p[1] - t0_new[1] << " " << p_new[1] << " " << p[1] - t0[1] << std::endl;
+
             if (dist2_cur == 0.0) {
-                std::cout << "point triangle distance " << internal::pointTriangleDistance(p, t0, t1, t2) << std::endl;;
-                std::cout << "PT CCD distance equals zero, warning "<< itr <<std::endl;
+               
+                //std::cout << internal::pointTriangleDistanceUnclassified(p, t0, t1, t2)<<" "<< internal::pointTriangleDistanceType(p, t0, t1, t2) << std::endl;
+                std::cout << "point triangle distance " <<std::endl;// internal::pointTriangleDistance(p, t0, t1, t2) << 
+                std::cout << "PT CCD distance equals zero, warning " << itr << std::endl;
+                //pointTriangleCcdTest(_p, _t0, _t1, _t2, p_new, t0_new, t1_new, t2_new, eta, thickness);
                 //std::cout<<
                 //std::cout << toc_lower_bound << std::endl;
 
                 break;
             }
 
-            if ((toc && ((dist2_cur - thickness * thickness) / (dist_cur + thickness) < gap))|| itr > 500) {// || (
-               // std::cout << toc<<" "<< toc_lower_bound<<" "<< dist_cur - thickness<<" "<<gap << std::endl;
+            if ((toc && ((dist2_cur - thickness * thickness) / (dist_cur + thickness) < gap))) {// || (
+                // std::cout << toc<<" "<< toc_lower_bound<<" "<< dist_cur - thickness<<" "<<gap << std::endl;
                 break;
             }
             toc += toc_lower_bound;
 
             if (toc < 0.0) {
-                std::cout << "warning: the vt distance is less than the thickness "<< dis_recrod<<" "<< dist2_cur - thickness * thickness <<" "<<thickness << std::endl;
+                std::cout << "warning: the vt distance is less than the thickness " << dis_recrod << " " << dist2_cur - thickness * thickness << " " << thickness << std::endl;
                 return 0.0;
             }
 
@@ -84,21 +227,11 @@ namespace CCD {
                 return 1.0;
             }
             itr++;
-
-            //if (itr > 500) {
-            //    std::cout <<"toc "<< toc << " " << toc_lower_bound<<" "<< (dist2_cur - thickness * thickness) / (dist_cur + thickness)<<" "<<gap << std::endl;
-            //    std::cout <<"velocity "<< max_disp_mag<<" "<<ori_dist2_cur << std::endl;
-            //    std::cout << (1 - eta) * (ori_dist2_cur - thickness * thickness) / ((sqrt(ori_dist2_cur) + thickness) * max_disp_mag) << std::endl;
-
-            //    //std::cout << p[0] << " " << p[1] << " " << p[2] << std::endl;
-            //    //std::cout << t0[0] << " " << t0[1] << " " << t0[2] << std::endl;
-            //    //std::cout << t1[0] << " " << t1[1] << " " << t1[2] << std::endl;
-            //    //std::cout << t2[0] << " " << t2[1] << " " << t2[2] << std::endl;
-            //}
-
         }
         return toc;
     }
+
+   
 
     //template <class T>
     //T pointTriangleCcdPrint(
