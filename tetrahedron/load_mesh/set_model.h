@@ -19,7 +19,8 @@ public:
 	RegularizationInfo regularization_info;
 	void load(std::string& path, int index, bool collider);
 	void regularization(int obj_index,
-		std::array<double, 3>& translation_info, double& resize_scaler, std::array<double, 3>& rotate_angle);
+		std::array<double, 3>& translation_info, double& resize_scaler, 
+		std::array<double, 3>& rotate_angle, bool is_collider);
 	void getAABB();
 private:
 

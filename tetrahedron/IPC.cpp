@@ -14,7 +14,7 @@ IPC::IPC()
 
 	perform_collision = true;
 
-	velocity_damp = 0.995;
+	velocity_damp = 0.99;
 	energy_converge_ratio = 1e-3;
 
 	min_inner_iteration = 4;
@@ -28,6 +28,8 @@ IPC::IPC()
 
 	second_order_constraint.solve_exact_ARAP_hessian = false;
 	time_step = 0.01;
+
+	testComputeHessian();
 
 }
 
@@ -54,13 +56,15 @@ void IPC::setForIPC(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahe
 	//setHessian();
 	this->floor = floor;
 
-	collision.common_hessian = &common_hessian;
-	if (perform_collision) {
-		collision.inner_iteration_number = &inner_iteration_number;
-		collision.initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio, IPC_, false);
-		collision.setCollisionFreeVertex(&record_collision_free_vertex_position_address, &record_vertex_position);
-		collision.inner_itr_num_standard = &inner_itr_num_standard;
-		collision.min_collision_time = &min_collision_time;
+	if (!not_initial_collision) {
+		collision->common_hessian = &common_hessian;
+		if (perform_collision) {
+			collision->inner_iteration_number = &inner_iteration_number;
+			collision->initial(cloth, collider, tetrahedron, thread, floor, tolerance_ratio, IPC_, false);
+			collision->setCollisionFreeVertex(&record_collision_free_vertex_position_address, &record_vertex_position);
+			collision->inner_itr_num_standard = &inner_itr_num_standard;
+			collision->min_collision_time = &min_collision_time;
+		}
 	}
 }
 
@@ -106,7 +110,7 @@ bool IPC::convergeCondition(unsigned int iteration_num, bool for_warm_start, dou
 void IPC::initialDHatTolerance(double ave_edge_length)
 {
 	if (perform_collision) {
-		collision.initialDHatTolerance(ave_edge_length);
+		collision->initialDHatTolerance(ave_edge_length);
 	}
 }
 
@@ -138,34 +142,43 @@ void IPC::updateTetrahedronAnchorVertices()
 
 void IPC::IPC_solve()
 {
+	std::cout << vertex_position[0][0][1] - vertex_position_collider[0][0][1] << std::endl;
+
 	updateCollisionFreePosition();
 	setPosPredict();
 	updateSn();
 	iteration_number = 0;
 	if (perform_collision) {
-		collision.initialPairRecordInfo();
+		collision->initialPairRecordInfo();
 	}
 	outer_itr_num = 0;
 	displacement_satisfied = false;
 	inner_itr_num_standard = min_inner_iteration;
 	inner_iteration_number = 0;
 	if (perform_collision) {
-		collision.collisionCulling();
+		collision->collisionCulling();
 		if (add_pair_by_distance) {
-			collision.globalCollisionTime();
+			collision->globalCollisionTime();
 		}
 		else {
-			collision.collisionTimeWithPair(false);
+			collision->collisionTimeWithPair(false);
 		}
 		
 		inversionTest();
 		computeCollisionFreePosition();
 		if (add_pair_by_distance) {
-			collision.addPairByDistance();
+			collision->addPairByDistance();
 		}
 		updateCollisionFreePosition();
 	}
 	double ori_energy = computeCurrentEnergy();
+
+	//std::cout << "= " << std::endl;
+	//std::cout<<std::setprecision(10) << vertex_position[0][0][0] << ", " << vertex_position[0][0][1] << ", " << vertex_position[0][0][2] << std::endl;
+	//int* index = triangle_indices_collider[0][845].data();
+	//for (int i = 0; i < 3; ++i) {
+	//	std::cout << std::setprecision(10) << vertex_position_collider[0][index[i]][0] << ", " << vertex_position_collider[0][index[i]][1] << ", " << vertex_position_collider[0][index[i]][2] << std::endl;
+	//}
 
 	while (!convergeCondition(outer_itr_num, false, max_move_standard, outer_max_iteration_number))
 	{
@@ -175,20 +188,20 @@ void IPC::IPC_solve()
 		//solve
 		solveSystem();
 		if (perform_collision) {
-			collision.collisionCulling();
+			collision->collisionCulling();
 			if (add_pair_by_distance) {
-				collision.globalCollisionTime();
+				collision->globalCollisionTime();
 			}
 			else {
-				collision.collisionTimeWithPair(false);
+				collision->collisionTimeWithPair(false);
 			}
 			inversionTest();
 			computeCollisionFreePosition();
 			if (add_pair_by_distance) {
-				collision.addPairByDistance();
+				collision->addPairByDistance();
 			}
 			//line search
-			lineSearch(ori_energy);
+			//lineSearch(ori_energy);
 		}
 		outer_itr_num++;
 	}
@@ -198,6 +211,11 @@ void IPC::IPC_solve()
 	updateRenderNormal();
 
 	updateRenderVertexNormal();
+
+
+	std::cout <<"===== "<< vertex_position[0][0][1] - vertex_position_collider[0][0][1]<<" "<< vertex_position[0][1][1] - vertex_position_collider[0][0][1]
+		<<" "<< vertex_position[0][2][1] - vertex_position_collider[0][0][1] << std::endl;
+
 }
 
 
@@ -251,6 +269,8 @@ double IPC::computeElasticEnergy()
 			if (mass_inv_[indices[j][0]] != 0.0 || mass_inv_[indices[j][1]] != 0.0 || mass_inv_[indices[j][2]] != 0.0 || mass_inv_[indices[j][3]] != 0.0) {
 				tet_energy = NeoHookean::energy(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
 					vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j], volume[j], mu, lambda);
+				//tet_energy = compute_energy.ARAPEnergy(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
+				//	vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j], volume[j], 1e4);
 				energy += tet_energy;
 				//if (!NeoHookean::testDeterminent(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
 				//	vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j])) {
@@ -293,34 +313,34 @@ double IPC::computeBarrierEnergy()
 		stiffness = cloth->data()[0].collision_stiffness[0];
 	}
 	//vt
-	energy += computeVTEnergy(&collision.record_vt_pair_sum_all_thread, triangle_indices.data(), vertex_position.data(), vertex_position.data(),
-		stiffness, collision.record_vt_pair_d_hat.data(),
-		0, collision.record_vt_pair_sum_all_thread.size());
+	energy += computeVTEnergy(&collision->record_vt_pair_sum_all_thread, triangle_indices.data(), vertex_position.data(), vertex_position.data(),
+		stiffness, collision->record_vt_pair_d_hat.data(),
+		0, collision->record_vt_pair_sum_all_thread.size());
 	//ee
-	energy += computeEEEnergy(&collision.record_ee_pair_sum_all_thread, edge_vertices.data(), edge_vertices.data(),
-		vertex_position.data(), vertex_position.data(), stiffness, collision.record_ee_pair_d_hat.data(),
+	energy += computeEEEnergy(&collision->record_ee_pair_sum_all_thread, edge_vertices.data(), edge_vertices.data(),
+		vertex_position.data(), vertex_position.data(), stiffness, collision->record_ee_pair_d_hat.data(),
 		0,
-		collision.record_ee_pair_sum_all_thread.size());
+		collision->record_ee_pair_sum_all_thread.size());
 	if (has_collider) {
 		//vt_c
-		energy += computeVTEnergy(&collision.record_vt_collider_pair_sum_all_thread, triangle_indices_collider.data(), vertex_position.data(), vertex_position_collider.data(),
-			stiffness, collision.record_vt_collider_pair_d_hat.data(),
+		energy += computeVTEnergy(&collision->record_vt_collider_pair_sum_all_thread, triangle_indices_collider.data(), vertex_position.data(), vertex_position_collider.data(),
+			stiffness, collision->record_vt_collider_pair_d_hat.data(),
 			0,
-			collision.record_vt_collider_pair_sum_all_thread.size());
+			collision->record_vt_collider_pair_sum_all_thread.size());
 		//tv_c
-		energy += computeVTEnergy(&collision.record_tv_collider_pair_sum_all_thread, triangle_indices.data(), vertex_position_collider.data(), vertex_position.data(),
-			stiffness, collision.record_tv_collider_pair_d_hat.data(),
+		energy += computeVTEnergy(&collision->record_tv_collider_pair_sum_all_thread, triangle_indices.data(), vertex_position_collider.data(), vertex_position.data(),
+			stiffness, collision->record_tv_collider_pair_d_hat.data(),
 			0,
-			collision.record_tv_collider_pair_sum_all_thread.size());
+			collision->record_tv_collider_pair_sum_all_thread.size());
 		//ee c
-		energy += computeEEEnergy(&collision.record_ee_collider_pair_sum_all_thread, edge_vertices.data(), collider_edge_vertices.data(),
-			vertex_position.data(), vertex_position_collider.data(), stiffness, collision.record_ee_collider_pair_d_hat.data(),
+		energy += computeEEEnergy(&collision->record_ee_collider_pair_sum_all_thread, edge_vertices.data(), collider_edge_vertices.data(),
+			vertex_position.data(), vertex_position_collider.data(), stiffness, collision->record_ee_collider_pair_d_hat.data(),
 			0,
-			collision.record_ee_collider_pair_sum_all_thread.size());
+			collision->record_ee_collider_pair_sum_all_thread.size());
 	}
 	if (floor->exist) {
-		energy += computeFloorEnergy(0, stiffness, &collision.record_vertex_collide_with_floor_sum_all_thread, 0,
-			collision.record_vertex_collide_with_floor_sum_all_thread.size());
+		energy += computeFloorEnergy(0, stiffness, &collision->record_vertex_collide_with_floor_sum_all_thread, 0,
+			collision->record_vertex_collide_with_floor_sum_all_thread.size());
 	}
 	return energy;
 }
@@ -332,14 +352,14 @@ double IPC::computeFloorEnergy(int type, double collision_stiffness, std::vector
 	double energy = 0.0;
 	if (type == 0) {
 		for (auto i = start_; i < end_; i += 2) {
-			energy += compute_energy.computeFloorBarrierEnergy(vertex_position[*i][*(i + 1)][floor->dimension], collision.record_vertex_collide_with_floor_d_hat[*i][*(i + 1)],
+			energy += compute_energy.computeFloorBarrierEnergy(vertex_position[*i][*(i + 1)][floor->dimension], collision->record_vertex_collide_with_floor_d_hat[*i][*(i + 1)],
 				collision_stiffness, floor->value);
 		}
 	}
 	else {
 		for (auto i = start_; i < end_; i += 2) {
-			if (collision.vertex_belong_to_color_group[*i][*(i + 1)]) {
-				energy += compute_energy.computeFloorBarrierEnergy(vertex_position[*i][*(i + 1)][floor->dimension], collision.record_vertex_collide_with_floor_d_hat[*i][*(i + 1)],
+			if (collision->vertex_belong_to_color_group[*i][*(i + 1)]) {
+				energy += compute_energy.computeFloorBarrierEnergy(vertex_position[*i][*(i + 1)][floor->dimension], collision->record_vertex_collide_with_floor_d_hat[*i][*(i + 1)],
 					collision_stiffness, floor->value);
 			}
 		}
@@ -415,20 +435,20 @@ void IPC::lineSearch(double& ori_energy)
 	if (perform_collision) {
 		current_energy = computeCurrentEnergy();
 		if (current_energy > energy_converge_standard) {
-			double record_collision_time = collision.collision_time;
+			double record_collision_time = collision->collision_time;
 			if (current_energy > ori_energy) {
 				if (record_collision_time < 1e-6) {
 					std::cout << "global ccd original record_collision_time is too small " << ori_energy << " " << current_energy << std::endl;
 				}
 			}
-			collision.collision_time = 0.5;
+			collision->collision_time = 0.5;
 			int itr_num = 0;
 			while (current_energy > ori_energy)
 			{
 				record_collision_time *= 0.5;
 				computeCollisionFreePosition();
 				if (add_pair_by_distance) {
-					collision.addPairByDistance();
+					collision->addPairByDistance();
 				}
 				itr_num++;
 				if (itr_num > 6) {
@@ -442,24 +462,38 @@ void IPC::lineSearch(double& ori_energy)
 	}
 }
 
-void IPC::solveSystem()
+
+
+void IPC::computeHessian()
 {
 	b.setZero();
 	hessian_nnz.resize(record_size_of_inertial_triplet);
-
-	setNeoHookean();
 	if (perform_collision) {
 		setCollisionHessian();
 	}
+	Hessian.setFromTriplets(hessian_nnz.begin()+ record_size_of_inertial_triplet, hessian_nnz.end());
+
+	//std::cout << b.transpose() << std::endl;
+	//MatrixXd k = Hessian;
+	//std::cout << k << std::endl;
+	setNeoHookean();
+	//std::cout << b.transpose() << std::endl;
 	setInertialGrad(b.data());
 	Hessian.setFromTriplets(hessian_nnz.begin(), hessian_nnz.end());
+
+}
+
+void IPC::solveSystem()
+{
+	computeHessian();
 	global_llt.compute(Hessian);
 	//std::cout << "result " << std::endl;
 	//std::cout << delta_x.transpose() << std::endl;
 	//std::cout << Hessian << std::endl;
-
 	delta_x = global_llt.solve(b);
 	max_displacement = delta_x.lpNorm<Eigen::Infinity>();
+
+	std::cout <<"++++ "<< delta_x.segment(0, 3).transpose() << std::endl;
 
 	//double k = 1.0;
 	//for (int i = 0; i < mesh_struct[1]->vertex_position.size(); ++i) {
@@ -581,7 +615,7 @@ void IPC::computeVelocity()
 
 void IPC::computeCollisionFreePosition()
 {
-	double collision_time = collision.collision_time;
+	double collision_time = collision->collision_time;
 
 	if (collision_time == 1.0) {
 		return;
@@ -680,8 +714,8 @@ void IPC::inversionTest()
 		std::cout << "inversion test time inversionTest() equals 0" << std::endl;
 	}
 
-	if (collision.collision_time > collision_time) {
-		collision.collision_time = collision_time;
+	if (collision->collision_time > collision_time) {
+		collision->collision_time = collision_time;
 	}
 }
 
@@ -719,22 +753,22 @@ void IPC::setPosPredict()
 void IPC::setCollisionHessian()
 {
 	//vt
-	computeVTHessian(0, collision.record_vt_pair_sum_all_thread.size(), collision.record_vt_pair_sum_all_thread.data(),
-		collision.record_vt_pair_d_hat.data(), 0, b.data(), hessian_nnz);
+	computeVTHessian(0, collision->record_vt_pair_sum_all_thread.size(), collision->record_vt_pair_sum_all_thread.data(),
+		collision->record_vt_pair_d_hat.data(), 0, b.data(), hessian_nnz);
 	//ee
-	computeEEHessian(0, collision.record_ee_pair_sum_all_thread.size(), collision.record_ee_pair_sum_all_thread.data(),
-		collision.record_ee_pair_d_hat.data(), b.data(), hessian_nnz,false);
+	computeEEHessian(0, collision->record_ee_pair_sum_all_thread.size(), collision->record_ee_pair_sum_all_thread.data(),
+		collision->record_ee_pair_d_hat.data(), b.data(), hessian_nnz,false);
 
 	if (has_collider) {
 		//tv_c
-		computeVTHessian(0, collision.record_tv_collider_pair_sum_all_thread.size(), collision.record_tv_collider_pair_sum_all_thread.data(),
-			collision.record_tv_collider_pair_d_hat.data(), 2, b.data(), hessian_nnz);
+		computeVTHessian(0, collision->record_tv_collider_pair_sum_all_thread.size(), collision->record_tv_collider_pair_sum_all_thread.data(),
+			collision->record_tv_collider_pair_d_hat.data(), 2, b.data(), hessian_nnz);
 		//ee_c
-		computeEEHessian(0, collision.record_ee_collider_pair_sum_all_thread.size(), collision.record_ee_collider_pair_sum_all_thread.data(),
-			collision.record_ee_collider_pair_d_hat.data(), b.data(), hessian_nnz, true);
+		computeEEHessian(0, collision->record_ee_collider_pair_sum_all_thread.size(), collision->record_ee_collider_pair_sum_all_thread.data(),
+			collision->record_ee_collider_pair_d_hat.data(), b.data(), hessian_nnz, true);
 		//vt_c
-		computeVTHessian(0, collision.record_vt_collider_pair_sum_all_thread.size(), collision.record_vt_collider_pair_sum_all_thread.data(),
-			collision.record_vt_collider_pair_d_hat.data(), 1, b.data(), hessian_nnz);
+		computeVTHessian(0, collision->record_vt_collider_pair_sum_all_thread.size(), collision->record_vt_collider_pair_sum_all_thread.data(),
+			collision->record_vt_collider_pair_d_hat.data(), 1, b.data(), hessian_nnz);
 	}
 	if (floor->exist) {
 		computeFloorHessian();
@@ -754,8 +788,8 @@ void IPC::computeFloorHessian()
 	else {
 		stiffness = cloth->data()[0].collision_stiffness[0];
 	}
-	for (auto i = collision.record_vertex_collide_with_floor_sum_all_thread.begin(); i < collision.record_vertex_collide_with_floor_sum_all_thread.end(); i+=2) {
-		if (collision.computeFloorHessian(collision.d_hat_2, stiffness, floor_value, &hessian, &grad,
+	for (auto i = collision->record_vertex_collide_with_floor_sum_all_thread.begin(); i < collision->record_vertex_collide_with_floor_sum_all_thread.end(); i+=2) {
+		if (collision->computeFloorHessian(collision->d_hat_2, stiffness, floor_value, &hessian, &grad,
 			vertex_position[*i][*(i + 1)][floor_dimension], true)) {
 			global_index = vertex_index_prefix_sum_obj[*i] + *(i + 1);
 			hessian_nnz.emplace_back(Triplet<double>(3 * global_index + floor->dimension,
@@ -827,6 +861,33 @@ void IPC::computeEEHessian(int start, int end, unsigned int* pair, double* d_hat
 	}
 }
 
+
+void IPC::testComputeHessian()
+{
+	//double p[3] = { 0.0998805,-1.94943,0.000130662 };
+	//double t0[3] = { 0.073077,-1.95,-0.073077 };
+	//double t1[3] = { 0.073077,-1.95,0.073077 };
+	//double t2[3] = { 0.219231,-1.95,0.073077 };
+	// 
+	double p[3] = { -0.05,-1.9497,1.05224e-08 };
+	double t0[3] = { -0.073077,-1.95,-0.073077 };
+	double t1[3] = { -0.073077,-1.95,0.073077 };
+	double t2[3] = { 0.073077,-1.95,0.073077 };
+
+	MatrixXd he;
+	VectorXd gra;
+	int hessian_record_index[5] = { 0,-1,-1,-1,-1 };
+	if (second_order_constraint.computeBarrierVTGradientHessian(he, gra, p, t0,
+		t1, t2, 1e-6, hessian_record_index,
+		1e8, true, 1)) {
+		std::cout << he.block<3,3>(0,0) << std::endl;
+		std::cout << gra.segment(0,3).transpose() << std::endl;
+		std::cout << hessian_record_index[0] << " " << std::endl;
+	}
+
+}
+
+
 void IPC::computeVTHessian(int start, int end, unsigned int* pair, double* d_hat, int type, double* grad_, 
 	std::vector<Triplet<double>>& hessian)
 {
@@ -874,6 +935,11 @@ void IPC::computeVTHessian(int start, int end, unsigned int* pair, double* d_hat
 			if (second_order_constraint.computeBarrierVTGradientHessian(Hessian, grad, vertex_position[pair[i]][vertex_index].data(), vertex_position_collider[obj_2][triangle_vertex[0]].data(),
 				vertex_position_collider[obj_2][triangle_vertex[1]].data(), vertex_position_collider[obj_2][triangle_vertex[2]].data(), d_hat[i >> 2],
 				hessian_record_index, stiffness, true, type)) {
+
+				//std::cout << pair[i + 1] << " " << pair[i + 3] << std::endl;
+				//std::cout << grad.segment(0, 3).transpose() << std::endl;
+				//std::cout << Hessian.block<3, 3>(0, 0) << std::endl;
+
 				//std::cout << "===" << std::endl;
 				//std::cout << grad.transpose() << std::endl;
 				//std::cout << Hessian << std::endl;
@@ -1047,10 +1113,16 @@ void IPC::computeARAPHessian(double* vertex_position_0, double* vertex_position_
 {
 	MatrixXd Hessian; VectorXd grad(12);
 	Hessian.resize(12, 12);
-
 	NeoHookean::gradientHessianMPM(vertex_position_0, vertex_position_1,
 		vertex_position_2, vertex_position_3,
 		A, volume, mu, lambda, grad, Hessian);
+
+	//MatrixXd Hessian; VectorXd grad(12);
+	//Hessian.resize(4, 4);
+	//second_order_constraint.setARAPHessian(Hessian,1e4, A, volume);
+	//second_order_constraint.setARAPGrad(grad, vertex_position_0, vertex_position_1,
+	//		vertex_position_2, vertex_position_3, 1e4, A, volume);
+
 
 	for (int i = 0; i < 4; ++i) {
 		if (is_unfixed[i]) {
@@ -1060,7 +1132,10 @@ void IPC::computeARAPHessian(double* vertex_position_0, double* vertex_position_
 						for (int n = 0; n < 3; ++n) {
 							hessian_nnz->emplace_back(Triplet<double>(vertex_index[j]+n, vertex_index[i]+m, Hessian(j*3+n, i*3+m)));
 						}
-					}				
+					}	
+					//hessian_nnz->emplace_back(Triplet<double>(vertex_index[j] + 0, vertex_index[i] + 0, Hessian(j, i)));
+					//hessian_nnz->emplace_back(Triplet<double>(vertex_index[j] + 1, vertex_index[i] + 1, Hessian(j, i)));
+					//hessian_nnz->emplace_back(Triplet<double>(vertex_index[j] + 2, vertex_index[i] + 2, Hessian(j, i)));
 				}
 			}
 			b[vertex_index[i]] += grad[3 * i];
@@ -1298,7 +1373,7 @@ void IPC::reorganzieDataOfObjects()
 
 	}
 
-	collision.indicate_if_involved_in_last_color = record_vertex_position_num_every_thread.data();
+	collision->indicate_if_involved_in_last_color = record_vertex_position_num_every_thread.data();
 	//collision_compare.indicate_if_involved_in_last_color = record_vertex_position_num_every_thread.data();
 	std::cout << "xpbd ipc reorganzieDataOfObjects " << vertex_num_on_surface_prefix_sum[1] << std::endl;
 }

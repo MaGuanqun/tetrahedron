@@ -45,7 +45,7 @@ public:
 	void XPBD_IPC_Block_Solve();
 
 	void XPBD_IPC_Position_Solve();//solve collision as four position constraint
-	Collision collision;
+	Collision* collision;
 
 	//CollisionCompare collision_compare;
 
@@ -59,6 +59,8 @@ public:
 	unsigned int max_iteration_number;
 	double velocity_damp;
 	unsigned int* sub_step_per_detection;
+
+	void computeHessian();
 
 	bool* has_force;
 	void computeCollisionFreePosition();
@@ -268,7 +270,7 @@ private:
 
 	std::vector<unsigned int*>tet_index_begin_per_thread;//size is total object num
 
-
+	bool not_initial_collision = false;
 
 	void reorganzieDataOfObjects();
 	unsigned int total_obj_num;
@@ -913,6 +915,8 @@ private:
 	void updatePos();
 
 	void computeFloorHessian();
+
+	void testComputeHessian();
 
 };
 

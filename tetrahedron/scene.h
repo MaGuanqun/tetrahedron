@@ -88,6 +88,9 @@ public:
 	Camera* camera;
 
 private:
+
+	Collision collision;
+
 	double cloth_density;
 	double tetrahedron_density;
 	unsigned int use_method;

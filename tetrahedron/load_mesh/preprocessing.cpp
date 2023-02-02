@@ -30,12 +30,15 @@ void Preprocessing::load_all_model(std::vector<std::string>& body_path, std::vec
 
 	for (int i = 0; i < object_path.size(); ++i) {
 		simulation_model[i].regularization(i,
-			translation_info[i], resize_scaler[i], rotate_angle[i]);
+			translation_info[i], resize_scaler[i], rotate_angle[i],false);
 	}
 	if (!body_path.empty()) {
 		for (int i = 0; i < body_path.size(); ++i) {
+			std::cout << collider_translation_info[i][0] << " " << collider_translation_info[i][1] << " " << collider_translation_info[i][2] << std::endl;
+			std::cout << collider_resize_scaler[i] << std::endl;
+
 			collider_model[i].regularization(i,
-				collider_translation_info[i], collider_resize_scaler[i], collider_rotate_angle[i]);
+				collider_translation_info[i], collider_resize_scaler[i], collider_rotate_angle[i],true);
 		}
 	}
 

@@ -1727,8 +1727,8 @@ void Collision::collisionCulling()
 		//spatial_hashing.vertex_triangle_pair[j][0] = 0;
 		//spatial_hashing.edge_edge_pair[j][0] = 0;
 		//spatial_hashing.vertex_obj_triangle_collider_pair[j][0] = 0;
-		//spatial_hashing.edge_edge_pair_collider[j][0] = 0;
-		//spatial_hashing.vertex_collider_triangle_obj_pair[j][0] = 0;
+		spatial_hashing.edge_edge_pair_collider[j][0] = 0;
+		spatial_hashing.vertex_collider_triangle_obj_pair[j][0] = 0;
 	}
 	//spatial_hashing.testColliderPair();
 
@@ -9135,7 +9135,7 @@ void Collision::edgeEdgeCollisionTimePair(int start_pair_index,
 		}
 
 
-		if (time < 1.0) {//  || current_distance < d_hat_2
+		if (time < 1.0 || current_distance < d_hat_2) {//  
 			actual_ele_0 = edge_0_index_prefix_sum[pair[i + 1]] + pair[i];
 			actual_ele_1 = edge_1_index_prefix_sum[pair[i + 3]] + pair[i + 2];
 			hash_value = ((actual_ele_0 * P1) ^ (P2 * actual_ele_1)) % pair_hash_table_size;
@@ -9156,10 +9156,10 @@ void Collision::edgeEdgeCollisionTimePair(int start_pair_index,
 			//}
 			//std::cout << "ee " << pair[i] << " " << pair[i + 2]<<" "<<i/4<<" " << time<<" "<< indices_0[0]<<" "<< indices_0[1] << std::endl;
 
+
 			if (time < collision_time) {
 				collision_time = time;
 			}
-
 
 			for (unsigned int j = 0;j< hash_size_record[hash_value]; j += 3) {
 				if (address[j] == actual_ele_0 && address[j + 1] == actual_ele_1) {
@@ -9170,6 +9170,7 @@ void Collision::edgeEdgeCollisionTimePair(int start_pair_index,
 					goto not_add_value_ee;
 				}
 			}
+
 
 		
 			record_new_in_hash->emplace_back(hash_value);
@@ -9300,7 +9301,7 @@ void Collision::vertexTriangleCollisionTimePair(int start_pair_index,
 		//	}
 		//}
 
-		if (time < 1.0){// || ||  current_distance < d_hat_2
+		if (time < 1.0 || current_distance < d_hat_2){// ||  
 			//std::cout << "+++ " << pair[i]<<" "<< vertex_position_0[pair[i + 1]][pair[i]][1]<<" "<< vertex_position_1[pair[i + 3]][indices[2]][1] << " " << time << std::endl;
 			//std::cout <<precisou vertex_position_1[pair[i + 3]][indices[2]][1]<< std::endl;
 
@@ -9320,10 +9321,10 @@ void Collision::vertexTriangleCollisionTimePair(int start_pair_index,
 				//	std::cout << vertex_position_1[pair[i + 3]][indices[1]][0] << ", " << vertex_position_1[pair[i + 3]][indices[1]][1] << ", " << vertex_position_1[pair[i + 3]][indices[1]][2] << std::endl;
 				//	std::cout << vertex_position_1[pair[i + 3]][indices[2]][0] << ", " << vertex_position_1[pair[i + 3]][indices[2]][1] << ", " << vertex_position_1[pair[i + 3]][indices[2]][2] << std::endl;
 				//}
+
 			if (time < collision_time) {
 				collision_time = time;
 			}
-		
 
 			for (unsigned int j = 0; j < hash_size_record[hash_value]; j += 3) {
 				if (address[j] == actual_ele_0 && address[j + 1] == actual_ele_1) {

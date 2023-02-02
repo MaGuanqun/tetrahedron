@@ -6,7 +6,7 @@ collider
 .\model\tank.obj
 stiffness
 20000 50000 1 0 0 0 10000 0.35 
-1e+8 20000 20000 20 0 0 0 0 
+1e+10 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
 0 
@@ -25,13 +25,13 @@ floor_dimension
 floor_value
 -0.55
 translation
-0 -0.4 0
+0 1.551 0
 size_scaler
 0.1 
 rotation_angle
 0 0 0
 collider_translation
-0 0 0
+0 2 0
 collider_size_scaler
 1 
 collider_rotation_angle

@@ -6,7 +6,7 @@ collider
 .\model\tank.obj
 stiffness
 2e+05 50000 0 0 0 0 1e+04 0.35
-2e+09 20000 20000 20 0 0 0 0 
+2e+07 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
 0 
@@ -25,7 +25,7 @@ floor_dimension
 floor_value
 -0.55
 translation
-0 1.0 -0.16
+0 0.0 0.16
 size_scaler
 0.3
 rotation_angle
@@ -60,7 +60,7 @@ min inner itr num
 min outer itr num
 3
 displacement standard
-0.0005
+0.0002
 distance record as collision
 0.0
 energy converge standard

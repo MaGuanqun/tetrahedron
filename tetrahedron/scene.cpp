@@ -91,6 +91,11 @@ Scene::Scene()
 	xpbd_ipc.has_force = &read_force;
 	ipc.has_force = &read_force;
 	newton_method.has_force = &read_force;
+
+	ipc.collision = &collision;
+	xpbd_ipc.collision = &collision;
+
+
 }
 
 
@@ -156,12 +161,12 @@ void Scene::saveParameter(std::vector<std::string>& path, std::vector<std::strin
 	case XPBD_IPC_:
 		velocity_damp = xpbd_ipc.velocity_damp;
 		sub_step_per_detection = *xpbd_ipc.sub_step_per_detection;
-		d_hat = xpbd_ipc.collision.d_hat;
+		d_hat = collision.d_hat;
 		local_conv_rate = xpbd_ipc.energy_converge_ratio;
 		min_inner_itr = xpbd_ipc.min_inner_iteration;
 		min_outer_itr = xpbd_ipc.min_outer_iteration;
 		displacement_standard = xpbd_ipc.max_move_standard;
-		distance_record_as_collision = xpbd_ipc.collision.tolerance;
+		distance_record_as_collision = collision.tolerance;
 		max_outer_iteration_num = xpbd_ipc.outer_max_iteration_number;
 		max_inner_iteration_num = xpbd_ipc.max_iteration_number;
 		energy_converge_standard = xpbd_ipc.energy_converge_standard;
@@ -170,12 +175,12 @@ void Scene::saveParameter(std::vector<std::string>& path, std::vector<std::strin
 	case IPC_:
 		velocity_damp = ipc.velocity_damp;
 		sub_step_per_detection = *ipc.sub_step_per_detection;
-		d_hat = ipc.collision.d_hat;
+		d_hat = collision.d_hat;
 		local_conv_rate = ipc.energy_converge_ratio;
 		min_inner_itr = ipc.min_inner_iteration;
 		min_outer_itr = ipc.min_outer_iteration;
 		displacement_standard = ipc.max_move_standard;
-		distance_record_as_collision = ipc.collision.tolerance;
+		distance_record_as_collision = collision.tolerance;
 		max_outer_iteration_num = ipc.outer_max_iteration_number;
 		max_inner_iteration_num = ipc.max_iteration_number;
 		energy_converge_standard = ipc.energy_converge_standard;
@@ -374,13 +379,13 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 			break;
 		case XPBD_IPC_:
 			control_parameter[USE_XPBD_IPC] = true;
-			xpbd_ipc.collision.d_hat = d_hat;
-			xpbd_ipc.collision.d_hat_2 = d_hat * d_hat;
+			collision.d_hat = d_hat;
+			collision.d_hat_2 = d_hat * d_hat;
 			xpbd_ipc.energy_converge_ratio = local_global_conv_rate;
 			xpbd_ipc.min_inner_iteration = min_inner_itr;
 			xpbd_ipc.min_outer_iteration = min_outer_itr;
 			xpbd_ipc.max_move_standard = displacement_standard;
-			xpbd_ipc.collision.tolerance = distance_record_as_collision;
+			collision.tolerance = distance_record_as_collision;
 
 			xpbd_ipc.outer_max_iteration_number = max_outer_itr_num;
 			xpbd_ipc.max_iteration_number = max_inner_itr_num;
@@ -407,13 +412,13 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 			break;
 		case IPC_:
 			control_parameter[USE_IPC] = true;
-			ipc.collision.d_hat = d_hat;
-			ipc.collision.d_hat_2 = d_hat * d_hat;
+			collision.d_hat = d_hat;
+			collision.d_hat_2 = d_hat * d_hat;
 			ipc.energy_converge_ratio = local_global_conv_rate;
 			ipc.min_inner_iteration = min_inner_itr;
 			ipc.min_outer_iteration = min_outer_itr;
 			ipc.max_move_standard = displacement_standard;
-			ipc.collision.tolerance = distance_record_as_collision;
+			collision.tolerance = distance_record_as_collision;
 
 			ipc.outer_max_iteration_number = max_outer_itr_num;
 			ipc.max_iteration_number = max_inner_itr_num;
@@ -463,14 +468,14 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 		project_dynamic.collision.friction_coe = friction_coe;
 	}
 	else if (use_method == XPBD_IPC_) {
-		xpbd_ipc.collision.friction_coe = friction_coe;
+		collision.friction_coe = friction_coe;
 
 		xpbd_ipc.sub_step_per_detection = sub_step_per_detection;
 
 		//xpbd_ipc.collision_compare.friction_coe = friction_coe;
 	}
 	else if (use_method == IPC_) {
-		ipc.collision.friction_coe = friction_coe;
+		collision.friction_coe = friction_coe;
 
 		ipc.sub_step_per_detection = sub_step_per_detection;
 	}
@@ -654,7 +659,7 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 
 	if (control_parameter[ONLY_COLLISION_TEST]) {
 		test_draw_collision.initial(&cloth, &collider, &tetrahedron, &thread, &floor, tolerance_ratio, &project_dynamic.collision,
-			&xpbd.collision, &newton_method.collision,&xpbd_ipc.collision, use_method);
+			&xpbd.collision, &newton_method.collision,xpbd_ipc.collision, use_method);
 	}
 
 	setAveEdgeLength();
@@ -1650,6 +1655,8 @@ void Scene::setAveEdgeLength()
 	}
 
 	ave_edge_length = edge_length_temp / (double)edge_size;
+
+	std::cout << "test shouw " << std::endl;
 	//if (!only_test_collision) {
 		switch (use_method)
 		{
@@ -1672,6 +1679,7 @@ void Scene::setAveEdgeLength()
 			ipc.initialDHatTolerance(ave_edge_length);
 			break;
 		}
+		std::cout << "test " << std::endl;
 	//}
 }
 

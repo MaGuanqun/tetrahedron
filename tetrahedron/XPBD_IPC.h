@@ -17,6 +17,7 @@
 #include"./compute_energy.h"
 
 #include"collision/collision_compare.h"
+#include"IPC.h"
 
 using namespace Eigen;
 using namespace denseOperation;
@@ -24,6 +25,9 @@ using namespace denseOperation;
 class XPBD_IPC
 {
 public:
+
+	IPC ipc;
+
 	XPBD_IPC();
 	double time_step;
 	double gravity_;
@@ -50,7 +54,7 @@ public:
 	void XPBD_IPC_Block_Solve();
 
 	void XPBD_IPC_Position_Solve();//solve collision as four position constraint
-	Collision collision;
+	Collision* collision;
 
 	//CollisionCompare collision_compare;
 
@@ -275,6 +279,8 @@ private:
 	void setColorNum();
 
 	void solveNewtonCD_tetBlock();
+
+	void compareHessianWithIPC();
 
 	int max_tet_color_num;//the max number of different objects tet color
 

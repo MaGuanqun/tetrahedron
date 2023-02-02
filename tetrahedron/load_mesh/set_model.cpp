@@ -114,47 +114,71 @@ void SetModel::getAABB()
 }
 
 void SetModel::regularization(int obj_index, 
-	std::array<double, 3>& translation_info, double& resize_scaler, std::array<double, 3>& rotate_angle)
+	std::array<double, 3>& translation_info, double& resize_scaler, std::array<double, 3>& rotate_angle, bool is_collider)
 {
 	double compute_center[3] = {0.0,0.0,0.0};
 
-	for (auto i = ori_mesh.vertices.begin(); i < ori_mesh.vertices.end(); ++i) {
-		compute_center[0] += i->data()[0];
-		compute_center[1] += i->data()[1];
-		compute_center[2] += i->data()[2];
-	}
-	compute_center[0] /= (double)ori_mesh.vertices.size();
-	compute_center[1] /= (double)ori_mesh.vertices.size();
-	compute_center[2] /= (double)ori_mesh.vertices.size();
+	//for (auto i = ori_mesh.vertices.begin(); i < ori_mesh.vertices.end(); ++i) {
+	//	compute_center[0] += i->data()[0];
+	//	compute_center[1] += i->data()[1];
+	//	compute_center[2] += i->data()[2];
+	//}
+	//compute_center[0] /= (double)ori_mesh.vertices.size();
+	//compute_center[1] /= (double)ori_mesh.vertices.size();
+	//compute_center[2] /= (double)ori_mesh.vertices.size();
+	getAABB();
+	compute_center[0] = 0.5 * (aabb[0] + aabb[3]);
+	compute_center[1] = 0.5 * (aabb[1] + aabb[4]);
+	compute_center[2] = 0.5 * (aabb[2] + aabb[5]);
+
 
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
 		SUB_(ori_mesh.vertices[i], compute_center);
 	}
 
-	double coe = resize_scaler;
+	//std::cout << "sho pos " << ori_mesh.vertices[0][0] << std::endl;
+
+
+	double k = (std::max)((std::max)(aabb[3] - aabb[0], aabb[4] - aabb[1]), aabb[5] - aabb[2]);
+
+	double coe = resize_scaler/k;
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
 		MULTI_(ori_mesh.vertices[i], coe);
 	}
+	//std::cout << "sho pos " << ori_mesh.vertices[0][0] << std::endl;
 
+	//double rotation_matrix[9];
+	//double axe[3][3] = { { 1,0,0 },{ 0,1,0 },{ 0,0,1 } };
+	//double pos[3];
 
-	double rotation_matrix[9];
-	double axe[3][3] = { { 1,0,0 },{ 0,1,0 },{ 0,0,1 } };
-	double pos[3];
-
-	for (int i = 0; i < 3; ++i) {
-		rotateAroundVectorRowMajor(rotation_matrix, axe[i], rotate_angle[i] / 180.0 * M_PI);
-		for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
-			pos[0] = DOT(rotation_matrix, ori_mesh.vertices[i]);
-			pos[1] = DOT((rotation_matrix + 3), ori_mesh.vertices[i]);
-			pos[2] = DOT((rotation_matrix + 6), ori_mesh.vertices[i]);
-			memcpy(ori_mesh.vertices[i].data(), pos, 24);
-		}
-	}
+	//for (int i = 0; i < 3; ++i) {
+	//	rotateAroundVectorRowMajor(rotation_matrix, axe[i], rotate_angle[i] / 180.0 * M_PI);
+	//	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
+	//		pos[0] = DOT(rotation_matrix, ori_mesh.vertices[i]);
+	//		pos[1] = DOT((rotation_matrix + 3), ori_mesh.vertices[i]);
+	//		pos[2] = DOT((rotation_matrix + 6), ori_mesh.vertices[i]);
+	//		memcpy(ori_mesh.vertices[i].data(), pos, 24);
+	//	}
+	//}
 	
+	
+
 	//SUM_(compute_center, translation_info);
 	for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
 		SUM_(ori_mesh.vertices[i], translation_info);
 	}
+
+
+	if (!is_collider) {
+		for (int i = 0; i < ori_mesh.vertices.size(); ++i) {
+			ori_mesh.vertices[i][0] += 0.1 / 6.0;
+		}
+	}
+
+	std::cout <<"sho pos "<< ori_mesh.vertices[0][0] << " " << ori_mesh.vertices[0][1] << " " << ori_mesh.vertices[0][2] << std::endl;
+	std::cout <<"sho pos "<< ori_mesh.vertices[1][0] << " " << ori_mesh.vertices[1][1] << " " << ori_mesh.vertices[1][2] << std::endl;
+	std::cout <<"sho pos "<< ori_mesh.vertices[2][0] << " " << ori_mesh.vertices[2][1] << " " << ori_mesh.vertices[2][2] << std::endl;
+	std::cout <<"sho pos "<< ori_mesh.vertices[3][0] << " " << ori_mesh.vertices[3][1] << " " << ori_mesh.vertices[3][2] << std::endl;
 }
 
 void SetModel::setTetFrontMaterial(OriMesh& ori_mesh, int index)

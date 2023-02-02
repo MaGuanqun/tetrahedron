@@ -21,7 +21,7 @@
 
 Thread::Thread()
 {
-    thread_num = 1;// std::thread::hardware_concurrency();//  
+    thread_num = std::thread::hardware_concurrency();//  
     initial();
 }
 

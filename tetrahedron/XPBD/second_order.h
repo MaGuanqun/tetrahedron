@@ -127,6 +127,10 @@ public:
 
 	void setARAPHessian(MatrixXd& Hessian,double stiffness,
 		Matrix<double, 3, 4>& A, double volume);
+	void setARAPGrad(VectorXd& grad, double* vertex_position_0, double* vertex_position_1,
+		double* vertex_position_2, double* vertex_position_3, double stiffness,
+		Matrix<double, 3, 4>& A, double volume);
+
 	void setARAPGrad(MatrixXd& grad, std::array<double, 3>* vertex_position, double stiffness,
 		Matrix<double, 3, 4>& A, double volume, int* tet_vertex_index);
 	void setTetHessianFromBarrierHessian(MatrixXd& Hessian_system, VectorXd& grad_system, MatrixXd& Hessian_, VectorXd& grad_,

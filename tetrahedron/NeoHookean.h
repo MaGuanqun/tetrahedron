@@ -174,6 +174,7 @@ namespace NeoHookean {
 
 		Matrix3d P_inv;
 		memcpy(P_inv.data(), A.data() + 3, 72);
+		//std::cout << P_inv << std::endl;
 		P_inv.transposeInPlace();
 		ConstitutiveModel::backpropagate_element_gradient(P_inv, P, grad);
 		grad *= volume;

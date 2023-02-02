@@ -459,6 +459,9 @@ inline void barrierGrad(double d, double d_hat, double& gradient)
 
 	double log_2 = 2.0 * log(d / d_hat);
 	gradient = (d_hat - d) * (log_2 - d_hat / d + 1.0);
+	//double t2 = d - d_hat;
+	//gradient = ((t2 / d_hat) * std::log(d / d_hat) * -2.0 / d_hat
+	//	- ((t2 / d_hat) * (t2 / d_hat)) / d);
 }
 
 
@@ -471,11 +474,21 @@ inline void barrierGradHessian(double d, double d_hat, double& gradient, double&
 	double log_2 = 2.0 * log(d / d_hat);
 	gradient = (d_hat - d) * (log_2 - d_hat / d + 1.0);
 	hessian = -log_2 + (d_hat - d) * (d_hat + 3.0 * d) / (d * d);
+	//double t2 = d - d_hat;
+	//gradient = ((t2 / d_hat) * std::log(d / d_hat) * -2.0 / d_hat
+	//		- ((t2 / d_hat) * (t2 / d_hat)) / d);
+	//hessian= ((std::log(d / d_hat) * -2.0 - t2 * 4.0 / d) / (d_hat * d_hat)
+	//		+ 1.0 / (d * d) * (t2 / d_hat) * (t2 / d_hat));
+
 }
 
 inline double barrier(double d, double d_hat)
 {
 	if (d < d_hat) {
+
+		//double t2 = d - d_hat;
+		//return -(t2 / d_hat) * (t2 / d_hat) * std::log(d / d_hat);
+
 		return -(d - d_hat) * (d - d_hat) * log(d / d_hat);
 	}
 	return 0;

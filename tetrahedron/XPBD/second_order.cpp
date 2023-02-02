@@ -193,6 +193,21 @@ void SecondOrderConstraint::setARAPHessian(MatrixXd& Hessian,double stiffness,
 	Hessian = A.transpose() * (A * (2.0 * volume * stiffness));
 }
 
+void SecondOrderConstraint::setARAPGrad(VectorXd& grad, double* vertex_position_0, double* vertex_position_1,
+	double* vertex_position_2, double* vertex_position_3, double stiffness,
+	Matrix<double, 3, 4>& A, double volume)
+{
+	Matrix3d deformation_gradient;
+	Matrix3d rotation;
+
+	FEM::getDeformationGradient(vertex_position_0, vertex_position_1,
+		vertex_position_2, vertex_position_3, A,
+		deformation_gradient);
+
+	FEM::extractRotation(deformation_gradient, rotation);
+	MatrixXd grad_ = (2.0 * stiffness * volume) * (deformation_gradient - rotation) * A;
+	memcpy(grad.data(), grad_.data(), 12 * 8);
+}
 
 void SecondOrderConstraint::setARAPGrad(MatrixXd& grad, std::array<double, 3>* vertex_position, double stiffness,
 	Matrix<double, 3, 4>& A, double volume, int* tet_vertex_index)
@@ -1626,6 +1641,8 @@ bool SecondOrderConstraint::computeBarrierEEGradientHessian(double* ea0, double*
 	double mollifier;
 	double ee_cross_norm_2;
 	bool need_mollifier = CCD::internal::edgeEdgeMollifier(ea0, ea1, eb0, eb1, eps_x, mollifier, ee_cross_norm_2);
+
+	is_collider = false;
 
 	switch (CCD::internal::edgeEdgeDistanceType(ea0, ea1, eb0, eb1)) {
 	case 0:
@@ -3442,7 +3459,7 @@ bool SecondOrderConstraint::computeBarrierVTGradientHessian(MatrixXd& Hessian, V
 			barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
 			b_grad *= stiffness; b_hessian *= stiffness;
 			Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
-
+			//FEM::SPDprojection(Hessian);
 			switch (type)
 			{
 			case 0:
@@ -3484,7 +3501,7 @@ bool SecondOrderConstraint::computeBarrierVTGradientHessian(MatrixXd& Hessian, V
 			barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
 			b_grad *= stiffness; b_hessian *= stiffness;
 			Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
-
+			//FEM::SPDprojection(Hessian);
 			switch (type)
 			{
 			case 0:
@@ -3531,6 +3548,7 @@ bool SecondOrderConstraint::computeBarrierVTGradientHessian(MatrixXd& Hessian, V
 			barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
 			b_grad *= stiffness; b_hessian *= stiffness;
 			Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
+			//FEM::SPDprojection(Hessian);
 			switch (type)
 			{
 			case 0:
@@ -3576,6 +3594,7 @@ bool SecondOrderConstraint::computeBarrierVTGradientHessian(MatrixXd& Hessian, V
 			barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
 			b_grad *= stiffness; b_hessian *= stiffness;
 			Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
+			//FEM::SPDprojection(Hessian);
 			switch (type)
 			{
 			case 0:
@@ -3624,6 +3643,7 @@ bool SecondOrderConstraint::computeBarrierVTGradientHessian(MatrixXd& Hessian, V
 			barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
 			b_grad *= stiffness; b_hessian *= stiffness;
 			Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
+			//FEM::SPDprojection(Hessian);
 			switch (type)
 			{
 			case 0:
@@ -3672,6 +3692,7 @@ bool SecondOrderConstraint::computeBarrierVTGradientHessian(MatrixXd& Hessian, V
 			barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
 			b_grad *= stiffness; b_hessian *= stiffness;
 			Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
+			//FEM::SPDprojection(Hessian);
 			switch (type)
 			{
 			case 0:
@@ -3715,10 +3736,24 @@ bool SecondOrderConstraint::computeBarrierVTGradientHessian(MatrixXd& Hessian, V
 
 		if (compute_hessian) {
 			Hessian.resize(12, 12);
+			//distance::H_PT(p[0], p[1], p[2], t0[0], t0[1], t0[2],
+			//	t1[0], t1[1], t1[2], t2[0], t2[1], t2[2], Hessian.data());
+			////std::cout << b_hessian << " " << b_grad << std::endl;
+			//std::cout << grad.transpose() << std::endl;
+			//std::cout << Hessian << std::endl;
+
 			distance::point_triangle_distance_hessian(p, t0, t1, t2, Hessian.data());
 			barrierGradHessian(distance, d_hat_2, b_grad, b_hessian);
 			b_grad *= stiffness; b_hessian *= stiffness;
 			Hessian = (b_hessian * grad * grad.transpose() + b_grad * Hessian).eval();
+
+
+
+			//std::cout << distance << std::endl;
+			//std::cout << "barrier grad " << b_grad << " " << b_hessian << std::endl;
+			//std::cout <<"barrier "<< barrier(distance, d_hat_2) << std::endl;
+
+			//FEM::SPDprojection(Hessian);
 			switch (type)
 			{
 			case 0:

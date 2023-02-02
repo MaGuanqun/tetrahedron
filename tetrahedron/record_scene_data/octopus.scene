@@ -10,15 +10,15 @@ collider
 .\model\tank.obj
 stiffness
 5e+04 50000 0 0 0 0 1e+04 0.35
-1e+8 20000 20000 20 0 0 0 0 
+1e+6 20000 20000 20 0 0 0 0 
 5e+04 50000 0 0 0 0 1e+04 0.35
-1e+8 20000 20000 20 0 0 0 0
+1e+6 20000 20000 20 0 0 0 0
 5e+04 50000 0 0 0 0 1e+04 0.35
-1e+8 20000 20000 20 0 0 0 0 
+1e+6 20000 20000 20 0 0 0 0 
 5e+04 50000 0 0 0 0 1e+04 0.35
-1e+8 20000 20000 20 0 0 0 0 
+1e+6 20000 20000 20 0 0 0 0 
 5e+04 50000 0 0 0 0 1e+04 0.35
-1e+8 20000 20000 20 0 0 0 0 
+1e+6 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
 0 
@@ -70,7 +70,7 @@ camera up
 -0.00291372 0.999959 0.00859385
 camera center
 -0.0926839 0.313883 0.281407
-IPC
+XPBD_IPC
 substep_num
 1
 out iteration_num
@@ -86,9 +86,9 @@ inner convergence rate
 min inner itr num
 4
 min outer itr num
-6
+3
 displacement standard
-0.001
+0.0003
 distance record as collision
 0.0
 energy converge standard
