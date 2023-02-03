@@ -1727,8 +1727,8 @@ void Collision::collisionCulling()
 		//spatial_hashing.vertex_triangle_pair[j][0] = 0;
 		//spatial_hashing.edge_edge_pair[j][0] = 0;
 		//spatial_hashing.vertex_obj_triangle_collider_pair[j][0] = 0;
-		spatial_hashing.edge_edge_pair_collider[j][0] = 0;
-		spatial_hashing.vertex_collider_triangle_obj_pair[j][0] = 0;
+		//spatial_hashing.edge_edge_pair_collider[j][0] = 0;
+		//spatial_hashing.vertex_collider_triangle_obj_pair[j][0] = 0;
 	}
 	//spatial_hashing.testColliderPair();
 
@@ -2402,7 +2402,7 @@ void Collision::collisionTimeWithPair(bool for_warm_start)
 	//}
 
 
-		setMapForHessianIndexToConstraint();
+	setMapForHessianIndexToConstraint();
 	
 	if (for_warm_start)
 	{
@@ -2414,6 +2414,7 @@ void Collision::collisionTimeWithPair(bool for_warm_start)
 		setCollisionStencilToStencil();
 	}
 	
+	//std::cout << "+++++ set map for 1 " << common_hessian->size() << " "<< common_hessian << std::endl;
 	
 }
 
@@ -3049,25 +3050,17 @@ void Collision::setMapForHessianIndexToConstraint()
 		//vt_c
 		start = record_previous_vt_collider_pair_sum_size / 4;
 		end = vt_collider_hessian_index_in_global.size();
+
+		//std::cout << "+++++ set map for " << start << " " << end<<" "<< common_hessian->size() << std::endl;
+
+
 		setMapForHessianIndexToConstraint(start, end, 1, vt_collider_hessian_index_in_global.data(), 4);
+
+		//std::cout << "+++++ set map for " <<common_hessian->size() << std::endl;
 
 	}
 
 	arrangeIndex(thread_num, record_pair_key_value.size()/2, pair_index_start_per_thread.data());
-
-	//unsigned int add[2] = { 624,1778 };
-	//for (int i = 0; i < 2; ++i) {
-	//	for (int j = 0; j < 2; ++j) {
-	//		auto find_ = common_hessian->find(std::array{ add[i],add[j] });
-	//		if (find_ != common_hessian->end()) {
-	//			std::cout << find_->second.is_update<<" "<<add[i]<<" "<<add[j] << std::endl;
-	//			for (int k = 0; k < find_->second.order_in_constraint.size(); k+=3) {
-	//				std::cout << find_->second.order_in_constraint[k] << " " << find_->second.order_in_constraint[k + 1] << " " << find_->second.order_in_constraint[k + 2] << std::endl;
-	//			}
-	//		}
-	//	}
-	//}
-
 }
 
 
@@ -5402,6 +5395,9 @@ void Collision::computeVTHessian(int start, int end, unsigned int* pair, double*
 					if (!pair_is_activated[i >> 2]) {
 						pair_is_activated[i >> 2] = '\1';
 					}
+					//if (vertex_index == 0) {
+					//	std::cout << hessian_record_index[0] << " " << grad.transpose() << std::endl;
+					//}
 					setHessian(hessian_record_index, vertex_index_in_sum, Hessian.data(), grad.data(), hessian_record + (i >> 2) * 9, grad_record,
 						3, not_collider, hessian_record_exist_ + (i >> 1),0);
 				}				
@@ -5542,6 +5538,11 @@ void Collision::setHessian(int* record_index, unsigned int* vertex_index_total, 
 
 			grad_locate = grad + 3 * i;
 			grad_in_global = common_grad + 3 * vertex_index_total[record_index[i]];
+
+			//if (vertex_index_total[record_index[i]] == 0) {
+			//	std::cout << "recoed " << i << " "<< record_index[i]<<" " << 3 * vertex_index_total[record_index[i]] << std::endl;
+			//}
+
 			grad_in_global[0] += *grad_locate;
 			grad_in_global[1] += *(grad_locate + 1);
 			grad_in_global[2] += *(grad_locate + 2);

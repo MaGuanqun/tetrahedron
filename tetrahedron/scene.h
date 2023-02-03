@@ -215,5 +215,5 @@ private:
 	std::vector<std::array<double, 3>> collider_rotate_angle;
 
 	void testPairDistance();
-
+	double computeAverageMass();
 };

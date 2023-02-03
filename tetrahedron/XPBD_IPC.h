@@ -145,6 +145,7 @@ public:
 
 	void computeLastColorARAPEnergy(int thread_No);
 
+	void testSumAllGrad(VectorXd& grad);
 	void sumAllGrad(int thread_No);
 	void sumWithInertial(int thread_No);
 
@@ -278,9 +279,12 @@ private:
 
 	void setColorNum();
 
+	void setAllHessianGrad(bool for_warm_start, unsigned int color_No);
 	void solveNewtonCD_tetBlock();
 
-	void compareHessianWithIPC();
+	void solveColor(unsigned int color_No);
+
+	void compareHessianWithIPC(VectorXd& test_grad_elastic, VectorXd& test_grad_collision);
 
 	int max_tet_color_num;//the max number of different objects tet color
 

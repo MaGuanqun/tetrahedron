@@ -142,7 +142,7 @@ void IPC::updateTetrahedronAnchorVertices()
 
 void IPC::IPC_solve()
 {
-	std::cout << vertex_position[0][0][1] - vertex_position_collider[0][0][1] << std::endl;
+	//std::cout << vertex_position[0][0][1] - vertex_position_collider[0][0][1] << std::endl;
 
 	updateCollisionFreePosition();
 	setPosPredict();
@@ -151,6 +151,9 @@ void IPC::IPC_solve()
 	if (perform_collision) {
 		collision->initialPairRecordInfo();
 	}
+
+	solveSystem(false);
+
 	outer_itr_num = 0;
 	displacement_satisfied = false;
 	inner_itr_num_standard = min_inner_iteration;
@@ -184,9 +187,9 @@ void IPC::IPC_solve()
 	{
 		if (outer_itr_num > 0) {
 			updateCollisionFreePosition();
+			solveSystem(perform_collision);
 		}
 		//solve
-		solveSystem();
 		if (perform_collision) {
 			collision->collisionCulling();
 			if (add_pair_by_distance) {
@@ -464,28 +467,44 @@ void IPC::lineSearch(double& ori_energy)
 
 
 
-void IPC::computeHessian()
+void IPC::computeHessian(bool perform_collision)
 {
 	b.setZero();
 	hessian_nnz.resize(record_size_of_inertial_triplet);
-	if (perform_collision) {
-		setCollisionHessian();
-	}
-	Hessian.setFromTriplets(hessian_nnz.begin()+ record_size_of_inertial_triplet, hessian_nnz.end());
 
-	//std::cout << b.transpose() << std::endl;
-	//MatrixXd k = Hessian;
+	b_neo_hookean = b;
+	b_collision = b;
+
+
+
+	setNeoHookean(b_neo_hookean, &hessian_nnz);
+
+	int neo_nnz_size = hessian_nnz.size();
+	//SparseMatrix<double> k;
+	//k.resize(Hessian.rows(), Hessian.cols());
+	//k.setFromTriplets(hessian_nnz.begin() + record_size_of_inertial_triplet, hessian_nnz.end());
 	//std::cout << k << std::endl;
-	setNeoHookean();
-	//std::cout << b.transpose() << std::endl;
-	setInertialGrad(b.data());
+
+	if (perform_collision) {
+		setCollisionHessian(b_collision.data(), &hessian_nnz);
+	}
+
+	//setInertialGrad(b.data());
+
+	//b += b_collision + b_neo_hookean;
+
 	Hessian.setFromTriplets(hessian_nnz.begin(), hessian_nnz.end());
+
+
+	Elastic_hessian.setFromTriplets(hessian_nnz.begin() + record_size_of_inertial_triplet, hessian_nnz.begin() + neo_nnz_size);
+	Collision_hessian.setFromTriplets(hessian_nnz.begin() + neo_nnz_size, hessian_nnz.end());
+
 
 }
 
-void IPC::solveSystem()
+void IPC::solveSystem(bool perform_collision)
 {
-	computeHessian();
+	computeHessian(perform_collision);
 	global_llt.compute(Hessian);
 	//std::cout << "result " << std::endl;
 	//std::cout << delta_x.transpose() << std::endl;
@@ -750,25 +769,25 @@ void IPC::setPosPredict()
 
 
 
-void IPC::setCollisionHessian()
+void IPC::setCollisionHessian(double* b, std::vector<Triplet<double>>* hessian_nnz)
 {
 	//vt
 	computeVTHessian(0, collision->record_vt_pair_sum_all_thread.size(), collision->record_vt_pair_sum_all_thread.data(),
-		collision->record_vt_pair_d_hat.data(), 0, b.data(), hessian_nnz);
+		collision->record_vt_pair_d_hat.data(), 0, b, *hessian_nnz);
 	//ee
 	computeEEHessian(0, collision->record_ee_pair_sum_all_thread.size(), collision->record_ee_pair_sum_all_thread.data(),
-		collision->record_ee_pair_d_hat.data(), b.data(), hessian_nnz,false);
+		collision->record_ee_pair_d_hat.data(), b, *hessian_nnz,false);
 
 	if (has_collider) {
 		//tv_c
 		computeVTHessian(0, collision->record_tv_collider_pair_sum_all_thread.size(), collision->record_tv_collider_pair_sum_all_thread.data(),
-			collision->record_tv_collider_pair_d_hat.data(), 2, b.data(), hessian_nnz);
+			collision->record_tv_collider_pair_d_hat.data(), 2, b, *hessian_nnz);
 		//ee_c
 		computeEEHessian(0, collision->record_ee_collider_pair_sum_all_thread.size(), collision->record_ee_collider_pair_sum_all_thread.data(),
-			collision->record_ee_collider_pair_d_hat.data(), b.data(), hessian_nnz, true);
+			collision->record_ee_collider_pair_d_hat.data(), b, *hessian_nnz, true);
 		//vt_c
 		computeVTHessian(0, collision->record_vt_collider_pair_sum_all_thread.size(), collision->record_vt_collider_pair_sum_all_thread.data(),
-			collision->record_vt_collider_pair_d_hat.data(), 1, b.data(), hessian_nnz);
+			collision->record_vt_collider_pair_d_hat.data(), 1, b, *hessian_nnz);
 	}
 	if (floor->exist) {
 		computeFloorHessian();
@@ -1015,7 +1034,7 @@ void IPC::setHessian(int* record_index, unsigned int* vertex_index_total, Matrix
 }
 
 
-void IPC::setNeoHookean()
+void IPC::setNeoHookean(VectorXd& b, std::vector<Triplet<double>>* hessian_nnz)
 {
 	std::array<double, 3>* vertex_pos;
 	unsigned int size;
@@ -1057,8 +1076,8 @@ void IPC::setNeoHookean()
 			}
 			if (is_unfixed[0] || is_unfixed[1] || is_unfixed[2] || is_unfixed[3]) {
 				computeARAPHessian(vertex_pos[indices[i][0]].data(), vertex_pos[indices[i][1]].data(), vertex_pos[indices[i][2]].data(), vertex_pos[indices[i][3]].data(),
-					&hessian_nnz, vertex_position_in_system,
-					mu, lambda, A[i], is_unfixed, volume[i]);
+					hessian_nnz, vertex_position_in_system,
+					mu, lambda, A[i], is_unfixed, volume[i], b);
 			}
 		}
 	}
@@ -1109,7 +1128,7 @@ void IPC::setInertial()
 
 void IPC::computeARAPHessian(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
 	std::vector<Triplet<double>>* hessian_nnz,
-	int* vertex_index, double mu, double lambda, Matrix<double, 3, 4>& A, bool* is_unfixed, double volume)
+	int* vertex_index, double mu, double lambda, Matrix<double, 3, 4>& A, bool* is_unfixed, double volume, VectorXd& b)
 {
 	MatrixXd Hessian; VectorXd grad(12);
 	Hessian.resize(12, 12);
@@ -1162,6 +1181,12 @@ void IPC::initialVariable()
 	gravity[2] = 0;
 
 	Hessian.resize(3 * vertex_index_prefix_sum_obj[total_obj_num], 3 * vertex_index_prefix_sum_obj[total_obj_num]);
+	Collision_hessian.resize(3 * vertex_index_prefix_sum_obj[total_obj_num], 3 * vertex_index_prefix_sum_obj[total_obj_num]);
+	Elastic_hessian.resize(3 * vertex_index_prefix_sum_obj[total_obj_num], 3 * vertex_index_prefix_sum_obj[total_obj_num]);
+
+
+
+
 	b.resize(3 * vertex_index_prefix_sum_obj[total_obj_num]);
 
 	f_ext.resize(total_obj_num);

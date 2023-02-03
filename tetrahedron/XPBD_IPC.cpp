@@ -22,16 +22,14 @@ XPBD_IPC::XPBD_IPC()
 	min_inner_iteration = 4;
 	min_outer_iteration = 2;
 
-	max_move_standard = 1e-3;
+	max_move_standard = 1e-4;
 	max_move_standard_inner_itr = 1e-4;
 	max_iteration_number = 100;
-	outer_max_iteration_number = 40;
+	outer_max_iteration_number = 400;
 	energy_converge_standard = 1e-10;
 
 	second_order_constraint.solve_exact_ARAP_hessian = false;
 	min_collision_time = 1e-3;
-
-	ipc.collision = collision;
 
 }
 void XPBD_IPC::initial()
@@ -791,6 +789,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 		if (outer_itr_num > 0) {
 			updateCollisionFreePosition();		
 		}
+
 		//for (int i = 0; i < color_group_num; ++i) {
 			solveNewtonCD_tetBlock();
 			inner_iteration_number++;
@@ -827,6 +826,10 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 	updateRenderNormal();
 
 	updateRenderVertexNormal();
+
+	std::cout << "===== " << vertex_position[0][0][1] - vertex_position_collider[0][0][1] << " " << vertex_position[0][1][1] - vertex_position_collider[0][0][1]
+		<< " " << vertex_position[0][2][1] - vertex_position_collider[0][0][1] << std::endl;
+
 	//vertex_trace.push_back(vertex_position[0][3556]);
 	//std::cout <<"time stamp "<< * time_stamp << std::endl;
 }
@@ -2947,11 +2950,132 @@ void XPBD_IPC::warmStart_solveBlock()
 
 
 
-void XPBD_IPC::compareHessianWithIPC()
+void XPBD_IPC::compareHessianWithIPC(VectorXd& test_grad_elastic, VectorXd& test_grad_collision)
 {
-	ipc.computeHessian();
+	ipc.computeHessian(perform_collision);
+
+	std::cout << "=====compare with newton" << std::endl;
+	//std::cout << ipc.b.transpose() << std::endl;
+	//std::cout << ipc.Collision_hessian << std::endl;
 	
+	Matrix3d k;
+	double* first_coeff;
+	//for (auto i = 0; i < neo_hookean_hessian.size(); ++i) {
+	//	for (auto j = neo_hookean_hessian[i].begin(); j != neo_hookean_hessian[i].end(); ++j) {
+	//		first_coeff = &ipc.Elastic_hessian.coeffRef(3 *(j->first[0]+vertex_index_prefix_sum_obj[i]), 3 *( j->first[1]+ vertex_index_prefix_sum_obj[i]));
+	//		memcpy(k.data(), first_coeff, 24);
+	//		//first_coeff = &ipc.Elastic_hessian.coeffRef(3 * j->first[0], 3 * j->first[1]+1);
+	//		first_coeff += ipc.Elastic_hessian.outerIndexPtr()[3 * (j->first[1] + vertex_index_prefix_sum_obj[i]) + 1] - ipc.Elastic_hessian.outerIndexPtr()[3 * (j->first[1] + vertex_index_prefix_sum_obj[i])];
+	//		memcpy(k.data()+3, first_coeff, 24);
+	//		first_coeff += ipc.Elastic_hessian.outerIndexPtr()[3 * (j->first[1] + vertex_index_prefix_sum_obj[i]) + 1] - ipc.Elastic_hessian.outerIndexPtr()[3 * (j->first[1] + vertex_index_prefix_sum_obj[i])];
+	//		//first_coeff = &ipc.Elastic_hessian.coeffRef(3 * j->first[0], 3 * j->first[1] + 2);
+	//		memcpy(k.data() + 6, first_coeff, 24);
+	//		for (int m = 0; m < 9; ++m) {
+	//			k.data()[m] -= j->second.hessian[m];
+	//		}
+	//		if (k.lpNorm<Eigen::Infinity>() > 1e-10) {
+	//			std::cout << "error occur on neo hookean hessian " << j->first[0] << " " << j->first[1]<<" "<< k.lpNorm<Eigen::Infinity>() << std::endl;
+	//		}
+	//	}	
+	//}
+
+	//std::cout << "common hessian size" << common_hessian.size() << std::endl;
+	//for (auto i = common_hessian.begin(); i != common_hessian.end(); ++i) {
+	//	if (i->second.is_update) {
+	//		//std::cout << "show hession " << i->first[0] << " " << i->first[1] << std::endl;
+	//		//std::cout << "show hession " << i->second.is_update << i->second.order_in_constraint.size() << std::endl;
+	//	
+	//		first_coeff = &ipc.Collision_hessian.coeffRef(3 *i->first[0], 3 *i->first[1]);
+	//		memcpy(k.data(), first_coeff, 24);
+	//		first_coeff += ipc.Collision_hessian.outerIndexPtr()[3 *i->first[1] + 1] - ipc.Collision_hessian.outerIndexPtr()[3 *i->first[1]];
+	//		memcpy(k.data() + 3, first_coeff, 24);
+	//		first_coeff += ipc.Collision_hessian.outerIndexPtr()[3 *i->first[1] + 1] - ipc.Collision_hessian.outerIndexPtr()[3 *i->first[1]];
+	//		memcpy(k.data() + 6, first_coeff, 24);
+	//		for (int m = 0; m < 9; ++m) {
+	//			k.data()[m] -=i->second.hessian[m];
+	//		}
+	//		if (k.lpNorm<Eigen::Infinity>() > 1e-10) {
+	//			std::cout << "error occur on collision hessian " << i->first[0] << " " << i->first[1] <<" " << k.lpNorm<Eigen::Infinity>() << std::endl;
+	//		}
+	//	}
+	//}
+
+	//ipc.b_neo_hookean -= test_grad_elastic;
+	//if (ipc.b_neo_hookean.lpNorm<Eigen::Infinity>() > 1e-10) {
+	//	std::cout << "error occur on neohookean grad " << ipc.b_neo_hookean.lpNorm<Eigen::Infinity>() << std::endl;
+	//}
+
+	ipc.b_collision -= test_grad_collision;
+	if (ipc.b_collision.lpNorm<Eigen::Infinity>() > 1e-10) {
+		std::cout << "error occur on neohookean grad " << ipc.b_collision.lpNorm<Eigen::Infinity>() << std::endl;
+	}
+
+	//for (int i = 0; i < common_grad[0].size(); ++i) {
+	//	ipc.b.data()[i] -= common_grad[0][i];
+	//	if (abs(ipc.b.data()[i]) > 1e-10) {
+	//		std::cout << "error occur on grad" <<i<<" "<<i/3 << " " << ipc.b.data()[i] << std::endl;
+	//	}
+	//}
+	
+
+
 }
+
+
+
+void XPBD_IPC::setAllHessianGrad(bool for_warm_start, unsigned int color_No)
+{
+	initialRecordHessian();
+
+	if (perform_collision) {
+		collision->computeHessian(color_No, for_warm_start);
+	}
+	else {
+		collision->updateVertexBelongColorGroup(color_No);
+	}
+	VectorXd test_grad_neohookean;
+	VectorXd test_grad_collision;
+	testSumAllGrad(test_grad_collision);
+
+	computeNeoHookeanHessianGrad();
+	thread->assignTask(this, SUM_ALL_GRAD);
+
+
+	//compareHessianWithIPC(test_grad_neohookean, test_grad_collision);
+
+}
+
+
+
+void XPBD_IPC::solveColor(unsigned int color_No)
+{
+	double ori_energy;
+	setAllHessianGrad(false, color_No);
+	ori_energy = computeCurrentEnergy();
+	initialRecordPositionForThread();
+	if (color_No != max_tet_color_num - 1) {
+		thread->assignTask(this, SOLVE_TET_BLOCK, color_No);
+		for (int i = 0; i < total_thread_num; ++i) {
+			if (max_displacement < max_dis_record[i]) {
+				max_displacement = max_dis_record[i];
+			}
+		}
+		thread->assignTask(this, UPDATE_POSITION_AVERAGE_EXCEPT_THIS_COLOR);
+	}
+	else {
+		thread->assignTask(this, SOLVE_TET_BLOCK_COLLISION, max_tet_color_num - 1);
+		for (int i = 0; i < total_thread_num; ++i) {
+			if (max_displacement < max_dis_record[i]) {
+				max_displacement = max_dis_record[i];
+			}
+		}
+		thread->assignTask(this, UPDATE_POSITION_AVERAGE);
+	}
+	lineSearchColor(color_No, ori_energy);
+	//testVolume();
+}
+
+
 
 void XPBD_IPC::solveNewtonCD_tetBlock()
 {
@@ -2959,80 +3083,16 @@ void XPBD_IPC::solveNewtonCD_tetBlock()
 	max_displacement = 0.0;
 	memset(max_dis_record.data(), 0, 8 * max_dis_record.size());
 
-	//std::cout << "before itr " << std::endl;
-	//testVolume();
 
-	for (unsigned int i = 0; i < max_tet_color_num - 1; ++i) {		//
-
-		
-
-		initialRecordHessian();
-		if (perform_collision) {
-			collision->computeHessian(i,false);
-		}		
-		else {
-			collision->updateVertexBelongColorGroup(i);
-		}
-		//thread->assignTask(this, TET_GRAD);
-		computeNeoHookeanHessianGrad();
-
-		thread->assignTask(this, SUM_ALL_GRAD);		
-
-
-
-		//if (i > 35 && inner_iteration_number ==23) {
-		//	std::cout << "first " << std::endl;
-		//}
-		//std::cout << "ori " << std::endl;
-		ori_energy = computeCurrentEnergy();
-		initialRecordPositionForThread();
-		thread->assignTask(this, SOLVE_TET_BLOCK, i);	
-		for (int i = 0; i < total_thread_num; ++i) {
-			if (max_displacement < max_dis_record[i]) {
-				max_displacement = max_dis_record[i];
-			}
-		}
-		thread->assignTask(this, UPDATE_POSITION_AVERAGE_EXCEPT_THIS_COLOR);		
-
-		//std::cout << vertex_position[0][428][0] << " " << vertex_position[0][428][1] << " " << vertex_position[0][428][1] << std::endl;
-
-
-		lineSearchColor(i, ori_energy);
-
-		//std::cout << "color itr "<<i << std::endl;
-		//testVolume();
-		
-
+	for (unsigned int i = 0; i < max_tet_color_num; ++i) {		//
+		solveColor(i);
 	}
-
-	//std::cout << "last color " <<  std::endl;
-	//testPrintOut();
-	initialRecordHessian();
-	//memset(is_tet_arap_grad_compute, 0, prefix_sum_of_every_tet_index[tetrahedron->size()]<<2);	
-	if (perform_collision) {
-		collision->computeHessian(max_tet_color_num - 1,false);
-	}
-	else {
-		collision->updateVertexBelongColorGroup(max_tet_color_num - 1);
-	}
-	//thread->assignTask(this, TET_GRAD);
-	computeNeoHookeanHessianGrad();
-	thread->assignTask(this, SUM_ALL_GRAD);
-	//NeoHookeanTest();
-	initialRecordPositionForThread();
-
-	thread->assignTask(this, SOLVE_TET_BLOCK_COLLISION, max_tet_color_num-1);
-	for (int i = 0; i < total_thread_num; ++i) {
-		if (max_displacement < max_dis_record[i]) {
-			max_displacement = max_dis_record[i];
-		}
-	}
-	//std::cout << "ori " << std::endl;
-	ori_energy = computeCurrentEnergy();
-	thread->assignTask(this, UPDATE_POSITION_AVERAGE);
-	lineSearchColor(max_tet_color_num - 1,ori_energy);
-	//testVolume();
 }
+
+
+
+
+
 
 
 void XPBD_IPC::lineSearchFirstColor(unsigned int color_No, double ori_energy)
@@ -3614,10 +3674,10 @@ void XPBD_IPC::newtonCDTetBlockAGroupCollision(int thread_No, int color)
 		solveEE_BlockPerThread(record_vertex_position, record_vertex_num, collision->record_ee_pair_sum_all_thread.data(), collision->ee_pair_sum_start_per_thread[thread_No],
 			collision->ee_pair_sum_start_per_thread[thread_No + 1],
 			collision->ee_hessian_index_exist.data(),false, thread_No);
-		if (has_collider || floor->exist) {
-			solvecollider_BlockPerThread(record_vertex_position, record_vertex_num, &collision->vertex_index_collide_collider_sum, false, 0,
-				collision->vertex_c_start_per_thread[thread_No], collision->vertex_c_start_per_thread[thread_No + 1],thread_No);
-		}
+		//if (has_collider || floor->exist) {
+		//	solvecollider_BlockPerThread(record_vertex_position, record_vertex_num, &collision->vertex_index_collide_collider_sum, false, 0,
+		//		collision->vertex_c_start_per_thread[thread_No], collision->vertex_c_start_per_thread[thread_No + 1],thread_No);
+		//}
 		if (has_collider) {
 			solvecollider_BlockPerThread(record_vertex_position, record_vertex_num, &collision->edge_index_collide_collider_sum, false, 1,
 				collision->edge_c_start_per_thread[thread_No], collision->edge_c_start_per_thread[thread_No + 1],thread_No);
@@ -3829,10 +3889,10 @@ void XPBD_IPC::newtonCDTetBlockAGroup(int thread_No, int color)
 		solveEE_BlockPerThread(record_vertex_position, record_vertex_num, collision->record_ee_pair_sum_all_thread.data(), collision->ee_pair_sum_start_per_thread[thread_No],
 			collision->ee_pair_sum_start_per_thread[thread_No + 1],
 			collision->ee_hessian_index_exist.data(), false, thread_No);
-		if (has_collider || floor->exist) {
-			solvecollider_BlockPerThread(record_vertex_position, record_vertex_num, &collision->vertex_index_collide_collider_sum, false, 0,
-				collision->vertex_c_start_per_thread[thread_No], collision->vertex_c_start_per_thread[thread_No + 1], thread_No);
-		}
+		//if (has_collider || floor->exist) {
+		//	solvecollider_BlockPerThread(record_vertex_position, record_vertex_num, &collision->vertex_index_collide_collider_sum, false, 0,
+		//		collision->vertex_c_start_per_thread[thread_No], collision->vertex_c_start_per_thread[thread_No + 1], thread_No);
+		//}
 		if (has_collider) {
 			solvecollider_BlockPerThread(record_vertex_position, record_vertex_num, &collision->edge_index_collide_collider_sum, false, 1,
 				collision->edge_c_start_per_thread[thread_No], collision->edge_c_start_per_thread[thread_No + 1], thread_No);
@@ -6435,6 +6495,13 @@ void XPBD_IPC::solveBlockWithPair(double dt,
 	LLT <MatrixXd> linear(Hessian);
 	VectorXd result = linear.solve(grad);
 
+	//if (unfixed_pair_vertex_index[1]==0) {
+	//	std::cout << result.transpose() << std::endl;
+	//	std::cout << grad.transpose() << std::endl;
+	//	std::cout << Hessian << std::endl;
+	//}
+
+
 	if (!only_solve_collision_pair) {
 		for (int j = 0; j < result.size(); ++j) {
 			//if (abs(result[j]) > 0.3) {
@@ -7077,9 +7144,56 @@ void XPBD_IPC::solveTetBlockCollision(std::array<double, 3>* vertex_position, do
 	grad.setZero();
 
 
+
+
+
 	auto k = tet_hessian.end();
 	double* add_of_hessian;
 	double* hessian_in_neo_hookean;
+
+
+	if (perform_collision) {
+		auto k_ = collision_hessian.end();
+		double* hessian_in_collision;
+		for (int i = 0; i < unfixed_vertex_num; ++i) {
+			for (int j = 0; j < unfixed_vertex_num; ++j) {
+				k_ = collision_hessian.find(std::array{ prefix_sum_vetex_obj + tet_actual_unfixed_vertex_indices[i], prefix_sum_vetex_obj + tet_actual_unfixed_vertex_indices[j] });
+				if (k_ != collision_hessian.end()) {
+					if (k_->second.is_update) {
+						add_of_hessian = Hessian.data() + 3 * (j * Hessian.cols() + i);
+						hessian_in_collision = k_->second.hessian.data();
+						for (int m = 0; m < 3; ++m) {
+							*add_of_hessian += *hessian_in_collision;
+							*(add_of_hessian + 1) += *(hessian_in_collision + 1);
+							*(add_of_hessian + 2) += *(hessian_in_collision + 2);
+							hessian_in_collision += 3;
+							add_of_hessian += Hessian.cols();
+						}
+						if (i != j) {
+							add_of_hessian = Hessian.data() + 3 * (i * Hessian.cols() + j);
+							hessian_in_collision = k_->second.hessian.data();
+							for (int m = 0; m < 3; ++m) {
+								*add_of_hessian += *hessian_in_collision;
+								*(add_of_hessian + 1) += *(hessian_in_collision + 3);
+								*(add_of_hessian + 2) += *(hessian_in_collision + 6);
+								hessian_in_collision++;
+								add_of_hessian += Hessian.cols();
+							}
+						}
+					}
+				}
+			}
+		}
+
+		//std::cout << "tet block " << Hessian<< std::endl;
+
+
+		if (floor->exist) {
+			for (int i = 0; i < unfixed_vertex_num; ++i) {
+				Hessian.data()[(3 * i + floor->dimension) * (Hessian.cols() + 1)] += floor_map[prefix_sum_vetex_obj + tet_actual_unfixed_vertex_indices[i]];
+			}
+		}
+	}
 
 	for (int i = 0; i < unfixed_vertex_num; ++i) {
 		for (int j = 0; j < unfixed_vertex_num; ++j) {
@@ -7113,46 +7227,14 @@ void XPBD_IPC::solveTetBlockCollision(std::array<double, 3>* vertex_position, do
 				}
 			}
 		}
+
+
 		memcpy(grad.data() + 3 * i, common_grad + 3 * (prefix_sum_vetex_obj + tet_actual_unfixed_vertex_indices[i]), 24);
 	}
 
-	if (perform_collision) {
-		auto k_ = collision_hessian.end();
-		double* hessian_in_collision;
-		for (int i = 0; i < unfixed_vertex_num; ++i) {
-			for (int j = 0; j < unfixed_vertex_num; ++j) {
-				k_ = collision_hessian.find(std::array{ prefix_sum_vetex_obj + tet_actual_unfixed_vertex_indices[i], prefix_sum_vetex_obj + tet_actual_unfixed_vertex_indices[j] });
-				if (k_ != collision_hessian.end()) {
-					if (k_->second.is_update) {
-						add_of_hessian = Hessian.data() + 3 * (j * Hessian.cols() + i);
-						hessian_in_collision = k_->second.hessian.data();
-						for (int m = 0; m < 3; ++m) {
-							*add_of_hessian += *hessian_in_collision;
-							*(add_of_hessian + 1) += *(hessian_in_collision + 1);
-							*(add_of_hessian + 2) += *(hessian_in_collision + 2);
-							hessian_in_collision += 3;
-							add_of_hessian += Hessian.cols();
-						}
-						if (i != j) {
-							add_of_hessian = Hessian.data() + 3 * (i * Hessian.cols() + j);
-							hessian_in_collision = k_->second.hessian.data();
-							for (int m = 0; m < 3; ++m) {
-								*add_of_hessian += *hessian_in_collision;
-								*(add_of_hessian + 1) += *(hessian_in_collision + 3);
-								*(add_of_hessian + 2) += *(hessian_in_collision + 6);
-								hessian_in_collision++;
-								add_of_hessian += Hessian.cols();
-							}
-						}
-					}
-				}
-			}			
-		}
-		if (floor->exist) {
-			for (int i = 0; i < unfixed_vertex_num; ++i) {
-					Hessian.data()[(3 * i + floor->dimension) * (Hessian.cols() + 1)] += floor_map[prefix_sum_vetex_obj + tet_actual_unfixed_vertex_indices[i]];
-			}
-		}
+
+	//std::cout << "tet block grad " << grad.transpose() << std::endl;
+	
 		//MatrixXd Hessian_collision;
 		//VectorXd grad_collision;
 		//Hessian_collision.resize(3 * unfixed_vertex_num, 3 * unfixed_vertex_num);
@@ -7180,7 +7262,6 @@ void XPBD_IPC::solveTetBlockCollision(std::array<double, 3>* vertex_position, do
 		//	std::cout << "============" << std::endl;
 		//	std::cout << grad.transpose() << std::endl;
 		//}
-	}
 	//if (Hessian_collision_test.norm() != 0.0) {
 	//	std::cout << "show" << std::endl;
 	//	std::cout << grad_collision_test.transpose() << std::endl;
@@ -7238,6 +7319,8 @@ void XPBD_IPC::solveTetBlockCollision(std::array<double, 3>* vertex_position, do
 	//		break;
 	//	}
 	//}
+
+	//std::cout << "tet block displacement" << result.transpose() << std::endl;
 
 	
 	double dis;
@@ -9029,8 +9112,18 @@ void XPBD_IPC::sumWithInertial(int thread_No)
 	grad_max_store[thread_No] = max;
 }
 
-
-
+void XPBD_IPC::testSumAllGrad(VectorXd& grad)
+{
+	int start = 0;
+	int end = common_grad[0].size();
+	grad.resize(common_grad[0].size());
+	grad.setZero();
+	for (int i = start; i < end; i++) {
+		for (int j = 0; j < total_thread_num; ++j) {
+			grad[i] += common_grad[j][i];
+		}
+	}
+}
 
 
 //SUM_ALL_GRAD

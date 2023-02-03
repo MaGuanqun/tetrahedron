@@ -23,6 +23,10 @@ public:
 	double time_step;
 	double gravity_;
 	unsigned int sub_step_num;
+	VectorXd b;
+
+	VectorXd b_neo_hookean;
+	VectorXd b_collision;
 
 	void setForIPC(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, Floor* floor,
 		Thread* thread, double* tolerance_ratio);
@@ -60,7 +64,7 @@ public:
 	double velocity_damp;
 	unsigned int* sub_step_per_detection;
 
-	void computeHessian();
+	void computeHessian(bool perform_collision);
 
 	bool* has_force;
 	void computeCollisionFreePosition();
@@ -143,6 +147,10 @@ public:
 	int counter = 0;
 
 	void tetGrad(int thread_No);
+
+	SparseMatrix<double> Hessian;
+	SparseMatrix<double> Collision_hessian;
+	SparseMatrix<double> Elastic_hessian;
 
 private:
 
@@ -257,7 +265,7 @@ private:
 	std::vector<std::vector<std::array<double,3>>> velocity;
 	std::vector<std::vector<std::array<double,3>>> sn;
 
-	void solveSystem();
+	void solveSystem(bool perform_collision);
 	//std::vector<std::vector<std::array<double, 3>>> total_gravity;
 
 	std::vector<std::array<double, 3>*> vertex_position_collider;
@@ -270,7 +278,7 @@ private:
 
 	std::vector<unsigned int*>tet_index_begin_per_thread;//size is total object num
 
-	bool not_initial_collision = false;
+	bool not_initial_collision = true;
 
 	void reorganzieDataOfObjects();
 	unsigned int total_obj_num;
@@ -871,19 +879,21 @@ private:
 	std::vector<double>dis_record;
 
 
-	SparseMatrix<double> Hessian;
-	VectorXd b;
+
+
+
+
 	VectorXd acceleration;
 	void setInertial();
-	void setNeoHookean();
+	void setNeoHookean(VectorXd& b, std::vector<Triplet<double>>* hessian_nnz);
 	std::vector<Triplet<double>> hessian_nnz;
 
 	void computeARAPHessian(double* vertex_position_0, double* vertex_position_1, double* vertex_position_2, double* vertex_position_3,
 		std::vector<Triplet<double>>* hessian_nnz,
-		int* vertex_index, double mu, double lambda, Matrix<double, 3, 4>& A, bool* is_unfixed, double volume);
+		int* vertex_index, double mu, double lambda, Matrix<double, 3, 4>& A, bool* is_unfixed, double volume, VectorXd& b);
 
 	int record_size_of_inertial_triplet;
-	void setCollisionHessian();
+	void setCollisionHessian(double* b, std::vector<Triplet<double>>* hessian_nnz);
 
 	void  computeVTHessian(int start, int end, unsigned int* pair, double* d_hat, int type, double* grad,
 		std::vector<Triplet<double>>& hessian);

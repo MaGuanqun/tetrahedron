@@ -94,7 +94,7 @@ Scene::Scene()
 
 	ipc.collision = &collision;
 	xpbd_ipc.collision = &collision;
-
+	xpbd_ipc.ipc.collision = &collision;
 
 }
 
@@ -290,6 +290,23 @@ void Scene::updateConvRate(double* convergence_rate)
 			break;
 		}
 	// }
+}
+
+
+double Scene::computeAverageMass()
+{
+	double mass = 0.0;
+	unsigned int vertex_num = 0;
+	for (int i = 0; i < tetrahedron.size(); ++i) {
+		mass += tetrahedron[i].mass;
+		vertex_num += tetrahedron[i].mesh_struct.vertex_position.size();
+	}
+	for (int i = 0; i < cloth.size(); ++i) {
+		mass += cloth[i].mass;
+		vertex_num += cloth[i].mesh_struct.vertex_position.size();
+	}
+	return mass / (double)vertex_num;
+
 }
 
 bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider_path, std::vector<std::string>& object_path, double* tolerance_ratio, bool* control_parameter,
@@ -520,6 +537,13 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 	setWireframwColor();
 
 
+	double ave = computeAverageMass();
+	std::cout << "ave mass " << ave << std::endl;
+	for (auto i = collide_stiffness.begin(); i < collide_stiffness.end(); i++) {
+		for (auto j = i->begin(); j < i->end(); ++j) {
+			(*j) *= ave;
+		}
+	}
 	double cloth_position_stiffness = 1e4;
 	double tet_position_stiffness = 1e4;
 

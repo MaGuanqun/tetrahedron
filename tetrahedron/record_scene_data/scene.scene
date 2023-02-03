@@ -7,9 +7,9 @@ collider
 .\model\tank.obj
 stiffness
 20000 50000 1 0 0 0 10000 0.35 
-1e+08 20000 20000 20 0 0 0 0 
+1e+2 20000 20000 20 0 0 0 0 
 20000 50000 1 0 0 0 10000 0.35 
-1e+08 20000 20000 20 0 0 0 0 
+1e+2 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
 0 
@@ -22,7 +22,7 @@ cloth_density
 tet_density
 100
 velocity_damp
-0.995
+0.99
 friction_coe
 0.9 0.8 0.9
 floor_dimension
@@ -30,13 +30,13 @@ floor_dimension
 floor_value
 -0.55
 translation
+0 -0.2 0
 0 -0.4 0
-0 0 0
 size_scaler
-0.5 0.5 
+0.5 0.5
 rotation_angle
+0 90 0
 0 0 0
-0 75 0
 collider_translation
 0 0 0
 collider_size_scaler
@@ -44,16 +44,16 @@ collider_size_scaler
 collider_rotation_angle
 0 0 0
 camera position
-0 0 -2.46908
+0.286196 -0.228792 -1.78348
 camera up
-0 1 0
+0.0143417 0.992058 -0.124964
 camera center
 0 0 0
-IPC
+XPBD_IPC
 substep_num
 1
 out iteration_num
-300
+400
 inner iteration_num
 100
 sub_step_per_detection
@@ -67,7 +67,7 @@ min inner itr num
 min outer itr num
 2
 displacement standard
-0.001
+0.0001
 distance record as collision
 0
 energy converge standard
