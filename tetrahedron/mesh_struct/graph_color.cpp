@@ -52,11 +52,12 @@ void GraphColor::graphColorTet(MeshStruct& mesh_struct, int different_color_stra
 	mesh_struct.tet_color_group.resize(different_color_strategy_num);
 	unsigned int max_degree, min_degree;
 	findMinMaxDegree(mesh_struct.tet_tet_index, max_degree, min_degree);
-	std::cout << "max degree " << max_degree << " min degree " << min_degree << std::endl;
+	//std::cout << "max degree " << max_degree << " min degree " << min_degree << std::endl;
 
 	std::vector<int>element_order(mesh_struct.tet_tet_index.size());
 
 	int max_color_num = (int)((double)max_degree) / 6;
+	std::cout << "max color num " << max_color_num << std::endl;
 	//for (int i =0; i < element_order.size(); ++i) {
 	//	element_order[i] = i;
 	//}
