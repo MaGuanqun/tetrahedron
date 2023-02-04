@@ -56,7 +56,7 @@ void GraphColor::graphColorTet(MeshStruct& mesh_struct, int different_color_stra
 
 	std::vector<int>element_order(mesh_struct.tet_tet_index.size());
 
-	int max_color_num = (int)((double)max_degree) / 6;
+	int max_color_num =  (int)((double)max_degree) / 6;
 	std::cout << "max color num " << max_color_num << std::endl;
 	//for (int i =0; i < element_order.size(); ++i) {
 	//	element_order[i] = i;

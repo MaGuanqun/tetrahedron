@@ -28,7 +28,7 @@ namespace NeoHookean {
 	}
 
 	inline double energy(double* position_0, double* position_1, double* position_2, double* position_3,
-		Matrix<double, 3, 4>& A, double volume, double mu, double lambda)
+		Matrix<double, 3, 4>& A, double volume, double mu, double lambda, int tet_index, int obj_index)
 	{
 		Matrix3d deformation_gradient;
 		FEM::getDeformationGradient(position_0, position_1, position_2, position_3, A, deformation_gradient);
@@ -36,7 +36,7 @@ namespace NeoHookean {
 		double k = deformation_gradient.determinant();
 
 		if (k <= 0) {
-			std::cout << "compute energy, error tet volume equals zero, error to compute ||F|| "<<k << std::endl;
+			std::cout << "compute energy, error tet volume equals zero, error to compute ||F|| "<<k <<" "<< tet_index <<" "<< obj_index << std::endl;
 			k = 1e-36;
 
 			//system("pause");
@@ -157,6 +157,22 @@ namespace NeoHookean {
 
 		ConstitutiveModel::first_piola_derivative(svd.matrixU(), svd.singularValues(), svd.matrixV(), de_dsigma,
 			left_coeff, d2e_dsigma2, dPdF);
+	}
+
+	inline void gradientMPM(double* position_0, double* position_1, double* position_2, double* position_3,
+		Matrix<double, 3, 4>& A, double volume, double mu, double lambda, VectorXd& grad)
+	{
+		Matrix3d deformation_gradient;
+		FEM::getDeformationGradient(position_0, position_1, position_2, position_3, A, deformation_gradient);
+
+		Matrix3d P;
+		firstPiola(deformation_gradient, mu, lambda, P);
+
+		Matrix3d P_inv;
+		memcpy(P_inv.data(), A.data() + 3, 72);
+		P_inv.transposeInPlace();
+		ConstitutiveModel::backpropagate_element_gradient(P_inv, P, grad);
+		grad *= volume;
 	}
 
 

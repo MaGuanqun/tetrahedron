@@ -49,7 +49,7 @@ camera up
 -0.00291372 0.999959 0.00859385
 camera center
 -0.0926839 0.313883 0.281407
-XPBD_IPC
+IPC
 substep_num
 1
 out iteration_num
@@ -67,7 +67,7 @@ min inner itr num
 min outer itr num
 6
 displacement standard
-0.0001
+1e-3
 distance record as collision
 0.0
 energy converge standard

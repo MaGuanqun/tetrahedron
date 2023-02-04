@@ -29,7 +29,7 @@ public:
 	VectorXd b_collision;
 
 	void setForIPC(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, Floor* floor,
-		Thread* thread, double* tolerance_ratio);
+		Thread* thread, double* tolerance_ratio, bool not_initial_collision);
 	size_t* time_stamp;
 	void setPosPredict(int thread_No);
 	void computeVelocity();
@@ -278,7 +278,7 @@ private:
 
 	std::vector<unsigned int*>tet_index_begin_per_thread;//size is total object num
 
-	bool not_initial_collision = true;
+	//bool not_initial_collision = false;
 
 	void reorganzieDataOfObjects();
 	unsigned int total_obj_num;

@@ -85,9 +85,11 @@ namespace find_root {
 	inline bool getSmallestPositiveRealCubicRootWithPoly(T* op, T& t, T tol)
 	{
 		// return negative value if no positive real root is found
-		T zeror[3]; T zeroi[3];
-		poly_root::rpoly(op, 3, zeror, zeroi);
+		T zeror[3] = { 2.0,2.0,2.0 }; T zeroi[3] = {0.0,0.0,0.0};
+		int degree = poly_root::rpoly(op, 3, zeror, zeroi);
 		t = 2.0;
+
+
 		if ((std::abs(zeroi[0]) < tol) && (zeror[0] > 0))
 			t = zeror[0];
 		if ((std::abs(zeroi[1]) < tol) && (zeror[1] > 0) && ((zeror[1] < t) || (t < 0)))

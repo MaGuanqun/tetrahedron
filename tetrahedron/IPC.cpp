@@ -34,7 +34,7 @@ IPC::IPC()
 }
 
 void IPC::setForIPC(std::vector<Cloth>* cloth, std::vector<Tetrahedron>* tetrahedron, std::vector<Collider>* collider, Floor* floor,
-	Thread* thread, double* tolerance_ratio)
+	Thread* thread, double* tolerance_ratio, bool not_initial_collision)
 {
 	this->cloth = cloth;
 	this->tetrahedron = tetrahedron;
@@ -167,7 +167,7 @@ void IPC::IPC_solve()
 			collision->collisionTimeWithPair(false);
 		}
 		
-		inversionTest();
+		//inversionTest();
 		computeCollisionFreePosition();
 		if (add_pair_by_distance) {
 			collision->addPairByDistance();
@@ -204,7 +204,7 @@ void IPC::IPC_solve()
 				collision->addPairByDistance();
 			}
 			//line search
-			//lineSearch(ori_energy);
+			lineSearch(ori_energy);
 		}
 		outer_itr_num++;
 	}
@@ -216,8 +216,8 @@ void IPC::IPC_solve()
 	updateRenderVertexNormal();
 
 
-	std::cout <<"===== "<< vertex_position[0][0][1] - vertex_position_collider[0][0][1]<<" "<< vertex_position[0][1][1] - vertex_position_collider[0][0][1]
-		<<" "<< vertex_position[0][2][1] - vertex_position_collider[0][0][1] << std::endl;
+	//std::cout <<"===== "<< vertex_position[0][0][1] - vertex_position_collider[0][0][1]<<" "<< vertex_position[0][1][1] - vertex_position_collider[0][0][1]
+	//	<<" "<< vertex_position[0][2][1] - vertex_position_collider[0][0][1] << std::endl;
 
 }
 
@@ -271,7 +271,7 @@ double IPC::computeElasticEnergy()
 		for (unsigned int j = start; j < end; ++j) {
 			if (mass_inv_[indices[j][0]] != 0.0 || mass_inv_[indices[j][1]] != 0.0 || mass_inv_[indices[j][2]] != 0.0 || mass_inv_[indices[j][3]] != 0.0) {
 				tet_energy = NeoHookean::energy(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
-					vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j], volume[j], mu, lambda);
+					vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j], volume[j], mu, lambda,j,i);
 				//tet_energy = compute_energy.ARAPEnergy(vertex_pos[indices[j][0]].data(), vertex_pos[indices[j][1]].data(),
 				//	vertex_pos[indices[j][2]].data(), vertex_pos[indices[j][3]].data(), A[j], volume[j], 1e4);
 				energy += tet_energy;
@@ -292,15 +292,15 @@ double IPC::computeCurrentEnergy()
 	double energy = 0;
 	double inertial_energy = computeInertialEnergy();
 	energy += inertial_energy;
-	double elastic_energy = computeElasticEnergy();
-	energy += elastic_energy;
+	//double elastic_energy = computeElasticEnergy();
+	//energy += elastic_energy;
 	double barrier_energy = 0.0;
 	if (perform_collision) {
 		barrier_energy = computeBarrierEnergy();
 		energy += barrier_energy;
 	}
 
-	std::cout <<"energy " << energy << " " << inertial_energy << " " << elastic_energy << " " << barrier_energy << std::endl;
+	//std::cout <<"energy " << energy << " " << inertial_energy << " " << barrier_energy << std::endl;
 
 	return energy;
 }
@@ -434,6 +434,7 @@ double IPC::computeEEEnergy(std::vector<unsigned int>* record_pair, unsigned int
 
 void IPC::lineSearch(double& ori_energy)
 {
+	std::cout << "collision time " << collision->collision_time << std::endl;
 	double current_energy = 0.0;
 	if (perform_collision) {
 		current_energy = computeCurrentEnergy();
@@ -441,7 +442,7 @@ void IPC::lineSearch(double& ori_energy)
 			double record_collision_time = collision->collision_time;
 			if (current_energy > ori_energy) {
 				if (record_collision_time < 1e-6) {
-					std::cout << "global ccd original record_collision_time is too small " << ori_energy << " " << current_energy << std::endl;
+					std::cout << "global ccd is too small "<< record_collision_time<<" " << ori_energy << " " << current_energy << std::endl;
 				}
 			}
 			collision->collision_time = 0.5;
@@ -455,7 +456,7 @@ void IPC::lineSearch(double& ori_energy)
 				}
 				itr_num++;
 				if (itr_num > 6) {
-					//std::cout << "global record_collision_time is too small " << ori_energy << " " << current_energy << std::endl;
+					std::cout << "global record_collision_time is too small "<< record_collision_time<<" " << ori_energy << " " << current_energy << std::endl;
 					break;
 				}
 				current_energy = computeCurrentEnergy();
@@ -463,6 +464,8 @@ void IPC::lineSearch(double& ori_energy)
 		}
 		ori_energy = current_energy;
 	}
+
+
 }
 
 
@@ -472,12 +475,12 @@ void IPC::computeHessian(bool perform_collision)
 	b.setZero();
 	hessian_nnz.resize(record_size_of_inertial_triplet);
 
-	b_neo_hookean = b;
-	b_collision = b;
+	//b_neo_hookean = b;
+	//b_collision = b;
 
 
 
-	setNeoHookean(b_neo_hookean, &hessian_nnz);
+	//setNeoHookean(b, &hessian_nnz);
 
 	int neo_nnz_size = hessian_nnz.size();
 	//SparseMatrix<double> k;
@@ -486,18 +489,18 @@ void IPC::computeHessian(bool perform_collision)
 	//std::cout << k << std::endl;
 
 	if (perform_collision) {
-		setCollisionHessian(b_collision.data(), &hessian_nnz);
+		setCollisionHessian(b.data(), &hessian_nnz);
 	}
 
-	//setInertialGrad(b.data());
+	setInertialGrad(b.data());
 
 	//b += b_collision + b_neo_hookean;
 
 	Hessian.setFromTriplets(hessian_nnz.begin(), hessian_nnz.end());
 
 
-	Elastic_hessian.setFromTriplets(hessian_nnz.begin() + record_size_of_inertial_triplet, hessian_nnz.begin() + neo_nnz_size);
-	Collision_hessian.setFromTriplets(hessian_nnz.begin() + neo_nnz_size, hessian_nnz.end());
+	//Elastic_hessian.setFromTriplets(hessian_nnz.begin() + record_size_of_inertial_triplet, hessian_nnz.begin() + neo_nnz_size);
+	//Collision_hessian.setFromTriplets(hessian_nnz.begin() + neo_nnz_size, hessian_nnz.end());
 
 
 }
@@ -512,7 +515,7 @@ void IPC::solveSystem(bool perform_collision)
 	delta_x = global_llt.solve(b);
 	max_displacement = delta_x.lpNorm<Eigen::Infinity>();
 
-	std::cout <<"++++ "<< delta_x.segment(0, 3).transpose() << std::endl;
+	//std::cout <<"++++ "<< delta_x.segment(0, 3).transpose() << std::endl;
 
 	//double k = 1.0;
 	//for (int i = 0; i < mesh_struct[1]->vertex_position.size(); ++i) {

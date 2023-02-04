@@ -172,6 +172,7 @@ public:
 	void sumNeoHookeanHessian(int thread_No);
 
 	void warmStartSolveCollision(int thread_No, int color);
+
 	void updatePositionAverageWarmStart(int thread_No);
 
 private:
@@ -179,7 +180,7 @@ private:
 	void computeNeoHookeanHessianGrad();
 
 
-	void computeGradient();
+	void computeGradient(bool for_warm_start);
 
 	std::vector<std::vector<std::vector<unsigned int>>*> vertex_index_of_a_tet_color_per_thread_start_group;
 
@@ -950,6 +951,8 @@ private:
 
 	void warmStart_solveBlock();
 	void lineSearchWarmStart(double& ori_energy, bool is_outer_itr);
+
+	void warmStartJacobi();
 };
 
 
