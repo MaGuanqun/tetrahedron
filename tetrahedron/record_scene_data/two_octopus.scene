@@ -49,7 +49,7 @@ camera up
 -0.00291372 0.999959 0.00859385
 camera center
 -0.0926839 0.313883 0.281407
-IPC
+XPBD_IPC
 substep_num
 1
 out iteration_num

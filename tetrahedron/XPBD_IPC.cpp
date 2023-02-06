@@ -725,7 +725,9 @@ void XPBD_IPC::warmStart(double& ori_energy)
 			updateCollisionFreePosition();
 		}
 		//warmStart_solveBlock();
-		warmStartJacobi();
+		for (int i = 0; i < 5; ++i) {
+			warmStartJacobi();
+		}
 
 		if (perform_collision) {
 			collision->collisionCulling();
@@ -733,16 +735,16 @@ void XPBD_IPC::warmStart(double& ori_energy)
 
 			thread->assignTask(this, COLLISION_FREE_POSITION_,0);
 			lineSearchWarmStart(ori_energy, true);
-			computeGradient(true);
+			//computeGradient(true);
 		}
 		itr_num++;
 	}
 
-	//collision->collision_time = 1.0;
-	//thread->assignTask(this, INVERSION_TEST, 2);
-	//collision->obtainCollisionTimeFromEveryThread();
-	//std::cout << "warm start inversion test time " << collision->collision_time << std::endl;
-	//thread->assignTask(this, COLLISION_FREE_POSITION_,1);
+	collision->collision_time = 1.0;
+	thread->assignTask(this, INVERSION_TEST, 2);
+	collision->obtainCollisionTimeFromEveryThread();
+	std::cout << "warm start inversion test time " << collision->collision_time << std::endl;
+	thread->assignTask(this, COLLISION_FREE_POSITION_,1);
 
 
 	updateCollisionFreePosition();
@@ -780,36 +782,34 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 	updateCollisionFreePosition();
 	if (perform_collision) {
 		warmStart(energy_time_start_begin);
-		//energy_time_start_begin = computeCurrentEnergy();
+		energy_time_start_begin = computeCurrentEnergy();
 	}
-
-	//std::cout << "time stamp " << *time_stamp << " outer itr num " << outer_itr_num << " " << inner_iteration_number << std::endl;
-	//max_displacement = 0.0;
-
-	//while (!convergeCondition(outer_itr_num,false, max_move_standard, outer_max_iteration_number)) {
-	//	if (outer_itr_num > 0) {
-	//		updateCollisionFreePosition();		
-	//	}
-	//	solveNewtonCD_tetBlock();
-	//	inner_iteration_number++;	
-	//	if (perform_collision) {
-	//		collision->collisionCulling();
-	//		collision->collisionTimeWithPair(false);			
-	//		thread->assignTask(this, INVERSION_TEST,0);
-	//		for (int i = 0; i < total_thread_num; ++i) {
-	//			if (collision->collision_time_thread[i] < collision->collision_time) {
-	//				collision->collision_time = collision->collision_time_thread[i];
-	//			}
-	//		}
-	//		thread->assignTask(this, COLLISION_FREE_POSITION_,0);
-	//		lineSearch(energy_time_start_begin);
-	//	}		
-	//	if (outer_itr_num > (int)min_outer_iteration - 2)
-	//	{
-	//		computeGradient(false);
-	//	}
-	//	outer_itr_num++;
-	//}
+	std::cout << "time stamp " << *time_stamp << " outer itr num " << outer_itr_num << " " << inner_iteration_number << std::endl;
+	max_displacement = 0.0;
+	while (!convergeCondition(outer_itr_num,false, max_move_standard, outer_max_iteration_number)) {
+		if (outer_itr_num > 0) {
+			updateCollisionFreePosition();		
+		}
+		solveNewtonCD_tetBlock();
+		inner_iteration_number++;	
+		if (perform_collision) {
+			collision->collisionCulling();
+			collision->collisionTimeWithPair(false);			
+			thread->assignTask(this, INVERSION_TEST,0);
+			for (int i = 0; i < total_thread_num; ++i) {
+				if (collision->collision_time_thread[i] < collision->collision_time) {
+					collision->collision_time = collision->collision_time_thread[i];
+				}
+			}
+			thread->assignTask(this, COLLISION_FREE_POSITION_,0);
+			lineSearch(energy_time_start_begin);
+		}		
+		if (outer_itr_num > (int)min_outer_iteration - 2)
+		{
+			//computeGradient(false);
+		}
+		outer_itr_num++;
+	}
 	
 	//for (int i = 0; i < mesh_struct[1]->vertex_position.size(); ++i) {
 	//	if (mesh_struct[1]->vertex_position[i][1] < -0.95 + 1e-7) {
@@ -821,8 +821,8 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 	updatePosition();
 	updateRenderNormal();
 	updateRenderVertexNormal();
-	std::cout << "===== " << vertex_position[0][0][1] - vertex_position_collider[0][0][1] << " " << vertex_position[0][1][1] - vertex_position_collider[0][0][1]
-		<< " " << vertex_position[0][2][1] - vertex_position_collider[0][0][1] << std::endl;
+	//std::cout << "===== " << vertex_position[0][0][1] - vertex_position_collider[0][0][1] << " " << vertex_position[0][1][1] - vertex_position_collider[0][0][1]
+	//	<< " " << vertex_position[0][2][1] - vertex_position_collider[0][0][1] << std::endl;
 	//vertex_trace.push_back(vertex_position[0][3556]);
 	//std::cout <<"time stamp "<< * time_stamp << std::endl;
 }
@@ -2057,6 +2057,7 @@ bool XPBD_IPC::convergeCondition(unsigned int iteration_num, bool for_warm_start
 	}
 	
 
+	//if (grad_max > max_move_standard) {
 	if (max_displacement > max_move_standard) {
 		
 		//if (iteration_num > 100) {
@@ -3259,7 +3260,7 @@ void XPBD_IPC::lineSearchWarmStart(double& ori_energy, bool is_outer_itr)
 			}		
 			itr_num++;
 			if (itr_num > 6) {
-				std::cout << "warm start line search is too small " << record_collision_time<<" "<<  ori_energy << " " << current_energy << std::endl;
+				//std::cout << "warm start line search is too small "<< is_outer_itr <<" " << record_collision_time << " " << ori_energy << " " << current_energy << std::endl;
 				break;
 			}
 			current_energy = computeWarmStartEnergy();
@@ -3468,10 +3469,6 @@ void XPBD_IPC::updatePositionAverageWarmStart(int thread_No)
 					SUM_(pos, record_position[k][j]);
 				}
 			}
-			//if (j == 2264) {
-			//	std::cout<< vertex_num<<" "<<
-			//}
-
 			if (vertex_num == 0) {
 				memcpy(vertex_pos[j].data(), sn_[j].data(), 24);
 			}

@@ -198,7 +198,7 @@ void IPC::IPC_solve()
 			else {
 				collision->collisionTimeWithPair(false);
 			}
-			inversionTest();
+			//inversionTest();
 			computeCollisionFreePosition();
 			if (add_pair_by_distance) {
 				collision->addPairByDistance();
@@ -208,6 +208,8 @@ void IPC::IPC_solve()
 		}
 		outer_itr_num++;
 	}
+	//inversionTest();
+
 	iteration_number += inner_iteration_number;
 	computeVelocity();
 	updatePosition();
