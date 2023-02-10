@@ -15,6 +15,8 @@ void Object::genBuffer()
 }
 
 
+
+
 void Object::combineObjAABB()
 {
 	memcpy(obj_aabb, obj_aabb_per_thread[0].data(), 48);

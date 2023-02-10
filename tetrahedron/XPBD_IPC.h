@@ -131,9 +131,11 @@ public:
 	void inertialEnergyPerThread(int thread_No);
 	void computeARAPEnergyPerThread(int thread_No);
 
-	double min_collision_time;
-	void computeBarrierEnergy(int thread_No);
+	void computeBarrierEnergy(int thread_No, unsigned int use_previous_pair);
 
+
+
+	double min_collision_time;
 
 	void computePreviousColorCollisionEnergy(int thread_No);
 
@@ -174,7 +176,7 @@ public:
 	void warmStartSolveCollision(int thread_No, int color);
 
 	void updatePositionAverageWarmStart(int thread_No);
-
+	void updateDisplacementOfNoCollision(int thread_No);
 private:
 
 	void computeNeoHookeanHessianGrad();
@@ -187,7 +189,7 @@ private:
 	double computeInertialEnergy();
 	double computeInertialEnergyWarmStart();
 	double computeCurrentARAPEnergy();
-	double computeBarrierEnergy();
+	double computeBarrierEnergy(int use_previous_energy);
 
 	double computeFloorEnergy(int type, double collision_stiffness, std::vector<unsigned int>* record_vertex_collide_with_floor, int start, int end);
 
@@ -196,9 +198,9 @@ private:
 
 	void previousColorCollisionInversionTime(unsigned int color_No);
 
-	double computeCurrentEnergy();
+	double computeCurrentEnergy(int use_previous_pair);
 
-	double computeWarmStartEnergy();
+	double computeWarmStartEnergy(int use_previous_pair);
 
 
 	double computeLastColorARAPEnergy();
@@ -219,7 +221,7 @@ private:
 
 	double computeEEEnergy(std::vector<unsigned int>* record_pair, unsigned int** edge_v_0, unsigned int** edge_v_1,
 		std::array<double, 3>** e0_current_pos, std::array<double, 3>** e1_current_pos, double collision_stiffness, double* d_hat,
-		bool** belong_to_color_group, int type, unsigned int start, unsigned int end);
+		bool** belong_to_color_group, int type, unsigned int start, unsigned int end, bool is_collider);
 
 
 	double computeVTEnergy(std::vector<std::vector<unsigned int>>* record_vt_pair, std::array<int, 3>** triangle_indices,
@@ -229,7 +231,7 @@ private:
 
 	double computeVTEnergy(std::vector<unsigned int>* record_vt_pair, std::array<int, 3>** triangle_indices,
 		std::array<double, 3>** v_current_pos, std::array<double, 3>** t_current_pos, double collision_stiffness, double* d_hat,
-		bool** belong_to_color_group, int type, unsigned int start, unsigned int end);
+		bool** belong_to_color_group, int type, unsigned int start, unsigned int end, int collision_type);
 
 
 	double computePreviousColorEnergy(unsigned int color_no);
@@ -950,9 +952,13 @@ private:
 		double* floor_map, double& max_dis, bool direct_update);
 
 	void warmStart_solveBlock();
-	void lineSearchWarmStart(double& ori_energy, bool is_outer_itr);
+	void lineSearchWarmStart(double& ori_energy, bool is_outer_itr, int use_previous_pair);
 
 	void warmStartJacobi();
+
+	std::vector<double*> edge_weight;
+	std::vector<double*> vertex_weight;
+
 };
 
 

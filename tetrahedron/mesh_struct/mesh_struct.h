@@ -164,6 +164,12 @@ public:
 
 	void testFaceEdgeAroundFaceEdge();
 
+
+	std::vector<double> edge_weight;
+	std::vector<double>vertex_weight;
+
+	void setElementWeight();
+	void setArea();
 protected:
 	int type;
 	bool isEdgeExist(unsigned int v0, unsigned int v1, unsigned int& edge_index);
@@ -173,6 +179,8 @@ protected:
 	bool isCommonUsed(unsigned int tet_num, std::vector<unsigned int>* tet_index);
 
 private:
+
+
 
 };
 

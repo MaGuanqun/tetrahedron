@@ -9,7 +9,7 @@ public:
 	void setSceneShader(Light& light, Camera* camera, float& far_plane, Shader* object_shader_front);
 	void loadMesh(OriMesh& ori_mesh, double density, Thread* thread);
 	void draw(Camera* camera, Shader* object_shader_front);
-	void setArea();
+
 
 	std::vector<int>update_stiffness_iteration_number;
 	void recordInitialMesh(SingleClothInfo& single_cloth_info_ref);

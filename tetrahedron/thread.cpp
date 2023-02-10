@@ -981,6 +981,9 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
     case COLLISION_FREE_POSITION_:
         k = job([func, thread_id, para]() {func->computeCollisionFreePosition(thread_id, para); });
         break;
+    case COMPUTE_BARRIER_ENERGY:
+        k = job([func, thread_id, para]() {func->computeBarrierEnergy(thread_id, para); });
+        break;
     //case UPDATE_TET_GRAD_SHARED_COLLISION:
     //    k = job([func, thread_id, para]() {func->tetGradForColorCollision(thread_id, para); });
     //    break;
@@ -1046,6 +1049,9 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
     case UPDATE_POSITION_AVERAGE_WARM_START:
         k = job([func, thread_id]() {func->updatePositionAverageWarmStart(thread_id); });
         break;
+    case UPDATE_DISPLACEMENT_NO_COLLISION_WARM_START:
+        k = job([func, thread_id]() {func->updateDisplacementOfNoCollision(thread_id); });
+        break;
     case UPDATE_POSITION_AVERAGE_EXCEPT_THIS_COLOR:
         k = job([func, thread_id]() {func->updatePositionAverageExceptThisColor(thread_id); });
         break;       
@@ -1060,9 +1066,6 @@ job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_ty
         break;
     case ARAP_ENERGY:
         k = job([func, thread_id]() {func->computeARAPEnergyPerThread(thread_id); });
-        break;
-    case COMPUTE_BARRIER_ENERGY:
-        k = job([func, thread_id]() {func->computeBarrierEnergy(thread_id); });
         break;
     case COMPUTE_RPREVIOUS_COLOR_BARRIER_ENERGY:
         k = job([func, thread_id]() {func->computePreviousColorCollisionEnergy(thread_id); });

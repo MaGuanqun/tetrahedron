@@ -2,7 +2,6 @@
 
 
 
-
 void TriangleObject::drawWireframe(Camera* camera, Shader* wireframe_shader)
 {
 	//setBuffer(cloth_index);

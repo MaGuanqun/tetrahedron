@@ -77,10 +77,13 @@ void Collider::loadMesh(OriMesh& ori_mesh, Thread* thread)
 	mesh_struct.initialInfo();
 	genBuffer();
 	setBuffer();
+	mesh_struct.setArea();
 	ori_vertices = mesh_struct.vertex_position;
 	initialHashAABB();
 	setRepresentativePrimitve();
 	obtainAABBMoveRadius();
+
+	mesh_struct.setElementWeight();
 }
 
 void Collider::setMeshStruct(OriMesh& ori_mesh)

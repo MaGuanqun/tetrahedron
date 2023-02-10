@@ -154,6 +154,9 @@ public:
 
 private:
 
+
+	double grad_infi=0.0;
+
 	void computeGradient();
 
 	std::vector<std::vector<std::vector<unsigned int>>*> vertex_index_of_a_tet_color_per_thread_start_group;
@@ -161,7 +164,7 @@ private:
 	double computeInertialEnergy();
 	double computeInertialEnergyWarmStart();
 	double computeCurrentARAPEnergy();
-	double computeBarrierEnergy();
+	double computeBarrierEnergy(bool only_use_previous_pair);
 
 	double computeFloorEnergy(int type, double collision_stiffness, std::vector<unsigned int>* record_vertex_collide_with_floor, int start, int end);
 
@@ -170,7 +173,7 @@ private:
 
 	void previousColorCollisionInversionTime(unsigned int color_No);
 
-	double computeCurrentEnergy();
+	double computeCurrentEnergy(bool only_use_previous_pair);
 
 	double computeWarmStartEnergy();
 
@@ -180,7 +183,7 @@ private:
 	void computeInversionForWarmStart();
 
 
-
+	void computeGrad(bool perform_collision);
 
 
 	double computeFloorEnergy(int type);
@@ -408,7 +411,7 @@ private:
 
 	SaveScene save_scene;
 	SecondOrderConstraint second_order_constraint;
-	void updateSn();
+	void updatePosBySn();
 
 	double computeBlockCurrentEnergy(std::array<double, 3>* vertex_position, double stiffness, double dt,
 		double* mass,
@@ -917,16 +920,21 @@ private:
 
 	double computeVTEnergy(std::vector<unsigned int>* record_vt_pair, std::array<int, 3>** triangle_indices,
 		std::array<double, 3>** v_current_pos, std::array<double, 3>** t_current_pos, double collision_stiffness, double* d_hat,
-		unsigned int start, unsigned int end);
+		unsigned int start, unsigned int end, int type);
 
 	double computeEEEnergy(std::vector<unsigned int>* record_pair, unsigned int** edge_v_0, unsigned int** edge_v_1,
 		std::array<double, 3>** e0_current_pos, std::array<double, 3>** e1_current_pos, double collision_stiffness, double* d_hat,
-		unsigned int start, unsigned int end);
+		unsigned int start, unsigned int end, bool is_collider);
 	void updatePos();
 
 	void computeFloorHessian();
 
 	void testComputeHessian();
+
+	bool only_perform_warmstart = true;
+
+	std::vector<double*> edge_weight;
+	std::vector<double*> vertex_weight;
 
 };
 

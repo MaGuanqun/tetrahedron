@@ -113,7 +113,7 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 
 	genBuffer();
 	setBuffer();
-	setArea();	
+	mesh_struct.setArea();	
 	setAnchor();
 	mass = mesh_struct.setMass(density);
 	mesh_struct.setAnchorPosition();
@@ -131,6 +131,8 @@ void Cloth::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	obtainAABBMoveRadius();
 
 	mesh_struct.sortTriangleAroundElement();
+
+	mesh_struct.setElementWeight();
 }
 
 
@@ -150,18 +152,7 @@ void Cloth::setMeshStruct(double density, OriMesh& ori_mesh)
 }
 
 
-void Cloth::setArea()
-{
-	double v01[3], v21[3], v_cross[3];
-	int* triangle_indices;
-	for (int i = 0; i < mesh_struct.triangle_indices.size(); ++i) {
-		triangle_indices = mesh_struct.triangle_indices[i].data();
-		SUB(v01, mesh_struct.vertex_position[triangle_indices[0]], mesh_struct.vertex_position[triangle_indices[1]]);
-		SUB(v21, mesh_struct.vertex_position[triangle_indices[2]], mesh_struct.vertex_position[triangle_indices[1]]);
-		CROSS(v_cross, v21, v01);
-		mesh_struct.faces[i].area = 0.5 * sqrt(DOT(v_cross, v_cross));
-	}
-}
+
 
 
 void Cloth::recordInitialMesh(SingleClothInfo& single_cloth_info_ref)

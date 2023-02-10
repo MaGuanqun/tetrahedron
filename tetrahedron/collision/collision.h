@@ -433,6 +433,17 @@ public:
 	std::vector<std::vector<unsigned int>>record_tv_collider_pair; //store collider vertex, obj triangle in order
 	std::vector<std::vector<unsigned int>>record_ee_collider_pair;
 
+	std::vector<unsigned int> previous_vt_pair_sum_start_per_thread;
+	std::vector<unsigned int> previous_ee_pair_sum_start_per_thread;
+	std::vector<unsigned int> previous_tv_collider_pair_sum_start_per_thread;
+	std::vector<unsigned int> previous_vt_collider_pair_sum_start_per_thread;
+	std::vector<unsigned int> previous_ee_collider_pair_sum_start_per_thread;
+	std::vector<unsigned int> previous_floor_pair_sum_start_per_thread;
+
+
+
+
+
 	std::vector<unsigned int>record_vt_pair_sum_all_thread; //obj_1, vertex_1, obj_2, vertex_2
 	std::vector<unsigned int>record_ee_pair_sum_all_thread;
 	std::vector<unsigned int>record_vt_collider_pair_sum_all_thread;
@@ -538,6 +549,17 @@ public:
 		bool compute_hessian);
 
 	void addPairByDistance();
+
+	unsigned int record_previous_triangle_index_with_collider_sum;
+	unsigned int record_previous_edge_index_with_collider_sum;
+	unsigned int record_previous_vertex_index_with_collider_sum;
+
+	unsigned int record_previous_vt_pair_sum_size;
+	unsigned int record_previous_ee_pair_sum_size;
+	unsigned int record_previous_tv_collider_pair_sum_size;
+	unsigned int record_previous_vt_collider_pair_sum_size;
+	unsigned int record_previous_ee_collider_pair_sum_size;
+	unsigned int record_previous_floor_pair_sum_size;
 
 private:		
 
@@ -663,16 +685,7 @@ private:
 	std::vector<unsigned int>record_previous_edge_index_with_collider;//size is thread_num
 	std::vector<unsigned int>record_previous_vertex_index_with_collider;//size is thread_num
 
-	unsigned int record_previous_triangle_index_with_collider_sum;
-	unsigned int record_previous_edge_index_with_collider_sum;
-	unsigned int record_previous_vertex_index_with_collider_sum;
 
-	unsigned int record_previous_vt_pair_sum_size;
-	unsigned int record_previous_ee_pair_sum_size;
-	unsigned int record_previous_tv_collider_pair_sum_size;
-	unsigned int record_previous_vt_collider_pair_sum_size;
-	unsigned int record_previous_ee_collider_pair_sum_size;
-	unsigned int record_previous_floor_pair_sum_size;
 
 	std::vector<unsigned int>record_previous_pair_size; //type 0 vt, 1 ee, 2 tv_c, 3 ee_c, 4 vt_c 
 
@@ -729,7 +742,8 @@ private:
 
 	void resizeHessianRecordIndex();
 
-	void computeVTHessian(unsigned int* VT, unsigned int num, double d_hat_2, double* vertex_position_, double* hessian_record, int* hessian_record_index, double stiffness, double* grad_record);
+	void computeVTHessian(unsigned int* VT, unsigned int num, double d_hat_2, double* vertex_position_, double* hessian_record, 
+		int* hessian_record_index, double stiffness, double* grad_record);
 	void computeVTColliderHessian(unsigned int* VT, unsigned int num, double d_hat_2, double* vertex_position_, double* hessian_record,
 		double stiffness, double* grad_record);
 
@@ -1498,4 +1512,13 @@ private:
 		std::array<double, 3>** vertex_position_0, std::array<double, 3>** vertex_position_1, std::array<int, 3>** indices);
 	void addEEPair(std::vector<unsigned int>* ee_pair, unsigned int** sp_ee_pair, std::vector<double>* d_hat,
 		std::array<double, 3>** vertex_position_0, std::array<double, 3>** vertex_position_1, unsigned int** e0v, unsigned int** e1v);
+
+
+	std::vector<double*> edge_weight;
+	std::vector<double*> vertex_weight;
+
+
+	std::vector<double*> collider_edge_weight;
+	std::vector<double*> collider_vertex_weight;
+
 };

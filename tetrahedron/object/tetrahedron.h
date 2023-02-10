@@ -68,8 +68,6 @@ public:
 
 	void drawOriPos(Camera* camera, Shader* object_shader_front);
 
-
-
 	void findAllNeighborVertex(int thread_No);
 };
 

@@ -72,7 +72,7 @@ bool IPC::convergeCondition(unsigned int iteration_num, bool for_warm_start, dou
 {
 
 	if (iteration_num < min_outer_iteration) {//max_iteration_number
-		std::cout << iteration_num << " " << max_displacement << std::endl;
+		std::cout << iteration_num << " " << max_displacement<<" "<<grad_infi << std::endl;
 		return false;
 	}
 	
@@ -80,26 +80,26 @@ bool IPC::convergeCondition(unsigned int iteration_num, bool for_warm_start, dou
 		return true;
 	}
 	if (for_warm_start) {
-		std::cout << "warm start " << iteration_num << " " << max_displacement << std::endl;
+		std::cout << "warm start " << iteration_num << " " << max_displacement << " " << grad_infi << std::endl;
 	}
 	else {
-		std::cout << iteration_num << " " << max_displacement << std::endl;
+		std::cout << iteration_num << " " << max_displacement << " " << grad_infi << std::endl;
 	}
 
 
-	if (max_displacement > max_move_standard) {
-
-		if (iteration_num > 100) {
-			if (dis_record.size() > 3) {
-				dis_record.clear();
-			}
-			for (int i = 0; i < dis_record.size(); ++i) {
-				if (abs(dis_record[i] - max_displacement) < 1e-8) {
-					return true;
-				}
-			}
-			dis_record.emplace_back(max_displacement);
-		}
+	if (grad_infi > max_move_standard) {
+	//if (max_displacement > max_move_standard) {
+		//if (iteration_num > 100) {
+		//	if (dis_record.size() > 3) {
+		//		dis_record.clear();
+		//	}
+		//	for (int i = 0; i < dis_record.size(); ++i) {
+		//		if (abs(dis_record[i] - max_displacement) < 1e-8) {
+		//			return true;
+		//		}
+		//	}
+		//	dis_record.emplace_back(max_displacement);
+		//}
 		return false;
 	}
 	return true;
@@ -146,13 +146,13 @@ void IPC::IPC_solve()
 
 	updateCollisionFreePosition();
 	setPosPredict();
-	updateSn();
+	updatePosBySn();
 	iteration_number = 0;
 	if (perform_collision) {
 		collision->initialPairRecordInfo();
 	}
 
-	solveSystem(false);
+	//solveSystem(false);
 
 	outer_itr_num = 0;
 	displacement_satisfied = false;
@@ -167,14 +167,14 @@ void IPC::IPC_solve()
 			collision->collisionTimeWithPair(false);
 		}
 		
-		//inversionTest();
+		inversionTest();
 		computeCollisionFreePosition();
 		if (add_pair_by_distance) {
 			collision->addPairByDistance();
 		}
 		updateCollisionFreePosition();
 	}
-	double ori_energy = computeCurrentEnergy();
+	double ori_energy = computeCurrentEnergy(false);
 
 	//std::cout << "= " << std::endl;
 	//std::cout<<std::setprecision(10) << vertex_position[0][0][0] << ", " << vertex_position[0][0][1] << ", " << vertex_position[0][0][2] << std::endl;
@@ -198,17 +198,18 @@ void IPC::IPC_solve()
 			else {
 				collision->collisionTimeWithPair(false);
 			}
-			//inversionTest();
+			inversionTest();
 			computeCollisionFreePosition();
 			if (add_pair_by_distance) {
 				collision->addPairByDistance();
 			}
 			//line search
 			lineSearch(ori_energy);
+			computeGrad(perform_collision);
 		}
 		outer_itr_num++;
 	}
-	//inversionTest();
+	inversionTest();
 
 	iteration_number += inner_iteration_number;
 	computeVelocity();
@@ -289,16 +290,18 @@ double IPC::computeElasticEnergy()
 }
 
 
-double IPC::computeCurrentEnergy()
+double IPC::computeCurrentEnergy(bool only_use_previous_pair)
 {
 	double energy = 0;
 	double inertial_energy = computeInertialEnergy();
 	energy += inertial_energy;
-	//double elastic_energy = computeElasticEnergy();
-	//energy += elastic_energy;
+	if (!only_perform_warmstart) {
+		double elastic_energy = computeElasticEnergy();
+		energy += elastic_energy;
+	}
 	double barrier_energy = 0.0;
 	if (perform_collision) {
-		barrier_energy = computeBarrierEnergy();
+		barrier_energy = computeBarrierEnergy(only_use_previous_pair);
 		energy += barrier_energy;
 	}
 
@@ -307,7 +310,7 @@ double IPC::computeCurrentEnergy()
 	return energy;
 }
 
-double IPC::computeBarrierEnergy()
+double IPC::computeBarrierEnergy(bool only_use_previous_pair)
 {
 	double energy = 0.0;
 	double stiffness = 0.0;
@@ -317,35 +320,57 @@ double IPC::computeBarrierEnergy()
 	else {
 		stiffness = cloth->data()[0].collision_stiffness[0];
 	}
+
+
+	unsigned int vt_pair=0, ee_pair=0, vt_c_pair=0, ee_c_pair=0, tv_c_pair=0, floor_pair=0;
+
+	if (only_use_previous_pair) {
+		vt_pair = collision->record_previous_vt_pair_sum_size;
+		ee_pair = collision->record_previous_ee_pair_sum_size;
+		vt_c_pair = collision->record_previous_vt_collider_pair_sum_size;
+		ee_c_pair = collision->record_previous_ee_collider_pair_sum_size;
+		tv_c_pair = collision->record_previous_tv_collider_pair_sum_size;
+		floor_pair = collision->record_previous_floor_pair_sum_size;
+	}
+	else {
+		vt_pair = collision->record_vt_pair_sum_all_thread.size();
+		ee_pair = collision->record_ee_pair_sum_all_thread.size();
+		vt_c_pair = collision->record_vt_collider_pair_sum_all_thread.size();
+		ee_c_pair = collision->record_ee_collider_pair_sum_all_thread.size();
+		tv_c_pair = collision->record_tv_collider_pair_sum_all_thread.size();
+		floor_pair = collision->record_vertex_collide_with_floor_sum_all_thread.size();
+	}
+
+
 	//vt
 	energy += computeVTEnergy(&collision->record_vt_pair_sum_all_thread, triangle_indices.data(), vertex_position.data(), vertex_position.data(),
 		stiffness, collision->record_vt_pair_d_hat.data(),
-		0, collision->record_vt_pair_sum_all_thread.size());
+		0, vt_pair,0);
 	//ee
 	energy += computeEEEnergy(&collision->record_ee_pair_sum_all_thread, edge_vertices.data(), edge_vertices.data(),
 		vertex_position.data(), vertex_position.data(), stiffness, collision->record_ee_pair_d_hat.data(),
 		0,
-		collision->record_ee_pair_sum_all_thread.size());
+		ee_pair, false);
 	if (has_collider) {
 		//vt_c
 		energy += computeVTEnergy(&collision->record_vt_collider_pair_sum_all_thread, triangle_indices_collider.data(), vertex_position.data(), vertex_position_collider.data(),
 			stiffness, collision->record_vt_collider_pair_d_hat.data(),
 			0,
-			collision->record_vt_collider_pair_sum_all_thread.size());
+			vt_c_pair,1);
 		//tv_c
 		energy += computeVTEnergy(&collision->record_tv_collider_pair_sum_all_thread, triangle_indices.data(), vertex_position_collider.data(), vertex_position.data(),
 			stiffness, collision->record_tv_collider_pair_d_hat.data(),
 			0,
-			collision->record_tv_collider_pair_sum_all_thread.size());
+			tv_c_pair,2);
 		//ee c
 		energy += computeEEEnergy(&collision->record_ee_collider_pair_sum_all_thread, edge_vertices.data(), collider_edge_vertices.data(),
 			vertex_position.data(), vertex_position_collider.data(), stiffness, collision->record_ee_collider_pair_d_hat.data(),
 			0,
-			collision->record_ee_collider_pair_sum_all_thread.size());
+			ee_c_pair,true);
 	}
 	if (floor->exist) {
 		energy += computeFloorEnergy(0, stiffness, &collision->record_vertex_collide_with_floor_sum_all_thread, 0,
-			collision->record_vertex_collide_with_floor_sum_all_thread.size());
+			floor_pair);
 	}
 	return energy;
 }
@@ -377,7 +402,7 @@ double IPC::computeFloorEnergy(int type, double collision_stiffness, std::vector
 
 double IPC::computeVTEnergy(std::vector<unsigned int>* record_vt_pair, std::array<int, 3>** triangle_indices,
 	std::array<double, 3>** v_current_pos, std::array<double, 3>** t_current_pos, double collision_stiffness, double* d_hat,
-	unsigned int start, unsigned int end)
+	unsigned int start, unsigned int end, int type)
 {
 	double energy = 0.0;
 	int* indices;
@@ -387,12 +412,30 @@ double IPC::computeVTEnergy(std::vector<unsigned int>* record_vt_pair, std::arra
 
 	double energy1;
 
+	double coe=0.0;
+
 	for (auto i = pair_start; i < pair_end; i += 4) {
 		indices = triangle_indices[*(i + 2)][*(i + 3)].data();
+
+		switch (type)
+		{
+		case 0:
+			coe = 0.25 * (vertex_weight[*i][*(i + 1)] + vertex_weight[*(i + 2)][indices[0]] + vertex_weight[*(i + 2)][indices[1]]
+				+ vertex_weight[*(i + 2)][indices[2]]);
+			break;
+		case 1:
+			coe = vertex_weight[*i][*(i + 1)];
+			break;
+		case 2:
+			coe = (vertex_weight[*(i + 2)][indices[0]] + vertex_weight[*(i + 2)][indices[1]]
+				+ vertex_weight[*(i + 2)][indices[2]]) / 3.0;
+			break;
+		}
+
 		energy1 = compute_energy.computeBarrierEnergy(v_current_pos[*i][*(i + 1)].data(),
 			t_current_pos[*(i + 2)][indices[0]].data(),
 			t_current_pos[*(i + 2)][indices[1]].data(),
-			t_current_pos[*(i + 2)][indices[2]].data(), collision_stiffness, *d_hat_, true);
+			t_current_pos[*(i + 2)][indices[2]].data(), coe*collision_stiffness, *d_hat_, true);
 		energy += energy1;
 
 		if (std::isinf(energy1)) {
@@ -406,7 +449,7 @@ double IPC::computeVTEnergy(std::vector<unsigned int>* record_vt_pair, std::arra
 
 double IPC::computeEEEnergy(std::vector<unsigned int>* record_pair, unsigned int** edge_v_0, unsigned int** edge_v_1,
 	std::array<double, 3>** e0_current_pos, std::array<double, 3>** e1_current_pos, double collision_stiffness, double* d_hat,
-	unsigned int start, unsigned int end)
+	unsigned int start, unsigned int end, bool is_collider)
 {
 	double energy = 0.0;
 	unsigned int* edge_0_vertex;
@@ -416,13 +459,21 @@ double IPC::computeEEEnergy(std::vector<unsigned int>* record_pair, unsigned int
 	auto pair_start = record_pair->begin() + start;
 	double* d_hat_ = d_hat + (start >> 2);
 	double energy1;
-
+	double coe=0.0;
 	for (auto i = pair_start; i < pair_end; i += 4) {
 		edge_0_vertex = edge_v_0[*i] + ((*(i + 1)) << 1);
 		edge_1_vertex = edge_v_1[*(i + 2)] + ((*(i + 3)) << 1);
+
+		if (is_collider) {
+			coe = edge_weight[*i][*(i + 1)];
+		}
+		else {
+			coe = 0.5 * (edge_weight[*i][*(i + 1)] + edge_weight[*(i + 2)][*(i + 3)]);
+		}
+
 		energy1 = compute_energy.computeBarrierEnergy(e0_current_pos[*i][*edge_0_vertex].data(),
 			e0_current_pos[*i][*(edge_0_vertex + 1)].data(), e1_current_pos[*(i + 2)][*edge_1_vertex].data(),
-			e1_current_pos[*(i + 2)][*(edge_1_vertex + 1)].data(), collision_stiffness, *d_hat_, false);
+			e1_current_pos[*(i + 2)][*(edge_1_vertex + 1)].data(), coe *collision_stiffness, *d_hat_, false);
 		energy += energy1;
 		if (std::isinf(energy1)) {
 			std::cout << "ee1 " << *(i + 1) << " " << *(i + 3) << std::endl;
@@ -439,7 +490,7 @@ void IPC::lineSearch(double& ori_energy)
 	std::cout << "collision time " << collision->collision_time << std::endl;
 	double current_energy = 0.0;
 	if (perform_collision) {
-		current_energy = computeCurrentEnergy();
+		current_energy = computeCurrentEnergy(true);
 		if (current_energy > energy_converge_standard) {
 			double record_collision_time = collision->collision_time;
 			if (current_energy > ori_energy) {
@@ -449,7 +500,7 @@ void IPC::lineSearch(double& ori_energy)
 			}
 			collision->collision_time = 0.5;
 			int itr_num = 0;
-			while (current_energy > ori_energy)
+			while (current_energy - ori_energy > 1e-8)
 			{
 				record_collision_time *= 0.5;
 				computeCollisionFreePosition();
@@ -457,17 +508,35 @@ void IPC::lineSearch(double& ori_energy)
 					collision->addPairByDistance();
 				}
 				itr_num++;
-				if (itr_num > 6) {
+				if (itr_num > 20) {
 					std::cout << "global record_collision_time is too small "<< record_collision_time<<" " << ori_energy << " " << current_energy << std::endl;
 					break;
 				}
-				current_energy = computeCurrentEnergy();
+				current_energy = computeCurrentEnergy(true);
+			}
+
+			if (itr_num > 10) {
+				std::cout << "collision time is too small, " << record_collision_time << std::endl;
 			}
 		}
 		ori_energy = current_energy;
 	}
 
 
+}
+
+
+void IPC::computeGrad(bool perform_collision)
+{
+	b.setZero();
+	hessian_nnz.resize(record_size_of_inertial_triplet);
+
+	if (perform_collision) {
+		setCollisionHessian(b.data(), &hessian_nnz);
+	}
+
+	setInertialGrad(b.data());
+	grad_infi = b.lpNorm<Eigen::Infinity>();
 }
 
 
@@ -480,9 +549,9 @@ void IPC::computeHessian(bool perform_collision)
 	//b_neo_hookean = b;
 	//b_collision = b;
 
-
-
-	//setNeoHookean(b, &hessian_nnz);
+	if (!only_perform_warmstart) {
+		setNeoHookean(b, &hessian_nnz);
+	}
 
 	int neo_nnz_size = hessian_nnz.size();
 	//SparseMatrix<double> k;
@@ -496,7 +565,6 @@ void IPC::computeHessian(bool perform_collision)
 
 	setInertialGrad(b.data());
 
-	//b += b_collision + b_neo_hookean;
 
 	Hessian.setFromTriplets(hessian_nnz.begin(), hessian_nnz.end());
 
@@ -673,15 +741,14 @@ void IPC::computeCollisionFreePosition()
 
 }
 
-void IPC::updateSn()
-{
-	for (unsigned int i = 0; i < total_obj_num; ++i) {
-		memcpy(sn[i][0].data(), vertex_position[i][0].data(), mesh_struct[i]->vertex_position.size() * 24);
-	}
-}
 
 void IPC::inversionTest()
 {
+
+	if (only_perform_warmstart) {
+		return;
+	}
+
 	unsigned int start, end;
 	unsigned int* tet_around_a_group;
 
@@ -744,9 +811,17 @@ void IPC::inversionTest()
 }
 
 
+void IPC::updatePosBySn()
+{
+	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		memcpy( vertex_position[i][0].data(), sn[i][0].data(), mesh_struct[i]->vertex_position.size() * 24);
+	}
+}
+
 void IPC::setPosPredict()
 {
 	std::array<double, 3>* vertex_pos;
+	std::array<double, 3>* sn_;
 	unsigned int vertex_end = 0;
 
 	double delta_t = time_step;
@@ -757,6 +832,7 @@ void IPC::setPosPredict()
 	double gravity__[3];
 	memcpy(gravity__, gravity, 24);
 	for (unsigned int i = 0; i < total_obj_num; ++i) {
+		sn_ = sn[i].data();
 		vertex_pos = vertex_position[i];
 		vertex_end = mesh_struct[i]->vertex_position.size();
 		mass_inv = mesh_struct[i]->mass_inv.data();
@@ -765,7 +841,7 @@ void IPC::setPosPredict()
 		for (unsigned int j = 0; j < vertex_end; ++j) {
 			if (mass_inv[j] != 0) {
 				for (unsigned int k = 0; k < 3; ++k) {
-					vertex_pos[j][k] += delta_t * velocity_[j][k] + delta_t_2 * (mass_inv[j] * f_ext_[j][k] + gravity__[k]);
+					sn_[j][k] = vertex_pos[j][k] + delta_t * velocity_[j][k] + delta_t_2 * (mass_inv[j] * f_ext_[j][k] + gravity__[k]);
 				}
 			}
 		}
@@ -847,6 +923,9 @@ void IPC::computeEEHessian(int start, int end, unsigned int* pair, double* d_hat
 	int hessian_record_index[5];
 	memset(hessian_record_index, 0, 20);
 	char* record_exist;
+
+	double coe=0.0;
+
 	if (is_collider) {
 		bool not_collider[4] = { true,true,false, false };
 		for (int i = start; i < end; i += 4) {
@@ -858,7 +937,7 @@ void IPC::computeEEHessian(int start, int end, unsigned int* pair, double* d_hat
 			if (second_order_constraint.computeBarrierEEGradientHessian(vertex_position[pair[i]][edge_0_vertex[0]].data(),
 				vertex_position[pair[i]][edge_0_vertex[1]].data(),
 				vertex_position_collider[obj_2][edge_1_vertex[0]].data(), vertex_position_collider[obj_2][edge_1_vertex[1]].data(), Hessian, grad,
-				hessian_record_index, stiffness, d_hat[i >> 2], rest_edge_length[pair[i]][pair[i + 1]],
+				hessian_record_index, edge_weight[pair[i]][pair[i + 1]] * stiffness, d_hat[i >> 2], rest_edge_length[pair[i]][pair[i + 1]],
 				rest_edge_length_collider[obj_2][pair[i + 3]], true, is_collider)) {
 				setHessian(hessian_record_index, vertex_index_in_sum, Hessian, grad.data(), hessian, grad_, not_collider);
 			}
@@ -874,10 +953,13 @@ void IPC::computeEEHessian(int start, int end, unsigned int* pair, double* d_hat
 			vertex_index_in_sum[1] = vertex_index_prefix_sum_obj[pair[i]] + edge_0_vertex[1];
 			vertex_index_in_sum[2] = vertex_index_prefix_sum_obj[obj_2] + edge_1_vertex[0];
 			vertex_index_in_sum[3] = vertex_index_prefix_sum_obj[obj_2] + edge_1_vertex[1];
+
+			coe = 0.5 * (edge_weight[pair[i]][pair[i + 1]] + edge_weight[obj_2][pair[i + 3]]);
+
 			if (second_order_constraint.computeBarrierEEGradientHessian(vertex_position[pair[i]][edge_0_vertex[0]].data(),
 				vertex_position[pair[i]][edge_0_vertex[1]].data(),
 				vertex_position[obj_2][edge_1_vertex[0]].data(), vertex_position[obj_2][edge_1_vertex[1]].data(), Hessian, grad,
-				hessian_record_index, stiffness, d_hat[i >> 2], rest_edge_length[pair[i]][pair[i + 1]],
+				hessian_record_index, coe*stiffness, d_hat[i >> 2], rest_edge_length[pair[i]][pair[i + 1]],
 				rest_edge_length[obj_2][pair[i + 3]], true, is_collider)) {				
 				setHessian(hessian_record_index, vertex_index_in_sum, Hessian, grad.data(), hessian, grad_, not_collider);
 			}
@@ -927,6 +1009,7 @@ void IPC::computeVTHessian(int start, int end, unsigned int* pair, double* d_hat
 	int* triangle_vertex;
 	MatrixXd Hessian; VectorXd grad;
 	int hessian_record_index[5] = { 0,-1,-1,-1,-1 };
+	double coe;
 	switch (type)
 	{
 	case 0: {
@@ -939,9 +1022,13 @@ void IPC::computeVTHessian(int start, int end, unsigned int* pair, double* d_hat
 			vertex_index_in_sum[1] = vertex_index_prefix_sum_obj[obj_2] + triangle_vertex[0];
 			vertex_index_in_sum[2] = vertex_index_prefix_sum_obj[obj_2] + triangle_vertex[1];
 			vertex_index_in_sum[3] = vertex_index_prefix_sum_obj[obj_2] + triangle_vertex[2];
+
+			coe = 0.25 * (vertex_weight[pair[i]][vertex_index] + vertex_weight[obj_2][triangle_vertex[0]] + vertex_weight[obj_2][triangle_vertex[1]]
+				+ vertex_weight[obj_2][triangle_vertex[2]]);
+
 			if (second_order_constraint.computeBarrierVTGradientHessian(Hessian, grad, vertex_position[pair[i]][vertex_index].data(), vertex_position[obj_2][triangle_vertex[0]].data(),
 				vertex_position[obj_2][triangle_vertex[1]].data(), vertex_position[obj_2][triangle_vertex[2]].data(), d_hat[i >> 2],
-				hessian_record_index, stiffness, true, type)) {
+				hessian_record_index, coe*stiffness, true, type)) {
 				setHessian(hessian_record_index, vertex_index_in_sum, Hessian, grad.data(), hessian, grad_, not_collider);
 			}
 		}
@@ -958,7 +1045,7 @@ void IPC::computeVTHessian(int start, int end, unsigned int* pair, double* d_hat
 			vertex_index_in_sum[0] = vertex_index_prefix_sum_obj[pair[i]] + vertex_index;
 			if (second_order_constraint.computeBarrierVTGradientHessian(Hessian, grad, vertex_position[pair[i]][vertex_index].data(), vertex_position_collider[obj_2][triangle_vertex[0]].data(),
 				vertex_position_collider[obj_2][triangle_vertex[1]].data(), vertex_position_collider[obj_2][triangle_vertex[2]].data(), d_hat[i >> 2],
-				hessian_record_index, stiffness, true, type)) {
+				hessian_record_index, vertex_weight[pair[i]][vertex_index] * stiffness, true, type)) {
 
 				//std::cout << pair[i + 1] << " " << pair[i + 3] << std::endl;
 				//std::cout << grad.segment(0, 3).transpose() << std::endl;
@@ -984,9 +1071,13 @@ void IPC::computeVTHessian(int start, int end, unsigned int* pair, double* d_hat
 			vertex_index_in_sum[1] = vertex_index_prefix_sum_obj[obj_2] + triangle_vertex[0];
 			vertex_index_in_sum[2] = vertex_index_prefix_sum_obj[obj_2] + triangle_vertex[1];
 			vertex_index_in_sum[3] = vertex_index_prefix_sum_obj[obj_2] + triangle_vertex[2];
+
+			coe = (vertex_weight[obj_2][triangle_vertex[0]] + vertex_weight[obj_2][triangle_vertex[1]]
+				+ vertex_weight[obj_2][triangle_vertex[2]]) / 3.0;
+
 			if (second_order_constraint.computeBarrierVTGradientHessian(Hessian, grad, vertex_position_collider[pair[i]][vertex_index].data(), vertex_position[obj_2][triangle_vertex[0]].data(),
 				vertex_position[obj_2][triangle_vertex[1]].data(), vertex_position[obj_2][triangle_vertex[2]].data(), d_hat[i >> 2],
-				hessian_record_index, stiffness, true, type)) {
+				hessian_record_index, coe*stiffness, true, type)) {
 				setHessian(hessian_record_index, vertex_index_in_sum, Hessian, grad.data(), hessian, grad_, not_collider);
 
 			}
@@ -1252,6 +1343,10 @@ void IPC::reorganzieDataOfObjects()
 
 	vertex_index_of_a_tet_color_per_thread_start_group.resize(total_obj_num);
 
+	edge_weight.resize(total_obj_num);
+	vertex_weight.resize(total_obj_num);
+
+
 	for (unsigned int i = 0; i < cloth->size(); ++i) {
 		vertex_position[i] = cloth->data()[i].mesh_struct.vertex_position.data();
 		vertex_position_render[i] = cloth->data()[i].mesh_struct.vertex_for_render.data();
@@ -1277,7 +1372,8 @@ void IPC::reorganzieDataOfObjects()
 		edge_around_edge[i] = cloth->data()[i].mesh_struct.edge_around_edge.data();
 
 		rest_edge_length[i] = cloth->data()[i].mesh_struct.edge_length.data();
-
+		edge_weight[i] = cloth->data()[i].mesh_struct.edge_weight.data();
+		vertex_weight[i] = cloth->data()[i].mesh_struct.vertex_weight.data();
 	}
 
 	unfix_tet_index.resize(tetrahedron->size());
@@ -1333,6 +1429,8 @@ void IPC::reorganzieDataOfObjects()
 		tet_index_begin_per_thread[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.tetrahedron_index_begin_per_thread.data();
 
 		vertex_index_of_a_tet_color_per_thread_start_group[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_index_of_a_tet_color_per_thread_start_group.data();
+		edge_weight[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.edge_weight.data();
+		vertex_weight[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_weight.data();
 	}
 	if (!collider->empty()) {
 		triangle_indices_collider.resize(collider->size());

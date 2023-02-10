@@ -24,6 +24,7 @@ void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 
 	genBuffer();
 	setBuffer();
+	mesh_struct.setArea();
 	setRepresentativePrimitve();
 	initialHashAABB();
 	obtainAABBMoveRadius();
@@ -36,10 +37,16 @@ void Tetrahedron::loadMesh(OriMesh& ori_mesh, double density, Thread* thread)
 	mesh_struct.recordPrimitiveIndexOfATet();
 	mesh_struct.sortTriangleAroundElement();	
 
-
+	mesh_struct.setElementWeight();
 	//mesh_struct.testFaceEdgeAroundFaceEdge();
 	//mesh_struct.testTetAroundFaceEdge();
+
+	//for (auto i = 0; i < mesh_struct.vertex_weight.size(); ++i) {
+	//	std::cout << mesh_struct.vertex_weight[i] << std::endl;
+	//}
 }
+
+
 
 
 //void Tetrahedron::genShader()

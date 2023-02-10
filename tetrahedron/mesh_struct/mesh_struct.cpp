@@ -71,6 +71,43 @@ void MeshStruct::sortTriangleAroundVertexEdge(int thread_id)
 
 }
 
+void MeshStruct::setArea()
+{
+	double v01[3], v21[3], v_cross[3];
+	int* triangle_indices_;
+	for (int i = 0; i < triangle_indices.size(); ++i) {
+		triangle_indices_ = triangle_indices[i].data();
+		SUB(v01, vertex_position[triangle_indices_[0]], vertex_position[triangle_indices_[1]]);
+		SUB(v21, vertex_position[triangle_indices_[2]], vertex_position[triangle_indices_[1]]);
+		CROSS(v_cross, v21, v01);
+		faces[i].area = 0.5 * sqrt(DOT(v_cross, v_cross));
+	}
+}
+
+
+void MeshStruct::setElementWeight()
+{
+	edge_weight.resize(edges.size(),0);
+	vertex_weight.resize(vertices.size(),0);
+
+	double m;
+	unsigned int* face_edge_index;
+	for (int i = 0; i < faces.size(); ++i) {
+		m = faces[i].area  / 3.0;
+		vertex_weight[triangle_indices[i][0]] += m;
+		vertex_weight[triangle_indices[i][1]] += m;
+		vertex_weight[triangle_indices[i][2]] += m;
+
+		face_edge_index = face_edges.data() + 3 * i;
+
+		edge_weight[face_edge_index[0]] += m;
+		edge_weight[face_edge_index[1]] += m;
+		edge_weight[face_edge_index[2]] += m;
+
+	}
+
+}
+
 
 void MeshStruct::setFace()
 {

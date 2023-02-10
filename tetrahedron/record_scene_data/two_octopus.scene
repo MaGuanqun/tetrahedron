@@ -6,10 +6,10 @@ collider
 1
 .\model\tank.obj
 stiffness
-2e+05 50000 0 0 0 0 1e+04 0.35
-1e+2 20000 20000 20 0 0 0 0 
-2e+05 50000 0 0 0 0 1e+04 0.35
-1e+2 20000 20000 20 0 0 0 0 
+2e+05 50000 0 0 0 0 1e+02 0.35
+1e+5 20000 20000 20 0 0 0 0 
+2e+05 50000 0 0 0 0 1e+02 0.35
+1e+5 20000 20000 20 0 0 0 0 
 anchor_vertex
 0
 0 
@@ -20,7 +20,7 @@ time_step
 cloth_density
 1
 tet_density
-100
+1
 velocity_damp
 0.99
 friction_coe
@@ -67,7 +67,7 @@ min inner itr num
 min outer itr num
 6
 displacement standard
-1e-3
+3e-5
 distance record as collision
 0.0
 energy converge standard

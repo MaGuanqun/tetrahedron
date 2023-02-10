@@ -159,6 +159,16 @@ void Collision::initial(std::vector<Cloth>* cloth, std::vector<Collider>* collid
 	ee_collider_pair_sum_start_per_thread.resize(thread_num + 1);
 	floor_pair_sum_start_per_thread.resize(thread_num + 1);
 
+
+	previous_vt_pair_sum_start_per_thread.resize(thread_num + 1);
+	previous_ee_pair_sum_start_per_thread.resize(thread_num + 1);
+	previous_tv_collider_pair_sum_start_per_thread.resize(thread_num + 1);
+	previous_vt_collider_pair_sum_start_per_thread.resize(thread_num + 1);
+	previous_ee_collider_pair_sum_start_per_thread.resize(thread_num + 1);
+	previous_floor_pair_sum_start_per_thread.resize(thread_num + 1);
+
+
+
 	pair_index_start_per_thread.resize(thread_num + 1, 0);
 
 	//target_position_start_per_thread.resize(2 * (thread_num + 1), 0);
@@ -329,7 +339,7 @@ void Collision::recordPair()
 
 
 	pair_hash_table_size= 99991;//999983
-	pair_hash_table_cell_size = 66;
+	pair_hash_table_cell_size = 132;
 	
 	vt_hash_size_record=new std::atomic_uint[pair_hash_table_size];
 	ee_hash_size_record = new std::atomic_uint[pair_hash_table_size];
@@ -730,6 +740,9 @@ void Collision::reorganzieDataOfObjects()
 
 	tet_order_in_color_group.resize(total_obj_num);
 
+	edge_weight.resize(total_obj_num);
+	vertex_weight.resize(total_obj_num);
+
 	for (int i = 0; i < cloth->size(); ++i) {
 		obj_tri_aabb[i] = cloth->data()[i].triangle_AABB.data();
 		vertex_aabb[i] = cloth->data()[i].vertex_AABB.data();
@@ -767,6 +780,9 @@ void Collision::reorganzieDataOfObjects()
 		edge_around_triangle[i] = cloth->data()[i].mesh_struct.edge_around_face.data();
 		triangle_around_edge[i] = cloth->data()[i].mesh_struct.face_around_edge.data();
 		edge_around_edge[i] = cloth->data()[i].mesh_struct.edge_around_edge.data();
+
+		edge_weight[i] = cloth->data()[i].mesh_struct.edge_weight.data();
+		vertex_weight[i] = cloth->data()[i].mesh_struct.vertex_weight.data();
 
 	}
 	for (int i = 0; i < tetrahedron->size(); ++i) {
@@ -830,6 +846,8 @@ void Collision::reorganzieDataOfObjects()
 		tet_around_edge[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.tet_around_edge.data();
 		tet_order_in_color_group[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.tet_order_in_color_group.data();
 
+		edge_weight[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.edge_weight.data();
+		vertex_weight[i + cloth->size()] = tetrahedron->data()[i].mesh_struct.vertex_weight.data();
 	}
 
 	if (has_collider) {
@@ -855,6 +873,10 @@ void Collision::reorganzieDataOfObjects()
 
 		rest_edge_length_collider.resize(collider->size());
 
+		collider_edge_weight.resize(collider->size());
+		collider_vertex_weight.resize(collider->size());
+
+
 		for (int i = 0; i < collider->size(); ++i) {
 			obj_tri_aabb_collider[i] = collider->data()[i].triangle_AABB.data();
 			vertex_aabb_collider[i] = collider->data()[i].vertex_AABB.data();
@@ -877,6 +899,10 @@ void Collision::reorganzieDataOfObjects()
 			collider_triangle_normal_magnitude_reciprocal[i] = collider->data()[i].mesh_struct.triangle_normal_magnitude_reciprocal.data();
 
 			rest_edge_length_collider[i] = collider->data()[i].mesh_struct.edge_length.data();
+
+			collider_edge_weight[i] = collider->data()[i].mesh_struct.edge_weight.data();
+			collider_vertex_weight[i] = collider->data()[i].mesh_struct.vertex_weight.data();
+
 		}
 	}
 
@@ -3111,6 +3137,23 @@ void Collision::setPairTogether()
 		arrangeIndex(thread_num, record_vertex_collide_with_floor_sum_all_thread.size() >> 1, floor_pair_sum_start_per_thread.data(),2);
 	}
 
+
+	arrangeIndex(thread_num, record_previous_vt_pair_sum_size >> 2, previous_vt_pair_sum_start_per_thread.data(), 4);
+	arrangeIndex(thread_num, record_previous_ee_pair_sum_size >> 2, previous_ee_pair_sum_start_per_thread.data(), 4);
+	if (has_collider) {
+		arrangeIndex(thread_num, record_previous_tv_collider_pair_sum_size >> 2, previous_tv_collider_pair_sum_start_per_thread.data(), 4);
+		arrangeIndex(thread_num, record_previous_vt_collider_pair_sum_size >> 2, previous_vt_collider_pair_sum_start_per_thread.data(), 4);
+		arrangeIndex(thread_num, record_previous_ee_collider_pair_sum_size >> 2, previous_ee_collider_pair_sum_start_per_thread.data(), 4);
+	}
+	if (floor->exist) {
+		arrangeIndex(thread_num, record_previous_floor_pair_sum_size >> 1, previous_floor_pair_sum_start_per_thread.data(), 2);
+	}
+
+
+
+
+
+
 	arrangeIndex(thread_num, (record_vt_pair_sum_all_thread.size()- record_previous_vt_pair_sum_size) >> 2, vt_pair_add_per_thread.data(),4);
 	arrangeIndex(thread_num, (record_ee_pair_sum_all_thread.size()- record_previous_ee_pair_sum_size) >> 2, ee_pair_add_per_thread.data(),4);
 	if (has_collider) {
@@ -5035,7 +5078,7 @@ void Collision::computeEEGrad(int start, int end, unsigned int* pair, double* d_
 			if (second_order_constraint.computeBarrierEEGradientHessian(vertex_position[pair[i]][edge_0_vertex[0]].data(),
 				vertex_position[pair[i]][edge_0_vertex[1]].data(),
 				vertex_position_collider[obj_2][edge_1_vertex[0]].data(), vertex_position_collider[obj_2][edge_1_vertex[1]].data(), Hessian, grad,
-				hessian_record_index, stiffness, d_hat[i >> 2], rest_edge_length[pair[i]][pair[i + 1]],
+				hessian_record_index, edge_weight[pair[i]][pair[i + 1]] * stiffness, d_hat[i >> 2], rest_edge_length[pair[i]][pair[i + 1]],
 				rest_edge_length_collider[obj_2][pair[i + 3]],false,is_collider)) {
 				setGrad(hessian_record_index, vertex_index_in_sum, grad.data(), hessian_record + (i >> 2) * 36, grad_record, 6, not_collider,
 					0);
@@ -5045,6 +5088,7 @@ void Collision::computeEEGrad(int start, int end, unsigned int* pair, double* d_
 	}
 	else
 	{
+		double coe;
 		for (int i = start; i < end; i += 4) {
 			edge_0_vertex = edge_vertices[pair[i]] + (pair[i + 1] << 1);
 			obj_2 = pair[i + 2];
@@ -5053,10 +5097,13 @@ void Collision::computeEEGrad(int start, int end, unsigned int* pair, double* d_
 			vertex_index_in_sum[1] = vertex_index_prefix_sum_obj[pair[i]] + edge_0_vertex[1];
 			vertex_index_in_sum[2] = vertex_index_prefix_sum_obj[obj_2] + edge_1_vertex[0];
 			vertex_index_in_sum[3] = vertex_index_prefix_sum_obj[obj_2] + edge_1_vertex[1];
+
+			coe = 0.5 * (edge_weight[pair[i]][pair[i + 1]] + edge_weight[obj_2][pair[i + 3]]);
+
 			if (second_order_constraint.computeBarrierEEGradientHessian(vertex_position[pair[i]][edge_0_vertex[0]].data(),
 				vertex_position[pair[i]][edge_0_vertex[1]].data(),
 				vertex_position[obj_2][edge_1_vertex[0]].data(), vertex_position[obj_2][edge_1_vertex[1]].data(), Hessian, grad,
-				hessian_record_index, stiffness, d_hat[i >> 2], rest_edge_length[pair[i]][pair[i + 1]],
+				hessian_record_index, coe*stiffness, d_hat[i >> 2], rest_edge_length[pair[i]][pair[i + 1]],
 				rest_edge_length[obj_2][pair[i + 3]], false, is_collider)) {
 				setGrad(hessian_record_index, vertex_index_in_sum, grad.data(), hessian_record + (i >> 2) * 144, grad_record, 12);
 			}
@@ -5143,6 +5190,7 @@ void Collision::computeEEHessian(int start, int end, unsigned int* pair, double*
 	//	}
 	//}
 	//else {
+	double coe;
 		if (is_collider) {
 			bool not_collider[4] = { true,true,false, false };
 			for (int i = start; i < end; i += 4) {
@@ -5151,10 +5199,11 @@ void Collision::computeEEHessian(int start, int end, unsigned int* pair, double*
 				edge_1_vertex = collider_edge_vertices[obj_2] + (pair[i + 3] << 1);
 				vertex_index_in_sum[0] = vertex_index_prefix_sum_obj[pair[i]] + edge_0_vertex[0];
 				vertex_index_in_sum[1] = vertex_index_prefix_sum_obj[pair[i]] + edge_0_vertex[1];
+
 				if (second_order_constraint.computeBarrierEEGradientHessian(vertex_position[pair[i]][edge_0_vertex[0]].data(),
 					vertex_position[pair[i]][edge_0_vertex[1]].data(),
 					vertex_position_collider[obj_2][edge_1_vertex[0]].data(), vertex_position_collider[obj_2][edge_1_vertex[1]].data(), Hessian, grad,
-					hessian_record_index, stiffness, d_hat[i >> 2], rest_edge_length[pair[i]][pair[i + 1]],
+					hessian_record_index, edge_weight[pair[i]][pair[i + 1]]* stiffness, d_hat[i >> 2], rest_edge_length[pair[i]][pair[i + 1]],
 					rest_edge_length_collider[obj_2][pair[i + 3]], true, is_collider)) {
 					if (!pair_is_activated[i >> 2]) {
 						pair_is_activated[i >> 2] = '\1';
@@ -5201,10 +5250,13 @@ void Collision::computeEEHessian(int start, int end, unsigned int* pair, double*
 				vertex_index_in_sum[1] = vertex_index_prefix_sum_obj[pair[i]] + edge_0_vertex[1];
 				vertex_index_in_sum[2] = vertex_index_prefix_sum_obj[obj_2] + edge_1_vertex[0];
 				vertex_index_in_sum[3] = vertex_index_prefix_sum_obj[obj_2] + edge_1_vertex[1];
+
+				coe = 0.5 * (edge_weight[pair[i]][pair[i + 1]] + edge_weight[obj_2][pair[i + 3]]);
+
 				if (second_order_constraint.computeBarrierEEGradientHessian(vertex_position[pair[i]][edge_0_vertex[0]].data(),
 					vertex_position[pair[i]][edge_0_vertex[1]].data(),
 					vertex_position[obj_2][edge_1_vertex[0]].data(), vertex_position[obj_2][edge_1_vertex[1]].data(), Hessian, grad,
-					hessian_record_index, stiffness, d_hat[i >> 2], rest_edge_length[pair[i]][pair[i + 1]],
+					hessian_record_index, coe * stiffness, d_hat[i >> 2], rest_edge_length[pair[i]][pair[i + 1]],
 					rest_edge_length[obj_2][pair[i + 3]], true, is_collider)) {
 					if (!pair_is_activated[i >> 2]) {
 						pair_is_activated[i >> 2] = '\1';
@@ -5238,7 +5290,7 @@ void Collision::computeVTGrad(int start, int end, unsigned int* pair, double* d_
 
 	MatrixXd Hessian; VectorXd grad;
 	int hessian_record_index[5] = { 0,-1,-1,-1,-1 };
-
+	double coe;
 	if (type == 0) {
 		for (int i = start; i < end; i += 4) {
 			vertex_index = pair[i + 1];
@@ -5248,9 +5300,13 @@ void Collision::computeVTGrad(int start, int end, unsigned int* pair, double* d_
 			vertex_index_in_sum[1] = vertex_index_prefix_sum_obj[obj_2] + triangle_vertex[0];
 			vertex_index_in_sum[2] = vertex_index_prefix_sum_obj[obj_2] + triangle_vertex[1];
 			vertex_index_in_sum[3] = vertex_index_prefix_sum_obj[obj_2] + triangle_vertex[2];
+
+			coe = 0.25 * (vertex_weight[pair[i]][vertex_index] + vertex_weight[obj_2][triangle_vertex[0]] + vertex_weight[obj_2][triangle_vertex[1]]
+				+ vertex_weight[obj_2][triangle_vertex[2]]);
+
 			if (second_order_constraint.computeBarrierVTGradientHessian(Hessian, grad, vertex_position[pair[i]][vertex_index].data(), vertex_position[obj_2][triangle_vertex[0]].data(),
 				vertex_position[obj_2][triangle_vertex[1]].data(), vertex_position[obj_2][triangle_vertex[2]].data(), d_hat[i >> 2],
-				hessian_record_index, stiffness,false, type)) {
+				hessian_record_index, coe * stiffness,false, type)) {
 				setGrad(hessian_record_index, vertex_index_in_sum,  grad.data(), hessian_record + (i >> 2) * 144, grad_record,
 					12);
 			}
@@ -5263,9 +5319,10 @@ void Collision::computeVTGrad(int start, int end, unsigned int* pair, double* d_
 			obj_2 = pair[i + 2];
 			triangle_vertex = triangle_indices_collider[obj_2][pair[i + 3]].data();
 			vertex_index_in_sum[0] = vertex_index_prefix_sum_obj[pair[i]] + vertex_index;
+
 			if (second_order_constraint.computeBarrierVTGradientHessian(Hessian, grad, vertex_position[pair[i]][vertex_index].data(), vertex_position_collider[obj_2][triangle_vertex[0]].data(),
 				vertex_position_collider[obj_2][triangle_vertex[1]].data(), vertex_position_collider[obj_2][triangle_vertex[2]].data(), d_hat[i >> 2],
-				hessian_record_index, stiffness, false, type)) {
+				hessian_record_index, vertex_weight[pair[i]][vertex_index] *stiffness, false, type)) {
 				setGrad(hessian_record_index, vertex_index_in_sum, grad.data(), hessian_record + (i >> 2) * 9, grad_record,
 					3, not_collider, 0);
 			}
@@ -5280,9 +5337,13 @@ void Collision::computeVTGrad(int start, int end, unsigned int* pair, double* d_
 			vertex_index_in_sum[1] = vertex_index_prefix_sum_obj[obj_2] + triangle_vertex[0];
 			vertex_index_in_sum[2] = vertex_index_prefix_sum_obj[obj_2] + triangle_vertex[1];
 			vertex_index_in_sum[3] = vertex_index_prefix_sum_obj[obj_2] + triangle_vertex[2];
+
+			coe = (vertex_weight[obj_2][triangle_vertex[0]] + vertex_weight[obj_2][triangle_vertex[1]]
+				+ vertex_weight[obj_2][triangle_vertex[2]]) / 3.0;
+
 			if (second_order_constraint.computeBarrierVTGradientHessian(Hessian, grad, vertex_position_collider[pair[i]][vertex_index].data(), vertex_position[obj_2][triangle_vertex[0]].data(),
 				vertex_position[obj_2][triangle_vertex[1]].data(), vertex_position[obj_2][triangle_vertex[2]].data(), d_hat[i >> 2],
-				hessian_record_index, stiffness, false, type)) {
+				hessian_record_index, coe * stiffness, false, type)) {
 				setGrad(hessian_record_index, vertex_index_in_sum, grad.data(), hessian_record + (i >> 2) * 81, grad_record,
 					9, not_collider, 1);
 			}
@@ -5381,6 +5442,7 @@ void Collision::computeVTHessian(int start, int end, unsigned int* pair, double*
 	//	}
 	//}
 	//else {
+	double coe;
 		if (type == 0) {
 			for (int i = start; i < end; i += 4) {
 				vertex_index = pair[i + 1];
@@ -5390,9 +5452,13 @@ void Collision::computeVTHessian(int start, int end, unsigned int* pair, double*
 				vertex_index_in_sum[1] = vertex_index_prefix_sum_obj[obj_2] + triangle_vertex[0];
 				vertex_index_in_sum[2] = vertex_index_prefix_sum_obj[obj_2] + triangle_vertex[1];
 				vertex_index_in_sum[3] = vertex_index_prefix_sum_obj[obj_2] + triangle_vertex[2];
+
+				coe = 0.25 * (vertex_weight[pair[i]][vertex_index] + vertex_weight[obj_2][triangle_vertex[0]] + vertex_weight[obj_2][triangle_vertex[1]]
+					+ vertex_weight[obj_2][triangle_vertex[2]]);
+
 				if (second_order_constraint.computeBarrierVTGradientHessian(Hessian, grad, vertex_position[pair[i]][vertex_index].data(), vertex_position[obj_2][triangle_vertex[0]].data(),
 					vertex_position[obj_2][triangle_vertex[1]].data(), vertex_position[obj_2][triangle_vertex[2]].data(), d_hat[i >> 2],
-					hessian_record_index, stiffness, true, type)) {
+					hessian_record_index, coe * stiffness, true, type)) {
 					if (!pair_is_activated[i >> 2]) {
 						pair_is_activated[i >> 2] = '\1';
 					}
@@ -5410,7 +5476,7 @@ void Collision::computeVTHessian(int start, int end, unsigned int* pair, double*
 				vertex_index_in_sum[0] = vertex_index_prefix_sum_obj[pair[i]] + vertex_index;
 				if (second_order_constraint.computeBarrierVTGradientHessian(Hessian, grad, vertex_position[pair[i]][vertex_index].data(), vertex_position_collider[obj_2][triangle_vertex[0]].data(),
 					vertex_position_collider[obj_2][triangle_vertex[1]].data(), vertex_position_collider[obj_2][triangle_vertex[2]].data(), d_hat[i >> 2],
-					hessian_record_index, stiffness, true, type)) {
+					hessian_record_index, vertex_weight[pair[i]][vertex_index]*stiffness, true, type)) {
 					if (!pair_is_activated[i >> 2]) {
 						pair_is_activated[i >> 2] = '\1';
 					}
@@ -5431,9 +5497,13 @@ void Collision::computeVTHessian(int start, int end, unsigned int* pair, double*
 				vertex_index_in_sum[1] = vertex_index_prefix_sum_obj[obj_2] + triangle_vertex[0];
 				vertex_index_in_sum[2] = vertex_index_prefix_sum_obj[obj_2] + triangle_vertex[1];
 				vertex_index_in_sum[3] = vertex_index_prefix_sum_obj[obj_2] + triangle_vertex[2];
+
+				coe =(vertex_weight[obj_2][triangle_vertex[0]] + vertex_weight[obj_2][triangle_vertex[1]]
+					+ vertex_weight[obj_2][triangle_vertex[2]])/3.0;
+
 				if (second_order_constraint.computeBarrierVTGradientHessian(Hessian, grad, vertex_position_collider[pair[i]][vertex_index].data(), vertex_position[obj_2][triangle_vertex[0]].data(),
 					vertex_position[obj_2][triangle_vertex[1]].data(), vertex_position[obj_2][triangle_vertex[2]].data(), d_hat[i >> 2],
-					hessian_record_index, stiffness, true, type)) {
+					hessian_record_index, coe * stiffness, true, type)) {
 					if (!pair_is_activated[i >> 2]) {
 						pair_is_activated[i >> 2] = '\1';
 					}
@@ -5756,7 +5826,8 @@ void Collision::computeGradientPerThread(int thread_No)
 		auto end = record_vertex_collide_with_floor_sum_all_thread.begin() + floor_pair_sum_start_per_thread[thread_No + 1];
 
 		for (auto j = start; j < end; j += 2) {
-			if (computeFloorHessian(record_vertex_collide_with_floor_d_hat[*j][*(j + 1)], stiffness, floor_value, &hessian, &grad,
+
+			if (computeFloorHessian(record_vertex_collide_with_floor_d_hat[*j][*(j + 1)], vertex_weight[*j][*(j+1)] *stiffness, floor_value, &hessian, &grad,
 				vertex_position[*j][*(j + 1)][floor_dimension],false)) {
 				global_index = vertex_index_prefix_sum_obj[*j] + *(j + 1);
 				grad_[3 * global_index + floor_dimension] += grad;
@@ -5823,7 +5894,7 @@ void Collision::computeLastColorHessianPerThread(int thread_No)
 		auto end = record_vertex_collide_with_floor_sum_all_thread.begin() + floor_pair_sum_start_per_thread[thread_No + 1];
 
 		for (auto j = start; j < end; j += 2) {
-			if (computeFloorHessian(record_vertex_collide_with_floor_d_hat[*j][*(j + 1)], stiffness, floor_value, &hessian, &grad,
+			if (computeFloorHessian(record_vertex_collide_with_floor_d_hat[*j][*(j + 1)], vertex_weight[*j][*(j + 1)] * stiffness, floor_value, &hessian, &grad,
 				vertex_position[*j][*(j + 1)][floor_dimension],true)) {
 				global_index = vertex_index_prefix_sum_obj[*j] + *(j + 1);
 				floor_hessian[global_index] = hessian;
