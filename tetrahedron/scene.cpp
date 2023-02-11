@@ -544,7 +544,7 @@ bool Scene::loadMesh(std::string& scene_path, std::vector<std::string>& collider
 			(*j) *= ave;
 		}
 	}
-	std::cout << "kappa " << collide_stiffness[0][0]<<" "<< collide_stiffness[0][0]*d_hat*d_hat*d_hat*d_hat << std::endl;
+	//std::cout << "kappa " << collide_stiffness[0][0]<<" "<< collide_stiffness[0][0]*d_hat*d_hat*d_hat*d_hat << std::endl;
 	double cloth_position_stiffness = 1e4;
 	double tet_position_stiffness = 1e4;
 

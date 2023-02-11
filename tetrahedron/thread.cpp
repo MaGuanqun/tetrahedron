@@ -624,7 +624,7 @@ job Thread::create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncS
 }
 
 
-job Thread::create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncSendToThread function_type, unsigned int key_id)
+job Thread::create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncSendToThread function_type, int key_id)
 {
     job k;
     switch (function_type)
@@ -642,7 +642,7 @@ job Thread::create_task(SpatialHashing* func, int thread_id, SpatialHashingFuncS
     return k;
 }
 
-job Thread::create_task(RadixSort* func, int thread_id, RadixSortFunc function_type, unsigned int key_id)
+job Thread::create_task(RadixSort* func, int thread_id, RadixSortFunc function_type, int key_id)
 {
     job k;
     switch (function_type)
@@ -902,7 +902,7 @@ job Thread::create_task(IterationMethod* func, IterationMethodFunc function_type
 }
 
 
-job Thread::create_task(MoveObject* func, int thread_id, MoveObjectFunc function_type, unsigned int key_id)
+job Thread::create_task(MoveObject* func, int thread_id, MoveObjectFunc function_type, int key_id)
 {
     job k;
     switch (function_type)
@@ -920,7 +920,7 @@ job Thread::create_task(MoveObject* func, int thread_id, MoveObjectFunc function
     return k;
 }
 
-//job Thread::create_task(DrawCulling* func, int thread_id, DrawCullingFunc function_type, unsigned int key_id)
+//job Thread::create_task(DrawCulling* func, int thread_id, DrawCullingFunc function_type, int key_id)
 //{
 //    job k;
 //    switch (function_type)
@@ -958,7 +958,7 @@ job Thread::create_task(XPBD* func, int thread_id, XPBDFunc function_type)
 
 
 
-job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_type, unsigned int para)
+job Thread::create_task(XPBD_IPC* func, int thread_id, XPBD_IPC_Func function_type, int para)
 {
     job k;
     switch (function_type)

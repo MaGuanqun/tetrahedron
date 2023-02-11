@@ -730,28 +730,28 @@ void XPBD_IPC::warmStart(double& ori_energy)
 		memcpy(record_first_collision_free_position[i][0].data(), vertex_position[i][0].data(), 24 * record_first_collision_free_position[i].size());
 	}
 
-	while (!convergeCondition(itr_num,true,5e-1,100))
+	while (!convergeCondition(itr_num,true,3e-1,100))
 	{
 		if (itr_num > 0) {
 			updateCollisionFreePosition();
 		}
-		//warmStart_solveBlock();
-		for (int i = 0; i < 5; ++i) {
-			warmStartJacobi();
-		}
+		warmStart_solveBlock();
+		//for (int i = 0; i < 5; ++i) {
+		//	warmStartJacobi();
+		//}
 
 		if (perform_collision) {
 			collision->collisionCulling();
-			collision->collisionTimeWithPair(false);
+			collision->collisionTimeWithPair(true);
 
 			thread->assignTask(this, COLLISION_FREE_POSITION_,0);
 			lineSearchWarmStart(ori_energy, true,1);
-			thread->assignTask(this, UPDATE_DISPLACEMENT_NO_COLLISION_WARM_START);
-			for (int i = 0; i < total_thread_num; ++i) {
-				if (max_displacement < max_dis_record[i]) {
-					max_displacement = max_dis_record[i];
-				}
-			}
+			//thread->assignTask(this, UPDATE_DISPLACEMENT_NO_COLLISION_WARM_START);
+			//for (int i = 0; i < total_thread_num; ++i) {
+			//	if (max_displacement < max_dis_record[i]) {
+			//		max_displacement = max_dis_record[i];
+			//	}
+			//}
 			computeGradient(true);
 		}
 		itr_num++;
@@ -786,7 +786,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 
 	if (perform_collision) {
 		collision->collisionCulling();
-		collision->collisionTimeWithPair(false);
+		collision->collisionTimeWithPair(true);
 		thread->assignTask(this, INVERSION_TEST,0);
 		for (int i = 0; i < total_thread_num; ++i) {
 			if (collision->collision_time_thread[i] < collision->collision_time) {
@@ -824,7 +824,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 		}		
 		if (outer_itr_num > (int)min_outer_iteration - 2)
 		{
-			//computeGradient(false);
+			computeGradient(false);
 		}
 		outer_itr_num++;
 	}
@@ -2075,6 +2075,9 @@ bool XPBD_IPC::convergeCondition(unsigned int iteration_num, bool for_warm_start
 		}
 	}
 	else {
+		//if (grad_max > max_move_standard) {
+		//	return false;
+		//}
 		if (max_displacement > max_move_standard) {
 			return false;
 		}
@@ -2965,7 +2968,7 @@ void XPBD_IPC::warmStartJacobi()
 	thread->assignTask(this, SUM_ALL_GRAD);
 	ori_energy = computeWarmStartEnergy(0);
 	initialRecordPositionForThread();
-	thread->assignTask(this, WARM_START_SOLVE_COLLISION, 0);
+	thread->assignTask(this, WARM_START_SOLVE_COLLISION, -1);
 	for (int i = 0; i < total_thread_num; ++i) {
 		if (max_displacement < max_dis_record[i]) {
 			max_displacement = max_dis_record[i];
@@ -2984,8 +2987,8 @@ void XPBD_IPC::warmStartJacobi()
 void XPBD_IPC::warmStart_solveBlock()
 {
 	double ori_energy = 0.0;
-	max_displacement = 0.0;
-	memset(max_dis_record.data(), 0, 8 * max_dis_record.size());
+	//max_displacement = 0.0;
+	//memset(max_dis_record.data(), 0, 8 * max_dis_record.size());
 
 	for (int i = 0; i < collision->unconnect_pair_color_group.size(); ++i) {
 		if (collision->unconnect_pair_color_group[i].empty()) {
@@ -2998,11 +3001,11 @@ void XPBD_IPC::warmStart_solveBlock()
 		ori_energy = computeWarmStartEnergy(0);
 		initialRecordPositionForThread();
 		thread->assignTask(this, WARM_START_SOLVE_COLLISION, i);
-		for (int i = 0; i < total_thread_num; ++i) {
-			if (max_displacement < max_dis_record[i]) {
-				max_displacement = max_dis_record[i];
-			}
-		}
+		//for (int i = 0; i < total_thread_num; ++i) {
+		//	if (max_displacement < max_dis_record[i]) {
+		//		max_displacement = max_dis_record[i];
+		//	}
+		//}
 		thread->assignTask(this, UPDATE_POSITION_AVERAGE_WARM_START);
 		lineSearchWarmStart(ori_energy,false,0);
 
@@ -3870,35 +3873,59 @@ void XPBD_IPC::solveEE_BlockPerThread(std::array<double, 3>** record_vertex_posi
 //WARM_START_SOLVE_COLLISION
 void XPBD_IPC::warmStartSolveCollision(int thread_No, int color)
 {
-	//bool direct_update;
-	//for (int i = 0; i < collision->unconnect_pair_color_group.size(); ++i) {
-	//	if (collision->unconnect_pair_color_group[i].empty()) {
-	//		continue;
-	//	}
-	//	auto start = collision->unconnect_pair_color_group[i].begin() + collision->pair_color_start_per_thread[i][thread_No];
-	//	auto end = collision->unconnect_pair_color_group[i].begin() + collision->pair_color_start_per_thread[i][thread_No + 1];
-	//	direct_update = (i == color) && i < (collision->unconnect_pair_color_group.size() - 1);
-	//	for (auto j = start; j < end; j += 2) {
-	//		solveCollisionBlockWarmStart(thread_No, *j, *(j + 1), sub_time_step, record_vertex_by_thread[thread_No].data(),
-	//			record_vertex_update_num_by_thread[thread_No].data(), direct_update);
-	//	}
-	//}
 
+	if (color != -1) {
+		bool direct_update;
+		for (int i = 0; i < collision->unconnect_pair_color_group.size(); ++i) {
+			if (collision->unconnect_pair_color_group[i].empty()) {
+				continue;
+			}
+			auto start = collision->unconnect_pair_color_group[i].begin() + collision->pair_color_start_per_thread[i][thread_No];
+			auto end = collision->unconnect_pair_color_group[i].begin() + collision->pair_color_start_per_thread[i][thread_No + 1];
+			direct_update = ((i == color) && i < (collision->unconnect_pair_color_group.size() - 1));
+			for (auto j = start; j < end; j += 2) {
+				solveCollisionBlockWarmStart(thread_No, *j, *(j + 1), sub_time_step, record_vertex_by_thread[thread_No].data(),
+					record_vertex_update_num_by_thread[thread_No].data(), direct_update);
+			}
+		}
+	}
+	else {
+		int size;
+		int step_size=1;
+		unsigned int* start_per_thread;
+		unsigned int temp[1] = { 0 };
+		start_per_thread = temp;
 
-	bool direct_update;
-	int size;
-	int step_size;
-	for (auto i = 0; i < 5; i++) {
-		if (i < 2) {
-			step_size = 4;
-		}
-		else {
-			step_size = 2;
-		}
-		size = collision->collision_pair_sum[i]->size() / step_size;
-		for (int j = 0; j < size; j ++) {
-			solveCollisionBlockWarmStart(thread_No, i, j, sub_time_step, record_vertex_by_thread[thread_No].data(),
-				record_vertex_update_num_by_thread[thread_No].data(), false);
+		for (auto i = 0; i < 5; i++) {
+			switch (i)
+			{
+			case 0:
+				start_per_thread = collision->vt_pair_sum_start_per_thread.data();
+				step_size = 4;
+				break;
+			case 1:
+				start_per_thread = collision->ee_pair_sum_start_per_thread.data();
+				step_size = 4;
+				break;
+			case 2:
+				start_per_thread = collision->triangle_c_start_per_thread.data();
+				step_size = 2;
+				break;
+			case 3:
+				start_per_thread = collision->edge_c_start_per_thread.data();
+				step_size = 2;
+				break;
+			case 4:
+				start_per_thread = collision->vertex_c_start_per_thread.data();
+				step_size = 2;
+				break;
+			}
+			size = start_per_thread[thread_No + 1] / step_size;
+			//size = collision->collision_pair_sum[i]->size() / step_size;
+			for (int j = start_per_thread[thread_No] / step_size; j < size; j++) {
+				solveCollisionBlockWarmStart(thread_No, i, j, sub_time_step, record_vertex_by_thread[thread_No].data(),
+					record_vertex_update_num_by_thread[thread_No].data(), false);
+			}
 		}
 	}
 
