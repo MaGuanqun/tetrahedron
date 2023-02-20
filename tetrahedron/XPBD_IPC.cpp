@@ -824,7 +824,7 @@ void XPBD_IPC::XPBD_IPC_Block_Solve_Multithread()
 		}		
 		if (outer_itr_num > (int)min_outer_iteration - 2)
 		{
-			computeGradient(false);
+			//computeGradient(false);
 		}
 		outer_itr_num++;
 	}
